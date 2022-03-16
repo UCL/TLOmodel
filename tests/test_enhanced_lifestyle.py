@@ -13,13 +13,13 @@ end_date = Date(2012, 4, 1)
 popsize = 10000
 
 
-@pytest.fixture(scope='module')
-def simulation():
+@pytest.fixture
+def simulation(seed):
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-    sim = Simulation(start_date=start_date)
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-    sim.seed_rngs(0)
+    sim = Simulation(start_date=start_date, seed=seed)
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath)
+                 )
     return sim
 
 
@@ -40,26 +40,20 @@ def __check_properties(df):
     # education: no one over age 20 in education
     assert not ((df.age_years > 20) & df.li_in_ed).any()
 
+    # Check sex workers, only women and non-zero:
+    assert df.loc[df.sex == 'F'].li_is_sexworker.any()
+    assert not df.loc[df.sex == 'M'].li_is_sexworker.any()
 
-def test_make_initial_population(simulation):
+    # Check circumcision (no women circumcised, some men circumcised)
+    assert not df.loc[df.sex == 'F'].li_is_circ.any()
+    assert df.loc[df.sex == 'M'].li_is_circ.any()
+
+
+def test_properties_and_dtypes(simulation):
     simulation.make_initial_population(n=popsize)
-
-
-def test_initial_population(simulation):
-    df = simulation.population.props
-    __check_properties(df)
-
-
-def test_simulate(simulation):
+    __check_properties(simulation.population.props)
     simulation.simulate(end_date=end_date)
-
-
-def test_final_population(simulation):
-    df = simulation.population.props
-    __check_properties(df)
-
-
-def test_dypes(simulation):
+    __check_properties(simulation.population.props)
     # check types of columns
     df = simulation.population.props
     orig = simulation.population.new_row

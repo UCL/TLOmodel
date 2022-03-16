@@ -13,3 +13,6 @@ from .population import Population  # noqa
 from .simulation import Simulation  # noqa
 
 __version__ = '0.1.0'
+
+DAYS_IN_YEAR = 365.25
+DAYS_IN_MONTH = 30.44

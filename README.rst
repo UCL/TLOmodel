@@ -1,21 +1,17 @@
-========
-Overview
-========
+=====================
+Getting Started
+=====================
 
-.. start-badges
 
-.. image:: https://api.travis-ci.com/UCL/TLOmodel.svg?branch=master
-    :alt: Travis-CI Build Status
-    :target: https://travis-ci.com/UCL/TLOmodel
 
-.. end-badges
 
-Thanzi la Onse Epidemiology Model
-=================================
+Prequisites
+===========
 
-This is the main software framework for epidemiology and health system modelling in the Thanzi la Onse project.
-
-See https://thanzi.org for more about the project.
+We use Git LFS to store large and binary files. Before you clone the repository, install
+`Git LFS <https://git-lfs.github.com/>`_ and run the command :code:`git lfs install`. On Windows, simply run the
+installer. On MacOS, extract the contents of the .tar.gz file using :code:`tar xvfz <filename>.tar.gz` and then
+run :code:`./install.sh`. The TLOmodel repository can then be cloned as normal.
 
 Installation
 ============
@@ -26,7 +22,7 @@ you prefer, you can carry out the setup using the command line:
 
 ::
 
-    conda create -n tlo python=3.6 virtualenv=15.1.0 pip=9.0.1
+    conda create -n tlo python=3.8
     conda activate tlo
     pip install -r requirements/dev.txt
     pip install -e .
@@ -35,6 +31,13 @@ This will install the software in 'editable' mode, so any changes you make to th
 After the initial install, each time you wish to use the model simply activate the environment::
 
     conda activate tlo
+
+To update dependencies, perform the following steps in the TLOmodel directory:
+
+::
+
+    conda activate tlo
+    pip install -r requirements/dev.txt
 
 
 Documentation
@@ -54,15 +57,11 @@ Please note that we have a `Wiki <https://github.com/UCL/TLOmodel/wiki>`_ which 
 Development
 ===========
 
-To use the software interactively in a Jupyter notebook, run::
-
-    jupyter notebook notebooks &
-
-To run just the Python code tests quickly, use::
+To run the Python code tests only::
 
     pytest
 
-To run all the tests run::
+To run all the tests::
 
     tox
 
@@ -82,4 +81,3 @@ Note, to combine test coverage data from all the tox environments run:
       - ::
 
             PYTEST_ADDOPTS=--cov-append tox
-

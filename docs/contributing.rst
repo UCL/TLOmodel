@@ -2,7 +2,7 @@
 Contributing
 ============
 
-We'll flesh out the guidelines here further as the project gets going!
+We welcome the usage of the modelling framework by all those interested and encourage them to work with us to develop it further.
 
 Bug reports
 ===========
@@ -55,8 +55,8 @@ For merging, you should:
 2. Update documentation when there's new API, functionality etc.
 3. Add yourself to ``authors.rst``.
 
-.. [1] If you don't have all the necessary python versions available locally you can rely on Travis - it will
-       `run the tests <https://travis-ci.com/UCL/TLOmodel/pull_requests>`_ for each change you add in the pull request.
+.. [1] If you don't have all the necessary python versions available locally you can rely on GitHub Actions - it will
+       `run the tests <https://github.com/UCL/TLOmodel/actions?query=workflow%3ACI>`_ for each change you add in the pull request.
 
        It will be slower though ...
 

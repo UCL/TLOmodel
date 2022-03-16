@@ -1,179 +1,94 @@
 """Unit tests for utility functions."""
+import os
+import pickle
+import types
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pytest
+from scipy.stats import chisquare
 
 import tlo.util
-from tlo import Date
+from tlo import Date, Simulation
+from tlo.analysis.utils import parse_log_file
+from tlo.methods import demography
+
+path_to_files = Path(os.path.dirname(__file__))
 
 
 @pytest.fixture
-def mock_pop():
-    class Population:
-        def _create_props(self, n):
-            return pd.DataFrame({'col1': [1.0] * n, 'col2': [''] * n, 'col3': [[]] * n, 'col4': [Date(0)] * n})
-
-    return Population()
+def rng(seed):
+    return np.random.RandomState(seed % 2**32)
 
 
-@pytest.fixture
-def mock_sim(mock_pop):
-    class Simulation:
-        population = mock_pop
-
-    return Simulation()
-
-
-def test_show_changes(mock_sim):
-    initial = pd.DataFrame(
-        {'col1': [1.0, 2.0], 'col2': ['a', 'b'], 'col3': [[], [1]], 'col4': [Date(2020, 1, 1), None]}
+def check_output_states_and_freq(
+    rng, input_freq, prob_matrix, use_categorical_dtype=False, p_value_threshold=0.01
+):
+    expected_output_freq = prob_matrix.to_numpy() @ input_freq
+    input_states = np.repeat(prob_matrix.columns.to_list(), input_freq).tolist()
+    input_states = pd.Series(
+        pd.Categorical(input_states) if use_categorical_dtype else input_states
     )
-    initial.index.name = 'row'
-    final = pd.DataFrame(
-        {
-            'col1': [3.0, 2.0, 1.0],
-            'col2': ['a', 'c', ''],
-            'col3': [[2], [1], []],
-            'col4': [Date(2020, 1, 1), Date(2020, 1, 2), None],
-        }
+    output_states = tlo.util.transition_states(input_states, prob_matrix, rng=rng)
+    output_freq = output_states.value_counts()
+    # Ensure frequencies ordered as prob_matrix columns and zero counts included
+    output_freq = np.array([output_freq.get(state, 0) for state in prob_matrix.columns])
+    assert isinstance(output_states, pd.Series)
+    assert output_states.dtype == input_states.dtype
+    assert output_freq.sum() == len(input_states)
+    # Perform Pearson's chi-squared test against null hypothesis of the frequencies of
+    # the output states being distributed according to the expected multinomial
+    # distribution. States with expected output frequency zero excluded to avoid
+    # division by zero issues in evaluating test statistic
+    assert chisquare(
+        output_freq[expected_output_freq > 0],
+        expected_output_freq[expected_output_freq > 0]
+    ).pvalue > p_value_threshold
+    return output_freq
+
+
+@pytest.mark.parametrize('missing_state_index', [None, 0, 1, 2, 3])
+def test_transition_states_uniform_input(rng, missing_state_index):
+    states = list("abcd")
+    prob_matrix = pd.DataFrame(columns=states, index=states)
+    prob_matrix["a"] = [0.9, 0.1, 0.0, 0.0]
+    prob_matrix["b"] = [0.1, 0.3, 0.6, 0.0]
+    prob_matrix["c"] = [0.0, 0.2, 0.6, 0.2]
+    prob_matrix["d"] = [0.0, 0.0, 0.3, 0.7]
+    input_freq = np.full(len(states), 1000)
+    if missing_state_index is not None:
+        input_freq[missing_state_index] = 0
+    check_output_states_and_freq(rng, input_freq, prob_matrix)
+
+
+@pytest.mark.parametrize('use_categorical_dtype', [False, True])
+def test_transition_states_fixed_state(rng, use_categorical_dtype):
+    states = list("abcd")
+    prob_matrix = pd.DataFrame(columns=states, index=states)
+    prob_matrix["a"] = [0.9, 0.1, 0.0, 0.0]
+    prob_matrix["b"] = [0.1, 0.3, 0.6, 0.0]
+    prob_matrix["c"] = [0.0, 0.2, 0.8, 0.0]
+    prob_matrix["d"] = [0.0, 0.0, 0.0, 1.0]
+    input_freq = np.full(len(states), 1000)
+    output_freq = check_output_states_and_freq(
+        rng, input_freq, prob_matrix, use_categorical_dtype
     )
-    final.index.name = 'row'
-
-    changes = tlo.util.show_changes(mock_sim, initial, final)
-    html = changes.render()
-
-    assert len(changes.index) == len(final)
-    assert html.count('color:  black;') == 7  # unchanged
-    assert html.count('color:  red;') == 5  # changed
-    assert html.count('background-color:  yellow;') == 4  # final row
+    # Transition of d state deterministic so should frequencies should match exactly
+    assert output_freq[states.index("d")] == input_freq[states.index("d")]
 
 
-def test_show_changes_same_size(mock_sim):
-    initial = pd.DataFrame(
-        {'col1': [1.0, 2.0], 'col2': ['a', 'b'], 'col3': [[], [1]], 'col4': [Date(2020, 1, 1), None]}
-    )
-    initial.index.name = 'row'
-    final = pd.DataFrame(
-        {'col1': [1.5, 2], 'col2': ['aa', 'b'], 'col3': [[], [1, 1]], 'col4': [Date(2020, 1, 2), None]}
-    )
-    final.index.name = 'row'
-
-    changes = tlo.util.show_changes(mock_sim, initial, final)
-    html = changes.render()
-
-    assert len(changes.index) == len(final)
-    assert html.count('color:  black;') == 4  # unchanged
-    assert html.count('color:  red;') == 4  # changed
-    assert html.count('background-color:  yellow;') == 0
-
-
-class TestTransitionsStates:
-    def setup(self):
-        # create rng for testing
-        self.rng = np.random.RandomState(1234)
-
-        self.states = list("abcd")
-        prob_matrix = pd.DataFrame(columns=self.states, index=self.states)
-        # key is original state, values are probability for new states
-        #                   A    B    C    D
-        prob_matrix["a"] = [0.9, 0.1, 0.0, 0.0]
-        prob_matrix["b"] = [0.1, 0.3, 0.6, 0.0]
-        prob_matrix["c"] = [0.0, 0.2, 0.6, 0.2]
-        prob_matrix["d"] = [0.0, 0.0, 0.3, 0.7]
-        # columns are original state, rows are the new state
-        all_states = prob_matrix.columns.tolist()
-        prob_matrix.rename(index={row_num: col_name for row_num, col_name in zip(range(len(prob_matrix)), all_states)})
-        self.prob_matrix = prob_matrix
-
-        # default input data
-        self.input = pd.DataFrame({'state': self.states * 1_000, 'other_data_1': range(0, 4_000)})
-
-        # default output data
-        nested_states = [  # perfect ratio would be: [1000, 600, 1500, 900]
-            list(state * repeat) for state, repeat in zip(self.states, [1018, 598, 1465, 919])
-        ]
-        self.expected = pd.DataFrame({'state': sum(nested_states, []), 'other_data_1': pd.Series(range(0, 4000))})
-
-    def test_simple_case(self):
-        """Simple case, should change to probabilities found per seed"""
-
-        expected = self.expected.copy()
-
-        # run the function
-        output = tlo.util.transition_states(self.input.state, self.prob_matrix, rng=self.rng)
-        output_merged = self.input.copy()
-        output_merged['state'] = output
-        expected_size = expected.groupby('state').size()
-        output_size = output_merged.groupby('state').size()
-        pd.testing.assert_series_equal(expected_size, output_size)
-
-    def test_state_doesnt_transition(self):
-        """State d shouldn't transition at all"""
-        nested_states = [  # perfect ratio would be: [1000, 600, 1400, 1000]
-            list(state * repeat) for state, repeat in zip(self.states, [1018, 598, 1384, 1000])
-        ]
-        expected = pd.DataFrame({'state': sum(nested_states, []), 'other_data_1': pd.Series(range(0, 4000))})
-        prob_matrix = self.prob_matrix.copy()
-        prob_matrix['c'] = [0.0, 0.2, 0.8, 0.0]
-        prob_matrix['d'] = [0.0, 0.0, 0.0, 1.0]
-
-        # run the function
-        output = tlo.util.transition_states(self.input.state, prob_matrix, rng=self.rng)
-        output_merged = self.input.copy()
-        output_merged['state'] = output
-        expected_size = expected.groupby('state').size()
-        output_size = output_merged.groupby('state').size()
-        pd.testing.assert_series_equal(expected_size, output_size)
-
-    def test_none_in_initial_state(self):
-        """States start without any in state c"""
-        # input
-        nested_states = [list(state * repeat) for state, repeat in zip(self.states, [2000, 2000, 0, 2000])]
-        input = pd.DataFrame({'state': sum(nested_states, []), 'other_data_1': pd.Series(range(0, 6000))})
-
-        # default output data
-        nested_states = [  # perfect ratio would be: [2000, 800, 1800, 1400]
-            list(state * repeat) for state, repeat in zip(self.states, [2006, 760, 1853, 1381])
-        ]
-        self.expected = pd.DataFrame({'state': sum(nested_states, []), 'other_data_1': pd.Series(range(0, 6000))})
-        expected = self.expected.copy()
-
-        # run the function
-        output = tlo.util.transition_states(input.state, self.prob_matrix, rng=self.rng)
-        output_merged = input.copy()
-        output_merged['state'] = output
-        expected_size = expected.groupby('state').size()
-        output_size = output_merged.groupby('state').size()
-        pd.testing.assert_series_equal(expected_size, output_size)
-
-    def test_transition_removes_state(self):
-        """Transition causes complete removal of a state a from the series"""
-        new_states = list('bcd')
-        nested_states = [  # perfect ratio would be: [1600, 1500, 900]
-            list(state * repeat) for state, repeat in zip(new_states, [1616, 1465, 919])
-        ]
-        expected = pd.DataFrame({'state': sum(nested_states, []), 'other_data_1': pd.Series(range(0, 4000))})
-        prob_matrix = self.prob_matrix.copy()
-        prob_matrix["a"] = [0.0, 1.0, 0.0, 0.0]
-        prob_matrix["b"] = [0.0, 0.4, 0.6, 0.0]
-
-        # run the function
-        output = tlo.util.transition_states(self.input.state, prob_matrix, rng=self.rng)
-        output_merged = self.input.copy()
-        output_merged['state'] = output
-        expected_size = expected.groupby('state').size()
-        output_size = output_merged.groupby('state').size()
-        pd.testing.assert_series_equal(expected_size, output_size)
-
-    def test_type_is_maintained(self):
-        """Given a categorical input, this data type should be maintained"""
-        categorical_input = pd.Series(pd.Categorical(self.input.state))
-
-        # run the function
-        output = tlo.util.transition_states(categorical_input, self.prob_matrix, rng=self.rng)
-        print(output.dtype)
-        assert output.dtype == categorical_input.dtype
+def test_transition_states_removes_state(rng):
+    states = list("abcd")
+    prob_matrix = pd.DataFrame(columns=states, index=states)
+    prob_matrix["a"] = [0.0, 1.0, 0.0, 0.0]
+    prob_matrix["b"] = [0.0, 0.4, 0.6, 0.0]
+    prob_matrix["c"] = [0.0, 0.2, 0.6, 0.2]
+    prob_matrix["d"] = [0.0, 0.0, 0.3, 0.7]
+    input_freq = np.full(len(states), 1000)
+    output_freq = check_output_states_and_freq(rng, input_freq, prob_matrix)
+    # No transitions to a state so should have zero frequency
+    assert output_freq[states.index("a")] == 0
 
 
 class TestCreateAgeRangeLookup:
@@ -224,54 +139,86 @@ class TestCreateAgeRangeLookup:
             assert lookup[i] == ranges[2]
 
 
-class TestNestedToRecord:
-    def setup(self):
-        indexes = [f'index{i}' for i in range(0, 3)]
-        self.df = pd.DataFrame(
-            {
-                'col0': [f'data{i}' for i in range(0, 3)],
-                'col1': [f'data{i}' for i in range(3, 6)],
-                'col2': [f'data{i}' for i in range(6, 9)],
-            },
-            index=indexes,
-        )
+@pytest.mark.slow
+def test_sample_outcome(tmpdir, seed):
+    """Check that helper function `sample_outcome` works correctly."""
 
-        self.expected_output = {
-            'col0_index0': 'data0',
-            'col0_index1': 'data1',
-            'col0_index2': 'data2',
-            'col1_index0': 'data3',
-            'col1_index1': 'data4',
-            'col1_index2': 'data5',
-            'col2_index0': 'data6',
-            'col2_index1': 'data7',
-            'col2_index2': 'data8',
-        }
+    # Create probability matrix for four individual (0-3) with four possible outcomes (A, B, C).
+    probs = pd.DataFrame({
+        'A': {0: 1.0, 1: 0.0, 2: 0.25, 3: 0.0},
+        'B': {0: 0.0, 1: 1.0, 2: 0.25, 3: 0.0},
+        'C': {0: 0.0, 1: 0.0, 2: 0.50, 3: 0.0},
+    })
+    rng = np.random.RandomState(seed=seed % 2**32)
 
-    def test_simple_df(self):
-        output = tlo.util.nested_to_record(self.df)
-        assert output == self.expected_output
+    list_of_results = list()
+    n = 5000
+    for i in range(n):
+        list_of_results.append(tlo.util.sample_outcome(probs, rng))
+    res = pd.DataFrame(list_of_results)
 
-    def test_numeric_index(self):
-        df = self.df.copy()
-        df.index = range(0, 3)
-        expected_output = {key.replace('index', ''): value for key, value in self.expected_output.items()}
+    assert (res[0] == 'A').all()
+    assert (res[1] == 'B').all()
+    assert (res[2].isin(['A', 'B', 'C'])).all()
+    assert 3 not in res.columns
 
-        output = tlo.util.nested_to_record(df)
+    for op in ['A', 'B', 'C']:
+        prob = probs.loc[2, op]
+        assert res[2].value_counts()[op] == pytest.approx(probs.loc[2, op] * n, abs=2 * np.sqrt(n * prob * (1 - prob)))
 
-        # output as expected
-        assert output == expected_output
-        # original df index not changed
-        assert (df.index == pd.Index(range(0, 3))).all()
 
-    def test_numeric_column(self):
-        df = self.df.copy()
-        df.columns = range(0, 3)
-        expected_output = {key.replace('col', ''): value for key, value in self.expected_output.items()}
+def test_logs_parsing(tmpdir):
+    """test all functionalities of LogDict class inside utils.py.
 
-        output = tlo.util.nested_to_record(df)
+        1.  ensure that logs are generated as expected
+        2.  check expected keys are present within the logs
+        3.  check that we're able to get metadata
+        4.  check that output from method `items()` of LogsDict class return a generator
+        5.  check that picked data can be properly generated
 
-        # output as expected
-        assert output == expected_output
-        # original df column not changed
-        assert (df.columns == range(0, 3)).all()
+        """
+
+    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+    path_to_tmpdir = path_to_files / tmpdir
+
+    start_date = Date(2010, 1, 1)
+    end_date = Date(2012, 1, 1)
+    popsize = 200
+
+    # add file handler for the purpose of logging
+    sim = Simulation(start_date=start_date, seed=0, log_config={
+        'filename': 'logs_dict_class',
+        'directory': tmpdir,
+    })
+
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath)
+    )
+
+    # Create a simulation
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
+
+    file_path = sim.log_filepath
+    outputs = parse_log_file(file_path)
+
+    # check parse_log_file methods worked as expected - expected keys has to be in the LogsDict class
+    assert 'tlo.methods.demography' in outputs
+
+    # check that metadata is within the selected key
+    assert '_metadata' in outputs['tlo.methods.demography'].keys()
+
+    # check that method `items()` of LogsDict class returns a generator
+    assert isinstance(outputs.items(), types.GeneratorType)
+
+    # test we can create a .pickled file
+    for key, output in outputs.items():
+        if key.startswith("tlo."):
+            with open(path_to_tmpdir / f"{key}.pickle", "wb") as f:
+                pickle.dump(output, f)
+
+        #   check a pickle file is created
+        assert Path.is_file(path_to_tmpdir / f"{key}.pickle")
+
+        # check the created pickle file is not empty
+        assert os.path.getsize(path_to_tmpdir / f"{key}.pickle") != 0

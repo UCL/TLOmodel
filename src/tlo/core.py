@@ -5,6 +5,7 @@ specification for parameters and properties, and the base Module class for
 disease modules.
 """
 import json
+import typing
 from enum import Enum, auto
 
 import numpy as np
@@ -92,6 +93,22 @@ class Specifiable:
     def pandas_type(self):
         return self.PANDAS_TYPE_MAP[self.type_]
 
+    delimiter = " === "
+
+    def __repr__(self):
+        '''Add docstring here.
+        self.type will be something like "Types.REAL".
+        For printing, we remove the redundant substring "Types." '''
+        sub = "Types."
+        mytype = str(self.type_)  # e.g. "Types.REAL"
+        item = mytype.split(sub)[1]  # e.g. "REAL"
+
+        if self.type_ == Types.CATEGORICAL:
+            return f'{item}{Specifiable.delimiter}{self.description} (Possible values are: {self.categories})'
+        else:
+            return f'{item}' + Specifiable.delimiter + f'{self.description}'
+        # Types.CATEGORICAL might need special treatment
+
 
 class Parameter(Specifiable):
     """Used to specify parameters for disease modules etc."""
@@ -154,9 +171,7 @@ class Module:
 
     `parameters`
         A dictionary of module parameters, derived from specifications in the PARAMETERS
-        class attribute on a subclass. These parameters are also available as object
-        attributes in their own right(where their names do not clash) so you can do both
-        `m.parameters['name']` and `m.name`.
+        class attribute on a subclass.
 
     `rng`
         A random number generator specific to this module, with its own internal state.
@@ -165,6 +180,37 @@ class Module:
     `sim`
         The simulation this module is part of, once registered.
     """
+
+    # Subclasses can override this to declare the set of initialisation dependencies
+    # Declares modules that need to be registered in simulation and initialised before
+    # this module
+    INIT_DEPENDENCIES = frozenset()
+
+    # Subclasses can override this to declare the set of optional init. dependencies
+    # Declares modules that need to be registered in simulation and initialised before
+    # this module if they are present, but are not required otherwise
+    OPTIONAL_INIT_DEPENDENCIES = frozenset()
+
+    # Subclasses can override this to declare the set of additional dependencies
+    # Declares any modules that need to be registered in simulation in addition to those
+    # in INIT_DEPENDENCIES to allow running simulation
+    ADDITIONAL_DEPENDENCIES = frozenset()
+
+    # Subclasses can override this to declare the set of modules that this module can be
+    # used in place of as a dependency
+    ALTERNATIVE_TO = frozenset()
+
+    # Subclasses can override this set to add metadata tags to their class
+    # See tlo.methods.Metadata class
+    METADATA = {}
+
+    # Subclasses can override this set to declare the causes death that this module contributes to
+    # This is a dict of the form {<name_used_by_the_module : Cause()}: see core.Cause
+    CAUSES_OF_DEATH = dict()
+
+    # Subclasses can override this set to declare the causes disability that this module contributes to
+    # This is a dict of the form {<name_used_by_the_module : Cause()}: see core.Cause
+    CAUSES_OF_DISABILITY = dict()
 
     # Subclasses may declare this dictionary to specify module-level parameters.
     # We give an empty definition here as default.
@@ -187,7 +233,7 @@ class Module:
         :param name: the name to use for this module. Defaults to the concrete subclass' name.
         """
         self.parameters = {}
-        self.rng = np.random.RandomState()
+        self.rng: typing.Optional[np.random.RandomState] = None
         self.name = name or self.__class__.__name__
         self.sim = None
 
@@ -300,32 +346,12 @@ class Module:
 
         This is called by the simulation whenever a new person is born.
 
-        :param mother: the mother for this child
+        :param mother: the mother for this child (can be -1 if the mother is not identified).
         :param child: the new child
         """
         raise NotImplementedError
 
-    def __getattr__(self, name):
-        """Look up a module parameter as though it is an object property.
-
-        :param name: the parameter name
-        """
-        try:
-            return self.parameters[name]
-        except KeyError:
-            raise AttributeError('Attribute %s not found' % name)
-
-    def __setattr__(self, name, value):
-        """Set a module parameter as though it is an object property.
-
-        :param name: the parameter name
-        :param value: the new value for the parameter
-        """
-        try:
-            super().__setattr__(name, value)
-        except AttributeError:
-            if name in self.PARAMETERS:
-                assert isinstance(value, self.PARAMETERS[name].python_type)
-                self.parameters[name] = value
-            else:
-                raise
+    def on_simulation_end(self):
+        """This is called after the simulation has ended.
+        Modules do not need to declare this."""
+        pass

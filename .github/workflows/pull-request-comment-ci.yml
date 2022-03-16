@@ -1,0 +1,17 @@
+name: Run extra tests on pull-request comments
+
+on:
+  issue_comment:
+    types:
+      - created
+      
+jobs:
+
+  scaled_sim:
+    uses: ./.github/workflows/run-on-pr-comment.yml
+    with:
+      runs-on: self-hosted
+      keyword: scaled-sim
+      commands: tox -v -e profile
+      description: Profiled scale run of model
+      timeout-minutes: 8640

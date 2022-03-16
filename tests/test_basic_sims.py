@@ -1,14 +1,14 @@
 
 import pandas as pd
 
-from tlo import Date, DateOffset, Module, Property, Simulation, Types
+from tlo import Date, DateOffset, Module, Property, Simulation, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.test import random_birth, random_death
 
 
 def test_individual_death():
     # Create a new simulation to orchestrate matters
-    sim = Simulation(start_date=Date(2010, 1, 1))
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=1)
 
     # Register just a test module with random death
     # Note: this approach would allow us to give a different name if desired,
@@ -19,11 +19,10 @@ def test_individual_death():
     assert sim.modules['rd'] is rd
     sim.modules['rd'].parameters['death_probability'] = 0.1
     # We can also use attribute-style access if the name doesn't clash
-    assert rd.death_probability == 0.1
-    rd.death_probability = 0.2
+    assert rd.parameters['death_probability'] == 0.1
+    rd.parameters['death_probability'] = 0.2
 
     # Seed the random number generators (manually)
-    sim.seed_rngs(1)
     sim.modules['rd'].rng.seed(1)
 
     # Create a population of 2 individuals
@@ -62,16 +61,15 @@ def test_single_step_death():
     # This demonstrates how to test the implementation of a single event in isolation
 
     # Set up minimal simulation
-    sim = Simulation(start_date=Date(2010, 1, 1))
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=1)
     rd = random_death.RandomDeath(name='rd')
     rd.parameters['death_probability'] = 0.1
     sim.register(rd)
-    sim.seed_rngs(1)
     sim.modules['rd'].rng.seed(1)
     sim.make_initial_population(n=10)
 
     # Create and fire the event of interest
-    event = random_death.RandomDeathEvent(rd, rd.death_probability)
+    event = random_death.RandomDeathEvent(rd, rd.parameters['death_probability'])
     sim.fire_single_event(event, Date(2010, 2, 1))
 
     # Check it has behaved as expected
@@ -84,9 +82,9 @@ def test_single_step_death():
     )
 
 
-def test_make_test_property():
+def test_make_test_property(seed):
     # This tests the Population.make_test_property method
-    sim = Simulation(start_date=Date(2010, 1, 1))
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
     sim.make_initial_population(n=3)
     # There should be no properties
     pop = sim.population
@@ -106,19 +104,18 @@ def test_birth_and_death():
     # This combines both population-scope and individual-scope events,
     # with more complex logic.
     # Create a new simulation to orchestrate matters
-    sim = Simulation(start_date=Date(1950, 1, 1))
+    sim = Simulation(start_date=Date(1950, 1, 1), seed=2)
 
     # Register modules
     rb = random_birth.RandomBirth(name='rb')
     rb.pregnancy_probability = 0.1
     rd = random_death.RandomDeath(name='rd')
-    rd.death_probability = 0.01
+    rd.parameters['death_probability'] = 0.01
     sim.register(rb, rd)
     assert sim.modules['rb'] is rb
     assert sim.modules['rd'] is rd
 
     # Seed the random number generators
-    sim.seed_rngs(2)
     sim.modules['rd'].rng.seed(2)
     sim.modules['rb'].rng.seed(2)
 
@@ -168,7 +165,7 @@ def test_birth_and_death():
             assert child1 + DateOffset(months=9) <= child2
 
 
-def test_regular_event_with_end():
+def test_regular_event_with_end(seed):
     # A small module (that does nothing) and event with end date
     class MyModule(Module):
         PROPERTIES = {'last_run': Property(Types.DATE, '')}
@@ -197,7 +194,7 @@ def test_regular_event_with_end():
         def apply(self, population):
             pass
 
-    sim = Simulation(start_date=Date(2010, 1, 1))
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
 
     my_module = MyModule()
     sim.register(my_module)
@@ -214,3 +211,18 @@ def test_regular_event_with_end():
     assert sim.population.props.loc[0, 'last_run'] == pd.Timestamp(Date(2010, 3, 1))
     # The last event the simulation ran was my_other_event that doesn't have end date
     assert sim.date == pd.Timestamp(Date(2011, 1, 1))
+
+
+def test_show_progress_bar(capfd, seed):
+    start_date = Date(2010, 1, 1)
+    end_date = Date(2010, 2, 1)
+    sim = Simulation(start_date=start_date, seed=seed, show_progress_bar=True)
+    logger = logging.getLogger('tlo')
+    assert len(logger.handlers) == 0
+    rd = random_death.RandomDeath(name='rd')
+    sim.register(rd)
+    sim.modules['rd'].parameters['death_probability'] = 0.1
+    sim.make_initial_population(n=1)
+    sim.simulate(end_date=end_date)
+    captured = capfd.readouterr()
+    assert "Simulation progress" in captured.out

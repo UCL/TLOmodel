@@ -2,35 +2,39 @@ import io
 import os
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from tlo.lm import LinearModel, LinearModelType, Predictor
 
-EXAMPLE_POP = """region_of_residence,li_urban,sex,age_years,sy_vomiting
-Northern,True,M,12,False
-Central,True,M,6,True
-Northern,True,M,24,False
-Southern,True,M,46,True
-Central,True,M,91,True
-Central,False,M,16,False
-Southern,False,F,80,True
-Northern,True,F,99,False
-Western,True,F,63,False
-Central,True,F,51,True
-Central,True,M,57,False
-Central,False,F,2,False
-Central,True,F,93,False
-Western,False,M,15,True
-Western,False,M,5,False
-Northern,True,M,29,True
-Western,True,M,63,False
-Southern,True,F,54,False
-Western,False,M,94,False
-Northern,False,F,91,True
-Northern,True,M,29,False
+EXAMPLE_POP = """region_of_residence,li_urban,sex,age_years,sy_vomiting,li_wealth
+Northern,True,M,12,False,3
+Central,True,M,6,True,2
+Northern,True,M,24,False,5
+Southern,True,M,46,True,1
+Central,True,M,91,True,1
+Central,False,M,16,False,4
+Southern,False,F,80,True,2
+Northern,True,F,99,False,3
+Western,True,F,63,False,5
+Central,True,F,51,True,2
+Central,True,M,57,False,3
+Central,False,F,2,False,1
+Central,True,F,93,False,4
+Western,False,M,15,True,2
+Western,False,M,5,False,3
+Northern,True,M,29,True,4
+Western,True,M,63,False,1
+Southern,True,F,54,False,5
+Western,False,M,94,False,2
+Northern,False,F,91,True,1
+Northern,True,M,29,False,3
 """
 
-EXAMPLE_DF = pd.read_csv(io.StringIO(EXAMPLE_POP))
+# Make `li_wealth` column integer categorical to test for failures due to brittle behaviour
+# of Pandas `eval` with columns of this datatype
+EXAMPLE_DF = pd.read_csv(
+    io.StringIO(EXAMPLE_POP), dtype={'li_wealth': pd.CategoricalDtype([1, 2, 3, 4, 5])})
 
 
 def test_of_example_usage():
@@ -48,7 +52,8 @@ def test_of_example_usage():
                               .when('< 35', 0.0003)
                               .when('< 60', 0.0004)
                               .otherwise(0.0005),
-        Predictor('sy_vomiting').when(True, 0.00001).otherwise(0.00002)
+        Predictor('sy_vomiting').when(True, 0.00001).otherwise(0.00002),
+        Predictor('li_wealth').when(1, 0.001).when(2, 0.002).otherwise(0.003)
     )
 
     eq.predict(EXAMPLE_DF)
@@ -290,7 +295,7 @@ def test_logistic_application_tob():
 
     lm_tob_probs = eq_tob.predict(df.loc[df.is_alive & (df.age_years >= 15)])
 
-    assert tob_probs.equals(lm_tob_probs)
+    assert np.allclose(tob_probs, lm_tob_probs)
 
 
 def test_logisitc_HSB_example():
@@ -407,7 +412,7 @@ def test_logisitc_HSB_example():
 
     prob_seeking_care_lm = lm.predict(df, year=2015)
 
-    assert prob_seeking_care_lm.equals(prob_seeking_care)
+    assert np.allclose(prob_seeking_care_lm, prob_seeking_care)
 
 
 def test_using_int_as_intercept():
@@ -416,3 +421,229 @@ def test_using_int_as_intercept():
         0
     )
     assert isinstance(eq, LinearModel)
+    pred = eq.predict(EXAMPLE_DF)
+    assert isinstance(pred, pd.Series)
+    assert np.issubdtype(pred.dtype, np.integer)
+    assert (pred.index == EXAMPLE_DF.index).all()
+    assert (pred == 0).all()
+
+
+def test_multiplicative_helper():
+    predictor1 = Predictor('column1').when(True, 1)
+    predictor2 = Predictor('column2').when(True, 2)
+    eq = LinearModel.multiplicative(
+        predictor1,
+        predictor2
+    )
+    assert isinstance(eq, LinearModel)
+    assert eq.lm_type == LinearModelType.MULTIPLICATIVE
+    assert eq.intercept == 1.0
+    assert eq.predictors[0] == predictor1
+    assert eq.predictors[1] == predictor2
+
+
+def test_outcomes():
+    prob = 0.5
+    OR_X = 2
+    OR_Y = 5
+
+    odds = prob / (1 - prob)
+
+    eq = LinearModel(
+        LinearModelType.LOGISTIC,
+        odds,
+        Predictor('FactorX').when(True, OR_X),
+        Predictor('FactorY').when(True, OR_Y)
+    )
+
+    df = pd.DataFrame(data={
+        'FactorX': [False, True, False, True],
+        'FactorY': [False, False, True, True]
+    }, index=['row1', 'row2', 'row3', 'row4'])
+
+    rng = np.random.RandomState(0)
+
+    pred = eq.predict(df, rng=rng)
+
+    assert isinstance(pred, pd.Series)
+    assert pred.dtype == bool
+    assert (pred.index == df.index).all()
+
+    pred = eq.predict(df.iloc[[0]], rng=rng)
+    assert not isinstance(pred, pd.Series)
+    assert isinstance(pred, np.bool_)
+
+
+def test_custom():
+    # example population dataframe
+    dataframe = pd.DataFrame(data={
+        'FactorX': [False, True, False, True],
+        'FactorY': [False, False, True, True]
+    }, index=['row1', 'row2', 'row3', 'row4'])
+
+    # example module parameters
+    module_params = {
+        'intercept': 1.0,
+        'rr_factorx': 20.0,
+        'rr_factory': 300.0
+    }
+
+    # a custom predict function for dataframe (including single-row dataframe) =========================================
+    def predict_on_dataframe(self, df, rng=None, **externals):
+        p = self.parameters
+        param_external = externals['other']  # another external variable passed when calling predict
+        # each row of dataframe needs a result
+        results = pd.Series(data=np.nan, index=df.index)
+        results[:] = p['intercept']
+        # note operator: this is an additive linear module
+        results[df.FactorX] += p['rr_factorx']
+        results[df.FactorY] += p['rr_factory']
+        results[df.FactorX & df.FactorY] += param_external
+        return results
+
+    # create the linear model passing the custom predict function
+    lm = LinearModel.custom(predict_on_dataframe, parameters=module_params)
+
+    pred = lm.predict(dataframe, other=4000.0)
+    assert pred['row1'] == 1.0
+    assert pred['row2'] == 21.0
+    assert pred['row3'] == 301.0
+    assert pred['row4'] == 4321.0
+
+    # a custom predict function operating on a single record ===========================================================
+    def predict_on_record(self, record, rng=None, **externals):
+        p = self.parameters
+        param_external = externals['other']  # another external variable passed when calling predict
+        result = p['intercept']
+        if record.FactorX:
+            result += p['rr_factorx']
+        if record.FactorY:
+            result += p['rr_factory']
+        if record.FactorX and record.FactorY:
+            result += param_external
+        return result
+
+    lm2 = LinearModel.custom(predict_on_record, parameters=module_params)
+
+    assert lm2.predict(dataframe.loc['row1'], other=4000.0) == 1.0
+    assert lm2.predict(dataframe.loc['row2'], other=4000.0) == 21.0
+    assert lm2.predict(dataframe.loc['row3'], other=4000.0) == 301.0
+    assert lm2.predict(dataframe.loc['row4'], other=4000.0) == 4321.0
+
+
+def test_mutually_exclusive_conditions():
+    """Check that declaring conditions mutually exclusive gives consistent output"""
+    lm = LinearModel(
+        LinearModelType.ADDITIVE,
+        0.0,
+        Predictor('age_years', conditions_are_mutually_exclusive=False)
+        .when('.between(0, 9)', 1.)
+        .when('.between(10, 19)', 2.)
+        .when('.between(20, 29)', 3.)
+        .when('.between(30, 39)', 4.)
+        .when('.between(40, 49)', 5.)
+        .when('.between(50, 59)', 6.)
+        .when('.between(60, 69)', 7.)
+        .when('.between(70, 79)', 8.)
+        .when('.between(80, 89)', 9.)
+        .when('.between(90, 99)', 10.)
+    )
+    lm_mutex = LinearModel(
+        LinearModelType.ADDITIVE,
+        0.0,
+        Predictor('age_years', conditions_are_mutually_exclusive=True)
+        .when('.between(0, 9)', 1.)
+        .when('.between(10, 19)', 2.)
+        .when('.between(20, 29)', 3.)
+        .when('.between(30, 39)', 4.)
+        .when('.between(40, 49)', 5.)
+        .when('.between(50, 59)', 6.)
+        .when('.between(60, 69)', 7.)
+        .when('.between(70, 79)', 8.)
+        .when('.between(80, 89)', 9.)
+        .when('.between(90, 99)', 10.)
+    )
+    assert np.allclose(lm.predict(EXAMPLE_DF), lm_mutex.predict(EXAMPLE_DF))
+
+
+def test_non_mutually_exclusive_conditions():
+    """Check that declaring conditions mutually exclusive when not gives wrong output"""
+    lm = LinearModel(
+        LinearModelType.ADDITIVE,
+        0.0,
+        Predictor('age_years', conditions_are_mutually_exclusive=False)
+        .when('< 10', 1.)
+        .when('< 20', 2.)
+        .when('< 30', 3.)
+        .when('< 40', 4.)
+        .when('< 50', 5.)
+        .when('< 60', 6.)
+        .when('< 70', 7.)
+        .when('< 80', 8.)
+        .when('< 90', 9.)
+        .when('< 100', 10.)
+    )
+    # Declare conditions to be mutually exclusive even though in reality they are not
+    lm_mutex = LinearModel(
+        LinearModelType.ADDITIVE,
+        0.0,
+        Predictor('age_years', conditions_are_mutually_exclusive=True)
+        .when('< 10', 1.)
+        .when('< 20', 2.)
+        .when('< 30', 3.)
+        .when('< 40', 4.)
+        .when('< 50', 5.)
+        .when('< 60', 6.)
+        .when('< 70', 7.)
+        .when('< 80', 8.)
+        .when('< 90', 9.)
+        .when('< 100', 10.)
+    )
+    assert not np.allclose(lm.predict(EXAMPLE_DF), lm_mutex.predict(EXAMPLE_DF))
+
+
+def test_exhaustive_conditions():
+    """Check that declaring conditions exhaustive gives consistent output"""
+    lm = LinearModel(
+        LinearModelType.MULTIPLICATIVE,
+        1.0,
+        Predictor('age_years', conditions_are_exhaustive=False)
+        .when('< 10', 1.)
+        .when('.between(10, 19)', 2.)
+        .when('.between(20, 29)', 3.)
+        .when('.between(30, 39)', 4.)
+        .when('>= 40', 5.)
+    )
+    lm_exhaustive = LinearModel(
+        LinearModelType.MULTIPLICATIVE,
+        1.0,
+        Predictor('age_years', conditions_are_exhaustive=True)
+        .when('< 10', 1.)
+        .when('.between(10, 19)', 2.)
+        .when('.between(20, 29)', 3.)
+        .when('.between(30, 39)', 4.)
+        .when('>= 40', 5.)
+    )
+    assert np.allclose(lm.predict(EXAMPLE_DF), lm_exhaustive.predict(EXAMPLE_DF))
+
+
+def test_non_exhaustive_conditions():
+    """Check that declaring conditions exhaustive when not gives wrong output"""
+    lm = LinearModel(
+        LinearModelType.MULTIPLICATIVE,
+        1.0,
+        Predictor('age_years', conditions_are_exhaustive=False)
+        .when('.between(10, 19)', 2.)
+        .when('.between(20, 29)', 3.)
+        .when('.between(30, 39)', 4.)
+    )
+    # Declare conditions to be exhaustive even though in reality they are not
+    lm_exhaustive = LinearModel(
+        LinearModelType.MULTIPLICATIVE,
+        1.0,
+        Predictor('age_years', conditions_are_exhaustive=True)
+        .when('.between(10, 19)', 2.)
+        .when('.between(20, 29)', 3.)
+        .when('.between(30, 39)', 4.)
+    )
+    assert not np.allclose(lm.predict(EXAMPLE_DF), lm_exhaustive.predict(EXAMPLE_DF))
