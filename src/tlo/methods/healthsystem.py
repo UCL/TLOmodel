@@ -514,6 +514,7 @@ class HealthSystem(Module):
             self.hsi_event_details = set()
 
         # Store the argument provided for cons_availability
+        assert cons_availability in (None, 'default', 'all', 'none')
         self.arg_cons_availability = cons_availability
 
         # Create the Diagnostic Test Manager to store and manage all Diagnostic Test
@@ -954,21 +955,6 @@ class HealthSystem(Module):
                 f"which it is not possible: TREATMENT_ID={hsi_event.TREATMENT_ID}"
             )
 
-            # Check that at least one type of appointment is required
-            assert len(hsi_event.EXPECTED_APPT_FOOTPRINT) > 0, (
-                'No appointment types required in the EXPECTED_APPT_FOOTPRINT'
-            )
-            # Check that the event does not request an appointment at a facility
-            # level which is not possible
-            appt_type_to_check_list = hsi_event.EXPECTED_APPT_FOOTPRINT.keys()
-            facility_appt_types = self._appt_type_by_facLevel[
-                hsi_event.ACCEPTED_FACILITY_LEVEL
-            ]
-            assert facility_appt_types.issuperset(appt_type_to_check_list), (
-                f"An appointment type has been requested at a facility level for "
-                f"which it is not possible: {hsi_event.TREATMENT_ID}"
-            )
-
     def is_treatment_id_allowed(self, treatment_id: str) -> bool:
         """Determine if a treatment_id (specified as a string) can be run (i.e., is within the allowable set of
          treatments, given by `self.service_availability`."""
@@ -1081,7 +1067,7 @@ class HealthSystem(Module):
         time required of each Officer Type in each Facility ID.
         The index will identify the Facility ID and the Officer Type in the same format
         as is used in Daily_Capabilities.
-        :params facility: The FacilityInfo describing the facility at which the appointment occurs
+        :params facility_info: The FacilityInfo describing the facility at which the appointment occurs
         :param appt_footprint: The actual appt footprint (optional) if different to that in the HSI event.
         :return: A Counter that gives the times required for each officer-type in each facility_ID, where this time
          is non-zero.
