@@ -3,10 +3,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging, util, Date
+from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging, util
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel
-from tlo.methods import Metadata, labour, pregnancy_supervisor_lm, pregnancy_helper_functions
+from tlo.methods import Metadata, labour, pregnancy_helper_functions, pregnancy_supervisor_lm
 from tlo.methods.causes import Cause
 from tlo.util import BitsetHandler
 
@@ -867,7 +867,7 @@ class PregnancySupervisor(Module):
         # Import the HSIs
         from tlo.methods.care_of_women_during_pregnancy import (
             HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact,
-            HSI_CareOfWomenDuringPregnancy_FocusedANCVisit
+            HSI_CareOfWomenDuringPregnancy_FocusedANCVisit,
         )
 
         # Now the correct ANC HSI is scheduled depending on the ANC contact schedule that has been provided via
@@ -1533,19 +1533,15 @@ class PregnancySupervisor(Module):
             care_seeking = self.rng.random_sample() < params['prob_seek_care_pregnancy_loss']
 
         if care_seeking:
-
             # check for delay
             pregnancy_helper_functions.check_if_delayed_careseeking(self, individual_id)
 
             # We assume women will seek care via HSI_GenericEmergencyFirstApptAtFacilityLevel1 and will be admitted for
             # care in CareOfWomenDuringPregnancy module
-            from tlo.methods.hsi_generic_first_appts import (
-                HSI_GenericEmergencyFirstApptAtFacilityLevel1,
-            )
+            from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
 
-            event = HSI_GenericEmergencyFirstApptAtFacilityLevel1(
-                self.sim.modules['PregnancySupervisor'],
-                person_id=individual_id)
+            event = HSI_GenericEmergencyFirstApptAtFacilityLevel1(self.sim.modules['PregnancySupervisor'],
+                                                                  person_id=individual_id)
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                                 priority=0,
@@ -1553,8 +1549,7 @@ class PregnancySupervisor(Module):
                                                                 tclose=self.sim.date + DateOffset(days=1))
             return True
 
-        else:
-            return False
+        return False
 
     def apply_risk_of_death_from_monthly_complications(self, individual_id):
         """
@@ -1637,16 +1632,16 @@ class PregnancySupervisor(Module):
 
         # Call the functions that schedule the HSIs according to the predicted month of gestation at which each woman
         # will attend her first visit
-        def schedulde_early_visit(df_slice):
+        def schedule_early_visit(df_slice):
             for person in df_slice.index:
                 random_draw_gest_at_anc = self.rng.choice([2, 3, 4], p=params['prob_anc1_months_2_to_4'])
                 self.schedule_anc_one(individual_id=person, anc_month=random_draw_gest_at_anc)
 
-        for slice in [early_initiation_anc4.loc[early_initiation_anc4],
-                      early_initiation_anc_below_4.loc[early_initiation_anc_below_4]]:
-            schedulde_early_visit(slice)
+        for s in [early_initiation_anc4.loc[early_initiation_anc4],
+                  early_initiation_anc_below_4.loc[early_initiation_anc_below_4]]:
+            schedule_early_visit(s)
 
-        def schedulde_late_visit(df_slice):
+        def schedule_late_visit(df_slice):
             for person in df_slice.index:
                 random_draw_gest_at_anc = self.rng.choice([5, 6, 7, 8, 9, 10], p=params['prob_anc1_months_5_to_9'])
 
@@ -1654,9 +1649,9 @@ class PregnancySupervisor(Module):
                 if random_draw_gest_at_anc != 10:
                     self.schedule_anc_one(individual_id=person, anc_month=random_draw_gest_at_anc)
 
-        for slice in [late_initiation_anc4.loc[late_initiation_anc4],
-                      early_initiation_anc_below_4.loc[~early_initiation_anc_below_4]]:
-            schedulde_late_visit(slice)
+        for s in [late_initiation_anc4.loc[late_initiation_anc4],
+                  early_initiation_anc_below_4.loc[~early_initiation_anc_below_4]]:
+            schedule_late_visit(s)
 
 
 class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
@@ -2045,11 +2040,10 @@ class SyphilisInPregnancyEvent(Event, IndividualScopeEventMixin):
            (not (mni[individual_id]['pred_syph_infect'] == self.sim.date))):
             return
 
-        else:
-            df.at[individual_id, 'ps_syphilis'] = True
-            logger.info(key='maternal_complication', data={'person': individual_id,
-                                                           'type': 'syphilis',
-                                                           'timing': 'antenatal'})
+        df.at[individual_id, 'ps_syphilis'] = True
+        logger.info(key='maternal_complication', data={'person': individual_id,
+                                                       'type': 'syphilis',
+                                                       'timing': 'antenatal'})
 
 
 class ParameterUpdateEvent(Event, PopulationScopeEventMixin):
