@@ -2233,237 +2233,225 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
         if not mother.is_alive:
             return
 
-        if mother.is_pregnant and not mother.la_currently_in_labour and not mother.hs_is_inpatient:
+        if not (mother.is_pregnant and not mother.la_currently_in_labour and not mother.hs_is_inpatient):
+            return
 
-            # check if she will experience delayed care
-            pregnancy_helper_functions.check_if_delayed_care_delivery(self.module, squeeze_factor, person_id,
-                                                                      hsi_type='an')
+        # check if she will experience delayed care
+        pregnancy_helper_functions.check_if_delayed_care_delivery(self.module, squeeze_factor, person_id, hsi_type='an')
 
-            # The event represents inpatient care delivered within the antenatal ward at a health facility. Therefore
-            # it is assumed that women with a number of different complications could be sent to this HSI for treatment.
+        # The event represents inpatient care delivered within the antenatal ward at a health facility. Therefore
+        # it is assumed that women with a number of different complications could be sent to this HSI for treatment.
 
-            # ================================= INITIATE TREATMENT FOR ANAEMIA ========================================
-            # Women who are referred from ANC or an outpatient appointment following point of care Hb which detected
-            # anaemia first have a full blood count test to determine the severity of their anaemia
-            if mother.ps_anaemia_in_pregnancy != 'none':
+        # ================================= INITIATE TREATMENT FOR ANAEMIA ========================================
+        # Women who are referred from ANC or an outpatient appointment following point of care Hb which detected
+        # anaemia first have a full blood count test to determine the severity of their anaemia
+        if mother.ps_anaemia_in_pregnancy != 'none':
 
-                # This test returns one of a number of possible outcomes as seen below...
-                fbc_result = self.module.full_blood_count_testing(self)
-                if fbc_result not in ('none', 'mild', 'moderate', 'severe'):
-                    logger.debug(key='error', data='FBC result error')
+            # This test returns one of a number of possible outcomes as seen below...
+            fbc_result = self.module.full_blood_count_testing(self)
+            if fbc_result not in ('none', 'mild', 'moderate', 'severe'):
+                logger.debug(key='error', data='FBC result error')
 
-                # If the FBC detected non severe anaemia (Hb >7) she is treated
-                if fbc_result in ('mild', 'moderate'):
+            # If the FBC detected non severe anaemia (Hb >7) she is treated
+            if fbc_result in ('mild', 'moderate'):
 
-                    # Women are started on daily iron and folic acid supplementation (if they are not already receiving
-                    # supplements) as treatment for mild/moderate anaemia
-                    if not mother.ac_receiving_iron_folic_acid:
-                        self.module.iron_and_folic_acid_supplementation(self)
+                # Women are started on daily iron and folic acid supplementation (if they are not already receiving
+                # supplements) as treatment for mild/moderate anaemia
+                if not mother.ac_receiving_iron_folic_acid:
+                    self.module.iron_and_folic_acid_supplementation(self)
 
-                elif fbc_result == 'severe':
-                    # In the case of severe anaemia (Hb <7) then, in addition to the above treatments, this woman
-                    # should receive a blood transfusion to correct her anaemia
-                    self.module.antenatal_blood_transfusion(person_id, self)
-                    if not mother.ac_receiving_iron_folic_acid:
-                        self.module.iron_and_folic_acid_supplementation(self)
+            elif fbc_result == 'severe':
+                # In the case of severe anaemia (Hb <7) then, in addition to the above treatments, this woman
+                # should receive a blood transfusion to correct her anaemia
+                self.module.antenatal_blood_transfusion(person_id, self)
+                if not mother.ac_receiving_iron_folic_acid:
+                    self.module.iron_and_folic_acid_supplementation(self)
 
-                if fbc_result in ('mild', 'moderate', 'severe'):
-                    # Women treated for anaemia will need follow up to ensure the treatment has been effective. Clinical
-                    # guidelines suggest follow up one month after treatment
+            if fbc_result in ('mild', 'moderate', 'severe'):
+                # Women treated for anaemia will need follow up to ensure the treatment has been effective. Clinical
+                # guidelines suggest follow up one month after treatment
 
-                    # To avoid issues with scheduling of events we assume women who are not scheduled to return to
-                    # routine ANC OR their next ANC appointment is more than a month away will be asked to routine for
-                    # follow up
-                    follow_up_date = self.sim.date + DateOffset(days=28)
-                    if pd.isnull(mother.ac_date_next_contact) or ((mother.ac_date_next_contact - self.sim.date) >
-                                                                  pd.to_timedelta(28, unit='D')):
+                # To avoid issues with scheduling of events we assume women who are not scheduled to return to
+                # routine ANC OR their next ANC appointment is more than a month away will be asked to routine for
+                # follow up
+                follow_up_date = self.sim.date + DateOffset(days=28)
+                if pd.isnull(mother.ac_date_next_contact) or ((mother.ac_date_next_contact - self.sim.date) >
+                                                              pd.to_timedelta(28, unit='D')):
 
-                        outpatient_checkup = HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia(
-                            self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
+                    outpatient_checkup = HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia(
+                        self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
 
-                        self.sim.modules['HealthSystem'].schedule_hsi_event(outpatient_checkup, priority=0,
-                                                                            topen=follow_up_date,
-                                                                            tclose=follow_up_date + DateOffset(days=7))
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(outpatient_checkup, priority=0,
+                                                                        topen=follow_up_date,
+                                                                        tclose=follow_up_date + DateOffset(days=7))
 
-            # ======================== INITIATE TREATMENT FOR GESTATIONAL DIABETES (case management) ==================
-            # Women admitted with gestational diabetes are given dietary and exercise advice as first line treatment
-            if (mother.ps_gest_diab == 'uncontrolled') and (mother.ac_gest_diab_on_treatment == 'none'):
-                df.at[person_id, 'ac_gest_diab_on_treatment'] = 'diet_exercise'
-                df.at[person_id, 'ps_gest_diab'] = 'controlled'
+        # ======================== INITIATE TREATMENT FOR GESTATIONAL DIABETES (case management) ==================
+        # Women admitted with gestational diabetes are given dietary and exercise advice as first line treatment
+        if (mother.ps_gest_diab == 'uncontrolled') and (mother.ac_gest_diab_on_treatment == 'none'):
+            df.at[person_id, 'ac_gest_diab_on_treatment'] = 'diet_exercise'
+            df.at[person_id, 'ps_gest_diab'] = 'controlled'
 
-                # We then schedule GestationalDiabetesGlycaemicControlEvent which determines if this treatment will be
-                # effective in controlling this womans blood sugar prior to her next check up
-                from tlo.methods.pregnancy_supervisor import (
-                    GestationalDiabetesGlycaemicControlEvent,
-                )
-                self.sim.schedule_event(GestationalDiabetesGlycaemicControlEvent(
-                    self.sim.modules['PregnancySupervisor'], person_id), self.sim.date + DateOffset(days=7))
+            # We then schedule GestationalDiabetesGlycaemicControlEvent which determines if this treatment will be
+            # effective in controlling this womans blood sugar prior to her next check up
+            from tlo.methods.pregnancy_supervisor import (
+                GestationalDiabetesGlycaemicControlEvent,
+            )
+            self.sim.schedule_event(GestationalDiabetesGlycaemicControlEvent(
+                self.sim.modules['PregnancySupervisor'], person_id), self.sim.date + DateOffset(days=7))
 
-                # We then schedule this woman to return for blood sugar testing to evaluate the effectiveness of her
-                # treatment and potentially move to second line treatment
-                check_up_date = self.sim.date + DateOffset(days=28)
+            # We then schedule this woman to return for blood sugar testing to evaluate the effectiveness of her
+            # treatment and potentially move to second line treatment
+            check_up_date = self.sim.date + DateOffset(days=28)
 
-                outpatient_checkup = HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes(
-                    self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
-                self.sim.modules['HealthSystem'].schedule_hsi_event(outpatient_checkup, priority=0,
-                                                                    topen=check_up_date,
-                                                                    tclose=check_up_date + DateOffset(days=3))
+            outpatient_checkup = HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes(
+                self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(outpatient_checkup, priority=0,
+                                                                topen=check_up_date,
+                                                                tclose=check_up_date + DateOffset(days=3))
 
-            # =============================== INITIATE TREATMENT FOR HYPERTENSION =====================================
-            # Treatment delivered to mothers with hypertension is dependent on severity. Women admitted due to more mild
-            # hypertension are started on regular oral antihypertensives therapy (reducing risk of progression to more
-            # severe hypertension)
+        # =============================== INITIATE TREATMENT FOR HYPERTENSION =====================================
+        # Treatment delivered to mothers with hypertension is dependent on severity. Women admitted due to more mild
+        # hypertension are started on regular oral antihypertensives therapy (reducing risk of progression to more
+        # severe hypertension)
 
-            if ((mother.ps_htn_disorders == 'gest_htn') or
-                (mother.ps_htn_disorders == 'mild_pre_eclamp')) and \
-               not mother.ac_gest_htn_on_treatment:
+        if mother.ps_htn_disorders in ('gest_htn', 'mild_pre_eclamp') and not mother.ac_gest_htn_on_treatment:
+            self.module.initiate_maintenance_anti_hypertensive_treatment(person_id, self)
+
+        # Women with severe gestational hypertension are also started on routine oral antihypertensives (if not
+        # already receiving- this will prevent progression once this episode of severe hypertension has been
+        # rectified)
+        elif mother.ps_htn_disorders == 'severe_gest_htn':
+            if not mother.ac_gest_htn_on_treatment:
                 self.module.initiate_maintenance_anti_hypertensive_treatment(person_id, self)
 
-            # Women with severe gestational hypertension are also started on routine oral antihypertensives (if not
-            # already receiving- this will prevent progression once this episode of severe hypertension has been
-            # rectified)
-            elif mother.ps_htn_disorders == 'severe_gest_htn':
-                if not mother.ac_gest_htn_on_treatment:
-                    self.module.initiate_maintenance_anti_hypertensive_treatment(person_id, self)
+            # In addition, women with more severe disease are given intravenous anti hypertensives to reduce risk
+            # of death
+            self.module.initiate_treatment_for_severe_hypertension(person_id, self)
 
-                # In addition, women with more severe disease are given intravenous anti hypertensives to reduce risk
-                # of death
-                self.module.initiate_treatment_for_severe_hypertension(person_id, self)
+        # Treatment guidelines dictate that women with severe forms of pre-eclampsia should be admitted for delivery
+        # to reduce risk of death and pregnancy loss
+        elif mother.ps_htn_disorders in ('severe_pre_eclamp', 'eclampsia'):
 
-            # Treatment guidelines dictate that women with severe forms of pre-eclampsia should be admitted for delivery
-            # to reduce risk of death and pregnancy loss
-            elif (mother.ps_htn_disorders == 'severe_pre_eclamp') or (mother.ps_htn_disorders == 'eclampsia'):
+            # Women are started on oral antihypertensives
+            if not mother.ac_gest_htn_on_treatment:
+                self.module.initiate_maintenance_anti_hypertensive_treatment(person_id, self)
 
-                # Women are started on oral antihypertensives
-                if not mother.ac_gest_htn_on_treatment:
-                    self.module.initiate_maintenance_anti_hypertensive_treatment(person_id, self)
+            # And are given intravenous magnesium sulfate which reduces risk of death from eclampsia and reduces a
+            # womans risk of progressing from severe pre-eclampsia to eclampsia during the intrapartum period
+            self.module.treatment_for_severe_pre_eclampsia_or_eclampsia(person_id,
+                                                                        hsi_event=self)
+            # intravenous antihypertensives are also given
+            self.module.initiate_treatment_for_severe_hypertension(person_id, self)
 
-                # And are given intravenous magnesium sulfate which reduces risk of death from eclampsia and reduces a
-                # womans risk of progressing from severe pre-eclampsia to eclampsia during the intrapartum period
-                self.module.treatment_for_severe_pre_eclampsia_or_eclampsia(person_id,
-                                                                            hsi_event=self)
-                # intravenous antihypertensives are also given
-                self.module.initiate_treatment_for_severe_hypertension(person_id, self)
+            # Finally This property stores what type of delivery this woman is being admitted for
+            delivery_mode = ['induction_now', 'avd_now', 'caesarean_now']
 
-                # Finally This property stores what type of delivery this woman is being admitted for
-                delivery_mode = ['induction_now', 'avd_now', 'caesarean_now']
+            # Mode of delivery is dependent on individual case severity. We use a probability weighted random draw
+            # to determine mode of delivery here
+            if mother.ps_htn_disorders == 'eclampsia':
+                df.at[person_id, 'ac_admitted_for_immediate_delivery'] = self.module.rng.choice(
+                    delivery_mode,  p=params['prob_delivery_modes_ec'])
 
-                # Mode of delivery is dependent on individual case severity. We use a probability weighted random draw
-                # to determine mode of delivery here
-                if mother.ps_htn_disorders == 'eclampsia':
-                    df.at[person_id, 'ac_admitted_for_immediate_delivery'] = self.module.rng.choice(
-                        delivery_mode,  p=params['prob_delivery_modes_ec'])
+            elif mother.ps_htn_disorders == 'severe_pre_eclamp':
+                df.at[person_id, 'ac_admitted_for_immediate_delivery'] = self.module.rng.choice(
+                    delivery_mode, p=params['prob_delivery_modes_spe'])
 
-                elif mother.ps_htn_disorders == 'severe_pre_eclamp':
-                    df.at[person_id, 'ac_admitted_for_immediate_delivery'] = self.module.rng.choice(
-                        delivery_mode, p=params['prob_delivery_modes_spe'])
+        # ========================= INITIATE TREATMENT FOR ANTEPARTUM HAEMORRHAGE =================================
+        # Treatment delivered to mothers due to haemorrhage in the antepartum period is dependent on the underlying
+        # etiology of the bleeding (in this model, whether a woman is experiencing a placental abruption or
+        # placenta praevia)
 
-            # ========================= INITIATE TREATMENT FOR ANTEPARTUM HAEMORRHAGE =================================
-            # Treatment delivered to mothers due to haemorrhage in the antepartum period is dependent on the underlying
-            # etiology of the bleeding (in this model, whether a woman is experiencing a placental abruption or
-            # placenta praevia)
+        if mother.ps_antepartum_haemorrhage != 'none':
+            # ---------------------- APH SECONDARY TO PLACENTAL ABRUPTION -----------------------------------------
+            if mother.ps_placental_abruption:
+                # Women experiencing placenta abruption at are admitted for immediate
+                # caesarean delivery due to high risk of mortality/morbidity
+                df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'caesarean_now'
+                mni[person_id]['cs_indication'] = 'an_aph_pa'
 
-            if mother.ps_antepartum_haemorrhage != 'none':
-                # ---------------------- APH SECONDARY TO PLACENTAL ABRUPTION -----------------------------------------
-                if mother.ps_placental_abruption:
-                    # Women experiencing placenta abruption at are admitted for immediate
-                    # caesarean delivery due to high risk of mortality/morbidity
+            # ---------------------- APH SECONDARY TO PLACENTA PRAEVIA -----------------------------------------
+            if mother.ps_placenta_praevia:
+                # The treatment plan for a woman with placenta praevia is dependent on both the severity of the
+                # bleed and her current gestation at the time of bleeding
+
+                if mother.ps_antepartum_haemorrhage == 'severe':
+
+                    # Women experiencing severe bleeding are admitted immediately for caesarean section
                     df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'caesarean_now'
-                    mni[person_id]['cs_indication'] = 'an_aph_pa'
+                    mni[person_id]['cs_indication'] = 'an_aph_pp'
 
-                # ---------------------- APH SECONDARY TO PLACENTA PRAEVIA -----------------------------------------
-                if mother.ps_placenta_praevia:
-                    # The treatment plan for a woman with placenta praevia is dependent on both the severity of the
-                    # bleed and her current gestation at the time of bleeding
+                elif mother.ps_gestational_age_in_weeks >= 37:
+                    # Women experiencing mild or moderate bleeding but who are around term gestation are admitted
+                    # for caesarean
+                    df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'caesarean_now'
+                    mni[person_id]['cs_indication'] = 'an_aph_pp'
 
-                    if mother.ps_antepartum_haemorrhage == 'severe':
+                elif mother.ps_gestational_age_in_weeks < 37:
+                    # Women with more mild bleeding remain as inpatients until their gestation has increased and
+                    # then will be delivered by caesarean - (no risk of death associated with mild/moderate bleeds)
+                    df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'caesarean_future'
+                    mni[person_id]['cs_indication'] = 'an_aph_pp'
 
-                        # Women experiencing severe bleeding are admitted immediately for caesarean section
-                        df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'caesarean_now'
-                        mni[person_id]['cs_indication'] = 'an_aph_pp'
+                    # self.module.antenatal_blood_transfusion(person_id, self, cause='antepartum_haem')
 
-                    elif (mother.ps_antepartum_haemorrhage != 'severe') and (mother.ps_gestational_age_in_weeks >= 37):
-                        # Women experiencing mild or moderate bleeding but who are around term gestation are admitted
-                        # for caesarean
-                        df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'caesarean_now'
-                        mni[person_id]['cs_indication'] = 'an_aph_pp'
+            if df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'none':
+                logger.debug(key='error', data=f'Mother {person_id} was not admitted for delviery following APH')
 
-                    elif (mother.ps_antepartum_haemorrhage != 'severe') and (mother.ps_gestational_age_in_weeks < 37):
-                        # Women with more mild bleeding remain as inpatients until their gestation has increased and
-                        # then will be delivered by caesarean - (no risk of death associated with mild/moderate bleeds)
-                        df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'caesarean_future'
-                        mni[person_id]['cs_indication'] = 'an_aph_pp'
+        # ===================================== INITIATE TREATMENT FOR PROM =======================================
+        # Treatment for women with premature rupture of membranes is dependent upon a womans gestational age and if
+        # she also has an infection of membrane surrounding the foetus (the chorion)
 
-                        # self.module.antenatal_blood_transfusion(person_id, self, cause='antepartum_haem')
+        if mother.ps_premature_rupture_of_membranes and not mother.ps_chorioamnionitis:
+            # If the woman has PROM but no infection, she is given prophylactic antibiotics which will reduce
+            # the risk of maternal and neonatal infection
+            self.module.antibiotics_for_prom(person_id, self)
 
-                if df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'none':
-                    logger.debug(key='error', data=f'Mother {person_id} was not admitted for delviery following APH')
-
-            # ===================================== INITIATE TREATMENT FOR PROM =======================================
-            # Treatment for women with premature rupture of membranes is dependent upon a womans gestational age and if
-            # she also has an infection of membrane surrounding the foetus (the chorion)
-
-            if mother.ps_premature_rupture_of_membranes and not mother.ps_chorioamnionitis:
-                # If the woman has PROM but no infection, she is given prophylactic antibiotics which will reduce
-                # the risk of maternal and neonatal infection
-                self.module.antibiotics_for_prom(person_id, self)
-
-                # Guidelines suggest women over 34 weeks of gestation should be admitted for induction to to
-                # increased risk of morbidity and mortality
-                if mother.ps_gestational_age_in_weeks >= 34:
-                    df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'induction_now'
-
-                # Otherwise they may stay as an inpatient until their gestation as increased prior to delivery
-                elif mother.ps_gestational_age_in_weeks < 34:
-                    df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'induction_future'
-
-            # ============================== INITIATE TREATMENT FOR CHORIOAMNIONITIS ==================================
-            # Women with chorioamnionitis are admitted for delivery (and will receive antibiotics in the labour module)
-            if mother.ps_chorioamnionitis:
+            # Guidelines suggest women over 34 weeks of gestation should be admitted for induction to to
+            # increased risk of morbidity and mortality
+            if mother.ps_gestational_age_in_weeks >= 34:
                 df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'induction_now'
 
-            # ======================== ADMISSION FOR DELIVERY (INDUCTION) ========================================
-            # Women for whom immediate delivery is indicated are schedule to move straight to the labour model where
-            # they will have the appropriate properties set and facility delivery at a hospital scheduled (mode of
-            # delivery will match the recommended mode here)
-            if (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'induction_now') or (df.at[person_id,
-                                                                                                     'ac_admitted_'
-                                                                                                     'for_immediate_'
-                                                                                                     'delivery'] ==
-                                                                                               'caesarean_now'):
+            # Otherwise they may stay as an inpatient until their gestation as increased prior to delivery
+            elif mother.ps_gestational_age_in_weeks < 34:
+                df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'induction_future'
 
-                self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], person_id), self.sim.date)
+        # ============================== INITIATE TREATMENT FOR CHORIOAMNIONITIS ==================================
+        # Women with chorioamnionitis are admitted for delivery (and will receive antibiotics in the labour module)
+        if mother.ps_chorioamnionitis:
+            df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'induction_now'
 
-            # Women who require delivery BUT are not in immediate risk of morbidity/mortality will remain as
-            # inpatients until they can move to the labour model. Currently it is possible for women to go into
-            # labour whilst as an inpatient - it is assumed they are delivered via the mode recommended here
-            # (i.e induction/caesarean)
-            elif (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'caesarean_future') or (df.at[person_id,
-                                                                                                          'ac_admitted_'
-                                                                                                          'for_'
-                                                                                                          'immediate_'
-                                                                                                          'delivery'] ==
-                                                                                                    'induction_future'):
+        # ======================== ADMISSION FOR DELIVERY (INDUCTION) ========================================
+        # Women for whom immediate delivery is indicated are schedule to move straight to the labour model where
+        # they will have the appropriate properties set and facility delivery at a hospital scheduled (mode of
+        # delivery will match the recommended mode here)
+        if df.at[person_id, 'ac_admitted_for_immediate_delivery'] in ('induction_now', 'caesarean_now'):
+            self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], person_id), self.sim.date)
 
-                # Here we calculate how many days this woman needs to remain on the antenatal ward before she can go
-                # for delivery (assuming delivery is indicated to occur at 37 weeks)
-                if mother.ps_gestational_age_in_weeks < 37:
-                    days_until_safe_for_cs = int((37 * 7) - (mother.ps_gestational_age_in_weeks * 7))
-                else:
-                    days_until_safe_for_cs = 1
+        # Women who require delivery BUT are not in immediate risk of morbidity/mortality will remain as
+        # inpatients until they can move to the labour model. Currently it is possible for women to go into
+        # labour whilst as an inpatient - it is assumed they are delivered via the mode recommended here
+        # (i.e induction/caesarean)
+        elif df.at[person_id, 'ac_admitted_for_immediate_delivery'] in ('caesarean_future', 'induction_future'):
 
-                # We schedule the LabourOnset event for this woman will be able to progress for delivery
-                admission_date = self.sim.date + DateOffset(days=days_until_safe_for_cs)
-
-                logger.debug(key='message', data=f'Mother {person_id} will move to labour ward for '
-                                                 f'{df.at[person_id, "ac_admitted_for_immediate_delivery"]} on '
-                                                 f'{admission_date}')
-
-                self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], person_id),
-                                        admission_date)
+            # Here we calculate how many days this woman needs to remain on the antenatal ward before she can go
+            # for delivery (assuming delivery is indicated to occur at 37 weeks)
+            if mother.ps_gestational_age_in_weeks < 37:
+                days_until_safe_for_cs = int((37 * 7) - (mother.ps_gestational_age_in_weeks * 7))
             else:
-                mni[person_id]['delay_one_two'] = False
-                mni[person_id]['delay_three'] = False
+                days_until_safe_for_cs = 1
+
+            # We schedule the LabourOnset event for this woman will be able to progress for delivery
+            admission_date = self.sim.date + DateOffset(days=days_until_safe_for_cs)
+
+            logger.debug(key='message', data=f'Mother {person_id} will move to labour ward for '
+                                             f'{df.at[person_id, "ac_admitted_for_immediate_delivery"]} on '
+                                             f'{admission_date}')
+
+            self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], person_id),
+                                    admission_date)
+        else:
+            mni[person_id]['delay_one_two'] = False
+            mni[person_id]['delay_three'] = False
 
     def did_not_run(self):
         logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare: did not run')
