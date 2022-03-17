@@ -1111,10 +1111,7 @@ class Labour(Module):
         delay_one_two = mni[person_id]['delay_one_two']
         delay_three = mni[person_id]['delay_three']
 
-        if mni[person_id]['birth_weight'] == 'macrosomia':
-            macrosomia = True
-        else:
-            macrosomia = False
+        macrosomia = mni[person_id]['birth_weight'] == 'macrosomia'
 
         # We run a random draw and return the outcome
         return self.rng.random_sample() < eq.predict(person,
