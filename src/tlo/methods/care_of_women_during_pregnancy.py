@@ -1152,9 +1152,9 @@ class CareOfWomenDuringPregnancy(Module):
         elif df.at[individual_id, 'hs_is_inpatient']:
 
             # We assume that she will return for her first appointment at the next gestation in the schedule
-            logger.debug(key='msg', data=f'mother {individual_id} is scheduled to attend ANC today but is currently an '
-                                         f'inpatient- she will be scheduled to arrive at her next visit instead and'
-                                         f' no interventions will be delivered here')
+            logger.debug(key='message', data=f'mother {individual_id} is scheduled to attend ANC today but is '
+                                             f'currently an inpatient- she will be scheduled to arrive at her next '
+                                             f'visit instead no interventions will be delivered here')
 
             weeks_due_next_visit = int(gest_age_next_contact - df.at[individual_id, 'ps_gestational_age_in_weeks'])
             visit_date = self.sim.date + DateOffset(weeks=weeks_due_next_visit)
@@ -2153,7 +2153,7 @@ class HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour(HSI_Event, Ind
         # We set this admission property to show shes being admitted for induction of labour and hand her over to the
         # labour events
         df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'induction_now'
-        logger.debug(key='msg', data=f'Mother {person_id} will move to labour ward for '
+        logger.debug(key='message', data=f'Mother {person_id} will move to labour ward for '
                                      f'{df.at[person_id, "ac_admitted_for_immediate_delivery"]} today')
 
         self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], person_id), self.sim.date)
@@ -2457,7 +2457,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                 # We schedule the LabourOnset event for this woman will be able to progress for delivery
                 admission_date = self.sim.date + DateOffset(days=days_until_safe_for_cs)
 
-                logger.debug(key='msg', data=f'Mother {person_id} will move to labour ward for '
+                logger.debug(key='message', data=f'Mother {person_id} will move to labour ward for '
                                              f'{df.at[person_id, "ac_admitted_for_immediate_delivery"]} on '
                                              f'{admission_date}')
 
