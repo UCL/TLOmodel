@@ -518,10 +518,7 @@ class NewbornOutcomes(Module):
         steroid_status = nci[person_id]['corticosteroids_given']
         abx_for_prom = nci[person_id]['abx_for_prom_given']
 
-        if nci[person_id]['maternal_chorio']:
-            chorio = True
-        else:
-            chorio = False
+        chorio = nci[person_id]['maternal_chorio']
 
         # We return a BOOLEAN
         return self.rng.random_sample(size=1) < eq.predict(person,
@@ -1247,7 +1244,7 @@ class NewbornOutcomes(Module):
 
                     # For newborns with retinopathy we then use a weighted random draw to determine the severity of the
                     # retinopathy to map to DALY weights
-                    random_draw = self.rng.choice(('mild', 'moderate', 'severe', 'blindness'),
+                    random_draw = self.rng.choice(['mild', 'moderate', 'severe', 'blindness'],
                                                   p=params['prob_retinopathy_severity'])
 
                     df.at[child_id, 'nb_retinopathy_prem'] = random_draw
