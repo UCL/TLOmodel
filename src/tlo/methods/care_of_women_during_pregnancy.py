@@ -440,6 +440,7 @@ class CareOfWomenDuringPregnancy(Module):
         df.loc[id_or_index, 'ac_gest_htn_on_treatment'] = False
         df.loc[id_or_index, 'ac_gest_diab_on_treatment'] = 'none'
         df.loc[id_or_index, 'ac_ectopic_pregnancy_treated'] = False
+        df.loc[id_or_index, 'ac_received_post_abortion_care'] = False
         df.loc[id_or_index, 'ac_received_abx_for_prom'] = False
         df.loc[id_or_index, 'ac_mag_sulph_treatment'] = False
         df.loc[id_or_index, 'ac_iv_anti_htn_treatment'] = False
