@@ -2663,7 +2663,7 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
                                                                                           'birth'])):
                 df.at[individual_id, 'ps_prev_stillbirth'] = True
                 mni[individual_id]['single_twin_still_birth'] = True
-                logger.debug(key='msg', data=f'single twin stillbirth for {individual_id}')
+                logger.debug(key='message', data=f'single twin stillbirth for {individual_id}')
 
         if mni[individual_id]['death_in_labour'] and df.at[individual_id, 'la_intrapartum_still_birth']:
             # We delete the mni dictionary if both mother and baby have died in labour, if the mother has died but
