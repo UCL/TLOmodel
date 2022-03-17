@@ -10,32 +10,28 @@ from tlo.methods import contraception, demography, healthburden, healthsystem, s
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2011, 1, 1)
-popsize = 10000
+popsize = 10_000
+
+resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+
 
 
 @pytest.fixture(scope='module')
 def simulation_haem():
-
-    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim = Simulation(start_date=start_date)
-
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  schisto.Schisto(resourcefilepath=resourcefilepath),
                  schisto.Schisto_Haematobium(resourcefilepath=resourcefilepath, symptoms_and_HSI=False))
-
     sim.seed_rngs(1)
     return sim
 
 
 @pytest.fixture(scope='module')
 def simulation_both():
-
-    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim = Simulation(start_date=start_date)
-
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
@@ -43,7 +39,6 @@ def simulation_both():
                  schisto.Schisto(resourcefilepath=resourcefilepath),
                  schisto.Schisto_Haematobium(resourcefilepath=resourcefilepath, symptoms_and_HSI=False),
                  schisto.Schisto_Mansoni(resourcefilepath=resourcefilepath, symptoms_and_HSI=False))
-
     sim.seed_rngs(1)
     return sim
 
@@ -61,7 +56,7 @@ def check_dtypes(simulation):
 
 
 def test_one_schisto_type(simulation_haem):
-    # check that there is no columns starting with 'sm' when only haematobium is registered
+    """Check that there is no columns starting with 'sm' when only haematobium is registered."""
     simulation_haem.make_initial_population(n=popsize)
     simulation_haem.simulate(end_date=end_date)
     df = simulation_haem.population.props
@@ -70,8 +65,8 @@ def test_one_schisto_type(simulation_haem):
 
 
 def test_no_symptoms_or_HSI_or_MDA(simulation_haem):
-    # check that with the symptoms turned off there will be no PZQ ever administered
-    # and that the symptoms will all be nans
+    """Check that with the symptoms turned off there will be no PZQ ever administered
+    # and that the symptoms will all be nans."""
     df = simulation_haem.population.props
     assert(len(df.ss_last_PZQ_date.unique()) == 1)
     assert(df.ss_last_PZQ_date.unique()[0] == np.datetime64('1900-01-01T00:00:00.000000000'))
@@ -84,4 +79,4 @@ if __name__ == '__main__':
     test_run(simulation)
     t1 = time.time()
     print('Time taken', t1 - t0)
-    # test_dtypes(simulation)
+    check_dtypes(simulation)
