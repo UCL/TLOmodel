@@ -264,15 +264,6 @@ class HealthSystem(Module):
         # Create pointer for the HealthSystemScheduler event
         self.healthsystemscheduler = None
 
-        # aggregated outputs: consumables
-        keys = ["date",
-                "treatment_id",
-                "consumables_available",
-                "consumables_not_available",
-                ]
-        # initialise empty dict with set keys
-        self.annual_consumables_log = {k: [] for k in keys}
-
         # aggregated outputs: hsi
         keys = ["date",
                 "treatment_id",
@@ -280,7 +271,7 @@ class HealthSystem(Module):
                 ]
         # initialise empty dict with set keys
         self.annual_hsi_log = {k: [] for k in keys}
-        # logger.info
+
         # aggregated outputs: fraction HCW time used
         keys = ["date",
                 "Frac_Time_Used_Overall",
@@ -1017,83 +1008,6 @@ class HealthSystem(Module):
 
         return squeeze_factor_per_hsi_event
 
-    def _request_consumables(self, hsi_event, item_codes: dict, to_log: bool) -> dict:
-        """
-        This is a private function called by the 'get_consumables` in the `HSI_Event` base class. It queries whether
-        item_codes are currently available for a particular `hsi_event` and logs the request.
-
-        :param hsi_event: The hsi_event from which the request for consumables originates
-        :param item_codes: dict of the form {<item_code>: <quantity>} for the items requested
-        :param to_log: whether the request is logged.
-        :return:
-        """
-
-        # If HealthSystem is 'disabled' return that all items are available (with no logging).
-        if self.disable:
-            return {k: True for k in item_codes}
-
-        # Determine availability of consumables:
-        if self.cons_availability == 'all':
-            # All item_codes available available if all consumables should be considered available by default.
-            available = {k: True for k in item_codes}
-        elif self.cons_availability == 'none':
-            # All item_codes not available if consumables should be considered not available by default.
-            available = {k: False for k in item_codes.keys()}
-        else:
-            # Determine availability of each item and package:
-            select_col = f'Available_Facility_Level_{hsi_event.ACCEPTED_FACILITY_LEVEL}'
-            available = self.cons_available_today['Item_Code'].loc[item_codes.keys(), select_col].to_dict()
-
-        # Log the request and the outcome:
-        if to_log:
-            logger.info(key='Consumables',
-                        data={
-                            'TREATMENT_ID': hsi_event.TREATMENT_ID,
-                            'Item_Available': str({k: v for k, v in item_codes.items() if v}),
-                            'Item_NotAvailable': str({k: v for k, v in item_codes.items() if not v}),
-                        },
-                        # NB. Casting the data to strings because logger complains with dict of varying sizes/keys
-                        description="Record of each consumable item that is requested."
-                        )
-
-            # record in dict for aggregated logging
-            self.annual_consumables_log["date"] += [self.sim.date.year]
-            self.annual_consumables_log["treatment_id"] += [hsi_event.TREATMENT_ID]
-
-            item_available = {k: v for k, v in item_codes.items() if v}
-            cons = list(item_available.keys())
-            for value in cons:
-                self.annual_consumables_log["consumables_available"].append(value)
-
-            item_not_available = {k: v for k, v in item_codes.items() if not v}
-            cons = list(item_not_available.keys())
-            for value in cons:
-                self.annual_consumables_log["consumables_not_available"].append(value)
-
-        # Return the result of the check on availability
-        return available
-
-    def determine_availability_of_consumables_today(self):
-        """Helper function to determine availability of all items and packages"""
-
-        # Determine the availability of the consumables *items* today
-
-        # Random draws: assume that availability of the same item is independent between different facility levels
-        random_draws = self.rng.rand(
-            len(self.prob_item_codes_available), len(self.prob_item_codes_available.columns)
-        )
-        items = self.prob_item_codes_available > random_draws
-
-        # Determine the availability of packages today
-        # (packages are made-up of the individual items: if one item is not available, the package is not available)
-        pkgs = self.df_mapping_pkg_code_to_intv_code.merge(items, left_on='Item_Code', right_index=True)
-        pkgs = pkgs.groupby(level=0)[pkgs.columns[pkgs.columns.str.startswith('Available_Facility_Level')]].all()
-
-        self.cons_available_today = {
-            "Item_Code": items,
-            "Intervention_Package_Code": pkgs
-        }
-
     def log_hsi_event(self, hsi_event, actual_appt_footprint=None, squeeze_factor=None, did_run=True):
         """
         This will write to the log with a record that this HSI event has occured.
@@ -1136,10 +1050,7 @@ class HealthSystem(Module):
         self.annual_hsi_log["date"].append(self.sim.date.year)
         self.annual_hsi_log["treatment_id"].append(hsi_event.TREATMENT_ID)
         # actual_appt_footprint can be blank counter
-        # todo need to store more than one appt type
-        # appt_name, appt_value = list(actual_appt_footprint.items())[0]
         appt_name = list(actual_appt_footprint.keys())
-        # can get empty counter if appt didn't run
         if actual_appt_footprint:
             for value in appt_name:
                 self.annual_hsi_log["actual_appt_footprint"].append(value)
@@ -1719,7 +1630,7 @@ class HealthSystemLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # aggregate data passed to dicts for each year
 
         # consumables
-        cons = self.module.annual_consumables_log
+        cons = self.module.consumables.annual_consumables_log
 
         treatment_counts = Counter(cons["treatment_id"])
         cons_available = Counter(cons["consumables_available"])
@@ -1749,7 +1660,7 @@ class HealthSystemLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         )
 
         # re-initialise empty dict with set keys
-        self.module.annual_consumables_log.update((key, []) for key in self.module.annual_consumables_log)
+        self.module.consumables.annual_consumables_log.update((key, []) for key in self.module.consumables.annual_consumables_log)
         self.module.annual_hsi_log.update((key, []) for key in self.module.annual_hsi_log)
         self.module.capacity_logs.update((key, []) for key in self.module.capacity_logs)
 

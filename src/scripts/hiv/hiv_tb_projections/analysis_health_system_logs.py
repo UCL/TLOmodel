@@ -1,7 +1,6 @@
 """
-Run the HIV/TB modules with intervention coverage specified at national level
-save outputs for plotting (file: output_plots_tb.py)
- """
+Run the HIV/TB modules with health system outputs aggregated annually
+"""
 
 import datetime
 import pickle

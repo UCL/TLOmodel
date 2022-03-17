@@ -9,6 +9,7 @@ import pandas as pd
 from tlo import logging
 
 logger = logging.getLogger('tlo.methods.healthsystem')
+logger_summary = logging.getLogger('tlo.methods.healthsystem.summary')
 
 
 class Consumables:
@@ -42,6 +43,14 @@ class Consumables:
         self._not_recognised_item_codes = set()  # The item codes requested but which are not recognised.
 
         self._process_consumables_df(data)
+
+        # aggregated outputs: consumables
+        keys = ["treatment_id",
+                "consumables_available",
+                "consumables_not_available",
+                ]
+        # initialise empty dict with set keys
+        self.annual_consumables_log = {k: [] for k in keys}
 
     def processing_at_start_of_new_day(self, date: datetime.datetime) -> None:
         """Do the jobs at the start of each new day.
@@ -125,6 +134,19 @@ class Consumables:
                         # NB. Casting the data to strings because logger complains with dict of varying sizes/keys
                         description="Record of each consumable item that is requested."
                         )
+
+            # record in dict for aggregated logging
+            self.annual_consumables_log["treatment_id"] += [treatment_id]
+
+            item_available = {k: v for k, v in item_codes.items() if v}
+            cons = list(item_available.keys())
+            for value in cons:
+                self.annual_consumables_log["consumables_available"].append(value)
+
+            item_not_available = {k: v for k, v in item_codes.items() if not v}
+            cons = list(item_not_available.keys())
+            for value in cons:
+                self.annual_consumables_log["consumables_not_available"].append(value)
 
         # Return the result of the check on availability
         return available
