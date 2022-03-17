@@ -6,13 +6,12 @@ from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin
 from tlo.methods import Metadata, pregnancy_helper_functions
 from tlo.methods.dxmanager import DxTest
-from tlo.methods.healthsystem import HSI_Event
 # from tlo.methods.tb import HSI_TbScreening
 from tlo.methods.epi import HSI_TdVaccine
-
+from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
-from tlo.methods.malaria import HSI_MalariaIPTp
 from tlo.methods.labour import LabourOnsetEvent
+from tlo.methods.malaria import HSI_MalariaIPTp
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -2154,7 +2153,7 @@ class HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour(HSI_Event, Ind
         # labour events
         df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'induction_now'
         logger.debug(key='message', data=f'Mother {person_id} will move to labour ward for '
-                                     f'{df.at[person_id, "ac_admitted_for_immediate_delivery"]} today')
+                                         f'{df.at[person_id, "ac_admitted_for_immediate_delivery"]} today')
 
         self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], person_id), self.sim.date)
 
@@ -2194,7 +2193,6 @@ class HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(HSI_Event, Indi
         self.module.call_if_maternal_emergency_assessment_cant_run(self)
 
     def did_not_run(self):
-        df = self.sim.population.props
         self.module.call_if_maternal_emergency_assessment_cant_run(self)
         return False
 
@@ -2458,8 +2456,8 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                 admission_date = self.sim.date + DateOffset(days=days_until_safe_for_cs)
 
                 logger.debug(key='message', data=f'Mother {person_id} will move to labour ward for '
-                                             f'{df.at[person_id, "ac_admitted_for_immediate_delivery"]} on '
-                                             f'{admission_date}')
+                                                 f'{df.at[person_id, "ac_admitted_for_immediate_delivery"]} on '
+                                                 f'{admission_date}')
 
                 self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], person_id),
                                         admission_date)
