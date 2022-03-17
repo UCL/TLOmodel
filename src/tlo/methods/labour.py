@@ -3003,10 +3003,8 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         params = self.module.current_parameters
 
-        if pd.isnull(df.at[person_id, 'la_date_most_recent_delivery']):
-            return
-        if not df.at[person_id, 'is_alive']:
-            return
+        if not df.at[person_id, 'is_alive'] or pd.isnull(df.at[person_id, 'la_date_most_recent_delivery']):
+            return None
 
         # Ensure that women who were scheduled to receive early PNC have received care prior to passing through
         # PostnatalWeekOneMaternalEvent
@@ -3068,8 +3066,7 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
         if not mni[person_id]['referred_for_surgery'] and not mni[person_id]['referred_for_blood']:
             self.module.apply_risk_of_early_postpartum_death(person_id)
 
-        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
-        return actual_appt_footprint
+        return self.EXPECTED_APPT_FOOTPRINT
 
     def never_ran(self):
         self.module.run_if_receives_postnatal_check_cant_run(self)
