@@ -7,6 +7,7 @@ import datetime
 import pickle
 from pathlib import Path
 
+import pandas as pd
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
@@ -94,3 +95,8 @@ for key, dfs in output.items():
     if key.startswith("tlo."):
         with open(f"{key}.pickle", "wb") as f:
             pickle.dump(dfs, f)
+
+tmp = output["tlo.methods.healthsystem.summary"]["health_system_annual_logs"]
+new = tmp[['date', 'treatment_counts']].copy()
+new2 = pd.DataFrame(new['treatment_counts'].to_list())
+
