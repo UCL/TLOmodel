@@ -3,8 +3,8 @@ This file stores any functions that are called from multiple different modules i
 module suite
 """
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 
 def get_list_of_items(self, item_list):
@@ -50,8 +50,7 @@ def scale_linear_model_at_initialisation(self, model, parameter_key):
     # The target value is stored within the parameter
     target = params[parameter_key]
 
-    if (parameter_key != 'prob_spontaneous_abortion_per_month') and (parameter_key != 'baseline_prob_early_'
-                                                                                      'labour_onset'):
+    if parameter_key not in ('prob_spontaneous_abortion_per_month', 'baseline_prob_early_labour_onset'):
 
         # Override the intercept parameter with a value of one
         params[parameter_key] = 1
@@ -88,7 +87,7 @@ def update_current_parameter_dictionary(self, list_position):
     """
 
     for key, value in self.parameters.items():
-        if type(value) is list:
+        if isinstance(value, list):
             self.current_parameters[key] = self.parameters[key][list_position]
         else:
             if list_position == 0:
@@ -289,9 +288,8 @@ def check_for_risk_of_death_from_cause_maternal(self, individual_id):
         # Call return the result from calculate_risk_of_death_from_causes function
         return calculate_risk_of_death_from_causes(self, risks)
 
-    else:
-        # if she is not at risk of death as she has no complications we return false to the module
-        return False
+    # if she is not at risk of death as she has no complications we return false to the module
+    return False
 
 
 def check_for_risk_of_death_from_cause_neonatal(self, individual_id):
@@ -360,9 +358,8 @@ def check_for_risk_of_death_from_cause_neonatal(self, individual_id):
         # Return the result from calculate_risk_of_death_from_causes function (returns primary cause of death or False)
         return calculate_risk_of_death_from_causes(self, risks)
 
-    else:
-        # if they is not at risk of death as they has no complications we return False to the module
-        return False
+    # if they is not at risk of death as they has no complications we return False to the module
+    return False
 
 
 def update_mni_dictionary(self, individual_id):
