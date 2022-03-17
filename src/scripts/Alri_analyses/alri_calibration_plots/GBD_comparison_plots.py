@@ -268,3 +268,27 @@ plt.tight_layout()
 # plt.savefig(outputpath / ("ALRI_DALYs_model_comparison" + datestamp + ".png"), format='png')
 
 plt.show()
+
+# -----------------------------------------------------------------------------------------------
+# check the case fatality rates (CFR)
+
+# using the tracker to get the number of cases per year
+number_of_cases = counts.incident_cases
+
+# using the tracker to get the number of deaths per year
+number_of_deaths = counts.deaths
+
+# calculate CFR
+CFR_in_percentage = (number_of_deaths / number_of_cases) * 100
+
+fig5, ax5 = plt.subplots()
+
+# model output
+plt.plot(CFR_in_percentage, color="mediumseagreen")  # model
+plt.title("ALRI CFR")
+plt.xlabel("Year")
+plt.xticks(rotation=90)
+plt.ylabel("CRF (%)")
+plt.legend(["Model"])
+plt.tight_layout()
+plt.show()

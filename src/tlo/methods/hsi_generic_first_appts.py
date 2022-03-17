@@ -182,6 +182,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
 
         if ('cough' in symptoms) or ('difficult_breathing' in symptoms):
             if 'Alri' in sim.modules:
+                sim.modules['Alri'].sought_care_for_alri(person_id=person_id)
                 sim.modules['Alri'].assess_and_classify_cough_or_difficult_breathing_level(
                     person_id=person_id, hsi_event=hsi_event)
 
@@ -483,6 +484,12 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
             person_id=person_id
         )
         schedule_hsi(event, priority=1, topen=sim.date)
+
+    if (age < 5) and (('cough' in symptoms) or ('difficult_breathing' in symptoms)):
+        if 'Alri' in sim.modules:
+            sim.modules['Alri'].sought_care_for_alri(person_id=person_id)
+            sim.modules['Alri'].assess_and_classify_cough_or_difficult_breathing_level(
+                person_id=person_id, hsi_event=hsi_event)
 
     if (age < 5) and (('cough' in symptoms) or ('difficult_breathing' in symptoms)):
         if 'Alri' in sim.modules:
