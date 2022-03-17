@@ -704,13 +704,13 @@ class CareOfWomenDuringPregnancy(Module):
 
         # If the second intervention hasn't already been given, store within the mni, return True so the intervention is
         # delivered
-        elif int2 not in mni[person_id]['anc_ints']:
+        if int2 not in mni[person_id]['anc_ints']:
             mni[person_id]['anc_ints'].append(int2)
             return True
 
         # If both of the interventions have been delivered, return false to prevent the intervention being delivered
         # again
-        elif int_1 and int2 in mni[person_id]['anc_ints']:
+        if int_1 and int2 in mni[person_id]['anc_ints']:
             return False
 
     def screening_interventions_delivered_at_every_contact(self, hsi_event):
@@ -931,7 +931,7 @@ class CareOfWomenDuringPregnancy(Module):
             return
 
         # Run check against probability of testing being delivered
-        elif self.rng.random_sample() < params['prob_intervention_delivered_poct']:
+        if self.rng.random_sample() < params['prob_intervention_delivered_poct']:
             logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'hb_screen'})
 
             hsi_event.get_consumables(item_codes=self.item_codes_preg_consumables['blood_test_equipment'])
@@ -954,17 +954,17 @@ class CareOfWomenDuringPregnancy(Module):
         # If this woman has already had deworming the intervention is not delivered again
         if 'albend' in mni[person_id]['anc_ints']:
             return
-        else:
-            mni[person_id]['anc_ints'].append('albend')
 
-            # We run this function to store the associated consumables with albendazole administration. This
-            # intervention has no effect in the model due to limited evidence
+        mni[person_id]['anc_ints'].append('albend')
 
-            # If the consumables are available and the HCW will provide the tablets, the intervention is given
-            avail = hsi_event.get_consumables(item_codes=self.item_codes_preg_consumables['albendazole'])
+        # We run this function to store the associated consumables with albendazole administration. This
+        # intervention has no effect in the model due to limited evidence
 
-            if avail:
-                logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'albendazole'})
+        # If the consumables are available and the HCW will provide the tablets, the intervention is given
+        avail = hsi_event.get_consumables(item_codes=self.item_codes_preg_consumables['albendazole'])
+
+        if avail:
+            logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'albendazole'})
 
     def hep_b_testing(self, hsi_event):
         """
@@ -978,16 +978,16 @@ class CareOfWomenDuringPregnancy(Module):
         # If this woman has already been tested for hep b twice in her pregnancy the intervention will not run
         if not self.check_intervention_should_run_and_update_mni(person_id, 'hep_b_1', 'hep_b_2'):
             return
-        else:
-            # This intervention is a place holder prior to the Hepatitis B module being coded
-            # Define the consumables
-            avail = hsi_event.get_consumables(item_codes=cons['hep_b_test'],
-                                              optional_item_codes=cons['blood_test_equipment'])
 
-            # We log all the consumables required above but we only condition the event test happening on the
-            # availability of the test itself
-            if avail:
-                logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'hep_b'})
+        # This intervention is a place holder prior to the Hepatitis B module being coded
+        # Define the consumables
+        avail = hsi_event.get_consumables(item_codes=cons['hep_b_test'],
+                                          optional_item_codes=cons['blood_test_equipment'])
+
+        # We log all the consumables required above but we only condition the event test happening on the
+        # availability of the test itself
+        if avail:
+            logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'hep_b'})
 
     def syphilis_screening_and_treatment(self, hsi_event):
         """
@@ -1004,7 +1004,7 @@ class CareOfWomenDuringPregnancy(Module):
         if not self.check_intervention_should_run_and_update_mni(person_id, 'syph_1', 'syph_2'):
             return
 
-        elif self.rng.random_sample() < params['prob_intervention_delivered_syph_test']:
+        if self.rng.random_sample() < params['prob_intervention_delivered_syph_test']:
             logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'syphilis_test'})
 
             hsi_event.get_consumables(item_codes=self.item_codes_preg_consumables['blood_test_equipment'])
@@ -1032,20 +1032,20 @@ class CareOfWomenDuringPregnancy(Module):
         # If she has already been tested for HIV she will not be tested again during ANC
         if 'hiv' in mni[person_id]['anc_ints']:
             return
-        else:
-            if 'Hiv' in self.sim.modules:
 
-                # Women who are already diagnosed will not be tested again, testing is managed in the HIV module
-                if not df.at[person_id, 'hv_diagnosed']:
-                    mni[person_id]['anc_ints'].append('hiv')
+        if 'Hiv' in self.sim.modules:
 
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(
-                       HSI_Hiv_TestAndRefer(person_id=person_id, module=self.sim.modules['Hiv']),
-                       topen=self.sim.date,
-                       tclose=None,
-                       priority=0)
+            # Women who are already diagnosed will not be tested again, testing is managed in the HIV module
+            if not df.at[person_id, 'hv_diagnosed']:
+                mni[person_id]['anc_ints'].append('hiv')
 
-                logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'hiv_screen'})
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                   HSI_Hiv_TestAndRefer(person_id=person_id, module=self.sim.modules['Hiv']),
+                   topen=self.sim.date,
+                   tclose=None,
+                   priority=0)
+
+            logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'hiv_screen'})
 
     def iptp_administration(self, hsi_event):
         """
@@ -1074,33 +1074,32 @@ class CareOfWomenDuringPregnancy(Module):
         # Women already screened will not be screened again
         if 'gdm_screen' in mni[person_id]['anc_ints']:
             return
-        else:
 
-            # We check if this women has any of the key risk factors, if so they are sent for additional blood tests
-            if df.at[person_id, 'li_bmi'] >= 4 or df.at[person_id, 'ps_prev_gest_diab'] or df.at[person_id,
-                                                                                                 'ps_prev_stillbirth']:
+        # We check if this women has any of the key risk factors, if so they are sent for additional blood tests
+        if df.at[person_id, 'li_bmi'] >= 4 or df.at[person_id, 'ps_prev_gest_diab'] or df.at[person_id,
+                                                                                             'ps_prev_stillbirth']:
 
-                # If they are available, the test is conducted
-                if self.rng.random_sample() < params['prob_intervention_delivered_gdm_test']:
+            # If they are available, the test is conducted
+            if self.rng.random_sample() < params['prob_intervention_delivered_gdm_test']:
 
-                    hsi_event.get_consumables(item_codes=self.item_codes_preg_consumables['blood_test_equipment'])
+                hsi_event.get_consumables(item_codes=self.item_codes_preg_consumables['blood_test_equipment'])
 
-                    # If the test accurately detects a woman has gestational diabetes the consumables are recorded and
-                    # she is referred for treatment
-                    if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='blood_test_glucose',
-                                                                               hsi_event=hsi_event):
+                # If the test accurately detects a woman has gestational diabetes the consumables are recorded and
+                # she is referred for treatment
+                if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='blood_test_glucose',
+                                                                           hsi_event=hsi_event):
 
-                        logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'gdm_screen'})
-                        mni[person_id]['anc_ints'].append('gdm_screen')
+                    logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'gdm_screen'})
+                    mni[person_id]['anc_ints'].append('gdm_screen')
 
-                        # We assume women with a positive GDM screen will be admitted (if they are not already receiving
-                        # outpatient care)
-                        if df.at[person_id, 'ac_gest_diab_on_treatment'] == 'none':
+                    # We assume women with a positive GDM screen will be admitted (if they are not already receiving
+                    # outpatient care)
+                    if df.at[person_id, 'ac_gest_diab_on_treatment'] == 'none':
 
-                            # Store onset after diagnosis as daly weight is tied to diagnosis
-                            pregnancy_helper_functions.store_dalys_in_mni(person_id, mni, 'gest_diab_onset',
-                                                                          self.sim.date)
-                            df.at[person_id, 'ac_to_be_admitted'] = True
+                        # Store onset after diagnosis as daly weight is tied to diagnosis
+                        pregnancy_helper_functions.store_dalys_in_mni(person_id, mni, 'gest_diab_onset',
+                                                                      self.sim.date)
+                        df.at[person_id, 'ac_to_be_admitted'] = True
 
     def interventions_delivered_each_visit_from_anc2(self, hsi_event):
         """This function contains a collection of interventions that are delivered to women every time they attend ANC
@@ -1139,7 +1138,7 @@ class CareOfWomenDuringPregnancy(Module):
 
         # Here we block the event from running for previously scheduled ANC1 HSIs for women who have lost a pregnancy
         # and become pregnant again
-        elif (
+        if (
             (date_difference > pd.to_timedelta(7, unit='D')) or
             (df.at[individual_id, 'ac_total_anc_visits_current_pregnancy'] > 0) or
             (df.at[individual_id, 'ps_gestational_age_in_weeks'] < 7)
@@ -1148,7 +1147,7 @@ class CareOfWomenDuringPregnancy(Module):
 
         # If the woman is an inpatient when ANC1 is scheduled, she will try and return at the next appropriate
         # gestational age
-        elif df.at[individual_id, 'hs_is_inpatient']:
+        if df.at[individual_id, 'hs_is_inpatient']:
 
             # We assume that she will return for her first appointment at the next gestation in the schedule
             logger.debug(key='message', data=f'mother {individual_id} is scheduled to attend ANC today but is '
@@ -1165,14 +1164,14 @@ class CareOfWomenDuringPregnancy(Module):
             return False
 
         # Finally, if the squeeze factor is too high the event wont run and she will return tomorrow
-        elif squeeze_factor > params['squeeze_factor_threshold_anc']:
+        if squeeze_factor > params['squeeze_factor_threshold_anc']:
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(visit, priority=0,
                                                                 topen=self.sim.date + DateOffset(days=1),
                                                                 tclose=self.sim.date + DateOffset(days=2))
             return False
-        else:
-            return True
+
+        return True
 
     def check_subsequent_anc_can_run(self, individual_id, this_contact, this_visit_number, squeeze_factor,
                                      gest_age_next_contact):
@@ -1208,20 +1207,19 @@ class CareOfWomenDuringPregnancy(Module):
 
         # If the woman is currently an inpatient then she will return at the next point in the contact schedule but
         # receive the care she has missed in this visit
-        elif df.at[individual_id, 'hs_is_inpatient']:
+        if df.at[individual_id, 'hs_is_inpatient']:
             self.antenatal_care_scheduler(individual_id, visit_to_be_scheduled=this_visit_number,
                                           recommended_gestation_next_anc=gest_age_next_contact)
             return False
 
         # If the squeeze factor is too high she will return tomorrow
-        elif squeeze_factor > params['squeeze_factor_threshold_anc']:
+        if squeeze_factor > params['squeeze_factor_threshold_anc']:
             self.sim.modules['HealthSystem'].schedule_hsi_event(this_contact, priority=0,
                                                                 topen=self.sim.date + DateOffset(days=1),
                                                                 tclose=self.sim.date + DateOffset(days=2))
             return False
 
-        else:
-            return True
+        return True
 
     # =============================== INTERVENTIONS DELIVERED DURING INPATIENT CARE ===================================
     # The following functions contain code for the interventions which are called by antenatal HSIs (not including
@@ -1249,12 +1247,11 @@ class CareOfWomenDuringPregnancy(Module):
             return 'non_severe'
 
         # If the test correctly identifies a woman's anaemia we assume it correctly identifies its severity
-        elif test_result and (df.at[person_id, 'ps_anaemia_in_pregnancy'] != 'none'):
+        if test_result and (df.at[person_id, 'ps_anaemia_in_pregnancy'] != 'none'):
             return df.at[person_id, 'ps_anaemia_in_pregnancy']
 
         # We return a none value if no anaemia was detected
-        else:
-            return 'none'
+        return 'none'
 
     def antenatal_blood_transfusion(self, individual_id, hsi_event):
         """
@@ -2043,7 +2040,7 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
 
         # Women who are inpatients at the time the HSI should run will return at the next recommended point in
         # pregnancy
-        elif df.at[person_id, 'hs_is_inpatient'] and (df.at[person_id, 'ps_gestational_age_in_weeks'] < 37):
+        if df.at[person_id, 'hs_is_inpatient'] and (df.at[person_id, 'ps_gestational_age_in_weeks'] < 37):
             weeks_due_next_visit = int(recommended_gestation_next_anc - df.at[person_id, 'ps_gestational_age_in_weeks'])
             visit_date = self.sim.date + DateOffset(weeks=weeks_due_next_visit)
             self.sim.modules['HealthSystem'].schedule_hsi_event(self, priority=0,
@@ -2083,14 +2080,14 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
             self.module.point_of_care_hb_testing(hsi_event=self)
             self.module.tetanus_vaccination(hsi_event=self)
 
-        if (self.visit_number == 2) or ((mother.ps_gestational_age_in_weeks > 20) and (self.visit_number == 1)):
+        elif (self.visit_number == 2) or ((mother.ps_gestational_age_in_weeks > 20) and (self.visit_number == 1)):
             self.module.albendazole_administration(hsi_event=self)
             self.module.tetanus_vaccination(hsi_event=self)
 
         elif self.visit_number == 3 or ((mother.ps_gestational_age_in_weeks > 30) and (self.visit_number == 1)):
             self.module.point_of_care_hb_testing(hsi_event=self)
 
-        # Following this the womans next visit is scheduled (if she hasn't already attended 4 visits)
+        # Following this the woman's next visit is scheduled (if she hasn't already attended 4 visits)
         if self.visit_number < 4:
 
             # update the visit number for the event scheduling
