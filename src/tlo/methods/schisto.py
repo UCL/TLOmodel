@@ -79,7 +79,6 @@ def _define_parameters():
         'low_intensity_threshold': Parameter(Types.REAL, 'Threshold of worm burden indicating low intensity infection'),
         'high_intensity_threshold_PSAC': Parameter(Types.REAL,
                                                    'Worm burden threshold for high intensity infection in PSAC'),
-        'list_of_districts': Parameter(Types.LIST, 'List of the districts with the infection present')
     }
     return parameters
 
@@ -150,9 +149,6 @@ def _initialise_population(module, population):
 def _initialise_simulation(module, sim):
     """Get ready for simulation start.
     """
-    # Register this disease module with the health system
-    module.sim.modules['HealthSystem'].register_disease_module(module)
-
     # add the basic events of infection
     sim.schedule_event(SchistoInfectionWormBurdenEvent(module), sim.date + DateOffset(months=1))
 
@@ -191,7 +187,7 @@ def _assign_harbouring_rate(module, population):
     df = population.props
     params = module.parameters
     prefix = module.prefix
-    for district in params['list_of_districts']:
+    for district in module.districts:
         eligible = df.index[df['district_of_residence'] == district]
         hr = params['gamma_alpha'][district]
         df.loc[eligible, f'{prefix}_harbouring_rate'] = module.rng.gamma(hr, size=len(eligible))
@@ -203,7 +199,7 @@ def _assign_initial_worm_burden(module, population):
     """
     df = population.props
     params = module.parameters
-    districts = params['list_of_districts']
+    districts = module.districts
     reservoir = params['reservoir_2010']
     prefix = module.prefix
 
@@ -336,6 +332,7 @@ class Schisto(Module):
         self.resourcefilepath = resourcefilepath
         self.prefix = 'ss'
         self.mda_execute = mda_execute
+        self.districts = None  # Will be the list of all districts to consider
 
     PARAMETERS = {
         # health system interaction
@@ -381,57 +378,53 @@ class Schisto(Module):
     def read_parameters(self, data_folder):
         workbook = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Schisto.xlsx', sheet_name=None)
 
-        params = self.parameters
-        params['param_list'] = workbook['Parameters']
-        self.param_list.set_index("Parameter", inplace=True)
-
+        # todo - use helper function to load parameters
         # HSI and treatment params
-        params['delay_till_hsi_a'] = self.param_list.loc['delay_till_hsi_a', 'Value']
-        params['delay_till_hsi_b'] = self.param_list.loc['delay_till_hsi_b', 'Value']
-        params['delay_till_hsi_a_repeated'] = self.param_list.loc['delay_till_hsi_a_repeated', 'Value']
-        params['delay_till_hsi_b_repeated'] = self.param_list.loc['delay_till_hsi_b_repeated', 'Value']
-        params['prob_seeking_healthcare'] = self.param_list.loc['prob_seeking_healthcare', 'Value']
-        params['prob_sent_to_lab_test_children'] = self.param_list.loc['prob_sent_to_lab_test_children', 'Value']
-        params['prob_sent_to_lab_test_adults'] = self.param_list.loc['prob_sent_to_lab_test_adults', 'Value']
-        params['PZQ_efficacy'] = self.param_list.loc['PZQ_efficacy', 'Value']
+        param_list = workbook['Parameters'].set_index("Parameter")
+        self.parameters['delay_till_hsi_a'] = param_list.loc['delay_till_hsi_a', 'Value']
+        self.parameters['delay_till_hsi_b'] = param_list.loc['delay_till_hsi_b', 'Value']
+        self.parameters['delay_till_hsi_a_repeated'] = param_list.loc['delay_till_hsi_a_repeated', 'Value']
+        self.parameters['delay_till_hsi_b_repeated'] = param_list.loc['delay_till_hsi_b_repeated', 'Value']
+        self.parameters['prob_seeking_healthcare'] = param_list.loc['prob_seeking_healthcare', 'Value']
+        self.parameters['prob_sent_to_lab_test_children'] = param_list.loc['prob_sent_to_lab_test_children', 'Value']
+        self.parameters['prob_sent_to_lab_test_adults'] = param_list.loc['prob_sent_to_lab_test_adults', 'Value']
+        self.parameters['PZQ_efficacy'] = param_list.loc['PZQ_efficacy', 'Value']
 
         # symptoms prevalence
         symptoms_df = workbook['Symptoms']
-        params['symptoms_prevalence'] = pd.Series(symptoms_df.Prevalence.values, index=symptoms_df.Symptom).to_dict()
-        params['symptoms_mapping'] = \
+        self.parameters['symptoms_prevalence'] = pd.Series(symptoms_df.Prevalence.values, index=symptoms_df.Symptom).to_dict()
+        self.parameters['symptoms_mapping'] = \
             pd.Series(symptoms_df.HSB_mapped_symptom.values, index=symptoms_df.Symptom).to_dict()
 
         # MDA coverage historical
-        params['years_till_first_MDA'] = self.param_list.loc['years_till_first_MDA', 'Value']
+        self.parameters['years_till_first_MDA'] = param_list.loc['years_till_first_MDA', 'Value']
 
-        params['MDA_coverage'] = workbook['MDA_historical_Coverage']
-        self.MDA_coverage.set_index(['District', 'Year'], inplace=True)
-        params['MDA_coverage_PSAC'] = self.MDA_coverage.loc[:, 'Coverage PSAC']
-        params['MDA_coverage_SAC'] = self.MDA_coverage.loc[:, 'Coverage SAC']
-        params['MDA_coverage_Adults'] = self.MDA_coverage.loc[:, 'Coverage Adults']
+        mda_historical_coverage = workbook['MDA_historical_Coverage'].set_index(['District', 'Year'])
+        self.parameters['MDA_coverage_PSAC'] = mda_historical_coverage.loc[:, 'Coverage PSAC']
+        self.parameters['MDA_coverage_SAC'] = mda_historical_coverage.loc[:, 'Coverage SAC']
+        self.parameters['MDA_coverage_Adults'] = mda_historical_coverage.loc[:, 'Coverage Adults']
 
         # MDA coverage prognosed
-        params['MDA_coverage_prognosed'] = workbook['MDA_prognosed_Coverage']
-        self.MDA_coverage_prognosed.set_index(['District'], inplace=True)
-        params['MDA_frequency_prognosed'] = self.MDA_coverage_prognosed.loc[:, 'Frequency']
-        params['MDA_prognosed_PSAC'] = self.MDA_coverage_prognosed.loc[:, 'Coverage PSAC']
-        params['MDA_prognosed_SAC'] = self.MDA_coverage_prognosed.loc[:, 'Coverage SAC']
-        params['MDA_prognosed_Adults'] = self.MDA_coverage_prognosed.loc[:, 'Coverage Adults']
+        mda_prognosed_coverage = workbook['MDA_prognosed_Coverage'].set_index(['District'])
+        self.parameters['MDA_frequency_prognosed'] = mda_prognosed_coverage.loc[:, 'Frequency']
+        self.parameters['MDA_prognosed_PSAC'] = mda_prognosed_coverage.loc[:, 'Coverage PSAC']
+        self.parameters['MDA_prognosed_SAC'] = mda_prognosed_coverage.loc[:, 'Coverage SAC']
+        self.parameters['MDA_prognosed_Adults'] = mda_prognosed_coverage.loc[:, 'Coverage Adults']
 
         # DALY weights
         symptoms_dict = {'anemia': 258, 'fever': 262, 'hydronephrosis': 260, 'dysuria': 263,
                          'bladder_pathology': 264, 'diarrhoea': 259, 'vomit': 254, 'ascites': 261,
                          'hepatomegaly': 257}
         for symptom, weight in symptoms_dict.items():
-            str = 'daly_wt_' + symptom
-            params[str] = self.sim.modules['HealthBurden'].get_daly_weight(weight)
-        params['daly_wt_haematuria'] = 0  # that's a very common symptom but no official DALY weight yet defined
+            self.parameters['daly_wt_' + symptom] = self.sim.modules['HealthBurden'].get_daly_weight(weight)
+        self.parameters['daly_wt_haematuria'] = 0  # that's a very common symptom but no official DALY weight yet defined
 
     def change_parameter_value(self, parameter_name, new_value):
         """This function allows updating a parameter change at some point due to e.g. a behavioural change intervention,
         such as increasing awareness or e.g. improving the sensitivity of laboratory tests.
         Used by a SchistoChangeParameterEvent"""
         self.parameters[parameter_name] = new_value
+        # todo- may need to remove this
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -444,7 +437,11 @@ class Schisto(Module):
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
         """
-        # sim.schedule_event(SchistoLoggingTotalEvent(self), sim.date + DateOffset(months=0))
+        # self.districts = sim.modules['Demography'].districts  # if we want it to be all distictrs:
+        # Iwona used in her thesis:
+        self.districts = ['Blantyre', 'Chiradzulu', 'Mulanje', 'Nsanje', 'Nkhotakota', 'Phalombe']
+
+        sim.schedule_event(SchistoLoggingTotalEvent(self), sim.date + DateOffset(months=0))
         sim.schedule_event(SchistoPrevalentDaysLoggingEvent(self),
                            pd.Timestamp(year=sim.date.year, month=12, day=31, hour=23))
 
@@ -454,10 +451,13 @@ class Schisto(Module):
             years_of_historical_mda = [int(y0 + ii) for ii in range(4)]  # 4 consecutive years
             years_of_historical_mda = [sim.date.year + el for el in years_of_historical_mda]  # create dates
             for historical_mda_year in years_of_historical_mda:
+                # todo - to be an HSI event
                 sim.schedule_event(SchistoHistoricalMDAEvent(self),
                                    pd.Timestamp(year=historical_mda_year, month=7, day=1, hour=23))
             year_first_simulated_mda = years_of_historical_mda[-1] + 1
+
             # schedule prognosed MDA programmes for every district
+            # todo - be an HSI event
             for district in sim.population.props.district_of_residence.unique():
                 freq = self.parameters['MDA_frequency_prognosed'][district]
                 if freq > 0:  # frequency 0 means no need for MDA, because prevalence there is always 0
@@ -511,6 +511,7 @@ class Schisto_Haematobium(Module):
         self.prefix = 'sh'
         assert symptoms_and_HSI in [True, False]
         self.symptoms_and_HSI = symptoms_and_HSI
+        self.districts = ['Blantyre', 'Chiradzulu', 'Mulanje', 'Nsanje', 'Nkhotakota', 'Phalombe']  # todo should inherit from Schisto
 
     PARAMETERS = _define_parameters()
     PROPERTIES = _define_properties('sh')
@@ -518,38 +519,28 @@ class Schisto_Haematobium(Module):
     def read_parameters(self, data_folder):
         workbook = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Schisto.xlsx', sheet_name=None)
 
-        params = self.parameters
-        params['param_list'] = workbook['Parameters']
-        self.param_list.set_index("Parameter", inplace=True)
-
-        params['delay_a'] = self.param_list.loc['delay_a', 'Value']
-        params['delay_b'] = self.param_list.loc['delay_b', 'Value']
-        params['beta_PSAC'] = self.param_list.loc['beta_PSAC', 'Value']
-        params['beta_SAC'] = self.param_list.loc['beta_SAC', 'Value']
-        params['beta_Adults'] = self.param_list.loc['beta_Adults', 'Value']
-        params['worms_fecundity'] = self.param_list.loc['worms_fecundity_haematobium', 'Value']
-        params['worm_lifespan'] = self.param_list.loc['lifespan_haematobium', 'Value']
-        params['high_intensity_threshold'] = self.param_list.loc['high_intensity_threshold_haematobium', 'Value']
-        params['low_intensity_threshold'] = self.param_list.loc['low_intensity_threshold_haematobium', 'Value']
-        params['high_intensity_threshold_PSAC'] = \
-            self.param_list.loc['high_intensity_threshold_haematobium_PSAC', 'Value']
+        # natural history params
+        param_list = workbook['Parameters'].set_index("Parameter")
+        self.parameters['delay_a'] = param_list.loc['delay_a', 'Value']
+        self.parameters['delay_b'] = param_list.loc['delay_b', 'Value']
+        self.parameters['beta_PSAC'] = param_list.loc['beta_PSAC', 'Value']
+        self.parameters['beta_SAC'] = param_list.loc['beta_SAC', 'Value']
+        self.parameters['beta_Adults'] = param_list.loc['beta_Adults', 'Value']
+        self.parameters['worms_fecundity'] = param_list.loc['worms_fecundity_haematobium', 'Value']
+        self.parameters['worm_lifespan'] = param_list.loc['lifespan_haematobium', 'Value']
+        self.parameters['high_intensity_threshold'] = param_list.loc['high_intensity_threshold_haematobium', 'Value']
+        self.parameters['low_intensity_threshold'] = param_list.loc['low_intensity_threshold_haematobium', 'Value']
+        self.parameters['high_intensity_threshold_PSAC'] = \
+            param_list.loc['high_intensity_threshold_haematobium_PSAC', 'Value']
 
         # baseline reservoir size and other district-related params (alpha and R0)
-        params['schisto_initial_reservoir'] = workbook['District_Params_haematobium']
-        self.schisto_initial_reservoir.set_index("District", inplace=True)
-        params['reservoir_2010'] = self.schisto_initial_reservoir.loc[:, 'Reservoir']
-        params['gamma_alpha'] = self.schisto_initial_reservoir.loc[:, 'alpha_value']
-        params['R0'] = self.schisto_initial_reservoir.loc[:, 'R0_value']
+        schisto_initial_reservoir = workbook['District_Params_haematobium'].set_index("District")
+        self.parameters['reservoir_2010'] = schisto_initial_reservoir.loc[:, 'Reservoir']
+        self.parameters['gamma_alpha'] = schisto_initial_reservoir.loc[:, 'alpha_value']
+        self.parameters['R0'] = schisto_initial_reservoir.loc[:, 'R0_value']
 
         # symptoms # TODO: Put into the SymptomManager
-        params['symptoms'] = ['anemia', 'fever', 'haematuria', 'hydronephrosis', 'dysuria', 'bladder_pathology']
-
-        # this is to be used if we want to model every district
-        params['list_of_districts'] = \
-            pd.read_csv(Path(self.resourcefilepath) /
-                        'ResourceFile_District_Population_Data.csv').District.unique().tolist()
-        # this was used for the analysis done in my thesis
-        # params['list_of_districts'] = ['Blantyre', 'Chiradzulu', 'Mulanje', 'Nsanje', 'Nkhotakota', 'Phalombe']
+        self.parameters['symptoms'] = ['anemia', 'fever', 'haematuria', 'hydronephrosis', 'dysuria', 'bladder_pathology']
 
     def initialise_population(self, population):
         """Set our property values for the initial population, using a top-level function
@@ -572,19 +563,10 @@ class Schisto_Haematobium(Module):
         _on_birth(self, mother_id, child_id)
 
     def report_daly_values(self):
-        logger.debug('This is Schisto Haematobium reporting my health values')
         df = self.sim.population.props
         health_values = df.loc[df.is_alive,
                                'sh_symptoms'].apply(lambda x: self.sim.modules['Schisto'].add_DALYs_from_symptoms(x))
-
-        return health_values.loc[df.is_alive]   # returns the series
-
-    def on_hsi_alert(self, person_id, treatment_id):
-        """
-        This is called whenever there is an HSI event commissioned by one of the other disease modules.
-        """
-        logger.debug('This is Schisto Haematobium, being alerted about a health system interaction '
-                     'person %d for: %s', person_id, treatment_id)
+        return health_values.loc[df.is_alive]
 
 
 class Schisto_Mansoni(Module):
@@ -601,6 +583,7 @@ class Schisto_Mansoni(Module):
         self.prefix = 'sm'
         assert isinstance(symptoms_and_HSI, bool)
         self.symptoms_and_HSI = symptoms_and_HSI
+        self.districts = ['Blantyre', 'Chiradzulu', 'Mulanje', 'Nsanje', 'Nkhotakota', 'Phalombe']  # todo should inherit from Schisto
 
     PARAMETERS = _define_parameters()
     PROPERTIES = _define_properties('sm')
@@ -608,35 +591,27 @@ class Schisto_Mansoni(Module):
     def read_parameters(self, data_folder):
         workbook = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Schisto.xlsx', sheet_name=None)
 
-        params = self.parameters
-        params['param_list'] = workbook['Parameters']
-        self.param_list.set_index("Parameter", inplace=True)
-
         # natural history params
-        params['delay_a'] = self.param_list.loc['delay_a', 'Value']
-        params['delay_b'] = self.param_list.loc['delay_b', 'Value']
-        params['beta_PSAC'] = self.param_list.loc['beta_PSAC', 'Value']
-        params['beta_SAC'] = self.param_list.loc['beta_SAC', 'Value']
-        params['beta_Adults'] = self.param_list.loc['beta_Adults', 'Value']
-        params['worms_fecundity'] = self.param_list.loc['worms_fecundity_mansoni', 'Value']
-        params['worm_lifespan'] = self.param_list.loc['lifespan_mansoni', 'Value']
-        params['high_intensity_threshold'] = self.param_list.loc['high_intensity_threshold_mansoni', 'Value']
-        params['low_intensity_threshold'] = self.param_list.loc['low_intensity_threshold_mansoni', 'Value']
-        params['high_intensity_threshold_PSAC'] = self.param_list.loc['high_intensity_threshold_mansoni_PSAC', 'Value']
+        param_list = workbook['Parameters'].set_index("Parameter")
+        self.parameters['delay_a'] = param_list.loc['delay_a', 'Value']
+        self.parameters['delay_b'] = param_list.loc['delay_b', 'Value']
+        self.parameters['beta_PSAC'] = param_list.loc['beta_PSAC', 'Value']
+        self.parameters['beta_SAC'] = param_list.loc['beta_SAC', 'Value']
+        self.parameters['beta_Adults'] = param_list.loc['beta_Adults', 'Value']
+        self.parameters['worms_fecundity'] = param_list.loc['worms_fecundity_mansoni', 'Value']
+        self.parameters['worm_lifespan'] = param_list.loc['lifespan_mansoni', 'Value']
+        self.parameters['high_intensity_threshold'] = param_list.loc['high_intensity_threshold_mansoni', 'Value']
+        self.parameters['low_intensity_threshold'] = param_list.loc['low_intensity_threshold_mansoni', 'Value']
+        self.parameters['high_intensity_threshold_PSAC'] = param_list.loc['high_intensity_threshold_mansoni_PSAC', 'Value']
 
         # baseline reservoir size and other district-related params (alpha and R0)
-        params['schisto_initial_reservoir'] = workbook['District_Params_mansoni']
-        self.schisto_initial_reservoir.set_index("District", inplace=True)
-        params['reservoir_2010'] = self.schisto_initial_reservoir.loc[:, 'Reservoir']
-        params['gamma_alpha'] = self.schisto_initial_reservoir.loc[:, 'alpha_value']
-        params['R0'] = self.schisto_initial_reservoir.loc[:, 'R0_value']
+        schisto_initial_reservoir = workbook['District_Params_mansoni'].set_index("District")
+        self.parameters['reservoir_2010'] = schisto_initial_reservoir.loc[:, 'Reservoir']
+        self.parameters['gamma_alpha'] = schisto_initial_reservoir.loc[:, 'alpha_value']
+        self. parameters['R0'] = schisto_initial_reservoir.loc[:, 'R0_value']
 
         # symptoms  #TODO - put into the Symptom Manaher
-        params['symptoms'] = ['anemia', 'fever', 'ascites', 'diarrhoea', 'vomit', 'hepatomegaly']
-
-        params['list_of_districts'] = \
-            pd.read_csv(Path(self.resourcefilepath) /
-                        'ResourceFile_District_Population_Data.csv').District.unique().tolist()
+        self.parameters['symptoms'] = ['anemia', 'fever', 'ascites', 'diarrhoea', 'vomit', 'hepatomegaly']
 
     def initialise_population(self, population):
         """Set our property values for the initial population, using a top-level function
@@ -659,19 +634,11 @@ class Schisto_Mansoni(Module):
         _on_birth(self, mother_id, child_id)
 
     def report_daly_values(self):
-        logger.debug('This is Schisto Mansoni reporting my health values')
         df = self.sim.population.props
         health_values = \
             df.loc[df.is_alive, 'sm_symptoms'].apply(lambda x: self.sim.modules['Schisto'].add_DALYs_from_symptoms(x))
+        return health_values.loc[df.is_alive]
 
-        return health_values.loc[df.is_alive]   # returns the series
-
-    def on_hsi_alert(self, person_id, treatment_id):
-        """
-        This is called whenever there is an HSI event commissioned by one of the other disease modules.
-        """
-        logger.debug('This is Schisto_Mansoni, being alerted about a health system interaction '
-                     'person %d for: %s', person_id, treatment_id)
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -694,8 +661,6 @@ class SchistoChangeParameterEvent(Event, PopulationScopeEventMixin):
         self.new_value = new_value
 
     def apply(self, population):
-        logger.debug("This is SchistoEvent, changing the parameter", self.param_name, "from value",
-                     self.module.parameters[self.param_name], "to", self.new_value)
         self.module.change_parameter_value(self.param_name, self.new_value)
 
 
@@ -713,50 +678,50 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
         assert isinstance(module, Schisto_Haematobium) or isinstance(module, Schisto_Mansoni)
 
     def apply(self, population):
-        params = self.module.parameters
-        prefix = self.module.prefix
-        logger.debug('This is SchistoEvent, tracking the disease progression of the population.')
-        betas = [params['beta_PSAC'], params['beta_SAC'], params['beta_Adults']]
-        R0 = params['R0']
-
-        df = population.props
-        where = df.is_alive
-        age_group = pd.cut(df.loc[where, 'age_years'], [0, 4, 14, 120], labels=['PSAC', 'SAC', 'Adults'],
-                           include_lowest=True)
-        age_group.name = 'age_group'
-        beta_by_age_group = pd.Series(betas, index=['PSAC', 'SAC', 'Adults'])
-        beta_by_age_group.index.name = 'age_group'
-
-        # get the size of reservoir per district
-        mean_count_burden_district_age_group = df.loc[where].groupby(['district_of_residence', age_group])[
-            f'{prefix}_aggregate_worm_burden'].agg([np.mean, np.size])
-        district_count = df.loc[where].groupby(df.district_of_residence)['district_of_residence'].count()
-        beta_contribution_to_reservoir = mean_count_burden_district_age_group['mean'] * beta_by_age_group
-        to_get_weighted_mean = mean_count_burden_district_age_group['size'] / district_count
-        age_worm_burden = beta_contribution_to_reservoir * to_get_weighted_mean
-        reservoir = age_worm_burden.groupby(['district_of_residence']).sum()
-
-        # harbouring new worms
-        contact_rates = age_group.map(beta_by_age_group)
-        harbouring_rates = df.loc[where, f'{prefix}_harbouring_rate']
-        rates = harbouring_rates * contact_rates
-        worms_total = reservoir * R0
-        draw_worms = pd.Series(self.module.rng.poisson(df.loc[where, 'district_of_residence'].map(worms_total) * rates),
-                               index=df.index[where])
-
-        # density dependent establishment
-        param_worm_fecundity = params['worms_fecundity']
-        established = self.module.rng.random_sample(size=sum(where)) < np.exp(
-            df.loc[where, f'{prefix}_aggregate_worm_burden'] * -param_worm_fecundity
-        )
-        to_establish = pd.DataFrame({'new_worms': draw_worms[(draw_worms > 0) & established]})
-
-        # schedule maturation of the established worms
-        to_establish['date_maturation'] = \
-            self.sim.date + pd.to_timedelta(self.module.rng.randint(30, 55, size=len(to_establish)), unit='D')
-        for index, row in to_establish.iterrows():
-            self.sim.schedule_event(SchistoMatureWorms(self.module, person_id=index,
-                                                       new_worms=row.new_worms), row.date_maturation)
+        pass
+        # params = self.module.parameters
+        # prefix = self.module.prefix
+        # betas = [params['beta_PSAC'], params['beta_SAC'], params['beta_Adults']]
+        # R0 = params['R0']
+        #
+        # df = population.props
+        # where = df.is_alive
+        # age_group = pd.cut(df.loc[where, 'age_years'], [0, 4, 14, 120], labels=['PSAC', 'SAC', 'Adults'],
+        #                    include_lowest=True)
+        # age_group.name = 'age_group'
+        # beta_by_age_group = pd.Series(betas, index=['PSAC', 'SAC', 'Adults'])
+        # beta_by_age_group.index.name = 'age_group'
+        #
+        # # get the size of reservoir per district
+        # mean_count_burden_district_age_group = df.loc[where].groupby(['district_of_residence', age_group])[
+        #     f'{prefix}_aggregate_worm_burden'].agg([np.mean, np.size])
+        # district_count = df.loc[where].groupby(df.district_of_residence)['district_of_residence'].count()
+        # beta_contribution_to_reservoir = mean_count_burden_district_age_group['mean'] * beta_by_age_group
+        # to_get_weighted_mean = mean_count_burden_district_age_group['size'] / district_count
+        # age_worm_burden = beta_contribution_to_reservoir * to_get_weighted_mean
+        # reservoir = age_worm_burden.groupby(['district_of_residence']).sum()
+        #
+        # # harbouring new worms
+        # contact_rates = age_group.map(beta_by_age_group)
+        # harbouring_rates = df.loc[where, f'{prefix}_harbouring_rate']
+        # rates = harbouring_rates * contact_rates
+        # worms_total = reservoir * R0
+        # draw_worms = pd.Series(self.module.rng.poisson(df.loc[where, 'district_of_residence'].map(worms_total) * rates),
+        #                        index=df.index[where])
+        #
+        # # density dependent establishment
+        # param_worm_fecundity = params['worms_fecundity']
+        # established = self.module.rng.random_sample(size=sum(where)) < np.exp(
+        #     df.loc[where, f'{prefix}_aggregate_worm_burden'] * -param_worm_fecundity
+        # )
+        # to_establish = pd.DataFrame({'new_worms': draw_worms[(draw_worms > 0) & established]})
+        #
+        # # schedule maturation of the established worms
+        # to_establish['date_maturation'] = \
+        #     self.sim.date + pd.to_timedelta(self.module.rng.randint(30, 55, size=len(to_establish)), unit='D')
+        # for index, row in to_establish.iterrows():
+        #     self.sim.schedule_event(SchistoMatureWorms(self.module, person_id=index,
+        #                                                new_worms=row.new_worms), row.date_maturation)
 
 
 class SchistoMatureWorms(Event, IndividualScopeEventMixin):
@@ -849,7 +814,7 @@ class SchistoWormsNatDeath(Event, IndividualScopeEventMixin):
                         df.loc[person_id, f'{prefix}_high_inf_days_this_year'] += high_inf_duration
                         df.loc[person_id, f'{prefix}_start_of_high_infection'] = pd.NaT
 
-#TODO: change this to use SYmptomManager and HealthCareSeekingBehaviour
+#TODO: change this to use SymptomManager and HealthCareSeekingBehaviour
 class SchistoDevelopSymptomsEvent(Event, IndividualScopeEventMixin):
     """Development of symptoms upon high intensity infection
     Schedules the HSI_seek_treatment event, provided a True value is drawn from Bernoulli(prob_seek_healthcare)
@@ -904,6 +869,7 @@ class SchistoDevelopSymptomsEvent(Event, IndividualScopeEventMixin):
         if len(symptoms_exp):
             return symptoms_exp
         return np.nan
+
 
 # TODO: Should this be an HSI?
 class SchistoTreatmentEvent(Event, IndividualScopeEventMixin):
@@ -1035,12 +1001,9 @@ class HSI_SchistoSeekTreatment(HSI_Event, IndividualScopeEventMixin):
                     self.sim.modules['HealthSystem'].request_consumables(
                         hsi_event=self, cons_req_as_footprint=the_cons_footprint, to_log=True
                     )
-                    logger.debug('ItemsCode1 is available, so use it.')
                     # patient is cured
                     self.sim.schedule_event(SchistoTreatmentEvent(self.module, person_id), self.sim.date)
-            #     else:
-            #         # print('There was no PZQ available')
-            #         logger.debug('ItemsCode1 is not available, so can' 't use it.')
+
             else:  # person seeked treatment but was not sent to test; visit is reschedulled
                 # schedule another Seeking Treatment event for that person
                 seeking_treatment_ahead_repeated = \
@@ -1057,7 +1020,6 @@ class HSI_SchistoSeekTreatment(HSI_Event, IndividualScopeEventMixin):
                                                                     + DateOffset(weeks=500))
 
     def did_not_run(self):
-        print('HSI event did not run')
         return True
 
 
@@ -1199,9 +1161,8 @@ class SchistoParamFittingLogging(Event, PopulationScopeEventMixin):
         prevalence = all_infected / total_pop
         mwb = df_alive[f'{prefix}_aggregate_worm_burden'].mean()
 
-        log_string = '%s|' + inf_type + '|%s'
-        logger.info(log_string, self.sim.date.date(),
-                    {
+        logger.info(key=f"{inf_type}",
+                    data={
                         'Prevalence': prevalence,
                         'MWB': mwb,
                         'alpha': self.module.alpha,
@@ -1241,9 +1202,8 @@ class SchistoPrevalentDaysLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
             for age_group in ['PSAC', 'SAC', 'Adults', 'All']:
                 count_states = self.count_prev_years_age(prefix, df, age_group)
-                log_string = '%s|' + age_group + '_PrevalentYears' + '|%s'
-                logger.info(log_string, self.sim.date.date(),
-                            {
+                logger.info(key=f"{age_group}_PrevalentYears",
+                            data={
                                 'Prevalent_years_this_year_total': count_states['Prevalent_years_this_year_total'],
                                 'Prevalent_years_per_100': count_states['Prevalent_years_per_100'],
                                 'High_infection_years_this_year_total':
@@ -1298,9 +1258,8 @@ class SchistoLoggingPrevDistrictEvent(Event, PopulationScopeEventMixin):
             inf_type = 'Mansoni'
 
         count_states = self.count_district_states(population, district)
-        log_string = f'%s|{district}_{inf_type}|%s'
-        logger.info(log_string, self.sim.date,
-                    {
+        logger.info(key=f"{district}_{inf_type}",
+                    data={
                         'Non_infected': count_states['Non-infected'],
                         'Low_infections': count_states['Low-infection'],
                         'High_infections': count_states['High-infection'],
@@ -1335,7 +1294,7 @@ class SchistoLoggingPrevDistrictEvent(Event, PopulationScopeEventMixin):
 
     def apply(self, population):
         # districts = population.props.district_of_residence.unique()
-        districts = self.module.parameters['list_of_districts']
+        districts = self.module.districts
         for distr in districts:
             self.create_logger(population, distr)
 
@@ -1356,9 +1315,8 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         else:
             inf_type = 'Mansoni'
         count_states = self.count_age_group_states(population, age_group)
-        log_string = f'%s|{age_group}_{inf_type}|%s'
-        logger.info(log_string, self.sim.date.date(),
-                    {
+        logger.info(key=f"{age_group}_{inf_type}",
+                    data={
                         'Non_infected': count_states['Non-infected'],
                         'Low_infections': count_states['Low-infection'],
                         'High_infections': count_states['High-infection'],
@@ -1374,7 +1332,7 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         :param age_group:
         :return: count_states: a dictionary of counts of individuals in age_group in different states on infection
         """
-        districts = self.module.parameters['list_of_districts']
+        districts = self.module.districts
         df = population.props
         age_range = map_age_groups(age_group)  # returns a tuple
 
@@ -1409,9 +1367,8 @@ class SchistoLoggingTotalEvent(RegularEvent, PopulationScopeEventMixin):
 
     def create_logger(self, population, age_group):
         count_states = self.count_age_group_states(population, age_group)
-        log_string = '%s|' + age_group + '_Total' + '|%s'
-        logger.info(log_string, self.sim.date.date(),
-                    {
+        logger.info(key=f'{age_group}_Total',
+                    data={
                         'Prevalence': count_states['Prevalence'],
                         'High_infections_Prevalence': count_states['High-inf_Prevalence'],
                     })
