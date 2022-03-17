@@ -353,7 +353,7 @@ class HealthSystem(Module):
         self.set_service_availability()
 
         # schedule aggregated HS logger
-        sim.schedule_event(HealthSystemLoggingEvent(self), sim.date + DateOffset(days=364))
+        sim.schedule_event(HealthSystemLoggingEvent(self), sim.date + DateOffset(years=1))
 
     def on_birth(self, mother_id, child_id):
         self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
@@ -1181,8 +1181,8 @@ class HealthSystem(Module):
                     data=log_capacity,
                     description='daily summary of utilisation and capacity of health system resources')
 
-        self.capacity_logs["date"] = self.sim.date.year
-        self.capacity_logs["Frac_Time_Used_Overall"] = fraction_time_used_across_all_facilities
+        self.capacity_logs["date"].append(self.sim.date.year)
+        self.capacity_logs["Frac_Time_Used_Overall"].append(fraction_time_used_across_all_facilities)
 
     def remove_beddays_footprint(self, person_id):
         # removing bed_days from a particular individual if any
@@ -1695,13 +1695,24 @@ class HealthSystemLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # ------------------------------------ SUMMARIES ------------------------------------
         # aggregate data passed to dicts for each year
+
+        # consumables
         cons = self.module.annual_consumables_log
-        assert cons["date"][0] == self.sim.date.year
 
         treatment_counts = Counter(cons["treatment_id"])
         cons_available = Counter(cons["consumables_available"])
         cons_not_available = Counter(cons["consumables_not_available"])
 
+        # HSIs
+        hsi = self.module.annual_hsi_log
+        numbers_treatment_id = Counter(hsi["treatment_id"])
+        numbers_appts = Counter(hsi["actual_appt_footprint"])
+
+        # fraction HCW time used - average over 12 months
+        capacity = self.module.capacity_logs["Frac_Time_Used_Overall"]
+        mean_capacity = sum(capacity) / len(capacity)
+
+        # write to logger
         logger_summary.info(
             key="health_system_annual_logs",
             description="summary of health system demand each year",
@@ -1709,65 +1720,15 @@ class HealthSystemLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 "treatment_counts": treatment_counts,
                 "consumables_available": cons_available,
                 "consumables_not_available": cons_not_available,
+                "hsi_treatment_id": numbers_treatment_id,
+                "numbers_appts": numbers_appts,
+                "capacity": mean_capacity,
             },
         )
-        keys = ["date",
-                "treatment_id",
-                "consumables_available",
-                "consumables_not_available"
-                ]
+
         # re-initialise empty dict with set keys
-        self.annual_consumables_log = {k: [] for k in keys}
+        self.module.annual_consumables_log.update((key, []) for key in self.module.annual_consumables_log)
+        self.module.annual_hsi_log.update((key, []) for key in self.module.annual_hsi_log)
+        self.module.capacity_logs.update((key, []) for key in self.module.capacity_logs)
 
-        # aggregated outputs: hsi
-        keys = ["date",
-                "treatment_id",
-                "actual_appt_footprint",
-                ]
-        # initialise empty dict with set keys
-        self.annual_hsi_log = {k: [] for k in keys}
-        # logger.info
-        # aggregated outputs: fraction HCW time used
-        keys = ["date",
-                "Frac_Time_Used_Overall",
-                ]
-        self.capacity_logs = {k: [] for k in keys}
 
-        # consumables - sum each consumable type by year and available/not available
-        consumables = 10
-        # HSIs
-        HSIs = 10
-        # fraction HCW time used - this is daily, take mean across the year
-        capacity = 10
-
-        logger_summary.info(
-            key="health_system_annual_logs",
-            description="summary of health system usage each year",
-            data={
-                "consumables": consumables,
-                "HSIs": HSIs,
-                "capacity_used": capacity,
-            },
-        )
-
-        # reset the dicts to empty to avoid storing huge amounts of data
-        keys = ["date",
-                "treatment_id",
-                "availability",
-                ]
-        # initialise empty dict with set keys
-        self.annual_consumables_log = {k: [] for k in keys}
-
-        # aggregated outputs: hsi
-        keys = ["date",
-                "treatment_id",
-                "actual_appt_footprint",
-                ]
-        # initialise empty dict with set keys
-        self.annual_hsi_log = {k: [] for k in keys}
-
-        # aggregated outputs: fraction HCW time used
-        keys = ["date",
-                "Frac_Time_Used_Overall",
-                ]
-        self.capacity_logs = {k: [] for k in keys}

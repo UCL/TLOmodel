@@ -33,20 +33,19 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2016, 1, 1)
+end_date = Date(2014, 1, 1)
 popsize = 2000
 
 # set up the log config
 log_config = {
-    "filename": "deviance_calibrated",
+    "filename": "test_runs",
     "directory": outputpath,
     "custom_levels": {
         "*": logging.WARNING,
-        # "tlo.methods.deviance_measure": logging.INFO,
         "tlo.methods.hiv": logging.INFO,
         "tlo.methods.tb": logging.INFO,
         "tlo.methods.demography": logging.INFO,
-        "tlo.methods.healthsystem": logging.INFO,
+        "tlo.methods.healthsystem.summary": logging.INFO,
     },
 }
 
@@ -87,9 +86,9 @@ sim.simulate(end_date=end_date)
 output = parse_log_file(sim.log_filepath)
 
 # save the results, argument 'wb' means write using binary mode. use 'rb' for reading file
-with open(outputpath / "default_run.pickle", "wb") as f:
-    # Pickle the 'data' dictionary using the highest protocol available.
-    pickle.dump(dict(output), f, pickle.HIGHEST_PROTOCOL)
+# with open(outputpath / "default_run.pickle", "wb") as f:
+#     # Pickle the 'data' dictionary using the highest protocol available.
+#     pickle.dump(dict(output), f, pickle.HIGHEST_PROTOCOL)
 
 for key, dfs in output.items():
     if key.startswith("tlo."):
