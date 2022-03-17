@@ -1816,8 +1816,8 @@ class Labour(Module):
         if 'assessment_and_treatment_of_eclampsia' not in params['allowed_interventions']:
             return
 
-        if (df.at[person_id, 'ps_htn_disorders'] == 'eclampsia') or (df.at[person_id, 'pn_htn_disorders'] ==
-                                                                       'eclampsia'):
+        if (df.at[person_id, 'ps_htn_disorders'] == 'eclampsia') or \
+           (df.at[person_id, 'pn_htn_disorders'] == 'eclampsia'):
 
             # Run HCW check
             sf_check = self.check_emonc_signal_function_will_run(sf='anticonvulsant',
