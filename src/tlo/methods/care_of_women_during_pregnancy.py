@@ -2253,7 +2253,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                     logger.debug(key='error', data='FBC result error')
 
                 # If the FBC detected non severe anaemia (Hb >7) she is treated
-                if fbc_result == 'mild' or fbc_result == 'moderate':
+                if fbc_result in ('mild', 'moderate'):
 
                     # Women are started on daily iron and folic acid supplementation (if they are not already receiving
                     # supplements) as treatment for mild/moderate anaemia
@@ -2267,7 +2267,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                     if not mother.ac_receiving_iron_folic_acid:
                         self.module.iron_and_folic_acid_supplementation(self)
 
-                if fbc_result == 'mild' or fbc_result == 'moderate' or fbc_result == 'severe':
+                if fbc_result in ('mild', 'moderate', 'severe'):
                     # Women treated for anaemia will need follow up to ensure the treatment has been effective. Clinical
                     # guidelines suggest follow up one month after treatment
 
@@ -2505,7 +2505,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia(HSI_
             fbc_result = self.module.full_blood_count_testing(self)
 
             # If she is determined to still be anaemic she is admitted for additional treatment via the inpatient event
-            if fbc_result == 'mild' or fbc_result == 'moderate' or fbc_result == 'severe':
+            if fbc_result in ('mild', 'moderate', 'severe'):
 
                 admission = HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
                     self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
