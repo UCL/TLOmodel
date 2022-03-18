@@ -2042,7 +2042,6 @@ class Labour(Module):
                 else:
                     mni[person_id]['referred_for_surgery'] = True
                     mni[person_id]['referred_for_blood'] = True
-                    return True
 
     def assessment_and_treatment_of_pph_retained_placenta(self, hsi_event):
         """
