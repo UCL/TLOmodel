@@ -5,9 +5,9 @@ import numpy as np
 import pandas as pd
 import pytest
 from pandas.tseries.offsets import DateOffset
-from tlo.analysis.utils import parse_log_file
 
 from tlo import Date, Simulation
+from tlo.analysis.utils import parse_log_file
 from tlo.lm import LinearModel, LinearModelType
 from tlo.methods import (
     alri,
@@ -15,8 +15,8 @@ from tlo.methods import (
     care_of_women_during_pregnancy,
     contraception,
     demography,
-    diarrhoea,
     depression,
+    diarrhoea,
     enhanced_lifestyle,
     epi,
     healthburden,
@@ -27,11 +27,11 @@ from tlo.methods import (
     malaria,
     newborn_outcomes,
     postnatal_supervisor,
-    pregnancy_supervisor,
     pregnancy_helper_functions,
+    pregnancy_supervisor,
     stunting,
     symptommanager,
-    wasting
+    wasting,
 )
 
 # The resource files
@@ -544,7 +544,9 @@ def test_abortion_complications(seed):
         health_system = sim.modules['HealthSystem']
         hsi_events = health_system.find_events_for_person(person_id=mother_id)
         hsi_events = [e.__class__ for d, e in hsi_events]
-        from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
+        from tlo.methods.hsi_generic_first_appts import (
+            HSI_GenericEmergencyFirstApptAtFacilityLevel1,
+        )
         assert HSI_GenericEmergencyFirstApptAtFacilityLevel1 in hsi_events
 
         emergency_appt = HSI_GenericEmergencyFirstApptAtFacilityLevel1(person_id=mother_id,
