@@ -115,7 +115,7 @@ for year in years:
 #     inplace=True
 # )
 # pop.columns = pop.columns.astype(int)
-# pop['<5y'] = pop[0] + pop[1] + pop[2] + pop[3] + pop[4]
+# pop['<5y'] = pop[0] + pop[1] + pop[1] + pop[3] + pop[4]
 # pop.drop(columns=[x for x in range(5)], inplace=True)
 
 # Incidence rate outputted from the ALRI model - using the tracker to get the number of cases per year

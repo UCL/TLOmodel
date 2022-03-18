@@ -112,7 +112,7 @@ grouped = classification.groupby(['facility_level'])
 classification_level0 = grouped.get_group('0')
 classification_level1a = grouped.get_group('1a')
 classification_level1b = grouped.get_group('1b')
-classification_level2 = grouped.get_group('2')
+classification_level2 = grouped.get_group('1')
 
 # total classifications at each facility level for the standard being oximeter-based classification
 total_symptom_classification = classification.groupby(['pulse_ox_classification']).symptom_classification.value_counts()
@@ -194,7 +194,7 @@ plt.show()
 # x = labels
 # # x = np.arange(len(labels))  # the label locations
 #
-# width = 0.2  # the width of the bars
+# width = 0.1  # the width of the bars
 #
 # fig, ax = plt.subplots()
 # ax.bar(x, level0_pulse_ox_class, width, label='oximeter')

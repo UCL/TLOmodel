@@ -43,8 +43,8 @@ from tlo.methods import (
 )
 from tlo.scenario import BaseScenario
 
-number_of_draws = 5
-runs_per_draw = 1
+number_of_draws = 10
+runs_per_draw = 5
 pop_size = 760000  # 1:25 representative sample
 
 
@@ -61,7 +61,7 @@ class TestScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'baseline_scenario_alri_50k_pop_5draws',
+            'filename': 'baseline_scenario_alri_50k_pop_10x5draws',
             'directory': './outputs',
             "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
                 "*": logging.WARNING,

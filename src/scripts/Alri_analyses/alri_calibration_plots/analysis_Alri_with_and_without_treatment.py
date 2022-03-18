@@ -99,12 +99,12 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
         drop=True,
         inplace=True
     )
-    counts = counts.drop(columns='5+').rename(columns={'0': '0y', '1': '1y', '2-4': '2-4y'})  # for consistency
+    counts = counts.drop(columns='5+').rename(columns={'0': '0y', '1': '1y', '1-4': '1-4y'})  # for consistency
 
-    # get person-years of 0 year-old, 1 year-olds and 2-4 year-old
+    # get person-years of 0 year-old, 1 year-olds and 1-4 year-old
     py_ = output['tlo.methods.demography']['person_years']
     years = pd.to_datetime(py_['date']).dt.year
-    py = pd.DataFrame(index=years, columns=['0y', '1y', '2-4y'])
+    py = pd.DataFrame(index=years, columns=['0y', '1y', '1-4y'])
     for year in years:
         tot_py = (
             (py_.loc[pd.to_datetime(py_['date']).dt.year == year]['M']).apply(pd.Series) +
@@ -113,18 +113,18 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
         tot_py.index = tot_py.index.astype(int)
         py.loc[year, '0y'] = tot_py.loc[0].values[0]
         py.loc[year, '1y'] = tot_py.loc[1].values[0]
-        py.loc[year, '2-4y'] = tot_py.loc[2:4].sum().values[0]
+        py.loc[year, '1-4y'] = tot_py.loc[2:4].sum().values[0]
 
-    # Incidence rate among 0, 1, 2-4 year-olds
+    # Incidence rate among 0, 1, 1-4 year-olds
     inc_rate = dict()
-    for age_grp in ['0y', '1y', '2-4y']:
+    for age_grp in ['0y', '1y', '1-4y']:
         inc_rate[age_grp] = counts[age_grp].apply(pd.Series).div(py[age_grp], axis=0).dropna()
 
     # Produce mean inicence rates of incidence rate during the simulation:
     inc_mean = pd.DataFrame()
     inc_mean['0y_model_output'] = inc_rate['0y'].mean()
     inc_mean['1y_model_output'] = inc_rate['1y'].mean()
-    inc_mean['2-4y_model_output'] = inc_rate['2-4y'].mean()
+    inc_mean['1-4y_model_output'] = inc_rate['1-4y'].mean()
 
     # calculate death rate
     deaths_df = output['tlo.methods.demography']['death']
