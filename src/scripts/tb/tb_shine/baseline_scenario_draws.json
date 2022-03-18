@@ -1,7 +1,7 @@
 {
   "scenario_script_path": "/Users/leilauwais/PycharmProjects/TLOmodel/src/scripts/tb/tb_shine/baseline_scenario.py",
   "scenario_seed": 5,
-  "runs_per_draw": 5,
+  "runs_per_draw": 3,
   "draws": [
     {
       "draw_number": 0,

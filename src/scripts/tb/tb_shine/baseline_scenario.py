@@ -37,6 +37,7 @@ class TestShorterTreatmentScenario(BaseScenario):
                 'tlo.methods.tb': logging.INFO,
                 'tlo.methods.demography': logging.INFO,
                 'tlo.methods.healthsystem': logging.INFO,
+                'tlo.methods.healthburden': logging.INFO,
             }
         }
 
