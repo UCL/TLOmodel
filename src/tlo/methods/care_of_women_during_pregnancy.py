@@ -696,22 +696,26 @@ class CareOfWomenDuringPregnancy(Module):
         """
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
+        # If both of the interventions have been delivered, return false to prevent the intervention being delivered
+        # again
+        if int_1 and int2 in mni[person_id]['anc_ints']:
+            return False
+
         # If the first intervention hasn't already been given, store within the mni, return True so the intervention is
         # delivered
-        if int_1 not in mni[person_id]['anc_ints']:
+        elif (int_1 not in mni[person_id]['anc_ints']) and (int2 not in mni[person_id]['anc_ints']):
             mni[person_id]['anc_ints'].append(int_1)
             return True
 
         # If the second intervention hasn't already been given, store within the mni, return True so the intervention is
         # delivered
-        if int2 not in mni[person_id]['anc_ints']:
+        elif (int_1 in mni[person_id]['anc_ints']) and int2 not in mni[person_id]['anc_ints']:
             mni[person_id]['anc_ints'].append(int2)
             return True
 
-        # If both of the interventions have been delivered, return false to prevent the intervention being delivered
-        # again
-        if int_1 and int2 in mni[person_id]['anc_ints']:
-            return False
+        else:
+            # If no conditions are met return true to prevent interventions not running
+            return True
 
     def screening_interventions_delivered_at_every_contact(self, hsi_event):
         """
