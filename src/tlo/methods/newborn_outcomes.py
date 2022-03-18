@@ -1124,12 +1124,8 @@ class NewbornOutcomes(Module):
             return
 
         self.sim.modules['Labour'].further_on_birth_labour(mother_id)
-
-        # We check that the baby has survived labour and has been delivered (even if the mother did not survive)
-        if (df.at[mother_id, 'is_alive'] and not df.at[mother_id, 'la_intrapartum_still_birth']) or \
-           (not df.at[mother_id, 'is_alive'] and not df.at[mother_id, 'la_intrapartum_still_birth']):
-            mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-            m = mni[mother_id]
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+        m = mni[mother_id]
 
         # For twins, each baby has the 'twin_count' variable updated to ensure certain processes are/are not repeated
         # for each birth
