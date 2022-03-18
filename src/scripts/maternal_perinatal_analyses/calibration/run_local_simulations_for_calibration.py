@@ -1,21 +1,27 @@
 
 from pathlib import Path
-import pandas as pd
+
 import numpy as np
+import pandas as pd
+
 from tlo import Date, Simulation, logging
-from tlo.methods.labour import LabourOnsetEvent
 from tlo.methods import (
+    cardio_metabolic_disorders,
     care_of_women_during_pregnancy,
     contraception,
     demography,
+    depression,
     enhanced_lifestyle,
     healthsystem,
+    hiv,
     labour,
+    malaria,
     newborn_outcomes,
     postnatal_supervisor,
     pregnancy_supervisor,
-    symptommanager, malaria, hiv, cardio_metabolic_disorders, depression,
+    symptommanager,
 )
+from tlo.methods.labour import LabourOnsetEvent
 
 resourcefilepath = Path("./resources")
 

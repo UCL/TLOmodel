@@ -2290,9 +2290,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
 
             # We then schedule GestationalDiabetesGlycaemicControlEvent which determines if this treatment will be
             # effective in controlling this womans blood sugar prior to her next check up
-            from tlo.methods.pregnancy_supervisor import (
-                GestationalDiabetesGlycaemicControlEvent,
-            )
+            from tlo.methods.pregnancy_supervisor import GestationalDiabetesGlycaemicControlEvent
             self.sim.schedule_event(GestationalDiabetesGlycaemicControlEvent(
                 self.sim.modules['PregnancySupervisor'], person_id), self.sim.date + DateOffset(days=7))
 

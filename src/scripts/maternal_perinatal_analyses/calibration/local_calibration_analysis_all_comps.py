@@ -1,6 +1,6 @@
 
-from tlo.analysis.utils import parse_log_file
 from scripts.maternal_perinatal_analyses.calibration import graph_maker_for_local_calibration
+from tlo.analysis.utils import parse_log_file
 
 antenatal_comps = ['spontaneous_abortion', 'induced_abortion', 'spontaneous_abortion_haemorrhage',
                    'induced_abortion_haemorrhage', 'spontaneous_abortion_sepsis', 'spontaneous_abortion_other_comp',

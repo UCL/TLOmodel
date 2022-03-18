@@ -4,10 +4,7 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
-from tlo.analysis.utils import (
-    extract_results,
-    get_scenario_outputs,
-)
+from tlo.analysis.utils import extract_results, get_scenario_outputs
 
 # %% Declare the name of the file that specified the scenarios used in this run.
 scenario_filename = 'standard_mph_calibration.py'  # <-- update this to look at other results

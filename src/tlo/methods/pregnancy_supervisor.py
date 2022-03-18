@@ -1537,7 +1537,9 @@ class PregnancySupervisor(Module):
 
             # We assume women will seek care via HSI_GenericEmergencyFirstApptAtFacilityLevel1 and will be admitted for
             # care in CareOfWomenDuringPregnancy module
-            from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
+            from tlo.methods.hsi_generic_first_appts import (
+                HSI_GenericEmergencyFirstApptAtFacilityLevel1,
+            )
 
             event = HSI_GenericEmergencyFirstApptAtFacilityLevel1(self.sim.modules['PregnancySupervisor'],
                                                                   person_id=individual_id)

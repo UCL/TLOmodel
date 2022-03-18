@@ -1,12 +1,11 @@
 from pathlib import Path
+
 import pandas as pd
 from matplotlib import pyplot as plt
 
-from tlo.analysis.utils import (
-    extract_results,
-    get_scenario_outputs, load_pickled_dataframes
-)
 from scripts.maternal_perinatal_analyses import analysis_utility_functions
+from tlo.analysis.utils import extract_results, get_scenario_outputs, load_pickled_dataframes
+
 # from tlo.methods.demography import get_scaling_factor
 
 

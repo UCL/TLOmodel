@@ -1,11 +1,12 @@
-import pandas as pd
-import numpy as np
-
 from pathlib import Path
-from tlo.analysis.utils import parse_log_file
+
+import numpy as np
+import pandas as pd
 
 from tlo import Date, Simulation, logging
+from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
+    cardio_metabolic_disorders,
     care_of_women_during_pregnancy,
     contraception,
     demography,
@@ -21,7 +22,6 @@ from tlo.methods import (
     postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
-    cardio_metabolic_disorders
 )
 
 seed = 7844

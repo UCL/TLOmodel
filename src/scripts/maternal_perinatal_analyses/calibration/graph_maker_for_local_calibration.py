@@ -1,6 +1,6 @@
-from matplotlib import pyplot as plt
 import numpy as np
 import pandas as pd
+from matplotlib import pyplot as plt
 
 
 def get_incidence(logs_dict_file, module, complication, dictionary, specific_year, year, age_group):
