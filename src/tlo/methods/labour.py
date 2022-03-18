@@ -773,9 +773,6 @@ class Labour(Module):
                                      'Gauze, absorbent 90cm x 40m_each_CMST',
                                      'Needle suture intestinal round bodied Â½ circle trocar_6_CMST'])
 
-        # -------------------------------------  OBSTETRIC FORCEPS  ---------------------------------------------------
-        self.item_codes_lab_consumables['forceps'] = get_list_of_items(self, ['Forceps, obstetric'])
-
         # -------------------------------------  OBSTETRIC VACUUM   ---------------------------------------------------
         self.item_codes_lab_consumables['vacuum'] = get_list_of_items(self, ['Vacuum, obstetric'])
 
@@ -1854,7 +1851,6 @@ class Labour(Module):
         if df.at[person_id, 'la_obstructed_labour'] or for_spe:
             # Define the consumables...
             hsi_event.get_consumables(item_codes=cons['obstructed_labour'])
-            avail_forceps = hsi_event.get_consumables(item_codes=cons['forceps'])
             avail_vacuum = hsi_event.get_consumables(item_codes=cons['vacuum'])
 
             # run HCW check
@@ -1865,7 +1861,7 @@ class Labour(Module):
             if not mni[person_id]['cpd']:
                 # If the general package is available AND the facility has the correct tools to carry out the
                 # delivery then it can occur
-                if (avail_forceps or avail_vacuum) and sf_check:
+                if avail_vacuum and sf_check:
 
                     # If AVD was successful then we record the mode of delivery. We use this variable to reduce
                     # risk of intrapartum still birth when applying risk in the death event
