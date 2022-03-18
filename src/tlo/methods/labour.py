@@ -665,9 +665,8 @@ class Labour(Module):
 
         # ---------------------------------- BLOOD TEST EQUIPMENT ---------------------------------------------------
         self.item_codes_lab_consumables['blood_test_equipment'] =\
-            get_list_of_items(self, ['Blood collecting tube, 5 ml',
-                                     'Syringe, needle + swab',
-                                     'Disposables gloves, powder free, 100 pieces per box'])
+            get_list_of_items(self, ['Disposables gloves, powder free, 100 pieces per box'])
+        # todo: remove entirely
 
         # -------------------------------------------- DELIVERY ------------------------------------------------------
         # assuming CDK has blade, soap, cord tie
@@ -749,8 +748,6 @@ class Labour(Module):
                                      'Disposables gloves, powder free, 100 pieces per box',
                                      'Oxygen, 1000 liters, primarily with oxygen cylinders',
                                      'Complete blood count',
-                                     'Blood collecting tube, 5 ml',
-                                     'Syringe, needle + swab',
                                      'Foley catheter',
                                      'Bag, urine, collecting, 2000 ml'])
 
@@ -764,8 +761,6 @@ class Labour(Module):
                                      'Giving set iv administration + needle 15 drops/ml_each_CMST',
                                      'Disposables gloves, powder free, 100 pieces per box',
                                      'Complete blood count',
-                                     'Blood collecting tube, 5 ml',
-                                     'Syringe, needle + swab',
                                      'Foley catheter',
                                      'Bag, urine, collecting, 2000 ml',
                                      'Paracetamol, tablet, 500 mg',
@@ -790,11 +785,8 @@ class Labour(Module):
                                      'Giving set iv administration + needle 15 drops/ml_each_CMST',
                                      'Foley catheter',
                                      'Bag, urine, collecting, 2000 ml',
-                                     'Syringe, needle + swab',
                                      'Disposables gloves, powder free, 100 pieces per box',
-                                     'Complete blood count',
-                                     'Blood collecting tube, 5 ml',
-                                     'Syringe, needle + swab'])
+                                     'Complete blood count'])
 
         # -------------------------------------  ACTIVE MANAGEMENT THIRD STAGE  ---------------------------------------
         self.item_codes_lab_consumables['amtsl'] = \
@@ -813,11 +805,8 @@ class Labour(Module):
                                      'Bag, urine, collecting, 2000 ml',
                                      'Foley catheter',
                                      'Giving set iv administration + needle 15 drops/ml_each_CMST',
-                                     'Syringe, needle + swab',
                                      'Disposables gloves, powder free, 100 pieces per box',
-                                     'Complete blood count',
-                                     'Blood collecting tube, 5 ml',
-                                     'Syringe, needle + swab'])
+                                     'Complete blood count'])
 
         # -------------------------------------  BLOOD TRANSFUSION  ---------------------------------------
         self.item_codes_lab_consumables['blood_transfusion'] = get_list_of_items(self, ['Blood, one unit'])

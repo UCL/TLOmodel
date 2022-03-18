@@ -206,9 +206,8 @@ class CareOfWomenDuringPregnancy(Module):
 
         # ---------------------------------- BLOOD TEST EQUIPMENT ---------------------------------------------------
         self.item_codes_preg_consumables['blood_test_equipment'] = \
-            get_list_of_items(self, ['Blood collecting tube, 5 ml',
-                                     'Syringe, needle + swab',
-                                     'Disposables gloves, powder free, 100 pieces per box'])
+            get_list_of_items(self, ['Disposables gloves, powder free, 100 pieces per box'])
+        # todo: remove entirely?
 
         # ---------------------------------- IV DRUG ADMIN EQUIPMENT  -------------------------------------------------
         self.item_codes_preg_consumables['iv_drug_equipment'] = \
@@ -226,7 +225,6 @@ class CareOfWomenDuringPregnancy(Module):
             get_list_of_items(self, ['Sodium chloride, injectable solution, 0,9 %, 500 ml',
                                      'Paracetamol, tablet, 500 mg',
                                      'Pethidine, 50 mg/ml, 2 ml ampoule',
-                                     'Syringe, needle + swab',
                                      'Needle suture intestinal round bodied Â½ circle trocar_6_CMST',
                                      'Gauze, absorbent 90cm x 40m_each_CMST',
                                      'Cannula iv (winged with injection pot) 18_each_CMST'])
@@ -239,7 +237,6 @@ class CareOfWomenDuringPregnancy(Module):
         self.item_codes_preg_consumables['post_abortion_care_optional'] = \
             get_list_of_items(self, ['Complete blood count',
                                      'Blood collecting tube, 5 ml',
-                                     'Syringe, needle + swab',
                                      'Disposables gloves, powder free, 100 pieces per box',
                                      'Paracetamol, tablet, 500 mg',
                                      'Pethidine, 50 mg/ml, 2 ml ampoule'])
@@ -336,7 +333,6 @@ class CareOfWomenDuringPregnancy(Module):
                    'Oxygen, 1000 liters, primarily with oxygen cylinders',
                    'Complete blood count',
                    'Blood collecting tube, 5 ml',
-                   'Syringe, needle + swab',
                    'Foley catheter',
                    'Bag, urine, collecting, 2000 ml'])
 
