@@ -1,6 +1,12 @@
-"""This file contains the HSI events that represent the first contact with the Health System, which are triggered by
+"""
+The file contains the event HSI_GenericFirstApptAtFacilityLevel1, which describes the first interaction with
+the health system following the onset of acute generic symptoms.
+
+This file contains the HSI events that represent the first contact with the Health System, which are triggered by
 the onset of symptoms. Non-emergency symptoms lead to `HSI_GenericFirstApptAtFacilityLevel0` and emergency symptoms
- lead to `HSI_GenericEmergencyFirstApptAtFacilityLevel1`. """
+lead to `HSI_GenericEmergencyFirstApptAtFacilityLevel1`.
+"""
+import pandas as pd
 
 from tlo import logging
 from tlo.events import IndividualScopeEventMixin
@@ -18,10 +24,7 @@ from tlo.methods.care_of_women_during_pregnancy import (
 from tlo.methods.chronicsyndrome import HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
-from tlo.methods.labour import (
-    HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour,
-    HSI_Labour_ReceivesSkilledBirthAttendanceFollowingLabour,
-)
+from tlo.methods.labour import HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour
 from tlo.methods.malaria import (
     HSI_Malaria_complicated_treatment_adult,
     HSI_Malaria_complicated_treatment_child,
@@ -323,20 +326,19 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
         if df.at[person_id, 'ps_ectopic_pregnancy'] != 'none':
             event = HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(
                 module=sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
-            schedule_hsi(event, priority=1, topen=sim.date)
+            schedule_hsi(event, priority=0, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1))
 
         # -----  COMPLICATIONS OF ABORTION  -----
         abortion_complications = sim.modules['PregnancySupervisor'].abortion_complications
         if abortion_complications.has_any([person_id], 'sepsis', 'injury', 'haemorrhage', first=True):
             event = HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(
                 module=sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
-            schedule_hsi(event, priority=1, topen=sim.date)
+            schedule_hsi(event, priority=0, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1))
 
     if 'Labour' in sim.modules:
         mni = sim.modules['PregnancySupervisor'].mother_and_newborn_info
         labour_list = sim.modules['Labour'].women_in_labour
 
-        # -----  COMPLICATION DURING BIRTH  -----
         if person_id in labour_list:
             la_currently_in_labour = df.at[person_id, 'la_currently_in_labour']
             if (
@@ -347,18 +349,7 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
                 event = HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(
                     module=sim.modules['Labour'], person_id=person_id,
                     facility_level_of_this_hsi=rng.choice(['1a', '1b']))
-                schedule_hsi(event, priority=1, topen=sim.date)
-
-            # -----  COMPLICATION AFTER BIRTH  -----
-            if (
-                la_currently_in_labour &
-                mni[person_id]['sought_care_for_complication'] &
-                (mni[person_id]['sought_care_labour_phase'] == 'postpartum')
-            ):
-                event = HSI_Labour_ReceivesSkilledBirthAttendanceFollowingLabour(
-                    module=sim.modules['Labour'], person_id=person_id,
-                    facility_level_of_this_hsi=rng.choice(['1a', '1b']))
-                schedule_hsi(event, priority=1, topen=sim.date)
+                schedule_hsi(event, priority=0, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1))
 
     if "Depression" in sim.modules:
         if 'Injuries_From_Self_Harm' in symptoms:
