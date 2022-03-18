@@ -414,8 +414,8 @@ class NewbornOutcomes(Module):
 
         # ---------------------------------- IV DRUG ADMIN EQUIPMENT  -------------------------------------------------
         self.item_codes_nb_consumables['iv_drug_equipment'] = \
-            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 20_each_CMST',
-                                     'IV giving/infusion set, with needle',
+            get_list_of_items(self, ['Cannula iv (winged with injection pot) 18_each_CMST',
+                                     'Giving set iv administration + needle 15 drops/ml_each_CMST',
                                      'Gloves, exam, latex, disposable, pair'])
 
         # ---------------------------------- BLOOD TEST EQUIPMENT ---------------------------------------------------
@@ -429,7 +429,8 @@ class NewbornOutcomes(Module):
             get_list_of_items(self, ['vitamin K1  (phytomenadione) 1 mg/ml, 1 ml, inj._100_IDA'])
 
         # -------------------------------------------- EYE CARE  ------------------------------------------
-        self.item_codes_nb_consumables['eye_care'] = get_list_of_items(self, ['Tetracycline eye ointment 1%_3.5_CMST'])
+        self.item_codes_nb_consumables['eye_care'] = get_list_of_items(
+            self, ['Tetracycline eye ointment, 1 %, tube 5 mg'])
 
         # -------------------------------------------- RESUSCITATION ------------------------------------------
         self.item_codes_nb_consumables['resuscitation'] = \

@@ -659,15 +659,15 @@ class Labour(Module):
 
         # ---------------------------------- IV DRUG ADMIN EQUIPMENT  -------------------------------------------------
         self.item_codes_lab_consumables['iv_drug_equipment'] = \
-            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 20_each_CMST',
-                                     'IV giving/infusion set, with needle',
-                                     'Gloves, exam, latex, disposable, pair'])
+            get_list_of_items(self, ['Cannula iv (winged with injection pot) 18_each_CMST',
+                                     'Giving set iv administration + needle 15 drops/ml_each_CMST',
+                                     'Disposables gloves, powder free, 100 pieces per box'])
 
         # ---------------------------------- BLOOD TEST EQUIPMENT ---------------------------------------------------
         self.item_codes_lab_consumables['blood_test_equipment'] =\
             get_list_of_items(self, ['Blood collecting tube, 5 ml',
                                      'Syringe, needle + swab',
-                                     'Gloves, exam, latex, disposable, pair'])
+                                     'Disposables gloves, powder free, 100 pieces per box'])
 
         # -------------------------------------------- DELIVERY ------------------------------------------------------
         # assuming CDK has blade, soap, cord tie
@@ -676,13 +676,10 @@ class Labour(Module):
                                      'Chlorhexidine 1.5% solution_5_CMST'])
 
         self.item_codes_lab_consumables['delivery_optional'] = \
-            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 20_each_CMST',
-                                     'Apron, disposable, polythene_100_CMST',
-                                     'Gloves, exam, latex, disposable, pair',
-                                     'Gauze, swabs 8-ply 10cm x 10cm_100_CMST',
-                                     'Gauze pad, 10 x 10 cm, sterile',
-                                     'Cotton swab',
-                                     'Paracetamol 500mg_1000_CMST'])
+            get_list_of_items(self, ['Cannula iv (winged with injection pot) 18_each_CMST',
+                                     'Disposables gloves, powder free, 100 pieces per box',
+                                     'Gauze, absorbent 90cm x 40m_each_CMST',
+                                     'Paracetamol, tablet, 500 mg'])
 
         # -------------------------------------------- CAESAREAN DELIVERY ------------------------------------------
         # TODO: this package is incomplete?
@@ -693,13 +690,13 @@ class Labour(Module):
                                      'Metronidazole 200mg_1000_CMST'])
 
         self.item_codes_lab_consumables['caesarean_delivery_optional'] =\
-            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 20_each_CMST',
-                                     'Paracetamol 500mg _1000_CMST',
+            get_list_of_items(self, ['Cannula iv (winged with injection pot) 18_each_CMST',
+                                     'Paracetamol, tablet, 500 mg',
                                      'Declofenac injection_each_CMST',
                                      'Pethidine, 50 mg/ml, 2 ml ampoule',
                                      'Foley catheter',
                                      'Bag, urine, collecting, 2000 ml',
-                                     "Sodium lactate injection (Ringer's), 500 ml, with giving set",
+                                     "ringer's lactate (Hartmann's solution), 1000 ml_12_IDA",
                                      'Sodium chloride, injectable solution, 0,9 %, 500 ml',
                                      "Giving set iv administration + needle 15 drops/ml_each_CMST",
                                      "Chlorhexidine 1.5% solution_5_CMST"])
@@ -712,8 +709,8 @@ class Labour(Module):
                                      'Metronidazole 200mg_1000_CMST'])
 
         self.item_codes_lab_consumables['obstetric_surgery_optional'] = \
-            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 20_each_CMST',
-                                     'Paracetamol 500mg _1000_CMST',
+            get_list_of_items(self, ['Cannula iv (winged with injection pot) 18_each_CMST',
+                                     'Paracetamol, tablet, 500 mg',
                                      'Declofenac injection_each_CMST',
                                      'Pethidine, 50 mg/ml, 2 ml ampoule',
                                      'Foley catheter',
@@ -747,9 +744,9 @@ class Labour(Module):
             get_list_of_items(self, ['Misoprostol, tablet, 200 mcg',
                                      'Oxytocin, injection, 10 IU in 1 ml ampoule',
                                      'Sodium chloride, injectable solution, 0,9 %, 500 ml',
-                                     'Cannula iv  (winged with injection pot) 20_each_CMST',
-                                     'IV giving/infusion set, with needle',
-                                     'Gloves, exam, latex, disposable, pair',
+                                     'Cannula iv (winged with injection pot) 18_each_CMST',
+                                     'Giving set iv administration + needle 15 drops/ml_each_CMST',
+                                     'Disposables gloves, powder free, 100 pieces per box',
                                      'Oxygen, 1000 liters, primarily with oxygen cylinders',
                                      'Complete blood count',
                                      'Blood collecting tube, 5 ml',
@@ -763,18 +760,18 @@ class Labour(Module):
                                      'Ampicillin, powder for injection, 500 mg, vial',
                                      'Gentamycin, injection, 40 mg/ml in 2 ml vial',
                                      'Sodium chloride, injectable solution, 0,9 %, 500 ml',
-                                     'Cannula iv  (winged with injection pot) 20_each_CMST',
-                                     'IV giving/infusion set, with needle',
-                                     'Gloves, exam, latex, disposable, pair',
+                                     'Cannula iv (winged with injection pot) 18_each_CMST',
+                                     'Giving set iv administration + needle 15 drops/ml_each_CMST',
+                                     'Disposables gloves, powder free, 100 pieces per box',
                                      'Complete blood count',
                                      'Blood collecting tube, 5 ml',
                                      'Syringe, needle + swab',
                                      'Foley catheter',
                                      'Bag, urine, collecting, 2000 ml',
-                                     'Paracetamol 500mg _1000_CMST',
+                                     'Paracetamol, tablet, 500 mg',
                                      'Pethidine, 50 mg/ml, 2 ml ampoule',
-                                     'Gauze, swabs 8-ply 10cm x 10cm_100_CMST',
-                                     'Suture pack'])
+                                     'Gauze, absorbent 90cm x 40m_each_CMST',
+                                     'Needle suture intestinal round bodied Â½ circle trocar_6_CMST'])
 
         # -------------------------------------  OBSTETRIC FORCEPS  ---------------------------------------------------
         self.item_codes_lab_consumables['forceps'] = get_list_of_items(self, ['Forceps, obstetric'])
@@ -797,7 +794,7 @@ class Labour(Module):
                                      'Foley catheter',
                                      'Bag, urine, collecting, 2000 ml',
                                      'Syringe, needle + swab',
-                                     'Gloves, exam, latex, disposable, pair',
+                                     'Disposables gloves, powder free, 100 pieces per box',
                                      'Complete blood count',
                                      'Blood collecting tube, 5 ml',
                                      'Syringe, needle + swab'])
@@ -820,7 +817,7 @@ class Labour(Module):
                                      'Foley catheter',
                                      'Giving set iv administration + needle 15 drops/ml_each_CMST',
                                      'Syringe, needle + swab',
-                                     'Gloves, exam, latex, disposable, pair',
+                                     'Disposables gloves, powder free, 100 pieces per box',
                                      'Complete blood count',
                                      'Blood collecting tube, 5 ml',
                                      'Syringe, needle + swab'])
