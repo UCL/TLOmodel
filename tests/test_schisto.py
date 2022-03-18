@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from tlo import Date, Simulation
-from tlo.methods import demography, healthburden, healthsystem, schisto, simplified_births
+from tlo.methods import demography, healthburden, healthsystem, schisto, simplified_births, symptommanager
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2011, 1, 1)
@@ -15,17 +15,18 @@ popsize = 10_000
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
 # todo - healthcare seeking?
-# make one class to declare when want both to be used.
+# make one class to declare when want both to be used - done
 # symtom manager and hSI
 # switches to log or not
 # use consumables
 # test with HSI and symptoms on
-
+# check dtypes (and that columns are addressed with right ss_sm/ ss_sh prefix)
 
 
 def simulation_both(seed):
     sim = Simulation(start_date=start_date, seed=seed)
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),

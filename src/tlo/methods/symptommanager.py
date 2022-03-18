@@ -188,6 +188,7 @@ class SymptomManager(Module):
 
         self.all_registered_symptoms = set()
         self.symptom_names = set()
+        self.modules_that_can_impose_symptoms = set()
 
         self.recognised_module_names = None
         self.spurious_symptom_resolve_event = None
@@ -206,7 +207,6 @@ class SymptomManager(Module):
         Stores the symptom classes that are passed. Registration must be done before 'pre-initialise population' is
         called.
         The disease module associated with each symptom is also stored.
-        :disease_module: the disease module that is registering a particular symptom
         :param symptoms_to_register: instance(s) of class Symptom
         :return:
         """
@@ -261,13 +261,13 @@ class SymptomManager(Module):
         self.recognised_module_names = [
             m.name for m in self.sim.modules.values() if Metadata.USES_SYMPTOMMANAGER in m.METADATA
         ]
-        modules_that_can_impose_symptoms = [self.name] + self.recognised_module_names
+        self.modules_that_can_impose_symptoms = [self.name] + self.recognised_module_names
 
         # Establish the BitSetHandler for the symptoms
         self.bsh = BitsetHandler(
             population=self.sim.population,
             column=None,
-            elements=modules_that_can_impose_symptoms
+            elements=self.modules_that_can_impose_symptoms
         )
         # NB. Bitset handler will establish such that everyone has no symptoms. i.e. can check below:
         # symptom_col_names = [self.get_column_name_for_symptom(s) for s in self.symptom_names]
@@ -435,7 +435,7 @@ class SymptomManager(Module):
             )
         ]
 
-    def has_what(self, person_id, disease_module=None):
+    def has_what(self, person_id, disease_module: Module =None):
         """
         This is a helper function that will give a list of strings for the symptoms that a _single_ person
         is currently experiencing.
@@ -510,6 +510,21 @@ class SymptomManager(Module):
         )
         sy_columns = [self.get_column_name_for_symptom(sym) for sym in self.symptom_names]
         self.bsh.unset(person_id, disease_module.name, columns=sy_columns)
+
+    def caused_by(self, disease_module: Module):
+        """Find the persons experiencing symptoms due to a particular module.
+        Returns a dict of the form {<<person_id>>, <<list_of_symptoms>>}."""
+        # todo find a faster form using bsh.get directly.
+        df = self.sim.population.props
+        alive_persons_idx = df.index[df.is_alive]
+
+        symptoms_for_each_person = dict()
+        for idx in alive_persons_idx:
+            _has_what = self.has_what(person_id=idx, disease_module=disease_module)
+            if _has_what:
+                symptoms_for_each_person[idx] = _has_what
+
+        return symptoms_for_each_person
 
     def get_persons_with_newly_onset_symptoms(self):
         return self.persons_with_newly_onset_symptoms
