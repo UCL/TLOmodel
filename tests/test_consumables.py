@@ -1,5 +1,6 @@
 import datetime
 import os
+from collections import namedtuple
 from pathlib import Path
 
 import numpy
@@ -24,6 +25,7 @@ resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
 mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "ResourceFile_Master_Facilities_List.csv")
 fac_ids = set(mfl.loc[mfl.Facility_Level != '5'].Facility_ID)
+facility_info_0 = namedtuple('FacilityInfo', ['id'])(0)
 
 
 def find_level_of_facility_id(facility_id: int) -> str:
@@ -56,7 +58,7 @@ def test_using_recognised_item_codes():
     # Make requests for consumables (which would normally come from an instance of `HSI_Event`).
     rtn = cons._request_consumables(
         item_codes={0: 1, 1: 1},
-        facility_id=0
+        facility_info=facility_info_0
     )
 
     assert {0: False, 1: True} == rtn
@@ -83,7 +85,7 @@ def test_unrecognised_item_code_is_recorded():
     # Make requests for consumables (which would normally come from an instance of `HSI_Event`).
     rtn = cons._request_consumables(
         item_codes={99: 1},
-        facility_id=0
+        facility_info=facility_info_0
     )
 
     assert isinstance(rtn[99], bool)
@@ -122,7 +124,7 @@ def test_consumables_availability_options():
         cons.processing_at_start_of_new_day(date=date)
 
         assert _expected_result == cons._request_consumables(
-            item_codes={_item_code: 1 for _item_code in all_items_request}, to_log=False, facility_id=0
+            item_codes={_item_code: 1 for _item_code in all_items_request}, to_log=False, facility_info=facility_info_0
         )
 
 
@@ -152,7 +154,7 @@ def test_consumables_available_at_right_frequency():
         cons.processing_at_start_of_new_day(date=date)
         rtn = cons._request_consumables(
             item_codes=requested_items,
-            facility_id=0,
+            facility_info=facility_info_0,
         )
         for _i in requested_items:
             counter[_i] += (1 if (rtn[_i]) else 0)
@@ -219,15 +221,15 @@ def get_dummy_hsi_event_instance(module, facility_id=None):
     """Make an HSI Event that runs for person_id=0 in a particular facility_id and requests consumables,
     and for which its parent is the identified module."""
 
+    _facility_level = find_level_of_facility_id(facility_id)
+
     class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
         def __init__(self, module, person_id):
             super().__init__(module, person_id=person_id)
             self.TREATMENT_ID = 'Dummy'
-            self.ACCEPTED_FACILITY_LEVEL = find_level_of_facility_id(facility_id)
+            self.ACCEPTED_FACILITY_LEVEL = _facility_level
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ConWithDCSA': 1}) \
                 if self.ACCEPTED_FACILITY_LEVEL == '0' else self.make_appt_footprint({'Over5OPD': 1})
-
-            self.ALERT_OTHER_DISEASES = []
             self._facility_id = facility_id
 
         def apply(self, person_id, squeeze_factor):
@@ -238,7 +240,10 @@ def get_dummy_hsi_event_instance(module, facility_id=None):
                 return_individual_results=False
             )
 
-    return HSI_Dummy(module=module, person_id=0)
+    hsi_dummy = HSI_Dummy(module=module, person_id=0)
+    hsi_dummy.initialise()
+    hsi_dummy.facility_info = module.sim.modules['HealthSystem']._facility_by_facility_id[facility_id]
+    return hsi_dummy
 
 
 def test_use_get_consumables_by_hsi_method_get_consumables():
