@@ -16,8 +16,9 @@ tlo batch-submit src/scripts/hiv/hiv_tb_projections/scenario2.py
 Display information about a job:
 tlo batch-job tlo_q1_demo-123 --tasks
 
-21st Feb
-Job ID: scenario2-2022-03-07T185547Z
+21st March
+Job ID: scenario2-2022-03-21T150125Z
+
 
 Download result files for a completed job:
 tlo batch-download scenario2-2022-03-07T185547Z
