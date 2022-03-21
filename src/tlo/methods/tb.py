@@ -2700,9 +2700,21 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[(df.tb_date_active >= (now - DateOffset(months=self.repeat)))]
         )
 
+        # number of new active cases (0 - 16 years)
+        new_tb_cases_child = len(
+            df[(df.tb_date_active >= (now - DateOffset(months=self.repeat)))
+               & (df.age_years <= 16)]
+        )
+
         # number of latent cases
         new_latent_cases = len(
             df[(df.tb_date_latent >= (now - DateOffset(months=self.repeat)))]
+        )
+
+        # number of latent cases (0 - 16 years)
+        new_latent_cases_child = len(
+            df[(df.tb_date_latent >= (now - DateOffset(months=self.repeat)))
+               & (df.age_years <= 16)]
         )
 
         # number of new active cases in HIV+
@@ -2713,17 +2725,33 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 ]
         )
 
+        # number of new active cases in HIV+ children
+        inc_active_hiv_child = len(
+            df[
+                (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
+                & df.hv_inf
+                & (df.age_years <= 16)
+                ]
+        )
+
         # proportion of active TB cases in the last year who are HIV-positive
         prop_hiv = inc_active_hiv / new_tb_cases if new_tb_cases else 0
+
+        # proportion of active TB cases in the last year who are HIV-positive and aged < 16 years
+        prop_hiv_child = inc_active_hiv_child / new_tb_cases_child if new_tb_cases_child else 0
 
         logger.info(
             key="tb_incidence",
             description="Number new active and latent TB cases, total and in PLHIV",
             data={
                 "num_new_active_tb": new_tb_cases,
+                "num_new_active_tb_child": new_tb_cases_child,
                 "num_new_latent_tb": new_latent_cases,
+                "num_new_latent_tb_child": new_latent_cases_child,
                 "num_new_active_tb_in_hiv": inc_active_hiv,
+                "num_new_active_tb_in_hiv_child": inc_active_hiv_child,
                 "prop_active_tb_in_plhiv": prop_hiv,
+                "prop_active_tb_in_plhiv_child": prop_hiv_child,
             },
         )
 
@@ -2742,19 +2770,19 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # prevalence of active TB in adults
         num_active_adult = len(
-            df[(df.tb_inf == "active") & (df.age_years >= 15) & df.is_alive]
+            df[(df.tb_inf == "active") & (df.age_years >= 16) & df.is_alive]
         )
         prev_active_adult = num_active_adult / len(
-            df[(df.age_years >= 15) & df.is_alive]
+            df[(df.age_years >= 16) & df.is_alive]
         )
         assert prev_active_adult <= 1
 
         # prevalence of active TB in children
         num_active_child = len(
-            df[(df.tb_inf == "active") & (df.age_years < 15) & df.is_alive]
+            df[(df.tb_inf == "active") & (df.age_years < 16) & df.is_alive]
         )
         prev_active_child = num_active_child / len(
-            df[(df.age_years < 15) & df.is_alive]
+            df[(df.age_years < 16) & df.is_alive]
         )
         assert prev_active_child <= 1
 
@@ -2766,19 +2794,19 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # proportion of population with latent TB - adults
         num_latent_adult = len(
-            df[(df.tb_inf == "latent") & (df.age_years >= 15) & df.is_alive]
+            df[(df.tb_inf == "latent") & (df.age_years >= 16) & df.is_alive]
         )
         prev_latent_adult = num_latent_adult / len(
-            df[(df.age_years >= 15) & df.is_alive]
+            df[(df.age_years >= 16) & df.is_alive]
         )
         assert prev_latent_adult <= 1
 
         # proportion of population with latent TB - children
         num_latent_child = len(
-            df[(df.tb_inf == "latent") & (df.age_years < 15) & df.is_alive]
+            df[(df.tb_inf == "latent") & (df.age_years < 16) & df.is_alive]
         )
         prev_latent_child = num_latent_child / len(
-            df[(df.age_years < 15) & df.is_alive]
+            df[(df.age_years < 16) & df.is_alive]
         )
         assert prev_latent_child <= 1
 
@@ -2812,12 +2840,28 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         else:
             prop_mdr = 0
 
+        # number new mdr cases (0 - 16 years)
+        new_mdr_cases_child = len(
+            df[
+                (df.tb_strain == "mdr")
+                & (df.age_years <= 16)
+                & (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
+            ]
+        )
+
+        if new_mdr_cases_child:
+            prop_mdr_child = new_mdr_cases_child / new_tb_cases_child
+        else:
+            prop_mdr_child = 0
+
         logger.info(
             key="tb_mdr",
             description="Incidence of new active MDR cases and the proportion of TB cases that are MDR",
             data={
                 "tbNewActiveMdrCases": new_mdr_cases,
                 "tbPropActiveCasesMdr": prop_mdr,
+                "tbNewActiveMdrCasesChild": new_mdr_cases_child,
+                "tbPropActiveCasesMdrChild": prop_mdr_child,
             },
         )
 
@@ -2856,6 +2900,55 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         else:
             ipt_coverage = 0
 
+        # number of children initiated on standard treatment
+        new_tb_tx_child = len(
+            df[
+                (df.age_years <= 16)
+                & (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
+                & df.tb_on_treatment
+                & (df.tb_treatment_regimen == "tb_tx_child")
+                ]
+        )
+
+        # number of children initiated on shorter treatment
+        new_tb_tx_child_shorter = len(
+            df[
+                (df.age_years <= 16)
+                & (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
+                & df.tb_on_treatment
+                & (df.tb_treatment_regimen == "tb_tx_child_shorter")
+                ]
+        )
+
+        # proportion of children initiated on treatment
+        if new_tb_cases_child:
+            child_tx_coverage = (new_tb_tx_child + new_tb_tx_child_shorter) / new_tb_cases_child
+        else:
+            child_tx_coverage = 0
+
+        # proportion of children on treatment who are initiated on the shorter regimen
+        if new_tb_tx_child or new_tb_tx_child_shorter:
+            shorter_child_tx_coverage = new_tb_tx_child_shorter / (new_tb_tx_child + new_tb_tx_child_shorter)
+        else:
+            shorter_child_tx_coverage = 0
+
+        # Number of children eligible for shorter treatment
+        num_shorter_child_tx_elig = len(
+            df[
+                (df.age_years <= 16)
+                & (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
+                & ~df.tb_smear
+                & ~df.tb_ever_treated
+                & ~df.tb_diagnosed_mdr
+                ]
+        )
+
+        # proportion of children eligible for shorter treatment
+        if num_active_child:
+            prop_shorter_child_tx_elig = num_shorter_child_tx_elig / num_active_child
+        else:
+            prop_shorter_child_tx_elig = 0
+
         logger.info(
             key="tb_treatment",
             description="TB treatment coverage",
@@ -2863,5 +2956,38 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 "tbNewDiagnosis": new_tb_diagnosis,
                 "tbTreatmentCoverage": tx_coverage,
                 "tbIptCoverage": ipt_coverage,
+                "tbChildTreatment": new_tb_tx_child,
+                "tbShorterChildTreatment": new_tb_tx_child_shorter,
+                "tbChildTreatmentCoverage": child_tx_coverage,
+                "tbShorterChildTreatmentCoverage": shorter_child_tx_coverage,
+                "tbShorterChildTreatmentEligibility": num_shorter_child_tx_elig,
+                "tbPropShorterChildTreatmentEligibility": prop_shorter_child_tx_elig,
             },
+        )
+
+        # ------------------------------------ TREATMENT FAILURE ------------------------------------
+        # Number of people that failed treatment
+        num_tx_failure = len(
+            df[
+                (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
+                & df.tb_treatment_failure
+                ]
+        )
+
+        # Number of children that failed treatment
+        num_child_tx_failure = len(
+            df[
+                (df.age_years <= 16)
+                & (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
+                & df.tb_treatment_failure
+            ]
+        )
+
+        logger.info(
+            key="tb_treatment_failure",
+            description="TB treatment failure",
+            data={
+                "tbNumTxFailure": num_tx_failure,
+                "tbNumTxFailureChild": num_child_tx_failure,
+            }
         )
