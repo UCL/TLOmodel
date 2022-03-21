@@ -447,9 +447,9 @@ class Tb(Module):
 
         self.district_list = (
             self.sim.modules["Demography"]
-                .parameters["pop_2010"]["District"]
-                .unique()
-                .tolist()
+            .parameters["pop_2010"]["District"]
+            .unique()
+            .tolist()
         )
 
         # 2) Get the DALY weights
@@ -503,8 +503,8 @@ class Tb(Module):
         # intercept=1
         self.lm["latent_tb_2010"] = LinearModel.multiplicative(
             Predictor("age_years")
-                .when("<15", p["prob_latent_tb_0_14"])
-                .otherwise(p["prob_latent_tb_15plus"]),
+            .when("<15", p["prob_latent_tb_0_14"])
+            .otherwise(p["prob_latent_tb_15plus"]),
             Predictor("hv_inf").when(True, p["rr_tb_hiv"]),
         )
 
@@ -803,6 +803,7 @@ class Tb(Module):
         eligible_adults = df.loc[
             (df.tb_date_latent == now) & df.is_alive & (df.age_years >= 15)
         ].index
+
         eligible_adults = eligible_adults[~eligible_adults.isin(fast)]
 
         # check no fast progressors included in the slow progressors risk
@@ -908,7 +909,7 @@ class Tb(Module):
         # previously diagnosed/treated or hiv+ -> xpert
         # assume ~60% have access to Xpert, some data in 2019 NTP report but not exact proportions
         if person["tb_ever_treated"] or person["hv_diagnosed"]:
-            test = p["second_line_test"]
+            test = "xpert"
 
         return (
             "xpert"
@@ -1337,7 +1338,6 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             p["age_eligibility_for_ipt"] = 100
 
             # increase coverage of IPT
-            # todo check this works
             p["ipt_coverage"]["coverage_plhiv"] = 0.6
             p["ipt_coverage"]["coverage_paediatric"] = 0.8  # this will apply to contacts of all ages
 
@@ -1970,7 +1970,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
             # this selects a test for the person
             # if selection is xpert, will check for availability and return sputum if xpert not available
             test = self.module.select_tb_test(person_id)
-            assert test is not None
+            assert test in ["sputum", "xpert"]
 
             if test == "sputum":
                 ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
@@ -2021,22 +2021,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
         # if still no result available, rely on clinical diagnosis
         if test_result is None:
-            test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
-                dx_tests_to_run="tb_clinical", hsi_event=self
-            )
-
-        # if sputum test result is negative but patient still displays symptoms that indicate active TB,
-        # refer to clinical diagnosis (this is to avoid smear negative patients being missed via sputum test)
-        if (test == "sputum") and not test_result and not smear_status:
-            test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
-                dx_tests_to_run="tb_clinical", hsi_event=self
-            )
-
-        # ------------------------- testing outcomes ------------------------- #
-
-        # diagnosed with mdr-tb - only if xpert used
-        if test_result and (test == "xpert") and (person["tb_strain"] == "mdr"):
-            df.at[person_id, "tb_diagnosed_mdr"] = True
+            pass
 
         # if a test has been performed, update person's properties
         if test_result is not None:

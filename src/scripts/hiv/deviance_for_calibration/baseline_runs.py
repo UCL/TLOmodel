@@ -2,13 +2,13 @@
 This file defines a batch run through which the hiv and tb modules are run across a grid of parameter values
 
 check the batch configuration gets generated without error:
-tlo scenario-run --draw-only src/scripts/hiv/deviance_for_calibration/baseline_runs.py
+tlo scenario-run --draw-only src/scripts/hiv/hiv_tb_projections/scenario1.py
 
 Test the scenario starts running without problems:
-tlo scenario-run src/scripts/hiv/deviance_for_calibration/baseline_runs.py
+tlo scenario-run src/scripts/hiv/hiv_tb_projections/scenario1.py
 
 or execute a single run:
-tlo scenario-run src/scripts/hiv/deviance_for_calibration/baseline_runs.py --draw 0 0
+tlo scenario-run src/scripts/hiv/hiv_tb_projections/scenario1.py --draw 0 0
 
 Run on the batch system using:
 tlo batch-submit src/scripts/hiv/deviance_for_calibration/baseline_runs.py
@@ -16,11 +16,9 @@ tlo batch-submit src/scripts/hiv/deviance_for_calibration/baseline_runs.py
 Display information about a job:
 tlo batch-job tlo_q1_demo-123 --tasks
 
-21st Feb
-Job ID: baseline_runs-2022-02-21T171625Z
-
 Download result files for a completed job:
-tlo batch-download baseline_runs-2022-02-08T164813Z
+tlo batch-download baseline_runs-2022-03-08T071729Z
+
 
 """
 
@@ -29,7 +27,6 @@ from random import randint
 from tlo import Date, logging
 from tlo.methods import (
     demography,
-    deviance_measure,
     enhanced_lifestyle,
     epi,
     healthburden,
@@ -49,23 +46,22 @@ class TestScenario(BaseScenario):
     def __init__(self):
         super().__init__()
         self.seed = randint(0, 5000)
-        # self.seed = 3
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2025, 1, 1)
-        self.pop_size = 760000
-        self.number_of_draws = 5
-        self.runs_per_draw = 1
+        self.end_date = Date(2035, 1, 1)
+        self.pop_size = 30000
+        self.number_of_draws = 1
+        self.runs_per_draw = 5
 
     def log_configuration(self):
         return {
-            "filename": "baseline_scenario",
+            "filename": "scenario1",
             "directory": "./outputs",
             "custom_levels": {
                 "*": logging.WARNING,
                 "tlo.methods.hiv": logging.INFO,
                 "tlo.methods.tb": logging.INFO,
                 "tlo.methods.demography": logging.INFO,
-                "tlo.methods.deviance_measure": logging.INFO,
+                "tlo.methods.healthsystem": logging.INFO,
             },
         }
 
@@ -81,7 +77,7 @@ class TestScenario(BaseScenario):
                 cons_availability="all",  # mode for consumable constraints (if ignored, all consumables available)
                 ignore_priority=True,  # do not use the priority information in HSI event to schedule
                 capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
-                disable=True,  # disables the healthsystem (no constraints and no logging) and every HSI runs
+                disable=False,  # disables the healthsystem (no constraints and no logging) and every HSI runs
                 disable_and_reject_all=False,  # disable healthsystem and no HSI runs
                 store_hsi_events_that_have_run=False,  # convenience function for debugging
             ),
@@ -91,16 +87,12 @@ class TestScenario(BaseScenario):
             epi.Epi(resourcefilepath=self.resources),
             hiv.Hiv(resourcefilepath=self.resources),
             tb.Tb(resourcefilepath=self.resources),
-            deviance_measure.Deviance(resourcefilepath=self.resources),
         ]
 
     def draw_parameters(self, draw_number, rng):
         return {
-            'Hiv': {
-                'beta': 0.125176,
-            },
             'Tb': {
-                'transmission_rate': 19.5,
+                'scenario': 1,
             },
         }
 

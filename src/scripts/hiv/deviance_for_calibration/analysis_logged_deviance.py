@@ -33,10 +33,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2018, 1, 1)
-popsize = 5000
-
-scenario = 2
+end_date = Date(2016, 1, 1)
+popsize = 2000
 
 # set up the log config
 log_config = {
@@ -65,7 +63,7 @@ sim.register(
         resourcefilepath=resourcefilepath,
         service_availability=["*"],  # all treatment allowed
         mode_appt_constraints=0,  # mode of constraints to do with officer numbers and time
-        cons_availability="default",  # mode for consumable constraints (if ignored, all consumables available)
+        cons_availability="all",  # mode for consumable constraints (if ignored, all consumables available)
         ignore_priority=True,  # do not use the priority information in HSI event to schedule
         capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
         disable=False,  # disables the healthsystem (no constraints and no logging) and every HSI runs
@@ -81,21 +79,6 @@ sim.register(
     # deviance_measure.Deviance(resourcefilepath=resourcefilepath),
 )
 
-# todo change
-sim.modules["Tb"].parameters["scenario"] = scenario
-# sim.modules["Tb"].parameters["scenario_start_date"] = "01/07/2010"
-
-# hiv_item_codes = set()
-# for f in sim.modules['Hiv'].item_codes_for_consumables_required.values():
-#     hiv_item_codes = hiv_item_codes.union(f.keys())
-# sim.modules["HealthSystem"].prob_item_codes_available.loc[hiv_item_codes] = 0.6
-#
-# tb_item_codes = set()
-# for f in sim.modules['Tb'].item_codes_for_consumables_required.values():
-#     tb_item_codes = tb_item_codes.union(f.keys())
-# sim.modules["HealthSystem"].prob_item_codes_available.loc[tb_item_codes] = 0.6
-
-
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
@@ -106,10 +89,4 @@ output = parse_log_file(sim.log_filepath)
 # save the results, argument 'wb' means write using binary mode. use 'rb' for reading file
 with open(outputpath / "default_run.pickle", "wb") as f:
     # Pickle the 'data' dictionary using the highest protocol available.
-    pickle.dump(output, f, pickle.HIGHEST_PROTOCOL)
-
-
-cov_over_time = output["tlo.methods.hiv"]["hiv_program_coverage"]
-cov_over_time = cov_over_time.set_index("date")
-# Percent of all HIV+ on ART
-print(cov_over_time["art_coverage_adult"])
+    pickle.dump(dict(output), f, pickle.HIGHEST_PROTOCOL)

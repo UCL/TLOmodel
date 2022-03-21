@@ -162,7 +162,7 @@ def test_scenario_ipt_expansion():
 
     # run HSI_Tb_ScreeningAndRefer for person 1
     # check ages again of those scheduled for HSI_Tb_Start_or_Continue_Ipt
-    assert "tb_sputum_test" in sim.modules["HealthSystem"].dx_manager.dx_tests
+    assert "tb_sputum_test_smear_positive" in sim.modules["HealthSystem"].dx_manager.dx_tests
     screening_appt = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id,
                                                  module=sim.modules['Tb'])
     screening_appt.apply(person_id=person_id, squeeze_factor=0.0)
@@ -231,7 +231,7 @@ def test_scenario_ipt_expansion():
         )
 
     # run diagnosis (HSI_Tb_ScreeningAndRefer) for person 0
-    assert "tb_sputum_test" in sim.modules["HealthSystem"].dx_manager.dx_tests
+    assert "tb_sputum_test_smear_positive" in sim.modules["HealthSystem"].dx_manager.dx_tests
     screening_appt = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id,
                                                  module=sim.modules['Tb'])
     screening_appt.apply(person_id=person_id, squeeze_factor=0.0)
@@ -255,7 +255,7 @@ def test_scenario_ipt_expansion():
     # run ScenarioSetupEvent - should change parameter "age_eligibility_for_ipt"
     progression_event = tb.ScenarioSetupEvent(module=sim.modules['Tb'])
     progression_event.apply(population=sim.population)
-    assert not sim.modules["Tb"].parameters["age_eligibility_for_ipt"] == 5.0
+    assert sim.modules["Tb"].parameters["age_eligibility_for_ipt"] >= 5.0
 
     # assign another person active TB
     person_id = 3
@@ -281,7 +281,7 @@ def test_scenario_ipt_expansion():
 
     # run HSI_Tb_ScreeningAndRefer for person 3
     # check ages again of those scheduled for HSI_Tb_Start_or_Continue_Ipt
-    assert "tb_sputum_test" in sim.modules["HealthSystem"].dx_manager.dx_tests
+    assert "tb_sputum_test_smear_positive" in sim.modules["HealthSystem"].dx_manager.dx_tests
     screening_appt = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id,
                                                  module=sim.modules['Tb'])
     screening_appt.apply(person_id=person_id, squeeze_factor=0.0)
@@ -301,7 +301,7 @@ def test_scenario_ipt_expansion():
     idx_of_ipt_candidates = [x[2] for x in list_of_events]
     ages_of_ipt_candidates = df.loc[idx_of_ipt_candidates, "age_exact_years"]
     # make sure at least one candidate is over 5 years old
-    assert (ages_of_ipt_candidates > 6).any()
+    assert (ages_of_ipt_candidates > 5.0).any()
 
 
 def test_check_tb_test_under_each_scenario():
@@ -421,6 +421,7 @@ def test_check_tb_test_under_each_scenario():
     # set HIV status
     df.at[hiv_neg_person, 'hv_inf'] = False
     df.at[hiv_pos_person, 'hv_inf'] = True
+    df.at[hiv_pos_person, 'hv_diagnosed'] = True
 
     # assign symptoms
     symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
