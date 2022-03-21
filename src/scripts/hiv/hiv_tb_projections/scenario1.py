@@ -48,20 +48,20 @@ class TestScenario(BaseScenario):
         self.seed = randint(0, 5000)
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2035, 1, 1)
-        self.pop_size = 40000
+        self.pop_size = 50000
         self.number_of_draws = 1
-        self.runs_per_draw = 5
+        self.runs_per_draw = 3
 
     def log_configuration(self):
         return {
-            "filename": "scenario1",
+            "filename": "scenario1_test",
             "directory": "./outputs",
             "custom_levels": {
                 "*": logging.WARNING,
                 "tlo.methods.hiv": logging.INFO,
                 "tlo.methods.tb": logging.INFO,
                 "tlo.methods.demography": logging.INFO,
-                "tlo.methods.healthsystem": logging.INFO,
+                "tlo.methods.healthsystem.summary": logging.INFO,
             },
         }
 
