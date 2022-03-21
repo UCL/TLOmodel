@@ -233,9 +233,9 @@ class Schisto(Module):
         module."""
         # Get the total weights for all those that have symptoms caused by this module.
         symptoms_being_caused = self.sim.modules['SymptomManager'].caused_by(self)
-        dw = pd.Series(symptoms_being_caused).apply(pd.Series).replace(self.disability_weights).fillna(0).sum(axis=1).clipper(upper=1.0)
+        dw = pd.Series(symptoms_being_caused).apply(pd.Series).replace(self.disability_weights).fillna(0).sum(axis=1).clip(upper=1.0)
 
-        # Return series that include entries for all alive persons (filling 0.0) where they do not have have disability
+        # Return series that include entries for all alive persons (filling 0.0) where they do not have any disability
         df = self.sim.population.props
         return pd.Series(index=df.index[df.is_alive], data=0.0).add(dw, fill_value=0.0)
 
@@ -736,7 +736,7 @@ class SchistoSpecies:
 # ---------------------------------------------------------------------------------------------------------
 
 
-# mixin with helper functions for _get_param and _get_property
+# todo - mixin with helper functions for _get_param and _get_property to make that neater
 
 class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
     """An event of infecting people with Schistosomiasis
@@ -850,7 +850,7 @@ class SchistoMatureWorms(Event, IndividualScopeEventMixin):
                     df.loc[person_id, f'{prefix}_infection_status'] = 'High-infection'
                     df.loc[person_id, f'{prefix}_start_of_high_infection'] = self.sim.date
 
-                    # develop symptoms immediately todo - should this be an event of a function call??
+                    # develop symptoms immediately todo - this has now become a function call!
                     self.sim.schedule_event(
                         SchistoDevelopSymptomsEvent(self.module,
                                                     person_id=person_id,
