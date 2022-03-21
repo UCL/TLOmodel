@@ -19,6 +19,8 @@ tlo batch-job tlo_q1_demo-123 --tasks
 Download result files for a completed job:
 tlo batch-download scenario1-2022-03-07T185508Z
 
+Job ID: scenario1-2022-03-21T103409Z
+
 
 """
 
@@ -48,9 +50,9 @@ class TestScenario(BaseScenario):
         self.seed = randint(0, 5000)
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2035, 1, 1)
-        self.pop_size = 50000
+        self.pop_size = 500000
         self.number_of_draws = 1
-        self.runs_per_draw = 3
+        self.runs_per_draw = 5
 
     def log_configuration(self):
         return {
