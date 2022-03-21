@@ -33,8 +33,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2014, 1, 1)
-popsize = 2000
+end_date = Date(2025, 1, 1)
+popsize = 50000
 
 # set up the log config
 log_config = {
@@ -52,7 +52,7 @@ log_config = {
 # Register the appropriate modules
 # need to call epi before tb to get bcg vax
 # seed = random.randint(0, 50000)
-seed = 4  # set seed for reproducibility
+seed = 14  # set seed for reproducibility
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
 sim.register(
     demography.Demography(resourcefilepath=resourcefilepath),
@@ -92,7 +92,8 @@ output = parse_log_file(sim.log_filepath)
 
 for key, dfs in output.items():
     if key.startswith("tlo."):
-        with open(f"{key}.pickle", "wb") as f:
+        with open(outputpath / f"{key}.pickle", "wb") as f:
+            print(f)
             pickle.dump(dfs, f)
 
 tmp = output["tlo.methods.healthsystem.summary"]["health_system_annual_logs"]
