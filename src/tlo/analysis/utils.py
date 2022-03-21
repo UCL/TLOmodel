@@ -4,6 +4,7 @@ General utility functions for TLO analysis
 import json
 import os
 import pickle
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Dict, Optional, TextIO
 
@@ -35,12 +36,11 @@ def _parse_log_file_inner_loop(filepath, level: int = logging.INFO):
     return output_logs
 
 
-def parse_log_file(log_filepath, level=logging.INFO):
+def parse_log_file(log_filepath):
     """Parses logged output from a TLO run, split it into smaller logfiles and returns a class containing paths to
     these split logfiles.
 
     :param log_filepath: file path to log file
-    :param level: logging level to be parsed for structured logging
     :return: a class containing paths to split logfiles
     """
     print(f'Processing log file {log_filepath}')
@@ -74,7 +74,7 @@ def parse_log_file(log_filepath, level=logging.INFO):
         file_handle.close()
 
     # return an object that accepts as an argument a dictionary containing paths to split logfiles
-    return LogsDict(module_name_to_filehandle)
+    return LogsDict({name: handle.name for name, handle in module_name_to_filehandle.items()})
 
 
 def write_log_to_excel(filename, log_dataframes):
@@ -495,7 +495,7 @@ def unflatten_flattened_multi_index_in_logging(_x: pd.DataFrame) -> pd.DataFrame
     return _y
 
 
-class LogsDict(dict):
+class LogsDict(Mapping):
     """Parses module-specific log files and returns Pandas dataframes.
 
         The dictionary returned has the format::
@@ -513,7 +513,9 @@ class LogsDict(dict):
                                    <log key 6>: <pandas dataframe>
                                  },
                 ...
-            } """
+            }
+    """
+
     def __init__(self, file_names_and_paths):
         super().__init__()
         # initialise class with module-specific log files paths
@@ -522,17 +524,13 @@ class LogsDict(dict):
         # create a dictionary that will contain cached data
         self._results_cache: Dict[str, Dict] = dict()
 
-    def __setitem__(self, key, item):
-        # restrict resetting of dictionary items
-        raise NotImplementedError
-
     def __getitem__(self, key, cache=True):
         # check if the requested key is found in a dictionary containing module name and log file paths. if key
         # is found, return parsed logs else return KeyError
         if key in self._logfile_names_and_paths:
             # check if key is found in cache
             if key not in self._results_cache:
-                result_df = _parse_log_file_inner_loop(self._logfile_names_and_paths[key].name)
+                result_df = _parse_log_file_inner_loop(self._logfile_names_and_paths[key])
                 # get metadata for the selected log file and merge it all with the selected key
                 result_df[key]['_metadata'] = result_df['_metadata']
                 if not cache:  # check if caching is disallowed
@@ -553,23 +551,11 @@ class LogsDict(dict):
             module_specific_logs = self.__getitem__(key, cache=False)
             yield key, module_specific_logs
 
-    def update(self, *args, **kwargs):
-        raise NotImplementedError
-
     def __repr__(self):
         return repr(self._logfile_names_and_paths)
 
     def __len__(self):
         return len(self._logfile_names_and_paths)
-
-    def __delitem__(self, key):
-        raise NotImplementedError
-
-    def clear(self):
-        raise NotImplementedError
-
-    def copy(self):
-        raise NotImplementedError
 
     def keys(self):
         # return dictionary keys
@@ -581,14 +567,11 @@ class LogsDict(dict):
             module_specific_logs = self.__getitem__(key, cache=False)
             yield module_specific_logs
 
-    def pop(self, *args):
-        raise NotImplementedError
-
-    def __cmp__(self, dict_):
-        raise NotImplementedError
-
     def __iter__(self):
-        raise NotImplementedError
+        return iter(self._logfile_names_and_paths)
 
-    def __unicode__(self):
-        raise NotImplementedError
+    def __getstate__(self):
+        # Ensure all items cached before pickling
+        for key in self.keys():
+            self.__getitem__(key, cache=True)
+        return self.__dict__
