@@ -23,6 +23,7 @@ from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     alri,
     bladder_cancer,
+    breast_cancer,
     cardio_metabolic_disorders,
     care_of_women_during_pregnancy,
     contraception,
@@ -44,10 +45,11 @@ from tlo.methods import (
     other_adult_cancers,
     postnatal_supervisor,
     pregnancy_supervisor,
+    prostate_cancer,
     rti,
     stunting,
     symptommanager,
-    wasting, breast_cancer, prostate_cancer,
+    wasting,
 )
 
 # Parse arguments defining run options
@@ -226,33 +228,43 @@ sim.register(
         capabilities_coefficient=args.capabilities_coefficient,
         record_hsi_event_details=args.record_hsi_event_details
     ),
+    epi.Epi(resourcefilepath=resourcefilepath),
 
     # Modules for birth/labour/newborns
     contraception.Contraception(resourcefilepath=resourcefilepath),
     pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-    care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(
-        resourcefilepath=resourcefilepath),
+    care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
     labour.Labour(resourcefilepath=resourcefilepath),
     newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
     postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
 
-    # Disease modules considered complete:
-    cardio_metabolic_disorders.CardioMetabolicDisorders(
-        resourcefilepath=resourcefilepath),
-    depression.Depression(resourcefilepath=resourcefilepath),
+    # Diseases of childhood
+    alri.Alri(resourcefilepath=resourcefilepath),
     diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
-    epi.Epi(resourcefilepath=resourcefilepath),
-    epilepsy.Epilepsy(resourcefilepath=resourcefilepath),
+    stunting.Stunting(resourcefilepath=resourcefilepath),
+    wasting.Wasting(resourcefilepath=resourcefilepath),
+
+    # Major Infectious Diseases
     hiv.Hiv(resourcefilepath=resourcefilepath),
     malaria.Malaria(resourcefilepath=resourcefilepath),
-    oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
-    other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath),
+    measles.Measles(resourcefilepath=resourcefilepath),
+
+    # Chronic Conditions
+    #  - Cardio-metabolic
+    cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
+
+    # - Cancers
     bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
     breast_cancer.BreastCancer(resourcefilepath=resourcefilepath),
+    oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
+    other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath),
     prostate_cancer.ProstateCancer(resourcefilepath=resourcefilepath),
 
+    # - Mental Health
     depression.Depression(resourcefilepath=resourcefilepath),
     epilepsy.Epilepsy(resourcefilepath=resourcefilepath),
+
+    # Other
     rti.RTI(resourcefilepath=resourcefilepath)
 )
 
