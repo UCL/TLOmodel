@@ -129,7 +129,7 @@ def test_consumables_availability_options():
 
 
 @pytest.mark.slow
-def test_consumables_available_at_right_frequency():
+def test_consumables_available_at_right_frequency(seed):
     """Check that the availability of consumables following a request is as expected."""
     # Define known set of probabilities with which each item is available
     p_known_items = dict(zip(range(4), [0.0, 0.2, 0.8, 1.0]))
@@ -141,7 +141,7 @@ def test_consumables_available_at_right_frequency():
         months=[1],
         facility_ids=[0])
     rng = numpy.random
-    rng.seed(0)
+    rng.SeedSequence(seed)
     date = datetime.datetime(2010, 1, 1)
 
     # Initiate Consumables class
