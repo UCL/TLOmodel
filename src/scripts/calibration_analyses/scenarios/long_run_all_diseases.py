@@ -1,6 +1,6 @@
 """
 This file defines a batch run of a large population for a long time with all disease modules and full use of HSIs
-It's used for calibrations (demographic patterns, health burdens and healthsytstem usage)
+It's used for calibrations (demographic patterns, health burdens and healthsystem usage)
 
 Run on the batch system using:
 ```tlo batch-submit src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py```
@@ -60,7 +60,10 @@ class LongRun(BaseScenario):
             'filename': 'long_run',  # <- (specified only for local running)
             'directory': './outputs',  # <- (specified only for local running)
             'custom_levels': {
-                '*': logging.INFO,
+                '*': logging.WARNING,
+                'tlo.methods.demography': logging.INFO,
+                'tlo.methods.healthburden': logging.INFO,
+                'tlo.methods.healthsystem': logging.INFO
             }
         }
 
