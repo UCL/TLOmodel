@@ -48,12 +48,11 @@ def predict_parity(self, df, rng=None, **externals):
     result[~df.li_urban] += params['effect_rural_parity_lr2010']
 
     # Return the result as a rounded integer (values are originally floats and can be negative)
-    rounded_result = result.round()
-    minus_women = rounded_result.loc[rounded_result.values < 0]
-    rounded_result.loc[minus_women.index] = 0
-    updated_result = rounded_result.astype(int)
+    result = result.round()
+    result.loc[result < 0] = 0
+    result = result.astype(int)
 
-    return updated_result
+    return result
 
 
 def predict_obstruction_cpd_ip(self, df, rng=None, **externals):
@@ -401,7 +400,7 @@ def predict_intrapartum_still_birth(self, df, rng=None, **externals):
     params = self.parameters
     result = params['prob_ip_still_birth']
 
-    if ~person['is_alive']:
+    if not person['is_alive']:
         result *= params['rr_still_birth_maternal_death']
     if person['la_uterine_rupture']:
         result *= params['rr_still_birth_ur']

@@ -139,6 +139,42 @@ def test_run_core_modules_high_volumes_of_pregnancy(seed, tmpdir):
 
 
 @pytest.mark.slow
+def test_run_core_modules_high_volumes_of_pregnancy_hsis_cant_run(seed, tmpdir):
+    """Runs the simulation with the core modules and all women of reproductive age being pregnant at the start of the
+    simulation. In addition scheduled HSI events will not run- testing the did_not_run functions of the relevant HSIs"""
+    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
+
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           mode_appt_constraints=2,
+                                           cons_availability='all'),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+
+                 hiv.DummyHivModule(),
+                 )
+
+    sim.make_initial_population(n=5000)
+    set_all_women_as_pregnant_and_reset_baseline_parity(sim)
+    sim.simulate(end_date=Date(2011, 1, 1))
+    check_dtypes(sim)
+
+    # check that no errors have been logged during the simulation run
+    output = parse_log_file(sim.log_filepath)
+    for module in ['pregnancy_supervisor', 'care_of_women_during_pregnancy', 'labour', 'postnatal_supervisor',
+                   'newborn_outcomes']:
+        assert 'error' not in output[f'tlo.methods.{module}']
+
+
+@pytest.mark.slow
 def test_run_with_all_referenced_modules_registered(seed, tmpdir):
     """
     Runs the simulation for one year where all the referenced modules are registered to ensure

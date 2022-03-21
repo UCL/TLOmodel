@@ -1,6 +1,12 @@
-"""This file contains the HSI events that represent the first contact with the Health System, which are triggered by
+"""
+The file contains the event HSI_GenericFirstApptAtFacilityLevel1, which describes the first interaction with
+the health system following the onset of acute generic symptoms.
+
+This file contains the HSI events that represent the first contact with the Health System, which are triggered by
 the onset of symptoms. Non-emergency symptoms lead to `HSI_GenericFirstApptAtFacilityLevel0` and emergency symptoms
- lead to `HSI_GenericEmergencyFirstApptAtFacilityLevel1`. """
+lead to `HSI_GenericEmergencyFirstApptAtFacilityLevel1`.
+"""
+import pandas as pd
 
 import pandas as pd
 

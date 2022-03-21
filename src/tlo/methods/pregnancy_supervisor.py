@@ -66,6 +66,8 @@ class PregnancySupervisor(Module):
     }
 
     PARAMETERS = {
+        # n.b. Parameters are stored as LIST variables due to containing values to match both 2010 and 2015 data.
+
         # ECTOPIC PREGNANCY...
         'prob_ectopic_pregnancy': Parameter(
             Types.LIST, 'probability of ectopic pregnancy'),
@@ -662,7 +664,7 @@ class PregnancySupervisor(Module):
                 return
 
             # If the complication has onset within the last month...
-            elif (self.sim.date - DateOffset(months=1)) <= mni[person][f'{complication}_onset'] <= self.sim.date:
+            if (self.sim.date - DateOffset(months=1)) <= mni[person][f'{complication}_onset'] <= self.sim.date:
 
                 # We assume that any woman who experiences an acute event receives the whole weight for that daly
                 monthly_daly[person] += p[f'{complication}']
@@ -680,78 +682,77 @@ class PregnancySupervisor(Module):
             # If the complication hasn't occurred, the function ends
             if pd.isnull(mni[person][f'{complication}_onset']):
                 return
+
+            # If the complication has not yet resolved, and started more than a month ago, the woman gets a
+            # months disability
+            if pd.isnull(mni[person][f'{complication}_resolution']):
+                if mni[person][f'{complication}_onset'] < (self.sim.date - DateOffset(months=1)):
+                    weight = (p[f'{complication}'] / days_per_year) * (days_per_year / 12)
+                    monthly_daly[person] += weight
+
+                # Otherwise, if the complication started this month she gets a daly weight relative to the number of
+                # days she has experience the complication
+                elif (self.sim.date - DateOffset(months=1)) <= mni[person][
+                     f'{complication}_onset'] <= self.sim.date:
+                    days_since_onset = pd.Timedelta((self.sim.date - mni[person][f'{complication}_onset']),
+                                                    unit='d')
+                    daly_weight = days_since_onset.days * (p[f'{complication}'] / days_per_year)
+
+                    monthly_daly[person] += daly_weight
+
+                    if not monthly_daly[person] >= 0:
+                        logger.debug(key='error', data=f'Daly wt not correctly assigned for person {person}')
+
             else:
-                # If the complication has not yet resolved, and started more than a month ago, the woman gets a
-                # months disability
-                if pd.isnull(mni[person][f'{complication}_resolution']):
-                    if mni[person][f'{complication}_onset'] < (self.sim.date - DateOffset(months=1)):
-                        weight = (p[f'{complication}'] / days_per_year) * (days_per_year / 12)
-                        monthly_daly[person] += weight
+                # Its possible for a condition to resolve (via treatment) and onset within the same month
+                # (i.e. anaemia). If so, here we calculate how many days this month an individual has suffered
+                if mni[person][f'{complication}_resolution'] < mni[person][f'{complication}_onset']:
 
-                    # Otherwise, if the complication started this month she gets a daly weight relative to the number of
-                    # days she has experience the complication
-                    elif (self.sim.date - DateOffset(months=1)) <= mni[person][
-                         f'{complication}_onset'] <= self.sim.date:
-                        days_since_onset = pd.Timedelta((self.sim.date - mni[person][f'{complication}_onset']),
-                                                        unit='d')
-                        daly_weight = days_since_onset.days * (p[f'{complication}'] / days_per_year)
+                    if (mni[person][f'{complication}_resolution'] == (self.sim.date - DateOffset(months=1))) and \
+                      (mni[person][f'{complication}_onset'] == self.sim.date):
+                        return
 
-                        monthly_daly[person] += daly_weight
+                    # Calculate daily weight and how many days this woman hasnt had the complication
+                    daily_weight = p[f'{complication}'] / days_per_year
+                    days_without_complication = pd.Timedelta((
+                        mni[person][f'{complication}_onset'] - mni[person][f'{complication}_resolution']),
+                        unit='d')
 
-                        if not monthly_daly[person] >= 0:
-                            logger.debug(key='error', data=f'Daly wt not correctly assigned for person {person}')
+                    # Use the average days in a month to calculate how many days shes had the complication this
+                    # month
+                    avg_days_in_month = days_per_year / 12
+                    days_with_comp = avg_days_in_month - days_without_complication.days
+
+                    monthly_daly[person] += daily_weight * days_with_comp
+
+                    if not monthly_daly[person] >= 0:
+                        logger.debug(key='error', data=f'Daly wt not correctly assigned for person {person}')
+
+                    mni[person][f'{complication}_resolution'] = pd.NaT
 
                 else:
-                    # Its possible for a condition to resolve (via treatment) and onset within the same month
-                    # (i.e. anaemia). If so, here we calculate how many days this month an individual has suffered
-                    if mni[person][f'{complication}_resolution'] < mni[person][f'{complication}_onset']:
+                    # If the complication has truly resolved, check the dates make sense
+                    if not mni[person][f'{complication}_resolution'] >= mni[person][f'{complication}_onset']:
+                        logger.debug(key='error', data=f'Complication resolution has occurred before onset in'
+                                                       f' {person}')
+                        return
 
-                        if (mni[person][f'{complication}_resolution'] == (self.sim.date - DateOffset(months=1))) and \
-                          (mni[person][f'{complication}_onset'] == self.sim.date):
-                            return
+                    # We calculate how many days she has been free of the complication this month to determine how
+                    # many days she has suffered from the complication this month
+                    days_free_of_comp_this_month = pd.Timedelta((self.sim.date - mni[person][f'{complication}_'
+                                                                                             f'resolution']),
+                                                                unit='d')
+                    mid_way_calc = (self.sim.date - DateOffset(months=1)) + days_free_of_comp_this_month
+                    days_with_comp_this_month = pd.Timedelta((self.sim.date - mid_way_calc), unit='d')
+                    daly_weight = days_with_comp_this_month.days * (p[f'{complication}'] / days_per_year)
+                    monthly_daly[person] += daly_weight
 
-                        else:
-                            # Calculate daily weight and how many days this woman hasnt had the complication
-                            daily_weight = p[f'{complication}'] / days_per_year
-                            days_without_complication = pd.Timedelta((
-                                mni[person][f'{complication}_onset'] - mni[person][f'{complication}_resolution']),
-                                unit='d')
+                    if not monthly_daly[person] >= 0:
+                        logger.debug(key='error', data=f'Daly wt not correctly assigned for person {person}')
 
-                            # Use the average days in a month to calculate how many days shes had the complication this
-                            # month
-                            avg_days_in_month = days_per_year / 12
-                            days_with_comp = avg_days_in_month - days_without_complication.days
-
-                            monthly_daly[person] += daily_weight * days_with_comp
-
-                            if not monthly_daly[person] >= 0:
-                                logger.debug(key='error', data=f'Daly wt not correctly assigned for person {person}')
-
-                            mni[person][f'{complication}_resolution'] = pd.NaT
-
-                    else:
-                        # If the complication has truly resolved, check the dates make sense
-                        if not mni[person][f'{complication}_resolution'] >= mni[person][f'{complication}_onset']:
-                            logger.debug(key='error', data=f'Complication resolution has occurred before onset in'
-                                                           f' {person}')
-                            return
-
-                        # We calculate how many days she has been free of the complication this month to determine how
-                        # many days she has suffered from the complication this month
-                        days_free_of_comp_this_month = pd.Timedelta((self.sim.date - mni[person][f'{complication}_'
-                                                                                                 f'resolution']),
-                                                                    unit='d')
-                        mid_way_calc = (self.sim.date - DateOffset(months=1)) + days_free_of_comp_this_month
-                        days_with_comp_this_month = pd.Timedelta((self.sim.date - mid_way_calc), unit='d')
-                        daly_weight = days_with_comp_this_month.days * (p[f'{complication}'] / days_per_year)
-                        monthly_daly[person] += daly_weight
-
-                        if not monthly_daly[person] >= 0:
-                            logger.debug(key='error', data=f'Daly wt not correctly assigned for person {person}')
-
-                        # Reset the dates to stop additional disability being applied
-                        mni[person][f'{complication}_onset'] = pd.NaT
-                        mni[person][f'{complication}_resolution'] = pd.NaT
+                    # Reset the dates to stop additional disability being applied
+                    mni[person][f'{complication}_onset'] = pd.NaT
+                    mni[person][f'{complication}_resolution'] = pd.NaT
 
         # Then for each alive person in the MNI we cycle through all the complications that can lead to disability and
         # calculate their individual daly weight for the month
@@ -1531,7 +1532,6 @@ class PregnancySupervisor(Module):
             care_seeking = self.rng.random_sample() < params['prob_seek_care_pregnancy_loss']
 
         if care_seeking:
-
             # check for delay
             pregnancy_helper_functions.check_if_delayed_careseeking(self, individual_id)
 
@@ -1541,9 +1541,8 @@ class PregnancySupervisor(Module):
                 HSI_GenericEmergencyFirstApptAtFacilityLevel1,
             )
 
-            event = HSI_GenericEmergencyFirstApptAtFacilityLevel1(
-                self.sim.modules['PregnancySupervisor'],
-                person_id=individual_id)
+            event = HSI_GenericEmergencyFirstApptAtFacilityLevel1(self.sim.modules['PregnancySupervisor'],
+                                                                  person_id=individual_id)
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                                 priority=0,
@@ -1551,8 +1550,7 @@ class PregnancySupervisor(Module):
                                                                 tclose=self.sim.date + DateOffset(days=1))
             return True
 
-        else:
-            return False
+        return False
 
     def apply_risk_of_death_from_monthly_complications(self, individual_id):
         """
@@ -1635,16 +1633,16 @@ class PregnancySupervisor(Module):
 
         # Call the functions that schedule the HSIs according to the predicted month of gestation at which each woman
         # will attend her first visit
-        def schedulde_early_visit(df_slice):
+        def schedule_early_visit(df_slice):
             for person in df_slice.index:
                 random_draw_gest_at_anc = self.rng.choice([2, 3, 4], p=params['prob_anc1_months_2_to_4'])
                 self.schedule_anc_one(individual_id=person, anc_month=random_draw_gest_at_anc)
 
-        for slice in [early_initiation_anc4.loc[early_initiation_anc4],
-                      early_initiation_anc_below_4.loc[early_initiation_anc_below_4]]:
-            schedulde_early_visit(slice)
+        for s in [early_initiation_anc4.loc[early_initiation_anc4],
+                  early_initiation_anc_below_4.loc[early_initiation_anc_below_4]]:
+            schedule_early_visit(s)
 
-        def schedulde_late_visit(df_slice):
+        def schedule_late_visit(df_slice):
             for person in df_slice.index:
                 random_draw_gest_at_anc = self.rng.choice([5, 6, 7, 8, 9, 10], p=params['prob_anc1_months_5_to_9'])
 
@@ -1652,9 +1650,9 @@ class PregnancySupervisor(Module):
                 if random_draw_gest_at_anc != 10:
                     self.schedule_anc_one(individual_id=person, anc_month=random_draw_gest_at_anc)
 
-        for slice in [late_initiation_anc4.loc[late_initiation_anc4],
-                      early_initiation_anc_below_4.loc[~early_initiation_anc_below_4]]:
-            schedulde_late_visit(slice)
+        for s in [late_initiation_anc4.loc[late_initiation_anc4],
+                  early_initiation_anc_below_4.loc[~early_initiation_anc_below_4]]:
+            schedule_late_visit(s)
 
 
 class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
@@ -2043,11 +2041,10 @@ class SyphilisInPregnancyEvent(Event, IndividualScopeEventMixin):
            (not (mni[individual_id]['pred_syph_infect'] == self.sim.date))):
             return
 
-        else:
-            df.at[individual_id, 'ps_syphilis'] = True
-            logger.info(key='maternal_complication', data={'person': individual_id,
-                                                           'type': 'syphilis',
-                                                           'timing': 'antenatal'})
+        df.at[individual_id, 'ps_syphilis'] = True
+        logger.info(key='maternal_complication', data={'person': individual_id,
+                                                       'type': 'syphilis',
+                                                       'timing': 'antenatal'})
 
 
 class ParameterUpdateEvent(Event, PopulationScopeEventMixin):
@@ -2058,7 +2055,7 @@ class ParameterUpdateEvent(Event, PopulationScopeEventMixin):
 
     def apply(self, population):
 
-        logger.debug(key='msg', data='Now updating parameters in the maternal and perinatal health modules...')
+        logger.debug(key='message', data='Now updating parameters in the maternal and perinatal health modules...')
 
         for module in [self.module,
                        self.sim.modules['CareOfWomenDuringPregnancy'],
