@@ -44,6 +44,7 @@ from tlo.methods import (
     other_adult_cancers,
     postnatal_supervisor,
     pregnancy_supervisor,
+    rti,
     stunting,
     symptommanager,
     wasting,
@@ -251,6 +252,7 @@ sim.register(
     alri.Alri(resourcefilepath=resourcefilepath),
     stunting.Stunting(resourcefilepath=resourcefilepath),
     wasting.Wasting(resourcefilepath=resourcefilepath),
+    rti.RTI(resourcefilepath=resourcefilepath)
 )
 
 # Run the simulation
