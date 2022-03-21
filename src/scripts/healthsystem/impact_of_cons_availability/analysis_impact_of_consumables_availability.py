@@ -74,7 +74,9 @@ for i, _p in enumerate(params.values):
     central_val = deaths_summarized[(i, 'mean')].values / deaths_summarized[(0, 'mean')].values
     lower_val = deaths_summarized[(i, 'lower')].values/deaths_summarized[(0, 'lower')].values
     upper_val = deaths_summarized[(i, 'upper')].values/deaths_summarized[(0, 'upper')].values
-    # todo - this form of constructing the intervals on the ratio is not right: just an approximation for now!
+    # todo - this form of constructing the intervals on the ratio is not quite right: just an approximation for now!
+    #  When we have decided exactly what we want to plot, we should compute the statistic on each draw and then
+    #  summmarise the distribution of those statistics.
 
     ax.plot(
         deaths_summarized.index, central_val,

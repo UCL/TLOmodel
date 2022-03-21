@@ -37,6 +37,7 @@ from tlo.methods import (
     postnatal_supervisor,
     pregnancy_supervisor,
     prostate_cancer,
+    rti,
     stunting,
     symptommanager,
     wasting,
@@ -96,7 +97,6 @@ class ImpactOfConsumablesAvailability(BaseScenario):
             hiv.Hiv(resourcefilepath=self.resources),
             malaria.Malaria(resourcefilepath=self.resources),
             measles.Measles(resourcefilepath=self.resources),
-            # todo - add TB
 
             # - Non-Communicable Conditions
             # -- Cancers
@@ -110,8 +110,7 @@ class ImpactOfConsumablesAvailability(BaseScenario):
             cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=self.resources),
 
             # -- Injuries
-            # rti.RTI(resourcefilepath=self.resources),
-            # todo - add RTI when it works reliably
+            rti.RTI(resourcefilepath=self.resources),
 
             # -- Other Non-Communicable Conditions
             depression.Depression(resourcefilepath=self.resources),
