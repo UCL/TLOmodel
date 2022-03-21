@@ -2021,7 +2021,15 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
         # if still no result available, rely on clinical diagnosis
         if test_result is None:
-            pass
+            test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+                dx_tests_to_run="tb_clinical", hsi_event=self
+            )
+
+        # ------------------------- testing outcomes ------------------------- #
+
+        # diagnosed with mdr-tb - only if xpert used
+        if test_result and (test == "xpert") and (person["tb_strain"] == "mdr"):
+            df.at[person_id, "tb_diagnosed_mdr"] = True
 
         # if a test has been performed, update person's properties
         if test_result is not None:
