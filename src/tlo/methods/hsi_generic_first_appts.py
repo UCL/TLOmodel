@@ -8,8 +8,6 @@ lead to `HSI_GenericEmergencyFirstApptAtFacilityLevel1`.
 """
 import pandas as pd
 
-import pandas as pd
-
 from tlo import logging
 from tlo.events import IndividualScopeEventMixin
 from tlo.methods.bladder_cancer import (
