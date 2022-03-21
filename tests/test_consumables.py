@@ -141,6 +141,7 @@ def test_consumables_available_at_right_frequency():
         months=[1],
         facility_ids=[0])
     rng = numpy.random
+    rng.seed(0)
     date = datetime.datetime(2010, 1, 1)
 
     # Initiate Consumables class
