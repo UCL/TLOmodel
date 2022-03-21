@@ -211,7 +211,7 @@ class CareOfWomenDuringPregnancy(Module):
 
         # ---------------------------------- IV DRUG ADMIN EQUIPMENT  -------------------------------------------------
         self.item_codes_preg_consumables['iv_drug_equipment'] = \
-            get_list_of_items(self, ['Cannula iv (winged with injection pot) 18_each_CMST',
+            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 18_each_CMST',
                                      'Giving set iv administration + needle 15 drops/ml_each_CMST',
                                      'Disposables gloves, powder free, 100 pieces per box'])
 
@@ -225,9 +225,9 @@ class CareOfWomenDuringPregnancy(Module):
             get_list_of_items(self, ['Sodium chloride, injectable solution, 0,9 %, 500 ml',
                                      'Paracetamol, tablet, 500 mg',
                                      'Pethidine, 50 mg/ml, 2 ml ampoule',
-                                     'Needle suture intestinal round bodied Â½ circle trocar_6_CMST',
+                                     # 'Needle suture intestinal round bodied Â½ circle trocar_6_CMST',
                                      'Gauze, absorbent 90cm x 40m_each_CMST',
-                                     'Cannula iv (winged with injection pot) 18_each_CMST'])
+                                     'Cannula iv  (winged with injection pot) 18_each_CMST'])
 
         # ------------------------------------------- POST ABORTION CARE - GENERAL  -----------------------------------
         self.item_codes_preg_consumables['post_abortion_care_core'] = \
@@ -249,7 +249,7 @@ class CareOfWomenDuringPregnancy(Module):
 
         self.item_codes_preg_consumables['post_abortion_care_sepsis_optional'] = \
             get_list_of_items(self, ['Sodium chloride, injectable solution, 0,9 %, 500 ml',
-                                     'Cannula iv (winged with injection pot) 18_each_CMST',
+                                     'Cannula iv  (winged with injection pot) 18_each_CMST',
                                      'Disposables gloves, powder free, 100 pieces per box',
                                      'Giving set iv administration + needle 15 drops/ml_each_CMST',
                                      'Oxygen, 1000 liters, primarily with oxygen cylinders'])
@@ -257,7 +257,7 @@ class CareOfWomenDuringPregnancy(Module):
         # ------------------------------------------- POST ABORTION CARE - SHOCK -------------------------------------
         self.item_codes_preg_consumables['post_abortion_care_shock'] = \
             get_list_of_items(self, ['Sodium chloride, injectable solution, 0,9 %, 500 ml',
-                                     'Cannula iv (winged with injection pot) 18_each_CMST',
+                                     'Cannula iv  (winged with injection pot) 18_each_CMST',
                                      'Disposables gloves, powder free, 100 pieces per box',
                                      'Giving set iv administration + needle 15 drops/ml_each_CMST',
                                      'Oxygen, 1000 liters, primarily with oxygen cylinders'])
@@ -327,7 +327,7 @@ class CareOfWomenDuringPregnancy(Module):
             self, ['Misoprostol, tablet, 200 mcg',
                    'Oxytocin, injection, 10 IU in 1 ml ampoule',
                    'Sodium chloride, injectable solution, 0,9 %, 500 ml',
-                   'Cannula iv (winged with injection pot) 18_each_CMST',
+                   'Cannula iv  (winged with injection pot) 18_each_CMST',
                    'Giving set iv administration + needle 15 drops/ml_each_CMST',
                    'Disposables gloves, powder free, 100 pieces per box',
                    'Oxygen, 1000 liters, primarily with oxygen cylinders',

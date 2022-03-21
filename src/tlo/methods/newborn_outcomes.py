@@ -414,7 +414,7 @@ class NewbornOutcomes(Module):
 
         # ---------------------------------- IV DRUG ADMIN EQUIPMENT  -------------------------------------------------
         self.item_codes_nb_consumables['iv_drug_equipment'] = \
-            get_list_of_items(self, ['Cannula iv (winged with injection pot) 18_each_CMST',
+            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 18_each_CMST',
                                      'Giving set iv administration + needle 15 drops/ml_each_CMST',
                                      'Gloves, exam, latex, disposable, pair'])
 

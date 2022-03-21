@@ -659,7 +659,7 @@ class Labour(Module):
 
         # ---------------------------------- IV DRUG ADMIN EQUIPMENT  -------------------------------------------------
         self.item_codes_lab_consumables['iv_drug_equipment'] = \
-            get_list_of_items(self, ['Cannula iv (winged with injection pot) 18_each_CMST',
+            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 18_each_CMST',
                                      'Giving set iv administration + needle 15 drops/ml_each_CMST',
                                      'Disposables gloves, powder free, 100 pieces per box'])
 
@@ -675,7 +675,7 @@ class Labour(Module):
                                      'Chlorhexidine 1.5% solution_5_CMST'])
 
         self.item_codes_lab_consumables['delivery_optional'] = \
-            get_list_of_items(self, ['Cannula iv (winged with injection pot) 18_each_CMST',
+            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 18_each_CMST',
                                      'Disposables gloves, powder free, 100 pieces per box',
                                      'Gauze, absorbent 90cm x 40m_each_CMST',
                                      'Paracetamol, tablet, 500 mg'])
@@ -689,7 +689,7 @@ class Labour(Module):
                                      'Metronidazole 200mg_1000_CMST'])
 
         self.item_codes_lab_consumables['caesarean_delivery_optional'] =\
-            get_list_of_items(self, ['Cannula iv (winged with injection pot) 18_each_CMST',
+            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 18_each_CMST',
                                      'Paracetamol, tablet, 500 mg',
                                      'Declofenac injection_each_CMST',
                                      'Pethidine, 50 mg/ml, 2 ml ampoule',
@@ -708,7 +708,7 @@ class Labour(Module):
                                      'Metronidazole 200mg_1000_CMST'])
 
         self.item_codes_lab_consumables['obstetric_surgery_optional'] = \
-            get_list_of_items(self, ['Cannula iv (winged with injection pot) 18_each_CMST',
+            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 18_each_CMST',
                                      'Paracetamol, tablet, 500 mg',
                                      'Declofenac injection_each_CMST',
                                      'Pethidine, 50 mg/ml, 2 ml ampoule',
@@ -743,7 +743,7 @@ class Labour(Module):
             get_list_of_items(self, ['Misoprostol, tablet, 200 mcg',
                                      'Oxytocin, injection, 10 IU in 1 ml ampoule',
                                      'Sodium chloride, injectable solution, 0,9 %, 500 ml',
-                                     'Cannula iv (winged with injection pot) 18_each_CMST',
+                                     'Cannula iv  (winged with injection pot) 18_each_CMST',
                                      'Giving set iv administration + needle 15 drops/ml_each_CMST',
                                      'Disposables gloves, powder free, 100 pieces per box',
                                      'Oxygen, 1000 liters, primarily with oxygen cylinders',
@@ -757,7 +757,7 @@ class Labour(Module):
                                      'Ampicillin, powder for injection, 500 mg, vial',
                                      'Gentamycin, injection, 40 mg/ml in 2 ml vial',
                                      'Sodium chloride, injectable solution, 0,9 %, 500 ml',
-                                     'Cannula iv (winged with injection pot) 18_each_CMST',
+                                     'Cannula iv  (winged with injection pot) 18_each_CMST',
                                      'Giving set iv administration + needle 15 drops/ml_each_CMST',
                                      'Disposables gloves, powder free, 100 pieces per box',
                                      'Complete blood count',
@@ -765,8 +765,8 @@ class Labour(Module):
                                      'Bag, urine, collecting, 2000 ml',
                                      'Paracetamol, tablet, 500 mg',
                                      'Pethidine, 50 mg/ml, 2 ml ampoule',
-                                     'Gauze, absorbent 90cm x 40m_each_CMST',
-                                     'Needle suture intestinal round bodied Â½ circle trocar_6_CMST'])
+                                     'Gauze, absorbent 90cm x 40m_each_CMST',])
+                                     # 'Needle suture intestinal round bodied Â½ circle trocar_6_CMST'])
 
         # -------------------------------------  OBSTETRIC VACUUM   ---------------------------------------------------
         self.item_codes_lab_consumables['vacuum'] = get_list_of_items(self, ['Vacuum, obstetric'])
@@ -779,7 +779,7 @@ class Labour(Module):
                                      'Metronidazole, injection, 500 mg in 100 ml vial'])
 
         self.item_codes_lab_consumables['maternal_sepsis_optional'] = \
-            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 20_each_CMST',
+            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 18_each_CMST',
                                      'Oxygen, 1000 liters, primarily with oxygen cylinders',
                                      'Paracetamol, tablet, 500 mg',
                                      'Giving set iv administration + needle 15 drops/ml_each_CMST',
@@ -801,7 +801,7 @@ class Labour(Module):
         self.item_codes_lab_consumables['pph_optional'] = \
             get_list_of_items(self, ['Pethidine, 50 mg/ml, 2 ml ampoule',
                                      'Oxygen, 1000 liters, primarily with oxygen cylinders',
-                                     'Cannula iv  (winged with injection pot) 20_each_CMST',
+                                     'Cannula iv  (winged with injection pot) 18_each_CMST',
                                      'Bag, urine, collecting, 2000 ml',
                                      'Foley catheter',
                                      'Giving set iv administration + needle 15 drops/ml_each_CMST',
