@@ -567,11 +567,11 @@ class Tb(Module):
             LinearModelType.MULTIPLICATIVE,
             1,
             Predictor("age_years")
-                .when("<1", p["prog_1yr"])
-                .when("<2", p["prog_1_2yr"])
-                .when("<5", p["prog_2_5yr"])
-                .when("<10", p["prog_5_10yr"])
-                .when("<15", p["prog_10yr"]),
+            .when("<1", p["prog_1yr"])
+            .when("<2", p["prog_1_2yr"])
+            .when("<5", p["prog_2_5yr"])
+            .when("<10", p["prog_5_10yr"])
+            .when("<15", p["prog_10yr"]),
             Predictor().when(
                 "va_bcg_all_doses & (hv_inf == False) & (age_years <10)", p["rr_tb_bcg"]
             ),
@@ -696,8 +696,8 @@ class Tb(Module):
         # allocate some latent infections as mdr-tb
         idx_new_latent_mdr = (
             df[df.is_alive & (df.tb_inf == "latent")]
-                .sample(frac=p["prop_mdr2010"], random_state=self.rng)
-                .index
+            .sample(frac=p["prop_mdr2010"], random_state=self.rng)
+            .index
         )
 
         df.loc[idx_new_latent_mdr, "tb_strain"] = "mdr"
@@ -770,7 +770,7 @@ class Tb(Module):
         # ------------------ fast progressors ------------------ #
         eligible_for_fast_progression = df.loc[
             (df.tb_date_latent == now) & df.is_alive & (df.age_years >= 15) & ~df.hv_inf
-            ].index
+        ].index
 
         will_progress = (
             rng.random_sample(len(eligible_for_fast_progression)) < p["prop_fast_progressor"]
@@ -780,7 +780,7 @@ class Tb(Module):
         # hiv-positive
         eligible_for_fast_progression_hiv = df.loc[
             (df.tb_date_latent == now) & df.is_alive & (df.age_years >= 15) & df.hv_inf
-            ].index
+        ].index
 
         will_progress = (
             rng.random_sample(len(eligible_for_fast_progression_hiv)) < p["prop_fast_progressor_hiv"]
@@ -802,8 +802,7 @@ class Tb(Module):
         # adults
         eligible_adults = df.loc[
             (df.tb_date_latent == now) & df.is_alive & (df.age_years >= 15)
-            ].index
-
+        ].index
         eligible_adults = eligible_adults[~eligible_adults.isin(fast)]
 
         # check no fast progressors included in the slow progressors risk
@@ -829,7 +828,7 @@ class Tb(Module):
         # will progress within 1 year
         eligible_children = df.loc[
             (df.tb_date_latent == now) & df.is_alive & (df.age_years < 15)
-            ].index
+        ].index
         eligible_children = eligible_children[~np.isin(eligible_children, fast)]
         assert not any(elem in fast for elem in eligible_children)
 
@@ -858,9 +857,7 @@ class Tb(Module):
 
         active_testing_rates = p["rate_testing_active_tb"]
         current_active_testing_rate = active_testing_rates.loc[
-                                          (
-                                              active_testing_rates.year == self.sim.date.year), "testing_rate_active_cases"].values[
-                                          0] / 100
+            (active_testing_rates.year == self.sim.date.year), "testing_rate_active_cases"].values[0]/100
         current_active_testing_rate = current_active_testing_rate / 3  # adjusted for monthly poll
         random_draw = rng.random_sample(size=len(df))
 
@@ -870,7 +867,7 @@ class Tb(Module):
             & ~df.tb_diagnosed
             & ~df.tb_on_treatment
             & (random_draw < p["rate_testing_general_pop"])
-            ]
+        ]
 
         # randomly select some symptomatic individuals for screening and testing
         # this rate increases by year
@@ -880,7 +877,7 @@ class Tb(Module):
             & ~df.tb_on_treatment
             & (df.tb_inf == "active")
             & (random_draw < current_active_testing_rate)
-            ]
+        ]
 
         all_screened = screen_idx.union(screen_active_idx).drop_duplicates()
 
@@ -1183,13 +1180,13 @@ class Tb(Module):
             & (df_tmp.tb_inf == "active")
             & (df_tmp.tb_strain == "ds")
             & ~df_tmp.hv_inf
-            ] = self.daly_wts["daly_tb"]
+        ] = self.daly_wts["daly_tb"]
         health_values.loc[
             df_tmp.is_alive
             & (df_tmp.tb_inf == "active")
             & (df_tmp.tb_strain == "mdr")
             & ~df_tmp.hv_inf
-            ] = self.daly_wts["daly_tb"]
+        ] = self.daly_wts["daly_tb"]
 
         # hiv-positive
         health_values.loc[
@@ -1197,13 +1194,13 @@ class Tb(Module):
             & (df_tmp.tb_inf == "active")
             & (df_tmp.tb_strain == "ds")
             & df_tmp.hv_inf
-            ] = self.daly_wts["daly_tb_hiv_anaemia"]
+        ] = self.daly_wts["daly_tb_hiv_anaemia"]
         health_values.loc[
             df_tmp.is_alive
             & (df_tmp.tb_inf == "active")
             & (df_tmp.tb_strain == "mdr")
             & df_tmp.hv_inf
-            ] = self.daly_wts["daly_mdr_tb_hiv_anaemia"]
+        ] = self.daly_wts["daly_mdr_tb_hiv_anaemia"]
 
         health_values.name = "TB"  # label the cause of this disability
 
@@ -1275,6 +1272,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             return
 
         if (scenario == 1) | (scenario == 3):
+
             # increase testing/diagnosis rates, default 2020 0.03/0.25 -> 93% dx
             self.sim.modules["Hiv"].parameters["hiv_testing_rates"]["annual_testing_rate_children"] = 0.1
             self.sim.modules["Hiv"].parameters["hiv_testing_rates"]["annual_testing_rate_adults"] = 0.3
@@ -1320,6 +1318,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
 
         # improve preventive measures
         if scenario == 3:
+
             # reduce risk of HIV - applies to whole adult population
             self.sim.modules["Hiv"].parameters["beta"] = self.sim.modules["Hiv"].parameters["beta"] * 0.9
 
@@ -1354,6 +1353,7 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(years=1))
 
     def apply(self, population):
+
         # transmission ds-tb
         # the outcome of this will be an updated df with new tb cases
         self.latent_transmission(strain="ds")
@@ -1396,9 +1396,9 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 & (df.tb_strain == strain)
                 & df.tb_smear
                 & ~df.tb_on_treatment
-                ]
-                .groupby(["district_of_residence"])["is_alive"]
-                .sum()
+            ]
+            .groupby(["district_of_residence"])["is_alive"]
+            .sum()
         )
 
         tmp["smear_pos"] = pd.Series(smear_pos, index=districts)
@@ -1411,9 +1411,9 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 & (df.tb_strain == strain)
                 & ~df.tb_smear
                 & ~df.tb_on_treatment
-                ]
-                .groupby(["district_of_residence"])["is_alive"]
-                .sum()
+            ]
+            .groupby(["district_of_residence"])["is_alive"]
+            .sum()
         )
         tmp["smear_neg"] = pd.Series(smear_neg, index=districts)
 
@@ -1421,9 +1421,9 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # calculate foi by district
         foi = (
-                  p["transmission_rate"]
-                  * (tmp["smear_pos"] + (tmp["smear_neg"] * p["rel_inf_smear_ng"]))
-              ) / tmp["is_alive"]
+            p["transmission_rate"]
+            * (tmp["smear_pos"] + (tmp["smear_neg"] * p["rel_inf_smear_ng"]))
+        ) / tmp["is_alive"]
         foi = pd.Series(foi, index=districts)
 
         foi = foi.fillna(0)  # fill any missing values with 0
@@ -1452,10 +1452,10 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         total_pop = pop.sum()
 
         foi_national = (
-                           p["mixing_parameter"]
-                           * p["transmission_rate"]
-                           * (total_smear_pos + (total_smear_neg * p["rel_inf_smear_ng"]))
-                       ) / total_pop
+            p["mixing_parameter"]
+            * p["transmission_rate"]
+            * (total_smear_pos + (total_smear_neg * p["rel_inf_smear_ng"]))
+        ) / total_pop
 
         # -------------- individual risk of acquisition -------------- #
 
@@ -1476,7 +1476,7 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # latent infected with other strain - replace with latent infection with this strain
         tb_idx = df.index[
             df.is_alive & (df.tb_inf != "active") & (random_draw < risk_tb)
-            ]
+        ]
 
         logger.debug(
             key="message",
@@ -1511,7 +1511,7 @@ class TbRelapseEvent(RegularEvent, PopulationScopeEventMixin):
         relapse_risk_early = df.loc[
             df.tb_ever_treated
             & (self.sim.date < (df.tb_date_treated + pd.DateOffset(days=732.5)))
-            ].index
+        ].index
 
         risk_of_relapse_early = self.module.lm["risk_relapse_2yrs"].predict(
             df.loc[relapse_risk_early]
@@ -1527,7 +1527,7 @@ class TbRelapseEvent(RegularEvent, PopulationScopeEventMixin):
         relapse_risk_later = df.loc[
             df.tb_ever_treated
             & (self.sim.date >= (df.tb_date_treated + pd.DateOffset(days=732.5)))
-            ].index
+        ].index
 
         risk_of_relapse_later = self.module.lm["risk_relapse_late"].predict(
             df.loc[relapse_risk_later]
@@ -1579,7 +1579,7 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
             & (df.tb_scheduled_date_active <= now)
             & ~df.tb_on_ipt
             & ~df.tb_on_treatment
-            ].index
+        ].index
 
         # -------- 1) change individual properties for active disease --------
         df.loc[active_idx, "tb_inf"] = "active"
@@ -1605,7 +1605,7 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
             & ~df.tb_on_ipt
             & ~df.tb_on_treatment
             & df.hv_inf
-            ].index
+        ].index
 
         # higher probability of being smear positive than HIV-
         smear_pos = (
@@ -1673,7 +1673,7 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
                 now
                 > (df.tb_date_treated + pd.DateOffset(months=p["ds_treatment_length"]))
             )
-            ].index
+        ].index
 
         # ---------------------- treatment end: retreatment ds-tb (7 months) ---------------------- #
         # end treatment for retreatment cases
@@ -1688,7 +1688,7 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
                     + pd.DateOffset(months=p["ds_retreatment_length"])
                 )
             )
-            ].index
+        ].index
 
         # ---------------------- treatment end: mdr-tb (24 months) ---------------------- #
         # end treatment for mdr-tb cases
@@ -1700,7 +1700,7 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
                 now
                 > (df.tb_date_treated + pd.DateOffset(months=p["mdr_treatment_length"]))
             )
-            ].index
+        ].index
 
         # ---------------------- treatment end: shorter paediatric regimen ---------------------- #
         # end treatment for paediatric cases on 4 month regimen
@@ -1712,7 +1712,7 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
                 now
                 > (df.tb_date_treated + pd.DateOffset(months=p["child_shorter_treatment_length"]))
             )
-            ].index
+        ].index
 
         # join indices
         end_tx_idx = end_ds_tx_idx.union(end_ds_retx_idx)
@@ -1729,34 +1729,34 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
             (df.index.isin(end_ds_tx_idx))
             & (df.age_years < 5)
             & (random_var < (1 - p["prob_tx_success_0_4"]))
-            ].index
+        ].index
 
         # children aged 5-14 ds-tb
         ds_tx_failure5_14_idx = df.loc[
             (df.index.isin(end_ds_tx_idx))
             & (df.age_years.between(5, 14))
             & (random_var < (1 - p["prob_tx_success_5_14"]))
-            ].index
+        ].index
 
         # children aged <16 and on shorter regimen
         ds_tx_failure_shorter_idx = df.loc[
             (df.index.isin(end_tx_shorter_idx))
             & (df.age_years < 16)
             & (random_var < (1 - p["prob_tx_success_shorter"]))
-            ].index
+        ].index
 
         # adults ds-tb
         ds_tx_failure_adult_idx = df.loc[
             (df.index.isin(end_ds_tx_idx))
             & (df.age_years >= 15)
             & (random_var < (1 - p["prob_tx_success_ds"]))
-            ].index
+        ].index
 
         # all mdr cases on ds tx will fail
         failure_in_mdr_with_ds_tx_idx = df.loc[
             (df.index.isin(end_ds_tx_idx))
             & (df.tb_strain == "mdr")
-            ].index
+        ].index
 
         # some mdr cases on mdr treatment will fail
         failure_due_to_mdr_idx = df.loc[
@@ -1764,7 +1764,7 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
             & (df.tb_strain == "mdr")
             & (random_var < (1 - p["prob_tx_success_mdr"]))
 
-            ].index
+        ].index
 
         # join indices of failing cases together
         tx_failure = (
@@ -1836,7 +1836,7 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
             & ~df.hv_inf
             & (df.tb_date_active < now)
             & (random_draw < prob_self_cure)
-            ].index
+        ].index
 
         # hiv-positive, on art and virally suppressed
         self_cure_art = df.loc[
@@ -1846,7 +1846,7 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
             & (df.hv_art == "on_VL_suppressed")
             & (df.tb_date_active < now)
             & (random_draw < prob_self_cure)
-            ].index
+        ].index
 
         # resolve symptoms and change properties
         all_self_cure = [*self_cure, *self_cure_art]
@@ -2077,7 +2077,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                     & ~df.tb_diagnosed
                     & df.is_alive
                     & (df.district_of_residence == district)
-                    ].index
+                ].index
 
                 if ipt_eligible.any():
                     # sample with replacement in case eligible population n<5
@@ -2233,6 +2233,7 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
 
         # if consumables not available, rely on clinical diagnosis
         if test_result is None:
+
             test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                 dx_tests_to_run="tb_clinical", hsi_event=self
             )
@@ -2258,7 +2259,6 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
             return self.make_appt_footprint({})
         else:
             return ACTUAL_APPT_FOOTPRINT
-
 
 # # ---------------------------------------------------------------------------
 # #   Treatment
@@ -2309,7 +2309,7 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             logger.debug(
                 key="message",
                 data=f"HSI_Tb_StartTreatment: scheduling first follow-up "
-                     f"for person {person_id} on {follow_up_date}",
+                f"for person {person_id} on {follow_up_date}",
             )
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -2375,9 +2375,10 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         if (self.module.parameters["scenario"] == 4) \
             & (self.sim.date >= self.module.parameters["scenario_start_date"]) \
             & (person["age_years"] <= 16) \
-            & ~(person["tb_smear"]) \
-            & ~person["tb_ever_treated"] \
-            & ~person["tb_diagnosed_mdr"]:
+                & ~(person["tb_smear"]) \
+                & ~person["tb_ever_treated"]\
+                & ~person["tb_diagnosed_mdr"]:
+
             # shorter treatment for child with minimal tb
             treatment_regimen = "tb_tx_child_shorter"
 
@@ -2439,7 +2440,7 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
 
         # if previously treated:
         if ((person["tb_treatment_regimen"] == "tb_retx_adult") or
-            (person["tb_treatment_regimen"] == "tb_retx_child")):
+                (person["tb_treatment_regimen"] == "tb_retx_child")):
 
             # if strain is ds and person previously treated:
             sputum_fup = follow_up_times["ds_retreatment_sputum"].dropna()
@@ -2507,7 +2508,7 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
             logger.debug(
                 key="message",
                 data=f"HSI_Tb_FollowUp: scheduling next follow-up "
-                     f"for person {person_id} on {follow_up_date}",
+                f"for person {person_id} on {follow_up_date}",
             )
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -2572,7 +2573,7 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
             # Check/log use of consumables, and give IPT if available
             # if not available, reschedule IPT start
             if self.get_consumables(
-                item_codes=self.module.item_codes_for_consumables_required["tb_ipt"]
+                        item_codes=self.module.item_codes_for_consumables_required["tb_ipt"]
             ):
                 # Update properties
                 df.at[person_id, "tb_on_ipt"] = True
@@ -2618,8 +2619,8 @@ class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):
         if (
             (not person["tb_diagnosed"])
             and (
-            person["tb_date_ipt"] < (self.sim.date - pd.DateOffset(days=36 * 30.5))
-        )
+                person["tb_date_ipt"] < (self.sim.date - pd.DateOffset(days=36 * 30.5))
+            )
             and (m.rng.random_sample() < m.parameters["prob_retained_ipt_6_months"])
         ):
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -2722,7 +2723,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[
                 (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
                 & df.hv_inf
-                ]
+            ]
         )
 
         # number of new active cases in HIV+ children
@@ -2832,7 +2833,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[
                 (df.tb_strain == "mdr")
                 & (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
-                ]
+            ]
         )
 
         if new_mdr_cases:
@@ -2877,7 +2878,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[
                 (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
                 & (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
-                ]
+            ]
         )
 
         # treatment coverage: if became active and was treated in last timeperiod
