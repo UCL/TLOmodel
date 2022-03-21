@@ -47,7 +47,7 @@ from tlo.methods import (
     rti,
     stunting,
     symptommanager,
-    wasting,
+    wasting, breast_cancer,
 )
 
 # Parse arguments defining run options
@@ -248,6 +248,7 @@ sim.register(
     oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
     other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath),
     bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
+    breast_cancer.BreastCancer(resourcefilepath=resourcefilepath),
     measles.Measles(resourcefilepath=resourcefilepath),
     alri.Alri(resourcefilepath=resourcefilepath),
     stunting.Stunting(resourcefilepath=resourcefilepath),
