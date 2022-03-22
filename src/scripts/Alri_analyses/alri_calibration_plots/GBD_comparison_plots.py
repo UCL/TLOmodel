@@ -9,6 +9,7 @@ import time
 import random
 
 import pandas as pd
+import numpy as np
 from matplotlib import pyplot as plt
 
 from tlo import Date, Simulation, logging
@@ -105,6 +106,18 @@ for year in years:
     tot_py.index = tot_py.index.astype(int)
     py.loc[year, '<5y'] = tot_py.loc[0:4].sum().values[0]
 
+
+# get all live births
+births = output['tlo.methods.demography']['on_birth']
+births['year'] = pd.to_datetime(births['date']).dt.year
+births.drop(columns='date', inplace=True)
+births.set_index(
+    'year',
+    drop=True,
+    inplace=True
+)
+births_per_year = births.groupby('year').size()
+
 # # get population size to make a comparison
 # pop = output['tlo.methods.demography']['num_children']
 # pop['year'] = pd.to_datetime(pop['date']).dt.year
@@ -156,11 +169,12 @@ plt.fill_between(
     alpha=0.5,
 )
 # McAllister et al 2019 estimates
-plt.plot(McAllister_data.Year, McAllister_data.Incidence_per100_children)
+years_with_data = McAllister_data.dropna(axis=0)
+plt.plot(years_with_data.Year, years_with_data.Incidence_per100_children)
 plt.fill_between(
-    McAllister_data.Year,
-    McAllister_data.Incidence_per100_lower,
-    McAllister_data.Incidence_per100_upper,
+    years_with_data.Year,
+    years_with_data.Incidence_per100_lower,
+    years_with_data.Incidence_per100_upper,
     alpha=0.5,
 )
 # model output
@@ -172,13 +186,14 @@ plt.xticks(rotation=90)
 plt.gca().set_xlim(start_date, end_date)
 plt.legend(["GBD", "McAllister 2019", "Model"])
 plt.tight_layout()
-plt.savefig(outputpath / ("ALRI_Incidence_model_comparison" + datestamp + ".png"), format='png')
+# plt.savefig(outputpath / ("ALRI_Incidence_model_comparison" + datestamp + ".png"), format='png')
 
 plt.show()
 
 # MORTALITY RATE
 # # # # # ALRI mortality per 100,000 children # # # # #
-fig2, ax2 = plt.subplots()
+
+fig1, ax1 = plt.subplots()
 
 # GBD estimates
 plt.plot(GBD_data.Year, GBD_data.Death_per100k_children)  # GBD data
@@ -188,6 +203,10 @@ plt.fill_between(
     GBD_data.Death_per100k_upper,
     alpha=0.5,
 )
+
+# # McAllister et al 2019 estimates
+# plt.plot(McAllister_data.Year, McAllister_data.Death_per1000_livebirths * 100)  # no upper/lower
+
 # model output
 plt.plot(counts.index, mort_rate, color="mediumseagreen")  # model
 plt.title("ALRI Mortality per 100,000 children")
@@ -197,7 +216,30 @@ plt.ylabel("Mortality (/100k)")
 plt.gca().set_xlim(start_date, end_date)
 plt.legend(["GBD", "Model"])
 plt.tight_layout()
-plt.savefig(outputpath / ("ALRI_Mortality_model_comparison" + datestamp + ".png"), format='png')
+# plt.savefig(outputpath / ("ALRI_Mortality_model_comparison" + datestamp + ".png"), format='png')
+
+plt.show()
+
+# # # # # #
+# Mortality per 1,000 livebirths due to ALRI
+
+fig2, ax2 = plt.subplots()
+
+# McAllister et al. 2019 estimates
+plt.plot(McAllister_data.Year, McAllister_data.Death_per1000_livebirths)  # no upper/lower
+
+# model output
+mort_per_livebirth = (counts.deaths / births_per_year * 1000).dropna()
+
+plt.plot(counts.index, mort_per_livebirth, color="mediumseagreen")  # model
+plt.title("ALRI Mortality per 1,000 livebirths")
+plt.xlabel("Year")
+plt.xticks(rotation=90)
+plt.ylabel("Mortality (/100k)")
+plt.gca().set_xlim(start_date, end_date)
+plt.legend(["McAllister 2019", "Model"])
+plt.tight_layout()
+# plt.savefig(outputpath / ("ALRI_Mortality_model_comparison" + datestamp + ".png"), format='png')
 
 plt.show()
 
@@ -225,7 +267,7 @@ plt.ylabel("Number of deaths")
 plt.xticks(rotation=0)
 plt.legend(loc=2)
 plt.tight_layout()
-plt.savefig(outputpath / ("ALRI_death_calibration_plot" + datestamp + ".png"), format='png')
+# plt.savefig(outputpath / ("ALRI_death_calibration_plot" + datestamp + ".png"), format='png')
 plt.show()
 
 # -------------------------------------------------------------------------------------------------------------

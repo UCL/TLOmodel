@@ -14,13 +14,13 @@ Run on the batch system using:
 tlo batch-submit src/scripts/Alri_analyses/alri_azure_run_scenarios/baseline_alri_scenario.py
 
 weds 16th feb runs:
-Job ID: baseline_alri_scenario-(date)
+Job ID: baseline_alri_scenario-2022-03-18T142355Z
 
 Display information about a job:
 tlo batch-job tlo_q1_demo-123 --tasks
 
 Download result files for a completed job:
-tlo batch-download baseline_alri_scenario-(date)
+tlo batch-download baseline_alri_scenario-2022-03-18T142355Z
 """
 
 import os
@@ -43,8 +43,8 @@ from tlo.methods import (
 )
 from tlo.scenario import BaseScenario
 
-number_of_draws = 10
-runs_per_draw = 5
+number_of_draws = 1
+runs_per_draw = 10
 pop_size = 760000  # 1:25 representative sample
 
 
@@ -54,14 +54,14 @@ class TestScenario(BaseScenario):
         super().__init__()
         self.seed = random.randint(0, 50000)
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2030, 1, 2)
-        self.pop_size = 50000
+        self.end_date = Date(2031, 1, 1)
+        self.pop_size = pop_size
         self.number_of_draws = number_of_draws
         self.runs_per_draw = runs_per_draw
 
     def log_configuration(self):
         return {
-            'filename': 'baseline_scenario_alri_50k_pop_10x5draws',
+            'filename': 'baseline_scenario_alri_50k_pop_1drawx10runs',
             'directory': './outputs',
             "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
                 "*": logging.WARNING,
