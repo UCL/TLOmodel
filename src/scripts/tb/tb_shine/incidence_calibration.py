@@ -18,28 +18,26 @@ from tlo.methods import (
 from tlo.scenario import BaseScenario
 
 
-class TestShorterTreatmentScenario(BaseScenario):
+class TestTBIncidence(BaseScenario):
 
     def __init__(self):
         super().__init__()
         self.seed = randint(0, 5000)
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2035, 1, 1)
-        self.pop_size = 500_000
-        self.number_of_draws = 2
-        self.runs_per_draw = 5
+        self.pop_size = 250_000
+        self.number_of_draws = 5
+        self.runs_per_draw = 1
 
     def log_configuration(self):
         return {
-            'filename': 'test_shorter_treatment_scenario',
+            'filename': 'test_tb_incidence',
             'directory': './outputs',
             'custom_levels': {
                 '*': logging.WARNING,
                 'tlo.methods.hiv': logging.INFO,
                 'tlo.methods.tb': logging.INFO,
                 'tlo.methods.demography': logging.INFO,
-                'tlo.methods.healthsystem.summary': logging.INFO,
-                'tlo.methods.healthburden': logging.INFO,
             }
         }
 
@@ -59,7 +57,10 @@ class TestShorterTreatmentScenario(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
         return {
-            'Tb': {'scenario': [0, 4][draw_number]}
+            'Tb': {
+                'scenario': 0,
+                'transmission_rate': [16.71012, 17.71012, 18.71012, 19.71012, 20.71012][draw_number]
+            },
         }
 
 

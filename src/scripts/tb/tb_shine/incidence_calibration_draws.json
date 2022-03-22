@@ -1,0 +1,57 @@
+{
+  "scenario_script_path": "src/scripts/tb/tb_shine/incidence_calibration.py",
+  "scenario_seed": 2708,
+  "runs_per_draw": 1,
+  "draws": [
+    {
+      "draw_number": 0,
+      "draw_seed": 627738751,
+      "parameters": {
+        "Tb": {
+          "scenario": 0,
+          "transmission_rate": 16.71012
+        }
+      }
+    },
+    {
+      "draw_number": 1,
+      "draw_seed": 1616300174,
+      "parameters": {
+        "Tb": {
+          "scenario": 0,
+          "transmission_rate": 17.71012
+        }
+      }
+    },
+    {
+      "draw_number": 2,
+      "draw_seed": 1351729854,
+      "parameters": {
+        "Tb": {
+          "scenario": 0,
+          "transmission_rate": 18.71012
+        }
+      }
+    },
+    {
+      "draw_number": 3,
+      "draw_seed": 2034017173,
+      "parameters": {
+        "Tb": {
+          "scenario": 0,
+          "transmission_rate": 19.71012
+        }
+      }
+    },
+    {
+      "draw_number": 4,
+      "draw_seed": 77268605,
+      "parameters": {
+        "Tb": {
+          "scenario": 0,
+          "transmission_rate": 20.71012
+        }
+      }
+    }
+  ]
+}
