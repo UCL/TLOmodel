@@ -16,11 +16,18 @@ resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
 # todo - healthcare seeking?
 # make one class to declare when want both to be used - done
-# symtom manager and hSI
-# switches to log or not
-# use consumables
-# test with HSI and symptoms on
+# use of symptom manager - done
 # check dtypes (and that columns are addressed with right ss_sm/ ss_sh prefix)
+
+# clean up parameters/resourcefile etc. (overall parameters passed to class but not loaded from there).
+# switches to log or not
+# test with HSI and symptoms on
+
+# generic HSI
+# own HSI / functions
+# use consumables
+
+# run and produce plots using scripts
 
 
 def simulation_both(seed):
