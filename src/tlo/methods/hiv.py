@@ -889,7 +889,7 @@ class Hiv(Module):
 
         self.item_codes_for_consumables_required['hiv_early_infant_test'] = {
             hs.get_item_code_from_item_name("Blood collecting tube, 5 ml"): 1,
-            hs.get_item_code_from_item_name("Gloves, exam, latex, disposable, pair"): 1,
+            hs.get_item_code_from_item_name("Disposables gloves, powder free, 100 pieces per box"): 1,
             hs.get_item_code_from_item_name("HIV EIA Elisa test"): 1}
 
         self.item_codes_for_consumables_required['vl_measurement'] = \
