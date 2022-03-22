@@ -433,7 +433,7 @@ class NewbornOutcomes(Module):
 
         # -------------------------------------------- RESUSCITATION ------------------------------------------
         self.item_codes_nb_consumables['resuscitation'] = \
-            get_item_code_from_pkg('Neonatal resuscitation (institutional)')
+            get_list_of_items(self, ['Infant resuscitator, clear plastic + mask + bag_each_CMST'])
 
         # ------------------------------------- SEPSIS - FULL SUPPORTIVE CARE ---------------------------------------
         self.item_codes_nb_consumables['sepsis_supportive_care'] = \
