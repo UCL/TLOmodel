@@ -32,8 +32,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
-popsize = 1000
+end_date = Date(2030, 1, 1)
+popsize = 50000
 
 # set up the log config
 log_config = {
@@ -51,7 +51,7 @@ log_config = {
 # Register the appropriate modules
 # need to call epi before tb to get bcg vax
 # seed = random.randint(0, 50000)
-seed = 3  # set seed for reproducibility
+seed = 42  # set seed for reproducibility
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
 # Used to configure health system behaviour
 service_availability = ["*"]
@@ -79,14 +79,14 @@ sim.register(
 )
 
 # change IPT high-risk districts to all districts for national-level model
-sim.modules["Tb"].parameters["tb_high_risk_distr"] = pd.read_excel(
-    resourcefilepath / "ResourceFile_TB.xlsx", sheet_name="all_districts"
-)
+# sim.modules["Tb"].parameters["tb_high_risk_distr"] = pd.read_excel(
+#     resourcefilepath / "ResourceFile_TB.xlsx", sheet_name="all_districts"
+# )
 
 # choose the scenario, 0=baseline, 4=shorter paediatric treatment
 sim.modules["Tb"].parameters["scenario"] = 0
 
-#sim.modules["Tb"].parameters["transmission_rate"] = 25
+sim.modules["Tb"].parameters["transmission_rate"] = 20
 
 #sim.modules["Tb"].parameters["new_transmission_rate"] = 30
 
@@ -99,9 +99,18 @@ sim.simulate(end_date=end_date)
 output = parse_log_file(sim.log_filepath)
 
 # save the results, argument 'wb' means write using binary mode. use 'rb' for reading file
-with open(outputpath / "default_run.pickle", "wb") as f:
-    # Pickle the 'data' dictionary using the highest protocol available.
-    pickle.dump(output, f, pickle.HIGHEST_PROTOCOL)
+#with open(outputpath / "default_run.pickle", "wb") as f:
+#    # Pickle the 'data' dictionary using the highest protocol available.
+#    pickle.dump(output, f, pickle.HIGHEST_PROTOCOL)
+
+#with open(outputpath / 'default_run.pickle', 'rb') as f:
+#    output = pickle.load(f)
+
+for key, dfs in output.items():
+    if key.startswith("tlo."):
+        with open(outputpath / f"{key}.pickle", "wb") as f:
+            print(f)
+            pickle.dump(dfs, f)
 
 # --------------- LOAD DATA --------------- #
 data_who_tb_2020 = pd.read_excel(resourcefilepath / 'ResourceFile_TB.xlsx', sheet_name='WHO_activeTB2020')
@@ -181,10 +190,15 @@ make_plot(
 
 
 make_plot(
-    title_str="Number of New Active TB Cases (0 - 15 years)",
+    title_str="Number of New Active TB Cases (0 - 16 years)",
     model=tb_incidence['num_new_active_tb_child'],
 )
 
 tb_prevalence = output['tlo.methods.tb']['tb_prevalence']
 tb_prevalence = tb_prevalence.set_index('date')
 tb_prevalence.index = pd.to_datetime(tb_prevalence.index)
+
+tb_treatment = output['tlo.methods.tb']['tb_treatment']
+tb_treatment = tb_treatment.set_index('date')
+tb_treatment.index = pd.to_datetime(tb_treatment.index)
+
