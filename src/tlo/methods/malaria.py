@@ -461,8 +461,8 @@ class Malaria(Module):
         self.item_codes_for_consumables_required['malaria_complicated'] = {
             get_item_code("Injectable artesunate"): 1,
             get_item_code("Cannula iv  (winged with injection pot) 18_each_CMST"): 3,
-            get_item_code("Glove disposable latex medium_100_CMST"): 3,
-            get_item_code("Gauze, swabs 8-ply 10cm x 10cm_100_CMST"): 3,
+            get_item_code("Disposables gloves, powder free, 100 pieces per box"): 1,
+            get_item_code("Gauze, absorbent 90cm x 40m_each_CMST"): 3,
             get_item_code("Water for injection, 10ml_Each_CMST"): 3,
         }
 
