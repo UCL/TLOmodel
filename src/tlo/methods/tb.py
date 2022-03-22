@@ -465,14 +465,14 @@ class Tb(Module):
             ].get_daly_weight(1)
 
             # HIV-positive
-            # Drug-susceptible Tuberculosis, HIV infected and anemia, moderate
-            self.daly_wts["daly_tb_hiv_anaemia"] = self.sim.modules[
+            # Drug-susceptible Tuberculosis, HIV infected without anaemia
+            self.daly_wts["daly_tb_hiv"] = self.sim.modules[
                 "HealthBurden"
-            ].get_daly_weight(5)
+            ].get_daly_weight(7)
             # Multi-drug resistant Tuberculosis, HIV infected and anemia, moderate
-            self.daly_wts["daly_mdr_tb_hiv_anaemia"] = self.sim.modules[
+            self.daly_wts["daly_mdr_tb_hiv"] = self.sim.modules[
                 "HealthBurden"
-            ].get_daly_weight(10)
+            ].get_daly_weight(9)
 
         # 3) Declare the Symptoms
         # additional healthcare-seeking behaviour with these symptoms
@@ -1195,13 +1195,13 @@ class Tb(Module):
             & (df_tmp.tb_inf == "active")
             & (df_tmp.tb_strain == "ds")
             & df_tmp.hv_inf
-        ] = self.daly_wts["daly_tb_hiv_anaemia"]
+        ] = self.daly_wts["daly_tb_hiv"]
         health_values.loc[
             df_tmp.is_alive
             & (df_tmp.tb_inf == "active")
             & (df_tmp.tb_strain == "mdr")
             & df_tmp.hv_inf
-        ] = self.daly_wts["daly_mdr_tb_hiv_anaemia"]
+        ] = self.daly_wts["daly_mdr_tb_hiv"]
 
         health_values.name = "TB"  # label the cause of this disability
 
