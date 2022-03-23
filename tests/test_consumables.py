@@ -3,7 +3,6 @@ import os
 from collections import namedtuple
 from pathlib import Path
 
-import numpy
 import numpy as np
 import pandas as pd
 import pytest
@@ -39,14 +38,18 @@ def any_warnings_about_item_code(recorded_warnings):
     return len([_r for _r in recorded_warnings if str(_r.message).startswith('Item_Code')]) > 0
 
 
-def test_using_recognised_item_codes():
+def get_rng(seed):
+    return np.random.RandomState(np.random.MT19937(np.random.SeedSequence(seed)))
+
+
+def test_using_recognised_item_codes(seed):
     """Test the functionality of the `Consumables` class with a recognising item_code."""
     # Prepare inputs for the Consumables class (normally provided by the `HealthSystem` module).
     data = create_dummy_data_for_cons_availability(
         intrinsic_availability={0: 0.0, 1: 1.0},
         months=[1],
         facility_ids=[0])
-    rng = numpy.random
+    rng = get_rng(seed)
     date = datetime.datetime(2010, 1, 1)
 
     # Initiate Consumables class
@@ -65,7 +68,7 @@ def test_using_recognised_item_codes():
     assert not cons._not_recognised_item_codes  # No item_codes recorded as not recognised.
 
 
-def test_unrecognised_item_code_is_recorded():
+def test_unrecognised_item_code_is_recorded(seed):
     """Check that when using an item_code that is not recognised, a working result is returned but the fact that
     an unrecognised item_code was requested is logged and a warning issued."""
     # Prepare inputs for the Consumables class (normally provided by the `HealthSystem` module).
@@ -73,7 +76,7 @@ def test_unrecognised_item_code_is_recorded():
         intrinsic_availability={0: 0.0, 1: 1.0},
         months=[1],
         facility_ids=[0])
-    rng = numpy.random
+    rng = get_rng(seed)
     date = datetime.datetime(2010, 1, 1)
 
     # Initiate Consumables class
@@ -98,7 +101,7 @@ def test_unrecognised_item_code_is_recorded():
     assert any_warnings_about_item_code(recorded_warnings)
 
 
-def test_consumables_availability_options():
+def test_consumables_availability_options(seed):
     """Check that the options for `availability` in the Consumables class work as expected for recognised and
     unrecognised item_codes."""
     intrinsic_availability = {0: 0.0, 1: 1.0}
@@ -106,7 +109,7 @@ def test_consumables_availability_options():
         intrinsic_availability=intrinsic_availability,
         months=[1, 2],
         facility_ids=[0, 1])
-    rng = numpy.random
+    rng = get_rng(seed)
     date = datetime.datetime(2010, 1, 1)
 
     # Define the items to be requested, including some unrecognised item_codes
@@ -129,7 +132,7 @@ def test_consumables_availability_options():
 
 
 @pytest.mark.slow
-def test_consumables_available_at_right_frequency():
+def test_consumables_available_at_right_frequency(seed):
     """Check that the availability of consumables following a request is as expected."""
     # Define known set of probabilities with which each item is available
     p_known_items = dict(zip(range(4), [0.0, 0.2, 0.8, 1.0]))
@@ -140,7 +143,7 @@ def test_consumables_available_at_right_frequency():
         intrinsic_availability=p_known_items,
         months=[1],
         facility_ids=[0])
-    rng = numpy.random
+    rng = get_rng(seed)
     date = datetime.datetime(2010, 1, 1)
 
     # Initiate Consumables class
