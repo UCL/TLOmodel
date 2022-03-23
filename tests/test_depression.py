@@ -279,6 +279,6 @@ def test_hsi_functions_no_healthsystem_capability(tmpdir, seed):
 
     df = sim.population.props
 
-    # Check that there have been been no some cases of talking Therapy and anti-depressants
+    # Check that there have been been no use of talking therapy or anti-depressants
     assert 0 == df['de_ever_talk_ther'].sum()
     assert 0 == df['de_on_antidepr'].sum()
