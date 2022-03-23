@@ -626,7 +626,7 @@ class HSI_TdVaccine(HsiBaseVaccine):
         return "Epi_Td"
 
     def apply(self, person_id, squeeze_factor):
-        if self.get_consumables(item_codes=self.modules.cons_item_codes["td"]):
+        if self.get_consumables(item_codes=self.module.cons_item_codes["td"]):
             self.module.increment_dose(person_id, "td")
 
 

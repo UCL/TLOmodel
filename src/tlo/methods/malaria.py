@@ -407,7 +407,10 @@ class Malaria(Module):
         sim.schedule_event(MalariaPollingEventDistrict(self), sim.date + DateOffset(months=1))
 
         sim.schedule_event(MalariaScheduleTesting(self), sim.date + DateOffset(days=1))
-        sim.schedule_event(MalariaIPTp(self), sim.date + DateOffset(days=30.5))
+
+        if 'CareOfWomenDuringPregnancy' not in self.sim.modules:
+            sim.schedule_event(MalariaIPTp(self), sim.date + DateOffset(days=30.5))
+
         sim.schedule_event(MalariaCureEvent(self), sim.date + DateOffset(days=5))
         sim.schedule_event(MalariaParasiteClearanceEvent(self), sim.date + DateOffset(days=30.5))
 
@@ -1122,7 +1125,7 @@ class HSI_MalariaIPTp(HSI_Event, IndividualScopeEventMixin):
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["AntenatalFirst"] = 0.25  # This requires part of an ANC appt
+        the_appt_footprint["ANCSubsequent"] = 0.25  # This requires part of an ANC appt
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "Malaria_IPTp"

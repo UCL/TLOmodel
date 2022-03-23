@@ -21,19 +21,17 @@ from tlo.methods import (
 )
 from tlo.methods.healthsystem import HSI_Event
 
-try:
-    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-except NameError:
-    # running interactively
-    resourcefilepath = 'resources'
+resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
 popsize = 200
 
+"""
+Test whether the system runs under multiple configurations of the healthsystem. (Running the dummy Mockitits and
+ChronicSyndrome modules is intended to test all aspects of the healthsystem module.)
+"""
 
-# Simply test whether the system runs under multiple configurations of the healthsystem
-# NB. Running the dummy Mockitits and ChronicSyndrome modules test all aspects of the healthsystem module.
 
 def check_dtypes(simulation):
     # check types of columns
