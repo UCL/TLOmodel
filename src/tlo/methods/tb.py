@@ -2610,6 +2610,8 @@ class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):
 
         # decide whether PLHIV will continue
         if (
+            person["hv_diagnosed"]
+            and
             (not person["tb_diagnosed"])
             and (
                 person["tb_date_ipt"] < (self.sim.date - pd.DateOffset(days=36 * 30.5))
