@@ -165,11 +165,18 @@ def test_consumables_available_at_right_frequency(seed):
     assert 0 == counter[0]
     assert n_trials == counter[3]
 
+    def is_obs_frequency_consistent_with_expected_probability(n_obs, n_trials, p):
+        """Returns True if the 99% binomial confidence interval on the estimate of frequency from `n_obs` successes out
+         of `n_trials` includes the value `p`."""
+        return np.isclose(p, n_obs / n_trials, atol=2.58 * (p * (1.0 - p) / n_trials) ** 0.5)
+
+    # Check that the availability of each item is consistent with the expectation
     for _i, _p in p_known_items.items():
-        assert np.isclose(_p, counter[_i] / n_trials, rtol=0.05)
+        assert is_obs_frequency_consistent_with_expected_probability(n_obs=counter[_i], n_trials=n_trials, p=_p)
 
     # Check that the availability of the unknown item is the average of the known items
-    assert np.isclose(average_availability_of_known_items, counter[4] / n_trials, rtol=0.02)
+    assert is_obs_frequency_consistent_with_expected_probability(n_obs=counter[4], n_trials=n_trials,
+                                                                 p=average_availability_of_known_items)
 
 
 def get_sim_with_dummy_module_registered(tmpdir=None, run=True, data=None):
