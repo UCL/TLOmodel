@@ -250,9 +250,11 @@ class Schisto(Module):
 
         # HSI and treatment params
         param_list = workbook['Parameters'].set_index("Parameter")
-        # parameters['delay_till_hsi_a'] = param_list.loc['delay_till_hsi_a', 'Value']
+        # parameters['delay_till_hsi_a'] = param_list.loc['delay_till_hsi_a', 'Value']    todo- remove!?!
         # parameters['delay_till_hsi_b'] = param_list.loc['delay_till_hsi_b', 'Value']
         # parameters['prob_seeking_healthcare'] = param_list.loc['prob_seeking_healthcare', 'Value']
+
+        # todo - use helper function!?
 
         parameters['delay_till_hsi_a_repeated'] = param_list.loc['delay_till_hsi_a_repeated', 'Value']
         parameters['delay_till_hsi_b_repeated'] = param_list.loc['delay_till_hsi_b_repeated', 'Value']
@@ -303,14 +305,11 @@ class Schisto(Module):
             'hepatomegaly': 257,
             'haematuria': None  # That's a very common symptom but no official DALY weight yet defined.
         }
-        get_daly_weight = lambda _code: self.sim.modules['HealthBurden'].get_daly_weight(
-            dw_code) if dw_code is not None else 0.0
+        get_daly_weight = lambda _code: self.sim.modules['HealthBurden'].get_daly_weight(_code) if _code is not None else 0.0
 
-        dw = dict()
-        for symptom, dw_code in symptoms_to_disability_weight_mapping.items():
-            dw[symptom] = get_daly_weight(dw_code)
-
-        return dw
+        return {
+            symptom: get_daly_weight(dw_code) for symptom, dw_code in symptoms_to_disability_weight_mapping.items()
+        }
 
 
 class SchistoSpecies:

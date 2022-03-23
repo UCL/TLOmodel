@@ -6,7 +6,8 @@ import numpy as np
 import pytest
 
 from tlo import Date, Simulation
-from tlo.methods import demography, healthburden, healthsystem, schisto, simplified_births, symptommanager
+from tlo.methods import demography, healthburden, healthsystem, schisto, simplified_births, symptommanager, \
+    healthseekingbehaviour
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2011, 1, 1)
@@ -34,6 +35,7 @@ def simulation_both(seed):
     sim = Simulation(start_date=start_date, seed=seed)
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
