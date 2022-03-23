@@ -165,6 +165,11 @@ class CardioMetabolicDisorders(Module):
         f"nc_{p}_medication_prevents_death": Property(Types.BOOL, f"Whether or not medication (if provided) will "
                                                                   f"prevent death from {p}") for p in conditions
     }
+    condition_facility_treatment_level = {'diabetes': '1b',
+                                          'hypertension': '1b',
+                                          'chronic_kidney_disease': '3',
+                                          'chronic_lower_back_pain': '1b',
+                                          'chronic_ischemic_hd': '1b'}
     event_list = {
         f"nc_{p}": Property(Types.BOOL, f"Whether or not someone has had a {p}") for p in events}
     event_date_last_list = {
@@ -1560,7 +1565,7 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'CardioMetabolicDisorders_StartWeightLossAndMedication'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.ACCEPTED_FACILITY_LEVEL = self.module.condition_facility_treatment_level[condition]
         self.ALERT_OTHER_DISEASES = []
         self.condition = condition
 
