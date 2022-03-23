@@ -12,13 +12,13 @@ from tlo.methods import (
     hiv,
     simplified_births,
     symptommanager,
-    tb
+    tb,
 )
 
 from tlo.scenario import BaseScenario
 
 
-class TestTBIncidence(BaseScenario):
+class TestScenario(BaseScenario):
 
     def __init__(self):
         super().__init__()
@@ -27,11 +27,11 @@ class TestTBIncidence(BaseScenario):
         self.end_date = Date(2035, 1, 1)
         self.pop_size = 250_000
         self.number_of_draws = 5
-        self.runs_per_draw = 1
+        self.runs_per_draw = 3
 
     def log_configuration(self):
         return {
-            'filename': 'test_tb_incidence',
+            'filename': 'incidence_calibration',
             'directory': './outputs',
             'custom_levels': {
                 '*': logging.WARNING,
@@ -46,7 +46,17 @@ class TestTBIncidence(BaseScenario):
             demography.Demography(resourcefilepath=self.resources),
             simplified_births.SimplifiedBirths(resourcefilepath=self.resources),
             enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
-            healthsystem.HealthSystem(resourcefilepath=self.resources, disable=False, service_availability=['*']),
+            healthsystem.HealthSystem(
+                resourcefilepath=self.resources,
+                service_availability=["*"],  # all treatment allowed
+                mode_appt_constraints=0,  # mode of constraints to do with officer numbers and time
+                cons_availability="default",  # mode for consumable constraints (if ignored, all consumables available)
+                ignore_priority=True,  # do not use the priority information in HSI event to schedule
+                capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
+                disable=False,  # disables the healthsystem (no constraints and no logging) and every HSI runs
+                disable_and_reject_all=False,  # disable healthsystem and no HSI runs
+                store_hsi_events_that_have_run=False,  # convenience function for debugging
+            ),
             symptommanager.SymptomManager(resourcefilepath=self.resources),
             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
             healthburden.HealthBurden(resourcefilepath=self.resources),
