@@ -1183,7 +1183,6 @@ class HealthSystem(Module):
         :param actual_appt_footprint: The actual appt footprint to log (if individual event)
         :param squeeze_factor: The squueze factor (if individual event)
         """
-        # todo - refactor this!!
 
         if isinstance(hsi_event.target, tlo.population.Population):
             # Population HSI-Event
