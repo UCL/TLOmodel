@@ -1585,8 +1585,11 @@ class RTI(Module):
             for code in person.rt_injuries_for_major_surgery:
                 column, found_code = self.rti_find_injury_column(person_id, [code])
                 index_in_rt_recovery_dates = int(column[-1]) - 1
-                if not pd.isnull(person.rt_date_to_remove_daly[index_in_rt_recovery_dates]):
-                    df.loc[person_id, 'rt_date_to_remove_daly'][index_in_rt_recovery_dates] = pd.NaT
+                if not pd.isnull(df.at[person_id, 'rt_date_to_remove_daly'][index_in_rt_recovery_dates]):
+                    logger.debug(key='rti_general_message',
+                                 data=f"person {person_id} was assigned for a minor surgery but had already received "
+                                      f"treatment")
+                    return
             # schedule major surgeries
             if 'Major Surgery' not in p['blocked_interventions']:
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -1633,7 +1636,12 @@ class RTI(Module):
             for code in df.at[person_id, 'rt_injuries_for_minor_surgery']:
                 column, found_code = self.rti_find_injury_column(person_id, [code])
                 index_in_rt_recovery_dates = int(column[-1]) - 1
-                assert pd.isnull(df.at[person_id, 'rt_date_to_remove_daly'][index_in_rt_recovery_dates])
+                if not pd.isnull(df.at[person_id, 'rt_date_to_remove_daly'][index_in_rt_recovery_dates]):
+                    logger.debug(key='rti_general_message',
+                                 data=f"person {person_id} was assigned for a minor surgery but had already received "
+                                      f"treatment")
+                    return
+
             # check that this person's injuries that were decided to be treated with a minor surgery and the injuries
             # actually treated by minor surgeries coincide
             if count == 0:
@@ -2017,8 +2025,10 @@ class RTI(Module):
         if df.at[person_id, 'rt_disability'] < 0:
             df.at[person_id, 'rt_disability'] = df.at[person_id, 'rt_debugging_DALY_wt']
         # Make sure the true disability burden is greater or equal to zero
-        assert df.at[person_id, 'rt_debugging_DALY_wt'] >= 0, (person_injuries.values,
-                                                               df.at[person_id, 'rt_debugging_DALY_wt'])
+        if df.at[person_id, 'rt_debugging_DALY_wt'] < 0:
+            logger.debug(key='rti_general_message',
+                         data=f"person {person_id} has had too many daly weights removed")
+            df.at[person_id, 'rt_debugging_DALY_wt'] = 0
         # the reported disability should satisfy 0<=disability<=1, check that they do
         assert df.at[person_id, 'rt_disability'] >= 0, 'Negative disability burden'
         assert df.at[person_id, 'rt_disability'] <= 1, 'Too large disability burden'
@@ -2063,8 +2073,10 @@ class RTI(Module):
             sum([self.ASSIGN_INJURIES_AND_DALY_CHANGES[code][2] for code in relevant_codes])
         df.at[person_id, 'rt_debugging_DALY_wt'] = np.round(df.at[person_id, 'rt_debugging_DALY_wt'], 4)
         # Check that the person's true disability burden is positive
-        assert df.at[person_id, 'rt_debugging_DALY_wt'] >= 0, (person_injuries.values,
-                                                               df.at[person_id, 'rt_debugging_DALY_wt'])
+        if df.at[person_id, 'rt_debugging_DALY_wt'] < 0:
+            logger.debug(key='rti_general_message',
+                         data=f"person {person_id} has had too many daly weights removed")
+            df.at[person_id, 'rt_debugging_DALY_wt'] = 0
         # catch rounding point errors where the disability weights should be zero but aren't
         if df.at[person_id, 'rt_disability'] < 0:
             df.at[person_id, 'rt_disability'] = df.at[person_id, 'rt_debugging_DALY_wt']
