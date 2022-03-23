@@ -4545,7 +4545,7 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
         }
 
         request_outcome = self.get_consumables(
-            self.module.item_codes_for_consumables_required['major_surgery']
+            optional_item_codes=self.module.item_codes_for_consumables_required['major_surgery']
         )
 
         if not df.at[person_id, 'is_alive']:
@@ -4890,7 +4890,7 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
                 {get_item_code('External fixator'): 1}
             )
         request_outcome = self.get_consumables(
-            self.module.item_codes_for_consumables_required['minor_surgery']
+            optional_item_codes=self.module.item_codes_for_consumables_required['minor_surgery']
         )
         # todo: think about consequences of certain consumables not being available for minor surgery and model health
         #  outcomes
