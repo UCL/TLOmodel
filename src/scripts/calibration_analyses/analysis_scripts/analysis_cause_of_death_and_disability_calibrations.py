@@ -5,7 +5,7 @@ This uses the results of the Scenario defined in: src/scripts/long_run/long_run.
 results (change 'scenario_filename').
 """
 
-# todo - use GBD all ages numbers for some outputs (correct uncertainity bounds)
+# todo - use GBD all ages numbers for some outputs (correct uncertainty bounds)
 
 from pathlib import Path
 
@@ -26,7 +26,7 @@ from tlo.analysis.utils import (
 )
 
 # %% Declare the name of the file that specified the scenarios used in this run.
-scenario_filename = 'long_run.py'  # <-- update this to look at other results
+scenario_filename = 'long_run_all_diseases.py'  # <-- update this to look at other results
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/tbh03@ic.ac.uk')
@@ -157,30 +157,24 @@ def make_std_graphs(what='Deaths', period='2010-2014'):
     sexes = ['F', 'M']
     sexname = lambda x: 'Females' if x == 'F' else 'Males'  # noqa: E731
 
-    fig, axes = plt.subplots(ncols=2, nrows=2, sharey=True, sharex=True, figsize=(40, 40))
-
-    for col, sex in enumerate(sexes):
-        for row, dat in enumerate(dats):
+    fig, axes = plt.subplots(ncols=2, nrows=2, sharey=True, sharex=True)
+    for col, dat in enumerate(dats):
+        for row, sex in enumerate(sexes):
             ax = axes[row][col]
             df = outcome_by_age_pt[dat].loc[sex].loc[:, pd.IndexSlice['mean']] / 1e3
 
-            xs = np.arange(len(df.index))
-            df.plot.bar(stacked=True, ax=ax, fontsize=30)
-            ax.set_xlabel('Age Group', fontsize=40)
-            ax.set_title(f"{sexname(sex)}: {dat}", fontsize=60)
-            ax.get_legend().remove()
+            df.plot.bar(stacked=True, ax=ax)
+            ax.set_xlabel('Age Group')
+            ax.set_title(f"{period}: {sexname(sex)}: {dat}")
+            ax.set_ylabel(f"{what} per year (thousands)")
+            if (col == 0) and (row == 0):
+                ax.legend(loc='upper right', prop={'size': 5}, ncol=2, handleheight=1.0, labelspacing=0.03)
+            else:
+                ax.get_legend().remove()
 
-    # add a big axis, hide frame
-    bigax = fig.add_subplot(111, frameon=False)
-
-    # hide tick and tick label of the "big axis"
-    bigax.tick_params(labelcolor='none', which='both', top=False, bottom=False, left=False, right=False)
-    bigax.set_ylabel(f"{what} per year (thousands)", fontsize=40)
-
-    fig.legend(loc="center right", fontsize=15)
     fig.tight_layout()
-    plt.savefig(make_graph_file_name(f"{what}_{period}_StackedBars_ModelvsGBD"))
-    plt.show()
+    fig.savefig(make_graph_file_name(f"{what}_{period}_StackedBars_ModelvsGBD"))
+    fig.show()
 
     # %% Plots of age-breakdown of outcomes patten for each cause:
 
@@ -239,10 +233,11 @@ def make_std_graphs(what='Deaths', period='2010-2014'):
     # todo - for GBD, instead use all ages and all sex numbers to get correct uncertainity bounds (the addition of the
     #  bounds for the sub-categories is not correct)
 
-    select_labels = ['AIDS', 'Childhood Diarrhoea', 'Other']
+    # select_labels = ['AIDS', 'Childhood Diarrhoea', 'Other', 'Transport Injuries']
+    select_labels = all_causes
 
     fig, ax = plt.subplots()
-    xylim = tot_outcomes_by_cause.loc[('mean', slice(None))].max().max() / 1e3
+    xylim = (tot_outcomes_by_cause.loc[('mean', slice(None))].max().max()*1.1 / 1e3).round(-2)
     for cause in tot_outcomes_by_cause.index.levels[1]:
 
         vals = tot_outcomes_by_cause.loc[(slice(None), cause), ] / 1e3
@@ -265,12 +260,13 @@ def make_std_graphs(what='Deaths', period='2010-2014'):
             ax.annotate(cause,
                         (x, y),
                         textcoords="offset points",
-                        xytext=(0, 10),
-                        ha='center'
+                        xytext=(0, 5),
+                        ha='center',
+                        fontsize=6
                         )
 
     line_x = np.linspace(0, xylim)
-    ax.plot(line_x, line_x, 'r')
+    ax.plot(line_x, line_x, 'k--')
     ax.set(xlim=(0, xylim), ylim=(0, xylim))
     ax.set_xlabel('GBD (thousands)')
     ax.set_ylabel('Model (thousands)')
@@ -281,5 +277,9 @@ def make_std_graphs(what='Deaths', period='2010-2014'):
 
 # %% Make graphs for each of Deaths and DALYS for a specific period
 period = '2010-2014'
+make_std_graphs(what='Deaths', period=period)
+make_std_graphs(what='DALYs', period=period)
+
+period = '2015-2019'
 make_std_graphs(what='Deaths', period=period)
 make_std_graphs(what='DALYs', period=period)
