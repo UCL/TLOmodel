@@ -408,8 +408,6 @@ class NewbornOutcomes(Module):
         This function defines the required consumables for each intervention delivered during this module and stores
         them in a module level dictionary called within HSIs
         """
-        get_item_code_from_pkg = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
-
         get_list_of_items = pregnancy_helper_functions.get_list_of_items
 
         # ---------------------------------- IV DRUG ADMIN EQUIPMENT  -------------------------------------------------
@@ -433,7 +431,7 @@ class NewbornOutcomes(Module):
 
         # -------------------------------------------- RESUSCITATION ------------------------------------------
         self.item_codes_nb_consumables['resuscitation'] = \
-            get_item_code_from_pkg('Neonatal resuscitation (institutional)')
+            get_list_of_items(self, ['Infant resuscitator, clear plastic + mask + bag_each_CMST'])
 
         # ------------------------------------- SEPSIS - FULL SUPPORTIVE CARE ---------------------------------------
         self.item_codes_nb_consumables['sepsis_supportive_care'] = \

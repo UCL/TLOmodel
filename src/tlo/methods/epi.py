@@ -379,8 +379,14 @@ class Epi(Module):
                 get_item_code_from_item_name("Pneumococcal vaccine"),
                 get_item_code_from_item_name("Syringe, Autodisable SoloShot IX "),
                 get_item_code_from_item_name("Safety box for used syringes/needles, 5 liter")]
-        self.cons_item_codes['measles_and_rubella'] = get_item_codes_from_package_name("Measles rubella vaccine")
-        self.cons_item_codes['hpv'] = get_item_codes_from_package_name("HPV vaccine")
+        self.cons_item_codes["measles_and_rubella"] = [
+            get_item_code_from_item_name("Measles vaccine"),
+            get_item_code_from_item_name("Syringe, Autodisable SoloShot IX "),
+            get_item_code_from_item_name("Safety box for used syringes/needles, 5 liter")]
+        self.cons_item_codes["hpv"] = [
+            get_item_code_from_item_name("HPV vaccine"),
+            get_item_code_from_item_name("Syringe, Autodisable SoloShot IX "),
+            get_item_code_from_item_name("Safety box for used syringes/needles, 5 liter")]
         self.cons_item_codes['td'] = get_item_codes_from_package_name("Tetanus toxoid (pregnant women)")
 
 

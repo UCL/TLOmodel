@@ -724,8 +724,7 @@ class Labour(Module):
 
         # -------------------------------------------- ANTENATAL STEROIDS ---------------------------------------------
         self.item_codes_lab_consumables['antenatal_steroids'] = \
-            get_list_of_items(self, ['Dexamethasone 5mg/ml, 5ml_each_CMST',
-                                     'Betamethasone, 12 mg injection'])
+            get_list_of_items(self, ['Dexamethasone 5mg/ml, 5ml_each_CMST'])
 
         # -------------------------------------  INTRAVENOUS ANTIHYPERTENSIVES ---------------------------------------
         self.item_codes_lab_consumables['iv_antihypertensives'] = \
@@ -765,8 +764,8 @@ class Labour(Module):
                                      'Bag, urine, collecting, 2000 ml',
                                      'Paracetamol, tablet, 500 mg',
                                      'Pethidine, 50 mg/ml, 2 ml ampoule',
-                                     'Gauze, absorbent 90cm x 40m_each_CMST',])
-                                     # 'Needle suture intestinal round bodied Â½ circle trocar_6_CMST'])
+                                     'Gauze, absorbent 90cm x 40m_each_CMST'])
+        # 'Needle suture intestinal round bodied Â½ circle trocar_6_CMST'])
 
         # -------------------------------------  OBSTETRIC VACUUM   ---------------------------------------------------
         self.item_codes_lab_consumables['vacuum'] = get_list_of_items(self, ['Vacuum, obstetric'])
