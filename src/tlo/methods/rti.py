@@ -2843,6 +2843,7 @@ class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
                 max_untreated_injury = max(mais_scores)
                 prob_death = probabilities_of_death[str(max_untreated_injury)]
                 if (rand_for_death < prob_death) & (~df.loc[person, 'rt_med_int']):
+                # if rand_for_death < prob_death:
                     # If determined to die, schedule a death without med
                     df.loc[person, 'rt_no_med_death'] = True
                     self.sim.modules['Demography'].do_death(individual_id=person, cause="RTI_death_without_med",
