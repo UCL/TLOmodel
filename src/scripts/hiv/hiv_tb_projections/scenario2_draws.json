@@ -1,18 +1,22 @@
 {
   "scenario_script_path": "src/scripts/hiv/hiv_tb_projections/scenario2.py",
-  "scenario_seed": 3567,
+  "scenario_seed": 2022,
   "runs_per_draw": 5,
   "draws": [
     {
       "draw_number": 0,
-      "draw_seed": 1779561211,
+      "draw_seed": 40194941,
       "parameters": {
         "Tb": {
-          "scenario": 2
+          "scenario": 2,
+          "transmission_rate": 16.7
+        },
+        "Hiv": {
+          "beta": 0.125
         }
       }
     }
   ],
-  "commit": "d95540bb94d909f1ce02042a8bca4c28debd0771",
-  "github": "https://github.com/UCL/TLOmodel/blob/d95540bb94d909f1ce02042a8bca4c28debd0771/src/scripts/hiv/hiv_tb_projections/scenario2.py"
+  "commit": "3fe39349f1a8179b236fdabf9b16694929a7211d",
+  "github": "https://github.com/UCL/TLOmodel/blob/3fe39349f1a8179b236fdabf9b16694929a7211d/src/scripts/hiv/hiv_tb_projections/scenario2.py"
 }
