@@ -53,7 +53,7 @@ class TestScenario(BaseScenario):
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2035, 1, 1)
         self.pop_size = 500000
-        self.number_of_draws = 1
+        self.number_of_draws = 5
         self.runs_per_draw = 5
 
     def log_configuration(self):
@@ -97,6 +97,10 @@ class TestScenario(BaseScenario):
         return {
             'Tb': {
                 'scenario': 1,
+                'transmission_rate': [16.7, 18.0, 15.8, 19.2, 15.4][draw_number]
+            },
+            'Hiv': {
+                'beta': [0.125, 0.121, 0.109, 0.116, 0.133][draw_number]
             },
         }
 

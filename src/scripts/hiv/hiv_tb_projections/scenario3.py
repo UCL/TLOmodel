@@ -96,6 +96,10 @@ class TestScenario(BaseScenario):
         return {
             'Tb': {
                 'scenario': 3,
+                'transmission_rate': [16.7, 18.0, 15.8, 19.2, 15.4][draw_number]
+            },
+            'Hiv': {
+                'beta': [0.125, 0.121, 0.109, 0.116, 0.133][draw_number]
             },
         }
 
