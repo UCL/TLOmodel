@@ -169,7 +169,9 @@ class CardioMetabolicDisorders(Module):
                                           'hypertension': '1b',
                                           'chronic_kidney_disease': '3',
                                           'chronic_lower_back_pain': '1b',
-                                          'chronic_ischemic_hd': '1b'}
+                                          'chronic_ischemic_hd': '1b',
+                                          'ever_stroke': '1b',
+                                          'ever_heart_attack': '1b'}
     event_list = {
         f"nc_{p}": Property(Types.BOOL, f"Whether or not someone has had a {p}") for p in events}
     event_date_last_list = {
