@@ -20,7 +20,7 @@ results_folder2 = get_scenario_outputs("scenario2.py", outputspath)[-1]
 results_folder3 = get_scenario_outputs("scenario3.py", outputspath)[-1]
 
 # look at one log (so can decide what to extract)
-log = load_pickled_dataframes(results_folder1)
+log = load_pickled_dataframes(results_folder2)
 
 # ---------------------------------- Fraction HCW time-------------------------------------
 
@@ -28,10 +28,10 @@ log = load_pickled_dataframes(results_folder1)
 # output fraction of time by year
 capacity1 = summarize(extract_results(
     results_folder1,
-    module="tlo.methods.healthsystem",
-    key="Capacity",
+    module="tlo.methods.healthsystem.summary",
+    key="health_system_annual_logs",
     custom_generate_series=(
-        lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['Frac_Time_Used_Overall'].mean()
+        lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['capacity'].mean()
     ),
 ),
     only_mean=False,
@@ -40,10 +40,10 @@ capacity1 = summarize(extract_results(
 
 capacity2 = summarize(extract_results(
     results_folder2,
-    module="tlo.methods.healthsystem",
-    key="Capacity",
+    module="tlo.methods.healthsystem.summary",
+    key="health_system_annual_logs",
     custom_generate_series=(
-        lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['Frac_Time_Used_Overall'].mean()
+        lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['capacity'].mean()
     ),
 ),
     only_mean=False,
@@ -52,10 +52,10 @@ capacity2 = summarize(extract_results(
 
 capacity3 = summarize(extract_results(
     results_folder3,
-    module="tlo.methods.healthsystem",
-    key="Capacity",
+    module="tlo.methods.healthsystem.summary",
+    key="health_system_annual_logs",
     custom_generate_series=(
-        lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['Frac_Time_Used_Overall'].mean()
+        lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['capacity'].mean()
     ),
 ),
     only_mean=False,

@@ -34,7 +34,9 @@ resourcefilepath = Path("./resources")
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2025, 1, 1)
-popsize = 50000
+popsize = 1000
+
+scenario = 2
 
 # set up the log config
 log_config = {
@@ -77,6 +79,10 @@ sim.register(
     tb.Tb(resourcefilepath=resourcefilepath),
     # deviance_measure.Deviance(resourcefilepath=resourcefilepath),
 )
+
+# set the scenario
+sim.modules["Tb"].parameters["scenario"] = scenario
+
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)

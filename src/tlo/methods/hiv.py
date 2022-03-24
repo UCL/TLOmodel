@@ -2467,7 +2467,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     ]
             )
             n_pop = len(df.loc[(df.sex == sex) & (df.age_years >= 15)])
-            testing_by_sex[sex] = n_tested / n_pop
+            testing_by_sex[sex] = n_tested / n_pop if n_pop else 0
 
         # per_capita_testing_rate: number of tests administered divided by population
         current_testing_rate = self.module.per_capita_testing_rate()
