@@ -225,7 +225,7 @@ class CareOfWomenDuringPregnancy(Module):
             get_list_of_items(self, ['Sodium chloride, injectable solution, 0,9 %, 500 ml',
                                      'Paracetamol, tablet, 500 mg',
                                      'Pethidine, 50 mg/ml, 2 ml ampoule',
-                                     # 'Needle suture intestinal round bodied Â½ circle trocar_6_CMST',
+                                     'Suture pack',
                                      'Gauze, absorbent 90cm x 40m_each_CMST',
                                      'Cannula iv  (winged with injection pot) 18_each_CMST'])
 

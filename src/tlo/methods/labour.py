@@ -714,7 +714,7 @@ class Labour(Module):
                                      'Pethidine, 50 mg/ml, 2 ml ampoule',
                                      'Foley catheter',
                                      'Bag, urine, collecting, 2000 ml',
-                                     "Sodium lactate injection (Ringer's), 500 ml, with giving set",
+                                     "ringer's lactate (Hartmann's solution), 1000 ml_12_IDA",
                                      'Sodium chloride, injectable solution, 0,9 %, 500 ml',
                                      "Giving set iv administration + needle 15 drops/ml_each_CMST"])
 
@@ -764,8 +764,8 @@ class Labour(Module):
                                      'Bag, urine, collecting, 2000 ml',
                                      'Paracetamol, tablet, 500 mg',
                                      'Pethidine, 50 mg/ml, 2 ml ampoule',
-                                     'Gauze, absorbent 90cm x 40m_each_CMST'])
-        # 'Needle suture intestinal round bodied Â½ circle trocar_6_CMST'])
+                                     'Gauze, absorbent 90cm x 40m_each_CMST',
+                                     'Suture pack'])
 
         # -------------------------------------  OBSTETRIC VACUUM   ---------------------------------------------------
         self.item_codes_lab_consumables['vacuum'] = get_list_of_items(self, ['Vacuum, obstetric'])
