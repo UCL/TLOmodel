@@ -274,7 +274,7 @@ plt.plot(McAllister_data.Year, McAllister_data.Death_per1000_livebirths)  # no u
 # model output
 mort_per_livebirth = (alri_death_count / birth_count * 1000).dropna()
 
-plt.plot(counts.index, mort_per_livebirth, color="mediumseagreen")  # model
+plt.plot(mort_per_livebirth.index, mort_per_livebirth, color="mediumseagreen")  # model
 plt.title("ALRI Mortality per 1,000 livebirths")
 plt.xlabel("Year")
 plt.xticks(rotation=90)

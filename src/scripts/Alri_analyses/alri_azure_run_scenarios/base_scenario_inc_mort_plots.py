@@ -7,7 +7,7 @@ import datetime
 from pathlib import Path
 import numpy as np
 
-from tlo.analysis.utils import compare_number_of_deaths, parse_log_file
+from tlo.analysis.utils import compare_number_of_deaths, parse_log_file, create_pickles_locally
 
 import matplotlib.lines as mlines
 import matplotlib.patches as mpatches
@@ -29,7 +29,14 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 outputspath = Path("./outputs/sejjil0@ucl.ac.uk")
 
 # 0) Find results_folder associated with a given batch_file (and get most recent [-1])
-results_folder = get_scenario_outputs("baseline_alri_scenario.py", outputspath)[-1]
+# results_folder = get_scenario_outputs("baseline_alri_scenario.py", outputspath)[-1]
+# or specify which folder to use
+results_folder = (outputspath/'baseline_alri_scenario-2022-03-23T102644Z')
+#
+# folder9 = (outputspath/'baseline_alri_scenario-2022-03-23T102644Z/0/9')
+#
+# # get the pickled files if not generated at the batch run
+# create_pickles_locally(folder9)
 
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results_folder)
@@ -46,21 +53,21 @@ do_scaling = True  # if True, multiply by data-to-model scaling factor to corres
 
 # incident count from model
 alri_incident_count = extract_results(
-        results_folder,
-        module="tlo.methods.alri",
-        key="event_counts",
-        column='incident_cases',
-        index="date",
-        do_scaling=do_scaling)
+    results_folder,
+    module="tlo.methods.alri",
+    key="event_counts",
+    column='incident_cases',
+    index="date",
+    do_scaling=do_scaling)
 
 # death count from model
 alri_death_count = extract_results(
-        results_folder,
-        module="tlo.methods.alri",
-        key="event_counts",
-        column='deaths',
-        index="date",
-        do_scaling=do_scaling)
+    results_folder,
+    module="tlo.methods.alri",
+    key="event_counts",
+    column='deaths',
+    index="date",
+    do_scaling=do_scaling)
 
 # set the index as year value (not date)
 alri_incident_count.index = alri_incident_count.index.year
@@ -120,7 +127,7 @@ mortality_summary_per_draw.to_csv(outputspath / ("batch_run_mortality_100000pop_
 # ----------------------------------- CREATE PLOTS - SINGLE RUN FIGURES -----------------------------------
 # INCIDENCE & MORTALITY RATE - OUTPUT OVERTIME
 start_date = 2010
-end_date = 2031
+end_date = 2032
 draw = 0
 
 # import GBD data for Malawi's ALRI burden estimates
@@ -142,7 +149,7 @@ plt.style.use("ggplot")
 fig = plt.figure()
 
 # GBD estimates
-plt.plot(GBD_data.Year, GBD_data.Incidence_per100_children, label='GBD')
+plt.plot(GBD_data.Year, GBD_data.Incidence_per100_children, color='#E24A33', label='GBD')
 plt.fill_between(
     GBD_data.Year,
     GBD_data.Incidence_per100_lower,
@@ -151,7 +158,7 @@ plt.fill_between(
 )
 # McAllister et al 2019 estimates
 years_with_data = McAllister_data.dropna(axis=0)
-plt.plot(years_with_data.Year, years_with_data.Incidence_per100_children, label='McAllister')
+plt.plot(years_with_data.Year, years_with_data.Incidence_per100_children, color='#348ABD', label='McAllister')
 plt.fill_between(
     years_with_data.Year,
     years_with_data.Incidence_per100_lower,
@@ -163,8 +170,8 @@ plt.plot(incidence_summary_per_draw.index, incidence_summary_per_draw.loc[:, (dr
          color='teal', label='Model')
 plt.fill_between(
     incidence_summary_per_draw.index,
-    incidence_summary_per_draw.loc[:, (draw, 'mean')].values,
-    incidence_summary_per_draw.loc[:, (draw, 'mean')].values,
+    incidence_summary_per_draw.loc[:, (draw, 'lower')].values,
+    incidence_summary_per_draw.loc[:, (draw, 'upper')].values,
     color='teal',
     alpha=0.5,
 )
@@ -186,7 +193,7 @@ plt.show()
 fig1 = plt.figure()
 
 # GBD estimates
-plt.plot(GBD_data.Year, GBD_data.Death_per100k_children, label='GBD')  # GBD data
+plt.plot(GBD_data.Year, GBD_data.Death_per100k_children, color='#E24A33', label='GBD')  # GBD data
 plt.fill_between(
     GBD_data.Year,
     GBD_data.Death_per100k_lower,
@@ -214,9 +221,7 @@ plt.tight_layout()
 plt.show()
 
 # -------------------------------------------------------------------------------------------------------------
-# # # # # #
-# Mortality per 1,000 livebirths due to ALRI
-
+# MORTALITY RATE - (per 1000 livebirths)
 # get birth counts
 birth_count = extract_results(
     results_folder,
@@ -225,30 +230,104 @@ birth_count = extract_results(
     custom_generate_series=(
         lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()
     ),
-    do_scaling=False
+    do_scaling=do_scaling
 )
 
-# mean_births_per_year = \
-#     birth_count.groupby(axis=1, by=birth_count.columns.get_level_values('stat')).mean()
-
+# store the output numbers of births in each run of each draw
 birth_count.to_csv(outputspath / ("batch_run_birth_results" + ".csv"))
 
-fig2, ax2 = plt.subplots()
+# calculate mortality per 1000 livebirths
+deaths_per_livebirth = (alri_death_count / birth_count * 1000).dropna()
+
+# get mean / upper/ lower statistics
+mortality_per_livebirths_summary = summarize(deaths_per_livebirth)
+
+# ------------------------------------------
+# Plot the mortality per livebirths
+fig2 = plt.figure()
 
 # McAllister et al. 2019 estimates
-plt.plot(McAllister_data.Year, McAllister_data.Death_per1000_livebirths)  # no upper/lower
+plt.plot(McAllister_data.Year, McAllister_data.Death_per1000_livebirths, color='#348ABD', label='McAllister')  # no upper/lower
 
 # model output
-mort_per_livebirth = (alri_death_count / birth_count * 1000).dropna()
+plt.plot(mortality_per_livebirths_summary.index, mortality_per_livebirths_summary.loc[:, (draw, 'mean')].values,
+         color='teal', label='Model')  # model
+plt.fill_between(
+    mortality_per_livebirths_summary.index,
+    mortality_per_livebirths_summary.loc[:, (draw, 'lower')].values,
+    mortality_per_livebirths_summary.loc[:, (draw, 'upper')].values,
+    color='teal',
+    alpha=0.5)
 
-plt.plot(counts.index, mort_per_livebirth, color="mediumseagreen")  # model
 plt.title("ALRI Mortality per 1,000 livebirths")
 plt.xlabel("Year")
-plt.xticks(rotation=90)
+plt.xticks(ticks=np.arange(start_date, end_date), rotation=90)
 plt.ylabel("Mortality (/100k)")
 plt.gca().set_xlim(start_date, end_date)
-plt.legend(["McAllister 2019", "Model"])
+plt.legend()
 plt.tight_layout()
-# plt.savefig(outputpath / ("ALRI_Mortality_model_comparison" + datestamp + ".png"), format='png')
+
+plt.show()
+
+# -------------------------------------------------------------------------------------------------------------
+# # # # # # # # # # ALRI DALYs # # # # # # # # # #
+# ------------------------------------------------------------------
+# Get the total DALYs from the output of health burden
+def get_lri_dalys(df_):
+    # get dalys of ALRI in under-5
+    years = df_['year'].value_counts().keys()
+    dalys = pd.Series(dtype='float64', index=years)
+    for year in years:
+        tot_dalys = (
+            df_.drop(columns='date').groupby(['year', 'age_range']).sum().apply(pd.Series))
+        dalys[year] = tot_dalys.loc[(year, '0-4'), 'Lower respiratory infections']
+    dalys.sort_index()
+
+    return dalys
+
+
+# extract dalys from model and scale
+alri_dalys_count = extract_results(
+    results_folder,
+    module="tlo.methods.healthburden",
+    key="dalys",
+    custom_generate_series=get_lri_dalys,
+    do_scaling=do_scaling
+)
+
+# get mean / upper/ lower statistics
+dalys_summary = summarize(alri_dalys_count).sort_index()
+
+# store the output numbers of births in each run of each draw
+dalys_summary.to_csv(outputspath / ("batch_run_dalys_results" + ".csv"))
+
+# ---------------- PLOT FIGURE -------------------
+fig3 = plt.figure()
+
+# GBD estimates
+plt.plot(GBD_data.Year, GBD_data.DALYs, color='#E24A33', label='GBD')  # GBD data
+plt.fill_between(
+    GBD_data.Year,
+    GBD_data.DALYs_lower,
+    GBD_data.DALYs_upper,
+    alpha=0.5,
+)
+# model output
+plt.plot(dalys_summary.index, dalys_summary.loc[:, (draw, 'mean')].values,
+         color='teal', label='Model')  # model
+plt.fill_between(
+    dalys_summary.index,
+    dalys_summary.loc[:, (draw, 'lower')].values,
+    dalys_summary.loc[:, (draw, 'upper')].values,
+    color='teal',
+    alpha=0.5)
+
+plt.title("ALRI DALYs")
+plt.xlabel("Year")
+plt.xticks(ticks=np.arange(start_date, end_date), rotation=90)
+plt.ylabel("DALYs")
+plt.gca().set_xlim(start_date, end_date)
+plt.legend()
+plt.tight_layout()
 
 plt.show()
