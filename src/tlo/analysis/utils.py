@@ -4,6 +4,7 @@ General utility functions for TLO analysis
 import json
 import os
 import pickle
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Dict, Optional, TextIO
 
@@ -35,29 +36,12 @@ def _parse_log_file_inner_loop(filepath, level: int = logging.INFO):
     return output_logs
 
 
-def parse_log_file(log_filepath, level: int = logging.INFO):
-    """Parses logged output from a TLO run and returns Pandas dataframes.
-
-    The dictionary returned has the format::
-
-        {
-            <logger 1 name>: {
-                               <log key 1>: <pandas dataframe>,
-                               <log key 2>: <pandas dataframe>,
-                               <log key 3>: <pandas dataframe>
-                             },
-
-            <logger 2 name>: {
-                               <log key 4>: <pandas dataframe>,
-                               <log key 5>: <pandas dataframe>,
-                               <log key 6>: <pandas dataframe>
-                             },
-            ...
-        }
+def parse_log_file(log_filepath):
+    """Parses logged output from a TLO run, split it into smaller logfiles and returns a class containing paths to
+    these split logfiles.
 
     :param log_filepath: file path to log file
-    :param level: logging level to be parsed for structured logging
-    :return: dictionary of parsed log data
+    :return: a class containing paths to split logfiles
     """
     print(f'Processing log file {log_filepath}')
     uuid_to_module_name: Dict[str, str] = dict()  # uuid to module name
@@ -89,46 +73,28 @@ def parse_log_file(log_filepath, level: int = logging.INFO):
     for file_handle in module_name_to_filehandle.values():
         file_handle.close()
 
-    # parse each module-specific log file and collect the results into a single dictionary. metadata about each log
-    # is returned in the same key '_metadata', so it needs to be collected separately and then merged back in.
-    all_module_logs = dict()
-    metadata = dict()
-    for file_handle in module_name_to_filehandle.values():
-        print(f'Parsing {file_handle.name}', end='', flush=True)
-        module_specific_logs = _parse_log_file_inner_loop(file_handle.name, level)
-        print(' - complete.')
-        all_module_logs.update(module_specific_logs)
-        # sometimes there is nothing to be parsed at a given level, so no metadata
-        if 'metadata_' in module_specific_logs:
-            metadata.update(module_specific_logs['_metadata'])
-
-    if len(metadata) > 0:
-        all_module_logs['_metadata'] = metadata
-
-    print('Finished.')
-
-    return all_module_logs
+    # return an object that accepts as an argument a dictionary containing paths to split logfiles
+    return LogsDict({name: handle.name for name, handle in module_name_to_filehandle.items()})
 
 
 def write_log_to_excel(filename, log_dataframes):
     """Takes the output of parse_log_file() and creates an Excel file from dataframes"""
-    sheets = list()
+    metadata = list()
     sheet_count = 0
-    metadata = log_dataframes['_metadata']
-    for module, key_df in log_dataframes.items():
-        if module != '_metadata':
-            for key, df in key_df.items():
+    for module, dataframes in log_dataframes.items():
+        for key, dataframe in dataframes.items():
+            if key != '_metadata':
                 sheet_count += 1
-                sheets.append([module, key, sheet_count, metadata[module][key]['description']])
+                metadata.append([module, key, sheet_count, dataframes['_metadata'][module][key]['description']])
 
     writer = pd.ExcelWriter(filename)
-    index = pd.DataFrame(data=sheets, columns=['module', 'key', 'sheet', 'description'])
+    index = pd.DataFrame(data=metadata, columns=['module', 'key', 'sheet', 'description'])
     index.to_excel(writer, sheet_name='Index')
 
     sheet_count = 0
-    for module, key_df in log_dataframes.items():
-        if module != '_metadata':
-            for key, df in key_df.items():
+    for module, dataframes in log_dataframes.items():
+        for key, df in dataframes.items():
+            if key != '_metadata':
                 sheet_count += 1
                 df.to_excel(writer, sheet_name=f'Sheet {sheet_count}')
     writer.save()
@@ -527,3 +493,85 @@ def unflatten_flattened_multi_index_in_logging(_x: pd.DataFrame) -> pd.DataFrame
     _y = _x.copy()
     _y.columns = pd.MultiIndex.from_tuples(index_value_list, names=index_name_list)
     return _y
+
+
+class LogsDict(Mapping):
+    """Parses module-specific log files and returns Pandas dataframes.
+
+        The dictionary returned has the format::
+
+            {
+                <logger 1 name>: {
+                                   <log key 1>: <pandas dataframe>,
+                                   <log key 2>: <pandas dataframe>,
+                                   <log key 3>: <pandas dataframe>
+                                 },
+
+                <logger 2 name>: {
+                                   <log key 4>: <pandas dataframe>,
+                                   <log key 5>: <pandas dataframe>,
+                                   <log key 6>: <pandas dataframe>
+                                 },
+                ...
+            }
+    """
+
+    def __init__(self, file_names_and_paths):
+        super().__init__()
+        # initialise class with module-specific log files paths
+        self._logfile_names_and_paths: Dict[str, str] = file_names_and_paths
+
+        # create a dictionary that will contain cached data
+        self._results_cache: Dict[str, Dict] = dict()
+
+    def __getitem__(self, key, cache=True):
+        # check if the requested key is found in a dictionary containing module name and log file paths. if key
+        # is found, return parsed logs else return KeyError
+        if key in self._logfile_names_and_paths:
+            # check if key is found in cache
+            if key not in self._results_cache:
+                result_df = _parse_log_file_inner_loop(self._logfile_names_and_paths[key])
+                # get metadata for the selected log file and merge it all with the selected key
+                result_df[key]['_metadata'] = result_df['_metadata']
+                if not cache:  # check if caching is disallowed
+                    return result_df[key]
+                self._results_cache[key] = result_df[key]    # add key specific parsed results to cache
+            return self._results_cache[key]  # return the added results
+
+        else:
+            return KeyError
+
+    def __contains__(self, k):
+        # return true if key is found in module specific log files dictionary else return KeyError
+        return True if k in self._logfile_names_and_paths else KeyError
+
+    def items(self):
+        # parse module-specific log file and return results as a generator
+        for key in self._logfile_names_and_paths.keys():
+            module_specific_logs = self.__getitem__(key, cache=False)
+            yield key, module_specific_logs
+
+    def __repr__(self):
+        return repr(self._logfile_names_and_paths)
+
+    def __len__(self):
+        return len(self._logfile_names_and_paths)
+
+    def keys(self):
+        # return dictionary keys
+        return self._logfile_names_and_paths.keys()
+
+    def values(self):
+        # parse module-specific log file and yield the results
+        for key in self._logfile_names_and_paths.keys():
+            module_specific_logs = self.__getitem__(key, cache=False)
+            yield module_specific_logs
+
+    def __iter__(self):
+        return iter(self._logfile_names_and_paths)
+
+    def __getstate__(self):
+        # Ensure all items cached before pickling
+        for key in self.keys():
+            self.__getitem__(key, cache=True)
+        return self.__dict__

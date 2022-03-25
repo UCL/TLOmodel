@@ -18,6 +18,7 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
+from tlo.methods.consumables import Consumables, create_dummy_data_for_cons_availability
 from tlo.methods.dxmanager import DxManager, DxTest
 from tlo.methods.healthsystem import HSI_Event
 
@@ -59,7 +60,7 @@ def bundle(seed):
 
     # Run the simulation and flush the logger
     sim.make_initial_population(n=2000)
-    sim.simulate(end_date=Date(year=2010, month=1, day=31))
+    sim.simulate(end_date=sim.start_date)
 
     # Create a dummy HSI event from which the use of diagnostics can be tested
     class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
@@ -73,16 +74,27 @@ def bundle(seed):
         def apply(self, person_id, squeeze_factor):
             pass
 
-    hsi_event = HSI_Dummy(module=sim.modules['Mockitis'], person_id=-99)
+    hsi_event = HSI_Dummy(module=sim.modules['Mockitis'], person_id=0)
+    hsi_event.initialise()
+    # Force that the Facility_ID associated is facility_id=0 (as this is the facility for which availability of
+    #  consumables is manipulated in the below).
+    hsi_event.facility_info = sim.modules['HealthSystem']._facility_by_facility_id[0]
 
-    # Create consumable codes that are always and never available
-    cons_items = sim.modules['HealthSystem'].cons_available_today['Item_Code']
-
+    # Update Consumables module with  consumable codes that are always and never available
     item_code_for_consumable_that_is_not_available = 0
     item_code_for_consumable_that_is_available = 1
 
-    cons_items.loc[item_code_for_consumable_that_is_not_available, cons_items.columns] = False
-    cons_items.loc[item_code_for_consumable_that_is_available, cons_items.columns] = True
+    sim.modules['HealthSystem'].consumables = Consumables(
+        data=create_dummy_data_for_cons_availability(
+            intrinsic_availability={
+                item_code_for_consumable_that_is_not_available: 0.0,
+                item_code_for_consumable_that_is_available: 1.0},
+            facility_ids=[0],
+            months=[sim.date.month]),
+        rng=sim.modules['HealthSystem'].rng,
+        availability='default'
+    )
+    sim.modules['HealthSystem'].consumables.processing_at_start_of_new_day(sim.date)
 
     assert hsi_event.get_consumables(item_codes=item_code_for_consumable_that_is_available)
     assert not hsi_event.get_consumables(item_codes=item_code_for_consumable_that_is_not_available)
