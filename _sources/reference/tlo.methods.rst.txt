@@ -15,6 +15,7 @@ Submodules
    tlo.methods.care_of_women_during_pregnancy
    tlo.methods.causes
    tlo.methods.chronicsyndrome
+   tlo.methods.consumables
    tlo.methods.contraception
    tlo.methods.demography
    tlo.methods.depression
@@ -39,7 +40,9 @@ Submodules
    tlo.methods.other_adult_cancers
    tlo.methods.postnatal_supervisor
    tlo.methods.postnatal_supervisor_lm
+   tlo.methods.pregnancy_helper_functions
    tlo.methods.pregnancy_supervisor
+   tlo.methods.pregnancy_supervisor_lm
    tlo.methods.prostate_cancer
    tlo.methods.rti
    tlo.methods.simplified_births

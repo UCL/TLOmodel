@@ -797,7 +797,7 @@
         <span class="k">return</span> <span class="s2">&quot;Epi_Td&quot;</span></div>
 
 <div class="viewcode-block" id="HSI_TdVaccine.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_TdVaccine.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s2">&quot;td&quot;</span><span class="p">]):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s2">&quot;td&quot;</span><span class="p">]):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;td&quot;</span><span class="p">)</span></div></div>
 
 
@@ -879,7 +879,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Feb 16, 2022.
+        Last updated on Mar 25, 2022.
       </span>
 
     </p>

@@ -1,0 +1,4 @@
+tlo.methods.consumables module
+==============================
+
+.. automodule:: tlo.methods.consumables

@@ -560,7 +560,8 @@
 
         <span class="c1"># Release any beds-days that would be used by this person:</span>
         <span class="k">if</span> <span class="s1">&#39;HealthSystem&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">remove_beddays_footprint</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">individual_id</span><span class="p">)</span></div>
+            <span class="k">if</span> <span class="n">person</span><span class="o">.</span><span class="n">hs_is_inpatient</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">remove_beddays_footprint</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">individual_id</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Demography.get_gbd_causes_of_death_not_represented_in_disease_modules"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.Demography.get_gbd_causes_of_death_not_represented_in_disease_modules">[docs]</a>    <span class="k">def</span> <span class="nf">get_gbd_causes_of_death_not_represented_in_disease_modules</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">causes_of_death</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -857,7 +858,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Feb 16, 2022.
+        Last updated on Mar 25, 2022.
       </span>
 
     </p>

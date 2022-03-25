@@ -173,6 +173,7 @@
 <span class="kn">import</span> <span class="nn">json</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Mapping</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">TextIO</span>
 
@@ -204,29 +205,12 @@
     <span class="k">return</span> <span class="n">output_logs</span>
 
 
-<div class="viewcode-block" id="parse_log_file"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.parse_log_file">[docs]</a><span class="k">def</span> <span class="nf">parse_log_file</span><span class="p">(</span><span class="n">log_filepath</span><span class="p">,</span> <span class="n">level</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Parses logged output from a TLO run and returns Pandas dataframes.</span>
-
-<span class="sd">    The dictionary returned has the format::</span>
-
-<span class="sd">        {</span>
-<span class="sd">            &lt;logger 1 name&gt;: {</span>
-<span class="sd">                               &lt;log key 1&gt;: &lt;pandas dataframe&gt;,</span>
-<span class="sd">                               &lt;log key 2&gt;: &lt;pandas dataframe&gt;,</span>
-<span class="sd">                               &lt;log key 3&gt;: &lt;pandas dataframe&gt;</span>
-<span class="sd">                             },</span>
-
-<span class="sd">            &lt;logger 2 name&gt;: {</span>
-<span class="sd">                               &lt;log key 4&gt;: &lt;pandas dataframe&gt;,</span>
-<span class="sd">                               &lt;log key 5&gt;: &lt;pandas dataframe&gt;,</span>
-<span class="sd">                               &lt;log key 6&gt;: &lt;pandas dataframe&gt;</span>
-<span class="sd">                             },</span>
-<span class="sd">            ...</span>
-<span class="sd">        }</span>
+<div class="viewcode-block" id="parse_log_file"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.parse_log_file">[docs]</a><span class="k">def</span> <span class="nf">parse_log_file</span><span class="p">(</span><span class="n">log_filepath</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Parses logged output from a TLO run, split it into smaller logfiles and returns a class containing paths to</span>
+<span class="sd">    these split logfiles.</span>
 
 <span class="sd">    :param log_filepath: file path to log file</span>
-<span class="sd">    :param level: logging level to be parsed for structured logging</span>
-<span class="sd">    :return: dictionary of parsed log data</span>
+<span class="sd">    :return: a class containing paths to split logfiles</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Processing log file </span><span class="si">{</span><span class="n">log_filepath</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
     <span class="n">uuid_to_module_name</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>  <span class="c1"># uuid to module name</span>
@@ -258,46 +242,28 @@
     <span class="k">for</span> <span class="n">file_handle</span> <span class="ow">in</span> <span class="n">module_name_to_filehandle</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
         <span class="n">file_handle</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
-    <span class="c1"># parse each module-specific log file and collect the results into a single dictionary. metadata about each log</span>
-    <span class="c1"># is returned in the same key &#39;_metadata&#39;, so it needs to be collected separately and then merged back in.</span>
-    <span class="n">all_module_logs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-    <span class="n">metadata</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-    <span class="k">for</span> <span class="n">file_handle</span> <span class="ow">in</span> <span class="n">module_name_to_filehandle</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Parsing </span><span class="si">{</span><span class="n">file_handle</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">module_specific_logs</span> <span class="o">=</span> <span class="n">_parse_log_file_inner_loop</span><span class="p">(</span><span class="n">file_handle</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">level</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39; - complete.&#39;</span><span class="p">)</span>
-        <span class="n">all_module_logs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">module_specific_logs</span><span class="p">)</span>
-        <span class="c1"># sometimes there is nothing to be parsed at a given level, so no metadata</span>
-        <span class="k">if</span> <span class="s1">&#39;metadata_&#39;</span> <span class="ow">in</span> <span class="n">module_specific_logs</span><span class="p">:</span>
-            <span class="n">metadata</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">module_specific_logs</span><span class="p">[</span><span class="s1">&#39;_metadata&#39;</span><span class="p">])</span>
-
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">metadata</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">all_module_logs</span><span class="p">[</span><span class="s1">&#39;_metadata&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">metadata</span>
-
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Finished.&#39;</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">all_module_logs</span></div>
+    <span class="c1"># return an object that accepts as an argument a dictionary containing paths to split logfiles</span>
+    <span class="k">return</span> <span class="n">LogsDict</span><span class="p">({</span><span class="n">name</span><span class="p">:</span> <span class="n">handle</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">handle</span> <span class="ow">in</span> <span class="n">module_name_to_filehandle</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span></div>
 
 
 <div class="viewcode-block" id="write_log_to_excel"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.write_log_to_excel">[docs]</a><span class="k">def</span> <span class="nf">write_log_to_excel</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">log_dataframes</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Takes the output of parse_log_file() and creates an Excel file from dataframes&quot;&quot;&quot;</span>
-    <span class="n">sheets</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+    <span class="n">metadata</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
     <span class="n">sheet_count</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="n">metadata</span> <span class="o">=</span> <span class="n">log_dataframes</span><span class="p">[</span><span class="s1">&#39;_metadata&#39;</span><span class="p">]</span>
-    <span class="k">for</span> <span class="n">module</span><span class="p">,</span> <span class="n">key_df</span> <span class="ow">in</span> <span class="n">log_dataframes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="k">if</span> <span class="n">module</span> <span class="o">!=</span> <span class="s1">&#39;_metadata&#39;</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">df</span> <span class="ow">in</span> <span class="n">key_df</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">module</span><span class="p">,</span> <span class="n">dataframes</span> <span class="ow">in</span> <span class="n">log_dataframes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">dataframe</span> <span class="ow">in</span> <span class="n">dataframes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="o">!=</span> <span class="s1">&#39;_metadata&#39;</span><span class="p">:</span>
                 <span class="n">sheet_count</span> <span class="o">+=</span> <span class="mi">1</span>
-                <span class="n">sheets</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">module</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">sheet_count</span><span class="p">,</span> <span class="n">metadata</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;description&#39;</span><span class="p">]])</span>
+                <span class="n">metadata</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">module</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">sheet_count</span><span class="p">,</span> <span class="n">dataframes</span><span class="p">[</span><span class="s1">&#39;_metadata&#39;</span><span class="p">][</span><span class="n">module</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;description&#39;</span><span class="p">]])</span>
 
     <span class="n">writer</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">ExcelWriter</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
-    <span class="n">index</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">sheets</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;module&#39;</span><span class="p">,</span> <span class="s1">&#39;key&#39;</span><span class="p">,</span> <span class="s1">&#39;sheet&#39;</span><span class="p">,</span> <span class="s1">&#39;description&#39;</span><span class="p">])</span>
+    <span class="n">index</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;module&#39;</span><span class="p">,</span> <span class="s1">&#39;key&#39;</span><span class="p">,</span> <span class="s1">&#39;sheet&#39;</span><span class="p">,</span> <span class="s1">&#39;description&#39;</span><span class="p">])</span>
     <span class="n">index</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="s1">&#39;Index&#39;</span><span class="p">)</span>
 
     <span class="n">sheet_count</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="k">for</span> <span class="n">module</span><span class="p">,</span> <span class="n">key_df</span> <span class="ow">in</span> <span class="n">log_dataframes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="k">if</span> <span class="n">module</span> <span class="o">!=</span> <span class="s1">&#39;_metadata&#39;</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">df</span> <span class="ow">in</span> <span class="n">key_df</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">module</span><span class="p">,</span> <span class="n">dataframes</span> <span class="ow">in</span> <span class="n">log_dataframes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">df</span> <span class="ow">in</span> <span class="n">dataframes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="o">!=</span> <span class="s1">&#39;_metadata&#39;</span><span class="p">:</span>
                 <span class="n">sheet_count</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="n">df</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Sheet </span><span class="si">{</span><span class="n">sheet_count</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
     <span class="n">writer</span><span class="o">.</span><span class="n">save</span><span class="p">()</span></div>
@@ -696,6 +662,88 @@
     <span class="n">_y</span> <span class="o">=</span> <span class="n">_x</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
     <span class="n">_y</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">MultiIndex</span><span class="o">.</span><span class="n">from_tuples</span><span class="p">(</span><span class="n">index_value_list</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="n">index_name_list</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">_y</span></div>
+
+
+<div class="viewcode-block" id="LogsDict"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.LogsDict">[docs]</a><span class="k">class</span> <span class="nc">LogsDict</span><span class="p">(</span><span class="n">Mapping</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Parses module-specific log files and returns Pandas dataframes.</span>
+
+<span class="sd">        The dictionary returned has the format::</span>
+
+<span class="sd">            {</span>
+<span class="sd">                &lt;logger 1 name&gt;: {</span>
+<span class="sd">                                   &lt;log key 1&gt;: &lt;pandas dataframe&gt;,</span>
+<span class="sd">                                   &lt;log key 2&gt;: &lt;pandas dataframe&gt;,</span>
+<span class="sd">                                   &lt;log key 3&gt;: &lt;pandas dataframe&gt;</span>
+<span class="sd">                                 },</span>
+
+<span class="sd">                &lt;logger 2 name&gt;: {</span>
+<span class="sd">                                   &lt;log key 4&gt;: &lt;pandas dataframe&gt;,</span>
+<span class="sd">                                   &lt;log key 5&gt;: &lt;pandas dataframe&gt;,</span>
+<span class="sd">                                   &lt;log key 6&gt;: &lt;pandas dataframe&gt;</span>
+<span class="sd">                                 },</span>
+<span class="sd">                ...</span>
+<span class="sd">            }</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_names_and_paths</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="c1"># initialise class with module-specific log files paths</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logfile_names_and_paths</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">file_names_and_paths</span>
+
+        <span class="c1"># create a dictionary that will contain cached data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_results_cache</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="c1"># check if the requested key is found in a dictionary containing module name and log file paths. if key</span>
+        <span class="c1"># is found, return parsed logs else return KeyError</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logfile_names_and_paths</span><span class="p">:</span>
+            <span class="c1"># check if key is found in cache</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_results_cache</span><span class="p">:</span>
+                <span class="n">result_df</span> <span class="o">=</span> <span class="n">_parse_log_file_inner_loop</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_logfile_names_and_paths</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+                <span class="c1"># get metadata for the selected log file and merge it all with the selected key</span>
+                <span class="n">result_df</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;_metadata&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">result_df</span><span class="p">[</span><span class="s1">&#39;_metadata&#39;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">cache</span><span class="p">:</span>  <span class="c1"># check if caching is disallowed</span>
+                    <span class="k">return</span> <span class="n">result_df</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_results_cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">result_df</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>    <span class="c1"># add key specific parsed results to cache</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_results_cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>  <span class="c1"># return the added results</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="ne">KeyError</span>
+
+    <span class="k">def</span> <span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="c1"># return true if key is found in module specific log files dictionary else return KeyError</span>
+        <span class="k">return</span> <span class="kc">True</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logfile_names_and_paths</span> <span class="k">else</span> <span class="ne">KeyError</span>
+
+<div class="viewcode-block" id="LogsDict.items"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.LogsDict.items">[docs]</a>    <span class="k">def</span> <span class="nf">items</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># parse module-specific log file and return results as a generator</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logfile_names_and_paths</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">module_specific_logs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">yield</span> <span class="n">key</span><span class="p">,</span> <span class="n">module_specific_logs</span></div>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_logfile_names_and_paths</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_logfile_names_and_paths</span><span class="p">)</span>
+
+<div class="viewcode-block" id="LogsDict.keys"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.LogsDict.keys">[docs]</a>    <span class="k">def</span> <span class="nf">keys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># return dictionary keys</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logfile_names_and_paths</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="LogsDict.values"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.LogsDict.values">[docs]</a>    <span class="k">def</span> <span class="nf">values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># parse module-specific log file and yield the results</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logfile_names_and_paths</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">module_specific_logs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">yield</span> <span class="n">module_specific_logs</span></div>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_logfile_names_and_paths</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__getstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Ensure all items cached before pickling</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span></div>
 </pre></div>
 
            </div>
@@ -708,7 +756,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Feb 16, 2022.
+        Last updated on Mar 25, 2022.
       </span>
 
     </p>

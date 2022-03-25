@@ -179,8 +179,171 @@
   <div class="section" id="module-tlo.methods.healthsystem">
 <span id="tlo-methods-healthsystem-module"></span><h1>tlo.methods.healthsystem module<a class="headerlink" href="#module-tlo.methods.healthsystem" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.healthsystem.HSI_Event">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HSI_Event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HSI_Event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base HSI event class, from which all others inherit.</p>
+<p>Concrete subclasses should also inherit from one of the EventMixin classes
+defined below, and implement at least an <cite>apply</cite> and <cite>did_not_run</cite> method.</p>
+<p><strong>Class attributes:</strong></p>
+<p>bed_days_allocated_to_this_event : &lt;property object at 0x7ff4d75e2db0&gt;</p>
+<p><strong>Functions (defined or overridden in class HSI_Event):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthsystem.HSI_Event.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HSI_Event.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HSI_Event.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthsystem.HSI_Event.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HSI_Event.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HSI_Event.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthsystem.HSI_Event.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HSI_Event.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HSI_Event.did_not_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthsystem.HSI_Event.never_ran">
+<span class="sig-name descname"><span class="pre">never_ran</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HSI_Event.never_ran"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HSI_Event.never_ran" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is was entered to the HSI Event Queue, but was never run.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthsystem.HSI_Event.post_apply_hook">
+<span class="sig-name descname"><span class="pre">post_apply_hook</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HSI_Event.post_apply_hook"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HSI_Event.post_apply_hook" title="Permalink to this definition">¶</a></dt>
+<dd><p>Impose the bed-days footprint (if target of the HSI is a person_id)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthsystem.HSI_Event.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HSI_Event.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HSI_Event.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make the event happen.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthsystem.HSI_Event.get_consumables">
+<span class="sig-name descname"><span class="pre">get_consumables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">item_codes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.integer</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">set</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optional_item_codes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.integer</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">set</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to_log</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_individual_results</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HSI_Event.get_consumables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HSI_Event.get_consumables" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to allow for getting and checking of entire set of consumables. All requests for consumables should
+use this function.
+:param item_codes: The item code(s) (and quantities) of the consumables that are requested and which determine
+the summary result for availability/non-availability. This can be an <cite>int</cite> (the item_code needed [assume
+quantity=1]), a <cite>list</cite> or <cite>set</cite> (the collection  of item_codes [for each assuming quantity=1]), or a <cite>dict</cite>
+(with key:value pairs <cite>&lt;item_code&gt;:&lt;quantity&gt;</cite>).
+:param optional_item_codes: The item code(s) (and quantities) of the consumables that are requested and which do</p>
+<blockquote>
+<div><p>not determine the summary result for availability/non-availability. (Same format as <cite>item_codes</cite>). This is
+useful when a large set of items may be used, but the viability of a subsequent operation depends only on a
+subset.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>return_individual_results</strong> – If True returns a <cite>dict</cite> giving the availability of each item_code requested</p>
+</dd>
+</dl>
+<p>(otherwise gives a <cite>bool</cite> indicating if all the item_codes requested are available).
+:param to_log: If True, logs the request.
+:returns A <cite>bool</cite> indicating whether every item is available, or a <cite>dict</cite> indicating the availability of each</p>
+<blockquote>
+<div><p>item.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>Note that disease module can use the <cite>get_item_codes_from_package_name</cite> and <cite>get_item_code_from_item_name</cite></dt><dd><p>methods in the <cite>HealthSystem</cite> module to find item_codes.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthsystem.HSI_Event.make_beddays_footprint">
+<span class="sig-name descname"><span class="pre">make_beddays_footprint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dict_of_beddays</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HSI_Event.make_beddays_footprint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HSI_Event.make_beddays_footprint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function to make a correctly-formed ‘bed-days footprint’</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthsystem.HSI_Event.is_all_beddays_allocated">
+<span class="sig-name descname"><span class="pre">is_all_beddays_allocated</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HSI_Event.is_all_beddays_allocated"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HSI_Event.is_all_beddays_allocated" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if the entire footprint requested is allocated</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthsystem.HSI_Event.make_appt_footprint">
+<span class="sig-name descname"><span class="pre">make_appt_footprint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dict_of_appts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HSI_Event.make_appt_footprint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HSI_Event.make_appt_footprint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function to make appointment footprint in format expected downstream.</p>
+<p>Should be passed a dictionary keyed by appointment type codes with non-negative
+values.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthsystem.HSI_Event.initialise">
+<span class="sig-name descname"><span class="pre">initialise</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HSI_Event.initialise"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HSI_Event.initialise" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialise the HSI:
+* Set the facility_info
+* Compute appt-footprint time requirements</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthsystem.HSI_Event._check_if_appt_footprint_can_run">
+<span class="sig-name descname"><span class="pre">_check_if_appt_footprint_can_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HSI_Event._check_if_appt_footprint_can_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HSI_Event._check_if_appt_footprint_can_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check that event (if individual level) is able to run with this configuration of officers (i.e. check that
+this does not demand officers that are _never_ available), and issue warning if not.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.healthsystem.HSIEventWrapper">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSIEventWrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_hsi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HSIEventWrapper"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HSIEventWrapper" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is wrapper that contains an HSI event.</p>
+<dl class="simple">
+<dt>It is used:</dt><dd><p>1) When the healthsystem is in mode ‘disabled=True’ such that HSI events sent to the health system scheduler are
+passed to the main simulation scheduler for running on the date of <cite>topen</cite>. (Note, it is run with
+squeeze_factor=0.0.)
+2) When the healthsytsem is in mode <cite>diable_and_reject_all=True</cite> such that HSI are not run but the <cite>never_ran</cite>
+method is run on the date of <cite>tclose</cite>.
+3) When an HSI has been submitted to <cite>schedule_hsi_event</cite> but the service is not available.</p>
+</dd>
+</dl>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSIEventWrapper):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthsystem.HSIEventWrapper.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_hsi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HSIEventWrapper.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HSIEventWrapper.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthsystem.HSIEventWrapper.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HSIEventWrapper.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HSIEventWrapper.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Do the appropriate action on the HSI event</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HealthSystem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">pathlib.Path</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">service_availability</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode_appt_constraints</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cons_availability</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_priority</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">capabilities_coefficient</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_funded_or_actual_staffing</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'funded_plus'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disable_and_reject_all</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store_hsi_events_that_have_run</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">record_hsi_event_details</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HealthSystem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">pathlib.Path</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">service_availability</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode_appt_constraints</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cons_availability</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beds_availability</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_priority</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">capabilities_coefficient</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_funded_or_actual_staffing</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'funded_plus'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disable_and_reject_all</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store_hsi_events_that_have_run</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">record_hsi_event_details</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem" title="Permalink to this definition">¶</a></dt>
 <dd><p>This is the Health System Module.
 The execution of all health systems interactions are controlled through this module.</p>
 <p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.core.Module</span></code></a></p>
@@ -230,17 +393,29 @@ The execution of all health systems interactions are controlled through this mod
 <td><p>DATA_FRAME</p></td>
 <td><p>The capabilities (minutes of time available of each type of officer in each facility) based on the _potential_ number and distribution of staff estimated, with adjustments to permit each appointment type that should be run at facility level to do so in every district.</p></td>
 </tr>
-<tr class="row-even"><td><p>Consumables_OneHealth</p></td>
+<tr class="row-even"><td><p>item_and_package_code_lookups</p></td>
 <td><p>DATA_FRAME</p></td>
-<td><p>List of consumables used in each intervention and their costs.</p></td>
+<td><p>Data imported from the OneHealth Tool on consumable items, packages and costs.</p></td>
+</tr>
+<tr class="row-odd"><td><p>availability_estimates</p></td>
+<td><p>DATA_FRAME</p></td>
+<td><p>Estimated availability of consumables in the LMIS dataset.</p></td>
+</tr>
+<tr class="row-even"><td><p>cons_availability</p></td>
+<td><p>STRING</p></td>
+<td><p>Availability of consumables. If ‘default’ then use the availability specified in the ResourceFile; if ‘none’, then let no consumable be  ever be available; if ‘all’, then all consumables are always available. When using ‘all’ or ‘none’, requests for consumables are not logged. NB. This parameter is over-riddenif an argument is provided to the module initialiser.</p></td>
 </tr>
 <tr class="row-odd"><td><p>BedCapacity</p></td>
 <td><p>DATA_FRAME</p></td>
 <td><p>Data on the number of beds available of each type by facility_id</p></td>
 </tr>
-<tr class="row-even"><td><p>Service_Availability</p></td>
+<tr class="row-even"><td><p>beds_availability</p></td>
+<td><p>STRING</p></td>
+<td><p>Availability of beds. If ‘default’ then use the availability specified in the ResourceFile; if ‘none’, then let no beds be  ever be available; if ‘all’, then all beds are always available. NB. This parameter is over-ridden if an argument is provided to the module initialiser.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Service_Availability</p></td>
 <td><p>LIST</p></td>
-<td><p>List of services to be available.</p></td>
+<td><p>List of services to be available. NB. This parameter is over-ridden if an argument is provided to the module initialiser.</p></td>
 </tr>
 </tbody>
 </table>
@@ -269,7 +444,7 @@ The execution of all health systems interactions are controlled through this mod
 <p><strong>Functions (defined or overridden in class HealthSystem):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">pathlib.Path</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">service_availability</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode_appt_constraints</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cons_availability</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_priority</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">capabilities_coefficient</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_funded_or_actual_staffing</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'funded_plus'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disable_and_reject_all</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store_hsi_events_that_have_run</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">record_hsi_event_details</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.__init__" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">pathlib.Path</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">service_availability</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode_appt_constraints</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cons_availability</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beds_availability</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_priority</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">capabilities_coefficient</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_funded_or_actual_staffing</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'funded_plus'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disable_and_reject_all</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store_hsi_events_that_have_run</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">record_hsi_event_details</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -287,6 +462,8 @@ no squeeze factor run.</p></li>
 </dl>
 <p>let no consumable be ever be available; if ‘all’, then all consumables are always available. When using ‘all’
 or ‘none’, requests for consumables are not logged.
+:param beds_availability: If ‘default’ then use the availability specified in the ResourceFile; if ‘none’, then
+let no beds be ever be available; if ‘all’, then all beds are always available.
 :param ignore_priority: If <code class="docutils literal notranslate"><span class="pre">True</span></code> do not use the priority information in HSI</p>
 <blockquote>
 <div><p>event to schedule</p>
@@ -335,7 +512,7 @@ Typically modules would read a particular file within here.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.pre_initialise_population">
 <span class="sig-name descname"><span class="pre">pre_initialise_population</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.pre_initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.pre_initialise_population" title="Permalink to this definition">¶</a></dt>
-<dd><p>Do processing following <cite>read_parameters</cite> prior to generating the population.</p>
+<dd><p>Generate the accessory classes used by the HealthSystem and pass to them the data that has been read.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -394,15 +571,6 @@ It is a good place to add initial events to the event queue.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.process_consumables_file">
-<span class="sig-name descname"><span class="pre">process_consumables_file</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.process_consumables_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.process_consumables_file" title="Permalink to this definition">¶</a></dt>
-<dd><p>Helper function for processing the consumables data (stored as self.parameters[‘Consumables’])
-* Creates <code class="docutils literal notranslate"><span class="pre">`parameters['Consumables']`</span></code>
-* Creates <code class="docutils literal notranslate"><span class="pre">`df_mapping_pkg_code_to_intv_code`</span></code>
-* Creates <code class="docutils literal notranslate"><span class="pre">`prob_item_code_available`</span></code></p>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.format_daily_capabilities">
 <span class="sig-name descname"><span class="pre">format_daily_capabilities</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.core.series.Series</span></span></span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.format_daily_capabilities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.format_daily_capabilities" title="Permalink to this definition">¶</a></dt>
 <dd><p>This will updates the dataframe for the self.parameters[‘Daily_Capabilities’] so as to include
@@ -416,30 +584,54 @@ is available.</p>
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.set_service_availability">
 <span class="sig-name descname"><span class="pre">set_service_availability</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.set_service_availability"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.set_service_availability" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set service availability. (Should be equal to what is specified by the parameter, but overwrite with what was
-provided in arguement if an argument was specified – provided for backward compatibility.)</p>
+provided in argument if an argument was specified – provided for backward compatibility/debugging.)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.get_cons_availability">
+<span class="sig-name descname"><span class="pre">get_cons_availability</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.get_cons_availability"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.get_cons_availability" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set consumables availability. (Should be equal to what is specified by the parameter, but overwrite with
+what was provided in argument if an argument was specified – provided for backward compatibility/debugging.)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.get_beds_availability">
+<span class="sig-name descname"><span class="pre">get_beds_availability</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.get_beds_availability"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.get_beds_availability" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set beds availability. (Should be equal to what is specified by the parameter, but overwrite with
+what was provided in argument if an argument was specified – provided for backward compatibility/debugging.)</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.schedule_hsi_event">
-<span class="sig-name descname"><span class="pre">schedule_hsi_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">priority</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tclose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_hsi_event_checks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.schedule_hsi_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.schedule_hsi_event" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">schedule_hsi_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">priority</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">datetime.datetime</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tclose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime.datetime</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_hsi_event_checks</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.schedule_hsi_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.schedule_hsi_event" title="Permalink to this definition">¶</a></dt>
 <dd><p>Schedule a health system interaction (HSI) event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>hsi_event</strong> – The HSI event to be scheduled.</p></li>
-<li><p><strong>priority</strong> – The priority for the HSI event (0 (highest), 1 or 2 (lowest)</p></li>
-<li><p><strong>topen</strong> – The earliest date at which the HSI event should run</p></li>
-<li><p><strong>tclose</strong> – The latest date at which the HSI event should run. Set to one
-week after <code class="docutils literal notranslate"><span class="pre">topen</span></code> if <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
-<li><p><strong>do_hsi_event_checks</strong> – Whether to perform sanity checks on the passed
-<code class="docutils literal notranslate"><span class="pre">hsi_event</span></code> argument to check that it constitutes a valid HSI event. This
-is intended for allowing disabling of these checks when scheduling multiple
-HSI events of the same <code class="docutils literal notranslate"><span class="pre">HSI_Event</span></code> subclass together, in which case
-typically performing these checks for each individual HSI event of the
-shared type will be redundant.</p></li>
+<li><p><strong>priority</strong> – The priority for the HSI event: 0 (highest), 1 or 2 (lowest)</p></li>
+<li><p><strong>topen</strong> – The earliest date at which the HSI event should run.</p></li>
+<li><p><strong>tclose</strong> – The latest date at which the HSI event should run. Set to one week after <code class="docutils literal notranslate"><span class="pre">topen</span></code> if <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>do_hsi_event_checks</strong> – Whether to perform sanity checks on the passed <code class="docutils literal notranslate"><span class="pre">hsi_event</span></code> argument to check that
+it constitutes a valid HSI event. This is intended for allowing disabling of these checks when scheduling
+multiple HSI events of the same <code class="docutils literal notranslate"><span class="pre">HSI_Event</span></code> subclass together, in which case typically performing these
+checks for each individual HSI event of the shared type will be redundant.</p></li>
 </ul>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.check_hsi_event_is_valid">
+<span class="sig-name descname"><span class="pre">check_hsi_event_is_valid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.check_hsi_event_is_valid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.check_hsi_event_is_valid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check the integrity of an HSI_Event.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.is_treatment_id_allowed">
+<span class="sig-name descname"><span class="pre">is_treatment_id_allowed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">treatment_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.is_treatment_id_allowed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.is_treatment_id_allowed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determine if a treatment_id (specified as a string) can be run (i.e., is within the allowable set of
+treatments, given by <cite>self.service_availability</cite>.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -477,13 +669,6 @@ iterable of per-target values.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.broadcast_healthsystem_interaction">
-<span class="sig-name descname"><span class="pre">broadcast_healthsystem_interaction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.broadcast_healthsystem_interaction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.broadcast_healthsystem_interaction" title="Permalink to this definition">¶</a></dt>
-<dd><p>This will alert disease modules than a treatment_id is occurring to a particular person.
-:param hsi_event: the health system interaction event</p>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.get_capabilities_today">
 <span class="sig-name descname"><span class="pre">get_capabilities_today</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.core.series.Series</span></span></span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.get_capabilities_today"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.get_capabilities_today" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the capabilities of the health system today.
@@ -503,38 +688,25 @@ It returns an empty Counter instance.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.get_prob_seek_care">
-<span class="sig-name descname"><span class="pre">get_prob_seek_care</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">symptom_code</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.get_prob_seek_care"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.get_prob_seek_care" title="Permalink to this definition">¶</a></dt>
-<dd><p>This is depracted. Report onset of generic acute symptoms to the symptom mananger.
-HealthSeekingBehaviour module will schedule a generic hsi.</p>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.get_facility_info">
 <span class="sig-name descname"><span class="pre">get_facility_info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tlo.methods.healthsystem.FacilityInfo</span></span></span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.get_facility_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.get_facility_info" title="Permalink to this definition">¶</a></dt>
-<dd><p>Helper function to find the facility at which an HSI event will take place</p>
+<dd><p>Helper function to find the facility at which an HSI event will take place based on their district of
+residence and the level of the facility of the HSI.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.get_appt_footprint_as_time_request">
-<span class="sig-name descname"><span class="pre">get_appt_footprint_as_time_request</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">actual_appt_footprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.get_appt_footprint_as_time_request"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.get_appt_footprint_as_time_request" title="Permalink to this definition">¶</a></dt>
-<dd><p>This will take an HSI event and return the required appointments in terms of the
+<span class="sig-name descname"><span class="pre">get_appt_footprint_as_time_request</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">facility_info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tlo.methods.healthsystem.FacilityInfo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">appt_footprint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.get_appt_footprint_as_time_request"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.get_appt_footprint_as_time_request" title="Permalink to this definition">¶</a></dt>
+<dd><p>This will take an APPT_FOOTPRINT and return the required appointments in terms of the
 time required of each Officer Type in each Facility ID.
 The index will identify the Facility ID and the Officer Type in the same format
-as is used in Daily_Capabilities.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>hsi_event</strong> – The HSI event</p></li>
-<li><p><strong>actual_appt_footprint</strong> – The actual appt footprint (optional) if different
-to that in the HSI event.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>A Counter that gives the times required for each officer-type in each
-facility_ID, where this time is non-zero.</p>
-</dd>
-</dl>
+as is used in Daily_Capabilities.
+:params facility_info: The FacilityInfo describing the facility at which the appointment occurs
+:param appt_footprint: The actual appt footprint (optional) if different to that in the HSI event.
+:return: A Counter that gives the times required for each officer-type in each facility_ID, where this time</p>
+<blockquote>
+<div><p>is non-zero.</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py method">
@@ -570,38 +742,19 @@ each health officer in each health facility (using the standard index)</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem._request_consumables">
-<span class="sig-name descname"><span class="pre">_request_consumables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">item_codes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to_log</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem._request_consumables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem._request_consumables" title="Permalink to this definition">¶</a></dt>
-<dd><p>This is a private function called by the ‘get_consumables` in the <cite>HSI_Event</cite> base class. It queries whether
-item_codes are currently available for a particular <cite>hsi_event</cite> and logs the request.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>hsi_event</strong> – The hsi_event from which the request for consumables originates</p></li>
-<li><p><strong>item_codes</strong> – dict of the form {&lt;item_code&gt;: &lt;quantity&gt;} for the items requested</p></li>
-<li><p><strong>to_log</strong> – whether the request is logged.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.determine_availability_of_consumables_today">
-<span class="sig-name descname"><span class="pre">determine_availability_of_consumables_today</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.determine_availability_of_consumables_today"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.determine_availability_of_consumables_today" title="Permalink to this definition">¶</a></dt>
-<dd><p>Helper function to determine availability of all items and packages</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.log_hsi_event">
-<span class="sig-name descname"><span class="pre">log_hsi_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">actual_appt_footprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">did_run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.log_hsi_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.log_hsi_event" title="Permalink to this definition">¶</a></dt>
-<dd><p>This will write to the log with a record that this HSI event has occured.
+<dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.record_hsi_event">
+<span class="sig-name descname"><span class="pre">record_hsi_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">actual_appt_footprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">did_run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.record_hsi_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.record_hsi_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Record the processing of an HSI event.
 If this is an individual-level HSI event, it will also record the actual appointment footprint
 :param hsi_event: The hsi event (containing the initial expectations of footprints)
 :param actual_appt_footprint: The actual appt footprint to log (if individual event)
 :param squeeze_factor: The squueze factor (if individual event)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.write_to_hsi_log">
+<span class="sig-name descname"><span class="pre">write_to_hsi_log</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">treatment_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number_by_appt_type_code</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">did_run</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.write_to_hsi_log"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.write_to_hsi_log" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write the log <cite>HSI_Event</cite> with one entry per HSI event.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -654,7 +807,7 @@ a given package name.</p>
 <dd><p>This is the HealthSystemScheduler. It is an event that occurs every day, inspects the calls on the healthsystem
 and commissions event to occur that are consistent with the healthsystem’s capabilities for the following day, given
 assumptions about how this decision is made.
-The overall Prioritation algorithm is:</p>
+The overall Prioritization algorithm is:</p>
 <blockquote>
 <div><ul class="simple">
 <li><p>Look at events in order (the order is set by the heapq: see schedule_event</p></li>
@@ -705,157 +858,6 @@ The overall Prioritation algorithm is:</p>
 
 </dd></dl>
 
-<dl class="py class">
-<dt class="sig sig-object py" id="tlo.methods.healthsystem.HSI_Event">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HSI_Event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HSI_Event" title="Permalink to this definition">¶</a></dt>
-<dd><p>Base HSI event class, from which all others inherit.</p>
-<p>Concrete subclasses should also inherit from one of the EventMixin classes
-defined below, and implement at least an <cite>apply</cite> and <cite>did_not_run</cite> method.</p>
-<p><strong>Class attributes:</strong></p>
-<p>bed_days_allocated_to_this_event : &lt;property object at 0x7ff4e43fde50&gt;</p>
-<p><strong>Functions (defined or overridden in class HSI_Event):</strong></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.healthsystem.HSI_Event.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HSI_Event.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HSI_Event.__init__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a new event.</p>
-<p>Note that just creating an event does not schedule it to happen; that
-must be done by calling Simulation.schedule_event.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
-All subclasses of Event take this as the first argument in their
-constructor, but may also take further keyword arguments.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.healthsystem.HSI_Event.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HSI_Event.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HSI_Event.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the population.</p>
-<p>Must be implemented by subclasses.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.healthsystem.HSI_Event.did_not_run">
-<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HSI_Event.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HSI_Event.did_not_run" title="Permalink to this definition">¶</a></dt>
-<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
-to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.healthsystem.HSI_Event.never_ran">
-<span class="sig-name descname"><span class="pre">never_ran</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HSI_Event.never_ran"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HSI_Event.never_ran" title="Permalink to this definition">¶</a></dt>
-<dd><p>Called when this event is was entered to the HSI Event Queue, but was never run.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.healthsystem.HSI_Event.not_available">
-<span class="sig-name descname"><span class="pre">not_available</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HSI_Event.not_available"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HSI_Event.not_available" title="Permalink to this definition">¶</a></dt>
-<dd><p>Called when this event is passed to schedule_hsi_event but the TREATMENT_ID is not permitted by the
-parameter service_availability.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.healthsystem.HSI_Event.post_apply_hook">
-<span class="sig-name descname"><span class="pre">post_apply_hook</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HSI_Event.post_apply_hook"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HSI_Event.post_apply_hook" title="Permalink to this definition">¶</a></dt>
-<dd><p>Impose the bed-days footprint (if target of the HSI is a person_id)</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.healthsystem.HSI_Event.run">
-<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HSI_Event.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HSI_Event.run" title="Permalink to this definition">¶</a></dt>
-<dd><p>Make the event happen.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.healthsystem.HSI_Event.get_consumables">
-<span class="sig-name descname"><span class="pre">get_consumables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">item_codes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.integer</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">set</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to_log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_individual_results</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HSI_Event.get_consumables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HSI_Event.get_consumables" title="Permalink to this definition">¶</a></dt>
-<dd><p>Function to allow for getting and checking of entire set of consumables. All requests for consumables should
-use this function.
-:param item_codes: The item code(s) (and quantities) of the consumables that are requested. This can be an <cite>int</cite></p>
-<blockquote>
-<div><dl class="simple">
-<dt>(the item_code needed [assume quantity=1]), a <cite>list</cite> or <cite>set</cite> (the collection  of item_codes [for each assuming</dt><dd><p>quantity=1]), or a <cite>dict</cite> (of the form &lt;item_code&gt;:&lt;quantity&gt;).</p>
-</dd>
-</dl>
-</div></blockquote>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>return_individual_results</strong> – If True returns a <cite>dict</cite> giving the availability of each item_code requested</p>
-</dd>
-</dl>
-<p>(otherwise gives a <cite>bool</cite> indicating if all the item_codes requested are available).
-:param to_log: If True, logs the request.
-:returns A <cite>bool</cite> indicating whether every item is available, or a <cite>dict</cite> indicating the availability of each</p>
-<blockquote>
-<div><p>item.</p>
-</div></blockquote>
-<dl class="simple">
-<dt>Note that disease module can use the <cite>get_item_codes_from_package_name</cite> and <cite>get_item_code_from_item_name</cite></dt><dd><p>methods in the <cite>HealthSystem</cite> module to find item_codes.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.healthsystem.HSI_Event.make_beddays_footprint">
-<span class="sig-name descname"><span class="pre">make_beddays_footprint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dict_of_beddays</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HSI_Event.make_beddays_footprint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HSI_Event.make_beddays_footprint" title="Permalink to this definition">¶</a></dt>
-<dd><p>Helper function to make a correctly-formed ‘bed-days footprint’</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.healthsystem.HSI_Event.is_all_beddays_allocated">
-<span class="sig-name descname"><span class="pre">is_all_beddays_allocated</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HSI_Event.is_all_beddays_allocated"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HSI_Event.is_all_beddays_allocated" title="Permalink to this definition">¶</a></dt>
-<dd><p>Check if the entire footprint requested is allocated</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.healthsystem.HSI_Event.make_appt_footprint">
-<span class="sig-name descname"><span class="pre">make_appt_footprint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dict_of_appts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HSI_Event.make_appt_footprint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HSI_Event.make_appt_footprint" title="Permalink to this definition">¶</a></dt>
-<dd><p>Helper function to make appointment footprint in format expected downstream.</p>
-<p>Should be passed a dictionary keyed by appointment type codes with non-negative
-values.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="tlo.methods.healthsystem.HSIEventWrapper">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSIEventWrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_hsi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HSIEventWrapper"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HSIEventWrapper" title="Permalink to this definition">¶</a></dt>
-<dd><p>This is wrapper that contains an HSI event.</p>
-<dl class="simple">
-<dt>It is used:</dt><dd><p>1) When the healthsystem is in mode ‘disabled=True’ such that HSI events sent to the health system scheduler are
-passed to the main simulation scheduler for running on the date of <cite>topen</cite>. (Note, it is run with
-squeeze_factor=0.0.)
-2) When the healthsytsem is in mode <cite>diable_and_reject_all=True</cite> such that HSI are not run but the <cite>never_ran</cite>
-method is run on the date of <cite>tclose</cite>.</p>
-</dd>
-</dl>
-<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a></p>
-<p><strong>Functions (defined or overridden in class HSIEventWrapper):</strong></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.healthsystem.HSIEventWrapper.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_hsi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HSIEventWrapper.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HSIEventWrapper.__init__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a new event.</p>
-<p>Note that just creating an event does not schedule it to happen; that
-must be done by calling Simulation.schedule_event.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
-All subclasses of Event take this as the first argument in their
-constructor, but may also take further keyword arguments.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.healthsystem.HSIEventWrapper.run">
-<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HSIEventWrapper.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HSIEventWrapper.run" title="Permalink to this definition">¶</a></dt>
-<dd><p>Do the appropriate action on the HSI event</p>
-</dd></dl>
-
-</dd></dl>
-
 </div>
 
 
@@ -873,7 +875,7 @@ constructor, but may also take further keyword arguments.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Feb 16, 2022.
+        Last updated on Mar 25, 2022.
       </span>
 
     </p>

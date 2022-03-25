@@ -4,6 +4,66 @@ tlo.methods.healthsystem module
 .. automodule:: tlo.methods.healthsystem
 
 
+.. autoclass:: HSI_Event
+
+
+
+
+     **Class attributes:**
+
+     bed_days_allocated_to_this_event : <property object at 0x7ff4d75e2db0>
+
+     **Functions (defined or overridden in class HSI_Event):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+     .. automethod:: never_ran
+
+     .. automethod:: post_apply_hook
+
+     .. automethod:: run
+
+     .. automethod:: get_consumables
+
+     .. automethod:: make_beddays_footprint
+
+     .. automethod:: is_all_beddays_allocated
+
+     .. automethod:: make_appt_footprint
+
+     .. automethod:: initialise
+
+     .. automethod:: _check_if_appt_footprint_can_run
+
+
+
+
+
+
+
+
+.. autoclass:: HSIEventWrapper
+
+     Bases: :class:`tlo.events.Event`
+
+
+     **Functions (defined or overridden in class HSIEventWrapper):**
+
+     .. automethod:: __init__
+
+     .. automethod:: run
+
+
+
+
+
+
+
+
 .. autoclass:: HealthSystem
 
      Bases: :class:`tlo.core.Module`
@@ -42,15 +102,24 @@ tlo.methods.healthsystem module
         * - Daily_Capabilities_funded_plus
           - DATA_FRAME
           - The capabilities (minutes of time available of each type of officer in each facility) based on the _potential_ number and distribution of staff estimated, with adjustments to permit each appointment type that should be run at facility level to do so in every district.
-        * - Consumables_OneHealth
+        * - item_and_package_code_lookups
           - DATA_FRAME
-          - List of consumables used in each intervention and their costs.
+          - Data imported from the OneHealth Tool on consumable items, packages and costs.
+        * - availability_estimates
+          - DATA_FRAME
+          - Estimated availability of consumables in the LMIS dataset.
+        * - cons_availability
+          - STRING
+          - Availability of consumables. If 'default' then use the availability specified in the ResourceFile; if 'none', then let no consumable be  ever be available; if 'all', then all consumables are always available. When using 'all' or 'none', requests for consumables are not logged. NB. This parameter is over-riddenif an argument is provided to the module initialiser.
         * - BedCapacity
           - DATA_FRAME
           - Data on the number of beds available of each type by facility_id
+        * - beds_availability
+          - STRING
+          - Availability of beds. If 'default' then use the availability specified in the ResourceFile; if 'none', then let no beds be  ever be available; if 'all', then all beds are always available. NB. This parameter is over-ridden if an argument is provided to the module initialiser.
         * - Service_Availability
           - LIST
-          - List of services to be available.
+          - List of services to be available. NB. This parameter is over-ridden if an argument is provided to the module initialiser.
 
 
      **PROPERTIES:**
@@ -90,25 +159,27 @@ tlo.methods.healthsystem module
 
      .. automethod:: process_human_resources_files
 
-     .. automethod:: process_consumables_file
-
      .. automethod:: format_daily_capabilities
 
      .. automethod:: set_service_availability
 
+     .. automethod:: get_cons_availability
+
+     .. automethod:: get_beds_availability
+
      .. automethod:: schedule_hsi_event
+
+     .. automethod:: check_hsi_event_is_valid
+
+     .. automethod:: is_treatment_id_allowed
 
      .. automethod:: schedule_batch_of_individual_hsi_events
 
      .. automethod:: appt_footprint_is_valid
 
-     .. automethod:: broadcast_healthsystem_interaction
-
      .. automethod:: get_capabilities_today
 
      .. automethod:: get_blank_appt_footprint
-
-     .. automethod:: get_prob_seek_care
 
      .. automethod:: get_facility_info
 
@@ -116,11 +187,9 @@ tlo.methods.healthsystem module
 
      .. automethod:: get_squeeze_factors
 
-     .. automethod:: _request_consumables
+     .. automethod:: record_hsi_event
 
-     .. automethod:: determine_availability_of_consumables_today
-
-     .. automethod:: log_hsi_event
+     .. automethod:: write_to_hsi_log
 
      .. automethod:: log_current_capabilities
 
@@ -151,64 +220,6 @@ tlo.methods.healthsystem module
      .. automethod:: __init__
 
      .. automethod:: apply
-
-
-
-
-
-
-
-
-.. autoclass:: HSI_Event
-
-
-
-
-     **Class attributes:**
-
-     bed_days_allocated_to_this_event : <property object at 0x7ff4e43fde50>
-
-     **Functions (defined or overridden in class HSI_Event):**
-
-     .. automethod:: __init__
-
-     .. automethod:: apply
-
-     .. automethod:: did_not_run
-
-     .. automethod:: never_ran
-
-     .. automethod:: not_available
-
-     .. automethod:: post_apply_hook
-
-     .. automethod:: run
-
-     .. automethod:: get_consumables
-
-     .. automethod:: make_beddays_footprint
-
-     .. automethod:: is_all_beddays_allocated
-
-     .. automethod:: make_appt_footprint
-
-
-
-
-
-
-
-
-.. autoclass:: HSIEventWrapper
-
-     Bases: :class:`tlo.events.Event`
-
-
-     **Functions (defined or overridden in class HSIEventWrapper):**
-
-     .. automethod:: __init__
-
-     .. automethod:: run
 
 
 

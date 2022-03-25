@@ -178,27 +178,6 @@
             
   <div class="section" id="module-tlo.methods.newborn_outcomes_lm">
 <span id="tlo-methods-newborn-outcomes-lm-module"></span><h1>tlo.methods.newborn_outcomes_lm module<a class="headerlink" href="#module-tlo.methods.newborn_outcomes_lm" title="Permalink to this headline">¶</a></h1>
-<p>Module contains functions to be passed to LinearModel.custom function</p>
-<p>The following template can be used for implementing:</p>
-<dl class="simple">
-<dt>def predict_for_individual(self, df, rng=None, <a href="#id1"><span class="problematic" id="id2">**</span></a>externals):</dt><dd><p># this is a single row dataframe. get the individual record.
-person = df.iloc[0]
-params = self.parameters
-result = 0.0  # or other intercept value
-# …implement model here, adjusting result…
-# caller expects a series to be returned
-return pd.Series(data=[result], index=df.index)</p>
-</dd>
-</dl>
-<p>or</p>
-<dl class="simple">
-<dt>def predict_for_dataframe(self, df, rng=None, <a href="#id3"><span class="problematic" id="id4">**</span></a>externals):</dt><dd><p>params = self.parameters
-result = pd.Series(data=params[‘some_intercept’], index=df.index)
-# result series has same index as dataframe, update as required
-# e.g. result[df.age == 5.0] += params[‘some_value’]
-return result</p>
-</dd>
-</dl>
 </div>
 
 
@@ -216,7 +195,7 @@ return result</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Feb 16, 2022.
+        Last updated on Mar 25, 2022.
       </span>
 
     </p>

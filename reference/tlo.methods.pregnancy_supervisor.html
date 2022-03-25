@@ -42,8 +42,8 @@
     
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="tlo.methods.prostate_cancer module" href="tlo.methods.prostate_cancer.html" />
-    <link rel="prev" title="tlo.methods.postnatal_supervisor_lm module" href="tlo.methods.postnatal_supervisor_lm.html" /> 
+    <link rel="next" title="tlo.methods.pregnancy_supervisor_lm module" href="tlo.methods.pregnancy_supervisor_lm.html" />
+    <link rel="prev" title="tlo.methods.pregnancy_helper_functions module" href="tlo.methods.pregnancy_helper_functions.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -204,332 +204,456 @@ for routine antenatal care and emergency obstetric care in the event of severe c
 </thead>
 <tbody>
 <tr class="row-even"><td><p>prob_ectopic_pregnancy</p></td>
-<td><p>REAL</p></td>
+<td><p>LIST</p></td>
 <td><p>probability of ectopic pregnancy</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_ectopic_smoker</p></td>
-<td><p>REAL</p></td>
-<td><p>relative risk of ectopic pregnancy in a smoker</p></td>
+<tr class="row-odd"><td><p>prob_care_seeking_ectopic_pre_rupture</p></td>
+<td><p>LIST</p></td>
+<td><p>probability a woman will seek care for ectopic pregnancy prior to rupture</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_multiples</p></td>
-<td><p>REAL</p></td>
+<tr class="row-even"><td><p>prob_ectopic_pregnancy_death</p></td>
+<td><p>LIST</p></td>
+<td><p>probability of a woman dying from a ruptured ectopic pregnancy</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_multiples</p></td>
+<td><p>LIST</p></td>
 <td><p>probability that a woman is currently carrying more than one pregnancy</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_placenta_praevia</p></td>
-<td><p>REAL</p></td>
+<tr class="row-even"><td><p>prob_placenta_praevia</p></td>
+<td><p>LIST</p></td>
 <td><p>probability that this womans pregnancy will be complicated by placenta praevia</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_spontaneous_abortion_per_month</p></td>
+<tr class="row-odd"><td><p>rr_placenta_praevia_previous_cs</p></td>
+<td><p>LIST</p></td>
+<td><p>relative risk of placenta praevia in a woman who has previously delivered via caesarean section</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_syphilis_during_pregnancy</p></td>
+<td><p>LIST</p></td>
+<td><p>probability that this womans will develop syphilis during her pregnancy</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_previous_miscarriage_at_baseline</p></td>
 <td><p>REAL</p></td>
+<td><p>probability that a woman at baseline will have previously experienced a miscarriage</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_spontaneous_abortion_per_month</p></td>
+<td><p>LIST</p></td>
 <td><p>underlying risk of spontaneous abortion per month</p></td>
 </tr>
 <tr class="row-odd"><td><p>rr_spont_abortion_age_35</p></td>
-<td><p>REAL</p></td>
+<td><p>LIST</p></td>
 <td><p>relative risk of spontaneous abortion in women aged 35 years or older</p></td>
 </tr>
 <tr class="row-even"><td><p>rr_spont_abortion_age_31_34</p></td>
-<td><p>REAL</p></td>
+<td><p>LIST</p></td>
 <td><p>relative risk of spontaneous abortion in women aged 31-34 years old</p></td>
 </tr>
 <tr class="row-odd"><td><p>rr_spont_abortion_prev_sa</p></td>
-<td><p>REAL</p></td>
+<td><p>LIST</p></td>
 <td><p>relative risk of spontaneous abortion in women who have previously experiences spontaneous abortion</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_induced_abortion_per_month</p></td>
-<td><p>REAL</p></td>
+<tr class="row-even"><td><p>prob_complicated_sa</p></td>
+<td><p>LIST</p></td>
+<td><p>probability that a woman who experiences spontaneous abortion with experience any complications</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_induced_abortion_per_month</p></td>
+<td><p>LIST</p></td>
 <td><p>underlying risk of induced abortion per month</p></td>
 </tr>
+<tr class="row-even"><td><p>prob_complicated_ia</p></td>
+<td><p>LIST</p></td>
+<td><p>probability that a woman who experiences induced abortion with experience any complications</p></td>
+</tr>
 <tr class="row-odd"><td><p>prob_haemorrhage_post_abortion</p></td>
-<td><p>REAL</p></td>
+<td><p>LIST</p></td>
 <td><p>probability of haemorrhage following an abortion</p></td>
 </tr>
 <tr class="row-even"><td><p>prob_sepsis_post_abortion</p></td>
-<td><p>REAL</p></td>
+<td><p>LIST</p></td>
 <td><p>probability of sepsis following an abortion</p></td>
 </tr>
 <tr class="row-odd"><td><p>prob_injury_post_abortion</p></td>
-<td><p>REAL</p></td>
+<td><p>LIST</p></td>
 <td><p>probability of injury following an abortion</p></td>
 </tr>
-<tr class="row-even"><td><p>baseline_prob_early_labour_onset</p></td>
-<td><p>REAL</p></td>
-<td><p>monthly baseline risk of labour onsetting before term</p></td>
+<tr class="row-even"><td><p>prob_induced_abortion_death</p></td>
+<td><p>LIST</p></td>
+<td><p>underlying risk of death following an induced abortion</p></td>
 </tr>
-<tr class="row-odd"><td><p>treatment_effect_calcium_ptl</p></td>
-<td><p>REAL</p></td>
-<td><p>relative risk of early labour onset for women receiving calcium supplementation</p></td>
-</tr>
-<tr class="row-even"><td><p>rr_preterm_labour_post_prom</p></td>
-<td><p>REAL</p></td>
-<td><p>relative risk of early labour onset following PROM</p></td>
-</tr>
-<tr class="row-odd"><td><p>prob_iron_def_per_month</p></td>
-<td><p>REAL</p></td>
-<td><p>monthly risk of a pregnant woman becoming iron deficient</p></td>
-</tr>
-<tr class="row-even"><td><p>prob_folate_def_per_month</p></td>
-<td><p>REAL</p></td>
-<td><p>monthly risk of a pregnant woman becoming folate deficient</p></td>
-</tr>
-<tr class="row-odd"><td><p>treatment_effect_iron_def_ifa</p></td>
-<td><p>REAL</p></td>
-<td><p>treatment effect of iron supplementation on iron deficiency</p></td>
-</tr>
-<tr class="row-even"><td><p>treatment_effect_folate_def_ifa</p></td>
-<td><p>REAL</p></td>
-<td><p>treatment effect of folate supplementation on folate deficiency</p></td>
-</tr>
-<tr class="row-odd"><td><p>prob_b12_def_per_month</p></td>
-<td><p>REAL</p></td>
-<td><p>monthly risk of a pregnant woman becoming b12 deficient</p></td>
+<tr class="row-odd"><td><p>prob_spontaneous_abortion_death</p></td>
+<td><p>LIST</p></td>
+<td><p>underlying risk of death following an spontaneous abortion</p></td>
 </tr>
 <tr class="row-even"><td><p>baseline_prob_anaemia_per_month</p></td>
-<td><p>REAL</p></td>
+<td><p>LIST</p></td>
 <td><p>baseline risk of a woman developing anaemia secondary only to pregnant</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_anaemia_if_iron_deficient</p></td>
-<td><p>REAL</p></td>
-<td><p>relative risk of a woman developing anaemia in pregnancy if she is iron deficient</p></td>
-</tr>
-<tr class="row-even"><td><p>rr_anaemia_if_folate_deficient</p></td>
-<td><p>REAL</p></td>
-<td><p>relative risk of a woman developing anaemia in pregnancy if she is folate deficient</p></td>
-</tr>
-<tr class="row-odd"><td><p>rr_anaemia_if_b12_deficient</p></td>
-<td><p>REAL</p></td>
-<td><p>relative risk of a woman developing anaemia in pregnancy if she is b12 deficient</p></td>
-</tr>
-<tr class="row-even"><td><p>rr_anaemia_iron_folic_acid</p></td>
-<td><p>REAL</p></td>
-<td><p>risk reduction of maternal anaemia for women taking daily iron/folic acid</p></td>
-</tr>
 <tr class="row-odd"><td><p>rr_anaemia_maternal_malaria</p></td>
-<td><p>REAL</p></td>
+<td><p>LIST</p></td>
 <td><p>relative risk of anaemia secondary to malaria infection</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_mild_mod_sev_anaemia</p></td>
+<tr class="row-even"><td><p>rr_anaemia_hiv_no_art</p></td>
+<td><p>LIST</p></td>
+<td><p>relative risk of anaemia for a woman with HIV not on ART</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_mild_mod_sev_anaemia</p></td>
 <td><p>LIST</p></td>
 <td><p>probabilities that a womans anaemia will be mild, moderate or severe</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_pre_eclampsia_per_month</p></td>
-<td><p>REAL</p></td>
-<td><p>underlying risk of pre-eclampsia per month without the impact of risk factors</p></td>
+<tr class="row-even"><td><p>prob_gest_diab_per_month</p></td>
+<td><p>LIST</p></td>
+<td><p>underlying risk of gestational diabetes per month without the impact of risk factors</p></td>
 </tr>
-<tr class="row-even"><td><p>treatment_effect_calcium_pre_eclamp</p></td>
-<td><p>REAL</p></td>
-<td><p>risk reduction of pre-eclampsia for women taking daily calcium supplementation</p></td>
+<tr class="row-odd"><td><p>rr_gest_diab_obesity</p></td>
+<td><p>LIST</p></td>
+<td><p>Relative risk of gestational diabetes for women who are obese</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_gest_htn_per_month</p></td>
-<td><p>REAL</p></td>
+<tr class="row-even"><td><p>prob_gest_htn_per_month</p></td>
+<td><p>LIST</p></td>
 <td><p>underlying risk of gestational hypertension per month without the impact of risk factors</p></td>
 </tr>
-<tr class="row-even"><td><p>treatment_effect_gest_htn_calcium</p></td>
-<td><p>REAL</p></td>
-<td><p>Effect of calcium supplementation on risk of developing gestational hypertension</p></td>
+<tr class="row-odd"><td><p>rr_gest_htn_obesity</p></td>
+<td><p>LIST</p></td>
+<td><p>Relative risk of gestational hypertension for women who are obese</p></td>
 </tr>
-<tr class="row-odd"><td><p>treatment_effect_anti_htns_progression</p></td>
-<td><p>REAL</p></td>
-<td><p>Effect of anti hypertensive medication in reducing the risk of progression from mild to severe hypertension</p></td>
+<tr class="row-even"><td><p>prob_pre_eclampsia_per_month</p></td>
+<td><p>LIST</p></td>
+<td><p>underlying risk of pre-eclampsia per month without the impact of risk factors</p></td>
 </tr>
-<tr class="row-even"><td><p>probs_for_mgh_matrix</p></td>
+<tr class="row-odd"><td><p>rr_pre_eclampsia_obesity</p></td>
+<td><p>LIST</p></td>
+<td><p>Relative risk of pre-eclampsia for women who are obese</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_pre_eclampsia_multiple_pregnancy</p></td>
+<td><p>LIST</p></td>
+<td><p>Relative risk of pre-eclampsia for women who are pregnant with twins</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_pre_eclampsia_chronic_htn</p></td>
+<td><p>LIST</p></td>
+<td><p>Relative risk of pre-eclampsia in women who are chronically hypertensive</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_pre_eclampsia_diabetes_mellitus</p></td>
+<td><p>LIST</p></td>
+<td><p>Relative risk of pre-eclampsia in women who have diabetes mellitus</p></td>
+</tr>
+<tr class="row-odd"><td><p>probs_for_mgh_matrix</p></td>
 <td><p>LIST</p></td>
 <td><p>probability of mild gestational hypertension moving between states: gestational hypertension, severe gestational hypertension, mild pre-eclampsia, severe pre-eclampsia, eclampsia</p></td>
 </tr>
-<tr class="row-odd"><td><p>probs_for_sgh_matrix</p></td>
+<tr class="row-even"><td><p>probs_for_sgh_matrix</p></td>
 <td><p>LIST</p></td>
 <td><p>probability of severe gestational hypertension moving between states: gestational hypertension, severe gestational hypertension, mild pre-eclampsia, severe pre-eclampsia, eclampsia</p></td>
 </tr>
-<tr class="row-even"><td><p>probs_for_mpe_matrix</p></td>
+<tr class="row-odd"><td><p>probs_for_mpe_matrix</p></td>
 <td><p>LIST</p></td>
 <td><p>probability of mild pre-eclampsia moving between states: gestational hypertension, severe gestational hypertension, mild pre-eclampsia, severe pre-eclampsia, eclampsia</p></td>
 </tr>
-<tr class="row-odd"><td><p>probs_for_spe_matrix</p></td>
+<tr class="row-even"><td><p>probs_for_spe_matrix</p></td>
 <td><p>LIST</p></td>
 <td><p>probability of severe pre-eclampsia moving between states: gestational hypertension, severe gestational hypertension, mild pre-eclampsia, severe pre-eclampsia, eclampsia</p></td>
 </tr>
-<tr class="row-even"><td><p>probs_for_ec_matrix</p></td>
+<tr class="row-odd"><td><p>probs_for_ec_matrix</p></td>
 <td><p>LIST</p></td>
 <td><p>probability of eclampsia moving between states: gestational hypertension, severe gestational hypertension, mild pre-eclampsia, severe pre-eclampsia, eclampsia</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_gest_diab_per_month</p></td>
-<td><p>REAL</p></td>
-<td><p>underlying risk of gestational diabetes per month without the impact of risk factors</p></td>
+<tr class="row-even"><td><p>prob_severe_pre_eclampsia_death</p></td>
+<td><p>LIST</p></td>
+<td><p>probability of death for a woman experiencing acute severe pre-eclampsia</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_gest_diab_obesity</p></td>
-<td><p>REAL</p></td>
-<td><p>Relative risk of gestational diabetes for women who are obese</p></td>
+<tr class="row-odd"><td><p>prob_eclampsia_death</p></td>
+<td><p>LIST</p></td>
+<td><p>probability of death for a woman experiencing eclampsia</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_glycaemic_control_diet_exercise</p></td>
-<td><p>REAL</p></td>
-<td><p>probability a womans GDM is controlled by diet and exercise during the first month of treatment</p></td>
+<tr class="row-even"><td><p>prob_monthly_death_severe_htn</p></td>
+<td><p>LIST</p></td>
+<td><p>monthly risk of death for a woman with severe hypertension</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_glycaemic_control_orals</p></td>
-<td><p>REAL</p></td>
-<td><p>probability a womans GDM is controlled by oral anti-diabetics during the first month of treatment</p></td>
-</tr>
-<tr class="row-odd"><td><p>prob_glycaemic_control_insulin</p></td>
-<td><p>REAL</p></td>
-<td><p>probability a womans GDM is controlled by insulin during the first month of treatment</p></td>
-</tr>
-<tr class="row-even"><td><p>prob_placental_abruption_per_month</p></td>
-<td><p>REAL</p></td>
+<tr class="row-odd"><td><p>prob_placental_abruption_per_month</p></td>
+<td><p>LIST</p></td>
 <td><p>monthly probability that a woman will develop placental abruption</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_antepartum_haem_per_month</p></td>
-<td><p>REAL</p></td>
-<td><p>monthly probability that a woman will develop antepartum bleeding during pregnancy</p></td>
+<tr class="row-even"><td><p>rr_placental_abruption_hypertension</p></td>
+<td><p>LIST</p></td>
+<td><p>Relative risk of placental abruption in women with hypertension</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_placental_abruption_previous_cs</p></td>
+<td><p>LIST</p></td>
+<td><p>Relative risk of placental abruption in women who delivered previously via caesarean section</p></td>
 </tr>
 <tr class="row-even"><td><p>prob_aph_placenta_praevia</p></td>
-<td><p>REAL</p></td>
+<td><p>LIST</p></td>
 <td><p>risk of antepartum haemorrhage due to ongoing placenta praevia</p></td>
 </tr>
 <tr class="row-odd"><td><p>prob_aph_placental_abruption</p></td>
-<td><p>REAL</p></td>
+<td><p>LIST</p></td>
 <td><p>risk of antepartum haemorrhage due to placental abruption</p></td>
 </tr>
 <tr class="row-even"><td><p>prob_mod_sev_aph</p></td>
 <td><p>LIST</p></td>
 <td><p>probabilities that APH is mild/moderate or severe</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_prom_per_month</p></td>
-<td><p>REAL</p></td>
-<td><p>monthly probability that a woman will experience premature rupture of membranes</p></td>
-</tr>
-<tr class="row-even"><td><p>prob_chorioamnionitis</p></td>
-<td><p>REAL</p></td>
-<td><p>monthly probability of a women developing chorioamnionitis</p></td>
-</tr>
-<tr class="row-odd"><td><p>rr_chorio_post_prom</p></td>
-<td><p>REAL</p></td>
-<td><p>relative risk of chorioamnionitis after PROM</p></td>
-</tr>
-<tr class="row-even"><td><p>prob_clinical_chorio</p></td>
-<td><p>REAL</p></td>
-<td><p>probability that a woman with chorioamnionitis will have clinical presentation</p></td>
-</tr>
-<tr class="row-odd"><td><p>prob_progression_to_clinical_chorio</p></td>
-<td><p>REAL</p></td>
-<td><p>Risk that histological chorioamnionitis will progress to clinical disease</p></td>
-</tr>
-<tr class="row-even"><td><p>prob_still_birth_per_month</p></td>
-<td><p>REAL</p></td>
-<td><p>underlying risk of stillbirth per month without the impact of risk factors</p></td>
-</tr>
-<tr class="row-odd"><td><p>rr_still_birth_gest_diab</p></td>
-<td><p>REAL</p></td>
-<td><p>relative risk of still birth in women with gestational diabetes</p></td>
-</tr>
-<tr class="row-even"><td><p>rr_still_birth_mild_pre_eclamp</p></td>
-<td><p>REAL</p></td>
-<td><p>relative risk of still birth in women with mild pre-eclampsia</p></td>
-</tr>
-<tr class="row-odd"><td><p>rr_still_birth_gest_htn</p></td>
-<td><p>REAL</p></td>
-<td><p>relative risk of still birth in women with mild gestational hypertension</p></td>
-</tr>
-<tr class="row-even"><td><p>rr_still_birth_severe_gest_htn</p></td>
-<td><p>REAL</p></td>
-<td><p>relative risk of still birth in women with severe gestational hypertension</p></td>
-</tr>
-<tr class="row-odd"><td><p>rr_still_birth_severe_pre_eclamp</p></td>
-<td><p>REAL</p></td>
-<td><p>relative risk of still birth in women with severe pre-eclampsia</p></td>
-</tr>
-<tr class="row-even"><td><p>rr_still_birth_maternal_malaria</p></td>
-<td><p>REAL</p></td>
-<td><p>relative risk of still birth in women with malaria</p></td>
-</tr>
-<tr class="row-odd"><td><p>treatment_effect_still_birth_food_sups</p></td>
-<td><p>REAL</p></td>
-<td><p>risk reduction of still birth for women receiving nutritional supplements</p></td>
-</tr>
-<tr class="row-even"><td><p>treatment_effect_gdm_case_management</p></td>
-<td><p>REAL</p></td>
-<td><p>Treatment effect of GDM case management on mothers risk of stillbirth</p></td>
-</tr>
-<tr class="row-odd"><td><p>prob_ectopic_pregnancy_death</p></td>
-<td><p>REAL</p></td>
-<td><p>probability of a woman dying from a ruptured ectopic pregnancy</p></td>
-</tr>
-<tr class="row-even"><td><p>treatment_effect_ectopic_pregnancy_treatment</p></td>
-<td><p>REAL</p></td>
-<td><p>Treatment effect of ectopic pregnancy case management</p></td>
-</tr>
-<tr class="row-odd"><td><p>prob_induced_abortion_death</p></td>
-<td><p>REAL</p></td>
-<td><p>underlying risk of death following an induced abortion</p></td>
-</tr>
-<tr class="row-even"><td><p>prob_spontaneous_abortion_death</p></td>
-<td><p>REAL</p></td>
-<td><p>underlying risk of death following an spontaneous abortion</p></td>
-</tr>
-<tr class="row-odd"><td><p>treatment_effect_post_abortion_care</p></td>
-<td><p>REAL</p></td>
-<td><p>Treatment effect of post abortion care</p></td>
-</tr>
-<tr class="row-even"><td><p>prob_antepartum_haem_stillbirth</p></td>
-<td><p>REAL</p></td>
-<td><p>probability of stillbirth for a woman suffering acute antepartum haemorrhage</p></td>
-</tr>
-<tr class="row-odd"><td><p>prob_antepartum_haem_death</p></td>
-<td><p>REAL</p></td>
+<tr class="row-odd"><td><p>prob_antepartum_haemorrhage_death</p></td>
+<td><p>LIST</p></td>
 <td><p>probability of death for a woman suffering acute antepartum haemorrhage</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_antenatal_spe_death</p></td>
-<td><p>REAL</p></td>
-<td><p>probability of death for a woman experiencing acute severe pre-eclampsia</p></td>
+<tr class="row-even"><td><p>prob_prom_per_month</p></td>
+<td><p>LIST</p></td>
+<td><p>monthly probability that a woman will experience premature rupture of membranes</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_antenatal_ec_death</p></td>
-<td><p>REAL</p></td>
-<td><p>probability of death for a woman experiencing eclampsia</p></td>
+<tr class="row-odd"><td><p>prob_chorioamnionitis</p></td>
+<td><p>LIST</p></td>
+<td><p>monthly probability of a women developing chorioamnionitis</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_monthly_death_severe_htn</p></td>
-<td><p>REAL</p></td>
-<td><p>monthly risk of death for a woman with severe hypertension</p></td>
-</tr>
-<tr class="row-odd"><td><p>prob_antenatal_ec_still_birth</p></td>
-<td><p>REAL</p></td>
-<td><p>probability of a stillbirth following an episode of eclampsia</p></td>
-</tr>
-<tr class="row-even"><td><p>cfr_chorioamnionitis</p></td>
-<td><p>REAL</p></td>
+<tr class="row-even"><td><p>prob_antenatal_sepsis_death</p></td>
+<td><p>LIST</p></td>
 <td><p>case fatality rate for chorioamnionitis</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_still_birth_chorioamnionitis</p></td>
-<td><p>REAL</p></td>
-<td><p>probability of still birth for chorioamnionitis</p></td>
-</tr>
-<tr class="row-even"><td><p>prob_first_anc_visit_gestational_age</p></td>
+<tr class="row-odd"><td><p>baseline_prob_early_labour_onset</p></td>
 <td><p>LIST</p></td>
-<td><p>probability of initiation of ANC by month</p></td>
+<td><p>monthly baseline risk of labour onsetting before term</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_four_or_more_anc_visits</p></td>
-<td><p>REAL</p></td>
-<td><p>probability of a woman undergoing 4 or more basic ANC visits</p></td>
+<tr class="row-even"><td><p>rr_preterm_labour_post_prom</p></td>
+<td><p>LIST</p></td>
+<td><p>relative risk of early labour onset following PROM</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_eight_or_more_anc_visits</p></td>
-<td><p>REAL</p></td>
-<td><p>probability of a woman undergoing 8 or more basic ANC visits</p></td>
+<tr class="row-odd"><td><p>rr_preterm_labour_anaemia</p></td>
+<td><p>LIST</p></td>
+<td><p>relative risk of early labour onset in women with anaemia</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_anc_at_facility_level_1_2</p></td>
+<tr class="row-even"><td><p>rr_preterm_labour_malaria</p></td>
+<td><p>LIST</p></td>
+<td><p>relative risk of early labour onset in women with malaria</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_preterm_labour_multiple_pregnancy</p></td>
+<td><p>LIST</p></td>
+<td><p>relative risk of early labour onset in women pregnant with twins</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_still_birth_per_month</p></td>
+<td><p>LIST</p></td>
+<td><p>underlying risk of stillbirth per month without the impact of risk factors</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_still_birth_ga_41</p></td>
+<td><p>LIST</p></td>
+<td><p>relative risk of still birth in women with gestational age 41 weeks</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_still_birth_ga_42</p></td>
+<td><p>LIST</p></td>
+<td><p>relative risk of still birth in women with gestational age 42 weeks</p></td>
+</tr>
+<tr class="row-odd"><td><p><a href="#id1"><span class="problematic" id="id2">rr_still_birth_ga_</span></a>&gt;42</p></td>
+<td><p>LIST</p></td>
+<td><p>relative risk of still birth in women with gestational age &gt; 42 weeks</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_still_birth_gest_diab</p></td>
+<td><p>LIST</p></td>
+<td><p>relative risk of still birth in women with gestational diabetes</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_still_birth_diab_mellitus</p></td>
+<td><p>LIST</p></td>
+<td><p>relative risk of still birth in women with diabetes mellitus</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_still_birth_maternal_malaria</p></td>
+<td><p>LIST</p></td>
+<td><p>relative risk of still birth in women with malaria</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_still_birth_maternal_syphilis</p></td>
+<td><p>LIST</p></td>
+<td><p>relative risk of still birth in women with syphilis</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_still_birth_pre_eclampsia</p></td>
+<td><p>LIST</p></td>
+<td><p>relative risk of still birth in women with pre-eclampsia</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_still_birth_eclampsia</p></td>
+<td><p>LIST</p></td>
+<td><p>relative risk of still birth in women with eclampsia</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_still_birth_gest_htn</p></td>
+<td><p>LIST</p></td>
+<td><p>relative risk of still birth in women with mild gestational hypertension</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_still_birth_chronic_htn</p></td>
+<td><p>LIST</p></td>
+<td><p>relative risk of still birth in women with chronic hypertension</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_still_birth_aph</p></td>
+<td><p>LIST</p></td>
+<td><p>relative risk of still birth in women with antepartum haemorrhage</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_still_birth_chorio</p></td>
+<td><p>LIST</p></td>
+<td><p>relative risk of still birth in women with chorioamnionitis</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_seek_care_pregnancy_complication</p></td>
+<td><p>LIST</p></td>
+<td><p>Probability that a woman who is pregnant will seek care in the event of a complication</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_seek_care_pregnancy_loss</p></td>
+<td><p>LIST</p></td>
+<td><p>Probability that a woman who has developed complications post pregnancy loss will seek care</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_seek_care_induction</p></td>
+<td><p>LIST</p></td>
+<td><p>Probability that a woman who is post term will seek care for induction of labour</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_anc1_months_2_to_4</p></td>
+<td><p>LIST</p></td>
+<td><p>list of probabilities that a woman will attend her first ANC visit at either month 2, 3 or 4 of pregnancy</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_anc1_months_5_to_9</p></td>
+<td><p>LIST</p></td>
+<td><p>list of probabilities that a woman will attend her first ANC visit on months 5-10</p></td>
+</tr>
+<tr class="row-odd"><td><p>odds_early_init_anc4</p></td>
+<td><p>LIST</p></td>
+<td><p>probability of a woman undergoing 4 or more basic ANC visits with the first visit occurring prior or during month 4 of pregnancy (EANC4+)</p></td>
+</tr>
+<tr class="row-even"><td><p>aor_early_anc4_20_24</p></td>
+<td><p>LIST</p></td>
+<td><p>adjusted odds ratio of EANC4+ in women aged 20-24</p></td>
+</tr>
+<tr class="row-odd"><td><p>aor_early_anc4_25_29</p></td>
+<td><p>LIST</p></td>
+<td><p>adjusted odds ratio of EANC4+ in women aged 25-29</p></td>
+</tr>
+<tr class="row-even"><td><p>aor_early_anc4_30_34</p></td>
+<td><p>LIST</p></td>
+<td><p>adjusted odds ratio of EANC4+ in women aged 30-34</p></td>
+</tr>
+<tr class="row-odd"><td><p>aor_early_anc4_35_39</p></td>
+<td><p>LIST</p></td>
+<td><p>adjusted odds ratio of EANC4+ in women aged 35-39</p></td>
+</tr>
+<tr class="row-even"><td><p>aor_early_anc4_40_44</p></td>
+<td><p>LIST</p></td>
+<td><p>adjusted odds ratio of EANC4+ in women aged 40-44</p></td>
+</tr>
+<tr class="row-odd"><td><p>aor_early_anc4_45_49</p></td>
+<td><p>LIST</p></td>
+<td><p>adjusted odds ratio of EANC4+ in women aged 45-49</p></td>
+</tr>
+<tr class="row-even"><td><p>aor_early_anc4_2010</p></td>
+<td><p>LIST</p></td>
+<td><p>adjusted odds ratio of EANC4+ in 2010</p></td>
+</tr>
+<tr class="row-odd"><td><p>aor_early_anc4_2015</p></td>
+<td><p>LIST</p></td>
+<td><p>adjusted odds ratio of EANC4+ in 2015</p></td>
+</tr>
+<tr class="row-even"><td><p>aor_early_anc4_parity_2_3</p></td>
+<td><p>LIST</p></td>
+<td><p>adjusted odds ratio of EANC4+ in women with a parity of 2-3</p></td>
+</tr>
+<tr class="row-odd"><td><p>aor_early_anc4_parity_4_5</p></td>
+<td><p>LIST</p></td>
+<td><p>adjusted odds ratio of EANC4+ in women with a parity of 4-5</p></td>
+</tr>
+<tr class="row-even"><td><p>aor_early_anc4_parity_6+</p></td>
+<td><p>LIST</p></td>
+<td><p>adjusted odds ratio of EANC4+ in women with a parity of 6+</p></td>
+</tr>
+<tr class="row-odd"><td><p>aor_early_anc4_primary_edu</p></td>
+<td><p>LIST</p></td>
+<td><p>adjusted odds ratio of EANC4+ in women with primary education</p></td>
+</tr>
+<tr class="row-even"><td><p>aor_early_anc4_secondary_edu</p></td>
+<td><p>LIST</p></td>
+<td><p>adjusted odds ratio of EANC4+ in women with secondary education</p></td>
+</tr>
+<tr class="row-odd"><td><p>aor_early_anc4_tertiary_edu</p></td>
+<td><p>LIST</p></td>
+<td><p>adjusted odds ratio of EANC4+ in women with tertiary education</p></td>
+</tr>
+<tr class="row-even"><td><p>aor_early_anc4_middle_wealth</p></td>
+<td><p>LIST</p></td>
+<td><p>adjusted odds ratio of EANC4+ in women in the middle wealth quintile</p></td>
+</tr>
+<tr class="row-odd"><td><p>aor_early_anc4_richer_wealth</p></td>
+<td><p>LIST</p></td>
+<td><p>adjusted odds ratio of EANC4+ in women in the richer wealth quintile</p></td>
+</tr>
+<tr class="row-even"><td><p>aor_early_anc4_richest_wealth</p></td>
+<td><p>LIST</p></td>
+<td><p>adjusted odds ratio of EANC4+ in women in the richest wealth quintile</p></td>
+</tr>
+<tr class="row-odd"><td><p>aor_early_anc4_married</p></td>
+<td><p>LIST</p></td>
+<td><p>adjusted odds ratio of EANC4+ in women who are married</p></td>
+</tr>
+<tr class="row-even"><td><p>aor_early_anc4_previously_married</p></td>
+<td><p>LIST</p></td>
+<td><p>adjusted odds ratio of EANC4+ in women who were previously married (divorced/widowed)</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_late_initiation_anc4</p></td>
+<td><p>LIST</p></td>
+<td><p>probability a woman will undertake 4 or more ANC visits with the first being after 4 months</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_early_initiation_anc_below4</p></td>
+<td><p>LIST</p></td>
+<td><p>probabilities a woman will attend fewer than 4 ANC visits but the first visit will occur before month 4</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_early_anc_at_facility_level_1_2</p></td>
 <td><p>LIST</p></td>
 <td><p>probabilities a woman will attend ANC 1 at facility levels 1 or 2</p></td>
 </tr>
-<tr class="row-even"><td><p>probability_htn_persists</p></td>
-<td><p>REAL</p></td>
-<td><p>probability of a womans hypertension persisting post birth</p></td>
+<tr class="row-even"><td><p>treatment_effect_ectopic_pregnancy_treatment</p></td>
+<td><p>LIST</p></td>
+<td><p>Treatment effect of ectopic pregnancy case management</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_seek_care_pregnancy_complication</p></td>
-<td><p>REAL</p></td>
-<td><p>Probability that a woman who is pregnant will seek care in the event of a complication</p></td>
+<tr class="row-odd"><td><p>treatment_effect_post_abortion_care</p></td>
+<td><p>LIST</p></td>
+<td><p>Treatment effect of post abortion care</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_seek_care_pregnancy_loss</p></td>
-<td><p>REAL</p></td>
-<td><p>Probability that a woman who has developed complications post pregnancy loss will seek care</p></td>
+<tr class="row-even"><td><p>treatment_effect_iron_folic_acid_anaemia</p></td>
+<td><p>LIST</p></td>
+<td><p>relative effect of daily iron and folic acid treatment on risk of maternal anaemia</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_seek_care_induction</p></td>
+<tr class="row-odd"><td><p>treatment_effect_calcium_pre_eclamp</p></td>
+<td><p>LIST</p></td>
+<td><p>risk reduction of pre-eclampsia for women taking daily calcium supplementation</p></td>
+</tr>
+<tr class="row-even"><td><p>treatment_effect_gest_htn_calcium</p></td>
+<td><p>LIST</p></td>
+<td><p>Effect of calcium supplementation on risk of developing gestational hypertension</p></td>
+</tr>
+<tr class="row-odd"><td><p>treatment_effect_anti_htns_progression</p></td>
+<td><p>LIST</p></td>
+<td><p>Effect of anti hypertensive medication in reducing the risk of progression from mild to severe hypertension</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_glycaemic_control_diet_exercise</p></td>
+<td><p>LIST</p></td>
+<td><p>probability a womans GDM is controlled by diet and exercise during the first month of treatment</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_glycaemic_control_orals</p></td>
+<td><p>LIST</p></td>
+<td><p>probability a womans GDM is controlled by oral anti-diabetics during the first month of treatment</p></td>
+</tr>
+<tr class="row-even"><td><p>treatment_effect_gdm_case_management</p></td>
+<td><p>LIST</p></td>
+<td><p>Treatment effect of GDM case management on mothers risk of stillbirth</p></td>
+</tr>
+<tr class="row-odd"><td><p>treatment_effect_still_birth_food_sups</p></td>
+<td><p>LIST</p></td>
+<td><p>risk reduction of still birth for women receiving nutritional supplements</p></td>
+</tr>
+<tr class="row-even"><td><p>treatment_effect_modifier_all_delays</p></td>
+<td><p>LIST</p></td>
+<td><p>factor by which treatment effectiveness is reduced in the presences of multiple delays</p></td>
+</tr>
+<tr class="row-odd"><td><p>treatment_effect_modifier_one_delay</p></td>
+<td><p>LIST</p></td>
+<td><p>factor by which treatment effectiveness is reduced in the presences of one delays</p></td>
+</tr>
+<tr class="row-even"><td><p>anc_service_structure</p></td>
+<td><p>INT</p></td>
+<td><p>stores type of ANC service being delivered in the model (anc4 or anc8) and is used in analysis scripts to change ANC structure</p></td>
+</tr>
+<tr class="row-odd"><td><p>switch_anc_coverage</p></td>
+<td><p>BOOL</p></td>
+<td><p>used to signal if a change in parameters governing ANC coverage should be made at some predetermined time point</p></td>
+</tr>
+<tr class="row-even"><td><p>target_anc_coverage_for_analysis</p></td>
 <td><p>REAL</p></td>
-<td><p>Probability that a woman who is post term will seek care for induction of labour</p></td>
+<td><p>contains a target level of coverage for analysis so that a linear model of choice can be scaled to force set level of intervention coverage</p></td>
 </tr>
 </tbody>
 </table>
@@ -567,15 +691,15 @@ for routine antenatal care and emergency obstetric care in the event of severe c
 <td><p>BOOL</p></td>
 <td><p>Whether a womans pregnancy will be complicated by placentapraevia</p></td>
 </tr>
-<tr class="row-odd"><td><p>ps_deficiencies_in_pregnancy</p></td>
-<td><p>INT</p></td>
-<td><p>bitset column, stores types of anaemia causing deficiencies in pregnancy</p></td>
+<tr class="row-odd"><td><p>ps_syphilis</p></td>
+<td><p>BOOL</p></td>
+<td><p>Whether a womans has syphilis during pregnancy</p></td>
 </tr>
 <tr class="row-even"><td><p>ps_anaemia_in_pregnancy</p></td>
 <td><p>CATEGORICAL</p></td>
 <td><p>Whether a woman has anaemia in pregnancy and its severity.  Possible values are: [none, mild, moderate, severe, ]</p></td>
 </tr>
-<tr class="row-odd"><td><p>ps_will_attend_four_or_more_anc</p></td>
+<tr class="row-odd"><td><p>ps_anc4</p></td>
 <td><p>BOOL</p></td>
 <td><p>Whether this womans is predicted to attend 4 or more antenatal care visits during her pregnancy</p></td>
 </tr>
@@ -620,8 +744,8 @@ for routine antenatal care and emergency obstetric care in the event of severe c
 <td><p>whether this woman has experience rupture of membranes before the onset of labour. If this is &lt;37 weeks from gestation the woman has preterm premature rupture of membranes</p></td>
 </tr>
 <tr class="row-even"><td><p>ps_chorioamnionitis</p></td>
-<td><p>CATEGORICAL</p></td>
-<td><p>Whether a womans is experiencing chorioamnionitis andits current state.  Possible values are: [none, histological, clinical, ]</p></td>
+<td><p>BOOL</p></td>
+<td><p>Whether a womans is experiencing chorioamnionitis</p></td>
 </tr>
 <tr class="row-odd"><td><p>ps_emergency_event</p></td>
 <td><p>BOOL</p></td>
@@ -630,12 +754,12 @@ for routine antenatal care and emergency obstetric care in the event of severe c
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘CareOfWomenDuringPregnancy’, ‘HealthSystem’, ‘Contraception’, ‘Lifestyle’}</p>
-<p>CAUSES_OF_DEATH : {‘maternal’: &lt;tlo.methods.causes.Cause object at 0x7ff4e550b1f0&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘maternal’: &lt;tlo.methods.causes.Cause object at 0x7ff4e550b280&gt;}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘CareOfWomenDuringPregnancy’, ‘Lifestyle’, ‘Contraception’, ‘HealthSystem’, ‘Labour’}</p>
+<p>CAUSES_OF_DEATH : {‘ectopic_pregnancy’: &lt;tlo.methods.causes.Cause object at 0x7ff4d8e82850&gt;, ‘spontaneous_abortion’: &lt;tlo.methods.causes.Cause object at 0x7ff4d8e82d30&gt;, ‘induced_abortion’: &lt;tlo.methods.causes.Cause object at 0x7ff4d8e82d90&gt;, ‘antepartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x7ff4d8e82df0&gt;, ‘severe_gestational_hypertension’: &lt;tlo.methods.causes.Cause object at 0x7ff4d8e82e50&gt;, ‘severe_pre_eclampsia’: &lt;tlo.methods.causes.Cause object at 0x7ff4d8e82eb0&gt;, ‘eclampsia’: &lt;tlo.methods.causes.Cause object at 0x7ff4d8e82f10&gt;, ‘antenatal_sepsis’: &lt;tlo.methods.causes.Cause object at 0x7ff4d8e82f70&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘maternal’: &lt;tlo.methods.causes.Cause object at 0x7ff4d8e82fd0&gt;}</p>
 <p>INIT_DEPENDENCIES : {‘Demography’}</p>
 <p>METADATA : {&lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;}</p>
-<p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’}</p>
+<p>OPTIONAL_INIT_DEPENDENCIES : {‘Malaria’, ‘HealthBurden’, ‘Hiv’, ‘CardioMetabolicDisorders’}</p>
 <p><strong>Functions (defined or overridden in class PregnancySupervisor):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.__init__">
@@ -709,10 +833,11 @@ It is a good place to add initial events to the event queue.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.further_on_birth_pregnancy_supervisor">
 <span class="sig-name descname"><span class="pre">further_on_birth_pregnancy_supervisor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.further_on_birth_pregnancy_supervisor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.further_on_birth_pregnancy_supervisor" title="Permalink to this definition">¶</a></dt>
-<dd><p>This function is called by the on_birth function of NewbornOutcomes module. This function contains additional
-code related to the pregnancy supervisor module that should be ran on_birth for all births - it has been
-parcelled into functions to ensure each modules (pregnancy,antenatal care, labour, newborn, postnatal) on_birth
-code is ran in the correct sequence (as this can vary depending on how modules are registered)
+<dd><p>This function is called by the on_birth function of NewbornOutcomes module or following an intrapartum
+stillbirth in the Labour Module. This function contains additional code related to the pregnancy supervisor
+module that should be ran on_birth. These additional on_birth functions ensure each modules
+(pregnancy,antenatal care, labour, newborn, postnatal) on_birth code is ran in the correct sequence
+(as this can vary depending on how modules are registered)
 :param mother_id: mothers individual id</p>
 </dd></dl>
 
@@ -724,53 +849,54 @@ code is ran in the correct sequence (as this can vary depending on how modules a
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.report_daly_values">
 <span class="sig-name descname"><span class="pre">report_daly_values</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.report_daly_values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.report_daly_values" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.store_dalys_in_mni">
-<span class="sig-name descname"><span class="pre">store_dalys_in_mni</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mni_variable</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.store_dalys_in_mni"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.store_dalys_in_mni" title="Permalink to this definition">¶</a></dt>
-<dd><p>This function is called across the maternal health modules and stores onset/resolution dates for complications
-in an indiviudals MNI dictionary
-:param individual_id: individual_id
-:param mni_variable: key of mni dict being assigned
-:return:</p>
+<dd><p>This function calculates and reports the monthly daly weight values accumulated from Maternal Disorders. For
+simplicity all daly weights from Maternal Disorders are reported in this module (though may be attributable to
+conditions occurring antenatally, intrapartum or postnatally). Individual level monthly-daly weights are
+calculated using the mni dictionary where date of complication onset/resolution is stored.
+:return: daly_series</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.pregnancy_supervisor_property_reset">
-<span class="sig-name descname"><span class="pre">pregnancy_supervisor_property_reset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ind_or_df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_or_index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.pregnancy_supervisor_property_reset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.pregnancy_supervisor_property_reset" title="Permalink to this definition">¶</a></dt>
-<dd><p>This function is called when properties housed in the PregnancySupervisorModule should be reset. For example
+<span class="sig-name descname"><span class="pre">pregnancy_supervisor_property_reset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id_or_index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.pregnancy_supervisor_property_reset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.pregnancy_supervisor_property_reset" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is called when all properties housed in the PregnancySupervisorModule should be reset. For example
 following pregnancy loss
-:param ind_or_df: “individual/data_frame”(STR) whether this function has been called to reset properties for an</p>
-<blockquote>
-<div><p>individual row of the DF or a slice of the data frame</p>
-</div></blockquote>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>id_or_index</strong> – pass the function either an individual ID (INT) or index of subset of data frame</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p></p>
-</dd>
-</dl>
+:param id_or_index: pass the function either an individual ID (INT) or index of subset of data frame</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_linear_model">
-<span class="sig-name descname"><span class="pre">apply_linear_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.apply_linear_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_linear_model" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">apply_linear_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df_slice</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.apply_linear_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_linear_model" title="Permalink to this definition">¶</a></dt>
 <dd><p>Helper function will apply the linear model (lm) on the dataframe (df) to get a probability of some event
 happening to each individual. It then returns a series with same index with bools indicating the outcome based
 on the toss of the biased coin.
 :param lm: The linear model
-:param df: The dataframe
+:param df_slice: The dataframe
 :return: Series with same index containing outcomes (bool)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.schedule_anc_one">
+<span class="sig-name descname"><span class="pre">schedule_anc_one</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">anc_month</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.schedule_anc_one"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.schedule_anc_one" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>This functions calculates the correct date each woman will attend her first ANC contact and schedules the visit</dt><dd><p>for newly pregnant women depending on their predicted month of attendance</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>anc_month</strong> – month of pregnancy that woman will attend ANC 1</p></li>
+<li><p><strong>individual_id</strong> – individual_id</p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_spontaneous_abortion">
 <span class="sig-name descname"><span class="pre">apply_risk_of_spontaneous_abortion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gestation_of_interest</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.apply_risk_of_spontaneous_abortion"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_spontaneous_abortion" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function applies risk of spontaneous abortion to a slice of data frame and is called by
-PregnancySupervisorEvent. It calls the apply_risk_of_abortion_complications function for women who loose their
+PregnancySupervisorEvent. It calls the do_after_abortion function for women who loose their
 pregnancy.
 :param gestation_of_interest: gestation in weeks</p>
 </dd></dl>
@@ -779,25 +905,31 @@ pregnancy.
 <dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_induced_abortion">
 <span class="sig-name descname"><span class="pre">apply_risk_of_induced_abortion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gestation_of_interest</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.apply_risk_of_induced_abortion"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_induced_abortion" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function applies risk of induced abortion to a slice of data frame and is called by
-PregnancySupervisorEvent. It calls the apply_risk_of_abortion_complications for women who loose their pregnancy.
+PregnancySupervisorEvent. It calls the do_after_abortion for women who loose their pregnancy.
 :param gestation_of_interest: gestation in weeks</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.do_after_abortion">
+<span class="sig-name descname"><span class="pre">do_after_abortion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type_abortion</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.do_after_abortion"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.do_after_abortion" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is called for all women who experience a spontaneous or induced abortion. The function logs the
+pregnancy loss, resets key variables and determines risk of complication.
+:param individual_id: individual id
+:param type_abortion: STR “induced” or “spontaneous”</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_abortion_complications">
 <span class="sig-name descname"><span class="pre">apply_risk_of_abortion_complications</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cause</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.apply_risk_of_abortion_complications"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_abortion_complications" title="Permalink to this definition">¶</a></dt>
-<dd><p>This function makes changes to the data frame for women who have experienced induced or spontaneous abortion.
-Additionally it determines if a woman will develop complications associated with pregnancy loss, manages care
-seeking and schedules potential death
+<dd><p>This function makes stores the type of complication experience by a woman following abortion.
 :param individual_id: individual_id
 :param cause: ‘type’ of abortion (spontaneous abortion OR induced abortion) (str)</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_deficiencies_and_anaemia">
-<span class="sig-name descname"><span class="pre">apply_risk_of_deficiencies_and_anaemia</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gestation_of_interest</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.apply_risk_of_deficiencies_and_anaemia"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_deficiencies_and_anaemia" title="Permalink to this definition">¶</a></dt>
-<dd><p>This function applies risk of deficiencies and anaemia to a slice of the data frame. It is called by
-PregnancySupervisorEvent
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_anaemia">
+<span class="sig-name descname"><span class="pre">apply_risk_of_anaemia</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gestation_of_interest</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.apply_risk_of_anaemia"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_anaemia" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function applies risk of anaemia to a slice of the data frame. It is called by PregnancySupervisorEvent
 :param gestation_of_interest: gestation in weeks</p>
 </dd></dl>
 
@@ -850,10 +982,10 @@ PregnancySupervisorEvent.
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_onset_and_progression_antenatal_infections">
-<span class="sig-name descname"><span class="pre">apply_risk_of_onset_and_progression_antenatal_infections</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gestation_of_interest</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.apply_risk_of_onset_and_progression_antenatal_infections"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_onset_and_progression_antenatal_infections" title="Permalink to this definition">¶</a></dt>
-<dd><p>This function applies risk of new onset chorioamnionitis and risk of progression of chorioamnionitis state
-to a slice of the dataframe. It is called by PregnancySupervisorEvent.
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_sepsis_post_prom">
+<span class="sig-name descname"><span class="pre">apply_risk_of_sepsis_post_prom</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gestation_of_interest</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.apply_risk_of_sepsis_post_prom"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_sepsis_post_prom" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function applies risk of chorioamnionitis to women who have experienced premature rupture of membranes
+during labour
 :param gestation_of_interest: gestation in weeks</p>
 </dd></dl>
 
@@ -899,24 +1031,41 @@ stillbirth outside of the PregnancySupervisor polling event.
 <dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.induction_care_seeking_and_still_birth_risk">
 <span class="sig-name descname"><span class="pre">induction_care_seeking_and_still_birth_risk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gestation_of_interest</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.induction_care_seeking_and_still_birth_risk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.induction_care_seeking_and_still_birth_risk" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function is called for post term women and applies a probability that they will seek care for induction
-and if not will experience antenatal stillbirth
+and if not will experience risk of antenatal stillbirth
 :param gestation_of_interest: INT used to select women from the data frame at certain gestation</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.care_seeking_pregnancy_loss_complications">
-<span class="sig-name descname"><span class="pre">care_seeking_pregnancy_loss_complications</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.care_seeking_pregnancy_loss_complications"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.care_seeking_pregnancy_loss_complications" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">care_seeking_pregnancy_loss_complications</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cause</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.care_seeking_pregnancy_loss_complications"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.care_seeking_pregnancy_loss_complications" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function manages care seeking for women experiencing ectopic pregnancy or complications following
 spontaneous/induced abortion.
 :param individual_id: individual_id
+:param cause: ‘abortion’, ‘ectopic_pre_rupture’, ‘ectopic_ruptured’
 :return: Returns True/False value to signify care seeking</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.generate_mother_and_newborn_dictionary_for_individual">
-<span class="sig-name descname"><span class="pre">generate_mother_and_newborn_dictionary_for_individual</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.generate_mother_and_newborn_dictionary_for_individual"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.generate_mother_and_newborn_dictionary_for_individual" title="Permalink to this definition">¶</a></dt>
-<dd><p>This function generates variables within the mni dictionary for women. It is abstracted to a function for
-testing purposes</p>
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_death_from_monthly_complications">
+<span class="sig-name descname"><span class="pre">apply_risk_of_death_from_monthly_complications</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.apply_risk_of_death_from_monthly_complications"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_death_from_monthly_complications" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function calculates the risk of death for women who have developed complications but have not received
+treatment.  It is called by the PregnancySupervisor Event and HSI_CareOfWomenDuringPregnancy_Maternal
+EmergencyAssessment if care cant be delivered .
+:param individual_id: individual_id</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.schedule_first_anc_contact_for_new_pregnancy">
+<span class="sig-name descname"><span class="pre">schedule_first_anc_contact_for_new_pregnancy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gestation_of_interest</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.schedule_first_anc_contact_for_new_pregnancy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.schedule_first_anc_contact_for_new_pregnancy" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>This function is called by the PregnancySupervisorEvent for all pregnant women at 8 weeks gestational age to</dt><dd><p>determine if/when they will attend their first ANC visit.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>gestation_of_interest</strong> – INT used to select women from the data frame at certain gestation</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
@@ -924,10 +1073,11 @@ testing purposes</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisorEvent">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PregnancySupervisorEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisorEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisorEvent" title="Permalink to this definition">¶</a></dt>
-<dd><p>This is the PregnancySupervisorEvent, it is a weekly event which has two primary functions.
-1.) It updates the gestational age (in weeks) of all women who are pregnant.
-2.) It applies risk of complications/outcomes and care seeking during the antenatal period at pre-defined time
-points of pregnancy (defined below)</p>
+<dd><p>This is the PregnancySupervisorEvent, it is a weekly event which has four primary functions.
+1.) It updates the gestational age (in weeks) of all women who are pregnant
+2.) It applies monthly risk of key complications associated with pregnancy
+3.) It determines if women who experience life seeking complications associated with pregnancy will seek care
+4.) It applies risk of death and stillbirth to women who do not seek care following complications</p>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
 <p><strong>Functions (defined or overridden in class PregnancySupervisorEvent):</strong></p>
 <dl class="py method">
@@ -1108,6 +1258,117 @@ constructor, but may also take further keyword arguments.</p>
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.SyphilisInPregnancyEvent">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SyphilisInPregnancyEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#SyphilisInPregnancyEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.SyphilisInPregnancyEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is SyphilisInPregnancyEvent. It is scheduled by PregnancySupervisorEvent module after a
+woman becomes pregnant and is predicted to experience syphilis during their pregnancy. This event onsets Syphilis
+in those women</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class SyphilisInPregnancyEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.SyphilisInPregnancyEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#SyphilisInPregnancyEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.SyphilisInPregnancyEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.SyphilisInPregnancyEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#SyphilisInPregnancyEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.SyphilisInPregnancyEvent.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the given person.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.ParameterUpdateEvent">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ParameterUpdateEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#ParameterUpdateEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.ParameterUpdateEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is ParameterUpdateEvent. It is scheduled to occur once on 2015 to update parameters being used by the
+maternal and newborn health model</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class ParameterUpdateEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.ParameterUpdateEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#ParameterUpdateEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.ParameterUpdateEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.ParameterUpdateEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#ParameterUpdateEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.ParameterUpdateEvent.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>population</strong> – the current population</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.OverrideKeyParameterForAnalysis">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">OverrideKeyParameterForAnalysis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#OverrideKeyParameterForAnalysis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.OverrideKeyParameterForAnalysis" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>This is OverrideKeyParameterForAnalysis. This event is scheduled in initialise_simulation and allows for a parameter</dt><dd><p>value/values to be overridden at a set time point within a simulation run.</p>
+</dd>
+</dl>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class OverrideKeyParameterForAnalysis):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.OverrideKeyParameterForAnalysis.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#OverrideKeyParameterForAnalysis.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.OverrideKeyParameterForAnalysis.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.OverrideKeyParameterForAnalysis.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#OverrideKeyParameterForAnalysis.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.OverrideKeyParameterForAnalysis.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>population</strong> – the current population</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancyLoggingEvent">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PregnancyLoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancyLoggingEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancyLoggingEvent" title="Permalink to this definition">¶</a></dt>
 <dd><p>This is PregnancyLoggingEvent. It runs yearly to produce summary statistics around pregnancy.</p>
@@ -1150,8 +1411,8 @@ constructor, but may also take further keyword arguments.</p>
           </div>
           <footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="tlo.methods.prostate_cancer.html" class="btn btn-neutral float-right" title="tlo.methods.prostate_cancer module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
-        <a href="tlo.methods.postnatal_supervisor_lm.html" class="btn btn-neutral float-left" title="tlo.methods.postnatal_supervisor_lm module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="tlo.methods.pregnancy_supervisor_lm.html" class="btn btn-neutral float-right" title="tlo.methods.pregnancy_supervisor_lm module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="tlo.methods.pregnancy_helper_functions.html" class="btn btn-neutral float-left" title="tlo.methods.pregnancy_helper_functions module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
   <hr/>
@@ -1159,7 +1420,7 @@ constructor, but may also take further keyword arguments.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Feb 16, 2022.
+        Last updated on Mar 25, 2022.
       </span>
 
     </p>

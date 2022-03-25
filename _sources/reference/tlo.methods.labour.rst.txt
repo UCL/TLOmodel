@@ -19,452 +19,512 @@ tlo.methods.labour module
           - Type
           - Description
         * - intercept_parity_lr2010
-          - REAL
+          - LIST
           - intercept value for linear regression equation predicating womens parity at 2010 baseline
         * - effect_age_parity_lr2010
-          - REAL
+          - LIST
           - effect of an increase in age by 1 year in the linear regression equation predicating womens parity at 2010 baseline
         * - effect_mar_stat_2_parity_lr2010
-          - REAL
-          - effect of a change in marriage status from comparison (level 1) in the linear regression equation predicating womens parity at 2010 baseline
+          - LIST
+          - effect of a change in marriage status from comparison (level 1) in the linear regression equation predicating womans parity at 2010 baseline
         * - effect_mar_stat_3_parity_lr2010
-          - REAL
-          - effect of a change in marriage status from comparison (level 1) in the linear regression equation predicating womens parity at 2010 baseline
-        * - effect_wealth_lev_5_parity_lr2010
-          - REAL
-          - effect of a change in wealth status from comparison (level 1) in the linear regression equation predicating womens parity at 2010 baseline
+          - LIST
+          - effect of a change in marriage status from comparison (level 1) in the linear regression equation predicating womans parity at 2010 baseline
         * - effect_wealth_lev_4_parity_lr2010
-          - REAL
-          - effect of an increase in wealth level in the linear regression equation predicating womens parity at 2010 base line
+          - LIST
+          - effect of an increase in wealth level in the linear regression equation predicating womans parity at 2010 base line
         * - effect_wealth_lev_3_parity_lr2010
-          - REAL
-          - effect of an increase in wealth level in the linear regression equation predicating womens parity at 2010 base line
+          - LIST
+          - effect of an increase in wealth level in the linear regression equation predicating womans parity at 2010 base line
         * - effect_wealth_lev_2_parity_lr2010
-          - REAL
-          - effect of an increase in wealth level in the linear regression equation predicating womens parity at 2010 base line
+          - LIST
+          - effect of an increase in wealth level in the linear regression equation predicating womans parity at 2010 base line
         * - effect_wealth_lev_1_parity_lr2010
-          - REAL
-          - effect of an increase in wealth level in the linear regression equation predicating womens parity at 2010 base line
-        * - lower_limit_term_days
-          - REAL
-          - minimum number of days gestation at which a woman can go into labour and be categorised as term
-        * - upper_limit_term_days
-          - REAL
-          - maximum number of days gestation at which a woman can go into labour and be categorised as term
-        * - lower_limit_early_preterm_days
-          - REAL
-          - minimum number of days gestation at which a woman can go into labour and be categorised as early preterm
-        * - upper_limit_early_preterm_days
-          - REAL
-          - maximum number of days gestation at which a woman can go into labour and be categorised as early preterm
-        * - lower_limit_late_preterm_days
-          - REAL
-          - minimum number of days gestation at which a woman can go into labour and be categorised as early preterm
-        * - upper_limit_late_preterm_days
-          - REAL
-          - maximum number of days gestation at which a woman can go into labour and be categorised as late preterm
-        * - lower_limit_postterm_days
-          - REAL
-          - minimum number of days gestation at which a woman can go into labour and be categorised as post term 
-        * - prob_pl_ol
-          - REAL
-          - effect of an increase in wealth level in the linear regression equation predicating womens parity at 2010 base line
-        * - prob_cephalopelvic_dis
-          - REAL
-          - an individuals probability of experiencing CPD
-        * - prob_malpresentation
-          - REAL
-          - an individuals probability of experiencing malpresentation
-        * - prob_malposition
-          - REAL
-          - an individuals probability of experiencing malposition
+          - LIST
+          - effect of an increase in wealth level in the linear regression equation predicating womans parity at 2010 base line
+        * - effect_edu_lev_2_parity_lr2010
+          - LIST
+          - effect of an increase in education level in the linear regression equation predicating womans parity at 2010 base line
+        * - effect_edu_lev_3_parity_lr2010
+          - LIST
+          - effect of an increase in education level in the linear regression equation predicating womans parity at 2010 base line
+        * - effect_rural_parity_lr2010
+          - LIST
+          - effect of rural living in the linear regression equation predicating womans parity at 2010 base line
+        * - prob_previous_caesarean_at_baseline
+          - LIST
+          - probability of previously having delivered via caesarean section at baseline
+        * - risk_post_term_labour
+          - LIST
+          - risk of remaining pregnant past 42 weeks
+        * - list_limits_for_defining_term_status
+          - LIST
+          - List of number of days of gestation used to define term, early preterm, late preterm and post term delivery
+        * - allowed_interventions
+          - LIST
+          - list of interventions allowed to run, used in analysis
+        * - mean_birth_weights
+          - LIST
+          - list of mean birth weights from gestational age at birth 24-41 weeks
+        * - standard_deviation_birth_weights
+          - LIST
+          - list of standard deviations associated with mean birth weights from gestational age at birth 24-41 weeks
+        * - residual_prob_of_macrosomia
+          - LIST
+          - probability that those allocated to be normal birth weight and above will be macrosomic (>4kg)
         * - prob_obstruction_cpd
-          - REAL
-          - risk of obstruction in a woman with CPD
-        * - prob_obstruction_malpos
-          - REAL
-          - risk of obstruction in a woman with malposition
-        * - prob_obstruction_malpres
-          - REAL
-          - risk of obstruction in a woman with malpresentation
+          - LIST
+          - risk of a woman developing obstructed labour secondary to cephalopelvic disproportion
+        * - rr_obstruction_cpd_stunted_mother
+          - LIST
+          - relative risk of obstruction secondary to CPD in mothers who are stunted
+        * - rr_obstruction_foetal_macrosomia
+          - LIST
+          - relative risk of obstruction secondary to CPD in mothers who are carrying a macrosomic foetus
+        * - prob_obstruction_malpos_malpres
+          - LIST
+          - risk of a woman developing obstructed labour secondary to malposition or malpresentation
+        * - prob_obstruction_other
+          - LIST
+          - risk of a woman developing obstructed labour secondary to other causes
         * - prob_placental_abruption_during_labour
-          - REAL
+          - LIST
           - probability of a woman developing placental abruption during labour
         * - prob_aph_placenta_praevia_labour
-          - REAL
+          - LIST
           - probability of a woman with placenta praevia experiencing an APH during labour
         * - prob_aph_placental_abruption_labour
-          - REAL
+          - LIST
           - probability of a woman with placental abruption experiencing an APH during labour
-        * - prob_chorioamnionitis_ip
-          - REAL
-          - probability of chorioamnionitis infection during labour
-        * - prob_other_maternal_infection_ip
-          - REAL
-          - probability of other obstetric infection in labour
-        * - prob_endometritis_pp
-          - REAL
-          - probability of endometritis infection following labour
-        * - prob_skin_soft_tissue_inf_pp
-          - REAL
-          - probability of a skin or soft tissue infection following labour
-        * - prob_urinary_tract_inf_pp
-          - REAL
-          - probability of a urinary tract infection following labour
-        * - prob_other_maternal_infection_pp
-          - REAL
-          - probability of other obstetric infections following labour
-        * - prob_sepsis_chorioamnionitis
-          - REAL
-          - risk of sepsis following chorioamnionitis infection
-        * - prob_sepsis_other_maternal_infection_ip
-          - REAL
-          - risk of sepsis following other intrapartum infection
-        * - odds_uterine_rupture
-          - REAL
-          - probability of a uterine rupture during labour
-        * - or_ur_grand_multip
-          - REAL
-          - relative risk of uterine rupture in women who have delivered >4 times previously
-        * - or_ur_prev_cs
-          - REAL
-          - relative risk of uterine rupture in women who have previously delivered via caesarean section
-        * - or_ur_ref_ol
-          - REAL
-          - relative risk of uterine rupture in women who have been referred in obstructed labour
+        * - rr_placental_abruption_hypertension
+          - LIST
+          - Relative risk of placental abruption in women with hypertension
+        * - rr_placental_abruption_previous_cs
+          - LIST
+          - Relative risk of placental abruption in women who delivered previously via caesarean section
         * - severity_maternal_haemorrhage
           - LIST
           - probability a maternal hemorrhage is non-severe (<1000mls) or severe (>1000mls)
         * - cfr_aph
-          - REAL
+          - LIST
           - case fatality rate for antepartum haemorrhage during labour
-        * - cfr_eclampsia
-          - REAL
-          - case fatality rate for eclampsia during labours
-        * - cfr_severe_pre_eclamp
-          - REAL
-          - case fatality rate for severe pre eclampsia during labour
-        * - cfr_sepsis
-          - REAL
-          - case fatality rate for sepsis during labour
-        * - cfr_uterine_rupture
-          - REAL
-          - case fatality rate for uterine rupture in labour
-        * - prob_ip_still_birth_unk_cause
-          - REAL
-          - baseline probability of intrapartum still birth secondary to unknown cause
-        * - rr_still_birth_maternal_death
-          - REAL
-          - relative risk of still birth in mothers who have died during labour
-        * - rr_still_birth_aph
-          - REAL
-          - relative risk of still birth in mothers experiencing antepartum haemorrhage
-        * - rr_still_birth_ol
-          - REAL
-          - relative risk of still birth in mothers experiencing obstructed labour
-        * - rr_still_birth_ur
-          - REAL
-          - relative risk of still birth in mothers experiencing uterine rupture
-        * - rr_still_birth_sepsis
-          - REAL
-          - relative risk of still birth in mothers experiencing intrapartum sepsis
-        * - rr_still_birth_spe
-          - REAL
-          - relative risk of still birth in mothers experiencing severe pre-eclampsia
-        * - rr_still_birth_ec
-          - REAL
-          - relative risk of still birth in mothers experiencing eclampsia
-        * - prob_both_twins_ip_still_birth
-          - REAL
-          - probability that if this mother will experience still birth, and she is pregnant with twins, that neither baby will survive
-        * - prob_uterine_atony
-          - REAL
-          - probability of uterine atony following delivery
-        * - prob_lacerations
-          - REAL
-          - probability of genital tract lacerations following delivery
-        * - prob_retained_placenta
-          - REAL
-          - probability of placental retention following delievery
-        * - prob_other_pph_cause
-          - REAL
-          - probability of other pph causing factors
-        * - prob_pph_uterine_atony
-          - REAL
-          - risk of pph after experiencing uterine atony
-        * - prob_pph_lacerations
-          - REAL
-          - risk of pph after experiencing genital tract lacerations
-        * - prob_pph_retained_placenta
-          - REAL
-          - risk of pph after experiencing retained placenta
-        * - prob_pph_other_causes
-          - REAL
-          - risk of pph after experiencing otehr pph causes
+        * - prob_sepsis_chorioamnionitis
+          - LIST
+          - risk of sepsis following chorioamnionitis infection
+        * - rr_sepsis_chorio_prom
+          - LIST
+          - relative risk of chorioamnionitis following PROM
         * - prob_sepsis_endometritis
-          - REAL
+          - LIST
           - risk of sepsis following endometritis
-        * - prob_sepsis_urinary_tract_inf
-          - REAL
+        * - rr_sepsis_endometritis_post_cs
+          - LIST
+          - relative risk of endometritis following caesarean delivery
+        * - prob_sepsis_urinary_tract
+          - LIST
           - risk of sepsis following urinary tract infection
-        * - prob_sepsis_skin_soft_tissue_inf
-          - REAL
+        * - prob_sepsis_skin_soft_tissue
+          - LIST
           - risk of sepsis following skin or soft tissue infection
-        * - prob_sepsis_other_maternal_infection_pp
-          - REAL
-          - risk of sepsis following other maternal postpartum infection
-        * - cfr_pp_pph
-          - REAL
-          - case fatality rate for postpartum haemorrhage
-        * - rr_pph_death_anaemia
-          - REAL
-          - relative risk increase of death in women who are anaemic at time of PPH
-        * - cfr_pp_eclampsia
-          - REAL
-          - case fatality rate for eclampsia following delivery
+        * - rr_sepsis_sst_post_cs
+          - LIST
+          - relative risk of skin/soft tissue sepsis following caesarean delivery
+        * - cfr_sepsis
+          - LIST
+          - case fatality rate for sepsis during labour
         * - cfr_pp_sepsis
-          - REAL
+          - LIST
           - case fatality rate for sepsis following delivery
+        * - prob_uterine_rupture
+          - LIST
+          - probability of a uterine rupture during labour
+        * - rr_ur_parity_2
+          - LIST
+          - relative risk of uterine rupture in women who have delivered 2 times previously
+        * - rr_ur_parity_3_or_4
+          - LIST
+          - relative risk of uterine rupture in women who have delivered 3-4 times previously
+        * - rr_ur_parity_5+
+          - LIST
+          - relative risk of uterine rupture in women who have delivered > 5 times previously
+        * - rr_ur_prev_cs
+          - LIST
+          - relative risk of uterine rupture in women who have previously delivered via caesarean section
+        * - rr_ur_obstructed_labour
+          - LIST
+          - relative risk of uterine rupture in women who have been in obstructed labour
+        * - cfr_uterine_rupture
+          - LIST
+          - case fatality rate for uterine rupture in labour
         * - prob_progression_gest_htn
-          - REAL
+          - LIST
           - probability of gestational hypertension progressing to severe gestational hypertensionduring/after labour
         * - prob_progression_severe_gest_htn
-          - REAL
+          - LIST
           - probability of severe gestational hypertension progressing to severe pre-eclampsia during/after labour
         * - prob_progression_mild_pre_eclamp
-          - REAL
+          - LIST
           - probability of mild pre-eclampsia progressing to severe pre-eclampsia during/after labour
         * - prob_progression_severe_pre_eclamp
-          - REAL
+          - LIST
           - probability of severe pre-eclampsia progressing to eclampsia during/after labour
+        * - cfr_eclampsia
+          - LIST
+          - case fatality rate for eclampsia during labours
+        * - cfr_severe_pre_eclamp
+          - LIST
+          - case fatality rate for severe pre eclampsia during labour
+        * - cfr_pp_eclampsia
+          - LIST
+          - case fatality rate for eclampsia following delivery
+        * - prob_ip_still_birth
+          - LIST
+          - baseline probability of intrapartum still birth
+        * - rr_still_birth_maternal_death
+          - LIST
+          - relative risk of still birth in mothers who have died during labour
+        * - rr_still_birth_ur
+          - LIST
+          - relative risk of still birth in mothers experiencing uterine rupture
+        * - rr_still_birth_ol
+          - LIST
+          - relative risk of still birth in mothers experiencing obstructed labour
+        * - rr_still_birth_aph
+          - LIST
+          - relative risk of still birth in mothers experiencing antepartum haemorrhage
+        * - rr_still_birth_hypertension
+          - LIST
+          - relative risk of still birth in mothers experiencing hypertension
+        * - rr_still_birth_sepsis
+          - LIST
+          - relative risk of still birth in mothers experiencing intrapartum sepsis
+        * - rr_still_birth_multiple_pregnancy
+          - LIST
+          - relative risk of still birth in mothers pregnant with twins
+        * - prob_both_twins_ip_still_birth
+          - LIST
+          - probability that if this mother will experience still birth, and she is pregnant with twins, that neither baby will survive
+        * - prob_pph_uterine_atony
+          - LIST
+          - risk of pph after experiencing uterine atony
+        * - rr_pph_ua_hypertension
+          - LIST
+          - relative risk risk of pph after secondary to uterine atony in hypertensive women
+        * - rr_pph_ua_multiple_pregnancy
+          - LIST
+          - relative risk risk of pph after secondary to uterine atony in women pregnant with twins
+        * - rr_pph_ua_placental_abruption
+          - LIST
+          - relative risk risk of pph after secondary to uterine atony in women with placental abruption
+        * - rr_pph_ua_macrosomia
+          - LIST
+          - relative risk risk of pph after secondary to uterine atony in women with macrosomic foetus
+        * - rr_pph_ua_diabetes
+          - LIST
+          - risk of pph after experiencing uterine atony
+        * - prob_pph_retained_placenta
+          - LIST
+          - risk of pph after experiencing retained placenta
+        * - prob_pph_other_causes
+          - LIST
+          - risk of pph after experiencing other pph causes
+        * - cfr_pp_pph
+          - LIST
+          - case fatality rate for postpartum haemorrhage
+        * - rr_pph_death_anaemia
+          - LIST
+          - relative risk increase of death in women who are anaemic at time of PPH
         * - odds_deliver_in_health_centre
-          - REAL
+          - LIST
           - odds of a woman delivering in a health centre compared to a hospital
+        * - rrr_hc_delivery_age_20_24
+          - LIST
+          - relative risk ratio for a woman aged 20-24 delivering in a health centre compared to a hospital
         * - rrr_hc_delivery_age_25_29
-          - REAL
+          - LIST
           - relative risk ratio for a woman aged 25-29 delivering in a health centre compared to a hospital
         * - rrr_hc_delivery_age_30_34
-          - REAL
+          - LIST
           - relative risk ratio for a woman aged 30-34 delivering in a health centre compared to a hospital
         * - rrr_hc_delivery_age_35_39
-          - REAL
+          - LIST
           - relative risk ratio for a woman aged 35-39 delivering in a health centre compared to a hospital
         * - rrr_hc_delivery_age_40_44
-          - REAL
+          - LIST
           - relative risk ratio for a woman aged 40-44 delivering in a health centre compared to a hospital
         * - rrr_hc_delivery_age_45_49
-          - REAL
+          - LIST
           - relative risk ratio for a woman aged 45-49 delivering in a health centre compared to a hospital
-        * - rrr_hc_delivery_rural
-          - REAL
-          - relative risk ratio for a woman living in a rural setting delivery in a health centre comparedto a hospital
+        * - rrr_hc_delivery_wealth_4
+          - LIST
+          - relative risk ratio of a woman at wealth level 4 delivering at health centre compared to a hospital
+        * - rrr_hc_delivery_wealth_3
+          - LIST
+          - relative risk ratio of a woman at wealth level 3 delivering at health centre compared to a hospital
+        * - rrr_hc_delivery_wealth_2
+          - LIST
+          - relative risk ratio of a woman at wealth level 2 delivering at health centre compared to a hospital
+        * - rrr_hc_delivery_wealth_1
+          - LIST
+          - relative risk ratio of a woman at wealth level 1 delivering at health centre compared to a hospital
         * - rrr_hc_delivery_parity_3_to_4
-          - REAL
+          - LIST
           - relative risk ratio for a woman with a parity of 3-4 delivering in a health centre compared toa hospital
         * - rrr_hc_delivery_parity_>4
-          - REAL
+          - LIST
           - relative risk ratio of a woman with a parity >4 delivering in health centre compared to a hospital
+        * - rrr_hc_delivery_rural
+          - LIST
+          - relative risk ratio of a married woman delivering in a health centre compared to a hospital
         * - rrr_hc_delivery_married
-          - REAL
+          - LIST
           - relative risk ratio of a married woman delivering in a health centre compared to a hospital
         * - odds_deliver_at_home
-          - REAL
+          - LIST
           - odds of a woman delivering at home compared to a hospital
+        * - rrr_hb_delivery_age_20_24
+          - LIST
+          - relative risk ratio for a woman aged 20-24 delivering at home compared to a hospital
+        * - rrr_hb_delivery_age_25_29
+          - LIST
+          - relative risk ratio for a woman aged 25-29 delivering at home compared to a hospital
+        * - rrr_hb_delivery_age_30_34
+          - LIST
+          - relative risk ratio for a woman aged 30-34 delivering at home compared to a hospital
         * - rrr_hb_delivery_age_35_39
-          - REAL
+          - LIST
           - relative risk ratio for a woman aged 35-39 delivering at home compared to a hospital
         * - rrr_hb_delivery_age_40_44
-          - REAL
+          - LIST
           - relative risk ratio for a woman aged 40-44 delivering at home compared to a hospital
         * - rrr_hb_delivery_age_45_49
-          - REAL
+          - LIST
           - relative risk ratio for a woman aged 45-49 delivering at home compared to a hospital
+        * - rrr_hb_delivery_rural
+          - LIST
+          - relative risk ratio of a rural delivering at home compared to a hospital
+        * - rrr_hb_delivery_primary_education
+          - LIST
+          - relative risk ratio of a woman with a primary education delivering at home compared to a hospital
+        * - rrr_hb_delivery_secondary_education
+          - LIST
+          - relative risk ratio of a woman with a secondary education delivering at home compared to a hospital
+        * - rrr_hb_delivery_wealth_4
+          - LIST
+          - relative risk ratio of a woman at wealth level 4 delivering at home compared to a hospital
+        * - rrr_hb_delivery_wealth_3
+          - LIST
+          - relative risk ratio of a woman at wealth level 3 delivering at home compared to a hospital
+        * - rrr_hb_delivery_wealth_2
+          - LIST
+          - relative risk ratio of a woman at wealth level 2 delivering at home compared to a hospital
+        * - rrr_hb_delivery_wealth_1
+          - LIST
+          - relative risk ratio of a woman at wealth level 1 delivering at home compared to a hospital
         * - rrr_hb_delivery_parity_3_to_4
-          - REAL
+          - LIST
           - relative risk ratio for a woman with a parity of 3-4 delivering at home compared toa hospital
         * - rrr_hb_delivery_parity_>4
-          - REAL
+          - LIST
           - relative risk ratio of a woman with a parity >4 delivering at home compared to a hospital
+        * - rrr_hb_delivery_married
+          - LIST
+          - relative risk ratio of a married woman delivering in a home compared to a hospital
+        * - probability_delivery_hospital
+          - LIST
+          - probability of delivering in a hospital
+        * - prob_delay_one_two_fd
+          - LIST
+          - probability a woman seeking care during pregnancy will experience a type 1 or 2 delay when choosing to seek care (i.e. she is delayed in reaching the facility
+        * - squeeze_threshold_for_delay_three_bemonc
+          - LIST
+          - squeeze factor value over which an individual within a EMoNC HSI is said to experience type 3 delay i.e. delay in receiving appropriate care
+        * - squeeze_threshold_for_delay_three_cemonc
+          - LIST
+          - squeeze factor value over which an individual within a CEMoNC HSI is said to experience type 3 delay i.e. delay in receiving appropriate car1e
+        * - squeeze_threshold_for_delay_three_pn
+          - LIST
+          - squeeze factor value over which an individual within a postnatal HSI is said to experience type 3 delay i.e. delay in receiving appropriate care
+        * - prob_timings_pnc
+          - LIST
+          - probabilities that a woman who will receive a PNC check will receive care <48hrs post birth or > 48hrs post birth
+        * - odds_will_attend_pnc
+          - LIST
+          - baseline odss a woman will seek PNC for her and her newborn following delivery
+        * - or_pnc_age_30_35
+          - LIST
+          - odds ratio for women aged 30-35 attending PNC
+        * - or_pnc_age_>35
+          - LIST
+          - odds ratio for women aged > 35 attending PNC
+        * - or_pnc_rural
+          - LIST
+          - odds ratio for women who live rurally attending PNC
+        * - or_pnc_wealth_level_1
+          - LIST
+          - odds ratio for women from the highest wealth level attending PNC
+        * - or_pnc_anc4+
+          - LIST
+          - odds ratio for women who attended ANC4+ attending PNC
+        * - or_pnc_caesarean_delivery
+          - LIST
+          - odds ratio for women who delivered by caesarean attending PNC
+        * - or_pnc_facility_delivery
+          - LIST
+          - odds ratio for women who delivered in a health facility attending PNC
+        * - or_pnc_parity_>4
+          - LIST
+          - odds ratio for women with a parity of >4 attending PNC
+        * - probs_of_attending_pn_event_by_day
+          - LIST
+          - probabilities used in a weighted random draw to determine when a woman will attend the postnatal event
         * - prob_careseeking_for_complication
-          - REAL
+          - LIST
           - odds of a woman seeking skilled assistance after developing a complication at a home birth
-        * - or_comp_careseeking_wealth_2
-          - REAL
-          - odds ratio of a woman of wealth level 2 seeking assistance after developing a complication at a home birth 
         * - test_care_seeking_probs
           - LIST
           - dummy probabilities of delivery care seeking used in testing
+        * - prob_delivery_modes_ec
+          - LIST
+          - probabilities that a woman admitted with eclampsia will deliver normally, via caesarean or via assisted vaginal delivery
+        * - prob_delivery_modes_spe
+          - LIST
+          - probabilities that a woman admitted with severe pre-eclampsia will deliver normally, via caesarean or via assisted vaginal delivery
+        * - residual_prob_avd
+          - LIST
+          - probabilities that a woman will deliver via assisted vaginal delivery for an indication not explicitly modelled
+        * - residual_prob_caesarean
+          - LIST
+          - probabilities that a woman will deliver via caesarean section for an indication not explicitly modelled
+        * - prob_adherent_ifa
+          - LIST
+          - probability that a woman started on postnatal IFA will be adherent
+        * - effect_of_ifa_for_resolving_anaemia
+          - LIST
+          - relative effect of iron and folic acid on anaemia status
+        * - number_ifa_tablets_required_postnatally
+          - LIST
+          - total number of iron and folic acid tablets required during postnatal period
         * - treatment_effect_maternal_infection_clean_delivery
-          - REAL
+          - LIST
           - Effect of clean delivery practices on risk of maternal infection
-        * - rr_pph_amtsl
-          - REAL
+        * - treatment_effect_maternal_chorio_abx_prom
+          - LIST
+          - Relative effect of antibiotics for premature rupture of membranes on maternal risk of chorioamnionitis prior to birth
+        * - treatment_effect_amtsl
+          - LIST
           - relative risk of severe postpartum haemorrhage following active management of the third stage of labour
         * - prob_haemostatis_uterotonics
-          - REAL
+          - LIST
           - probability of uterotonics stopping a postpartum haemorrhage due to uterine atony 
-        * - prob_successful_manual_removal_placenta
-          - REAL
-          - probability of manual removal of retained products arresting a post partum haemorrhage
-        * - success_rate_pph_surgery
-          - REAL
-          - probability of surgery for postpartum haemorrhage being successful
-        * - success_rate_surgical_removal_placenta
-          - REAL
-          - probability of surgery for retained placenta being successful
-        * - success_rate_uterine_repair
-          - REAL
-          - probability repairing a ruptured uterus surgically
-        * - prob_successful_assisted_vaginal_delivery
-          - REAL
-          - probability of successful assisted vaginal delivery
-        * - sensitivity_of_assessment_of_obstructed_labour_hc
-          - REAL
-          - sensitivity of dx_test assessment by birth attendant for obstructed labour in a health centre
-        * - sensitivity_of_assessment_of_obstructed_labour_hp
-          - REAL
-          - sensitivity of dx_test assessment by birth attendant for obstructed labour in a level 1 hospital
-        * - sensitivity_of_assessment_of_sepsis_hc
-          - REAL
-          - sensitivity of dx_test assessment by birth attendant for maternal sepsis in a health centre
-        * - sensitivity_of_assessment_of_sepsis_hp
-          - REAL
-          - sensitivity of dx_test assessment by birth attendant for maternal sepsis in a level 1hospital
-        * - sensitivity_of_assessment_of_severe_pe_hc
-          - REAL
-          - sensitivity of dx_test assessment by birth attendant for severe pre-eclampsia in a level 1 hospital
-        * - sensitivity_of_assessment_of_severe_pe_hp
-          - REAL
-          - sensitivity of dx_test assessment by birth attendant for severe pre-eclampsia in a level 1 hospital
-        * - sensitivity_of_assessment_of_hypertension_hc
-          - REAL
-          - sensitivity of dx_test assessment by birth attendant for hypertension in a level 1 health centre
-        * - sensitivity_of_assessment_of_hypertension_hp
-          - REAL
-          - sensitivity of dx_test assessment by birth attendant for hypertension in a level 1 hospital
-        * - sensitivity_of_assessment_of_antepartum_haem_hc
-          - REAL
-          - sensitivity of dx_test assessment for referral by birth attendant for antepartum haemorrhage in a health centre
-        * - sensitivity_of_assessment_of_antepartum_haem_hp
-          - REAL
-          - sensitivity of dx_test assessment for treatment by birth attendant for antepartum haemorrhage in a level 1 hospital
-        * - sensitivity_of_assessment_of_uterine_rupture_hc
-          - REAL
-          - sensitivity of dx_test assessment by birth attendant for uterine rupture in a health centre
-        * - sensitivity_of_assessment_of_uterine_rupture_hp
-          - REAL
-          - sensitivity of dx_test assessment by birth attendant for uterine rupture in a level 1 hospital
-        * - sensitivity_of_assessment_of_ec_hc
-          - REAL
-          - sensitivity of dx_test assessment by birth attendant for eclampsia in a level 1 hospital
-        * - sensitivity_of_assessment_of_ec_hp
-          - REAL
-          - sensitivity of dx_test assessment by birth attendant for eclampsia in a level 1 hospital
-        * - sensitivity_of_assessment_of_pph_hc
-          - REAL
-          - sensitivity of dx_test assessment by birth attendant for postpartum haemorrhage in a level 1 hospital
-        * - sensitivity_of_assessment_of_pph_hp
-          - REAL
-          - sensitivity of dx_test assessment by birth attendant for postpartum haemorrhage in a level 1 hospital
-        * - sepsis_treatment_effect_md
-          - REAL
-          - effect of treatment for sepsis on risk of maternal death
-        * - eclampsia_treatment_effect_severe_pe
-          - REAL
-          - effect of treatment for severe pre eclampsia on risk of eclampsia
-        * - eclampsia_treatment_effect_md
-          - REAL
-          - effect of treatment for eclampsia on risk of maternal death
-        * - anti_htns_treatment_effect_md
-          - REAL
-          - effect of IV anti hypertensive treatment on risk of death secondary to severe pre-eclampsia/eclampsia stillbirth
-        * - anti_htns_treatment_effect_progression
-          - REAL
-          - effect of IV anti hypertensive treatment on risk of progression from mild to severe gestational hypertension
-        * - aph_bt_treatment_effect_md
-          - REAL
-          - effect of blood transfusion treatment for antepartum haemorrhage on risk of maternal death
         * - pph_treatment_effect_uterotonics_md
-          - REAL
+          - LIST
           - effect of uterotonics on maternal death due to postpartum haemorrhage
+        * - prob_successful_manual_removal_placenta
+          - LIST
+          - probability of manual removal of retained products arresting a post partum haemorrhage
         * - pph_treatment_effect_mrp_md
-          - REAL
+          - LIST
           - effect of uterotonics on maternal death due to postpartum haemorrhage
+        * - success_rate_pph_surgery
+          - LIST
+          - probability of surgery for postpartum haemorrhage being successful
         * - pph_treatment_effect_surg_md
-          - REAL
+          - LIST
           - effect of surgery on maternal death due to postpartum haemorrhage
         * - pph_treatment_effect_hyst_md
-          - REAL
+          - LIST
           - effect of hysterectomy on maternal death due to postpartum haemorrhage
         * - pph_bt_treatment_effect_md
-          - REAL
+          - LIST
           - effect of blood transfusion treatment for postpartum haemorrhage on risk of maternal death
-        * - aph_cs_treatment_effect_md
-          - REAL
-          - effect of caesarean section for antepartum haemorrhage on risk of maternal death
+        * - sepsis_treatment_effect_md
+          - LIST
+          - effect of treatment for sepsis on risk of maternal death
+        * - success_rate_uterine_repair
+          - LIST
+          - probability repairing a ruptured uterus surgically
+        * - prob_successful_assisted_vaginal_delivery
+          - LIST
+          - probability of successful assisted vaginal delivery
         * - ur_repair_treatment_effect_md
-          - REAL
+          - LIST
           - effect of surgical uterine repair treatment for uterine rupture on risk of maternal death
         * - ur_treatment_effect_bt_md
-          - REAL
+          - LIST
           - effect of blood transfusion treatment for uterine rupture on risk of maternal death
         * - ur_hysterectomy_treatment_effect_md
-          - REAL
+          - LIST
           - effect of blood hysterectomy for uterine rupture on risk of maternal death
+        * - eclampsia_treatment_effect_severe_pe
+          - LIST
+          - effect of treatment for severe pre eclampsia on risk of eclampsia
+        * - eclampsia_treatment_effect_md
+          - LIST
+          - effect of treatment for eclampsia on risk of maternal death
+        * - anti_htns_treatment_effect_md
+          - LIST
+          - effect of IV anti hypertensive treatment on risk of death secondary to severe pre-eclampsia/eclampsia stillbirth
+        * - anti_htns_treatment_effect_progression
+          - LIST
+          - effect of IV anti hypertensive treatment on risk of progression from mild to severe gestational hypertension
+        * - aph_bt_treatment_effect_md
+          - LIST
+          - effect of blood transfusion treatment for antepartum haemorrhage on risk of maternal death
+        * - treatment_effect_blood_transfusion_anaemia
+          - LIST
+          - effect of blood transfusion treatment for severe anaemia
+        * - aph_cs_treatment_effect_md
+          - LIST
+          - effect of caesarean section for antepartum haemorrhage on risk of maternal death
         * - treatment_effect_avd_still_birth
-          - REAL
+          - LIST
           - effect of assisted vaginal delivery on risk of intrapartum still birth
         * - treatment_effect_cs_still_birth
-          - REAL
-          - effect of caesarean section delivery on risk of intrapartum still birth
-        * - allowed_interventions
           - LIST
-          - list of interventions allowed to run, used in analysis
-        * - squeeze_threshold_proph_ints
-          - REAL
-          - squeeze factor threshold below which prophylactic interventions for birth cant be given
-        * - squeeze_threshold_treatment_spe
-          - REAL
-          - squeeze factor threshold below which treatment for severe pre-eclampsia cant be given
-        * - squeeze_threshold_treatment_ol
-          - REAL
-          - squeeze factor threshold below which treatment for obstructed labour cant be given
-        * - squeeze_threshold_treatment_sep
-          - REAL
-          - squeeze factor threshold below which treatment for maternal sepsis cant be given
-        * - squeeze_threshold_treatment_htn
-          - REAL
-          - squeeze factor threshold below which treatment for hypertension cant be given
-        * - squeeze_threshold_treatment_ec
-          - REAL
-          - squeeze factor threshold below which treatment for eclampsia cant be given
-        * - squeeze_threshold_treatment_ur
-          - REAL
-          - squeeze factor threshold below which treatment for uterine rupture cant be given
-        * - squeeze_threshold_treatment_aph
-          - REAL
-          - squeeze factor threshold below which treatment for antepartum haemorrhage cant be given
-        * - squeeze_threshold_treatment_pph
-          - REAL
-          - squeeze factor threshold below which treatment for antepartum haemorrhage cant be given
-        * - squeeze_threshold_amtsl
-          - REAL
-          - squeeze factor threshold below which treatment for amtsl cant be given
-        * - daly_wt_haemorrhage_moderate
-          - REAL
-          - DALY weight for a moderate maternal haemorrhage (<1 litre)
-        * - daly_wt_haemorrhage_severe
-          - REAL
-          - DALY weight for a severe maternal haemorrhage (>1 litre)
-        * - daly_wt_maternal_sepsis
-          - REAL
-          - DALY weight for maternal sepsis
-        * - daly_wt_eclampsia
-          - REAL
-          - DALY weight for eclampsia
-        * - daly_wt_obstructed_labour
-          - REAL
-          - DALY weight for obstructed labour
+          - effect of caesarean section delivery on risk of intrapartum still birth
+        * - prob_hcw_avail_iv_abx
+          - LIST
+          - average probability that a health facility providing EmONC care has a HCW available that can delivery signal function - parenteral antibiotics
+        * - prob_hcw_avail_uterotonic
+          - LIST
+          - average probability that a health facility providing EmONC care has a HCW available that can delivery signal function - parenteral uterotonics
+        * - prob_hcw_avail_anticonvulsant
+          - LIST
+          - average probability that a health facility providing EmONC care has a HCW available that can delivery signal function - parenteral anticonvulsants
+        * - prob_hcw_avail_man_r_placenta
+          - LIST
+          - average probability that a health facility providing EmONC care has a HCW available that can delivery signal function - manual removal of retained placenta
+        * - prob_hcw_avail_avd
+          - LIST
+          - average probability that a health facility providing EmONC care has a HCW available that can delivery signal function - assisted vaginal delivery
+        * - prob_hcw_avail_blood_tran
+          - LIST
+          - average probability that a health facility providing EmONC care has a HCW available that can delivery signal function - blood transfusion
+        * - prob_hcw_avail_surg
+          - LIST
+          - average probability that a health facility providing EmONC care has a HCW available that can delivery signal function - obstetric surgery
+        * - prob_hcw_avail_retained_prod
+          - LIST
+          - average probability that a health facility providing EmONC care has a HCW available that can delivery signal function - removal of retained products of conception
+        * - prob_hcw_avail_neo_resus
+          - LIST
+          - average probability that a health facility providing EmONC care has a HCW available that can delivery signal function - neonatal resuscitation
+        * - mean_hcw_competence_hc
+          - LIST
+          - mean competence of HCW at delivering EmONC care at a health centre. A draw below this level prevents intervention delivery
+        * - mean_hcw_competence_hp
+          - LIST
+          - mean competence of HCW at delivering EmONC care at a hospital. A draw below this level prevents intervention delivery
+        * - treatment_effect_modifier_all_delays
+          - LIST
+          - factor by which treatment effectiveness is reduced in the presences of multiple delays
+        * - treatment_effect_modifier_one_delay
+          - LIST
+          - factor by which treatment effectiveness is reduced in the presences of one delays
+        * - prob_intervention_delivered_anaemia_assessment_pnc
+          - LIST
+          - probability a woman will have their Hb levels checked during PNC given that the HSI has ran and the consumables are available (proxy for clinical quality)
 
 
      **PROPERTIES:**
@@ -497,9 +557,6 @@ tlo.methods.labour module
         * - la_obstructed_labour
           - BOOL
           - Whether this woman is experiencing obstructed labour
-        * - la_obstructed_labour_causes
-          - INT
-          - bitset column holding list of possible causes of obstructed labour
         * - la_placental_abruption
           - BOOL
           - whether the woman has experienced placental abruption
@@ -521,12 +578,6 @@ tlo.methods.labour module
         * - la_sepsis_pp
           - BOOL
           - whether this woman has developed sepsis due to a postpartum infection
-        * - la_maternal_ip_infection
-          - INT
-          - bitset column holding list of infections
-        * - la_maternal_pp_infection
-          - INT
-          - bitset column holding list of postpartum infections
         * - la_sepsis_treatment
           - BOOL
           - If this woman has received treatment for maternal sepsis
@@ -539,6 +590,9 @@ tlo.methods.labour module
         * - la_maternal_hypertension_treatment
           - BOOL
           - whether this woman has been treated for maternal hypertension
+        * - la_gest_htn_on_treatment
+          - BOOL
+          - whether this woman has is receiving regular antihypertensives
         * - la_postpartum_haem
           - BOOL
           - whether the woman has experienced an postpartum haemorrhage in thisdelivery
@@ -551,18 +605,15 @@ tlo.methods.labour module
         * - la_has_had_hysterectomy
           - BOOL
           - whether this woman has had a hysterectomy as treatment for a complication of labour, and therefore is unable to conceive
-        * - la_maternal_death_in_labour
-          - BOOL
-          -  whether the woman has died as a result of this pregnancy
-        * - la_maternal_death_in_labour_date
-          - DATE
-          - date of death for a date in pregnancy
         * - la_date_most_recent_delivery
           - DATE
           - date of on which this mother last delivered
         * - la_is_postpartum
           - BOOL
           - Whether a woman is in the postpartum period, from delivery until day +42 (6 weeks)
+        * - la_pn_checks_maternal
+          - INT
+          - Number of postnatal checks this woman has received
         * - la_iron_folic_acid_postnatal
           - BOOL
           - Whether a woman is receiving iron and folic acid during the postnatal period
@@ -571,15 +622,17 @@ tlo.methods.labour module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'PostnatalSupervisor', 'CareOfWomenDuringPregnancy', 'Contraception', 'NewbornOutcomes'}
+     ADDITIONAL_DEPENDENCIES : {'CareOfWomenDuringPregnancy', 'PostnatalSupervisor', 'NewbornOutcomes', 'Lifestyle', 'Contraception', 'HealthSystem', 'PregnancySupervisor'}
 
-     CAUSES_OF_DEATH : {'maternal': <tlo.methods.causes.Cause object at 0x7ff4e45704c0>, 'intrapartum stillbirth': <tlo.methods.causes.Cause object at 0x7ff4e4585460>}
+     CAUSES_OF_DEATH : {'uterine_rupture': <tlo.methods.causes.Cause object at 0x7ff4d7758850>, 'intrapartum_sepsis': <tlo.methods.causes.Cause object at 0x7ff4d8c958e0>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x7ff4d8c959a0>, 'postpartum_sepsis': <tlo.methods.causes.Cause object at 0x7ff4d8caca90>, 'postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x7ff4d8cacaf0>, 'secondary_postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x7ff4d8cacb50>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x7ff4d8cacbb0>, 'eclampsia': <tlo.methods.causes.Cause object at 0x7ff4d8cacc10>}
 
-     CAUSES_OF_DISABILITY : {'Labour': <tlo.methods.causes.Cause object at 0x7ff4e4585640>}
+     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x7ff4d8cacc70>}
 
-     INIT_DEPENDENCIES : {'PregnancySupervisor', 'Demography', 'HealthSystem', 'Lifestyle'}
+     INIT_DEPENDENCIES : {'Demography'}
 
-     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
+
+     OPTIONAL_INIT_DEPENDENCIES : {'Stunting'}
 
      **Functions (defined or overridden in class Labour):**
 
@@ -588,6 +641,8 @@ tlo.methods.labour module
      .. automethod:: read_parameters
 
      .. automethod:: initialise_population
+
+     .. automethod:: get_and_store_labour_item_codes
 
      .. automethod:: initialise_simulation
 
@@ -613,17 +668,17 @@ tlo.methods.labour module
 
      .. automethod:: progression_of_hypertensive_disorders
 
-     .. automethod:: set_maternal_death_status_intrapartum
-
-     .. automethod:: set_maternal_death_status_postpartum
-
      .. automethod:: apply_risk_of_early_postpartum_death
 
      .. automethod:: labour_characteristics_checker
 
      .. automethod:: postpartum_characteristics_checker
 
+     .. automethod:: check_emonc_signal_function_will_run
+
      .. automethod:: prophylactic_labour_interventions
+
+     .. automethod:: determine_delivery_mode_in_spe_or_ec
 
      .. automethod:: assessment_and_treatment_of_severe_pre_eclampsia_mgso4
 
@@ -631,7 +686,7 @@ tlo.methods.labour module
 
      .. automethod:: assessment_and_treatment_of_eclampsia
 
-     .. automethod:: assessment_and_treatment_of_obstructed_labour_via_avd
+     .. automethod:: assessment_for_assisted_vaginal_delivery
 
      .. automethod:: assessment_and_treatment_of_maternal_sepsis
 
@@ -649,7 +704,17 @@ tlo.methods.labour module
 
      .. automethod:: blood_transfusion
 
+     .. automethod:: assessment_and_treatment_of_anaemia
+
+     .. automethod:: assessment_for_depression
+
      .. automethod:: interventions_delivered_pre_discharge
+
+     .. automethod:: run_if_receives_skilled_birth_attendance_cant_run
+
+     .. automethod:: run_if_receives_postnatal_check_cant_run
+
+     .. automethod:: run_if_receives_comprehensive_emergency_obstetric_care_cant_run
 
 
 
@@ -694,48 +759,30 @@ tlo.methods.labour module
 
 
 
-.. autoclass:: BirthEvent
-
-     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
-
-
-     **Functions (defined or overridden in class BirthEvent):**
-
-     .. automethod:: __init__
-
-     .. automethod:: apply
-
-
-
-
-
-
-
-
-.. autoclass:: PostpartumLabourAtHomeEvent
-
-     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
-
-
-     **Functions (defined or overridden in class PostpartumLabourAtHomeEvent):**
-
-     .. automethod:: __init__
-
-     .. automethod:: apply
-
-
-
-
-
-
-
-
 .. autoclass:: LabourDeathAndStillBirthEvent
 
      Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
 
      **Functions (defined or overridden in class LabourDeathAndStillBirthEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: BirthAndPostnatalOutcomesEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class BirthAndPostnatalOutcomesEvent):**
 
      .. automethod:: __init__
 
@@ -759,6 +806,8 @@ tlo.methods.labour module
 
      .. automethod:: apply
 
+     .. automethod:: never_ran
+
      .. automethod:: did_not_run
 
      .. automethod:: not_available
@@ -770,16 +819,18 @@ tlo.methods.labour module
 
 
 
-.. autoclass:: HSI_Labour_ReceivesSkilledBirthAttendanceFollowingLabour
+.. autoclass:: HSI_Labour_ReceivesPostnatalCheck
 
      Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
 
-     **Functions (defined or overridden in class HSI_Labour_ReceivesSkilledBirthAttendanceFollowingLabour):**
+     **Functions (defined or overridden in class HSI_Labour_ReceivesPostnatalCheck):**
 
      .. automethod:: __init__
 
      .. automethod:: apply
+
+     .. automethod:: never_ran
 
      .. automethod:: did_not_run
 
@@ -803,27 +854,7 @@ tlo.methods.labour module
 
      .. automethod:: apply
 
-     .. automethod:: did_not_run
-
-     .. automethod:: not_available
-
-
-
-
-
-
-
-
-.. autoclass:: HSI_Labour_ReceivesCareFollowingCaesareanSection
-
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
-
-
-     **Functions (defined or overridden in class HSI_Labour_ReceivesCareFollowingCaesareanSection):**
-
-     .. automethod:: __init__
-
-     .. automethod:: apply
+     .. automethod:: never_ran
 
      .. automethod:: did_not_run
 

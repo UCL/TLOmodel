@@ -181,34 +181,15 @@
 <p>General utility functions for TLO analysis</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.analysis.utils.parse_log_file">
-<span class="sig-name descname"><span class="pre">parse_log_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">log_filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#parse_log_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.parse_log_file" title="Permalink to this definition">¶</a></dt>
-<dd><p>Parses logged output from a TLO run and returns Pandas dataframes.</p>
-<p>The dictionary returned has the format:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-    <span class="o">&lt;</span><span class="n">logger</span> <span class="mi">1</span> <span class="n">name</span><span class="o">&gt;</span><span class="p">:</span> <span class="p">{</span>
-                       <span class="o">&lt;</span><span class="n">log</span> <span class="n">key</span> <span class="mi">1</span><span class="o">&gt;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">pandas</span> <span class="n">dataframe</span><span class="o">&gt;</span><span class="p">,</span>
-                       <span class="o">&lt;</span><span class="n">log</span> <span class="n">key</span> <span class="mi">2</span><span class="o">&gt;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">pandas</span> <span class="n">dataframe</span><span class="o">&gt;</span><span class="p">,</span>
-                       <span class="o">&lt;</span><span class="n">log</span> <span class="n">key</span> <span class="mi">3</span><span class="o">&gt;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">pandas</span> <span class="n">dataframe</span><span class="o">&gt;</span>
-                     <span class="p">},</span>
-
-    <span class="o">&lt;</span><span class="n">logger</span> <span class="mi">2</span> <span class="n">name</span><span class="o">&gt;</span><span class="p">:</span> <span class="p">{</span>
-                       <span class="o">&lt;</span><span class="n">log</span> <span class="n">key</span> <span class="mi">4</span><span class="o">&gt;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">pandas</span> <span class="n">dataframe</span><span class="o">&gt;</span><span class="p">,</span>
-                       <span class="o">&lt;</span><span class="n">log</span> <span class="n">key</span> <span class="mi">5</span><span class="o">&gt;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">pandas</span> <span class="n">dataframe</span><span class="o">&gt;</span><span class="p">,</span>
-                       <span class="o">&lt;</span><span class="n">log</span> <span class="n">key</span> <span class="mi">6</span><span class="o">&gt;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">pandas</span> <span class="n">dataframe</span><span class="o">&gt;</span>
-                     <span class="p">},</span>
-    <span class="o">...</span>
-<span class="p">}</span>
-</pre></div>
-</div>
+<span class="sig-name descname"><span class="pre">parse_log_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">log_filepath</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#parse_log_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.parse_log_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses logged output from a TLO run, split it into smaller logfiles and returns a class containing paths to
+these split logfiles.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>log_filepath</strong> – file path to log file</p></li>
-<li><p><strong>level</strong> – logging level to be parsed for structured logging</p></li>
-</ul>
+<dd class="field-odd"><p><strong>log_filepath</strong> – file path to log file</p>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>dictionary of parsed log data</p>
+<dd class="field-even"><p>a class containing paths to split logfiles</p>
 </dd>
 </dl>
 </dd></dl>
@@ -354,6 +335,45 @@ columns will be those flattened labels. This helper function recreates the origi
 flattened labels were created and applies it to the pd.DataFrame.</p>
 </dd></dl>
 
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.analysis.utils.LogsDict">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">LogsDict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_names_and_paths</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#LogsDict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.LogsDict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">collections.abc.Mapping</span></code></p>
+<p>Parses module-specific log files and returns Pandas dataframes.</p>
+<p>The dictionary returned has the format:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="o">&lt;</span><span class="n">logger</span> <span class="mi">1</span> <span class="n">name</span><span class="o">&gt;</span><span class="p">:</span> <span class="p">{</span>
+                       <span class="o">&lt;</span><span class="n">log</span> <span class="n">key</span> <span class="mi">1</span><span class="o">&gt;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">pandas</span> <span class="n">dataframe</span><span class="o">&gt;</span><span class="p">,</span>
+                       <span class="o">&lt;</span><span class="n">log</span> <span class="n">key</span> <span class="mi">2</span><span class="o">&gt;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">pandas</span> <span class="n">dataframe</span><span class="o">&gt;</span><span class="p">,</span>
+                       <span class="o">&lt;</span><span class="n">log</span> <span class="n">key</span> <span class="mi">3</span><span class="o">&gt;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">pandas</span> <span class="n">dataframe</span><span class="o">&gt;</span>
+                     <span class="p">},</span>
+
+    <span class="o">&lt;</span><span class="n">logger</span> <span class="mi">2</span> <span class="n">name</span><span class="o">&gt;</span><span class="p">:</span> <span class="p">{</span>
+                       <span class="o">&lt;</span><span class="n">log</span> <span class="n">key</span> <span class="mi">4</span><span class="o">&gt;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">pandas</span> <span class="n">dataframe</span><span class="o">&gt;</span><span class="p">,</span>
+                       <span class="o">&lt;</span><span class="n">log</span> <span class="n">key</span> <span class="mi">5</span><span class="o">&gt;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">pandas</span> <span class="n">dataframe</span><span class="o">&gt;</span><span class="p">,</span>
+                       <span class="o">&lt;</span><span class="n">log</span> <span class="n">key</span> <span class="mi">6</span><span class="o">&gt;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">pandas</span> <span class="n">dataframe</span><span class="o">&gt;</span>
+                     <span class="p">},</span>
+    <span class="o">...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.analysis.utils.LogsDict.items">
+<span class="sig-name descname"><span class="pre">items</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">a</span> <span class="pre">set-like</span> <span class="pre">object</span> <span class="pre">providing</span> <span class="pre">a</span> <span class="pre">view</span> <span class="pre">on</span> <span class="pre">D's</span> <span class="pre">items</span></span></span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#LogsDict.items"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.LogsDict.items" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.analysis.utils.LogsDict.keys">
+<span class="sig-name descname"><span class="pre">keys</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">a</span> <span class="pre">set-like</span> <span class="pre">object</span> <span class="pre">providing</span> <span class="pre">a</span> <span class="pre">view</span> <span class="pre">on</span> <span class="pre">D's</span> <span class="pre">keys</span></span></span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#LogsDict.keys"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.LogsDict.keys" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.analysis.utils.LogsDict.values">
+<span class="sig-name descname"><span class="pre">values</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">an</span> <span class="pre">object</span> <span class="pre">providing</span> <span class="pre">a</span> <span class="pre">view</span> <span class="pre">on</span> <span class="pre">D's</span> <span class="pre">values</span></span></span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#LogsDict.values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.LogsDict.values" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </div>
 
 
@@ -371,7 +391,7 @@ flattened labels were created and applies it to the pd.DataFrame.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Feb 16, 2022.
+        Last updated on Mar 25, 2022.
       </span>
 
     </p>
