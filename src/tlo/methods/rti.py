@@ -988,6 +988,11 @@ class RTI(Module):
         'blocked_interventions': Parameter(
             Types.LIST,
             "A list of interventions that are blocked in a simulation"
+        ),
+        'unavailable_treatment_mortality_iss_cutoff': Parameter(
+            Types.INT,
+            "A cut-off score above which an injury will result in additional mortality if the person has "
+            "sought healthcare and not received it."
         )
 
     }
@@ -2808,6 +2813,7 @@ class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
         self.daly_wt_femur_fracture_short_term = p['daly_wt_femur_fracture_short_term']
         self.daly_wt_femur_fracture_long_term_without_treatment = \
             p['daly_wt_femur_fracture_long_term_without_treatment']
+        self.no_treatment_mortality_iss_cutoff = p['unavailable_treatment_mortality_iss_cutoff']
 
     def apply(self, population):
         df = population.props
@@ -2842,8 +2848,10 @@ class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
                     mais_scores.append(self.module.ASSIGN_INJURIES_AND_DALY_CHANGES[injury][0][-1])
                 max_untreated_injury = max(mais_scores)
                 prob_death = probabilities_of_death[str(max_untreated_injury)]
-                if (rand_for_death < prob_death) & (~df.loc[person, 'rt_med_int']):
-                # if rand_for_death < prob_death:
+                if df.loc[person, 'rt_med_int'] & max_untreated_injury < self.no_treatment_mortality_iss_cutoff:
+                    # filter out non serious injuries from the consideration of mortality
+                    prob_death = 0
+                if rand_for_death < prob_death:
                     # If determined to die, schedule a death without med
                     df.loc[person, 'rt_no_med_death'] = True
                     self.sim.modules['Demography'].do_death(individual_id=person, cause="RTI_death_without_med",
@@ -4546,7 +4554,8 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
         }
 
         request_outcome = self.get_consumables(
-            optional_item_codes=self.module.item_codes_for_consumables_required['major_surgery']
+            # optional_item_codes=self.module.item_codes_for_consumables_required['major_surgery']
+            self.module.item_codes_for_consumables_required['major_surgery']
         )
 
         if not df.at[person_id, 'is_alive']:
@@ -4891,7 +4900,8 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
                 {get_item_code('External fixator'): 1}
             )
         request_outcome = self.get_consumables(
-            optional_item_codes=self.module.item_codes_for_consumables_required['minor_surgery']
+            # optional_item_codes=self.module.item_codes_for_consumables_required['minor_surgery']
+            self.module.item_codes_for_consumables_required['minor_surgery']
         )
         # todo: think about consequences of certain consumables not being available for minor surgery and model health
         #  outcomes

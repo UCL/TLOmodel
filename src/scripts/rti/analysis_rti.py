@@ -33,7 +33,7 @@ log_config = {
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 12, 31)
-pop_size = 10000
+pop_size = 5000
 
 # This creates the Simulation instance for this run. Because we've passed the `seed` and
 # `log_config` arguments, these will override the default behaviour.
