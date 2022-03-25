@@ -71,6 +71,7 @@ sim.modules['RTI'].parameters['prob_death_iss_16_24'] = 0.97760263 * (37 / 988)
 sim.modules['RTI'].parameters['prob_death_iss_25_35'] = 0.97760263 * (52 / 325)
 sim.modules['RTI'].parameters['prob_death_iss_35_plus'] = 0.97760263 * (37 / 136)
 sim.modules['RTI'].parameters['rt_emergency_care_ISS_score_cut_off'] = 2
+sim.modules['RTI'].parameters['unavailable_treatment_mortality_iss_cutoff'] = 5
 sim.simulate(end_date=end_date)
 
 # parse the simulation logfile to get the output dataframes
