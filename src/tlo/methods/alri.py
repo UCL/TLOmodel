@@ -1015,12 +1015,12 @@ class Alri(Module):
 
         # Oxygen for hypoxaemia
         self.consumables_used_in_hsi['Oxygen_Therapy'] = \
-            [get_item_code(item='Oxygen, 1000 liters, primarily with oxygen concentrators')] + \
+            [get_item_code(item='Oxygen, 1000 liters, primarily with oxygen cylinders')] + \
             [get_item_code(item='Nasal prongs')]
 
         # Pulse oximetry
         self.consumables_used_in_hsi['Pulse_oximetry'] = \
-            [get_item_code(item='Oxygen, 1000 liters, primarily with oxygen concentrators')]
+            [get_item_code(item='Oxygen, 1000 liters, primarily with oxygen cylinders')]
         # use oxygen code to fill in consumable availability for pulse oximetry
 
         # X-ray scan
@@ -1613,6 +1613,12 @@ class Alri(Module):
         symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
 
         if not (('cough' in symptoms) or ('difficult_breathing' in symptoms)):
+            return
+
+        # check that person is not on treatment for the current episode
+        if df.loc[person_id, 'ri_on_treatment'] and (
+                df.loc[person_id, 'ri_start_of_current_episode'] <= self.sim.date <=
+                df.loc[person_id, 'ri_end_of_current_episode']):
             return
 
         # get the iCCM/IMCI classification based on symptoms alone

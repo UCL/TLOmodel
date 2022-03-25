@@ -124,7 +124,7 @@ def sim_hs_default_consumables(tmpdir, seed):
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, cons_availability='default'),
         alri.Alri(resourcefilepath=resourcefilepath, log_indivdual=0, do_checks=True),
         AlriPropertiesOfOtherModules(),
     )
@@ -683,59 +683,6 @@ def test_no_immediate_onset_complications(sim_hs_all_consumables):
     # Check has no complications following onset (check #1)
     complications_cols = [f"ri_complication_{complication}" for complication in sim.modules['Alri'].complications]
     assert not df.loc[person_id, complications_cols].any()
-
-
-# def test_classification_based_on_symptoms_and_imci(sim_hs_all_consumables):
-#     """Check that `symptom_based_classification` gives the expected classification."""
-#     sim = sim_hs_all_consumables
-#
-#     # Construct scenario and the expected classification if using only symptoms:
-#     classification_on_symptoms = (
-#         ('chest_indrawing_pneumonia', {'symptoms': ['chest_indrawing'], 'facility_level': '1a', 'age_exact_years': 0.5}),
-#         ('chest_indrawing_pneumonia', {'symptoms': ['chest_indrawing', 'tachypnoea'], 'facility_level': '1a', 'age_exact_years': 0.5}),
-#         ('fast_breathing_pneumonia', {'symptoms': ['tachypnoea'], 'facility_level': '1b', 'age_exact_years': 0.5}),
-#         ('danger_signs_pneumonia', {'symptoms': ['danger_signs'], 'facility_level': '1b', 'age_exact_years': 0.5}),
-#         ('danger_signs_pneumonia', {'symptoms': ['danger_signs', 'chest_indrawing'], 'facility_level': '1b', 'age_exact_years': 0.5}),
-#         ('serious_bacterial_infection', {'symptoms': ['chest_indrawing'], 'facility_level': '1b', 'age_exact_years': 0.1}),
-#         ('serious_bacterial_infection', {'symptoms': ['danger_signs'], 'facility_level': '2', 'age_exact_years': 0.1}),
-#         ('fast_breathing_pneumonia', {'symptoms': ['tachypnoea'], 'facility_level': '1b', 'age_exact_years': 0.1}),
-#         ('not_handled_at_facility_0', {'symptoms': ['tachypnoea'], 'facility_level': '0', 'age_exact_years': 0.1}),
-#         ('cough_or_cold', {'symptoms': ['cough'], 'facility_level': '1a', 'age_exact_years': 0.5}),
-#
-#         # todo - @Ines -- here add lots (or all?) of the permutations you're interesed in with answer that you'd like!
-#     )
-#
-#     recognised_classifications = {
-#         'fast_breathing_pneumonia',
-#         'chest_indrawing_pneumonia',
-#         'danger_signs_pneumonia',
-#         'cough_or_cold',
-#         'serious_bacterial_infection',
-#         'not_handled_at_facility_0'
-#     }
-#
-#     final_classification = sim.modules['Alri'].classification_based_on_pulse_oximeter_availability
-#     symptom_based_classification = sim.modules['Alri'].symptom_based_classification
-#
-#     for correct_classification_on_symptoms, chars in classification_on_symptoms:
-#         # Check classification using only symptoms:
-#         assert symptom_based_classification(**chars) in recognised_classifications
-#         assert correct_classification_on_symptoms == symptom_based_classification(**chars)
-#
-#         # Check IMCI classification if oximeter not available (should be same as symptoms)
-#         assert correct_classification_on_symptoms == final_classification(**chars,
-#                                                                           oximeter_available=False,
-#                                                                           oxygen_saturation='<90%')
-#
-#         # Check that IMCI classification if oximter available but no low oxygen saturation (should be same as symptoms)
-#         assert correct_classification_on_symptoms == final_classification(**chars,
-#                                                                                    oximeter_available=True,
-#                                                                                    oxygen_saturation='>=93%')
-#
-#         # Check that IMCI classification if oximter available and low oxygen saturation (should be'danger_signs_pneumonia' irrespective of symptoms)
-#         assert 'danger_signs_pneumonia' == final_classification(**chars,
-#                                                                          oximeter_available=True,
-#                                                                          oxygen_saturation='<90%')
 
 
 def test_classification_based_on_symptoms_and_imci(sim_hs_all_consumables):
