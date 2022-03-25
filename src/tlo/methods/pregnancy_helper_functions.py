@@ -122,7 +122,7 @@ def check_if_delayed_careseeking(self, individual_id):
         return
 
     if self.rng.random_sample() < self.sim.modules['Labour'].current_parameters['prob_delay_one_two_fd']:
-        mni[individual_id]['delay_one_two'] = False
+        mni[individual_id]['delay_one_two'] = True
 
 
 def check_if_delayed_care_delivery(self, squeeze_factor, individual_id, hsi_type):
@@ -139,7 +139,7 @@ def check_if_delayed_care_delivery(self, squeeze_factor, individual_id, hsi_type
     mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
     if squeeze_factor > self.current_parameters[f'squeeze_threshold_for_delay_three_{hsi_type}']:
-        mni[individual_id]['delay_three'] = False
+        mni[individual_id]['delay_three'] = True
 
 
 def get_treatment_effect(delay_one_two, delay_three, treatment_effect, params):
