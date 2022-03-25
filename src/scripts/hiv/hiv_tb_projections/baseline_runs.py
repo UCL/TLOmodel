@@ -2,7 +2,7 @@
 This file defines a batch run through which the hiv and tb modules are run across a grid of parameter values
 
 check the batch configuration gets generated without error:
-tlo scenario-run --draw-only src/scripts/hiv/hiv_tb_projections/scenario1.py
+tlo scenario-run --draw-only src/scripts/hiv/hiv_tb_projections/baseline_runs.py
 
 Test the scenario starts running without problems:
 tlo scenario-run src/scripts/hiv/hiv_tb_projections/scenario1.py
@@ -11,7 +11,7 @@ or execute a single run:
 tlo scenario-run src/scripts/hiv/hiv_tb_projections/scenario1.py --draw 0 0
 
 Run on the batch system using:
-tlo batch-submit src/scripts/hiv/hiv_tb_projections/scenario1.py
+tlo batch-submit src/scripts/hiv/hiv_tb_projections/baseline_runs.py
 
 Display information about a job:
 tlo batch-job tlo_q1_demo-123 --tasks

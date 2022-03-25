@@ -1,0 +1,72 @@
+{
+  "scenario_script_path": "src/scripts/hiv/hiv_tb_projections/baseline_runs.py",
+  "scenario_seed": 4488,
+  "runs_per_draw": 1,
+  "draws": [
+    {
+      "draw_number": 0,
+      "draw_seed": 300448002,
+      "parameters": {
+        "Tb": {
+          "scenario": 1,
+          "transmission_rate": 16.7
+        },
+        "Hiv": {
+          "beta": 0.125
+        }
+      }
+    },
+    {
+      "draw_number": 1,
+      "draw_seed": 1862389560,
+      "parameters": {
+        "Tb": {
+          "scenario": 1,
+          "transmission_rate": 18.0
+        },
+        "Hiv": {
+          "beta": 0.121
+        }
+      }
+    },
+    {
+      "draw_number": 2,
+      "draw_seed": 1562429390,
+      "parameters": {
+        "Tb": {
+          "scenario": 1,
+          "transmission_rate": 15.8
+        },
+        "Hiv": {
+          "beta": 0.109
+        }
+      }
+    },
+    {
+      "draw_number": 3,
+      "draw_seed": 1660552569,
+      "parameters": {
+        "Tb": {
+          "scenario": 1,
+          "transmission_rate": 19.2
+        },
+        "Hiv": {
+          "beta": 0.116
+        }
+      }
+    },
+    {
+      "draw_number": 4,
+      "draw_seed": 26828184,
+      "parameters": {
+        "Tb": {
+          "scenario": 1,
+          "transmission_rate": 15.4
+        },
+        "Hiv": {
+          "beta": 0.133
+        }
+      }
+    }
+  ]
+}
