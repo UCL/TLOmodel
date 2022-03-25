@@ -2332,6 +2332,26 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         now = self.sim.date
 
         # ------------------------------------ SUMMARIES ------------------------------------
+        # population
+        pop_male_15plus = len(
+            df[df.is_alive & (df.age_years >= 15) & (df.sex == "M")]
+        )
+        pop_female_15plus = len(
+            df[df.is_alive & (df.age_years >= 15) & (df.sex == "F")]
+        )
+        pop_child = len(df[df.is_alive])
+        pop_total = len(df[df.is_alive])
+
+        # plhiv
+        male_plhiv = len(
+            df[df.hv_inf & df.is_alive & (df.age_years >= 15) & (df.sex == "M")]
+        )
+        female_plhiv = len(
+            df[df.hv_inf & df.is_alive & (df.age_years >= 15) & (df.sex == "F")]
+        )
+        child_plhiv = len(df[df.hv_inf & df.is_alive & (df.age_years < 15)])
+        total_plhiv = len(df[df.hv_inf & df.is_alive])
+
         # adult prevalence
         adult_prev_15plus = len(
             df[df.hv_inf & df.is_alive & (df.age_years >= 15)]
@@ -2401,17 +2421,26 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             ) / n_fsw
         )
 
-        population = len(df.loc[df.is_alive])
+        total_population = len(df.loc[df.is_alive])
 
         logger.info(
             key="summary_inc_and_prev_for_adults_and_children_and_fsw",
             description="Summary of HIV among adult (15+ and 15-49) and children (0-14s) and female sex workers"
                         " (15-49)",
             data={
+                "pop_male_15plus": pop_male_15plus,
+                "pop_female_15plus": pop_female_15plus,
+                "pop_child": pop_child,
+                "pop_total": total_population,
+                "male_plhiv_15plus": male_plhiv,
+                "female_plhiv_15plus": female_plhiv,
+                "child_plhiv": child_plhiv,
+                "total_plhiv": total_plhiv,
                 "hiv_prev_adult_15plus": adult_prev_15plus,
                 "hiv_prev_adult_1549": adult_prev_1549,
                 "hiv_prev_child": child_prev,
                 "hiv_adult_inc_15plus": adult_inc_15plus,
+                "n_new_infections_adult_1549": n_new_infections_adult_1549,
                 "hiv_adult_inc_1549": adult_inc_1549,
                 "hiv_child_inc": child_inc,
                 "hiv_prev_fsw": prev_hiv_fsw,
@@ -2423,7 +2452,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.module.hiv_outputs["hiv_prev_adult_1549"] += [adult_prev_1549]
         self.module.hiv_outputs["hiv_adult_inc_1549"] += [adult_inc_1549]
         self.module.hiv_outputs["hiv_prev_child"] += [child_prev]
-        self.module.hiv_outputs["population"] += [population]
+        self.module.hiv_outputs["population"] += [total_population]
 
         # ------------------------------------ PREVALENCE BY AGE and SEX  ------------------------------------
 
@@ -2438,6 +2467,114 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             key="prev_by_age_and_sex",
             data=prev_by_age_and_sex,
             description="Prevalence of HIV split by age and sex",
+        )
+
+        male_prev_1524 = len(
+            df[df.hv_inf & df.is_alive & df.age_years.between(15, 24) & (df.sex == "M")]
+        ) / len(df[df.is_alive & df.age_years.between(15, 24) & (df.sex == "M")])
+
+        male_prev_2549 = len(
+            df[df.hv_inf & df.is_alive & df.age_years.between(25, 49) & (df.sex == "M")]
+        ) / len(df[df.is_alive & df.age_years.between(25, 49) & (df.sex == "M")])
+
+        female_prev_1524 = len(
+            df[df.hv_inf & df.is_alive & df.age_years.between(15, 24) & (df.sex == "F")]
+        ) / len(df[df.is_alive & df.age_years.between(15, 24) & (df.sex == "F")])
+
+        female_prev_2549 = len(
+            df[df.hv_inf & df.is_alive & df.age_years.between(25, 49) & (df.sex == "F")]
+        ) / len(df[df.is_alive & df.age_years.between(25, 49) & (df.sex == "F")])
+
+        total_prev = len(
+            df[df.hv_inf & df.is_alive]
+        ) / len(df[df.is_alive])
+
+        # incidence by age-group and sex
+        n_new_infections_male_1524 = len(
+            df.loc[
+                df.age_years.between(15, 24)
+                & (df.sex == "M")
+                & df.is_alive
+                & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
+                ]
+        )
+        denom_male_1524 = len(df[
+                                  df.is_alive
+                                  & (df.sex == "M")
+                                  & df.age_years.between(15, 24)])
+        male_inc_1524 = n_new_infections_male_1524 / denom_male_1524
+
+        n_new_infections_male_2549 = len(
+            df.loc[
+                df.age_years.between(25, 49)
+                & (df.sex == "M")
+                & df.is_alive
+                & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
+                ]
+        )
+        denom_male_2549 = len(df[
+                                  df.is_alive
+                                  & (df.sex == "M")
+                                  & df.age_years.between(25, 49)])
+        male_inc_2549 = n_new_infections_male_2549 / denom_male_2549
+
+        n_new_infections_male_1549 = len(
+            df.loc[
+                df.age_years.between(15, 49)
+                & (df.sex == "M")
+                & df.is_alive
+                & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
+                ]
+        )
+
+        n_new_infections_female_1524 = len(
+            df.loc[
+                df.age_years.between(15, 24)
+                & (df.sex == "F")
+                & df.is_alive
+                & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
+                ]
+        )
+        denom_female_1524 = len(df[
+                                  df.is_alive
+                                  & (df.sex == "F")
+                                  & df.age_years.between(15, 24)])
+        female_inc_1524 = n_new_infections_female_1524 / denom_female_1524
+
+        n_new_infections_female_2549 = len(
+            df.loc[
+                df.age_years.between(25, 49)
+                & (df.sex == "F")
+                & df.is_alive
+                & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
+                ]
+        )
+        denom_female_2549 = len(df[
+                                  df.is_alive
+                                  & (df.sex == "F")
+                                  & df.age_years.between(25, 49)])
+        female_inc_2549 = n_new_infections_female_2549 / denom_female_2549
+
+
+        logger.info(
+            key="infections_by_2age_groups_and_sex",
+            data={
+                "male_prev_1524": male_prev_1524,
+                "male_prev_2549": male_prev_2549,
+                "female_prev_1524": female_prev_1524,
+                "female_prev_2549": female_prev_2549,
+                "total_prev": total_prev,
+                "n_new_infections_male_1524": n_new_infections_male_1524,
+                "n_new_infections_male_2549": n_new_infections_male_2549,
+                "n_new_infections_male_1549": n_new_infections_male_1549,
+                "n_new_infections_female_1524": n_new_infections_female_1524,
+                "n_new_infections_female_2549": n_new_infections_female_2549,
+                "male_inc_1524": male_inc_1524,
+                "male_inc_2549": male_inc_2549,
+                "female_inc_1524": female_inc_1524,
+                "female_inc_2549": female_inc_2549,
+            },
+            description="HIV infections split by 2 age-groups age and sex",
         )
 
         # ------------------------------------ TESTING ------------------------------------
@@ -2512,6 +2649,34 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             alive_infected & (df.age_years < 15)
         )
 
+        n_on_art_male_15plus = len(
+            df.loc[
+                (df.age_years >= 15)
+                & (df.sex == "M")
+                & df.is_alive
+                & (df.hv_art != "not")
+                ]
+        )
+
+        n_on_art_female_15plus = len(
+            df.loc[
+                (df.age_years >= 15)
+                & (df.sex == "F")
+                & df.is_alive
+                & (df.hv_art != "not")
+                ]
+        )
+
+        n_on_art_children = len(
+            df.loc[
+                (df.age_years < 15)
+                & df.is_alive
+                & (df.hv_art != "not")
+                ]
+        )
+
+        n_on_art_total = n_on_art_male_15plus + n_on_art_female_15plus + n_on_art_children
+
         # ------------------------------------ BEHAVIOUR CHANGE ------------------------------------
 
         # proportion of adults (15+) exposed to behaviour change intervention
@@ -2543,6 +2708,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             key="hiv_program_coverage",
             description="Coverage of interventions for HIV among adult (15+) and children (0-14s)",
             data={
+                "number_adults_tested": n_tested,
                 "prop_tested_adult": tested,
                 "prop_tested_adult_male": testing_by_sex["M"],
                 "prop_tested_adult_female": testing_by_sex["F"],
@@ -2554,7 +2720,11 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 "art_coverage_adult_VL_suppression": art_cov_vs_adult,
                 "art_coverage_child": art_cov_children,
                 "art_coverage_child_VL_suppression": art_cov_vs_children,
-                "prop_adults_exposed_tgo_behav_intv": prop_adults_exposed_to_behav_intv,
+                "n_on_art_total": n_on_art_total,
+                "n_on_art_male_15plus": n_on_art_male_15plus,
+                "n_on_art_female_15plus": n_on_art_female_15plus,
+                "n_on_art_children": n_on_art_children,
+                "prop_adults_exposed_to_behav_intv": prop_adults_exposed_to_behav_intv,
                 "prop_fsw_on_prep": prop_fsw_on_prep,
                 "prop_men_circ": prop_men_circ,
             },
