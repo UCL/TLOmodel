@@ -1,11 +1,11 @@
 {
   "scenario_script_path": "src/scripts/hiv/hiv_tb_projections/baseline_runs.py",
-  "scenario_seed": 2635,
+  "scenario_seed": 1564,
   "runs_per_draw": 1,
   "draws": [
     {
       "draw_number": 0,
-      "draw_seed": 719539478,
+      "draw_seed": 433967916,
       "parameters": {
         "Tb": {
           "scenario": 1,
@@ -18,7 +18,7 @@
     },
     {
       "draw_number": 1,
-      "draw_seed": 514676255,
+      "draw_seed": 452239009,
       "parameters": {
         "Tb": {
           "scenario": 1,
@@ -31,7 +31,7 @@
     },
     {
       "draw_number": 2,
-      "draw_seed": 942378579,
+      "draw_seed": 2016636448,
       "parameters": {
         "Tb": {
           "scenario": 1,
@@ -44,7 +44,7 @@
     },
     {
       "draw_number": 3,
-      "draw_seed": 956811237,
+      "draw_seed": 839347030,
       "parameters": {
         "Tb": {
           "scenario": 1,
@@ -57,7 +57,7 @@
     },
     {
       "draw_number": 4,
-      "draw_seed": 720528401,
+      "draw_seed": 1371789655,
       "parameters": {
         "Tb": {
           "scenario": 1,
@@ -69,6 +69,6 @@
       }
     }
   ],
-  "commit": "8041770372109b14ab69e2f3054ae19c8c76097e",
-  "github": "https://github.com/UCL/TLOmodel/blob/8041770372109b14ab69e2f3054ae19c8c76097e/src/scripts/hiv/hiv_tb_projections/baseline_runs.py"
+  "commit": "0262fdb73ee24231533f9f78eecb50e731e5ecff",
+  "github": "https://github.com/UCL/TLOmodel/blob/0262fdb73ee24231533f9f78eecb50e731e5ecff/src/scripts/hiv/hiv_tb_projections/baseline_runs.py"
 }
