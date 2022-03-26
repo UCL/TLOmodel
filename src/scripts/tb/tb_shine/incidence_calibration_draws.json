@@ -1,11 +1,11 @@
 {
   "scenario_script_path": "src/scripts/tb/tb_shine/incidence_calibration.py",
-  "scenario_seed": 2575,
+  "scenario_seed": 3356,
   "runs_per_draw": 3,
   "draws": [
     {
       "draw_number": 0,
-      "draw_seed": 1512735998,
+      "draw_seed": 253528846,
       "parameters": {
         "Tb": {
           "scenario": 0,
@@ -15,7 +15,7 @@
     },
     {
       "draw_number": 1,
-      "draw_seed": 825284528,
+      "draw_seed": 5247653,
       "parameters": {
         "Tb": {
           "scenario": 0,
@@ -25,7 +25,7 @@
     },
     {
       "draw_number": 2,
-      "draw_seed": 594282446,
+      "draw_seed": 383151937,
       "parameters": {
         "Tb": {
           "scenario": 0,
@@ -35,7 +35,7 @@
     },
     {
       "draw_number": 3,
-      "draw_seed": 1222129791,
+      "draw_seed": 1656366094,
       "parameters": {
         "Tb": {
           "scenario": 0,
@@ -45,7 +45,7 @@
     },
     {
       "draw_number": 4,
-      "draw_seed": 412178212,
+      "draw_seed": 2017100912,
       "parameters": {
         "Tb": {
           "scenario": 0,
@@ -53,5 +53,7 @@
         }
       }
     }
-  ]
+  ],
+  "commit": "b1b5a764191d128e39680b48c710d86aaff8e1da",
+  "github": "https://github.com/UCL/TLOmodel/blob/b1b5a764191d128e39680b48c710d86aaff8e1da/src/scripts/tb/tb_shine/incidence_calibration.py"
 }
