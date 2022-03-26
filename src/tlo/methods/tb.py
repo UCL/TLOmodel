@@ -2021,7 +2021,16 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
         # if still no result available, rely on clinical diagnosis
         if test_result is None:
-            pass
+            test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+                dx_tests_to_run="tb_clinical", hsi_event=self
+            )
+
+        # if sputum test result is negative but patient still displays symptoms that indicate active TB,
+        # refer to clinical diagnosis (this is to avoid smear negative patients being missed via sputum test)
+        if (test == "sputum") and not test_result and not smear_status:
+            test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+                dx_tests_to_run="tb_clinical", hsi_event=self
+            )
 
         # if a test has been performed, update person's properties
         if test_result is not None:
