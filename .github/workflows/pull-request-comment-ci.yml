@@ -12,6 +12,5 @@ jobs:
     with:
       runs-on: self-hosted
       keyword: scaled-sim
-      commands: tox -v -e profile
-      description: Profiled scale run of model
-      timeout-minutes: 8640
+      commands: python -m cProfile src/scripts/profiling/scale_run.py --show-progress-bar --ignore-warnings
+      description: Scale run of model

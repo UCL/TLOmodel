@@ -15,7 +15,7 @@ from tlo.analysis.utils import (
 outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
 
 # download all files (and get most recent [-1])
-results_folder1 = get_scenario_outputs("scenario1.py", outputspath)[-1]
+results_folder1 = get_scenario_outputs("scenario1.py", outputspath)[0]
 results_folder2 = get_scenario_outputs("scenario2.py", outputspath)[-1]
 results_folder3 = get_scenario_outputs("scenario3.py", outputspath)[-1]
 

@@ -34,9 +34,7 @@ popsize = 5000
 log_config = {
     'filename': 'Malaria_LogFile',
     'directory': './outputs',
-    'custom_levels': {"*": logging.WARNING,
-                      "tlo.methods.malaria": logging.INFO,
-                      "tlo.methods.healthsystem": logging.DEBUG}
+    'custom_levels': {"*": logging.WARNING, "tlo.methods.malaria": logging.DEBUG}
 }
 
 seed = random.randint(0, 50000)

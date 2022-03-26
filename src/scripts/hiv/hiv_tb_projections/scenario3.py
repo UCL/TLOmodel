@@ -50,7 +50,7 @@ class TestScenario(BaseScenario):
         self.seed = randint(0, 5000)
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2035, 1, 1)
-        self.pop_size = 500000
+        self.pop_size = 40000
         self.number_of_draws = 1
         self.runs_per_draw = 5
 
@@ -63,7 +63,7 @@ class TestScenario(BaseScenario):
                 "tlo.methods.hiv": logging.INFO,
                 "tlo.methods.tb": logging.INFO,
                 "tlo.methods.demography": logging.INFO,
-                "tlo.methods.healthsystem.summary": logging.INFO,
+                "tlo.methods.healthsystem": logging.INFO,
             },
         }
 
