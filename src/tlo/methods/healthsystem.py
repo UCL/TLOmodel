@@ -1332,6 +1332,13 @@ class HealthSystem(Module):
         """Helper function to provide the item_code (an int) when provided with the name of the item"""
         return get_item_code_from_item_name(self.parameters['item_and_package_code_lookups'], item)
 
+    def override_availability_of_consumables(self, item_codes) -> None:
+        """Over-ride the availability (for all months and all facilities) of certain consumables item_codes.
+        :param item_codes: Dictionary of the form {<item_code>: probability_that_item_is_available}
+        :return: None
+        """
+        self.consumables.override_availability(item_codes)
+
 
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     """
