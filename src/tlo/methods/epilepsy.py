@@ -431,7 +431,7 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         n_incident_epilepsy = epi_now.sum()
         n_alive = df.is_alive.sum()
 
-        incidence_epilepsy = (n_incident_epilepsy * 4 * 100000) / n_alive
+        incidence_epilepsy = (n_incident_epilepsy * 4 * 100000) / n_alive if n_alive > 0 else 0
 
         logger.info(
             key='inc_epilepsy',
@@ -523,17 +523,18 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         n_epi_death = df.ep_epi_death.sum()
 
-        prop_seiz_stat_0 = n_seiz_stat_0 / n_alive
-        prop_seiz_stat_1 = n_seiz_stat_1 / n_alive
-        prop_seiz_stat_2 = n_seiz_stat_2 / n_alive
-        prop_seiz_stat_3 = n_seiz_stat_3 / n_alive
+        prop_seiz_stat_0 = n_seiz_stat_0 / n_alive if n_alive > 0 else 0
+        prop_seiz_stat_1 = n_seiz_stat_1 / n_alive if n_alive > 0 else 0
+        prop_seiz_stat_2 = n_seiz_stat_2 / n_alive if n_alive > 0 else 0
+        prop_seiz_stat_3 = n_seiz_stat_3 / n_alive if n_alive > 0 else 0
 
-        prop_antiepilep_seiz_stat_0 = n_antiepilep_seiz_stat_0 / n_seiz_stat_0
-        prop_antiepilep_seiz_stat_1 = n_antiepilep_seiz_stat_1 / n_seiz_stat_1
-        prop_antiepilep_seiz_stat_2 = n_antiepilep_seiz_stat_2 / n_seiz_stat_2
-        prop_antiepilep_seiz_stat_3 = n_antiepilep_seiz_stat_3 / n_seiz_stat_3
+        prop_antiepilep_seiz_stat_0 = n_antiepilep_seiz_stat_0 / n_seiz_stat_0 if n_seiz_stat_0 > 0 else 0
+        prop_antiepilep_seiz_stat_1 = n_antiepilep_seiz_stat_1 / n_seiz_stat_1 if n_seiz_stat_1 > 0 else 0
+        prop_antiepilep_seiz_stat_2 = n_antiepilep_seiz_stat_2 / n_seiz_stat_2 if n_seiz_stat_2 > 0 else 0
+        prop_antiepilep_seiz_stat_3 = n_antiepilep_seiz_stat_3 / n_seiz_stat_3 if n_seiz_stat_3 > 0 else 0
 
-        epi_death_rate = (n_epi_death * 4 * 1000) / (n_seiz_stat_2 + n_seiz_stat_3)
+        epi_death_rate = \
+            (n_epi_death * 4 * 1000) / (n_seiz_stat_2 + n_seiz_stat_3) if n_seiz_stat_2 + n_seiz_stat_3 > 0 else 0
 
         cum_deaths = (~df.is_alive).sum()
 
