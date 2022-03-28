@@ -2927,14 +2927,22 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         # Prophylactic treatment to prevent postpartum bleeding is applied
         if not mni[person_id]['sought_care_for_complication']:
             self.module.active_management_of_the_third_stage_of_labour(self)
+        elif self.module.rng.random_sample() < params['residual_prob_caesarean']:
+                mni[person_id]['referred_for_cs'] = True
+                mni[person_id]['cs_indication'] = 'other'
 
         # -------------------------- Caesarean section/AVD for un-modelled reason ------------------------------------
         # We apply a probability to women who have not already been allocated to undergo assisted/caesarean delivery
         # that they will require assisted/caesarean delivery to capture indications which are not explicitly modelled
         if not mni[person_id]['referred_for_cs'] and (not mni[person_id]['mode_of_delivery'] == 'instrumental'):
-            if self.module.rng.random_sample() < params['residual_prob_caesarean']:
+            if df.at[person_id, 'ps_multiple_pregnancy']:
+                mni[person_id]['referred_for_cs'] = True
+                mni[person_id]['cs_indication'] = 'twins'
+
+            elif self.module.rng.random_sample() < params['residual_prob_caesarean']:
                 mni[person_id]['referred_for_cs'] = True
                 mni[person_id]['cs_indication'] = 'other'
+
             elif self.module.rng.random_sample() < params['residual_prob_avd']:
                 self.module.assessment_for_assisted_vaginal_delivery(self, for_spe=True)
 
