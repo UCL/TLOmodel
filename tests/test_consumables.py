@@ -157,12 +157,29 @@ def test_override_cons_availability(seed):
     # Create consumables class
     cons = Consumables(data=data, rng=rng, availability='default')
 
+    # Check before overriding availability
+    for _ in range(1000):
+        cons.processing_at_start_of_new_day(date=date)
+
+        # Request item that is not available and not over-ridden
+        assert False is request_item(cons, 0)
+
+        # Request item that is available and not over-ridden
+        assert True is request_item(cons, 1)
+
+        # Request item that is not available but later over-ridden to be available
+        assert False is request_item(cons, 2)
+
+        # Request item that is available but later over-ridden to be not available
+        assert True is request_item(cons, 3)
+
     # Do over-riding of availability of item_codes 2 and 3
     cons.override_availability({
         2: 1.0,
         3: 0.0
     })
 
+    # Check after overriding availability
     for _ in range(1000):
         cons.processing_at_start_of_new_day(date=date)
 
