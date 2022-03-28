@@ -116,13 +116,24 @@ appts_by_treatment_id = pd.DataFrame({
 appts_by_treatment_id_short = \
     hsi.set_index('TREATMENT_ID')['Number_By_Appt_Type_Code'].drop_duplicates().apply(pd.Series).fillna(0.0)
 
+# get the appointment usage per month year 2019
+hsi_2019 = hsi.loc[hsi.date.dt.year == 2019].copy()
+M = range(1, 13)
+D = {}
+appt_usage_2019 = pd.DataFrame()
+for m in M:
+    a = hsi_2019.loc[hsi_2019.month == m, 'Number_By_Appt_Type_Code'].apply(pd.Series)
+    D[m] = pd.DataFrame(columns=[m], data=a.sum(axis=0))
+    appt_usage_2019 = appt_usage_2019.join(D[m], how='outer')
+# save
+# appt_usage_2019.to_csv(outputspath / 'appt_usage_2019.csv')
+
 # Possible issues:
 # set(appts_by_treatment_id_short.columns)-set(appts_by_treatment_id.columns)
 # the output is: {'ComDelivery', 'VCTPositive'}, not clear why the two appts are not in the table appts_by_treatment_id
 # There are inconsistencies in appts_by_treatment_id_short:
 # e.g. breastCancer_StartTreatment and oesophagealCancer_StartTreatment call for different appts,
 # Labour_ReceivesComprehensiveEmergencyObstetricCare calls for non appt.
-
 
 # Plot...
 # See the Sankey plot in analysis_sankey_appt_and_hsi.ipynb (in the same folder)
