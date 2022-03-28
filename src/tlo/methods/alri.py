@@ -42,6 +42,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import types
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
@@ -960,7 +961,7 @@ class Alri(Module):
         #     get_item_code(item='Syringe, needle + swab'): 1
         # }
         #
-        # # Antibiotic therapy for severe pneumonia - benzylpenicillin package
+        # # Antibiotic therapy for severe pneumonia - benzylpenicillin package when ampicillin is not available
         # self.consumables_used_in_hsi['Benzylpenicillin_gentamicin_therapy_for_severe_pneumonia'] = {
         #     get_item_code(item='Benzylpenicillin 3g (5MU), PFR_each_CMST'): lambda _age:
         #     8 if (1/6 <= _age < 1/3) else (15 if (1/3 <= _age < 1) else (24 if (1 <= _age < 3) else 34)),
@@ -1112,18 +1113,18 @@ class Alri(Module):
         # Oxygen, pulse oximetry and x-ray -------------------
 
         # Oxygen for hypoxaemia
-        self.consumables_used_in_hsi['Oxygen_Therapy'] = \
-            [get_item_code(item='Oxygen, 1000 liters, primarily with oxygen cylinders')] + \
-            [get_item_code(item='Nasal prongs')]
-
+        self.consumables_used_in_hsi['Oxygen_Therapy'] = {
+            get_item_code(item='Oxygen, 1000 liters, primarily with oxygen cylinders'): 5,
+            get_item_code(item='Nasal prongs'): 1
+        }
         # Pulse oximetry
         self.consumables_used_in_hsi['Pulse_oximetry'] = \
-            [get_item_code(item='Oxygen, 1000 liters, primarily with oxygen cylinders')]
+            get_item_code(item='Oxygen, 1000 liters, primarily with oxygen cylinders')
         # use oxygen code to fill in consumable availability for pulse oximetry
 
         # X-ray scan
         self.consumables_used_in_hsi['X_ray_scan'] = \
-            [get_item_code(item='X-ray')]
+            get_item_code(item='X-ray')
 
         # Optional consumables -------------------
 
@@ -1134,7 +1135,7 @@ class Alri(Module):
 
         # Maintenance of fluids via nasograstric tube
         self.consumables_used_in_hsi['Fluid_Maintenance'] = \
-            [get_item_code(item='Tube, nasogastric CH 8_each_CMST')]
+            get_item_code(item='Tube, nasogastric CH 8_each_CMST')
 
         # Bronchodilator
         # inhaled
@@ -1425,17 +1426,20 @@ class Alri(Module):
         # Create shortcuts:
         df = self.sim.population.props
         age = df.at[person_id, 'age_exact_years']
+
         schedule_hsi = \
             lambda _event: self.sim.modules['HealthSystem'].schedule_hsi_event(_event, priority=0,
                                                                                topen=self.sim.date, tclose=None)
 
         get_cons = \
             lambda _item_str: hsi_event.get_consumables(
-                item_codes={k: v(age) for k, v in self.consumables_used_in_hsi[_item_str].items()})
+                item_codes={k: v(age) if isinstance(v, types.LambdaType) else v
+                            for k, v in self.consumables_used_in_hsi[_item_str].items()})
 
         get_any_cons = \
-            lambda _item_strs: any(hsi_event.get_consumables(
-                item_codes={k: v(age) for k, v in self.consumables_used_in_hsi[_item_strs].items()},
+            lambda _item_str: any(hsi_event.get_consumables(
+                item_codes={k: v(age) if isinstance(v, types.LambdaType) else v
+                            for k, v in self.consumables_used_in_hsi[_item_str].items()},
                 return_individual_results=True).values())
 
         do_treatment = \
@@ -1585,7 +1589,7 @@ class Alri(Module):
 
             elif facility_level == '1b':
                 if oxygen_saturation == '<90%':  # need oxygen to survive
-                    if get_cons('Oxygen_Therapy') and get_cons('1st_line_Antibiotic_Therapy_for_Severe_Pneumonia'):
+                    if get_cons('Oxygen_Therapy') and get_cons('Ampicillin_gentamicin_therapy_for_severe_pneumonia'):
                         do_treatment(['1st_line_IV_antibiotics', 'oxygen'])
                         logger.debug(key='message',
                                      data=f'ALRI_HSI_Event: treatment GIVEN for person {person_id} with '
@@ -1600,7 +1604,7 @@ class Alri(Module):
 
                 else:
                     # TODO: add on a script analysis giving oxygen at SpO2 <93%
-                    if get_cons('1st_line_Antibiotic_Therapy_for_Severe_Pneumonia'):
+                    if get_cons('Ampicillin_gentamicin_therapy_for_severe_pneumonia'):
                         do_treatment('1st_line_IV_antibiotics')
                         logger.debug(key='message',
                                      data=f'ALRI_HSI_Event: treatment GIVEN for person {person_id} with '
@@ -1615,7 +1619,7 @@ class Alri(Module):
 
             elif facility_level == '2':
                 if oxygen_saturation == '<90%':  # need oxygen to survive
-                    if get_cons('Oxygen_Therapy') and get_cons('1st_line_Antibiotic_Therapy_for_Severe_Pneumonia'):
+                    if get_cons('Oxygen_Therapy') and get_cons('Ampicillin_gentamicin_therapy_for_severe_pneumonia'):
                         do_treatment(['1st_line_IV_antibiotics', 'oxygen'])
                         logger.debug(key='message',
                                      data=f'ALRI_HSI_Event: treatment GIVEN for person {person_id} with '
@@ -1624,7 +1628,7 @@ class Alri(Module):
                 else:
                     get_cons('Oxygen_Therapy')
                     # TODO: add on a script analysis giving oxygen at SpO2 <93%
-                    if get_cons('1st_line_Antibiotic_Therapy_for_Severe_Pneumonia'):
+                    if get_cons('Ampicillin_gentamicin_therapy_for_severe_pneumonia'):
                         do_treatment('1st_line_IV_antibiotics')
                         logger.debug(key='message',
                                      data=f'ALRI_HSI_Event: treatment GIVEN for person {person_id} with '
@@ -1648,7 +1652,7 @@ class Alri(Module):
                                   f'with ri_on_treatment property = {df.loc[person_id, "ri_on_treatment"]}')
 
             elif facility_level == '1b':
-                if get_cons('Oxygen_Therapy') and get_cons('1st_line_Antibiotic_Therapy_for_Severe_Pneumonia'):
+                if get_cons('Oxygen_Therapy') and get_cons('Ampicillin_gentamicin_therapy_for_severe_pneumonia'):
                     do_treatment(['1st_line_IV_antibiotics', 'oxygen'])
                     logger.debug(key='message',
                                  data=f'ALRI_HSI_Event: treatment GIVEN for person {person_id} with '
@@ -1662,7 +1666,7 @@ class Alri(Module):
                     schedule_hsi(HSI_IMCI_Pneumonia_Treatment_Inpatient_level_2(person_id=person_id, module=self))
 
             elif facility_level == '2':
-                if get_cons('Oxygen_Therapy') and get_cons('1st_line_Antibiotic_Therapy_for_Severe_Pneumonia'):
+                if get_cons('Oxygen_Therapy') and get_cons('Ampicillin_gentamicin_therapy_for_severe_pneumonia'):
                     do_treatment(['1st_line_IV_antibiotics', 'oxygen'])
                     logger.debug(key='message',
                                  data=f'ALRI_HSI_Event: treatment GIVEN for person {person_id} with '
@@ -1805,12 +1809,6 @@ class Alri(Module):
         # Do nothing if the person is not infected with a pathogen that can cause ALRI
         if not person['ri_current_infection_status']:
             return
-
-        # # Log the treatment provision in the Alri logging system
-        # self.logging_event.new_treated(
-        #     age=person.age_years,
-        #     pathogen=person.ri_primary_pathogen
-        # )
 
         # log the event for this person
         logger.info(
