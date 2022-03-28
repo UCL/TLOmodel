@@ -1170,4 +1170,3 @@ def test_focused_anc_scheduling(seed):
     hsi_events = health_system.find_events_for_person(person_id=updated_mother_id)
     hsi_events_class_list = [e.__class__ for d, e in hsi_events]
     assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FocusedANCVisit not in hsi_events_class_list
-test_focused_anc_scheduling(1)
