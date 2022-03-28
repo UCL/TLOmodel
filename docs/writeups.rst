@@ -61,13 +61,13 @@ Communicable Diseases
 ========================
 * **HIV**: HIV/AIDS and associated prevention and treatment programmes. :download:`.docx <./write-ups/Hiv.docx>`
 
+* **TB**: Tuberculosis and associated prevention and treatment programmes. :download:`.docx <./write-ups/TB.docx>`
+
 * **Measles**: Measles-related disease and associated prevention and treatment programmes. (Forthcoming)
 
 * **Malaria**: Malaria disease and associated prevention and treatment programmes. :download:`.docx <./write-ups/Malaria.docx>`
 
 * **Schistosomiasis**: Schistosomiasis disease and associated prevention and treatment programmes. :download:`.docx <./write-ups/Schistosomiasis.docx>`
-
-* **Tuberculosis**: Tuberculosis disease and associated prevention and treatment programmes. (Forthcoming)
 
 
 Non-Communicable Conditions
