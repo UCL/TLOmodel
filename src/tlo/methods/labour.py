@@ -2927,9 +2927,6 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         # Prophylactic treatment to prevent postpartum bleeding is applied
         if not mni[person_id]['sought_care_for_complication']:
             self.module.active_management_of_the_third_stage_of_labour(self)
-        elif self.module.rng.random_sample() < params['residual_prob_caesarean']:
-                mni[person_id]['referred_for_cs'] = True
-                mni[person_id]['cs_indication'] = 'other'
 
         # -------------------------- Caesarean section/AVD for un-modelled reason ------------------------------------
         # We apply a probability to women who have not already been allocated to undergo assisted/caesarean delivery
