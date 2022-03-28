@@ -59,20 +59,6 @@ sim.register(
 
 # create and run the simulation
 sim.make_initial_population(n=pop_size)
-sim.modules['RTI'].parameters['number_of_injured_body_regions_distribution'] = \
-    [[1, 2, 3, 4, 5, 6, 7, 8],
-     [0.7093834795440467, 0.2061841889568684, 0.05992798112965075, 0.017418226588785873,
-      0.00506265373502088, 0.0014714737295484586, 0.00042768774047753785, 0.00012430857560121887]]
-sim.modules['RTI'].parameters['base_rate_injrti'] = 0.004334746692121514
-sim.modules['RTI'].parameters['imm_death_proportion_rti'] = 0.007
-sim.modules['RTI'].parameters['prob_death_iss_less_than_9'] = 0.97760263 * (102 / 11650)
-sim.modules['RTI'].parameters['prob_death_iss_10_15'] = 0.97760263 * (7 / 528)
-sim.modules['RTI'].parameters['prob_death_iss_16_24'] = 0.97760263 * (37 / 988)
-sim.modules['RTI'].parameters['prob_death_iss_25_35'] = 0.97760263 * (52 / 325)
-sim.modules['RTI'].parameters['prob_death_iss_35_plus'] = 0.97760263 * (37 / 136)
-sim.modules['RTI'].parameters['rt_emergency_care_ISS_score_cut_off'] = 2
-sim.modules['RTI'].parameters['unavailable_treatment_mortality_iss_cutoff'] = 5
-sim.simulate(end_date=end_date)
 
 # parse the simulation logfile to get the output dataframes
 log_df = parse_log_file(sim.log_filepath)
