@@ -936,82 +936,180 @@ class Alri(Module):
     def look_up_consumables(self):
         """Look up and store the consumables item codes used in each of the HSI."""
 
-        get_item_codes_from_package = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
         get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
 
-        # Treatment of non-severe pneumonia in the health facility (TLO package)
-        self.consumables_used_in_hsi['IMCI_Treatment_non_severe_pneumonia'] = \
-            get_item_codes_from_package(package='Pneumonia treatment (children)')
-        # Treatment severe pneumonia in hospital (TLO package)
-        self.consumables_used_in_hsi['IMCI_Treatment_severe_pneumonia'] = \
-            get_item_codes_from_package(package='Treatment of severe pneumonia')
+        # # # # # # Dosages by age # # # # # #
 
-        # ------------- Community (iCCM) -------------
-        # Treatment of non-severe pneumonia in the community
-        self.consumables_used_in_hsi['iCCM_Antibiotic_Therapy_for_pneumonia'] = \
-            [get_item_code(item='Paracetamol, tablet, 100 mg')] + \
-            [get_item_code(item='Amoxycillin 250mg_1000_CMST')]
+        # # Antibiotic therapy -------------------
+        #
+        # # Antibiotics for non-severe pneumonia - oral amoxicillin for 5 days
+        # self.consumables_used_in_hsi['Amoxicillin_tablet_or_suspension'] = {
+        #     get_item_code(item='Amoxycillin 250mg_1000_CMST'): lambda _age:
+        #     0.01 if (1/6 <= _age < 1) else (0.02 if (1 <= _age < 3) else 0.03),
+        #     get_item_code(item='Amoxycillin 125mg/5ml suspension, PFR_0.025_CMST'): lambda _age:
+        #     1 if (1/6 <= _age < 1) else (2 if (1 <= _age < 3) else 3),
+        # }
+        #
+        # # Antibiotic therapy for severe pneumonia - ampicillin package
+        # self.consumables_used_in_hsi['Ampicillin_gentamicin_therapy_for_severe_pneumonia'] = {
+        #     get_item_code(item='Ampicillin injection 500mg, PFR_each_CMST'): lambda _age:
+        #     8 if (1/6 <= _age < 1/3) else (16 if (1/3 <= _age < 1) else (24 if (1 <= _age < 3) else 40)),
+        #     get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST'): lambda _age:
+        #     2.81 if (1/6 <= _age < 1/3) else (4.69 if (1/3 <= _age < 1) else (7.03 if (1 <= _age < 3) else 9.37)),
+        #     get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
+        #     get_item_code(item='Syringe, needle + swab'): 1
+        # }
+        #
+        # # Antibiotic therapy for severe pneumonia - benzylpenicillin package
+        # self.consumables_used_in_hsi['Benzylpenicillin_gentamicin_therapy_for_severe_pneumonia'] = {
+        #     get_item_code(item='Benzylpenicillin 3g (5MU), PFR_each_CMST'): lambda _age:
+        #     8 if (1/6 <= _age < 1/3) else (15 if (1/3 <= _age < 1) else (24 if (1 <= _age < 3) else 34)),
+        #     get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST'): lambda _age:
+        #     2.81 if (1/6 <= _age < 1/3) else (4.69 if (1/3 <= _age < 1) else (7.03 if (1 <= _age < 3) else 9.37)),
+        #     get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
+        #     get_item_code(item='Syringe, needle + swab'): 1
+        # }
+        #
+        # # Second line of antibiotics for severe pneumonia
+        # self.consumables_used_in_hsi['Ceftriaxone_therapy_for_severe_pneumonia'] = {
+        #     get_item_code(item='Ceftriaxone 1g, PFR_each_CMST'): lambda _age:
+        #     1.5 if (1/6 <= _age < 1/3) else (3 if (1/3 <= _age < 1) else (5 if (1 <= _age < 3) else 7)),
+        #     get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
+        #     get_item_code(item='Syringe, needle + swab'): 1
+        # }
+        #
+        # # Second line of antibiotics for severe pneumonia, if Staph is suspected
+        # self.consumables_used_in_hsi['2nd_line_Antibiotic_therapy_for_severe_staph_pneumonia'] = {
+        #     get_item_code(item='cloxacillin 500 mg, powder for injection_50_IDA'): lambda _age:
+        #     5.6 if (1/6 <= _age < 1/3) else (11.2 if (1/3 <= _age < 1) else (16.8 if (1 <= _age < 3) else 22.4)),
+        #     get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST'): lambda _age:
+        #     2.81 if (1/6 <= _age < 1/3) else (4.69 if (1/3 <= _age < 1) else (7.03 if (1 <= _age < 3) else 9.37)),
+        #     get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
+        #     get_item_code(item='Syringe, needle + swab'): 1
+        # }
+        #
+        # # First dose of antibiotic before referral -------------------
+        #
+        # # Referral process in iCCM for severe pneumonia, and at health centres for HIV exposed/infected
+        # self.consumables_used_in_hsi['oral_amoxicillin_for_referral'] = {
+        #     get_item_code(item='Amoxycillin 250mg_1000_CMST'): lambda _age:
+        #     0.001 if (1/6 <= _age < 1) else (0.002 if (1 <= _age < 3) else 0.003)
+        # }
+        # # Referral process at health centres for severe cases
+        # self.consumables_used_in_hsi['First_dose_IM_antibiotics_for_referral'] = {
+        #     get_item_code(item='Ampicillin injection 500mg, PFR_each_CMST'): lambda _age:
+        #     0.4 if (1/6 <= _age < 1/3) else (0.8 if (1/3 <= _age < 1) else (1.4 if (1 <= _age < 3) else 2)),
+        #     get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST'): lambda _age:
+        #     0.56 if (1/6 <= _age < 1/3) else (0.94 if (1/3 <= _age < 1) else (1.41 if (1 <= _age < 3) else 1.87)),
+        #     get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
+        #     get_item_code(item='Syringe, needle + swab'): 1
+        # }
+        #
+        # # Oxygen, pulse oximetry and x-ray -------------------
+        #
+        # # Oxygen for hypoxaemia
+        # self.consumables_used_in_hsi['Oxygen_Therapy'] = \
+        #     [get_item_code(item='Oxygen, 1000 liters, primarily with oxygen cylinders')] + \
+        #     [get_item_code(item='Nasal prongs')]
+        #
+        # # Pulse oximetry
+        # self.consumables_used_in_hsi['Pulse_oximetry'] = \
+        #     [get_item_code(item='Oxygen, 1000 liters, primarily with oxygen cylinders')]
+        # # use oxygen code to fill in consumable availability for pulse oximetry
+        #
+        # # X-ray scan
+        # self.consumables_used_in_hsi['X_ray_scan'] = \
+        #     [get_item_code(item='X-ray')]
+        #
+        # # Optional consumables -------------------
+        #
+        # # Paracetamol
+        # self.consumables_used_in_hsi['Paracetamol_tablet'] = {
+        #     get_item_code(item='Paracetamol, tablet, 100 mg'): lambda _age: 12 if (1/6 <= _age < 3) else 18
+        # }
+        #
+        # # Maintenance of fluids via nasograstric tube
+        # self.consumables_used_in_hsi['Fluid_Maintenance'] = \
+        #     [get_item_code(item='Tube, nasogastric CH 8_each_CMST')]
+        #
+        # # Bronchodilator
+        # # inhaled
+        # self.consumables_used_in_hsi['Inhaled_Brochodilator'] = {
+        #     get_item_code(item='Salbutamol sulphate 1mg/ml, 5ml_each_CMST'): 2
+        # }
+        # # oral
+        # self.consumables_used_in_hsi['Oral_Brochodilator'] = [
+        #     get_item_code(item='Salbutamol, syrup, 2 mg/5 ml'),
+        #     get_item_code(item='Salbutamol, tablet, 4 mg')
+        # ]
 
-        # Referral process in the community for severe pneumonia
-        self.consumables_used_in_hsi['First_dose_antibiotic_for_referral_iCCM'] = \
-            [get_item_code(item='Amoxycillin 250mg_1000_CMST')]
-
-        # ------------- Health centres (IMCI) -------------
-
-        # Treatment at health centres for severe cases if no referral
-        self.consumables_used_in_hsi['IMCI_Antibiotic_therapy_for_severe_pneumonia'] = \
-            [get_item_code(item='Ampicillin injection 500mg, PFR_each_CMST')] + \
-            [get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST')] + \
-            [get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST')] + \
-            [get_item_code(item='Syringe, needle + swab')]
-
-        # Referral process at health centres for severe cases
-        self.consumables_used_in_hsi['First_dose_antibiotic_for_referral_IMCI'] = \
-            [get_item_code(item='Ampicillin injection 500mg, PFR_each_CMST')] + \
-            [get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST')] + \
-            [get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST')] + \
-            [get_item_code(item='Syringe, needle + swab')]
-
-        # Referral process at health centres for HIV exposed/infected (oral amoxicillin)
-        self.consumables_used_in_hsi['First_dose_amoxicillin_for_HIV_referral_IMCI'] = \
-            [get_item_code(item='Amoxycillin 250mg_1000_CMST')]
+        # Antibiotic therapy -------------------
+        # TODO: PLACE HOLDER FOR MAKING ALL INTERGER
 
         # Antibiotics for non-severe pneumonia - oral amoxicillin for 5 days
-        self.consumables_used_in_hsi['Amoxicillin_suspension_or_tablet'] = \
-            [get_item_code(item='Amoxycillin 125mg/5ml suspension, PFR_0.025_CMST')] + \
-            [get_item_code(item='Amoxycillin 250mg_1000_CMST')]
+        self.consumables_used_in_hsi['Amoxicillin_tablet_or_suspension'] = {
+            get_item_code(item='Amoxycillin 250mg_1000_CMST'): lambda _age:
+            1 if (1/6 <= _age < 1) else (2 if (1 <= _age < 3) else 3),
+            get_item_code(item='Amoxycillin 125mg/5ml suspension, PFR_0.025_CMST'): lambda _age:
+            1 if (1/6 <= _age < 1) else (2 if (1 <= _age < 3) else 3),
+        }
 
-        # Bronchodilator
-        self.consumables_used_in_hsi['Inhaled_Brochodilator'] = \
-            [get_item_code(item='Salbutamol sulphate 1mg/ml, 5ml_each_CMST')]
-        # if not available inhaled bronchodilator, give oral
-        self.consumables_used_in_hsi['Brochodilator_syrup'] = \
-            [get_item_code(item='Salbutamol, syrup, 2 mg/5 ml')]
-        self.consumables_used_in_hsi['Brochodilator_tablet'] = \
-            [get_item_code(item='Salbutamol, tablet, 4 mg')]
+        # Antibiotic therapy for severe pneumonia - ampicillin package
+        self.consumables_used_in_hsi['Ampicillin_gentamicin_therapy_for_severe_pneumonia'] = {
+            get_item_code(item='Ampicillin injection 500mg, PFR_each_CMST'): lambda _age:
+            8 if (1/6 <= _age < 1/3) else (16 if (1/3 <= _age < 1) else (24 if (1 <= _age < 3) else 40)),
+            get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST'): lambda _age:
+            3 if (1/6 <= _age < 1/3) else (5 if (1/3 <= _age < 1) else (7 if (1 <= _age < 3) else 9)),
+            get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
+            get_item_code(item='Syringe, needle + swab'): 1
+        }
 
-        # ------------- Hospital (IMCI) -------------
-
-        # First line of antibiotics for severe pneumonia
-        self.consumables_used_in_hsi['1st_line_Antibiotic_Therapy_for_Severe_Pneumonia'] = \
-            [get_item_code(item='Benzylpenicillin 3g (5MU), PFR_each_CMST')] + \
-            [get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST')] + \
-            [get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST')] + \
-            [get_item_code(item='Syringe, needle + swab')]
+        # Antibiotic therapy for severe pneumonia - benzylpenicillin package
+        self.consumables_used_in_hsi['Benzylpenicillin_gentamicin_therapy_for_severe_pneumonia'] = {
+            get_item_code(item='Benzylpenicillin 3g (5MU), PFR_each_CMST'): lambda _age:
+            8 if (1/6 <= _age < 1/3) else (15 if (1/3 <= _age < 1) else (24 if (1 <= _age < 3) else 34)),
+            get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST'): lambda _age:
+            3 if (1/6 <= _age < 1/3) else (5 if (1/3 <= _age < 1) else (7 if (1 <= _age < 3) else 9)),
+            get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
+            get_item_code(item='Syringe, needle + swab'): 1
+        }
 
         # Second line of antibiotics for severe pneumonia
-        self.consumables_used_in_hsi['2nd_line_Antibiotic_Therapy_for_Severe_Pneumonia'] = \
-            [get_item_code(item='Ceftriaxone 1g, PFR_each_CMST')] + \
-            [get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST')] + \
-            [get_item_code(item='Syringe, needle + swab')]
+        self.consumables_used_in_hsi['Ceftriaxone_therapy_for_severe_pneumonia'] = {
+            get_item_code(item='Ceftriaxone 1g, PFR_each_CMST'): lambda _age:
+            1 if (1/6 <= _age < 1/3) else (3 if (1/3 <= _age < 1) else (5 if (1 <= _age < 3) else 7)),
+            get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
+            get_item_code(item='Syringe, needle + swab'): 1
+        }
 
         # Second line of antibiotics for severe pneumonia, if Staph is suspected
-        self.consumables_used_in_hsi['2nd_line_Antibiotic_Therapy_for_Severe_Staph_Pneumonia'] = \
-            [get_item_code(item='cloxacillin 500 mg, powder for injection_50_IDA')] + \
-            [get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST')] + \
-            [get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST')] + \
-            [get_item_code(item='Syringe, needle + swab')] + \
-            [get_item_code(item='Cloxacillin discs 5mcg_50_CMST')]
+        self.consumables_used_in_hsi['2nd_line_Antibiotic_therapy_for_severe_staph_pneumonia'] = {
+            get_item_code(item='cloxacillin 500 mg, powder for injection_50_IDA'): lambda _age:
+            6 if (1/6 <= _age < 1/3) else (11 if (1/3 <= _age < 1) else (17 if (1 <= _age < 3) else 22)),
+            get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST'): lambda _age:
+            3 if (1/6 <= _age < 1/3) else (5 if (1/3 <= _age < 1) else (7 if (1 <= _age < 3) else 9)),
+            get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
+            get_item_code(item='Syringe, needle + swab'): 1
+        }
+
+        # First dose of antibiotic before referral -------------------
+
+        # Referral process in iCCM for severe pneumonia, and at health centres for HIV exposed/infected
+        self.consumables_used_in_hsi['First_dose_oral_amoxicillin_for_referral'] = {
+            get_item_code(item='Amoxycillin 250mg_1000_CMST'): lambda _age:
+            1 if (1/6 <= _age < 1) else (2 if (1 <= _age < 3) else 3)
+        }
+        # Referral process at health centres for severe cases
+        self.consumables_used_in_hsi['First_dose_IM_antibiotics_for_referral'] = {
+            get_item_code(item='Ampicillin injection 500mg, PFR_each_CMST'): lambda _age:
+            4 if (1/6 <= _age < 1/3) else (8 if (1/3 <= _age < 1) else (1 if (1 <= _age < 3) else 2)),
+            get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST'): lambda _age:
+            1 if (1/6 <= _age < 1/3) else (2 if (1/3 <= _age < 1) else (3 if (1 <= _age < 3) else 4)),
+            get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
+            get_item_code(item='Syringe, needle + swab'): 1
+        }
+
+        # Oxygen, pulse oximetry and x-ray -------------------
 
         # Oxygen for hypoxaemia
         self.consumables_used_in_hsi['Oxygen_Therapy'] = \
@@ -1027,14 +1125,27 @@ class Alri(Module):
         self.consumables_used_in_hsi['X_ray_scan'] = \
             [get_item_code(item='X-ray')]
 
-        # Treat wheeze
-        self.consumables_used_in_hsi['Brochodilator_and_Steroids'] = \
-            [get_item_code(item='Salbutamol sulphate 1mg/ml, 5ml_each_CMST')] + \
-            [get_item_code(item='Prednisolone 5mg_100_CMST')]
+        # Optional consumables -------------------
+
+        # Paracetamol
+        self.consumables_used_in_hsi['Paracetamol_tablet'] = {
+            get_item_code(item='Paracetamol, tablet, 100 mg'): lambda _age: 12 if (1/6 <= _age < 3) else 18
+        }
 
         # Maintenance of fluids via nasograstric tube
         self.consumables_used_in_hsi['Fluid_Maintenance'] = \
             [get_item_code(item='Tube, nasogastric CH 8_each_CMST')]
+
+        # Bronchodilator
+        # inhaled
+        self.consumables_used_in_hsi['Inhaled_Brochodilator'] = {
+            get_item_code(item='Salbutamol sulphate 1mg/ml, 5ml_each_CMST'): 2
+        }
+        # oral
+        self.consumables_used_in_hsi['Oral_Brochodilator'] = [
+            get_item_code(item='Salbutamol, syrup, 2 mg/5 ml'),
+            get_item_code(item='Salbutamol, tablet, 4 mg')
+        ]
 
     def end_episode(self, person_id):
         """End the episode infection for a person (i.e. reset all properties to show no current infection or
@@ -1313,14 +1424,20 @@ class Alri(Module):
 
         # Create shortcuts:
         df = self.sim.population.props
+        age = df.at[person_id, 'age_exact_years']
         schedule_hsi = \
             lambda _event: self.sim.modules['HealthSystem'].schedule_hsi_event(_event, priority=0,
                                                                                topen=self.sim.date, tclose=None)
+
         get_cons = \
-            lambda _item_str: hsi_event.get_consumables(item_codes=self.consumables_used_in_hsi[_item_str])
+            lambda _item_str: hsi_event.get_consumables(
+                item_codes={k: v(age) for k, v in self.consumables_used_in_hsi[_item_str].items()})
+
         get_any_cons = \
-            lambda _item_strs: any(hsi_event.get_consumables(item_codes=self.consumables_used_in_hsi[_item_strs],
-                                                             return_individual_results=True).values())
+            lambda _item_strs: any(hsi_event.get_consumables(
+                item_codes={k: v(age) for k, v in self.consumables_used_in_hsi[_item_strs].items()},
+                return_individual_results=True).values())
+
         do_treatment = \
             lambda _treatment_str: self.do_effects_of_alri_treatment(person_id=person_id,
                                                                      hsi_event=hsi_event, treatment=[_treatment_str])
@@ -1332,7 +1449,7 @@ class Alri(Module):
         # Define actions for each classification:
         def do_if_fast_breathing_pneumonia(facility_level):
             if facility_level == '0':
-                if get_cons('iCCM_Antibiotic_Therapy_for_pneumonia'):
+                if get_any_cons('Amoxicillin_tablet_or_suspension'):
                     do_treatment('5day_oral_amoxicillin')
                     logger.debug(key='message',
                                  data=f'ALRI_HSI_Event: treatment given for person {person_id} with '
@@ -1346,7 +1463,7 @@ class Alri(Module):
                     schedule_hsi(HSI_IMCI_Pneumonia_Treatment_Outpatient_level_1a(person_id=person_id, module=self))
 
             elif facility_level == '1a':
-                if get_any_cons('Amoxicillin_suspension_or_tablet'):
+                if get_any_cons('Amoxicillin_tablet_or_suspension'):
                     do_treatment('5day_oral_amoxicillin')
                     logger.debug(key='message',
                                  data=f'ALRI_HSI_Event: treatment GIVEN for person {person_id} with '
@@ -1360,7 +1477,7 @@ class Alri(Module):
                                       f'with ri_on_treatment property = {df.loc[person_id, "ri_on_treatment"]}')
 
             elif facility_level == '1b':
-                if get_any_cons('Amoxicillin_suspension_or_tablet'):
+                if get_any_cons('Amoxicillin_tablet_or_suspension'):
                     do_treatment('5day_oral_amoxicillin')
                     logger.debug(key='message',
                                  data=f'ALRI_HSI_Event: treatment GIVEN for person {person_id} with '
@@ -1374,7 +1491,7 @@ class Alri(Module):
                                       f'with ri_on_treatment property = {df.loc[person_id, "ri_on_treatment"]}')
 
             elif facility_level == '2':
-                if get_any_cons('Amoxicillin_suspension_or_tablet'):
+                if get_any_cons('Amoxicillin_tablet_or_suspension'):
                     do_treatment('5day_oral_amoxicillin')
                     logger.debug(key='message',
                                  data=f'ALRI_HSI_Event: treatment GIVEN for person {person_id} with '
@@ -1391,7 +1508,7 @@ class Alri(Module):
 
         def do_if_chest_indrawing_pneumonia(facility_level):
             if facility_level == '0':
-                get_cons('First_dose_antibiotic_for_referral_iCCM')
+                get_cons('First_dose_oral_amoxicillin_for_referral')
                 schedule_hsi(HSI_IMCI_Pneumonia_Treatment_Outpatient_level_1a(person_id=person_id, module=self))
                 logger.debug(key='message',
                              data=f'ALRI_HSI_Event: NO treatment for person {person_id} with '
@@ -1399,7 +1516,7 @@ class Alri(Module):
                                   f'with ri_on_treatment property = {df.loc[person_id, "ri_on_treatment"]}')
 
             elif facility_level == '1a':
-                if get_cons('Amoxicillin_suspension_or_tablet'):
+                if get_any_cons('Amoxicillin_tablet_or_suspension'):
                     do_treatment('5day_oral_amoxicillin')
                     logger.debug(key='message',
                                  data=f'ALRI_HSI_Event: treatment GIVEN for person {person_id} with '
@@ -1413,7 +1530,7 @@ class Alri(Module):
                                       f'with ri_on_treatment property = {df.loc[person_id, "ri_on_treatment"]}')
 
             elif facility_level == '1b':
-                if get_cons('Amoxicillin_suspension_or_tablet'):
+                if get_any_cons('Amoxicillin_tablet_or_suspension'):
                     do_treatment('5day_oral_amoxicillin')
                     logger.debug(key='message',
                                  data=f'ALRI_HSI_Event: treatment GIVEN for person {person_id} with '
@@ -1427,7 +1544,7 @@ class Alri(Module):
                                       f'with ri_on_treatment property = {df.loc[person_id, "ri_on_treatment"]}')
 
             elif facility_level == '2':
-                if get_any_cons('Amoxicillin_suspension_or_tablet'):
+                if get_any_cons('Amoxicillin_tablet_or_suspension'):
                     do_treatment('5day_oral_amoxicillin')
                     logger.debug(key='message',
                                  data=f'ALRI_HSI_Event: treatment GIVEN for person {person_id} with '
@@ -1451,7 +1568,7 @@ class Alri(Module):
                     get_cons('Brochodilator_and_Steroids')
 
             if facility_level == '0':
-                get_cons('First_dose_antibiotic_for_referral_iCCM')
+                get_cons('First_dose_oral_amoxicillin_for_referral')
                 logger.debug(key='message',
                              data=f'ALRI_HSI_Event: NO treatment for person {person_id} with '
                                   f'danger_signs_pneumonia {classification} at level (0) {facility_level} hsi {hsi_event} '
@@ -1459,7 +1576,7 @@ class Alri(Module):
                 schedule_hsi(HSI_IMCI_Pneumonia_Treatment_Inpatient_level_1b(person_id=person_id, module=self))
 
             elif facility_level == '1a':
-                get_cons('First_dose_antibiotic_for_referral_IMCI')
+                get_cons('First_dose_IM_antibiotics_for_referral')
                 logger.debug(key='message',
                              data=f'ALRI_HSI_Event: NO treatment for person {person_id} with '
                                   f'danger_signs_pneumonia {classification} at level (1a) {facility_level} hsi {hsi_event} '
