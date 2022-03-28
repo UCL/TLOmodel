@@ -608,7 +608,11 @@ class CareOfWomenDuringPregnancy(Module):
                       7: HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(self, person_id=individual_id),
                       8: HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(self, person_id=individual_id)}
 
-        visit = visit_dict[visit_to_be_scheduled]
+        if self.sim.modules['PregnancySupervisor'].current_parameters['anc_service_structure'] == 8:
+            visit = visit_dict[visit_to_be_scheduled]
+        else:
+            visit = HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(self, person_id=individual_id,
+                                                                   visit_number=visit_to_be_scheduled)
 
         def calculate_visit_date_and_schedule_visit(visit):
             # We subtract this womans current gestational age from the recommended gestational age for the next
@@ -2100,30 +2104,10 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
             # update the visit number for the event scheduling
             self.visit_number = self.visit_number + 1
 
-            if df.at[person_id, 'ps_anc4']:
-                weeks_due_next_visit = int(recommended_gestation_next_anc - df.at[person_id, 'ps_gestational_age_'
-                                                                                             'in_weeks'])
-
-                visit_date = self.sim.date + DateOffset(weeks=weeks_due_next_visit)
-                self.sim.modules['HealthSystem'].schedule_hsi_event(self,
-                                                                    priority=0,
-                                                                    topen=visit_date,
-                                                                    tclose=visit_date + DateOffset(days=7))
-
-                df.at[person_id, 'ac_date_next_contact'] = visit_date
-
-            else:
-                if self. module.rng.random_sample() < params['prob_anc_continues']:
-                    weeks_due_next_visit = int(
-                        recommended_gestation_next_anc - df.at[person_id, 'ps_gestational_age_in_weeks'])
-
-                    visit_date = self.sim.date + DateOffset(weeks=weeks_due_next_visit)
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(self,
-                                                                        priority=0,
-                                                                        topen=visit_date,
-                                                                        tclose=visit_date + DateOffset(days=7))
-
-                    df.at[person_id, 'ac_date_next_contact'] = visit_date
+            # schedule the next event
+            self.module.antenatal_care_scheduler(individual_id=person_id,
+                                                 visit_to_be_scheduled=self.visit_number,
+                                                 recommended_gestation_next_anc=recommended_gestation_next_anc)
 
         # If the woman has had any complications detected during ANC she is admitted for treatment to be initiated
         if df.at[person_id, 'ac_to_be_admitted']:

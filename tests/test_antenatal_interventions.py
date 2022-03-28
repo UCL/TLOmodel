@@ -183,7 +183,12 @@ def test_perfect_run_of_anc_contacts_no_constraints(seed):
 
     # ensure care seeking will continue for all ANC visits
     params = sim.modules['CareOfWomenDuringPregnancy'].current_parameters
-    params['prob_anc_continues'] = 1.0
+    params['prob_seek_anc2'] = 1.0
+    params['prob_seek_anc3'] = 1.0
+    params['prob_seek_anc5'] = 1.0
+    params['prob_seek_anc6'] = 1.0
+    params['prob_seek_anc7'] = 1.0
+    params['prob_seek_anc8'] = 1.0
 
     # Set parameters used to determine if HCW will deliver intervention (if consumables available) to 1
     params['prob_intervention_delivered_urine_ds'] = 1.0
@@ -424,7 +429,12 @@ def test_anc_contacts_that_should_not_run_wont_run(seed):
     mother_id = run_sim_for_0_days_get_mother_id(sim)
 
     params = sim.modules['CareOfWomenDuringPregnancy'].current_parameters
-    params['prob_anc_continues'] = 1.0
+    params['prob_seek_anc2'] = 1.0
+    params['prob_seek_anc3'] = 1.0
+    params['prob_seek_anc5'] = 1.0
+    params['prob_seek_anc6'] = 1.0
+    params['prob_seek_anc7'] = 1.0
+    params['prob_seek_anc8'] = 1.0
 
     # Set key pregnancy variables
     df = sim.population.props
@@ -554,7 +564,7 @@ def test_daisy_chain_care_seeking_logic_to_ensure_certain_number_of_contact(seed
     # For women who are not predetermined to attend at least 4 anc contact we use a probability to determine if they
     # will return for the next visit. Here we set that to 0 and check that no event has been sheduled
     params = sim.modules['CareOfWomenDuringPregnancy'].current_parameters
-    params['prob_anc_continues'] = 0.0
+    params['prob_seek_anc3'] = 0
 
     sim.modules['CareOfWomenDuringPregnancy'].antenatal_care_scheduler(individual_id=updated_mother_id,
                                                                        visit_to_be_scheduled=3,
@@ -1106,7 +1116,11 @@ def test_focused_anc_scheduling(seed):
 
     # ensure care seeking will continue for all ANC visits
     params = sim.modules['CareOfWomenDuringPregnancy'].current_parameters
-    params['prob_anc_continues'] = 1.0
+    params['prob_seek_anc2'] = 1.0
+    params['prob_seek_anc3'] = 1.0
+
+    params_ps = sim.modules['PregnancySupervisor'].current_parameters
+    params_ps['anc_service_structure'] = 4
 
     # Register the anc HSI and apply
     focused_anc = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(
@@ -1156,3 +1170,4 @@ def test_focused_anc_scheduling(seed):
     hsi_events = health_system.find_events_for_person(person_id=updated_mother_id)
     hsi_events_class_list = [e.__class__ for d, e in hsi_events]
     assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FocusedANCVisit not in hsi_events_class_list
+test_focused_anc_scheduling(1)
