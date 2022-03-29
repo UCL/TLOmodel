@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from matplotlib import pyplot as plt
 import numpy as np
+from matplotlib import pyplot as plt
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import compare_number_of_deaths, parse_log_file
