@@ -24,9 +24,9 @@ class TestScenario(BaseScenario):
         super().__init__()
         self.seed = randint(0, 5000)
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2035, 1, 1)
+        self.end_date = Date(2036, 1, 1)
         self.pop_size = 250_000
-        self.number_of_draws = 1
+        self.number_of_draws = 4
         self.runs_per_draw = 3
 
     def log_configuration(self):
@@ -69,7 +69,7 @@ class TestScenario(BaseScenario):
         return {
             'Tb': {
                 'scenario': 0,
-                'transmission_rate': 16.71012,
+                'transmission_rate': [16.71012, 17.71012, 18.71012, 19.71012][draw_number],
             },
         }
 
