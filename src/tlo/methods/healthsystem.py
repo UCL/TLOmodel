@@ -189,11 +189,12 @@ class HSI_Event:
 
             elif isinstance(item_codes, dict):
                 if not all(
-                    [(isinstance(code, (int, np.integer)) and isinstance(quantity, (int, np.integer)))
+                    [(isinstance(code, (int, np.integer)) and
+                      isinstance(quantity, (float, np.floating, int, np.integer)))
                      for code, quantity in item_codes.items()]
                 ):
-                    raise ValueError("item_codes must be integers and quantities must be integers.")
-                return {int(i): int(q) for i, q in item_codes.items()}
+                    raise ValueError("item_codes must be integers and quantities must be integers or floats.")
+                return {int(i): float(q) for i, q in item_codes.items()}
 
             else:
                 raise ValueError("The item_codes are given in an unrecognised format")
