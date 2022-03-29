@@ -59,7 +59,7 @@ sim.register(
 
 # create and run the simulation
 sim.make_initial_population(n=pop_size)
-
+sim.simulate(end_date=end_date)
 # parse the simulation logfile to get the output dataframes
 log_df = parse_log_file(sim.log_filepath)
 
