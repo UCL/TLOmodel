@@ -1517,6 +1517,10 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             footprint=event.BEDDAYS_FOOTPRINT
                         )
 
+                    # Check that a facility has been assigned to this HSI before it is run.
+                    assert event.facility_info is not None, \
+                        f"Cannot run HSI {event.TREATMENT_ID} without facility_info being defined."
+
                     # Run the HSI event (allowing it to return an updated appt_footprint)
                     actual_appt_footprint = event.run(squeeze_factor=squeeze_factor)
 
