@@ -505,49 +505,34 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
 
-        n_alive = df.is_alive.sum()
-        n_antiepilep_seiz_stat_0 = (df.is_alive & (df.ep_seiz_stat == '0') & df.ep_antiep).sum()
-        n_antiepilep_seiz_stat_1 = (df.is_alive & (df.ep_seiz_stat == '1') & df.ep_antiep).sum()
-        n_antiepilep_seiz_stat_2 = (df.is_alive & (df.ep_seiz_stat == '2') & df.ep_antiep).sum()
-        n_antiepilep_seiz_stat_3 = (df.is_alive & (df.ep_seiz_stat == '3') & df.ep_antiep).sum()
+        status_groups = df.groupby('ep_seiz_stat').sum()
 
-        n_seiz_stat_0 = (df.is_alive & (df.ep_seiz_stat == '0')).sum()
-        n_seiz_stat_1 = (df.is_alive & (df.ep_seiz_stat == '1')).sum()
-        n_seiz_stat_2 = (df.is_alive & (df.ep_seiz_stat == '2')).sum()
-        n_seiz_stat_3 = (df.is_alive & (df.ep_seiz_stat == '3')).sum()
-
-        n_seiz_stat_1_3 = n_seiz_stat_1 + n_seiz_stat_2 + n_seiz_stat_3
-        n_seiz_stat_2_3 = n_seiz_stat_2 + n_seiz_stat_3
+        n_seiz_stat_1_3 = sum(status_groups.iloc[1:].is_alive)
+        n_seiz_stat_2_3 = sum(status_groups.iloc[2:].is_alive)
 
         n_antiep = (df.is_alive & df.ep_antiep).sum()
 
         n_epi_death = df.ep_epi_death.sum()
 
-        prop_seiz_stat_0 = n_seiz_stat_0 / n_alive if n_alive > 0 else 0
-        prop_seiz_stat_1 = n_seiz_stat_1 / n_alive if n_alive > 0 else 0
-        prop_seiz_stat_2 = n_seiz_stat_2 / n_alive if n_alive > 0 else 0
-        prop_seiz_stat_3 = n_seiz_stat_3 / n_alive if n_alive > 0 else 0
+        status_groups['prop_seiz_stats'] = status_groups.is_alive / sum(status_groups.is_alive)
 
-        prop_antiepilep_seiz_stat_0 = n_antiepilep_seiz_stat_0 / n_seiz_stat_0 if n_seiz_stat_0 > 0 else 0
-        prop_antiepilep_seiz_stat_1 = n_antiepilep_seiz_stat_1 / n_seiz_stat_1 if n_seiz_stat_1 > 0 else 0
-        prop_antiepilep_seiz_stat_2 = n_antiepilep_seiz_stat_2 / n_seiz_stat_2 if n_seiz_stat_2 > 0 else 0
-        prop_antiepilep_seiz_stat_3 = n_antiepilep_seiz_stat_3 / n_seiz_stat_3 if n_seiz_stat_3 > 0 else 0
-
+        status_groups['prop_seiz_stat_on_anti_ep'] = status_groups['ep_antiep'] / status_groups.is_alive
+        status_groups['prop_seiz_stat_on_anti_ep'] = status_groups['prop_seiz_stat_on_anti_ep'].fillna(0)
         epi_death_rate = \
-            (n_epi_death * 4 * 1000) / (n_seiz_stat_2 + n_seiz_stat_3) if n_seiz_stat_2 + n_seiz_stat_3 > 0 else 0
+            (n_epi_death * 4 * 1000) / n_seiz_stat_2_3 if n_seiz_stat_2_3 > 0 else 0
 
         cum_deaths = (~df.is_alive).sum()
 
         logger.info(key='epilepsy_logging',
                     data={
-                        'prop_seiz_stat_0': prop_seiz_stat_0,
-                        'prop_seiz_stat_1': prop_seiz_stat_1,
-                        'prop_seiz_stat_2': prop_seiz_stat_2,
-                        'prop_seiz_stat_3': prop_seiz_stat_3,
-                        'prop_antiepilep_seiz_stat_0': prop_antiepilep_seiz_stat_0,
-                        'prop_antiepilep_seiz_stat_1': prop_antiepilep_seiz_stat_1,
-                        'prop_antiepilep_seiz_stat_2': prop_antiepilep_seiz_stat_2,
-                        'prop_antiepilep_seiz_stat_3': prop_antiepilep_seiz_stat_3,
+                        'prop_seiz_stat_0': status_groups['prop_seiz_stats'].iloc[0],
+                        'prop_seiz_stat_1': status_groups['prop_seiz_stats'].iloc[1],
+                        'prop_seiz_stat_2': status_groups['prop_seiz_stats'].iloc[2],
+                        'prop_seiz_stat_3': status_groups['prop_seiz_stats'].iloc[3],
+                        'prop_antiepilep_seiz_stat_0': status_groups['prop_seiz_stat_on_anti_ep'].iloc[0],
+                        'prop_antiepilep_seiz_stat_1': status_groups['prop_seiz_stat_on_anti_ep'].iloc[1],
+                        'prop_antiepilep_seiz_stat_2': status_groups['prop_seiz_stat_on_anti_ep'].iloc[2],
+                        'prop_antiepilep_seiz_stat_3': status_groups['prop_seiz_stat_on_anti_ep'].iloc[3],
                         'n_epi_death': n_epi_death,
                         'cum_deaths': cum_deaths,
                         'epi_death_rate': epi_death_rate,
