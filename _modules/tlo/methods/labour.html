@@ -3103,9 +3103,14 @@
         <span class="c1"># We apply a probability to women who have not already been allocated to undergo assisted/caesarean delivery</span>
         <span class="c1"># that they will require assisted/caesarean delivery to capture indications which are not explicitly modelled</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;referred_for_cs&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;mode_of_delivery&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;instrumental&#39;</span><span class="p">):</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;residual_prob_caesarean&#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ps_multiple_pregnancy&#39;</span><span class="p">]:</span>
+                <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;referred_for_cs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;cs_indication&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;twins&#39;</span>
+
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;residual_prob_caesarean&#39;</span><span class="p">]:</span>
                 <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;referred_for_cs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
                 <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;cs_indication&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;other&#39;</span>
+
             <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;residual_prob_avd&#39;</span><span class="p">]:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">assessment_for_assisted_vaginal_delivery</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">for_spe</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
@@ -3412,7 +3417,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Mar 25, 2022.
+        Last updated on Mar 30, 2022.
       </span>
 
     </p>

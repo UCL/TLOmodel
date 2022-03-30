@@ -217,107 +217,127 @@ interventions are stored as functions within the module to prevent repetition.</
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>prob_anc_continues</p></td>
+<tr class="row-even"><td><p>prob_seek_anc2</p></td>
 <td><p>LIST</p></td>
-<td><p>probability a woman will return for a subsequent ANC appointment</p></td>
+<td><p>Probability a women who is not predicted to attended four or more ANC visits will attend ANC2</p></td>
 </tr>
-<tr class="row-odd"><td><p>effect_of_ifa_for_resolving_anaemia</p></td>
+<tr class="row-odd"><td><p>prob_seek_anc3</p></td>
+<td><p>LIST</p></td>
+<td><p>Probability a women who is not predicted to attended four or more ANC visits will attend ANC3</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_seek_anc5</p></td>
+<td><p>LIST</p></td>
+<td><p>Probability a women who is predicted to attend four or more ANC visits will attend ANC5</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_seek_anc6</p></td>
+<td><p>LIST</p></td>
+<td><p>Probability a women who is predicted to attend four or more ANC visits will attend ANC6</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_seek_anc7</p></td>
+<td><p>LIST</p></td>
+<td><p>Probability a women who is predicted to attend four or more ANC visits will attend ANC7</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_seek_anc8</p></td>
+<td><p>LIST</p></td>
+<td><p>Probability a women who is predicted to attend four or more ANC visits will attend ANC8</p></td>
+</tr>
+<tr class="row-even"><td><p>effect_of_ifa_for_resolving_anaemia</p></td>
 <td><p>LIST</p></td>
 <td><p>treatment effectiveness of starting iron and folic acid on resolving anaemia</p></td>
 </tr>
-<tr class="row-even"><td><p>treatment_effect_blood_transfusion_anaemia</p></td>
+<tr class="row-odd"><td><p>treatment_effect_blood_transfusion_anaemia</p></td>
 <td><p>LIST</p></td>
 <td><p>treatment effectiveness of blood transfusion for anaemia in pregnancy</p></td>
 </tr>
-<tr class="row-odd"><td><p>squeeze_factor_threshold_anc</p></td>
+<tr class="row-even"><td><p>squeeze_factor_threshold_anc</p></td>
 <td><p>LIST</p></td>
 <td><p>squeeze factor threshold over which an ANC appointment cannot run</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_intervention_delivered_urine_ds</p></td>
+<tr class="row-odd"><td><p>prob_intervention_delivered_urine_ds</p></td>
 <td><p>LIST</p></td>
 <td><p>probability a woman will receive the intervention “urine dipstick” given that the HSI has ran and the consumables are available (proxy for clinical quality)</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_intervention_delivered_bp</p></td>
+<tr class="row-even"><td><p>prob_intervention_delivered_bp</p></td>
 <td><p>LIST</p></td>
 <td><p>probability a woman will receive the intervention “blood pressure measurement” given that the HSI has ran and the consumables are available (proxy for clinical quality)</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_intervention_delivered_ifa</p></td>
+<tr class="row-odd"><td><p>prob_intervention_delivered_ifa</p></td>
 <td><p>LIST</p></td>
 <td><p>probability a woman will receive the intervention “iron and folic acid” given that the HSI has ran and the consumables are available (proxy for clinical quality)</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_adherent_ifa</p></td>
+<tr class="row-even"><td><p>prob_adherent_ifa</p></td>
 <td><p>LIST</p></td>
 <td><p>probability a woman who is given iron and folic acid will adhere to the treatment for their pregnancy</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_intervention_delivered_poct</p></td>
+<tr class="row-odd"><td><p>prob_intervention_delivered_poct</p></td>
 <td><p>LIST</p></td>
 <td><p>probability a woman will receive the intervention “point of care Hb testing” given that the HSI has ran and the consumables are available (proxy for clinical quality)</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_intervention_delivered_syph_test</p></td>
+<tr class="row-even"><td><p>prob_intervention_delivered_syph_test</p></td>
 <td><p>LIST</p></td>
 <td><p>probability a woman will receive the intervention “Syphilis test” given that the HSI has ran and the consumables are available (proxy for clinical quality)</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_intervention_delivered_gdm_test</p></td>
+<tr class="row-odd"><td><p>prob_intervention_delivered_gdm_test</p></td>
 <td><p>LIST</p></td>
 <td><p>probability a woman will receive the intervention “GDM screening” given that the HSI has ran and the consumables are available (proxy for clinical quality)</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_delivery_modes_ec</p></td>
+<tr class="row-even"><td><p>prob_delivery_modes_ec</p></td>
 <td><p>LIST</p></td>
 <td><p>probabilities that a woman admitted with eclampsia will deliver normally, via caesarean or via assisted vaginal delivery</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_delivery_modes_spe</p></td>
+<tr class="row-odd"><td><p>prob_delivery_modes_spe</p></td>
 <td><p>LIST</p></td>
 <td><p>probabilities that a woman admitted with severe pre-eclampsia will deliver normally, via caesarean or via assisted vaginal delivery</p></td>
 </tr>
-<tr class="row-odd"><td><p>sensitivity_bp_monitoring</p></td>
+<tr class="row-even"><td><p>sensitivity_bp_monitoring</p></td>
 <td><p>LIST</p></td>
 <td><p>sensitivity of blood pressure monitoring to detect hypertension</p></td>
 </tr>
-<tr class="row-even"><td><p>specificity_bp_monitoring</p></td>
+<tr class="row-odd"><td><p>specificity_bp_monitoring</p></td>
 <td><p>LIST</p></td>
 <td><p>specificity of blood pressure monitoring to detect hypertension</p></td>
 </tr>
-<tr class="row-odd"><td><p>sensitivity_urine_protein_1_plus</p></td>
+<tr class="row-even"><td><p>sensitivity_urine_protein_1_plus</p></td>
 <td><p>LIST</p></td>
 <td><p>sensitivity of a urine dipstick test to detect proteinuria at 1+</p></td>
 </tr>
-<tr class="row-even"><td><p>specificity_urine_protein_1_plus</p></td>
+<tr class="row-odd"><td><p>specificity_urine_protein_1_plus</p></td>
 <td><p>LIST</p></td>
 <td><p>specificity of a urine dipstick test to detect proteinuria at 1+</p></td>
 </tr>
-<tr class="row-odd"><td><p>sensitivity_poc_hb_test</p></td>
+<tr class="row-even"><td><p>sensitivity_poc_hb_test</p></td>
 <td><p>LIST</p></td>
 <td><p>sensitivity of a point of care Hb test to detect anaemia</p></td>
 </tr>
-<tr class="row-even"><td><p>specificity_poc_hb_test</p></td>
+<tr class="row-odd"><td><p>specificity_poc_hb_test</p></td>
 <td><p>LIST</p></td>
 <td><p>specificity of a point of care Hb test to detect anaemia</p></td>
 </tr>
-<tr class="row-odd"><td><p>sensitivity_fbc_hb_test</p></td>
+<tr class="row-even"><td><p>sensitivity_fbc_hb_test</p></td>
 <td><p>LIST</p></td>
 <td><p>sensitivity of a Full Blood Count test to detect anaemia</p></td>
 </tr>
-<tr class="row-even"><td><p>specificity_fbc_hb_test</p></td>
+<tr class="row-odd"><td><p>specificity_fbc_hb_test</p></td>
 <td><p>LIST</p></td>
 <td><p>specificity of a Full Blood Count test to detect anaemia</p></td>
 </tr>
-<tr class="row-odd"><td><p>sensitivity_blood_test_glucose</p></td>
+<tr class="row-even"><td><p>sensitivity_blood_test_glucose</p></td>
 <td><p>LIST</p></td>
 <td><p>sensitivity of a blood test to detect raised blood glucose</p></td>
 </tr>
-<tr class="row-even"><td><p>specificity_blood_test_glucose</p></td>
+<tr class="row-odd"><td><p>specificity_blood_test_glucose</p></td>
 <td><p>LIST</p></td>
 <td><p>specificity of a blood test to detect raised blood glucose</p></td>
 </tr>
-<tr class="row-odd"><td><p>sensitivity_blood_test_syphilis</p></td>
+<tr class="row-even"><td><p>sensitivity_blood_test_syphilis</p></td>
 <td><p>LIST</p></td>
 <td><p>sensitivity of a blood test to detect syphilis</p></td>
 </tr>
-<tr class="row-even"><td><p>specificity_blood_test_syphilis</p></td>
+<tr class="row-odd"><td><p>specificity_blood_test_syphilis</p></td>
 <td><p>LIST</p></td>
 <td><p>specificity of a blood test to detect syphilis</p></td>
 </tr>
-<tr class="row-odd"><td><p>squeeze_threshold_for_delay_three_an</p></td>
+<tr class="row-even"><td><p>squeeze_threshold_for_delay_three_an</p></td>
 <td><p>LIST</p></td>
 <td><p>squeeze factor value over which an individual within a antenatal HSI is said to experience type 3 delay i.e. delay in receiving appropriate care</p></td>
 </tr>
@@ -396,8 +416,8 @@ interventions are stored as functions within the module to prevent repetition.</
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘Lifestyle’, ‘Labour’, ‘Contraception’}</p>
-<p>INIT_DEPENDENCIES : {‘PregnancySupervisor’, ‘Demography’, ‘HealthSystem’}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘Contraception’, ‘Labour’, ‘Lifestyle’}</p>
+<p>INIT_DEPENDENCIES : {‘PregnancySupervisor’, ‘HealthSystem’, ‘Demography’}</p>
 <p>METADATA : {&lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
 <p><strong>Functions (defined or overridden in class CareOfWomenDuringPregnancy):</strong></p>
 <dl class="py method">
@@ -1572,7 +1592,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Mar 25, 2022.
+        Last updated on Mar 30, 2022.
       </span>
 
     </p>

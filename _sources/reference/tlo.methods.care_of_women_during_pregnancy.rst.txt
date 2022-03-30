@@ -18,9 +18,24 @@ tlo.methods.care_of_women_during_pregnancy module
         * - Item
           - Type
           - Description
-        * - prob_anc_continues
+        * - prob_seek_anc2
           - LIST
-          - probability a woman will return for a subsequent ANC appointment
+          - Probability a women who is not predicted to attended four or more ANC visits will attend ANC2
+        * - prob_seek_anc3
+          - LIST
+          - Probability a women who is not predicted to attended four or more ANC visits will attend ANC3
+        * - prob_seek_anc5
+          - LIST
+          - Probability a women who is predicted to attend four or more ANC visits will attend ANC5
+        * - prob_seek_anc6
+          - LIST
+          - Probability a women who is predicted to attend four or more ANC visits will attend ANC6
+        * - prob_seek_anc7
+          - LIST
+          - Probability a women who is predicted to attend four or more ANC visits will attend ANC7
+        * - prob_seek_anc8
+          - LIST
+          - Probability a women who is predicted to attend four or more ANC visits will attend ANC8
         * - effect_of_ifa_for_resolving_anaemia
           - LIST
           - treatment effectiveness of starting iron and folic acid on resolving anaemia
@@ -154,9 +169,9 @@ tlo.methods.care_of_women_during_pregnancy module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'Lifestyle', 'Labour', 'Contraception'}
+     ADDITIONAL_DEPENDENCIES : {'Contraception', 'Labour', 'Lifestyle'}
 
-     INIT_DEPENDENCIES : {'PregnancySupervisor', 'Demography', 'HealthSystem'}
+     INIT_DEPENDENCIES : {'PregnancySupervisor', 'HealthSystem', 'Demography'}
 
      METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>}
 

@@ -238,8 +238,20 @@
         <span class="c1"># n.b. Parameters are stored as LIST variables due to containing values to match both 2010 and 2015 data.</span>
 
         <span class="c1"># CARE SEEKING...</span>
-        <span class="s1">&#39;prob_anc_continues&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
-            <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;probability a woman will return for a subsequent ANC appointment&#39;</span><span class="p">),</span>
+        <span class="s1">&#39;prob_seek_anc2&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;Probability a women who is not predicted to attended four or more ANC visits will attend &#39;</span>
+                        <span class="s1">&#39;ANC2&#39;</span><span class="p">),</span>
+        <span class="s1">&#39;prob_seek_anc3&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;Probability a women who is not predicted to attended four or more ANC visits will attend &#39;</span>
+                        <span class="s1">&#39;ANC3&#39;</span><span class="p">),</span>
+        <span class="s1">&#39;prob_seek_anc5&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;Probability a women who is predicted to attend four or more ANC visits will attend ANC5&#39;</span><span class="p">),</span>
+        <span class="s1">&#39;prob_seek_anc6&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;Probability a women who is predicted to attend four or more ANC visits will attend ANC6&#39;</span><span class="p">),</span>
+        <span class="s1">&#39;prob_seek_anc7&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;Probability a women who is predicted to attend four or more ANC visits will attend ANC7&#39;</span><span class="p">),</span>
+        <span class="s1">&#39;prob_seek_anc8&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;Probability a women who is predicted to attend four or more ANC visits will attend ANC8&#39;</span><span class="p">),</span>
 
         <span class="c1"># TREATMENT EFFECTS...</span>
         <span class="s1">&#39;effect_of_ifa_for_resolving_anaemia&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
@@ -767,7 +779,11 @@
                       <span class="mi">7</span><span class="p">:</span> <span class="n">HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">individual_id</span><span class="p">),</span>
                       <span class="mi">8</span><span class="p">:</span> <span class="n">HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">individual_id</span><span class="p">)}</span>
 
-        <span class="n">visit</span> <span class="o">=</span> <span class="n">visit_dict</span><span class="p">[</span><span class="n">visit_to_be_scheduled</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;PregnancySupervisor&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">current_parameters</span><span class="p">[</span><span class="s1">&#39;anc_service_structure&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">8</span><span class="p">:</span>
+            <span class="n">visit</span> <span class="o">=</span> <span class="n">visit_dict</span><span class="p">[</span><span class="n">visit_to_be_scheduled</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">visit</span> <span class="o">=</span> <span class="n">HSI_CareOfWomenDuringPregnancy_FocusedANCVisit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">individual_id</span><span class="p">,</span>
+                                                                   <span class="n">visit_number</span><span class="o">=</span><span class="n">visit_to_be_scheduled</span><span class="p">)</span>
 
         <span class="k">def</span> <span class="nf">calculate_visit_date_and_schedule_visit</span><span class="p">(</span><span class="n">visit</span><span class="p">):</span>
             <span class="c1"># We subtract this womans current gestational age from the recommended gestational age for the next</span>
@@ -788,20 +804,11 @@
         <span class="c1"># If this woman has attended less than 4 visits, and is predicted to attend &gt; 4 (as determined via the</span>
         <span class="c1"># PregnancySupervisor module when ANC1 is scheduled) her subsequent ANC appointment is automatically</span>
         <span class="c1"># scheduled</span>
-        <span class="k">if</span> <span class="n">visit_to_be_scheduled</span> <span class="o">&lt;=</span> <span class="mi">4</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">individual_id</span><span class="p">,</span> <span class="s1">&#39;ps_anc4&#39;</span><span class="p">]:</span>
-                <span class="n">calculate_visit_date_and_schedule_visit</span><span class="p">(</span><span class="n">visit</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># If she is not predicted to attend 4 or more visits, we use a probability to determine if she will</span>
-                <span class="c1"># seek care for her next contact</span>
-                <span class="c1"># If so, the HSI is scheduled in the same way</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_anc_continues&#39;</span><span class="p">]:</span>
-                    <span class="n">calculate_visit_date_and_schedule_visit</span><span class="p">(</span><span class="n">visit</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">visit_to_be_scheduled</span> <span class="o">&lt;=</span> <span class="mi">4</span><span class="p">)</span> <span class="ow">and</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">individual_id</span><span class="p">,</span> <span class="s1">&#39;ps_anc4&#39;</span><span class="p">]:</span>
+            <span class="n">calculate_visit_date_and_schedule_visit</span><span class="p">(</span><span class="n">visit</span><span class="p">)</span>
 
-        <span class="k">elif</span> <span class="n">visit_to_be_scheduled</span> <span class="o">&gt;</span> <span class="mi">4</span><span class="p">:</span>
-            <span class="c1"># After 4 or more visits we use this probability to determine if the woman will seek care for</span>
-            <span class="c1"># her next contact</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_anc_continues&#39;</span><span class="p">]:</span>
+        <span class="k">elif</span> <span class="p">((</span><span class="n">visit_to_be_scheduled</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">individual_id</span><span class="p">,</span> <span class="s1">&#39;ps_anc4&#39;</span><span class="p">])</span> <span class="ow">or</span> <span class="p">(</span><span class="n">visit_to_be_scheduled</span> <span class="o">&gt;</span> <span class="mi">4</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">params</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;prob_seek_anc</span><span class="si">{</span><span class="n">visit_to_be_scheduled</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]:</span>
                 <span class="n">calculate_visit_date_and_schedule_visit</span><span class="p">(</span><span class="n">visit</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="CareOfWomenDuringPregnancy.schedule_admission"><a class="viewcode-back" href="../../../reference/tlo.methods.care_of_women_during_pregnancy.html#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.schedule_admission">[docs]</a>    <span class="k">def</span> <span class="nf">schedule_admission</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individual_id</span><span class="p">):</span>
@@ -2268,30 +2275,10 @@
             <span class="c1"># update the visit number for the event scheduling</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">visit_number</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit_number</span> <span class="o">+</span> <span class="mi">1</span>
 
-            <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ps_anc4&#39;</span><span class="p">]:</span>
-                <span class="n">weeks_due_next_visit</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">recommended_gestation_next_anc</span> <span class="o">-</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ps_gestational_age_&#39;</span>
-                                                                                             <span class="s1">&#39;in_weeks&#39;</span><span class="p">])</span>
-
-                <span class="n">visit_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">weeks</span><span class="o">=</span><span class="n">weeks_due_next_visit</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                                                                    <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                                                                    <span class="n">topen</span><span class="o">=</span><span class="n">visit_date</span><span class="p">,</span>
-                                                                    <span class="n">tclose</span><span class="o">=</span><span class="n">visit_date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">7</span><span class="p">))</span>
-
-                <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ac_date_next_contact&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">visit_date</span>
-
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span> <span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_anc_continues&#39;</span><span class="p">]:</span>
-                    <span class="n">weeks_due_next_visit</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
-                        <span class="n">recommended_gestation_next_anc</span> <span class="o">-</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ps_gestational_age_in_weeks&#39;</span><span class="p">])</span>
-
-                    <span class="n">visit_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">weeks</span><span class="o">=</span><span class="n">weeks_due_next_visit</span><span class="p">)</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                                                                        <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                                                                        <span class="n">topen</span><span class="o">=</span><span class="n">visit_date</span><span class="p">,</span>
-                                                                        <span class="n">tclose</span><span class="o">=</span><span class="n">visit_date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">7</span><span class="p">))</span>
-
-                    <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ac_date_next_contact&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">visit_date</span>
+            <span class="c1"># schedule the next event</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">antenatal_care_scheduler</span><span class="p">(</span><span class="n">individual_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
+                                                 <span class="n">visit_to_be_scheduled</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">visit_number</span><span class="p">,</span>
+                                                 <span class="n">recommended_gestation_next_anc</span><span class="o">=</span><span class="n">recommended_gestation_next_anc</span><span class="p">)</span>
 
         <span class="c1"># If the woman has had any complications detected during ANC she is admitted for treatment to be initiated</span>
         <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ac_to_be_admitted&#39;</span><span class="p">]:</span>
@@ -2920,7 +2907,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Mar 25, 2022.
+        Last updated on Mar 30, 2022.
       </span>
 
     </p>

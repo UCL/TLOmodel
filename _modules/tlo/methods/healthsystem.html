@@ -360,11 +360,12 @@
 
             <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item_codes</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span>
-                    <span class="p">[(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">))</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">quantity</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">)))</span>
+                    <span class="p">[(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">))</span> <span class="ow">and</span>
+                      <span class="nb">isinstance</span><span class="p">(</span><span class="n">quantity</span><span class="p">,</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">)))</span>
                      <span class="k">for</span> <span class="n">code</span><span class="p">,</span> <span class="n">quantity</span> <span class="ow">in</span> <span class="n">item_codes</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span>
                 <span class="p">):</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;item_codes must be integers and quantities must be integers.&quot;</span><span class="p">)</span>
-                <span class="k">return</span> <span class="p">{</span><span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="p">):</span> <span class="nb">int</span><span class="p">(</span><span class="n">q</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">item_codes</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;item_codes must be integers and quantities must be integers or floats.&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="p">{</span><span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="p">):</span> <span class="nb">float</span><span class="p">(</span><span class="n">q</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">item_codes</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
 
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The item_codes are given in an unrecognised format&quot;</span><span class="p">)</span>
@@ -1501,7 +1502,14 @@
 
 <div class="viewcode-block" id="HealthSystem.get_item_code_from_item_name"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_item_code_from_item_name">[docs]</a>    <span class="k">def</span> <span class="nf">get_item_code_from_item_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Helper function to provide the item_code (an int) when provided with the name of the item&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;item_and_package_code_lookups&#39;</span><span class="p">],</span> <span class="n">item</span><span class="p">)</span></div></div>
+        <span class="k">return</span> <span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;item_and_package_code_lookups&#39;</span><span class="p">],</span> <span class="n">item</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="HealthSystem.override_availability_of_consumables"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.override_availability_of_consumables">[docs]</a>    <span class="k">def</span> <span class="nf">override_availability_of_consumables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_codes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Over-ride the availability (for all months and all facilities) of certain consumables item_codes.</span>
+<span class="sd">        :param item_codes: Dictionary of the form {&lt;item_code&gt;: probability_that_item_is_available}</span>
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">consumables</span><span class="o">.</span><span class="n">override_availability</span><span class="p">(</span><span class="n">item_codes</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="HealthSystemScheduler"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemScheduler">[docs]</a><span class="k">class</span> <span class="nc">HealthSystemScheduler</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
@@ -1764,7 +1772,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Mar 25, 2022.
+        Last updated on Mar 30, 2022.
       </span>
 
     </p>
