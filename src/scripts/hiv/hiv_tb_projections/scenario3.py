@@ -16,8 +16,9 @@ tlo batch-submit src/scripts/hiv/hiv_tb_projections/scenario3.py
 Display information about a job:
 tlo batch-job tlo_q1_demo-123 --tasks
 
-21st Feb
-Job ID: baseline_runs-2022-02-21T171625Z
+21st March
+Job ID: scenario3-2022-03-21T150152Z
+
 
 Download result files for a completed job:
 tlo batch-download scenario3-2022-03-07T185637Z
@@ -50,8 +51,8 @@ class TestScenario(BaseScenario):
         self.seed = randint(0, 5000)
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2035, 1, 1)
-        self.pop_size = 40000
-        self.number_of_draws = 1
+        self.pop_size = 500000
+        self.number_of_draws = 5
         self.runs_per_draw = 5
 
     def log_configuration(self):
@@ -63,7 +64,7 @@ class TestScenario(BaseScenario):
                 "tlo.methods.hiv": logging.INFO,
                 "tlo.methods.tb": logging.INFO,
                 "tlo.methods.demography": logging.INFO,
-                "tlo.methods.healthsystem": logging.INFO,
+                "tlo.methods.healthsystem.summary": logging.INFO,
             },
         }
 
@@ -95,6 +96,10 @@ class TestScenario(BaseScenario):
         return {
             'Tb': {
                 'scenario': 3,
+                'transmission_rate': [16.7, 18.0, 15.8, 19.2, 15.4][draw_number]
+            },
+            'Hiv': {
+                'beta': [0.125, 0.121, 0.109, 0.116, 0.133][draw_number]
             },
         }
 

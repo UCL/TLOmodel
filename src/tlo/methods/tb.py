@@ -18,6 +18,10 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
 
+from tlo.methods.consumables import (
+    Consumables
+)
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -465,14 +469,14 @@ class Tb(Module):
             ].get_daly_weight(1)
 
             # HIV-positive
-            # Drug-susceptible Tuberculosis, HIV infected and anemia, moderate
-            self.daly_wts["daly_tb_hiv_anaemia"] = self.sim.modules[
+            # Drug-susceptible Tuberculosis, HIV infected without anaemia
+            self.daly_wts["daly_tb_hiv"] = self.sim.modules[
                 "HealthBurden"
-            ].get_daly_weight(5)
+            ].get_daly_weight(7)
             # Multi-drug resistant Tuberculosis, HIV infected and anemia, moderate
-            self.daly_wts["daly_mdr_tb_hiv_anaemia"] = self.sim.modules[
+            self.daly_wts["daly_mdr_tb_hiv"] = self.sim.modules[
                 "HealthBurden"
-            ].get_daly_weight(10)
+            ].get_daly_weight(9)
 
         # 3) Declare the Symptoms
         # additional healthcare-seeking behaviour with these symptoms
@@ -1195,13 +1199,13 @@ class Tb(Module):
             & (df_tmp.tb_inf == "active")
             & (df_tmp.tb_strain == "ds")
             & df_tmp.hv_inf
-        ] = self.daly_wts["daly_tb_hiv_anaemia"]
+        ] = self.daly_wts["daly_tb_hiv"]
         health_values.loc[
             df_tmp.is_alive
             & (df_tmp.tb_inf == "active")
             & (df_tmp.tb_strain == "mdr")
             & df_tmp.hv_inf
-        ] = self.daly_wts["daly_mdr_tb_hiv_anaemia"]
+        ] = self.daly_wts["daly_mdr_tb_hiv"]
 
         health_values.name = "TB"  # label the cause of this disability
 
@@ -1293,22 +1297,27 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             p["first_line_test"] = "xpert"
             p["second_line_test"] = "sputum"
 
-        # health system constraints
+        # reduce program coverage and health system constraints set to default
         if scenario == 2:
 
-            # set consumables availability to 0.6 for all required cons in hiv/tb modules
-            hiv_item_codes = set()
-            for f in self.sim.modules['Hiv'].item_codes_for_consumables_required.values():
-                hiv_item_codes = hiv_item_codes.union(f.keys())
-            self.sim.modules["HealthSystem"].prob_item_codes_available.loc[hiv_item_codes] = 0.75
+            # HIV
+            # testing rates
+            self.sim.modules["Hiv"].parameters["hiv_testing_rates"]["annual_testing_rate_children"] = 0.02
+            self.sim.modules["Hiv"].parameters["hiv_testing_rates"]["annual_testing_rate_adults"] = 0.15
 
-            tb_item_codes = set()
-            for f in self.sim.modules['Tb'].item_codes_for_consumables_required.values():
-                tb_item_codes = tb_item_codes.union(f.keys())
-            self.sim.modules["HealthSystem"].prob_item_codes_available.loc[tb_item_codes] = 0.6
+            # prob ART start
+            self.sim.modules["Hiv"].parameters["prob_start_art_after_hiv_test"]["value"] = 0.8
+
+            # ART adherence
+            self.sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_6_months"] = 0.75
 
             # drop viral suppression for all PLHIV
             self.sim.modules["Hiv"].parameters["prob_viral_suppression"]["virally_suppressed_on_art"] = 80
+
+            # TB
+            # rate testing
+            self.sim.modules["Tb"].parameters["rate_testing_general_pop"] = 0.01
+            self.sim.modules["Tb"].parameters["rate_testing_active_tb"]["testing_rate_active_cases"] = 50
 
             # lower tb treatment success rates
             self.sim.modules["Tb"].parameters["prob_tx_success_ds"] = 0.6
@@ -1316,6 +1325,14 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.modules["Tb"].parameters["prob_tx_success_0_4"] = 0.6
             self.sim.modules["Tb"].parameters["prob_tx_success_5_14"] = 0.6
             self.sim.modules["Tb"].parameters["prob_tx_success_shorter"] = 0.6
+
+            # coverage of IPT
+            self.sim.modules["Tb"].parameters["ipt_coverage"]["coverage_plhiv"] = 0.15
+            self.sim.modules["Tb"].parameters["ipt_coverage"]["coverage_paediatric"] = 0.4
+
+            # retention on IPT (PLHIV)
+            self.sim.modules["Tb"].parameters["prob_retained_ipt_6_months"] = 0.8
+
 
         # improve preventive measures
         if scenario == 3:
@@ -2610,6 +2627,8 @@ class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):
 
         # decide whether PLHIV will continue
         if (
+            person["hv_diagnosed"]
+            and
             (not person["tb_diagnosed"])
             and (
                 person["tb_date_ipt"] < (self.sim.date - pd.DateOffset(days=36 * 30.5))

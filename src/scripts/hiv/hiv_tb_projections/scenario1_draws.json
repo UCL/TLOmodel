@@ -1,18 +1,74 @@
 {
   "scenario_script_path": "src/scripts/hiv/hiv_tb_projections/scenario1.py",
-  "scenario_seed": 3021,
+  "scenario_seed": 4561,
   "runs_per_draw": 5,
   "draws": [
     {
       "draw_number": 0,
-      "draw_seed": 500513356,
+      "draw_seed": 671851756,
       "parameters": {
         "Tb": {
-          "scenario": 1
+          "scenario": 1,
+          "transmission_rate": 16.7
+        },
+        "Hiv": {
+          "beta": 0.125
+        }
+      }
+    },
+    {
+      "draw_number": 1,
+      "draw_seed": 126616903,
+      "parameters": {
+        "Tb": {
+          "scenario": 1,
+          "transmission_rate": 18.0
+        },
+        "Hiv": {
+          "beta": 0.121
+        }
+      }
+    },
+    {
+      "draw_number": 2,
+      "draw_seed": 1101562504,
+      "parameters": {
+        "Tb": {
+          "scenario": 1,
+          "transmission_rate": 15.8
+        },
+        "Hiv": {
+          "beta": 0.109
+        }
+      }
+    },
+    {
+      "draw_number": 3,
+      "draw_seed": 303136465,
+      "parameters": {
+        "Tb": {
+          "scenario": 1,
+          "transmission_rate": 19.2
+        },
+        "Hiv": {
+          "beta": 0.116
+        }
+      }
+    },
+    {
+      "draw_number": 4,
+      "draw_seed": 1860306939,
+      "parameters": {
+        "Tb": {
+          "scenario": 1,
+          "transmission_rate": 15.4
+        },
+        "Hiv": {
+          "beta": 0.133
         }
       }
     }
   ],
-  "commit": "470b219bbe81b8ef5dcb5fce45604e0886a8350a",
-  "github": "https://github.com/UCL/TLOmodel/blob/470b219bbe81b8ef5dcb5fce45604e0886a8350a/src/scripts/hiv/hiv_tb_projections/scenario1.py"
+  "commit": "3fe39349f1a8179b236fdabf9b16694929a7211d",
+  "github": "https://github.com/UCL/TLOmodel/blob/3fe39349f1a8179b236fdabf9b16694929a7211d/src/scripts/hiv/hiv_tb_projections/scenario1.py"
 }

@@ -15,12 +15,12 @@ from tlo.analysis.utils import (
 outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
 
 # download all files (and get most recent [-1])
-results_folder1 = get_scenario_outputs("scenario1.py", outputspath)[0]
+results_folder1 = get_scenario_outputs("scenario1.py", outputspath)[-1]
 results_folder2 = get_scenario_outputs("scenario2.py", outputspath)[-1]
 results_folder3 = get_scenario_outputs("scenario3.py", outputspath)[-1]
 
 # look at one log (so can decide what to extract)
-log = load_pickled_dataframes(results_folder1)
+log = load_pickled_dataframes(results_folder3)
 
 # ---------------------------------- Fraction HCW time-------------------------------------
 
@@ -28,10 +28,10 @@ log = load_pickled_dataframes(results_folder1)
 # output fraction of time by year
 capacity1 = summarize(extract_results(
     results_folder1,
-    module="tlo.methods.healthsystem",
-    key="Capacity",
+    module="tlo.methods.healthsystem.summary",
+    key="health_system_annual_logs",
     custom_generate_series=(
-        lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['Frac_Time_Used_Overall'].mean()
+        lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['capacity'].mean()
     ),
 ),
     only_mean=False,
@@ -40,10 +40,10 @@ capacity1 = summarize(extract_results(
 
 capacity2 = summarize(extract_results(
     results_folder2,
-    module="tlo.methods.healthsystem",
-    key="Capacity",
+    module="tlo.methods.healthsystem.summary",
+    key="health_system_annual_logs",
     custom_generate_series=(
-        lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['Frac_Time_Used_Overall'].mean()
+        lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['capacity'].mean()
     ),
 ),
     only_mean=False,
@@ -52,10 +52,10 @@ capacity2 = summarize(extract_results(
 
 capacity3 = summarize(extract_results(
     results_folder3,
-    module="tlo.methods.healthsystem",
-    key="Capacity",
+    module="tlo.methods.healthsystem.summary",
+    key="health_system_annual_logs",
     custom_generate_series=(
-        lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['Frac_Time_Used_Overall'].mean()
+        lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['capacity'].mean()
     ),
 ),
     only_mean=False,
@@ -68,8 +68,8 @@ fig, ax = plt.subplots()
 ax.plot(capacity1.index, capacity1["mean"], "-", color="C3")
 ax.fill_between(capacity1.index, capacity1["lower"], capacity1["upper"], color="C3", alpha=0.2)
 
-ax.plot(capacity2.index, capacity2["mean"], "-", color="C0")
-ax.fill_between(capacity2.index, capacity2["lower"], capacity2["upper"], color="C0", alpha=0.2)
+# ax.plot(capacity2.index, capacity2["mean"], "-", color="C0")
+# ax.fill_between(capacity2.index, capacity2["lower"], capacity2["upper"], color="C0", alpha=0.2)
 
 ax.plot(capacity3.index, capacity3["mean"], "-", color="C2")
 ax.fill_between(capacity3.index, capacity3["lower"], capacity3["upper"], color="C2", alpha=0.2)
