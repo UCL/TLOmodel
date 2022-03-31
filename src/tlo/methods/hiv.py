@@ -2339,8 +2339,6 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         pop_female_15plus = len(
             df[df.is_alive & (df.age_years >= 15) & (df.sex == "F")]
         )
-        pop_child = len(df[df.is_alive])
-        pop_total = len(df[df.is_alive])
 
         # plhiv
         male_plhiv = len(
@@ -2430,7 +2428,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             data={
                 "pop_male_15plus": pop_male_15plus,
                 "pop_female_15plus": pop_female_15plus,
-                "pop_child": pop_child,
+                "pop_child": denom_children,
                 "pop_total": total_population,
                 "male_plhiv_15plus": male_plhiv,
                 "female_plhiv_15plus": female_plhiv,

@@ -55,7 +55,7 @@ writer = pd.ExcelWriter(outputspath / ("MIHPSA_outputs" + ".xlsx"))
 # ---------------------------------- write outputs to excel ---------------------------------- #
 # only one run per draw so take mean only
 
-def write_to_excel(key, column_name):
+def write_to_excel(key, column_name, scaling=True):
     out = summarize(
         extract_results(
             results_folder,
@@ -63,7 +63,7 @@ def write_to_excel(key, column_name):
             key=key,
             column=column_name,
             index="date",
-            do_scaling=True,
+            do_scaling=scaling,
         ),
         # collapse_columns=True,
         only_mean=True,
@@ -71,7 +71,6 @@ def write_to_excel(key, column_name):
     out.index = out.index.year
     out.to_excel(writer, sheet_name=column_name)
     writer.save()
-
 
 # ---------------------------------- population ---------------------------------- #
 
@@ -92,31 +91,31 @@ write_to_excel("summary_inc_and_prev_for_adults_and_children_and_fsw", "total_pl
 write_to_excel("infections_by_2age_groups_and_sex", "n_new_infections_male_1549")
 write_to_excel("infections_by_2age_groups_and_sex", "n_new_infections_female_1524")
 write_to_excel("infections_by_2age_groups_and_sex", "n_new_infections_female_2549")
-write_to_excel("infections_by_2age_groups_and_sex", "n_new_infections_adult_1549")
+write_to_excel("summary_inc_and_prev_for_adults_and_children_and_fsw", "n_new_infections_adult_1549")
 
 # ---------------------------------- hiv prevalence ---------------------------------- #
 
-write_to_excel("infections_by_2age_groups_and_sex", "male_prev_1524")
-write_to_excel("infections_by_2age_groups_and_sex", "male_prev_2549")
-write_to_excel("infections_by_2age_groups_and_sex", "female_prev_1524")
-write_to_excel("infections_by_2age_groups_and_sex", "female_prev_2549")
+write_to_excel("infections_by_2age_groups_and_sex", "male_prev_1524", scaling=False)
+write_to_excel("infections_by_2age_groups_and_sex", "male_prev_2549", scaling=False)
+write_to_excel("infections_by_2age_groups_and_sex", "female_prev_1524", scaling=False)
+write_to_excel("infections_by_2age_groups_and_sex", "female_prev_2549", scaling=False)
 
-write_to_excel("summary_inc_and_prev_for_adults_and_children_and_fsw", "hiv_prev_child")
-write_to_excel("summary_inc_and_prev_for_adults_and_children_and_fsw", "hiv_prev_fsw")
+write_to_excel("summary_inc_and_prev_for_adults_and_children_and_fsw", "hiv_prev_child", scaling=False)
+write_to_excel("summary_inc_and_prev_for_adults_and_children_and_fsw", "hiv_prev_fsw", scaling=False)
 
-write_to_excel("infections_by_2age_groups_and_sex", "total_prev")
+write_to_excel("infections_by_2age_groups_and_sex", "total_prev", scaling=False)
 
 # ---------------------------------- hiv incidence ---------------------------------- #
 
-write_to_excel("infections_by_2age_groups_and_sex", "male_inc_1524")
-write_to_excel("infections_by_2age_groups_and_sex", "male_inc_2549")
-write_to_excel("infections_by_2age_groups_and_sex", "female_inc_1524")
-write_to_excel("infections_by_2age_groups_and_sex", "female_inc_2549")
-write_to_excel("summary_inc_and_prev_for_adults_and_children_and_fsw", "hiv_adult_inc_1549")
+write_to_excel("infections_by_2age_groups_and_sex", "male_inc_1524", scaling=False)
+write_to_excel("infections_by_2age_groups_and_sex", "male_inc_2549", scaling=False)
+write_to_excel("infections_by_2age_groups_and_sex", "female_inc_1524", scaling=False)
+write_to_excel("infections_by_2age_groups_and_sex", "female_inc_2549", scaling=False)
+write_to_excel("summary_inc_and_prev_for_adults_and_children_and_fsw", "hiv_adult_inc_1549", scaling=False)
 
 # ---------------------------------- plhiv aware of status ---------------------------------- #
 
-write_to_excel("hiv_program_coverage", "dx_adult")
+write_to_excel("hiv_program_coverage", "dx_adult", scaling=False)
 
 # ---------------------------------- total tests performed on adults ---------------------------------- #
 
@@ -124,7 +123,7 @@ write_to_excel("hiv_program_coverage", "number_adults_tested")
 
 # ---------------------------------- proportion adults testing positive ---------------------------------- #
 
-write_to_excel("hiv_program_coverage", "testing_yield")
+write_to_excel("hiv_program_coverage", "testing_yield", scaling=False)
 
 # ---------------------------------- plhiv on art ---------------------------------- #
 
@@ -135,17 +134,15 @@ write_to_excel("hiv_program_coverage", "n_on_art_total")
 
 # ---------------------------------- art coverage ---------------------------------- #
 
-write_to_excel("hiv_program_coverage", "art_coverage_child")
+write_to_excel("hiv_program_coverage", "art_coverage_child", scaling=False)
 
 # ---------------------------------- adult art and virally suppressed ---------------------------------- #
 
-write_to_excel("hiv_program_coverage", "art_coverage_adult_VL_suppression")
+write_to_excel("hiv_program_coverage", "art_coverage_adult_VL_suppression", scaling=False)
 
 # ---------------------------------- M circumcised ---------------------------------- #
 
-write_to_excel("hiv_program_coverage", "prop_men_circ")
-
-
+write_to_excel("hiv_program_coverage", "prop_men_circ", scaling=False)
 
 # ---------------------------------- AIDS deaths ---------------------------------- #
 # returns floats because of scaling
