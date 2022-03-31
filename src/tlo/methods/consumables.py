@@ -164,8 +164,12 @@ class Consumables:
 
         if facility_info is None:
             # If `facility_info` is None, it implies that the HSI has not been initialised because the HealthSystem
-            #  is running with `disable=True`.
-            return {_i: True for _i in item_codes}
+            #  is running with `disable=True`. Therefore, accept the default behaviour indicated by the argument saved
+            #  in `self.cons_availability`. If the behaviour is `default`, then let the consumable be available.
+            if self.cons_availability in ('all', 'default'):
+                return {_i: True for _i in item_codes}
+            else:
+                return {_i: False for _i in item_codes}
 
         for _i in item_codes.keys():
             if _i in self.item_codes:
