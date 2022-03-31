@@ -8,17 +8,14 @@ import io
 import json
 import os.path
 import pkgutil
+from typing import Any, Iterable, List, Mapping, Set
 import warnings
 from pathlib import Path
-from typing import Any, Iterable, List, Mapping, Set
 
 import tlo.methods
 from tlo import Date, Module, Simulation
 from tlo.dependencies import (
-    get_dependencies_and_initialise,
-    get_init_dependencies,
-    get_module_class_map,
-    is_valid_tlo_module_subclass,
+    get_dependencies_and_initialise, get_init_dependencies, get_module_class_map, is_valid_tlo_module_subclass
 )
 from tlo.methods import alri, contraception, diarrhoea, healthseekingbehaviour, hiv, stunting
 from tlo.methods.healthsystem import HSI_Event, HSIEventDetails
