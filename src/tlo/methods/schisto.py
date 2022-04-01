@@ -8,6 +8,7 @@ from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
+from tlo.methods.consumables import get_item_code_from_item_name
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
 
@@ -73,7 +74,7 @@ class Schisto(Module):
     attribute mda_execute: TRUE (default) /FALSE determines whether MDA events should be scheduled or not
     """
 
-    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
+    INIT_DEPENDENCIES = {'Demography', 'SymptomManager'}
 
     OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
 
@@ -159,6 +160,9 @@ class Schisto(Module):
         # Create pointer that will be to dict of disability weights
         self.disability_weights = None
 
+        # Create pointer that will be to the item_code for praziquantel
+        self.item_code_for_praziquantel = None
+
     def read_parameters(self, data_folder):
         """Read parameters and load into `self.parameters` dictionary."""
 
@@ -190,6 +194,9 @@ class Schisto(Module):
         # DALY weights
         if 'HealthBurden' in self.sim.modules:
             self.disability_weights = self._get_disability_weight()
+
+        # Look-up item code for Praziquantel
+        self.item_code_for_praziquantel = self._get_item_code_for_praziquantel()
 
         if self.mda_execute:
             # schedule historical MDA to happen once per year in July (4 events)
@@ -310,6 +317,45 @@ class Schisto(Module):
         return {
             symptom: get_daly_weight(dw_code) for symptom, dw_code in symptoms_to_disability_weight_mapping.items()
         }
+
+    def _get_item_code_for_praziquantel(self):
+        """Look-up the item code for Praziquantel"""
+        # todo - need to liase with Sakshi to get the availability estimates
+        return self.sim.modules['HealthSystem'].get_item_code_from_item_name("Praziquantel, 600 mg (donated)")
+
+    def do_on_presentation_with_symptoms(self, person_id: int):
+        """What to do when this person presents to the GenericFirstAppt with symptoms: Refer ta HSI for testing."""
+        self.sim.modules['HealthSystem'].schedule_hsi_event(
+            HSI_Schisto_TestingFollowingSymptoms(
+                module=self,
+                person_id=person_id),
+            topen=self.sim.date,
+            tclose=None,
+            priority=0
+        )
+
+    def do_effect_of_treatment(self, person_id: int):
+        """Do the effects of a treatment administered to a person with a burden of this species.
+        (Infected -> Non-infected).
+        PZQ treats both types of infections, so affect symptoms and worm burden of any infection type registered.
+        Assumes that PZQ_efficacy = 100%
+        """
+        df = self.sim.population.props
+
+        # Clear any symptoms do with Schisto (any species)
+        self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id, disease_module=self)
+
+        # Record in the property the date of last treatment  # todo - is this needed?
+        df.loc[person_id, 'ss_last_PZQ_date'] = self.sim.date
+
+        # Set properties to be not-infected (any species), and zero-out all worm burden information.
+        for spec_prefix in [_spec.prefix for _spec in self.species.values()]:
+            df.loc[person_id, f'{self.module_prefix}_{spec_prefix}_aggregate_worm_burden'] = 0
+            df.loc[person_id, f'{self.module_prefix}_{spec_prefix}_start_of_prevalent_period'] = pd.NaT
+            df.loc[person_id, f'{self.module_prefix}_{spec_prefix}_start_of_high_infection'] = pd.NaT
+            df.loc[person_id, f'{self.module_prefix}_{spec_prefix}_infection_status'] = 'Non-infected'
+
+
 
 
 class SchistoSpecies:
@@ -769,6 +815,8 @@ class SchistoSpecies:
         #     return 0
 
 
+
+
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
 # ---------------------------------------------------------------------------------------------------------
@@ -845,6 +893,7 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
                 row.date_maturation
             )
 
+
 class SchistoMatureWorms(Event, IndividualScopeEventMixin):
     """Increases the aggregate worm burden of an individual upon maturation of the worms
     Changes the infection status accordingly
@@ -859,6 +908,8 @@ class SchistoMatureWorms(Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         prop = self.species._species_specific_property
         params = self.species.params
+
+        #todo - clause in case worm burden is zero?
 
         if df.loc[person_id, 'is_alive']:
             # increase worm burden
@@ -906,6 +957,9 @@ class SchistoWormsNatDeath(Event, IndividualScopeEventMixin):
         self.number_of_worms = number_of_worms
 
     def apply(self, person_id):
+
+        #todo - clause in case worm burden is zero?
+
         df = self.sim.population.props
         prop = self.species._species_specific_property
         params = self.species.params
@@ -940,143 +994,217 @@ class SchistoWormsNatDeath(Event, IndividualScopeEventMixin):
                         df.loc[person_id, prop('start_of_high_infection')] = pd.NaT
 
 
-# TODO: Should this be a function or an HSI?
-class SchistoTreatmentEvent(Event, IndividualScopeEventMixin):
-    """Cured upon PZQ treatment through HSI or MDA (Infected -> Non-infected)
+# ---------------------------------------------------------------------------------------------------------
+#   HSI EVENTS
+# ---------------------------------------------------------------------------------------------------------
+
+class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin):
+    """This is a Health System Interaction Event for a person with symptoms who has been referred from the FirstAppt
+    for testing at the clinic."""
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, Schisto)
+
+        under_5 = self.sim.population.props.at[person_id, 'age_years'] <= 5
+        self.TREATMENT_ID = 'Schisto_Treatment'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Under5OPD' if under_5 else 'Over5OPD': 1})
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        person = df.loc[person_id]
+        params = self.module.parameters
+
+        # Determine if the person will be tested
+        under_15 = person.age_years <= 15
+        will_test = self.module.rng.random_sample() < (
+            params['prob_sent_to_lab_test_children'] if under_15 else params['prob_sent_to_lab_test_adults']
+        )
+
+        # Determine if they truly are infected (with any of the species)
+        is_infected = any(
+            (person.loc[person.index.str.startswith(self.module.module_prefix) & person.index.str.endswith('_infection_status')]) != 'Non-infected'
+        )
+
+        if is_infected & will_test:
+            # If they are infected and will test, schedule a treatment HSI:
+            self.module.sim.modules['HealthSystem'].schedule_hsi_event(
+                HSI_Schisto_Treatment(
+                    module=self.module,
+                    person_id=person_id),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0
+            )
+
+
+
+class HSI_Schisto_Treatment(HSI_Event, IndividualScopeEventMixin):
+    """This is a Health System Interaction Event for a person being provided with PZQ treatment through HSI or MDA
+    (Infected -> Non-infected).
     PZQ treats both types of infections, so affect symptoms and worm burden of any infection type registered
     """
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Schisto)
 
-    def apply(self, person_id):
-        df = self.sim.population.props
-
-        prefixes = []
-        if 'Schisto_Haematobium' in self.sim.modules.keys():
-            prefixes.append('sh')
-        if 'Schisto_Mansoni' in self.sim.modules.keys():
-            prefixes.append('sm')
-
-        if not df.loc[person_id, 'is_alive']:
-            return
-
-        for prefix in prefixes:
-            if df.loc[person_id, f'{prefix}_infection_status'] != 'Non-infected':
-
-                # check if they experienced symptoms, and if yes, treat them
-                df.loc[person_id, f'{prefix}_symptoms'] = np.nan
-                # if isinstance(df.loc[person_id, prefix + '_symptoms'], list):
-                #     df.loc[person_id, prefix + '_symptoms'] = np.nan
-
-                # calculate the duration of the prevalent period
-                prevalent_duration = count_days_this_year(self.sim.date, df.loc[
-                    person_id, f'{prefix}_start_of_prevalent_period'])
-                df.loc[person_id, f'{prefix}_prevalent_days_this_year'] += prevalent_duration
-                df.loc[person_id, f'{prefix}_start_of_prevalent_period'] = pd.NaT
-
-                # calculate the duration of the high-intensity infection
-                if df.loc[person_id, f'{prefix}_infection_status'] == 'High-infection':
-                    high_infection_duration = count_days_this_year(self.sim.date, df.loc[
-                        person_id, f'{prefix}_start_of_high_infection'])
-                    df.loc[person_id, f'{prefix}_high_inf_days_this_year'] += high_infection_duration
-                    df.loc[person_id, f'{prefix}_start_of_high_infection'] = pd.NaT
-
-                df.loc[person_id, f'{prefix}_aggregate_worm_burden'] = 0  # PZQ_efficacy = 100% for now
-                df.loc[person_id, f'{prefix}_start_of_prevalent_period'] = pd.NaT
-                df.loc[person_id, f'{prefix}_start_of_high_infection'] = pd.NaT
-                df.loc[person_id, f'{prefix}_infection_status'] = 'Non-infected'
-
-        # the general Schisto module properties
-        df.loc[person_id, 'ss_scheduled_hsi_date'] = pd.NaT
-        df.loc[person_id, 'ss_last_PZQ_date'] = self.sim.date
-
-# ---------------------------------------------------------------------------------------------------------
-#   HSI EVENTS
-# ---------------------------------------------------------------------------------------------------------
-
-#TODO: Consider if this should be the generic HSI
-class HSI_SchistoSeekTreatment(HSI_Event, IndividualScopeEventMixin):
-    """This is a Health System Interaction Event of seeking treatment for a person with symptoms"""
-    # todo should this be handled with generic appointments?
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, Schisto)
-
         under_5 = self.sim.population.props.at[person_id, 'age_years'] <= 5
-        self.TREATMENT_ID = 'Schisto_Treatment_seeking'
+        self.TREATMENT_ID = 'Schisto_Treatment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Under5OPD' if under_5 else 'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-        params = self.module.parameters
+        """Do the treatment for this person."""
+        if self.get_consumables(item_codes=self.module.item_code_for_praziquantel):
+            self.module.do_effect_of_treatment(person_id=person_id)
 
-        prefixes = []
-        if 'Schisto_Haematobium' in self.sim.modules.keys():
-            prefixes.append('sh')
-        if 'Schisto_Mansoni' in self.sim.modules.keys():
-            prefixes.append('sm')
-        is_infected = False
-        for pref in prefixes:
-            if df.loc[person_id, f'{pref}_infection_status'] != 'Non-infected':
-                is_infected = True
 
-        # appt are scheduled and cannot be cancelled in the following situations:
-        #   a) person has died
-        #   b) the infection has been treated in MDA or by treating symptoms from
-        #   other schisto infection before the appt happened
-        if (df.loc[person_id, 'is_alive'] & is_infected):  # &
-            # (df.loc[person_id, 'ss_scheduled_hsi_date'] <= self.sim.date)):
-            # check if a person is a child or an adult and assign prob of being sent to schisto test (hence being cured)
-            if df.loc[person_id, 'age_years'] <= 15:
-                prob_test = params['prob_sent_to_lab_test_children']
-            else:
-                prob_test = params['prob_sent_to_lab_test_adults']
 
-            sent_to_test = self.module.rng.rand() < prob_test
-            # sent_to_test = self.module.rng.choice([True, False], p=[prob_test, 1-prob_test])
-            # use this is you don't care about whether PZQ is available or not
-            # if sent_to_test:
-            #     self.sim.schedule_event(SchistoTreatmentEvent(self.module, person_id), self.sim.date)
-            if sent_to_test:
-                # request the consumable
-                consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-                items_code1 = \
-                    pd.unique(
-                        consumables.loc[
-                            consumables['Items'] == "Praziquantel, 600 mg (donated)", 'Item_Code'])[0]
-                the_cons_footprint = {'Intervention_Package_Code': {}, 'Item_Code': {items_code1: 1}}
-                outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-                    hsi_event=self, cons_req_as_footprint=the_cons_footprint, to_log=False
-                )
 
-                # give the PZQ to the patient
-                if outcome_of_request_for_consumables['Item_Code'][items_code1]:
-                    self.sim.modules['HealthSystem'].request_consumables(
-                        hsi_event=self, cons_req_as_footprint=the_cons_footprint, to_log=True
-                    )
-                    # patient is cured
-                    self.sim.schedule_event(SchistoTreatmentEvent(self.module, person_id), self.sim.date)
 
-            else:  # person seeked treatment but was not sent to test; visit is reschedulled
-                # schedule another Seeking Treatment event for that person
-                seeking_treatment_ahead_repeated = \
-                    int(self.module.rng.uniform(params['delay_till_hsi_a_repeated'],
-                                                params['delay_till_hsi_b_repeated']))
-                seeking_treatment_ahead_repeated = pd.to_timedelta(seeking_treatment_ahead_repeated, unit='D')
-                df.loc[person_id, 'ss_scheduled_hsi_date'] = self.sim.date + seeking_treatment_ahead_repeated
+#
+#
+# # TODO: Should this be a function or an HSI?
+# class SchistoTreatmentEvent(Event, IndividualScopeEventMixin):
+#     """Cured upon PZQ treatment through HSI or MDA (Infected -> Non-infected)
+#     PZQ treats both types of infections, so affect symptoms and worm burden of any infection type registered
+#     """
+#     def __init__(self, module, person_id):
+#         super().__init__(module, person_id=person_id)
+#         assert isinstance(module, Schisto)
+#
+#     def apply(self, person_id):
+#         df = self.sim.population.props
+#
+#         prefixes = []
+#         if 'Schisto_Haematobium' in self.sim.modules.keys():
+#             prefixes.append('sh')
+#         if 'Schisto_Mansoni' in self.sim.modules.keys():
+#             prefixes.append('sm')
+#
+#         if not df.loc[person_id, 'is_alive']:
+#             return
+#
+#         for prefix in prefixes:
+#             if df.loc[person_id, f'{prefix}_infection_status'] != 'Non-infected':
+#
+#                 # check if they experienced symptoms, and if yes, treat them
+#                 df.loc[person_id, f'{prefix}_symptoms'] = np.nan
+#                 # if isinstance(df.loc[person_id, prefix + '_symptoms'], list):
+#                 #     df.loc[person_id, prefix + '_symptoms'] = np.nan
+#
+#                 # calculate the duration of the prevalent period
+#                 prevalent_duration = count_days_this_year(self.sim.date, df.loc[
+#                     person_id, f'{prefix}_start_of_prevalent_period'])
+#                 df.loc[person_id, f'{prefix}_prevalent_days_this_year'] += prevalent_duration
+#                 df.loc[person_id, f'{prefix}_start_of_prevalent_period'] = pd.NaT
+#
+#                 # calculate the duration of the high-intensity infection
+#                 if df.loc[person_id, f'{prefix}_infection_status'] == 'High-infection':
+#                     high_infection_duration = count_days_this_year(self.sim.date, df.loc[
+#                         person_id, f'{prefix}_start_of_high_infection'])
+#                     df.loc[person_id, f'{prefix}_high_inf_days_this_year'] += high_infection_duration
+#                     df.loc[person_id, f'{prefix}_start_of_high_infection'] = pd.NaT
+#
+#                 df.loc[person_id, f'{prefix}_aggregate_worm_burden'] = 0  # PZQ_efficacy = 100% for now
+#                 df.loc[person_id, f'{prefix}_start_of_prevalent_period'] = pd.NaT
+#                 df.loc[person_id, f'{prefix}_start_of_high_infection'] = pd.NaT
+#                 df.loc[person_id, f'{prefix}_infection_status'] = 'Non-infected'
+#
+#         # the general Schisto module properties
+#         df.loc[person_id, 'ss_scheduled_hsi_date'] = pd.NaT
+#         df.loc[person_id, 'ss_last_PZQ_date'] = self.sim.date
+#
+#
+# #TODO: Consider if this should be the generic HSI
+# class HSI_SchistoSeekTreatment(HSI_Event, IndividualScopeEventMixin):
+#     """This is a Health System Interaction Event of seeking treatment for a person with symptoms"""
+#     # todo should this be handled with generic appointments?
+#     def __init__(self, module, person_id):
+#         super().__init__(module, person_id=person_id)
+#         assert isinstance(module, Schisto)
+#
+#         under_5 = self.sim.population.props.at[person_id, 'age_years'] <= 5
+#         self.TREATMENT_ID = 'Schisto_Treatment_seeking'
+#         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Under5OPD' if under_5 else 'Over5OPD': 1})
+#         self.ACCEPTED_FACILITY_LEVEL = '1a'
+#         self.ALERT_OTHER_DISEASES = []
+#
+#     def apply(self, person_id, squeeze_factor):
+#         df = self.sim.population.props
+#         params = self.module.parameters
+#
+#         prefixes = []
+#         if 'Schisto_Haematobium' in self.sim.modules.keys():
+#             prefixes.append('sh')
+#         if 'Schisto_Mansoni' in self.sim.modules.keys():
+#             prefixes.append('sm')
+#         is_infected = False
+#         for pref in prefixes:
+#             if df.loc[person_id, f'{pref}_infection_status'] != 'Non-infected':
+#                 is_infected = True
+#
+#         # appt are scheduled and cannot be cancelled in the following situations:
+#         #   a) person has died
+#         #   b) the infection has been treated in MDA or by treating symptoms from
+#         #   other schisto infection before the appt happened
+#         if (df.loc[person_id, 'is_alive'] & is_infected):  # &
+#             # (df.loc[person_id, 'ss_scheduled_hsi_date'] <= self.sim.date)):
+#             # check if a person is a child or an adult and assign prob of being sent to schisto test (hence being cured)
+#             if df.loc[person_id, 'age_years'] <= 15:
+#                 prob_test = params['prob_sent_to_lab_test_children']
+#             else:
+#                 prob_test = params['prob_sent_to_lab_test_adults']
+#
+#             sent_to_test = self.module.rng.rand() < prob_test
+#             # sent_to_test = self.module.rng.choice([True, False], p=[prob_test, 1-prob_test])
+#             # use this is you don't care about whether PZQ is available or not
+#             # if sent_to_test:
+#             #     self.sim.schedule_event(SchistoTreatmentEvent(self.module, person_id), self.sim.date)
+#             if sent_to_test:
+#                 # request the consumable
+#                 consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+#                 items_code1 = \
+#                     pd.unique(
+#                         consumables.loc[
+#                             consumables['Items'] == "Praziquantel, 600 mg (donated)", 'Item_Code'])[0]
+#                 the_cons_footprint = {'Intervention_Package_Code': {}, 'Item_Code': {items_code1: 1}}
+#                 outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+#                     hsi_event=self, cons_req_as_footprint=the_cons_footprint, to_log=False
+#                 )
+#
+#                 # give the PZQ to the patient
+#                 if outcome_of_request_for_consumables['Item_Code'][items_code1]:
+#                     self.sim.modules['HealthSystem'].request_consumables(
+#                         hsi_event=self, cons_req_as_footprint=the_cons_footprint, to_log=True
+#                     )
+#                     # patient is cured
+#                     self.sim.schedule_event(SchistoTreatmentEvent(self.module, person_id), self.sim.date)
+#
+#             else:  # person seeked treatment but was not sent to test; visit is reschedulled
+#                 # schedule another Seeking Treatment event for that person
+#                 seeking_treatment_ahead_repeated = \
+#                     int(self.module.rng.uniform(params['delay_till_hsi_a_repeated'],
+#                                                 params['delay_till_hsi_b_repeated']))
+#                 seeking_treatment_ahead_repeated = pd.to_timedelta(seeking_treatment_ahead_repeated, unit='D')
+#                 df.loc[person_id, 'ss_scheduled_hsi_date'] = self.sim.date + seeking_treatment_ahead_repeated
+#
+#                 seek_treatment_repeated = HSI_SchistoSeekTreatment(self.module, person_id)
+#                 self.sim.modules['HealthSystem'].schedule_hsi_event(seek_treatment_repeated,
+#                                                                     priority=1,
+#                                                                     topen=df.loc[person_id, 'ss_scheduled_hsi_date'],
+#                                                                     tclose=df.loc[person_id, 'ss_scheduled_hsi_date']
+#                                                                     + DateOffset(weeks=500))
+#
+#     def did_not_run(self):
+#         return True
+#
+#
+#
 
-                seek_treatment_repeated = HSI_SchistoSeekTreatment(self.module, person_id)
-                self.sim.modules['HealthSystem'].schedule_hsi_event(seek_treatment_repeated,
-                                                                    priority=1,
-                                                                    topen=df.loc[person_id, 'ss_scheduled_hsi_date'],
-                                                                    tclose=df.loc[person_id, 'ss_scheduled_hsi_date']
-                                                                    + DateOffset(weeks=500))
 
-    def did_not_run(self):
-        return True
+
+
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -1138,6 +1266,7 @@ class SchistoHistoricalMDAEvent(Event, PopulationScopeEventMixin):
                 MDA_idx = MDA_idx + MDA_idx_distr
 
         return MDA_idx
+
 
 # TODO: Make this into HSI (Population Level)
 class SchistoPrognosedMDAEvent(RegularEvent, PopulationScopeEventMixin):

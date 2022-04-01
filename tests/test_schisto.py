@@ -7,7 +7,7 @@ import pytest
 
 from tlo import Date, Simulation
 from tlo.methods import demography, healthburden, healthsystem, schisto, simplified_births, symptommanager, \
-    healthseekingbehaviour
+    healthseekingbehaviour, enhanced_lifestyle
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2011, 1, 1)
@@ -34,6 +34,7 @@ resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 def simulation_both(seed):
     sim = Simulation(start_date=start_date, seed=seed)
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
