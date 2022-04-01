@@ -165,7 +165,7 @@ class Consumables:
         if facility_info is None:
             # If `facility_info` is None, it implies that the HSI has not been initialised because the HealthSystem
             #  is running with `disable=True`.
-            return True
+            return {_i: True for _i in item_codes}
 
         for _i in item_codes.keys():
             if _i in self.item_codes:
