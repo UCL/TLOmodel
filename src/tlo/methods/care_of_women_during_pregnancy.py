@@ -67,8 +67,20 @@ class CareOfWomenDuringPregnancy(Module):
         # n.b. Parameters are stored as LIST variables due to containing values to match both 2010 and 2015 data.
 
         # CARE SEEKING...
-        'prob_anc_continues': Parameter(
-            Types.LIST, 'probability a woman will return for a subsequent ANC appointment'),
+        'prob_seek_anc2': Parameter(
+            Types.LIST, 'Probability a women who is not predicted to attended four or more ANC visits will attend '
+                        'ANC2'),
+        'prob_seek_anc3': Parameter(
+            Types.LIST, 'Probability a women who is not predicted to attended four or more ANC visits will attend '
+                        'ANC3'),
+        'prob_seek_anc5': Parameter(
+            Types.LIST, 'Probability a women who is predicted to attend four or more ANC visits will attend ANC5'),
+        'prob_seek_anc6': Parameter(
+            Types.LIST, 'Probability a women who is predicted to attend four or more ANC visits will attend ANC6'),
+        'prob_seek_anc7': Parameter(
+            Types.LIST, 'Probability a women who is predicted to attend four or more ANC visits will attend ANC7'),
+        'prob_seek_anc8': Parameter(
+            Types.LIST, 'Probability a women who is predicted to attend four or more ANC visits will attend ANC8'),
 
         # TREATMENT EFFECTS...
         'effect_of_ifa_for_resolving_anaemia': Parameter(
@@ -596,7 +608,11 @@ class CareOfWomenDuringPregnancy(Module):
                       7: HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(self, person_id=individual_id),
                       8: HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(self, person_id=individual_id)}
 
-        visit = visit_dict[visit_to_be_scheduled]
+        if self.sim.modules['PregnancySupervisor'].current_parameters['anc_service_structure'] == 8:
+            visit = visit_dict[visit_to_be_scheduled]
+        else:
+            visit = HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(self, person_id=individual_id,
+                                                                   visit_number=visit_to_be_scheduled)
 
         def calculate_visit_date_and_schedule_visit(visit):
             # We subtract this womans current gestational age from the recommended gestational age for the next
@@ -617,20 +633,11 @@ class CareOfWomenDuringPregnancy(Module):
         # If this woman has attended less than 4 visits, and is predicted to attend > 4 (as determined via the
         # PregnancySupervisor module when ANC1 is scheduled) her subsequent ANC appointment is automatically
         # scheduled
-        if visit_to_be_scheduled <= 4:
-            if df.at[individual_id, 'ps_anc4']:
-                calculate_visit_date_and_schedule_visit(visit)
-            else:
-                # If she is not predicted to attend 4 or more visits, we use a probability to determine if she will
-                # seek care for her next contact
-                # If so, the HSI is scheduled in the same way
-                if self.rng.random_sample() < params['prob_anc_continues']:
-                    calculate_visit_date_and_schedule_visit(visit)
+        if (visit_to_be_scheduled <= 4) and df.at[individual_id, 'ps_anc4']:
+            calculate_visit_date_and_schedule_visit(visit)
 
-        elif visit_to_be_scheduled > 4:
-            # After 4 or more visits we use this probability to determine if the woman will seek care for
-            # her next contact
-            if self.rng.random_sample() < params['prob_anc_continues']:
+        elif ((visit_to_be_scheduled < 4) and not df.at[individual_id, 'ps_anc4']) or (visit_to_be_scheduled > 4):
+            if self.rng.random_sample() < params[f'prob_seek_anc{visit_to_be_scheduled}']:
                 calculate_visit_date_and_schedule_visit(visit)
 
     def schedule_admission(self, individual_id):
@@ -2097,30 +2104,10 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
             # update the visit number for the event scheduling
             self.visit_number = self.visit_number + 1
 
-            if df.at[person_id, 'ps_anc4']:
-                weeks_due_next_visit = int(recommended_gestation_next_anc - df.at[person_id, 'ps_gestational_age_'
-                                                                                             'in_weeks'])
-
-                visit_date = self.sim.date + DateOffset(weeks=weeks_due_next_visit)
-                self.sim.modules['HealthSystem'].schedule_hsi_event(self,
-                                                                    priority=0,
-                                                                    topen=visit_date,
-                                                                    tclose=visit_date + DateOffset(days=7))
-
-                df.at[person_id, 'ac_date_next_contact'] = visit_date
-
-            else:
-                if self. module.rng.random_sample() < params['prob_anc_continues']:
-                    weeks_due_next_visit = int(
-                        recommended_gestation_next_anc - df.at[person_id, 'ps_gestational_age_in_weeks'])
-
-                    visit_date = self.sim.date + DateOffset(weeks=weeks_due_next_visit)
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(self,
-                                                                        priority=0,
-                                                                        topen=visit_date,
-                                                                        tclose=visit_date + DateOffset(days=7))
-
-                    df.at[person_id, 'ac_date_next_contact'] = visit_date
+            # schedule the next event
+            self.module.antenatal_care_scheduler(individual_id=person_id,
+                                                 visit_to_be_scheduled=self.visit_number,
+                                                 recommended_gestation_next_anc=recommended_gestation_next_anc)
 
         # If the woman has had any complications detected during ANC she is admitted for treatment to be initiated
         if df.at[person_id, 'ac_to_be_admitted']:

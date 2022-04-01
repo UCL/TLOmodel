@@ -79,6 +79,26 @@ class Consumables:
                                            self._rng.random_sample(len(average_availability_of_items_by_facility_id))
                                            ).to_dict()
 
+    def override_availability(self, item_codes: dict = None) -> None:
+        """
+        Over-ride the availability (for all months and all facilities) of certain item_codes.
+        Note this should not be called directly: Disease modules should call `override_availability_of_consumables` in
+         `HealthSystem`.
+        :param item_codes: Dictionary of the form {<item_code>: probability_that_item_is_available}
+        :return: None
+        """
+
+        def check_item_codes_argument_is_valid(_item_codes):
+            assert set(_item_codes.keys()).issubset(self.item_codes), 'Some item_codes not recognised.'
+            assert all([0.0 <= x <= 1.0 for x in list(_item_codes.values())]), 'Probability of availability must be ' \
+                                                                               'between 0.0 and 1.0'
+
+        check_item_codes_argument_is_valid(item_codes)
+
+        # Update the internally-held data on availability for these item_codes (for all months and at all facilities)
+        for item, prob in item_codes.items():
+            self._prob_item_codes_available.loc[(slice(None), slice(None), item)] = prob
+
     @staticmethod
     def _determine_default_return_value(cons_availability, default_return_value):
         if cons_availability == 'all':

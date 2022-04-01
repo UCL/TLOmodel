@@ -131,6 +131,71 @@ def test_consumables_availability_options(seed):
         )
 
 
+def test_override_cons_availability(seed):
+    """Check that the availability of a consumable can be over-ridden."""
+    intrinsic_availability = {
+        0: 0.0,  # Not available
+        1: 1.0,  # Available
+        2: 0.0,  # Not available -- but will be over-ridden
+        3: 1.0   # Available -- but will be over-ridden
+    }
+
+    data = create_dummy_data_for_cons_availability(
+        intrinsic_availability=intrinsic_availability,
+        months=[1],
+        facility_ids=[0])
+
+    def request_item(cons, item_code):
+        """Use the internal helper function of the Consumables class to make the request."""
+        return cons._request_consumables(
+            item_codes={item_code: 1}, to_log=False, facility_info=facility_info_0
+        )[item_code]
+
+    rng = get_rng(seed)
+    date = datetime.datetime(2010, 1, 1)
+
+    # Create consumables class
+    cons = Consumables(data=data, rng=rng, availability='default')
+
+    # Check before overriding availability
+    for _ in range(1000):
+        cons.processing_at_start_of_new_day(date=date)
+
+        # Request item that is not available and not over-ridden
+        assert False is request_item(cons, 0)
+
+        # Request item that is available and not over-ridden
+        assert True is request_item(cons, 1)
+
+        # Request item that is not available but later over-ridden to be available
+        assert False is request_item(cons, 2)
+
+        # Request item that is available but later over-ridden to be not available
+        assert True is request_item(cons, 3)
+
+    # Do over-riding of availability of item_codes 2 and 3
+    cons.override_availability({
+        2: 1.0,
+        3: 0.0
+    })
+
+    # Check after overriding availability
+    for _ in range(1000):
+        cons.processing_at_start_of_new_day(date=date)
+
+        # Request item that is not available and not over-ridden
+        assert False is request_item(cons, 0)
+
+        # Request item that is available and not over-ridden
+        assert True is request_item(cons, 1)
+
+        # Request item that is not available but over-ridden to be available
+        assert True is request_item(cons, 2)
+
+        # Request item that is available but over-ridden to be not available
+        assert False is request_item(cons, 3)
+
+
 @pytest.mark.slow
 def test_consumables_available_at_right_frequency(seed):
     """Check that the availability of consumables following a request is as expected."""
@@ -165,11 +230,18 @@ def test_consumables_available_at_right_frequency(seed):
     assert 0 == counter[0]
     assert n_trials == counter[3]
 
+    def is_obs_frequency_consistent_with_expected_probability(n_obs, n_trials, p):
+        """Returns True if the 99% binomial confidence interval on the estimate of frequency from `n_obs` successes out
+         of `n_trials` includes the value `p`."""
+        return np.isclose(p, n_obs / n_trials, atol=2.58 * (p * (1.0 - p) / n_trials) ** 0.5)
+
+    # Check that the availability of each item is consistent with the expectation
     for _i, _p in p_known_items.items():
-        assert np.isclose(_p, counter[_i] / n_trials, rtol=0.05)
+        assert is_obs_frequency_consistent_with_expected_probability(n_obs=counter[_i], n_trials=n_trials, p=_p)
 
     # Check that the availability of the unknown item is the average of the known items
-    assert np.isclose(average_availability_of_known_items, counter[4] / n_trials, rtol=0.02)
+    assert is_obs_frequency_consistent_with_expected_probability(n_obs=counter[4], n_trials=n_trials,
+                                                                 p=average_availability_of_known_items)
 
 
 def get_sim_with_dummy_module_registered(tmpdir=None, run=True, data=None):

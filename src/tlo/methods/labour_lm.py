@@ -67,7 +67,7 @@ def predict_obstruction_cpd_ip(self, df, rng=None, **externals):
 
     # Effect of stunting only applied if the module is registered
     if 'Stunting' in self.module.sim.modules:
-        if person['un_HAZ_category'] == 'HAZ>=-2':
+        if person['un_HAZ_category'] != 'HAZ>=-2':
             result *= params['rr_obstruction_cpd_stunted_mother']
 
     if externals['macrosomia']:
@@ -477,7 +477,7 @@ def predict_probability_delivery_at_home(self, df, rng=None, **externals):
      or secondary education, decreased in higher wealth and increased in higher parity
     """
     params = self.parameters
-    result = pd.Series(data=params['odds_deliver_in_health_centre'], index=df.index)
+    result = pd.Series(data=params['odds_deliver_at_home'], index=df.index)
 
     result[(df.age_years > 19) & (df.age_years < 25)] *= params['rrr_hb_delivery_age_20_24']
     result[(df.age_years > 24) & (df.age_years < 30)] *= params['rrr_hb_delivery_age_25_29']
