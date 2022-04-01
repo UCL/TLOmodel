@@ -509,7 +509,6 @@ class Contraception(Module):
                                                 'Lidocaine, injection, 1 % in 20 ml vial',
                                                 'Lidocaine, spray, 10%, 500 ml bottle',
                                                 'Tape, adhesive, 2.5 cm wide, zinc oxide, 5 m roll',
-                                                'Gloves, surgeons, latex, disposable, sterile, pair',
                                                 'Paracetamol, tablet, 500 mg',
                                                 'Povidone iodine, solution, 10 %, 5 ml per injection',
                                                 'Suture pack',
