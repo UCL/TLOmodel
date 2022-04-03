@@ -414,11 +414,11 @@ class NewbornOutcomes(Module):
         self.item_codes_nb_consumables['iv_drug_equipment'] = \
             get_list_of_items(self, ['Cannula iv  (winged with injection pot) 18_each_CMST',
                                      'Giving set iv administration + needle 15 drops/ml_each_CMST',
-                                     'Gloves, exam, latex, disposable, pair'])
+                                     'Disposables gloves, powder free, 100 pieces per box'])
 
         # ---------------------------------- BLOOD TEST EQUIPMENT ---------------------------------------------------
         self.item_codes_nb_consumables['blood_test_equipment'] = \
-            get_list_of_items(self, ['Gloves, exam, latex, disposable, pair'])
+            get_list_of_items(self, ['Disposables gloves, powder free, 100 pieces per box'])
         # todo: remove entirely?
 
         # -------------------------------------------- VITAMIN K ------------------------------------------

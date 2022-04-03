@@ -714,7 +714,7 @@ class Labour(Module):
                                      'Pethidine, 50 mg/ml, 2 ml ampoule',
                                      'Foley catheter',
                                      'Bag, urine, collecting, 2000 ml',
-                                     "Sodium lactate injection (Ringer's), 500 ml, with giving set",
+                                     "ringer's lactate (Hartmann's solution), 1000 ml_12_IDA",
                                      'Sodium chloride, injectable solution, 0,9 %, 500 ml',
                                      "Giving set iv administration + needle 15 drops/ml_each_CMST"])
 
@@ -764,8 +764,8 @@ class Labour(Module):
                                      'Bag, urine, collecting, 2000 ml',
                                      'Paracetamol, tablet, 500 mg',
                                      'Pethidine, 50 mg/ml, 2 ml ampoule',
-                                     'Gauze, absorbent 90cm x 40m_each_CMST'])
-        # 'Needle suture intestinal round bodied Â½ circle trocar_6_CMST'])
+                                     'Gauze, absorbent 90cm x 40m_each_CMST',
+                                     'Suture pack'])
 
         # -------------------------------------  OBSTETRIC VACUUM   ---------------------------------------------------
         self.item_codes_lab_consumables['vacuum'] = get_list_of_items(self, ['Vacuum, obstetric'])
@@ -789,7 +789,7 @@ class Labour(Module):
 
         # -------------------------------------  ACTIVE MANAGEMENT THIRD STAGE  ---------------------------------------
         self.item_codes_lab_consumables['amtsl'] = \
-            get_item_code_from_pkg('Active management of the 3rd stage of labour')
+            get_list_of_items(self, ['Oxytocin, injection, 10 IU in 1 ml ampoule'])
 
         # -------------------------------------  POSTPARTUM HAEMORRHAGE  ---------------------------------------
         # TODO: helen allott recommended tranexamic acid - not availble
@@ -2913,9 +2913,14 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         # We apply a probability to women who have not already been allocated to undergo assisted/caesarean delivery
         # that they will require assisted/caesarean delivery to capture indications which are not explicitly modelled
         if not mni[person_id]['referred_for_cs'] and (not mni[person_id]['mode_of_delivery'] == 'instrumental'):
-            if self.module.rng.random_sample() < params['residual_prob_caesarean']:
+            if df.at[person_id, 'ps_multiple_pregnancy']:
+                mni[person_id]['referred_for_cs'] = True
+                mni[person_id]['cs_indication'] = 'twins'
+
+            elif self.module.rng.random_sample() < params['residual_prob_caesarean']:
                 mni[person_id]['referred_for_cs'] = True
                 mni[person_id]['cs_indication'] = 'other'
+
             elif self.module.rng.random_sample() < params['residual_prob_avd']:
                 self.module.assessment_for_assisted_vaginal_delivery(self, for_spe=True)
 
