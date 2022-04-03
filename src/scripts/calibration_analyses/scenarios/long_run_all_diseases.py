@@ -38,6 +38,7 @@ from tlo.methods import (
     pregnancy_supervisor,
     prostate_cancer,
     rti,
+    schisto,
     stunting,
     symptommanager,
     wasting,
@@ -95,6 +96,7 @@ class LongRun(BaseScenario):
             hiv.Hiv(resourcefilepath=self.resources),
             malaria.Malaria(resourcefilepath=self.resources),
             measles.Measles(resourcefilepath=self.resources),
+            schisto.Schisto(resourcefilepath=self.resources),
 
             # - Non-Communicable Conditions
             # -- Cancers
