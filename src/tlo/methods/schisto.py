@@ -1,10 +1,10 @@
-import datetime
 from pathlib import Path
 from typing import Union
 
 import numpy as np
 import pandas as pd
 
+from tlo import Date
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
@@ -12,7 +12,6 @@ from tlo.methods.causes import Cause
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date
-from tlo import Date
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -83,7 +82,7 @@ class Schisto(Module):
         'MDA_coverage_historical': Parameter(Types.DATA_FRAME,
                                              'Probability of getting PZQ in the MDA for PSAC, SAC and Adults in historic rounds'),
         'MDA_coverage_prognosed': Parameter(Types.DATA_FRAME,
-                                             'Probability of getting PZQ in the MDA for PSAC, SAC and Adults in future rounds, with the frequency given in months'),
+                                            'Probability of getting PZQ in the MDA for PSAC, SAC and Adults in future rounds, with the frequency given in months'),
     }
 
     def __init__(self, name=None, resourcefilepath=None, mda_execute=True):
@@ -247,12 +246,14 @@ class Schisto(Module):
             parameters[_param_name] = param_list[_param_name]
 
         # MDA coverage - historic
-        historical_mda = workbook['MDA_historical_Coverage'].set_index(['District', 'Year'])[['Coverage PSAC', 'Coverage SAC', 'Coverage Adults']]
+        historical_mda = workbook['MDA_historical_Coverage'].set_index(['District', 'Year'])[
+            ['Coverage PSAC', 'Coverage SAC', 'Coverage Adults']]
         historical_mda.columns = historical_mda.columns.str.replace('Coverage ', '')
         parameters['MDA_coverage_historical'] = historical_mda
 
         # MDA coverage - prognosed
-        prognosed_mda = workbook['MDA_prognosed_Coverage'].set_index(['District', 'Frequency'])[['Coverage PSAC', 'Coverage SAC', 'Coverage Adults']]
+        prognosed_mda = workbook['MDA_prognosed_Coverage'].set_index(['District', 'Frequency'])[
+            ['Coverage PSAC', 'Coverage SAC', 'Coverage Adults']]
         prognosed_mda.columns = prognosed_mda.columns.str.replace('Coverage ', '')
         parameters['MDA_coverage_prognosed'] = prognosed_mda
 
@@ -303,7 +304,7 @@ class Schisto(Module):
                 SchistoMDAEvent(self,
                                 district=district,
                                 coverage=cov.to_dict(),
-                                months_between_repeats=None),    # todo - check that this causes it to occur once only.
+                                months_between_repeats=None),  # todo - check that this causes it to occur once only.
                 Date(year=year, month=7, day=1)
             )
 
@@ -577,10 +578,10 @@ class SchistoSpecies:
         #  both the aggregate worm burden of both species is reduced.
         cols_of_infection_status_for_other_species = set(cols_of_infection_status) - set([prop('infection_status')])
         high_infection_any_other_species = (
-                df.loc[idx, cols_of_infection_status_for_other_species] == 'High-infection').any(axis=1)
+            df.loc[idx, cols_of_infection_status_for_other_species] == 'High-infection').any(axis=1)
         no_longer_high_infection = idx[
             (original_status == 'High-infection') & (
-                    correct_status != 'High-infection') & ~high_infection_any_other_species
+                correct_status != 'High-infection') & ~high_infection_any_other_species
             ]
         sm.clear_symptoms(person_id=no_longer_high_infection, disease_module=schisto_module)
 
@@ -974,6 +975,62 @@ class SchistoWormsNatDeath(Event, IndividualScopeEventMixin):
         #                 df.loc[person_id, prop('start_of_high_infection')] = pd.NaT
 
 
+class SchistoMDAEvent(RegularEvent, PopulationScopeEventMixin):
+    """Mass-Drug administration scheduled for the population. This event schedule the occurrence of the individual-level
+    HSI for the administration of drugs to each individual.
+    :param district: The district in which the MDA occurs.
+    :param coverage: A dictionary of the form {<age_group>: <coverage>}, where <age_group> is one of 'PSAC', 'SAC', 'Adults'
+    :params months_between_repeat: The number of months between repeated occurrences of this event. (None for no repeats).
+    """
+
+    def __init__(self,
+                 module: Module,
+                 district: str,
+                 coverage: dict,
+                 months_between_repeats: int
+                 ):
+        super().__init__(module, frequency=DateOffset(
+            months=months_between_repeats if months_between_repeats is not None else 10_000)
+                         # todo - neater way to prevent repeating in a repeating type? (done to keep the logic in all one place)
+                         )
+        assert isinstance(module, Schisto)
+
+        self.district = district
+        self.coverage = coverage
+
+    def apply(self, population):
+        """Schedule the MDA HSI for each person that is reached in the MDA."""
+
+        for age_group, cov in self.coverage.items():
+            for person_id in self._select_recipients(district=self.district, age_group=age_group, coverage=cov):
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    HSI_Schisto_MDA(self.module, person_id),
+                    self.sim.date)
+
+    def _select_recipients(self, district, age_group, coverage) -> list:
+        """Determine persons to receive MDA, based on a specified target age-group and coverage."""
+
+        assert 0.0 <= coverage <= 1.0, f'Value of coverage {coverage} is out of bounds.'
+        assert age_group in ('PSAC', 'SAC', 'Adults')
+
+        df = self.sim.population.props
+        rng = self.module.rng
+
+        age_range = map_age_groups(age_group)  # returns a tuple (a,b) a <= age_group <= b
+
+        eligible = df.index[
+            df['is_alive']
+            & (df['district_of_residence'] == district)
+            & df['age_years'].between(age_range[0], age_range[1])
+            ]
+
+        if len(eligible):
+            return eligible.index[rng.random_sample(len(eligible)) < coverage].to_list()
+        else:
+            # todo - need this clause?
+            return []
+
+
 class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin):
     """This is a Health System Interaction Event for a person with symptoms who has been referred from the FirstAppt
     for testing at the clinic."""
@@ -1071,113 +1128,6 @@ class HSI_Schisto_MDA(HSI_Event, IndividualScopeEventMixin):
             self.module.do_effect_of_treatment(person_id=person_id)
 
 
-class SchistoMDAEvent(RegularEvent, PopulationScopeEventMixin):
-    """Mass-Drug administration scheduled for the population. This event schedule the occurrence of the individual-level
-    HSI for the administration of drugs to each individual.
-    :param district: The district in which the MDA occurs.
-    :param coverage: A dictionary of the form {<age_group>: <coverage>}, where <age_group> is one of 'PSAC', 'SAC', 'Adults'
-    :params months_between_repeat: The number of months between repeated occurrences of this event. (None for no repeats).
-    """
-
-    def __init__(self,
-                 module: Module,
-                 district: str,
-                 coverage: dict,
-                 months_between_repeats: int
-                 ):
-        super().__init__(module, frequency=DateOffset(
-            months=months_between_repeats if months_between_repeats is not None else 10_000)   # todo - neater way to prevent repeating in a repeating type? (done to keep the logic in all one place)
-                         )
-        assert isinstance(module, Schisto)
-
-        self.district = district
-        self.coverage = coverage
-
-    def apply(self, population):
-        """Schedule the MDA HSI for each person that is reached in the MDA."""
-
-        for age_group, cov in self.coverage.items():
-            for person_id in self._select_recipients(district=self.district, age_group=age_group, coverage=cov):
-                self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    HSI_Schisto_MDA(self.module, person_id),
-                    self.sim.date)
-
-    def _select_recipients(self, district, age_group, coverage) -> list:
-        """Determine persons to receive MDA, based on a specified target age-group and coverage."""
-
-        assert 0.0 <= coverage <= 1.0, f'Value of coverage {coverage} is out of bounds.'
-        assert age_group in ('PSAC', 'SAC', 'Adults')
-
-        df = self.sim.population.props
-        rng = self.module.rng
-
-        age_range = map_age_groups(age_group)  # returns a tuple (a,b) a <= age_group <= b
-
-        eligible = df.index[
-            df['is_alive']
-            & (df['district_of_residence'] == district)
-            & df['age_years'].between(age_range[0], age_range[1])
-        ]
-
-        if len(eligible):
-            return eligible.index[rng.random_sample(len(eligible)) < coverage].to_list()
-        else:
-            # todo - need this clause?
-            return []
-
-
-# class SchistoPrognosedMDAEvent(RegularEvent, PopulationScopeEventMixin):
-#     """Mass-Drug administration scheduled for the population
-#     Using the proposed MDA coverage
-#     """
-#
-#     def __init__(self, module, freq, district):
-#         super().__init__(module, frequency=DateOffset(months=freq))
-#         self.district = district
-#         assert isinstance(module, Schisto)
-#
-#     def apply(self, population):
-#         print("Prognosed MDA is happening now!")
-#         district = self.district
-#
-#         treated_idx_PSAC = self.assign_prognosed_MDA_coverage(population, district, 'PSAC')
-#         treated_idx_SAC = self.assign_prognosed_MDA_coverage(population, district, 'SAC')
-#         treated_idx_Adults = self.assign_prognosed_MDA_coverage(population, district, 'Adults')
-#
-#         treated_idx = treated_idx_PSAC + treated_idx_SAC + treated_idx_Adults
-#         # all treated people will have worm burden decreased, and we already have chosen only alive people
-#         for person_id in treated_idx:
-#             self.sim.schedule_hsi_event(HSI_Schisto_MDA(self.module, person_id), self.sim.date)
-#
-#     def assign_prognosed_MDA_coverage(self, population, district, age_group):
-#         """Assign coverage of MDA program to chosen age_group. The same coverage for every district.
-#
-#           :param district: district for which the MDA coverage is required
-#           :param population: population
-#           :param age_group: 'SAC', 'PSAC', 'Adults'
-#           :returns MDA_idx: indices of people that will be administered PZQ in the MDA program
-#           """
-#
-#         df = population.props
-#         params = self.module.parameters
-#         age_range = map_age_groups(age_group)  # returns a tuple (a,b) a <= age_group <= b
-#         param_str = 'MDA_prognosed_' + age_group
-#
-#         coverage = params[param_str]
-#         coverage_distr = coverage[district]
-#
-#         eligible = df.index[(df.is_alive) & (df['district_of_residence'] == district)
-#                             & (df['age_years'].between(age_range[0], age_range[1]))]
-#         MDA_idx = []
-#         if len(eligible):
-#             MDA_idx = self.module.rng.choice(eligible,
-#                                              size=int(coverage_distr * (len(eligible))),
-#                                              replace=False)
-#
-#         return MDA_idx
-
-
-
 class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """This is a regular event (every month) that causes the logging for each species."""
@@ -1247,6 +1197,55 @@ class SchistoLoggingTotalEvent(RegularEvent, PopulationScopeEventMixin):
         for age in ['PSAC', 'SAC', 'Adults', 'All']:
             self.write_to_log(population, age)
 
+# class SchistoPrognosedMDAEvent(RegularEvent, PopulationScopeEventMixin):
+#     """Mass-Drug administration scheduled for the population
+#     Using the proposed MDA coverage
+#     """
+#
+#     def __init__(self, module, freq, district):
+#         super().__init__(module, frequency=DateOffset(months=freq))
+#         self.district = district
+#         assert isinstance(module, Schisto)
+#
+#     def apply(self, population):
+#         print("Prognosed MDA is happening now!")
+#         district = self.district
+#
+#         treated_idx_PSAC = self.assign_prognosed_MDA_coverage(population, district, 'PSAC')
+#         treated_idx_SAC = self.assign_prognosed_MDA_coverage(population, district, 'SAC')
+#         treated_idx_Adults = self.assign_prognosed_MDA_coverage(population, district, 'Adults')
+#
+#         treated_idx = treated_idx_PSAC + treated_idx_SAC + treated_idx_Adults
+#         # all treated people will have worm burden decreased, and we already have chosen only alive people
+#         for person_id in treated_idx:
+#             self.sim.schedule_hsi_event(HSI_Schisto_MDA(self.module, person_id), self.sim.date)
+#
+#     def assign_prognosed_MDA_coverage(self, population, district, age_group):
+#         """Assign coverage of MDA program to chosen age_group. The same coverage for every district.
+#
+#           :param district: district for which the MDA coverage is required
+#           :param population: population
+#           :param age_group: 'SAC', 'PSAC', 'Adults'
+#           :returns MDA_idx: indices of people that will be administered PZQ in the MDA program
+#           """
+#
+#         df = population.props
+#         params = self.module.parameters
+#         age_range = map_age_groups(age_group)  # returns a tuple (a,b) a <= age_group <= b
+#         param_str = 'MDA_prognosed_' + age_group
+#
+#         coverage = params[param_str]
+#         coverage_distr = coverage[district]
+#
+#         eligible = df.index[(df.is_alive) & (df['district_of_residence'] == district)
+#                             & (df['age_years'].between(age_range[0], age_range[1]))]
+#         MDA_idx = []
+#         if len(eligible):
+#             MDA_idx = self.module.rng.choice(eligible,
+#                                              size=int(coverage_distr * (len(eligible))),
+#                                              replace=False)
+#
+#         return MDA_idx
 
 
 # def count_days_this_year(date_end, date_start):

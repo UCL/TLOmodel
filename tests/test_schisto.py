@@ -17,10 +17,9 @@ from tlo.methods import (
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
-
 # todo - run and produce plots using scripts
 # todo - switches to log or not
-# todo - clean up code (removing comments)
+# todo - clean up code (removing commented-out blocks)
 # todo - make work for all districts (?)
 
 def get_simulation(seed, start_date, mda_execute=True):
