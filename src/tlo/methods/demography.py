@@ -370,7 +370,9 @@ class Demography(Module):
         if ('Contraception' in self.sim.modules) or ('SimplifiedBirths' in self.sim.modules):
             # If possible, append to the log additional information about pregnancy:
             data_to_log_for_each_death.update({
+                'age_days': person['age_days'],
                 'pregnancy': person['is_pregnant'],
+                'postpartum': person['la_is_postpartum']
             })
 
         logger.info(key='death', data=data_to_log_for_each_death)
