@@ -3,11 +3,11 @@
  postnatal supervisor, newborn outcomes) , allowing for faster runnning when these are not required. The main assumption
  is that every pregnancy results in a birth."""
 
-import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
+from tlo.methods.contraception import get_medium_variant_asfr_from_wpp_resourcefile
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -151,27 +151,8 @@ class SimplifiedBirthsPoll(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         self.months_between_polls = 1
         super().__init__(module, frequency=DateOffset(months=self.months_between_polls))
-        self.asfr = self.process_asfr_data()
-
-    def process_asfr_data(self):
-        """Process the imported data on age-specific fertility rates into a form that can be used to quickly map
-        age-ranges to an asfr."""
-        dat = self.module.parameters['age_specific_fertility_rates']
-        dat = dat.drop(dat[~dat.Variant.isin(['WPP_Estimates', 'WPP_Medium variant'])].index)
-        dat['Period-Start'] = dat['Period'].str.split('-').str[0].astype(int)
-        dat['Period-End'] = dat['Period'].str.split('-').str[1].astype(int)
-        years = range(min(dat['Period-Start'].values), 1 + max(dat['Period-End'].values))
-
-        # Convert the rates for asfr (rate of live-birth per year) to a rate per the frequency of this event repeating
-        dat['asfr_per_period'] = 1 - np.exp(np.log(1-dat['asfr']) * (self.months_between_polls / 12))
-
-        asfr = dict()  # format is {year: {age-range: asfr}}
-        for year in years:
-            asfr[year] = dat.loc[
-                (year >= dat['Period-Start']) & (year <= dat['Period-End'])
-                ].set_index('Age_Grp')['asfr_per_period'].to_dict()
-
-        return asfr
+        self.asfr = get_medium_variant_asfr_from_wpp_resourcefile(
+            dat=self.module.parameters['age_specific_fertility_rates'], months_exposure=self.months_between_polls)
 
     def apply(self, population):
         # Set new pregnancies:

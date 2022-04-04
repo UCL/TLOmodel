@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 
 import pandas as pd
+import pytest
 from pandas import DateOffset
 
 from tlo import Date, Simulation, logging
@@ -12,12 +13,10 @@ from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     demography,
     diarrhoea,
-    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    hiv,
     simplified_births,
     symptommanager,
 )
@@ -30,7 +29,7 @@ from tlo.methods.diarrhoea import (
     increase_risk_of_death,
     make_treatment_perfect,
 )
-from tlo.methods.hsi_generic_first_appts import HSI_GenericFirstApptAtFacilityLevel1
+from tlo.methods.hsi_generic_first_appts import HSI_GenericFirstApptAtFacilityLevel0
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
@@ -57,7 +56,8 @@ def get_combined_log(log_filepath):
     return m
 
 
-def test_basic_run_of_diarrhoea_module_with_default_params(tmpdir):
+@pytest.mark.slow
+def test_basic_run_of_diarrhoea_module_with_default_params(tmpdir, seed):
     """Check that the module run and that properties are maintained correctly, using health system and default
     parameters"""
     start_date = Date(2010, 1, 1)
@@ -70,7 +70,7 @@ def test_basic_run_of_diarrhoea_module_with_default_params(tmpdir):
                       "Diarrhoea": logging.INFO}
                   }
 
-    sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -82,7 +82,6 @@ def test_basic_run_of_diarrhoea_module_with_default_params(tmpdir):
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
                  diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
-                 dx_algorithm_child.DxAlgorithmChild()
                  )
 
     sim.make_initial_population(n=popsize)
@@ -97,13 +96,14 @@ def test_basic_run_of_diarrhoea_module_with_default_params(tmpdir):
     assert (m['date_of_outcome'] == m['date_o']).all()
 
 
-def test_basic_run_of_diarrhoea_module_with_zero_incidence():
+@pytest.mark.slow
+def test_basic_run_of_diarrhoea_module_with_zero_incidence(seed):
     """Run with zero incidence and check for no cases or deaths"""
     start_date = Date(2010, 1, 1)
     end_date = Date(2015, 12, 31)
     popsize = 1000
 
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -115,7 +115,6 @@ def test_basic_run_of_diarrhoea_module_with_zero_incidence():
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                  diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
-                 hiv.DummyHivModule(),
                  )
 
     # **Zero-out incidence**:
@@ -150,7 +149,8 @@ def test_basic_run_of_diarrhoea_module_with_zero_incidence():
     assert not df.loc[~df.is_alive & ~pd.isnull(df.date_of_birth), 'cause_of_death'].str.startswith('Diarrhoea').any()
 
 
-def test_basic_run_of_diarrhoea_module_with_high_incidence_and_zero_death(tmpdir):
+@pytest.mark.slow
+def test_basic_run_of_diarrhoea_module_with_high_incidence_and_zero_death(tmpdir, seed):
     """Check that there are incident cases, and that everyone recovers naturally"""
 
     start_date = Date(2010, 1, 1)
@@ -163,7 +163,7 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_zero_death(tmpdir
                       "Diarrhoea": logging.INFO}
                   }
 
-    sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -202,7 +202,8 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_zero_death(tmpdir
     assert (m['date_of_outcome'] == m['date_o']).all()
 
 
-def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_no_treatment(tmpdir):
+@pytest.mark.slow
+def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_no_treatment(tmpdir, seed):
     """Check that there are incident cases, treatments and deaths occurring correctly"""
     start_date = Date(2010, 1, 1)
     end_date = Date(2015, 12, 31)
@@ -214,7 +215,7 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_no
                       "Diarrhoea": logging.INFO}
                   }
 
-    sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -260,7 +261,8 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_no
     assert (m['date_of_outcome'] == m['date_o']).all()
 
 
-def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_with_perfect_treatment(tmpdir):
+@pytest.mark.slow
+def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_with_perfect_treatment(tmpdir, seed):
     """Run with high incidence and perfect treatment, with and without spurious symptoms of diarrhoea being generated"""
 
     def run(spurious_symptoms):
@@ -276,7 +278,7 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
                           "Diarrhoea": logging.INFO}
                       }
 
-        sim = Simulation(start_date=start_date, seed=0, show_progress_bar=True, log_config=log_config)
+        sim = Simulation(start_date=start_date, seed=seed, show_progress_bar=True, log_config=log_config)
 
         # Register the appropriate modules
         sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -285,7 +287,7 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
                      healthsystem.HealthSystem(
                          resourcefilepath=resourcefilepath,
                          disable=True,
-                         ignore_cons_constraints=True,
+                         cons_availability='all',
                      ),
                      symptommanager.SymptomManager(resourcefilepath=resourcefilepath,
                                                    spurious_symptoms=spurious_symptoms
@@ -297,7 +299,6 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
                      ),
                      diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
                      diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
-                     dx_algorithm_child.DxAlgorithmChild()
                      )
         # Edit rate of spurious symptoms to be limited to additional cases of diarrhoea:
         sp_symps = sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence']
@@ -345,13 +346,13 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
     run(spurious_symptoms=True)
 
 
-def test_do_when_presentation_with_diarrhoea_severe_dehydration():
+def test_do_when_presentation_with_diarrhoea_severe_dehydration(seed):
     """Check that when someone presents with diarrhoea and severe dehydration, the correct HSI is created"""
 
     start_date = Date(2010, 1, 1)
     popsize = 200  # smallest population size that works
 
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
@@ -359,7 +360,7 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration():
                  healthsystem.HealthSystem(
                      resourcefilepath=resourcefilepath,
                      disable=False,
-                     ignore_cons_constraints=True
+                     cons_availability='all'
                  ),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(
@@ -372,8 +373,8 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration():
                  )
 
     # Make DxTest for danger signs perfect:
-    sim.modules['Diarrhoea'].parameters['sensitivity_danger_signs_visual_inspection'] = 1.0
-    sim.modules['Diarrhoea'].parameters['specificity_danger_signs_visual_inspection'] = 1.0
+    sim.modules['Diarrhoea'].parameters['sensitivity_severe_dehydration_visual_inspection'] = 1.0
+    sim.modules['Diarrhoea'].parameters['specificity_severe_dehydration_visual_inspection'] = 1.0
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date)
@@ -396,7 +397,7 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration():
         'gi_treatment_date': pd.NaT,
     }
     df.loc[person_id, props_new.keys()] = props_new.values()
-    generic_hsi = HSI_GenericFirstApptAtFacilityLevel1(
+    generic_hsi = HSI_GenericFirstApptAtFacilityLevel0(
         module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
 
     # 1) If DxTest of danger signs perfect and 100% chance of referral --> Inpatient HSI should be created
@@ -419,14 +420,14 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration():
     assert isinstance(evs[0][1], HSI_Diarrhoea_Treatment_Outpatient)
 
 
-def test_do_when_presentation_with_diarrhoea_severe_dehydration_dxtest_notfunctional():
+def test_do_when_presentation_with_diarrhoea_severe_dehydration_dxtest_notfunctional(seed):
     """Check that when someone presents with diarrhoea and severe dehydration but the DxTest for danger signs
     is not functional (0% sensitivity, 0% specificity) that an Outpatient appointment is created"""
 
     start_date = Date(2010, 1, 1)
     popsize = 200  # smallest population size that works
 
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
@@ -434,7 +435,7 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration_dxtest_notfuncti
                  healthsystem.HealthSystem(
                      resourcefilepath=resourcefilepath,
                      disable=False,
-                     ignore_cons_constraints=True
+                     cons_availability='all'
                  ),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(
@@ -471,7 +472,7 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration_dxtest_notfuncti
         'gi_treatment_date': pd.NaT,
     }
     df.loc[person_id, props_new.keys()] = props_new.values()
-    generic_hsi = HSI_GenericFirstApptAtFacilityLevel1(
+    generic_hsi = HSI_GenericFirstApptAtFacilityLevel0(
         module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
 
     # Only an out-patient appointment should be created as the DxTest for danger signs is not functional.
@@ -484,13 +485,13 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration_dxtest_notfuncti
     assert isinstance(evs[0][1], HSI_Diarrhoea_Treatment_Outpatient)
 
 
-def test_do_when_presentation_with_diarrhoea_non_severe_dehydration():
+def test_do_when_presentation_with_diarrhoea_non_severe_dehydration(seed):
     """Check that when someone presents with diarrhoea and non-severe dehydration, the correct HSI is created"""
 
     start_date = Date(2010, 1, 1)
     popsize = 200  # smallest population size that works
 
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
@@ -498,7 +499,7 @@ def test_do_when_presentation_with_diarrhoea_non_severe_dehydration():
                  healthsystem.HealthSystem(
                      resourcefilepath=resourcefilepath,
                      disable=False,
-                     ignore_cons_constraints=True
+                     cons_availability='all'
                  ),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(
@@ -535,7 +536,7 @@ def test_do_when_presentation_with_diarrhoea_non_severe_dehydration():
         'gi_treatment_date': pd.NaT,
     }
     df.loc[person_id, props_new.keys()] = props_new.values()
-    generic_hsi = HSI_GenericFirstApptAtFacilityLevel1(
+    generic_hsi = HSI_GenericFirstApptAtFacilityLevel0(
         module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
 
     # 1) Outpatient HSI should be created
@@ -548,12 +549,12 @@ def test_do_when_presentation_with_diarrhoea_non_severe_dehydration():
     assert isinstance(evs[0][1], HSI_Diarrhoea_Treatment_Outpatient)
 
 
-def test_run_each_of_the_HSI():
+def test_run_each_of_the_HSI(seed):
     """Check that HSI specified can be run correctly"""
     start_date = Date(2010, 1, 1)
     popsize = 200  # smallest population size that works
 
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -562,7 +563,7 @@ def test_run_each_of_the_HSI():
                  healthsystem.HealthSystem(
                      resourcefilepath=resourcefilepath,
                      disable=False,
-                     ignore_cons_constraints=True
+                     cons_availability='all'
                  ),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(
@@ -586,25 +587,23 @@ def test_run_each_of_the_HSI():
     hsi_outpatient.run(squeeze_factor=0)
 
 
-def test_does_treatment_prevent_death():
+def test_does_treatment_prevent_death(seed):
     """Check that the helper function 'does_treatment_prevent_death' works as expected."""
 
     start_date = Date(2010, 1, 1)
     popsize = 1000
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
-                 dx_algorithm_child.DxAlgorithmChild(),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                  diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
-                 hiv.DummyHivModule(),
                  )
 
     # Increase incidence and risk of death in Diarrhoea episodes
@@ -665,13 +664,13 @@ def test_does_treatment_prevent_death():
     ) for _ in range(1000)])
 
 
-def test_do_treatment_for_those_that_will_die_if_consumables_available():
+def test_do_treatment_for_those_that_will_die_if_consumables_available(seed):
     """Check that when someone who will die and is provided with treatment, that the death is prevented"""
 
     # ** If consumables are available **:
     start_date = Date(2010, 1, 1)
     popsize = 200  # smallest population size that works
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
@@ -679,7 +678,7 @@ def test_do_treatment_for_those_that_will_die_if_consumables_available():
                  healthsystem.HealthSystem(
                      resourcefilepath=resourcefilepath,
                      disable=False,
-                     ignore_cons_constraints=True
+                     cons_availability='all'
                  ),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(
@@ -736,14 +735,14 @@ def test_do_treatment_for_those_that_will_die_if_consumables_available():
     assert pd.notnull(df.at[person_id, 'gi_treatment_date'])
 
 
-def test_do_treatment_for_those_that_will_die_if_consumables_not_available():
+def test_do_treatment_for_those_that_will_die_if_consumables_not_available(seed):
     """Check that when someone who will die and is provided with treatment, but that consumables are not available,
     that the death is not prevented"""
 
     # ** If consumables are available **:
     start_date = Date(2010, 1, 1)
     popsize = 200  # smallest population size that works
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
@@ -769,8 +768,8 @@ def test_do_treatment_for_those_that_will_die_if_consumables_not_available():
     df = sim.population.props
 
     # Make availability of consumables zero
-    sim.modules['HealthSystem'].cons_available_today['Item_Code'] *= False
-    sim.modules['HealthSystem'].cons_available_today['Intervention_Package_Code'] *= False
+    sim.modules['HealthSystem'].cons_available_today['Item_Code'][:] = False
+    sim.modules['HealthSystem'].cons_available_today['Intervention_Package_Code'][:] = False
 
     # Set that person_id=0 is a child with bloody diarrhoea and severe dehydration:
     person_id = 0
@@ -812,14 +811,14 @@ def test_do_treatment_for_those_that_will_die_if_consumables_not_available():
     assert pd.notnull(df.at[person_id, 'gi_treatment_date'])
 
 
-def test_do_treatment_for_those_that_will_not_die():
+def test_do_treatment_for_those_that_will_not_die(seed):
     """Check that when someone who will not die and is provided with treatment and gets zinc, that the date of cure is
     brought forward"""
 
     # ** If consumables are available **:
     start_date = Date(2010, 1, 1)
     popsize = 200  # smallest population size that works
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
@@ -827,7 +826,7 @@ def test_do_treatment_for_those_that_will_not_die():
                  healthsystem.HealthSystem(
                      resourcefilepath=resourcefilepath,
                      disable=False,
-                     ignore_cons_constraints=True
+                     cons_availability='all'
                  ),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(
@@ -888,3 +887,56 @@ def test_do_treatment_for_those_that_will_not_die():
     recovery_event = DiarrhoeaNaturalRecoveryEvent(module=sim.modules['Diarrhoea'], person_id=person_id)
     recovery_event.apply(person_id=person_id)
     assert not df.at[person_id, 'gi_has_diarrhoea']
+
+
+def test_effect_of_vaccine(seed):
+    """Check that if the vaccine is perfect, no one infected with rotavirus and who has the vaccine gets severe
+     dehydration."""
+
+    # Create dummy simulation
+    start_date = Date(2010, 1, 1)
+    popsize = 200
+
+    sim = Simulation(start_date=start_date, seed=seed)
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable_and_reject_all=True),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
+                 diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
+                 )
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date)
+
+    # Get the method that determines dehydration
+    get_dehydration = sim.modules['Diarrhoea'].models.get_dehydration
+
+    # 1) Make effect of vaccine perfect
+    sim.modules['Diarrhoea'].parameters['rr_severe_dehydration_due_to_rotavirus_with_R1_under1yo'] = 0.0
+    sim.modules['Diarrhoea'].parameters['rr_severe_dehydration_due_to_rotavirus_with_R1_over1yo'] = 0.0
+
+    # Check that if person has vaccine and is infected with rotavirus, there is never severe dehydration...
+    assert 'severe' not in [get_dehydration(pathogen='rotavirus', va_rota_all_doses=True, age_years=1)
+                            for _ in range(100)]
+    assert 'severe' not in [get_dehydration(pathogen='rotavirus', va_rota_all_doses=True, age_years=4)
+                            for _ in range(100)]
+
+    # ... but if no vaccine or infected with another pathogen, then sometimes it is severe dehydration.
+    assert 'severe' in [get_dehydration(pathogen='rotavirus', va_rota_all_doses=False, age_years=1)
+                        for _ in range(100)]
+    assert 'severe' in [get_dehydration(pathogen='shigella', va_rota_all_doses=True, age_years=1)
+                        for _ in range(100)]
+
+    # 2) Make effect of vaccine imperfect
+    sim.modules['Diarrhoea'].parameters['rr_severe_dehydration_due_to_rotavirus_with_R1_under1yo'] = 1.0
+    sim.modules['Diarrhoea'].parameters['rr_severe_dehydration_due_to_rotavirus_with_R1_over1yo'] = 1.0
+
+    # Check that if the vaccine is imperfect and the person is infected with rotavirus, then there sometimes is severe
+    # dehydration.
+    assert 'severe' in [get_dehydration(pathogen='rotavirus', va_rota_all_doses=True, age_years=1)
+                        for _ in range(100)]
+    assert 'severe' in [get_dehydration(pathogen='rotavirus', va_rota_all_doses=True, age_years=2)
+                        for _ in range(100)]

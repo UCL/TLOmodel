@@ -1,5 +1,5 @@
-"""Test file for the bed-days"""
-
+"""Test file for the bed-days class"""
+import copy
 import os
 from pathlib import Path
 
@@ -7,10 +7,10 @@ import pandas as pd
 import pytest
 
 from tlo import Date, Module, Simulation, logging
-# 1) Core functionality of the BedDays module
 from tlo.analysis.utils import parse_log_file
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata, demography, healthsystem
+from tlo.methods.bed_days import BedDays
 from tlo.methods.healthsystem import HSI_Event
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -22,8 +22,9 @@ popsize = 200
 """Suite of tests to examine the use of BedDays class when initialised by the HealthSystem Module"""
 
 
-def test_beddays_in_isolation(tmpdir):
-    sim = Simulation(start_date=start_date)
+def test_beddays_in_isolation(tmpdir, seed):
+    """Test the functionalities of BedDays class in the absence of HSI_Events"""
+    sim = Simulation(start_date=start_date, seed=seed)
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
@@ -33,7 +34,7 @@ def test_beddays_in_isolation(tmpdir):
     hs = sim.modules['HealthSystem']
 
     # Update BedCapacity data with a simple table:
-    level2_facility_ids = [64, 65, 66]  # <-- the level 2 facilities for each region
+    level2_facility_ids = [128, 129, 130]  # <-- the level 2 facilities for each region
     cap_bedtype1 = 5
     cap_bedtype2 = 100
 
@@ -61,7 +62,7 @@ def test_beddays_in_isolation(tmpdir):
 
     sim.date = start_date
     hs.bed_days.impose_beddays_footprint(person_id=person_id, footprint=footprint)
-    tracker = hs.bed_days.bed_tracker['bedtype1'][hs.bed_days.get_persons_level2_facility_id(person_id)]
+    tracker = hs.bed_days.bed_tracker['bedtype1'][hs.bed_days.get_facility_id_for_beds(person_id)]
 
     # check if impose footprint works as expected
     assert ([cap_bedtype1 - 1] * dur_bedtype1 + [cap_bedtype1] * (days_sim + 1 - dur_bedtype1) == tracker.values).all()
@@ -82,7 +83,7 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
-def test_bed_days_basics(tmpdir):
+def test_bed_days_basics(tmpdir, seed):
     """Check all the basic functionality about bed-days footprints and capacity management by the health-system"""
 
     class DummyModule(Module):
@@ -103,7 +104,7 @@ def test_bed_days_basics(tmpdir):
             super().__init__(module, person_id=person_id)
             self.TREATMENT_ID = 'Dummy'
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-            self.ACCEPTED_FACILITY_LEVEL = 1
+            self.ACCEPTED_FACILITY_LEVEL = '1a'
             self.ALERT_OTHER_DISEASES = []
 
         def apply(self, person_id, squeeze_factor):
@@ -116,7 +117,7 @@ def test_bed_days_basics(tmpdir):
             super().__init__(module, person_id=person_id)
             self.TREATMENT_ID = 'Dummy'
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-            self.ACCEPTED_FACILITY_LEVEL = 2
+            self.ACCEPTED_FACILITY_LEVEL = '2'
             self.ALERT_OTHER_DISEASES = []
             self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({
                 'high_dependency_bed': 10,
@@ -128,7 +129,7 @@ def test_bed_days_basics(tmpdir):
             print(f'Bed-days allocated to this event: {self.bed_days_allocated_to_this_event}')
 
     # Create simulation:
-    sim = Simulation(start_date=start_date, seed=0, log_config={
+    sim = Simulation(start_date=start_date, seed=seed, log_config={
         'filename': 'bed_days',
         'directory': tmpdir,
         'custom_levels': {
@@ -144,8 +145,8 @@ def test_bed_days_basics(tmpdir):
     hs = sim.modules['HealthSystem']
 
     # 0) Check that structure of the log is as expected (if the healthsystem was not disabled)
-    log = parse_log_file(sim.log_filepath)['tlo.methods.bed_days']
-    assert set([f"bed_tracker_{bed}" for bed in hs.bed_days.bed_types]) == set(log.keys())
+    log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']
+    assert set([f"bed_tracker_{bed}" for bed in hs.bed_days.bed_types]).issubset(set(log.keys()))
 
     for bed_type in [f"bed_tracker_{bed}" for bed in hs.bed_days.bed_types]:
         # Check dates are as expected:
@@ -191,7 +192,6 @@ def test_bed_days_basics(tmpdir):
     # 6) Check that footprint can be correctly recorded in the tracker after the HSI event is run and that
     #  '''bd_is_patient''' is updated. (All when the days fall safely inside the period of the simulation)
     # store copy of the original tracker
-    import copy
     orig = copy.deepcopy(hs.bed_days.bed_tracker)
 
     # check that person is not an in-patient before the HSI event's postapply hook is run.
@@ -210,8 +210,8 @@ def test_bed_days_basics(tmpdir):
     diff = pd.DataFrame()
     for bed_type in hsi_bd.BEDDAYS_FOOTPRINT:
         diff[bed_type] = - (
-            hs.bed_days.bed_tracker[bed_type].loc[:, hs.bed_days.get_persons_level2_facility_id(person_id)] -
-            orig[bed_type].loc[:, hs.bed_days.get_persons_level2_facility_id(person_id)]
+            hs.bed_days.bed_tracker[bed_type].loc[:, hs.bed_days.get_facility_id_for_beds(person_id)] -
+            orig[bed_type].loc[:, hs.bed_days.get_facility_id_for_beds(person_id)]
         )
 
     first_day = diff[diff.sum(axis=1) > 0].index.min()
@@ -240,7 +240,7 @@ def test_bed_days_basics(tmpdir):
     check_dtypes(sim)
 
 
-def test_bed_days_property_is_inpatient(tmpdir):
+def test_bed_days_property_is_inpatient(tmpdir, seed):
     """Check that the is_inpatient property is controlled correctly and kept in sync with the bed-tracker"""
 
     class DummyModule(Module):
@@ -308,7 +308,7 @@ def test_bed_days_property_is_inpatient(tmpdir):
             super().__init__(module, person_id=person_id)
             self.TREATMENT_ID = 'Dummy'
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-            self.ACCEPTED_FACILITY_LEVEL = 2
+            self.ACCEPTED_FACILITY_LEVEL = '2'
             self.ALERT_OTHER_DISEASES = []
             self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})
 
@@ -316,7 +316,7 @@ def test_bed_days_property_is_inpatient(tmpdir):
             pass
 
     # Create simulation with the health system and DummyModule
-    sim = Simulation(start_date=start_date, seed=0, log_config={
+    sim = Simulation(start_date=start_date, seed=seed, log_config={
         'filename': 'temp',
         'directory': tmpdir,
         'custom_levels': {
@@ -333,7 +333,7 @@ def test_bed_days_property_is_inpatient(tmpdir):
     check_dtypes(sim)
 
     # Load the logged tracker for general beds
-    log = parse_log_file(sim.log_filepath)['tlo.methods.bed_days']
+    log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']
     tracker = log['bed_tracker_general_bed'].drop(columns={'date'}).set_index('date_of_bed_occupancy')
     tracker.index = pd.to_datetime(tracker.index)
 
@@ -367,7 +367,7 @@ def test_bed_days_property_is_inpatient(tmpdir):
     assert beds_occupied.equals(tot_time_as_in_patient)
 
 
-def test_bed_days_released_on_death(tmpdir):
+def test_bed_days_released_on_death(tmpdir, seed):
     """Check that bed-days scheduled to be occupied are released upon the death of the person"""
     days_simulation_duration = 20
 
@@ -427,7 +427,7 @@ def test_bed_days_released_on_death(tmpdir):
             super().__init__(module, person_id=person_id)
             self.TREATMENT_ID = 'Dummy'
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-            self.ACCEPTED_FACILITY_LEVEL = 2
+            self.ACCEPTED_FACILITY_LEVEL = '2'
             self.ALERT_OTHER_DISEASES = []
             self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 10})
 
@@ -435,7 +435,7 @@ def test_bed_days_released_on_death(tmpdir):
             pass
 
     # Create simulation with the health system and DummyModule
-    sim = Simulation(start_date=start_date, seed=0, log_config={
+    sim = Simulation(start_date=start_date, seed=seed, log_config={
         'filename': 'temp',
         'directory': tmpdir,
         'custom_levels': {
@@ -456,7 +456,7 @@ def test_bed_days_released_on_death(tmpdir):
     assert sim.population.props.at[1, 'is_alive']  # person 1 is alive
 
     # Load the logged tracker for general beds
-    log = parse_log_file(sim.log_filepath)['tlo.methods.bed_days']
+    log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']
     tracker = log['bed_tracker_general_bed'].drop(columns={'date'}).set_index('date_of_bed_occupancy')
     tracker.index = pd.to_datetime(tracker.index)
 
@@ -476,7 +476,7 @@ def test_bed_days_released_on_death(tmpdir):
     assert beds_occupied.astype(int).equals(expected_beds_occupied.astype(int))
 
 
-def test_bed_days_basics_with_healthsystem_disabled():
+def test_bed_days_basics_with_healthsystem_disabled(seed):
     """Check basic functionality of bed-days class when the health-system has been disabled"""
 
     class DummyModule(Module):
@@ -510,7 +510,7 @@ def test_bed_days_basics_with_healthsystem_disabled():
             self.this_ran = False
             self.TREATMENT_ID = 'Dummy'
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-            self.ACCEPTED_FACILITY_LEVEL = 2
+            self.ACCEPTED_FACILITY_LEVEL = '2'
             self.ALERT_OTHER_DISEASES = []
             self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({
                 'high_dependency_bed': 10,
@@ -523,7 +523,7 @@ def test_bed_days_basics_with_healthsystem_disabled():
             print(f'Bed-days allocated to this event: {self.bed_days_allocated_to_this_event}')
 
     # Create simulation:
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
@@ -536,7 +536,7 @@ def test_bed_days_basics_with_healthsystem_disabled():
     # Update BedCapacity data with a simple table:
     hs.parameters['BedCapacity'] = pd.DataFrame(
         data={
-            'Facility_ID': [64, 65, 66],  # <-- the level 2 facilities for each region,
+            'Facility_ID': [128, 129, 130],  # <-- the level 2 facilities for each region,
             'high_dependency_bed': 0,
             'general_bed': 0
         }
@@ -555,8 +555,9 @@ def test_bed_days_basics_with_healthsystem_disabled():
     assert not sim.population.props.at[0, 'is_alive']  # person 0 has died
 
 
-def test_the_use_of_beds_from_multiple_facilities():
-    sim = Simulation(start_date=start_date)
+def test_the_use_of_beds_from_multiple_facilities(seed):
+    """Test the functionalities of BedDays class when multiple facilities are defined"""
+    sim = Simulation(start_date=start_date, seed=seed)
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
@@ -568,7 +569,7 @@ def test_the_use_of_beds_from_multiple_facilities():
     # Create a simple bed capacity dataframe with capacity designated for two regions
     hs.parameters['BedCapacity'] = pd.DataFrame(
         data={
-            'Facility_ID': [64, 65],  # <-- facility_id for level 2 facilities in Northern (64) and Central (65)
+            'Facility_ID': [129, 130],  # <-- facility_id for level 2 facilities in Northern (129) and Central (130)
             'bedtype1': 50,
             'bedtype2': 100
         }
@@ -581,9 +582,9 @@ def test_the_use_of_beds_from_multiple_facilities():
 
     # Define the district and the facility_id to which the person will have beddays.
     person_info = [
-        ("Chitipa", 64),    # <-- in the Northern region, so use facility_id 64
-        ("Kasungu", 65),    # <-- in the Central region, so use facility_id 65
-        ("Machinga", 66)    # <-- in the Southern region, so use facility_id 66 (for which no capacity is defined)
+        ("Chitipa", 129),    # <-- in the Northern region, so use facility_id 129 (for which capacity is defined)
+        ("Kasungu", 130),    # <-- in the Central region, so use facility_id 130 (for which capacity is defined)
+        ("Machinga", 128)    # <-- in the Southern region, so use facility_id 128 (for which no capacity is defined)
     ]
 
     df = sim.population.props
@@ -618,3 +619,216 @@ def test_the_use_of_beds_from_multiple_facilities():
     # person 2 is in the Southern region for which no beddays capacity is defimed
     with pytest.raises(KeyError):
         hs.bed_days.impose_beddays_footprint(person_id=2, footprint=footprint)
+
+
+def test_bed_days_allocation_to_HSI():
+    """Checks the functionality of `issue_bed_days_according_to_availability` in providing the best possible footprint
+     to the HSI, given the requested footprint and the current state of the trackers"""
+
+    facility_id = 0  # Arbitrary facility_id
+
+    def prepare_sim():
+        """Create and run simulation"""
+        sim = Simulation(start_date=start_date, seed=0)
+        sim.register(
+            demography.Demography(resourcefilepath=resourcefilepath),
+            healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        )
+
+        # Update BedCapacity parameter with a simple table:
+        hs = sim.modules['HealthSystem']
+        hs.parameters['BedCapacity'] = pd.DataFrame(
+            data={
+                'Facility_ID': [facility_id],  # The level 2 facility that will be used,
+                'bed_A': 1,  # Only one bed of the each of the required type at the facility.
+                'bed_B': 1,
+            }
+        )
+        # Re-initialise the Bed-days instance (so that these new parameter are used)
+        hs.bed_days = BedDays(hs)
+
+        # Simulate for 0 days to get everything established
+        sim.make_initial_population(n=1)
+        sim.simulate(end_date=start_date)
+        return sim
+
+    def check_footprint_against_expectation(footprint_requested,
+                                            fn_edit_bed_tracker,
+                                            expected_footprint_sent_to_hsi
+                                            ):
+        _sim = prepare_sim()
+
+        # Edit tracker
+        fn_edit_bed_tracker(_sim.modules['HealthSystem'].bed_days.bed_tracker)
+
+        # See what footprint can be provided to HSI
+        footprint_provided = _sim.modules['HealthSystem'].bed_days.issue_bed_days_according_to_availability(
+            facility_id=facility_id, footprint=footprint_requested)
+
+        # Check:
+        assert expected_footprint_sent_to_hsi == footprint_provided
+
+    # A: When only requesting a bed of the lowest tier:
+    # A1) ... when the bed is available for all requested days:
+    def make_no_changes(_bed_tracker):
+        return _bed_tracker
+
+    check_footprint_against_expectation(
+        footprint_requested={'bed_A': 0, 'bed_B': 3},
+        fn_edit_bed_tracker=make_no_changes,
+        expected_footprint_sent_to_hsi={'bed_A': 0, 'bed_B': 3}
+    )
+
+    # A2) ... when the bed is available for only the first of the days requested;
+    def make_bed_b_available_on_first_day_only(_bed_tracker):
+        _bed_tracker['bed_B'][facility_id].values[1:] = 0
+        return _bed_tracker
+
+    check_footprint_against_expectation(
+        footprint_requested={'bed_A': 0, 'bed_B': 3},
+        fn_edit_bed_tracker=make_bed_b_available_on_first_day_only,
+        expected_footprint_sent_to_hsi={'bed_A': 0, 'bed_B': 1}
+    )
+
+    # A3) ... when the bed is not available on the first day but is available on later days;
+    def make_bed_b_not_available_on_first_day(_bed_tracker):
+        _bed_tracker['bed_B'][facility_id].values[0] = 0
+        return _bed_tracker
+
+    check_footprint_against_expectation(
+        footprint_requested={'bed_A': 0, 'bed_B': 3},
+        fn_edit_bed_tracker=make_bed_b_not_available_on_first_day,
+        expected_footprint_sent_to_hsi={'bed_A': 0, 'bed_B': 0}
+    )
+
+    # B: When requesting a bed of the highest tier only:
+    # B1) ... when the bed is available for all requested days:
+    check_footprint_against_expectation(
+        footprint_requested={'bed_A': 3, 'bed_B': 0},
+        fn_edit_bed_tracker=make_no_changes,
+        expected_footprint_sent_to_hsi={'bed_A': 3, 'bed_B': 0}
+    )
+
+    # B2) ... when the bed is available for only the first of the days requested;
+    def make_bed_a_available_on_first_day_only(_bed_tracker):
+        _bed_tracker['bed_A'][facility_id].values[1:] = 0
+        return _bed_tracker
+
+    check_footprint_against_expectation(
+        footprint_requested={'bed_A': 3, 'bed_B': 0},
+        fn_edit_bed_tracker=make_bed_a_available_on_first_day_only,
+        expected_footprint_sent_to_hsi={'bed_A': 1, 'bed_B': 2}
+    )
+
+    # B3) ... when the bed is not available on the first day but is available on later days;
+    def make_bed_a_not_available_on_first_day(_bed_tracker):
+        _bed_tracker['bed_A'][facility_id].values[0] = 0
+        return _bed_tracker
+
+    check_footprint_against_expectation(
+        footprint_requested={'bed_A': 3, 'bed_B': 0},
+        fn_edit_bed_tracker=make_bed_a_not_available_on_first_day,
+        expected_footprint_sent_to_hsi={'bed_A': 0, 'bed_B': 3}
+    )
+
+    # C: When requesting a bed of the highest and lowest tier:
+    # C1) ... when the bed of the higher tier is only available on first day, but the lower tier is always available
+    check_footprint_against_expectation(
+        footprint_requested={'bed_A': 3, 'bed_B': 3},
+        fn_edit_bed_tracker=make_bed_a_available_on_first_day_only,
+        expected_footprint_sent_to_hsi={'bed_A': 1, 'bed_B': 5}
+    )
+
+    # C2) ... when the bed of the higher tier is only available on first day, and the lower tier is available only on
+    # 1st and 2nd day
+    def make_bed_a_available_only_on_first_day_and_bed_b_available_on_first_and_second_day_only(_bed_tracker):
+        _bed_tracker = make_bed_a_available_on_first_day_only(_bed_tracker)
+        _bed_tracker['bed_B'][facility_id].values[2:] = 0
+        return _bed_tracker
+
+    check_footprint_against_expectation(
+        footprint_requested={'bed_A': 3, 'bed_B': 3},
+        fn_edit_bed_tracker=make_bed_a_available_only_on_first_day_and_bed_b_available_on_first_and_second_day_only,
+        expected_footprint_sent_to_hsi={'bed_A': 1, 'bed_B': 1}
+    )
+
+    # C3) ... when the bed of the higher tier and the lower tier are only available on the 1st day
+    def make_bed_a_and_b_available_on_first_day_only(_bed_tracker):
+        return make_bed_b_available_on_first_day_only(
+            make_bed_a_available_on_first_day_only(_bed_tracker))
+
+    check_footprint_against_expectation(
+        footprint_requested={'bed_A': 3, 'bed_B': 3},
+        fn_edit_bed_tracker=make_bed_a_and_b_available_on_first_day_only,
+        expected_footprint_sent_to_hsi={'bed_A': 1, 'bed_B': 0}
+    )
+
+
+def test_bed_days_allocation_information_is_provided_to_HSI():
+    """Checks the HSI is "informed" of the bed days footprint provided to it"""
+
+    district_of_residence = 'Zomba'   # Where person_id=0 is resident: Zomba district is in in the Southern region
+    facility_id = 128  # Facility that will provide the beds (Referral Hospital_Southern)
+    days_of_simulation = 1
+    footprint_requested = {'bed_A': 3, 'bed_B': 3}
+
+    class DummyModule(Module):
+        METADATA = {Metadata.USES_HEALTHSYSTEM}
+
+        def __init__(self):
+            super().__init__()
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            # Edit the HealthSystem bed tracker so that the bed of the higher tier is not available after
+            # 1st day, but the lower tier is.
+            self.sim.modules['HealthSystem'].bed_days.bed_tracker['bed_A'][facility_id].values[1] = 0
+
+            # Make HSI event (and hold pointer to it) and schedule it to occur on the first day of the simulation.
+            self.hsi_event = HSI_Dummy(module=self, person_id=0)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(self.hsi_event, topen=self.sim.date, priority=0)
+
+    class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
+
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = 'Dummy'
+            self.ACCEPTED_FACILITY_LEVEL = '2'
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+            self.BEDDAYS_FOOTPRINT = footprint_requested
+
+        def apply(self, person_id, squeeze_factor):
+            pass
+
+    sim = Simulation(start_date=start_date, seed=0)
+
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        DummyModule(),
+    )
+
+    # Update BedCapacity parameter with a simple table:
+    hs = sim.modules['HealthSystem']
+    hs.parameters['BedCapacity'] = pd.DataFrame(
+        data={
+            'Facility_ID': [facility_id],  # The level 2 facility that will be used,
+            'bed_A': 1,  # Only one bed of the each of the required type at the facility.
+            'bed_B': 1,
+        }
+    )
+    # Re-initialise the Bed-days instance (so that these new parameter are used)
+    hs.bed_days = BedDays(hs)
+
+    # Simulate
+    sim.make_initial_population(n=1)
+    sim.population.props.loc[0, 'district_of_residence'] = district_of_residence
+    sim.simulate(end_date=start_date + pd.DateOffset(days=days_of_simulation))
+
+    # Return the information provided to the HSI
+    assert {'bed_A': 1, 'bed_B': 5} == sim.modules['DummyModule'].hsi_event._received_info_about_bed_days

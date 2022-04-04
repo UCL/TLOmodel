@@ -16,7 +16,7 @@ from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods.hsi_generic_first_appts import (
     HSI_GenericEmergencyFirstApptAtFacilityLevel1,
-    HSI_GenericFirstApptAtFacilityLevel1,
+    HSI_GenericFirstApptAtFacilityLevel0,
 )
 
 # ---------------------------------------------------------------------------------------------------------
@@ -31,7 +31,6 @@ class HealthSeekingBehaviour(Module):
 
     An equation gives the probability of seeking care in response to the "average" symptom. This is modified according
     to if the symptom is associated with a particular effect.
-
     """
 
     INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
@@ -237,7 +236,7 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         symptom_manager = self.sim.modules["SymptomManager"]
         health_system = self.sim.modules["HealthSystem"]
         max_delay = module.parameters['max_days_delay_to_generic_HSI_after_symptoms']
-        routine_hsi_event_class = HSI_GenericFirstApptAtFacilityLevel1
+        routine_hsi_event_class = HSI_GenericFirstApptAtFacilityLevel0
         emergency_hsi_event_class = HSI_GenericEmergencyFirstApptAtFacilityLevel1
 
         # Get IDs of alive persons with new symptoms
@@ -280,7 +279,7 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
             # Check if no symptoms initiating (non-emergency) care seeking specified
             if len(care_seeking_symptoms) == 0:
                 continue
-            # Symptoms in non-emergengency care seeking set may or may not generate an
+            # Symptoms in non-emergency care seeking set may or may not generate an
             # associated HSI event, we first select all persons in subgroup who have
             # any symptoms which may lead to a HSI event being generated.
             # From here onwards care seeking should be taken to mean specifically

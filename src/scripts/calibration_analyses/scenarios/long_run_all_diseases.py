@@ -20,8 +20,6 @@ from tlo.methods import (
     demography,
     depression,
     diarrhoea,
-    dx_algorithm_adult,
-    dx_algorithm_child,
     enhanced_lifestyle,
     epi,
     epilepsy,
@@ -73,8 +71,6 @@ class LongRun(BaseScenario):
             # Representations of the Healthcare System
             healthsystem.HealthSystem(resourcefilepath=self.resources),
             epi.Epi(resourcefilepath=self.resources),
-            dx_algorithm_child.DxAlgorithmChild(resourcefilepath=self.resources),
-            dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=self.resources),
 
             # - Contraception, Pregnancy and Labour
             contraception.Contraception(resourcefilepath=self.resources, use_healthsystem=True),

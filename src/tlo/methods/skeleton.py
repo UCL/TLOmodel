@@ -135,16 +135,17 @@ class Skeleton(Module):
         raise NotImplementedError
 
     def report_daly_values(self):
-        # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
-        # experienced by persons in the previous month. Only rows for alive-persons must be returned.
-        # If multiple causes in CAUSES_OF_DISABILITY are defined, a pd.DataFrame must be returned with a column
-        # corresponding to each cause (but if only one cause in CAUSES_OF_DISABILITY is defined, the pd.Series does not
-        # need to be given a specific name).
+        """
+        This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
+        experienced by persons in the previous month. Only rows for alive-persons must be returned.
+        If multiple causes in CAUSES_OF_DISABILITY are defined, a pd.DataFrame must be returned with a column
+        corresponding to each cause (but if only one cause in CAUSES_OF_DISABILITY is defined, the pd.Series does not
+        need to be given a specific name).
 
-        # To return a value of 0.0 (fully health) for everyone, use:
-        # df = self.sim.popultion.props
-        # return pd.Series(index=df.index[df.is_alive],data=0.0)
-
+        To return a value of 0.0 (fully health) for everyone, use:
+        df = self.sim.population.props
+        return pd.Series(index=df.index[df.is_alive],data=0.0)
+        """
         raise NotImplementedError
 
     def on_hsi_alert(self, person_id, treatment_id):
@@ -195,7 +196,7 @@ class Skeleton_Event(RegularEvent, PopulationScopeEventMixin):
 #   LOGGING EVENTS
 #
 #   Put the logging events here. There should be a regular logger outputting current states of the
-#   population. There may also be a loggig event that is driven by particular events.
+#   population. There may also be a logging event that is driven by particular events.
 # ---------------------------------------------------------------------------------------------------------
 
 class Skeleton_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -210,7 +211,7 @@ class Skeleton_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         assert isinstance(module, Skeleton)
 
     def apply(self, population):
-        # Make some summary statitics
+        # Make some summary statistics
 
         dict_to_output = {
             'Metric_One': 1.0,
@@ -236,11 +237,8 @@ class HSI_Skeleton_Example_Interaction(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Skeleton)
 
-        # Define the call on resources of this treatment event: Time of Officers (Appointments)
-        #   - get an 'empty' footprint:
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        #   - update to reflect the appointments that are required
-        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient
+        # Define the appointments types needed
+        the_appt_footprint = self.make_appt_footprint({'Over5OPD': 1})  # This requires one adult out-patient appt.
 
         # Define the facilities at which this event can occur (only one is allowed)
         # Choose from: list(pd.unique(self.sim.modules['HealthSystem'].parameters['Facilities_For_Each_District']
@@ -264,6 +262,8 @@ class HSI_Skeleton_Example_Interaction(HSI_Event, IndividualScopeEventMixin):
               that have been allocated to this event.
 
         Can return an updated APPT_FOOTPRINT if this differs from the declaration in self.EXPECTED_APPT_FOOTPRINT
+
+        To request consumables use - self.get_all_consumables(item_codes=my_item_codes)
         """
         pass
 
@@ -278,7 +278,7 @@ class HSI_Skeleton_Example_Interaction(HSI_Event, IndividualScopeEventMixin):
 
     def never_ran(self):
         """
-        Do any action that is neccessary when it is clear that the HSI event will never be run. This will occur if it
+        Do any action that is necessary when it is clear that the HSI event will never be run. This will occur if it
         has not run and the simulation date has passed the date 'tclose' by which the event was scheduled to have
         occurred.
         Do not return anything.

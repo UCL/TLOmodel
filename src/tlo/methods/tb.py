@@ -2419,7 +2419,7 @@ class Tb(Module):
 #         # Define the necessary information for an HSI
 #         self.TREATMENT_ID = "Tb_Screening"
 #         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-#         self.ACCEPTED_FACILITY_LEVEL = 1
+#         self.ACCEPTED_FACILITY_LEVEL = '1a'
 #         self.ALERT_OTHER_DISEASES = ["Hiv"]
 #
 #     def apply(self, person_id, squeeze_factor):
@@ -2521,7 +2521,7 @@ class Tb(Module):
 #         # Define the necessary information for an HSI
 #         self.TREATMENT_ID = "Tb_SputumTest"
 #         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-#         self.ACCEPTED_FACILITY_LEVEL = 1
+#         self.ACCEPTED_FACILITY_LEVEL = '1a'
 #         self.ALERT_OTHER_DISEASES = ["Hiv"]
 #
 #     def apply(self, person_id, squeeze_factor):
@@ -2726,7 +2726,7 @@ class Tb(Module):
 #         # Define the necessary information for an HSI
 #         self.TREATMENT_ID = "Tb_XpertTest"
 #         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-#         self.ACCEPTED_FACILITY_LEVEL = 1
+#         self.ACCEPTED_FACILITY_LEVEL = '1a'
 #         self.ALERT_OTHER_DISEASES = ["Hiv"]
 #
 #     def apply(self, person_id, squeeze_factor):
@@ -3008,7 +3008,7 @@ class Tb(Module):
 #         # Define the necessary information for an HSI
 #         self.TREATMENT_ID = "Tb_Xray"
 #         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-#         self.ACCEPTED_FACILITY_LEVEL = 1
+#         self.ACCEPTED_FACILITY_LEVEL = '1a'
 #         self.ALERT_OTHER_DISEASES = ["Hiv"]
 #
 #     def apply(self, person_id, squeeze_factor):
@@ -3165,7 +3165,7 @@ class Tb(Module):
 #         # Define the necessary information for an HSI
 #         self.TREATMENT_ID = "Tb_TreatmentInitiationAdult"
 #         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-#         self.ACCEPTED_FACILITY_LEVEL = 1
+#         self.ACCEPTED_FACILITY_LEVEL = '1a'
 #         self.ALERT_OTHER_DISEASES = []
 #
 #     def apply(self, person_id, squeeze_factor):
@@ -3334,7 +3334,7 @@ class Tb(Module):
 #         # Define the necessary information for an HSI
 #         self.TREATMENT_ID = "Tb_TreatmentInitiationChild"
 #         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-#         self.ACCEPTED_FACILITY_LEVEL = 1
+#         self.ACCEPTED_FACILITY_LEVEL = '1a'
 #         self.ALERT_OTHER_DISEASES = []
 #
 #     def apply(self, person_id, squeeze_factor):
@@ -3503,7 +3503,7 @@ class Tb(Module):
 #         # Define the necessary information for an HSI
 #         self.TREATMENT_ID = "Tb_MdrTreatmentInitiation"
 #         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-#         self.ACCEPTED_FACILITY_LEVEL = 1
+#         self.ACCEPTED_FACILITY_LEVEL = '1a'
 #         self.ALERT_OTHER_DISEASES = []
 #
 #     def apply(self, person_id, squeeze_factor):
@@ -3603,7 +3603,7 @@ class Tb(Module):
 #         # Define the necessary information for an HSI
 #         self.TREATMENT_ID = "Tb_RetreatmentAdult"
 #         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-#         self.ACCEPTED_FACILITY_LEVEL = 1
+#         self.ACCEPTED_FACILITY_LEVEL = '1a'
 #         self.ALERT_OTHER_DISEASES = []
 #
 #     def apply(self, person_id, squeeze_factor):
@@ -3708,7 +3708,7 @@ class Tb(Module):
 #         # Define the necessary information for an HSI
 #         self.TREATMENT_ID = "Tb_RetreatmentChild"
 #         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-#         self.ACCEPTED_FACILITY_LEVEL = 1
+#         self.ACCEPTED_FACILITY_LEVEL = '1a'
 #         self.ALERT_OTHER_DISEASES = []
 #
 #     def apply(self, person_id, squeeze_factor):
@@ -3816,7 +3816,7 @@ class Tb(Module):
 #         # Define the necessary information for an HSI
 #         self.TREATMENT_ID = "Tb_FollowUp"
 #         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-#         self.ACCEPTED_FACILITY_LEVEL = 1
+#         self.ACCEPTED_FACILITY_LEVEL = '1a'
 #         self.ALERT_OTHER_DISEASES = []
 #
 #     def apply(self, person_id, squeeze_factor):
@@ -3849,7 +3849,7 @@ class Tb(Module):
 #         # Define the necessary information for an HSI
 #         self.TREATMENT_ID = "Tb_FollowUpSputumTest"
 #         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-#         self.ACCEPTED_FACILITY_LEVEL = 1
+#         self.ACCEPTED_FACILITY_LEVEL = '1a'
 #         self.ALERT_OTHER_DISEASES = []
 #
 #     def apply(self, person_id, squeeze_factor):
@@ -4081,7 +4081,7 @@ class Tb(Module):
 #         # Define the necessary information for an HSI
 #         self.TREATMENT_ID = "Tb_Ipt"
 #         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-#         self.ACCEPTED_FACILITY_LEVEL = 1
+#         self.ACCEPTED_FACILITY_LEVEL = '1a'
 #         self.ALERT_OTHER_DISEASES = []
 #
 #     def apply(self, person_id, squeeze_factor):
@@ -4137,7 +4137,7 @@ class Tb(Module):
 #         # Define the necessary information for an HSI
 #         self.TREATMENT_ID = "Tb_IptHiv"
 #         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-#         self.ACCEPTED_FACILITY_LEVEL = 1
+#         self.ACCEPTED_FACILITY_LEVEL = '1a'
 #         self.ALERT_OTHER_DISEASES = []
 #
 #     def apply(self, person_id, squeeze_factor):

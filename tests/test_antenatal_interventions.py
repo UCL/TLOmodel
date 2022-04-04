@@ -10,8 +10,6 @@ from tlo.methods import (
     contraception,
     demography,
     depression,
-    dx_algorithm_adult,
-    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
@@ -24,8 +22,6 @@ from tlo.methods import (
     pregnancy_supervisor,
     symptommanager,
 )
-
-seed = 8774
 
 # The resource files
 try:
@@ -44,7 +40,7 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
-def register_all_modules(ignore_cons_constraints):
+def register_all_modules(ignore_cons_constraints, seed):
     """Register all modules that are required for ANC to run (where we allow screening/treatment to occur for HIV,
     Malaria, Depression as part of routine ANC)"""
 
@@ -55,7 +51,7 @@ def register_all_modules(ignore_cons_constraints):
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*'],
-                                           ignore_cons_constraints=ignore_cons_constraints),
+                                           cons_availability='all'),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
@@ -65,8 +61,6 @@ def register_all_modules(ignore_cons_constraints):
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  malaria.Malaria(resourcefilepath=resourcefilepath),
                  hiv.Hiv(resourcefilepath=resourcefilepath),
-                 dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath))
 
     return sim
@@ -115,14 +109,14 @@ def run_sim_for_0_days_get_mother_id(sim):
     return mother_id
 
 
-def test_perfect_run_of_anc_contacts_no_constraints():
+def test_perfect_run_of_anc_contacts_no_constraints(seed):
     """This test calls all 8 of the ANC contacts for a relevant woman and tests that sequential daisy-chain event
     scheduling is happening correctly and that (when no quality or consumable constraints are applied) women receive all
     the correct screening and medication-based interventions during ANC (at the correct gestational age).
     """
 
     # Register the key modules and run the simulation for one day
-    sim = register_all_modules(ignore_cons_constraints=True)
+    sim = register_all_modules(ignore_cons_constraints=True, seed=seed)
     sim.make_initial_population(n=100)
 
     params = sim.modules['CareOfWomenDuringPregnancy'].parameters
@@ -183,21 +177,21 @@ def test_perfect_run_of_anc_contacts_no_constraints():
 
     # Register the anc HSIs
     first_anc = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(
-        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, facility_level_of_this_hsi=2)
+        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, facility_level_of_this_hsi='2')
     second_anc = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(
-        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, facility_level_of_this_hsi=2)
+        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, facility_level_of_this_hsi='2')
     third_anc = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(
-        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, facility_level_of_this_hsi=2)
+        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, facility_level_of_this_hsi='2')
     fourth_anc = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(
-        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, facility_level_of_this_hsi=2)
+        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, facility_level_of_this_hsi='2')
     fifth_anc = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(
-        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, facility_level_of_this_hsi=2)
+        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, facility_level_of_this_hsi='2')
     sixth_anc = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(
-        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, facility_level_of_this_hsi=2)
+        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, facility_level_of_this_hsi='2')
     seventh_anc = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(
-        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, facility_level_of_this_hsi=2)
+        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, facility_level_of_this_hsi='2')
     eight_anc = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(
-        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, facility_level_of_this_hsi=2)
+        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, facility_level_of_this_hsi='2')
 
     # ========================================== ANC 1 TESTING =======================================================
     # Here we test that during the first ANC contact, women receive the correct interventions
@@ -403,12 +397,12 @@ def test_perfect_run_of_anc_contacts_no_constraints():
     # todo: test with probabilities low/0? same with dx test?
 
 
-def test_anc_contacts_that_should_not_run_wont_run():
+def test_anc_contacts_that_should_not_run_wont_run(seed):
     """This test checks the inbuilt functions within ANC1 and ANC subsequent that should block, and in some cases
      reschedule, ANC visits for women when the HSI runs and is no longer appropriate for them """
 
     # Register the key modules and run the simulation for one day
-    sim = register_all_modules(ignore_cons_constraints=False)
+    sim = register_all_modules(ignore_cons_constraints=False, seed=seed)
     mother_id = run_sim_for_0_days_get_mother_id(sim)
 
     params = sim.modules['CareOfWomenDuringPregnancy'].parameters
@@ -428,9 +422,9 @@ def test_anc_contacts_that_should_not_run_wont_run():
 
     # define HSIs
     first_anc = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(
-        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, facility_level_of_this_hsi=2)
+        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, facility_level_of_this_hsi='2')
     second_anc = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(
-        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, facility_level_of_this_hsi=2)
+        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, facility_level_of_this_hsi='2')
 
     sim.date = start_date + pd.DateOffset(weeks=8)
     # ----------------------------------------- ANC 1 ----------------------------------------------------------------
@@ -502,12 +496,12 @@ def test_anc_contacts_that_should_not_run_wont_run():
     assert not pd.isnull(df.at[mother_id, 'ac_date_next_contact'])
 
 
-def test_daisy_chain_care_seeking_logic_to_ensure_certain_number_of_contact():
+def test_daisy_chain_care_seeking_logic_to_ensure_certain_number_of_contact(seed):
     """This test checks the logic around care seeking for the next ANC visit in the schedule. We test that women who are
      predicited at least 4 visits are automatically scheduled the next visit in the schedule (if that visit number is
     below 4). We also test that women who are not predicted 4 or more visits will seek care based on the value of a
     care seeking parameter"""
-    sim = register_all_modules(ignore_cons_constraints=False)
+    sim = register_all_modules(ignore_cons_constraints=False, seed=seed)
     mother_id = run_sim_for_0_days_get_mother_id(sim)
     updated_mother_id = int(mother_id)
 
@@ -521,7 +515,7 @@ def test_daisy_chain_care_seeking_logic_to_ensure_certain_number_of_contact():
     sim.modules['CareOfWomenDuringPregnancy'].antenatal_care_scheduler(individual_id=updated_mother_id,
                                                                        visit_to_be_scheduled=2,
                                                                        recommended_gestation_next_anc=20,
-                                                                       facility_level=2)
+                                                                       facility_level='2')
 
     # As this woman is set to attend at least 4 ANC contacts, the next visit should be correctly sheduled at the correct
     # gestational age
@@ -557,10 +551,10 @@ def test_daisy_chain_care_seeking_logic_to_ensure_certain_number_of_contact():
     assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact not in hsi_events
 
 
-def test_initiation_of_treatment_for_maternal_anaemia_during_antenatal_inpatient_care():
+def test_initiation_of_treatment_for_maternal_anaemia_during_antenatal_inpatient_care(seed):
     """Test the treatment delivered to women who are admitted to the antenatal ward with anaemia of differing
     severities"""
-    sim = register_all_modules(ignore_cons_constraints=True)
+    sim = register_all_modules(ignore_cons_constraints=True, seed=seed)
     sim.make_initial_population(n=100)
 
     # Set DxTest parameters to 1 to ensure anaemia is detected correctly
@@ -652,10 +646,10 @@ def test_initiation_of_treatment_for_maternal_anaemia_during_antenatal_inpatient
     assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia not in hsi_events  # noqa: E501
 
 
-def test_initiation_of_treatment_for_hypertensive_disorder_during_antenatal_inpatient_care():
+def test_initiation_of_treatment_for_hypertensive_disorder_during_antenatal_inpatient_care(seed):
     """Test that the correct treatment is delivered to women with differing severities of hypertensive disorder when
     admitted to inpatient ward"""
-    sim = register_all_modules(ignore_cons_constraints=True)
+    sim = register_all_modules(ignore_cons_constraints=True, seed=seed)
     mother_id = run_sim_for_0_days_get_mother_id(sim)
 
     updated_mother_id = int(mother_id)
@@ -703,10 +697,10 @@ def test_initiation_of_treatment_for_hypertensive_disorder_during_antenatal_inpa
     assert labour.LabourOnsetEvent in events
 
 
-def test_initiation_of_treatment_for_gestational_diabetes_during_antenatal_inpatient_care():
+def test_initiation_of_treatment_for_gestational_diabetes_during_antenatal_inpatient_care(seed):
     """Test that the correct treatment is delivered to women with gestational diabetes when
     admitted to inpatient ward"""
-    sim = register_all_modules(ignore_cons_constraints=True)
+    sim = register_all_modules(ignore_cons_constraints=True, seed=seed)
     mother_id = run_sim_for_0_days_get_mother_id(sim)
 
     updated_mother_id = int(mother_id)
@@ -783,10 +777,10 @@ def test_initiation_of_treatment_for_gestational_diabetes_during_antenatal_inpat
     assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes in hsi_events  # noqa: E501
 
 
-def test_initiation_of_treatment_for_prom_with_or_without_chorioamnionitis_during_antenatal_inpatient_care():
+def test_initiation_of_treatment_for_prom_with_or_without_chorioamnionitis_during_antenatal_inpatient_care(seed):
     """Test that the correct treatment is delivered to women with PROM +/- chorioamnionitis when admitted to inpatient
     ward"""
-    sim = register_all_modules(ignore_cons_constraints=True)
+    sim = register_all_modules(ignore_cons_constraints=True, seed=seed)
     mother_id = run_sim_for_0_days_get_mother_id(sim)
     updated_mother_id = int(mother_id)
 
@@ -833,10 +827,10 @@ def test_initiation_of_treatment_for_prom_with_or_without_chorioamnionitis_durin
     assert date_event == sim.date
 
 
-def test_initiation_of_treatment_for_antepartum_haemorrhage_during_antenatal_inpatient_care():
+def test_initiation_of_treatment_for_antepartum_haemorrhage_during_antenatal_inpatient_care(seed):
     """Test that the correct treatment is delivered to women with antenatal haemorrhage when admitted to inpatient
     ward"""
-    sim = register_all_modules(ignore_cons_constraints=True)
+    sim = register_all_modules(ignore_cons_constraints=True, seed=seed)
     mother_id = run_sim_for_0_days_get_mother_id(sim)
     updated_mother_id = int(mother_id)
 
@@ -913,10 +907,10 @@ def test_initiation_of_treatment_for_antepartum_haemorrhage_during_antenatal_inp
     assert date_event == sim.date
 
 
-def test_scheduling_and_treatment_effect_of_post_abortion_care():
+def test_scheduling_and_treatment_effect_of_post_abortion_care(seed):
     """Test women who present to the health system with complications of abortion are sent to the correct HSI, receive
     treatment and this reduces their risk of death from abortion complications """
-    sim = register_all_modules(ignore_cons_constraints=True)
+    sim = register_all_modules(ignore_cons_constraints=True, seed=seed)
     mother_id = run_sim_for_0_days_get_mother_id(sim)
     updated_mother_id = int(mother_id)
 
@@ -979,10 +973,10 @@ def test_scheduling_and_treatment_effect_of_post_abortion_care():
     assert not sim.modules['CareOfWomenDuringPregnancy'].pac_interventions.has_all(mother_id, 'blood_products')
 
 
-def test_scheduling_and_treatment_effect_of_ectopic_pregnancy_case_management():
+def test_scheduling_and_treatment_effect_of_ectopic_pregnancy_case_management(seed):
     """Test women who present to the health system with complications of ectopic pregnancy are sent to the correct HSI,
     receive treatment and this reduces their risk of death from abortion complications """
-    sim = register_all_modules(ignore_cons_constraints=True)
+    sim = register_all_modules(ignore_cons_constraints=True, seed=seed)
     mother_id = run_sim_for_0_days_get_mother_id(sim)
     updated_mother_id = int(mother_id)
 

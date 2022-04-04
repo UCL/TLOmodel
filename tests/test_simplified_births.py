@@ -3,6 +3,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 from pandas._libs.tslibs.offsets import DateOffset
 
 from tlo import Date, Simulation, logging
@@ -34,8 +35,8 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
-def get_sim(popsize=1000):
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=0)
+def get_sim(seed, popsize=1000):
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -119,13 +120,14 @@ def check_property_integrity(sim):
                 'nb_breastfeeding_status'] == 'none').all()
 
 
-def test_pregnancy_and_birth_for_one_woman():
+def test_pregnancy_and_birth_for_one_woman(seed):
     """Test to check that properties and sequence of events work as expected, when considering a single woman."""
 
-    sim = get_sim(popsize=1)
+    sim = get_sim(seed=seed, popsize=1)
     df = sim.population.props
 
-    # confirm that the woman is alive and eligible to become pregnant
+    # confirm that the person is alive and eligible to become pregnant
+    df.loc[0, 'sex'] = 'F'
     df.loc[0, 'is_alive'] = True
     df.loc[0, 'age_exact_years'] = 17.0
     df.loc[0, 'date_of_birth'] = sim.date - pd.DateOffset(years=17.0)
@@ -164,11 +166,11 @@ def test_pregnancy_and_birth_for_one_woman():
     check_property_integrity(sim)
 
 
-def test_no_pregnancy_among_in_ineligible_populations():
+def test_no_pregnancy_among_in_ineligible_populations(seed):
     """If no one in the population is pregnant, the SimplifiedBirthsPoll should not result in any pregnancies:"""
 
     # running pregnancy event with zero pregnancy probability
-    sim = get_sim(popsize=400)
+    sim = get_sim(seed=seed, popsize=400)
 
     # Set the probability of becoming pregnancy to 1
     sim = set_prob_of_pregnancy_to_one(sim)
@@ -191,9 +193,9 @@ def test_no_pregnancy_among_in_ineligible_populations():
     assert not df.is_pregnant.any()
 
 
-def test_no_births_if_no_one_is_pregnant():
+def test_no_births_if_no_one_is_pregnant(seed):
     """If no one is pregnant, the SimplifiedBirthEvent should not result in any births:"""
-    sim = get_sim(popsize=10_000)
+    sim = get_sim(seed=seed, popsize=10_000)
     df = sim.population.props
 
     # confirm that the woman is alive and eligible to become pregnant
@@ -209,12 +211,13 @@ def test_no_births_if_no_one_is_pregnant():
     assert 0 == len(df.loc[df.date_of_birth.notna() & (df.mother_id >= 0)])
 
 
-def test_standard_run_using_simplified_birth_module():
+@pytest.mark.slow
+def test_standard_run_using_simplified_birth_module(seed):
     """Run the model using the SimplifiedBirthsPoll and SimplifiedBirthEvent and check that properties are
     maintained correctly and that some number of births result."""
 
     # Get simulation object
-    sim = get_sim(popsize=10_000)
+    sim = get_sim(seed=seed, popsize=10_000)
 
     # Force all new borns to be given a breastfeeding status of 'exclusive'
     sim.modules['SimplifiedBirths'].parameters['prob_breastfeeding_type'] = [0, 0, 1]
@@ -246,6 +249,7 @@ def test_standard_run_using_simplified_birth_module():
     check_dtypes(sim)
 
 
+@pytest.mark.slow
 def test_other_modules_running_with_simplified_births_module():
     """Run a "full simulation" using the simplified_births module and other disease modules"""
     sim = Simulation(
