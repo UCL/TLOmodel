@@ -162,9 +162,9 @@ class Measles(Module):
             'vit_A':
                 self.sim.modules['HealthSystem'].get_item_code_from_item_name("Vitamin A, caplet, 100,000 IU"),
             'severe_diarrhoea':
-                self.sim.modules['HealthSystem'].get_item_codes_from_package_name("Treatment of severe diarrhea"),
+                self.sim.modules['HealthSystem'].get_item_code_from_item_name("ORS, sachet"),
             'severe_pneumonia':
-                self.sim.modules['HealthSystem'].get_item_codes_from_package_name("Treatment of severe pneumonia")
+                self.sim.modules['HealthSystem'].get_item_code_from_item_name("Oxygen, 1000 liters, primarily with oxygen cylinders")
         }
 
     def on_birth(self, mother_id, child_id):
