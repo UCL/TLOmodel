@@ -40,7 +40,7 @@ new_active_tb = summarize(
         key="tb_incidence",
         column="num_new_active_tb",
         index="date",
-        do_scaling=False
+        do_scaling=True
     ),
     collapse_columns=True,
 )
@@ -140,5 +140,146 @@ make_plot(
     xlab="Year",
     ylab="Active TB Incidence Rate (per 100k)",
 )
+
+plt.show()
+
+make_plot(
+    title_str="Active TB Incidence Rate",
+    model=tb_active_incidence_rate[0]["mean"],
+    #model_low=tb_active_incidence_rate[0]["lower"],
+    #model_high=tb_active_incidence_rate[0]["upper"],
+    #data_name="WHO Data",
+    data_mid=data_who_tb_2020['incidence_per_100k'],
+    data_low=data_who_tb_2020['incidence_per_100k_low'],
+    data_high=data_who_tb_2020['incidence_per_100k_high'],
+    xlab="Year",
+    ylab="Active TB Incidence Rate (per 100k)",
+)
+
+plt.plot(tb_active_incidence_rate[1]["mean"])
+plt.plot(tb_active_incidence_rate[2]["mean"])
+plt.plot(tb_active_incidence_rate[3]["mean"])
+plt.show()
+
+
+# ------------------------ EXTRACT NUMBER OF NEW ACTIVE TB CASES ---------------------#
+
+new_active_tb_child = summarize(
+    extract_results(
+        results_folder,
+        module="tlo.methods.tb",
+        key="tb_incidence",
+        column="num_new_active_tb_child",
+        index="date",
+        do_scaling=True
+    ),
+    collapse_columns=True,
+)
+
+new_active_tb_child.index = new_active_tb_child.index.year
+
+# ---------------------------- EXTRACT SCALING FACTOR  -------------------------#
+
+sf = summarize(
+    extract_results(
+        results_folder,
+        module="tlo.methods.demography",
+        key="scaling_factor",
+        column="scaling_factor",
+        do_scaling=False
+    ),
+    collapse_columns=True,
+)
+
+
+make_plot(
+    title_str="Number of Active TB Cases",
+    model=new_active_tb[0]["mean"],
+    model_low=new_active_tb[0]["lower"],
+    model_high=new_active_tb[0]["upper"],
+    xlab="Year",
+    ylab="Active TB Incidence Rate (per 100k)",
+)
+
+plt.plot(new_active_tb[1]["mean"])
+plt.plot(new_active_tb[2]["mean"])
+plt.plot(new_active_tb[3]["mean"])
+plt.show()
+
+
+make_plot(
+    title_str="Number of Active TB Cases (0 - 16 years)",
+    model=new_active_tb_child[0]["mean"],
+    model_low=new_active_tb_child[0]["lower"],
+    model_high=new_active_tb_child[0]["upper"],
+    xlab="Year",
+    ylab="Active TB Incidence Rate (per 100k)",
+)
+
+plt.plot(new_active_tb_child[1]["mean"])
+plt.plot(new_active_tb_child[2]["mean"])
+plt.plot(new_active_tb_child[3]["mean"])
+plt.show()
+
+
+fig, ax = plt.subplots()
+ax.plot(tb_active_incidence_rate[0].index, tb_active_incidence_rate[0]["mean"], "-", color="r")
+
+ax.plot(tb_active_incidence_rate[1].index, tb_active_incidence_rate[1]["mean"], "-", color="g")
+
+ax.plot(tb_active_incidence_rate[2].index, tb_active_incidence_rate[2]["mean"], "-", color="c")
+
+ax.plot(tb_active_incidence_rate[3].index, tb_active_incidence_rate[3]["mean"], "-", color="m")
+
+ax.plot(data_who_tb_2020.index, data_who_tb_2020["incidence_per_100k"], "-", color="b")
+ax.fill_between(data_who_tb_2020.index, data_who_tb_2020["incidence_per_100k_low"],
+                data_who_tb_2020["incidence_per_100k_high"], color="b", alpha=0.2)
+
+fig.subplots_adjust(left=0.15)
+#plt.axvline(x=hiv_adult_inc3.index[10])
+
+plt.ylabel("Active TB Incidence Rate (per 100,000)")
+plt.title("Active TB Incidence Rate")
+plt.legend(["16.71012", "17.71012", "18.71012", "19.71012", "WHO Data"])
+
+plt.show()
+
+
+fig, ax = plt.subplots()
+ax.plot(new_active_tb_child[0].index, new_active_tb_child[0]["mean"], "-", color="r")
+
+ax.plot(new_active_tb_child[1].index, new_active_tb_child[1]["mean"], "-", color="g")
+
+ax.plot(new_active_tb_child[2].index, new_active_tb_child[2]["mean"], "-", color="c")
+
+ax.plot(new_active_tb_child[3].index, new_active_tb_child[3]["mean"], "-", color="m")
+
+
+fig.subplots_adjust(left=0.15)
+#plt.axvline(x=hiv_adult_inc3.index[10])
+
+plt.ylabel("Number of New Active TB Infections (scaled)")
+plt.title("New Active TB Infections (0-16 years)")
+plt.legend(["16.71012", "17.71012", "18.71012", "19.71012"])
+
+plt.show()
+
+
+fig, ax = plt.subplots()
+ax.plot(new_active_tb[0].index, new_active_tb[0]["mean"], "-", color="r")
+
+ax.plot(new_active_tb[1].index, new_active_tb[1]["mean"], "-", color="g")
+
+ax.plot(new_active_tb[2].index, new_active_tb[2]["mean"], "-", color="c")
+
+ax.plot(new_active_tb[3].index, new_active_tb[3]["mean"], "-", color="m")
+
+
+fig.subplots_adjust(left=0.15)
+#plt.axvline(x=hiv_adult_inc3.index[10])
+
+plt.ylabel("Number of New Active TB Infections (scaled)")
+plt.title("New Active TB Infections")
+plt.legend(["16.71012", "17.71012", "18.71012", "19.71012"])
 
 plt.show()
