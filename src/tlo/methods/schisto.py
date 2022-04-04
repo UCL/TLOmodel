@@ -90,11 +90,6 @@ class Schisto(Module):
         self.resourcefilepath = resourcefilepath
         self.mda_execute = mda_execute
 
-        # self.districts = sim.modules['Demography'].districts  # if we want it to be all districts:
-        # Iwona used in her thesis (high burden districts):
-        # todo - make it work for all districts
-        self.districts = ['Blantyre', 'Chiradzulu', 'Mulanje', 'Nsanje', 'Nkhotakota', 'Phalombe']
-
         # Create pointer that will be to dict of disability weights
         self.disability_weights = None
 
@@ -128,6 +123,11 @@ class Schisto(Module):
 
     def pre_initialise_population(self):
         """Do things before generating the population (but after read_parameters and any parameter updating)."""
+
+        # Define districts that this module will operate in:
+        self.districts = self.sim.modules['Demography'].districts  # All districts
+        # N.B. Formal fitting has only been undertaken for: ('Blantyre', 'Chiradzulu', 'Mulanje', 'Nsanje',
+        # 'Nkhotakota', 'Phalombe')
 
         # Call `pre_initialise_population` for each `SchistoSpecies` helper module.
         for _spec in self.species.values():
@@ -642,10 +642,11 @@ class SchistoSpecies:
                 reservoir_distr = int(reservoir[district] * len(in_the_district))
 
                 # Distribute a worm burden among persons, according to their 'contact rate'
-                chosen = rng.choice(in_the_district, reservoir_distr, p=rates / rates.sum())
-                unique, counts = np.unique(chosen, return_counts=True)
-                worms_per_idx = dict(zip(unique, counts))
-                df[prop('aggregate_worm_burden')].update(pd.Series(worms_per_idx))
+                if (reservoir_distr > 0) and (rates.sum() > 0):
+                    chosen = rng.choice(in_the_district, reservoir_distr, p=rates / rates.sum())
+                    unique, counts = np.unique(chosen, return_counts=True)
+                    worms_per_idx = dict(zip(unique, counts))
+                    df[prop('aggregate_worm_burden')].update(pd.Series(worms_per_idx))
 
     def _schedule_death_of_worms_in_initial_population(self) -> None:
         """Schedule death of worms assigned to the initial population"""
@@ -1004,8 +1005,13 @@ class SchistoMDAEvent(RegularEvent, PopulationScopeEventMixin):
         for age_group, cov in self.coverage.items():
             for person_id in self._select_recipients(district=self.district, age_group=age_group, coverage=cov):
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    HSI_Schisto_MDA(self.module, person_id),
-                    self.sim.date)
+                    hsi_event=HSI_Schisto_MDA(self.module, person_id),
+                    topen=self.sim.date,
+                    tclose=self.sim.date + pd.DateOffset(months=1),
+                    priority=4
+                    # A long time-window of operation and a low priority is used for this MDA Appointment, to represent
+                    # that the MDA would not take a priority over other appointments.
+                )
 
     def _select_recipients(self, district, age_group, coverage) -> list:
         """Determine persons to receive MDA, based on a specified target age-group and coverage."""
@@ -1117,8 +1123,10 @@ class HSI_Schisto_MDA(HSI_Event, IndividualScopeEventMixin):
         assert isinstance(module, Schisto)
 
         self.TREATMENT_ID = 'Schisto_MDA'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ConWithDCSA': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '0'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'EPI': 1})
+        # The `EPI` appointment is a very small appointment and we note that in the DHIS2 this how appointments to do
+        #  with 'de-worming' are classified.
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
 
     def apply(self, person_id, squeeze_factor):
         """Do the treatment for this person.
