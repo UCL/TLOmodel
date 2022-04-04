@@ -8,6 +8,7 @@ The core demography module and its associated events.
 import math
 from collections import defaultdict
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -36,7 +37,7 @@ class Demography(Module):
     The core demography module.
     """
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None, resourcefilepath=None, max_age_initial: Optional[int] = None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
         self.initial_model_to_data_popsize_ratio = None  # will store scaling factor
@@ -46,6 +47,12 @@ class Demography(Module):
         self.gbd_causes_of_death_not_represented_in_disease_modules = set()
         #  will store causes of death in GBD not represented in the simulation
         self.other_death_poll = None    # will hold pointer to the OtherDeathPoll object
+
+        # Handle argument `max_age_initial`:The oldest age (in whole years) in the initial population.
+        if not isinstance(max_age_initial, (int, float, type(None))) or (max_age_initial == 0):
+            raise ValueError("The value of max_age_initial is not recognised or is 0.")
+        else:
+            self.max_age_initial = int(max_age_initial) if max_age_initial is not None else None
 
     AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = create_age_range_lookup(
         min_age=MIN_AGE_FOR_RANGE,
@@ -194,6 +201,10 @@ class Demography(Module):
         init_pop = self.parameters['pop_2010']
         init_pop['prob'] = init_pop['Count'] / init_pop['Count'].sum()
 
+        if self.max_age_initial is not None:
+            init_pop = self._edit_init_pop_to_prevent_persons_greater_than_max_age(
+                init_pop, max_age=self.max_age_initial)
+
         # randomly pick from the init_pop sheet, to allocate characteristic to each person in the df
         demog_char_to_assign = init_pop.iloc[self.rng.choice(init_pop.index.values,
                                                              size=len(df),
@@ -300,6 +311,15 @@ class Demography(Module):
                   'mother_age': _mother_age_at_birth,
                   'mother_age_at_pregnancy': _mother_age_at_pregnancy}
         )
+
+    def _edit_init_pop_to_prevent_persons_greater_than_max_age(self, df, max_age: int):
+        """Return an edited version of the pd.DataFrame describing the probability of persons in the population being
+        created with certain characteristics to reflect the constraint the persons aged greater than `max_age_initial`
+        should not be created."""
+
+        _df = df.drop(df.index[df.Age > max_age])  # Remove characteristics with age greater than max_age
+        _df.prob = _df.prob / _df.prob.sum()  # Rescale `prob` so that it sums to 1.0
+        return _df.reset_index(drop=True)
 
     def process_causes_of_death(self):
         """
