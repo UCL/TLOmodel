@@ -1021,7 +1021,7 @@ class SchistoMDAEvent(Event, PopulationScopeEventMixin):
             ),
             topen=self.sim.date,
             tclose=self.sim.date + pd.DateOffset(months=1),
-            priority=4
+            priority=2
             # A long time-window of operation and a low priority is used for this MDA Appointment, to represent
             # that the MDA would not take a priority over other appointments.
         )

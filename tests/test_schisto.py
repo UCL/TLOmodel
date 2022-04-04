@@ -65,7 +65,7 @@ def test_run_with_mda(seed):
 
     start_date = Date(2010, 1, 1)
     end_date = start_date + pd.DateOffset(years=20)
-    popsize = 50_000
+    popsize = 5_000
 
     sim = get_simulation(seed=seed, start_date=start_date, mda_execute=True)
     sim.make_initial_population(n=popsize)
