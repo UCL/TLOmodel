@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Union
+from typing import Union, Optional, List, Sequence
 
 import numpy as np
 import pandas as pd
@@ -37,7 +37,7 @@ class Schisto(Module):
 
     INIT_DEPENDENCIES = {'Demography', 'SymptomManager'}
 
-    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthSystem', 'HealthBurden'}
 
     METADATA = {
         Metadata.DISEASE_MODULE,
@@ -46,10 +46,8 @@ class Schisto(Module):
         Metadata.USES_HEALTHBURDEN
     }
 
-    # Declare Causes of Death
     CAUSES_OF_DEATH = {}
 
-    # Declare Causes of Disability
     CAUSES_OF_DISABILITY = {
         'Schistosomiasis': Cause(gbd_causes='Schistosomiasis', label='Schistosomiasis'),
     }
@@ -125,7 +123,7 @@ class Schisto(Module):
         """Do things before generating the population (but after read_parameters and any parameter updating)."""
 
         # Define districts that this module will operate in:
-        self.districts = self.sim.modules['Demography'].districts  # All districts
+        self.districts = self.sim.modules['Demography'].districts  # <- all districts
         # N.B. Formal fitting has only been undertaken for: ('Blantyre', 'Chiradzulu', 'Mulanje', 'Nsanje',
         # 'Nkhotakota', 'Phalombe')
 
@@ -154,7 +152,8 @@ class Schisto(Module):
             self.disability_weights = self._get_disability_weight()
 
         # Look-up item code for Praziquantel
-        self.item_code_for_praziquantel = self._get_item_code_for_praziquantel()
+        if 'HealthSystem' in self.sim.modules:
+            self.item_code_for_praziquantel = self._get_item_code_for_praziquantel()
 
         if self.mda_execute:
             self._schedule_mda_events()
@@ -209,10 +208,11 @@ class Schisto(Module):
                 priority=0
             )
 
-    def do_effect_of_treatment(self, person_id: int) -> None:
-        """Do the effects of a treatment administered to a person. This can be called for a person who is infected
-        and receiving treatment, or not infected and receiving treatment as part of a Mass Drug Administration.
-        The burden and effects of any species are aleviated by a succesful treatment."""
+    def do_effect_of_treatment(self, person_id: Union[int, Sequence[int]]) -> None:
+        """Do the effects of a treatment administered to a person or persons. This can be called for a person who is
+        infected and receiving treatment following a diagnosis, or for a person who is receiving treatment as part of a
+         Mass Drug Administration. The burden and effects of any species are alleviated by a successful treatment."""
+
         df = self.sim.population.props
 
         # Clear any symptoms caused by this module (i.e., Schisto of any species)
@@ -294,25 +294,26 @@ class Schisto(Module):
         """Look-up the item code for Praziquantel"""
         return self.sim.modules['HealthSystem'].get_item_code_from_item_name("Praziquantel, 600 mg (donated)")
 
-    def _schedule_mda_events(self):
+    def _schedule_mda_events(self) -> None:
         """Schedule MDA events, historical and prognosed."""
 
-        # Schedule the district-specific MDA that have occurred:
+        # Schedule the  MDA that have occurred, in each district and in each year:
         for (district, year), cov in self.parameters['MDA_coverage_historical'].iterrows():
             assert district in self.sim.modules['Demography'].districts, f'District {district} is not recognised.'
             self.sim.schedule_event(
                 SchistoMDAEvent(self,
                                 district=district,
                                 coverage=cov.to_dict(),
-                                months_between_repeats=None),  # todo - check that this causes it to occur once only.
+                                months_between_repeats=None),
                 Date(year=year, month=7, day=1)
             )
 
-        # Schedule the first occurrence (of a repeating event) of the MDA that occur after the last historical MDA
+        # Schedule the first occurrence of a future MDA in each district. It will occur after the last historical MDA.
+        # The event that will schedule further instances of itself.
         year_last_historical_mda = self.parameters['MDA_coverage_historical'].reset_index().Year.max()
         year_first_simulated_mda = year_last_historical_mda + 1
 
-        for (district, frequency_in_months) in self.parameters['MDA_coverage_prognosed'].iterrows():
+        for (district, frequency_in_months), cov in self.parameters['MDA_coverage_prognosed'].iterrows():
             assert district in self.sim.modules['Demography'].districts, f'District {district} is not recognised.'
             self.sim.schedule_event(
                 SchistoMDAEvent(self,
@@ -976,42 +977,58 @@ class SchistoWormsNatDeath(Event, IndividualScopeEventMixin):
         #                 df.loc[person_id, prop('start_of_high_infection')] = pd.NaT
 
 
-class SchistoMDAEvent(RegularEvent, PopulationScopeEventMixin):
-    """Mass-Drug administration scheduled for the population. This event schedule the occurrence of the individual-level
-    HSI for the administration of drugs to each individual.
+class SchistoMDAEvent(Event, PopulationScopeEventMixin):
+    """Mass-Drug administration scheduled for the population. This event schedules the occurrence of the
+    individual-level HSIs for the administration of drugs to each individual.
     :param district: The district in which the MDA occurs.
-    :param coverage: A dictionary of the form {<age_group>: <coverage>}, where <age_group> is one of 'PSAC', 'SAC', 'Adults'
-    :params months_between_repeat: The number of months between repeated occurrences of this event. (None for no repeats).
+    :param coverage: A dictionary of the form {<age_group>: <coverage>}, where <age_group> is one of ('PSAC', 'SAC',
+     'Adults').
+    :params months_between_repeat: The number of months between repeated occurrences of this event. (None for no
+     repeats).
     """
 
-    def __init__(self,
-                 module: Module,
-                 district: str,
-                 coverage: dict,
-                 months_between_repeats: int
-                 ):
-        super().__init__(module, frequency=DateOffset(
-            months=months_between_repeats if months_between_repeats is not None else 10_000)
-                         # todo - neater way to prevent repeating in a repeating type? (done to keep the logic in all one place)
-                         )
+    def __init__(self, module: Module, district: str, coverage: dict, months_between_repeats: Optional[int]):
+        super().__init__(module)
         assert isinstance(module, Schisto)
 
         self.district = district
         self.coverage = coverage
+        self.months_between_repeats = months_between_repeats
 
     def apply(self, population):
-        """Schedule the MDA HSI for each person that is reached in the MDA."""
+        """ Represents the occurence of an MDA, in a particular year and district, which achieves a particular coverage
+         (by age-group).
+         * Schedules the MDA HSI for each person that is reached in the MDA.
+         * Schedules the recurrence of this event, if the MDA is to be repeated in the future.
+        """
 
-        for age_group, cov in self.coverage.items():
-            for person_id in self._select_recipients(district=self.district, age_group=age_group, coverage=cov):
-                self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    hsi_event=HSI_Schisto_MDA(self.module, person_id),
-                    topen=self.sim.date,
-                    tclose=self.sim.date + pd.DateOffset(months=1),
-                    priority=4
-                    # A long time-window of operation and a low priority is used for this MDA Appointment, to represent
-                    # that the MDA would not take a priority over other appointments.
-                )
+        # Determine who receives the MDA
+        idx_to_receive_mda = [
+            self._select_recipients(district=self.district, age_group=age_group, coverage=cov)
+            for age_group, cov in self.coverage.items()
+        ]
+
+        # Schedule the MDA HSI. This HSI will do the work for all the `person_id`s in `idx_to_receive_mda`, but
+        # the HSI's argument `person_id` is attached only to the one of these people. This is to avoid the inefficiency
+        # of multiple individual HSI being created that do the same thing and occur on the same day and in the same
+        # facility. The limitation is that if this person dies then no one gets the HSI.
+        # This is discussed in https://github.com/UCL/TLOmodel/issues/531
+        self.sim.modules['HealthSystem'].schedule_hsi_event(
+            hsi_event=HSI_Schisto_MDA(
+                self.module,
+                person_id=idx_to_receive_mda[0],
+                beneficaries_ids=idx_to_receive_mda
+            ),
+            topen=self.sim.date,
+            tclose=self.sim.date + pd.DateOffset(months=1),
+            priority=4
+            # A long time-window of operation and a low priority is used for this MDA Appointment, to represent
+            # that the MDA would not take a priority over other appointments.
+        )
+
+        # Schedule the recurrence of this event, if the MDA is to be repeated in the future.
+        if self.months_between_repeats is not None:
+            self.sim.schedule_event(self, self.sim.date + pd.DateOffset(months=self.months_between_repeats))
 
     def _select_recipients(self, district, age_group, coverage) -> list:
         """Determine persons to receive MDA, based on a specified target age-group and coverage."""
@@ -1030,11 +1047,7 @@ class SchistoMDAEvent(RegularEvent, PopulationScopeEventMixin):
             & df['age_years'].between(age_range[0], age_range[1])
             ]
 
-        if len(eligible):
-            return eligible.index[rng.random_sample(len(eligible)) < coverage].to_list()
-        else:
-            # todo - need this clause?
-            return []
+        return eligible[rng.random_sample(len(eligible)) < coverage].to_list()
 
 
 class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin):
@@ -1115,26 +1128,43 @@ class HSI_Schisto_TreatmentFollowingDiagnosis(HSI_Event, IndividualScopeEventMix
 
 
 class HSI_Schisto_MDA(HSI_Event, IndividualScopeEventMixin):
-    """This is a Health System Interaction Event for a person being provided with PZQ as part of a Mass Drug
-    Administration."""
+    """This is a Health System Interaction Event for providing one or more persons with PZQ as part of a Mass Drug
+    Administration (MDA). Note that the `person_id` declared as the `target` of this `HSI_Event` is only one of the
+    beneficaries. This is in, effect, a batch of individual HSI being handled within one HSI, for the sake of
+    computational efficiency.
+    """
 
-    def __init__(self, module, person_id):
+    def __init__(self, module, person_id, beneficaries_ids):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Schisto)
+        self.beneficaries_ids = beneficaries_ids
 
         self.TREATMENT_ID = 'Schisto_MDA'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'EPI': 1})
-        # The `EPI` appointment is a very small appointment and we note that in the DHIS2 this how appointments to do
-        #  with 'de-worming' are classified.
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'EPI': len(beneficaries_ids)})
+        # The `EPI` appointment is a very small appointment and we that this this is the coding for 'de-worming'-type
+        # activities in the DHIS2 data. We expect there will be one of these appointments for each of the
+        # beneficiaries, but, in fact, it may be more realistic to consider that the real requirement is fewer than that.
+
         self.ACCEPTED_FACILITY_LEVEL = '1a'
 
     def apply(self, person_id, squeeze_factor):
-        """Do the treatment for this person.
-        N.B. As written, the provision of the PZQ is conditional on its availability. This is a limitation because, in
-        practise, the MDA would occur once sufficient stocks are available."""
-        if self.get_consumables(item_codes=self.module.item_code_for_praziquantel):
-            self.module.do_effect_of_treatment(person_id=person_id)
+        """Provide the treatment to the beneficiaries of this HSI."""
 
+        # Find which of the beneficiaries are still alive
+        beneficaries_still_alive = set(self.beneficaries_ids).intersect(
+            self.sim.population.props.index[self.sim.population.props.is_alive]
+        ).to_list()
+
+        # Let the key consumable be "optional" in order that provision of the treatment is NOT conditional on the drugs
+        # being available.This is because we expect that special planning would be undertaken in order to ensure the
+        # availability of the drugs on the day(s) when the MDA is planned.
+        if self.get_consumables(
+            optional_item_codes={self.module.item_code_for_praziquantel: len(beneficaries_still_alive)}
+        ):
+            self.module.do_effect_of_treatment(person_id=beneficaries_still_alive)
+
+        # Return the update appointment that reflects the actual number of beneficiaries.
+        return self.make_appt_footprint({'EPI': len(beneficaries_still_alive)})
 
 class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):

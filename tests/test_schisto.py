@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from tlo import Date, Simulation
 from tlo.methods import (
@@ -20,7 +21,9 @@ resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 # todo - run and produce plots using scripts
 # todo - switches to log or not
 # todo - clean up code (removing commented-out blocks)
-# todo - make work for all districts (?)
+
+# todo - remaining issue  - update document to remove out-of-date things about code/framework, more tests, fit for other districts
+
 
 def get_simulation(seed, start_date, mda_execute=True):
     sim = Simulation(start_date=start_date, seed=seed)
@@ -42,6 +45,7 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
+@pytest.mark.slow
 def test_run_without_mda(seed):
     """Run the Schisto module with default parameters for one year on a population of 10_000, with no MDA"""
 
@@ -55,12 +59,13 @@ def test_run_without_mda(seed):
     check_dtypes(sim)
 
 
+@pytest.mark.slow
 def test_run_with_mda(seed):
     """Run the Schisto module with default parameters for 20 years on a population of 1_000, with MDA"""
 
     start_date = Date(2010, 1, 1)
     end_date = start_date + pd.DateOffset(years=20)
-    popsize = 1_000
+    popsize = 50_000
 
     sim = get_simulation(seed=seed, start_date=start_date, mda_execute=True)
     sim.make_initial_population(n=popsize)
