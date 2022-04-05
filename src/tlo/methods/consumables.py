@@ -88,6 +88,26 @@ class Consumables:
                                            self._rng.random_sample(len(average_availability_of_items_by_facility_id))
                                            ).to_dict()
 
+    def override_availability(self, item_codes: dict = None) -> None:
+        """
+        Over-ride the availability (for all months and all facilities) of certain item_codes.
+        Note this should not be called directly: Disease modules should call `override_availability_of_consumables` in
+         `HealthSystem`.
+        :param item_codes: Dictionary of the form {<item_code>: probability_that_item_is_available}
+        :return: None
+        """
+
+        def check_item_codes_argument_is_valid(_item_codes):
+            assert set(_item_codes.keys()).issubset(self.item_codes), 'Some item_codes not recognised.'
+            assert all([0.0 <= x <= 1.0 for x in list(_item_codes.values())]), 'Probability of availability must be ' \
+                                                                               'between 0.0 and 1.0'
+
+        check_item_codes_argument_is_valid(item_codes)
+
+        # Update the internally-held data on availability for these item_codes (for all months and at all facilities)
+        for item, prob in item_codes.items():
+            self._prob_item_codes_available.loc[(slice(None), slice(None), item)] = prob
+
     @staticmethod
     def _determine_default_return_value(cons_availability, default_return_value):
         if cons_availability == 'all':
@@ -97,12 +117,16 @@ class Consumables:
         else:
             return default_return_value
 
-    def _request_consumables(self, facility_id: int, item_codes: dict, to_log: bool = True,
-                             treatment_id: Optional[str] = None) -> dict:
+    def _request_consumables(self,
+                             facility_info: 'FacilityInfo',  # noqa: F821
+                             item_codes: dict,
+                             to_log: bool = True,
+                             treatment_id: Optional[str] = None
+                             ) -> dict:
         """This is a private function called by 'get_consumables` in the `HSI_Event` base class. It queries whether
         item_codes are currently available at a particular Facility_ID and logs the request.
 
-        :param facility_id: The facility_id from which the request for consumables originates
+        :param facility_info: The facility_info from which the request for consumables originates
         :param item_codes: dict of the form {<item_code>: <quantity>} for the items requested
         :param to_log: whether the request is logged.
         :param treatment_id: the TREATMENT_ID of the HSI (which is entered to the log, if provided).
@@ -121,7 +145,8 @@ class Consumables:
             # All item_codes not available if consumables should be considered not available by default.
             available = {k: False for k in item_codes.keys()}
         else:
-            available = self._lookup_availability_of_consumables(item_codes=item_codes, facility_id=facility_id)
+            available = self._lookup_availability_of_consumables(item_codes=item_codes,
+                                                                 facility_info=facility_info)
 
         # Log the request and the outcome:
         if to_log:
@@ -151,15 +176,24 @@ class Consumables:
         # Return the result of the check on availability
         return available
 
-    def _lookup_availability_of_consumables(self, facility_id: int, item_codes: dict) -> dict:
-        """Lookup whether a particular item_code is in the set of available items for that facility_id (in
+    def _lookup_availability_of_consumables(self,
+                                            facility_info: 'FacilityInfo',   # noqa: F821
+                                            item_codes: dict
+                                            ) -> dict:
+        """Lookup whether a particular item_code is in the set of available items for that facility (in
         `self._is_available`). If any code is not recognised, use the `_is_unknown_item_available`."""
         avail = dict()
+
+        if facility_info is None:
+            # If `facility_info` is None, it implies that the HSI has not been initialised because the HealthSystem
+            #  is running with `disable=True`.
+            return {_i: True for _i in item_codes}
+
         for _i in item_codes.keys():
             if _i in self.item_codes:
-                avail.update({_i: _i in self._is_available[facility_id]})
+                avail.update({_i: _i in self._is_available[facility_info.id]})
             else:
-                avail.update({_i: self._is_unknown_item_available[facility_id]})
+                avail.update({_i: self._is_unknown_item_available[facility_info.id]})
         return avail
 
     def on_simulation_end(self):
