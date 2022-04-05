@@ -985,17 +985,21 @@ class HSI_Schisto_MDA(HSI_Event, IndividualScopeEventMixin):
     beneficaries. This is in, effect, a "batch job" of individual HSI being handled within one HSI, for the sake of
     computational efficiency."""
 
-    def __init__(self, module, person_id, beneficaries_ids):
+    def __init__(self, module, person_id, beneficaries_ids: Optional[Sequence] = None):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Schisto)
         self.beneficaries_ids = beneficaries_ids
 
         self.TREATMENT_ID = 'Schisto_MDA'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'EPI': len(beneficaries_ids)})
-        # The `EPI` appointment is a very small appointment and we that this this is the coding for 'de-worming'-type
-        # activities in the DHIS2 data. We expect there will be one of these appointments for each of the
-        # beneficiaries, but, in fact, it may be more realistic to consider that the real requirement is fewer than
-        # that.
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
+            'EPI': len(beneficaries_ids) if beneficaries_ids else 1})
+        # The `EPI` appointment is appropriate because it's a very small appointment, and we note that this is used in
+        # the coding for 'de-worming'-type activities in the DHIS2 data. We show that expect there will be one of these
+        # appointments for each of the beneficiaries, whereas, in fact, it may be more realistic to consider that the
+        # real requirement is fewer than that.
+        # This class is created when running `tlo_hsi_event.py`, which doesn't provide the argument `beneficaries_ids`
+        # but does require that `self.EXPECTED_APPT_FOOTPRINT` is valid. So, in this case, we let
+        # `self.EXPECTED_APPT_FOOTPRINT` show that this requires 1 * that appointment type.
 
         self.ACCEPTED_FACILITY_LEVEL = '1a'
 
