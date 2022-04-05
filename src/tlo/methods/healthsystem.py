@@ -1240,8 +1240,9 @@ class HealthSystem(Module):
         self.annual_hsi_log["date"].append(self.sim.date.year)
         self.annual_hsi_log["treatment_id"].append(hsi_event.TREATMENT_ID)
         # actual_appt_footprint can be blank counter
-        appt_name = list(actual_appt_footprint.keys())
         if actual_appt_footprint:
+            appt_name = list(actual_appt_footprint.keys())
+
             for value in appt_name:
                 self.annual_hsi_log["actual_appt_footprint"].append(value)
 
