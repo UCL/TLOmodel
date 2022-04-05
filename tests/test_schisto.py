@@ -21,9 +21,6 @@ from tlo.methods import (
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
-# todo - New issue
-#  * update document to remove out-of-date things about code/framework, more tests, fit for other districts
-#  * Improve calibration
 
 def get_simulation(seed, start_date, mda_execute=True):
     sim = Simulation(start_date=start_date, seed=seed)

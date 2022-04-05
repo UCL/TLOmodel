@@ -122,7 +122,7 @@ class Demography(Module):
         )
 
         # Lookup dicts to map from district_num_of_residence (in the df) and District name and Region name
-        self.districts = self.parameters['pop_2010'][ 'District'].drop_duplicates().to_list()
+        self.districts = self.parameters['pop_2010']['District'].drop_duplicates().to_list()
         self.parameters['district_num_to_district_name'] = \
             self.parameters['pop_2010'][['District_Num', 'District']].drop_duplicates()\
                                                                      .set_index('District_Num')['District']\

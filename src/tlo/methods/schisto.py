@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Union, Optional, List, Sequence
+from typing import Union, Optional, Sequence
 
 import numpy as np
 import pandas as pd
@@ -16,6 +16,7 @@ from tlo.util import random_date
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
 
 # todo make this relate to one another and not be independent
 def map_age_groups(age_group):
@@ -45,7 +46,6 @@ def get_age_group_mapper():
             return 'Adults'
 
     return {a: _age_grp(a) for a in range(0, 120)}
-
 
 
 class Schisto(Module):
@@ -81,11 +81,9 @@ class Schisto(Module):
                                                   'Probability that an infected adults gets sent to lab test'),
 
         'delay_till_hsi_a_repeated': Parameter(Types.REAL,
-                                               'Time till seeking healthcare again '
-                                               'after not being sent to schisto test, start'),
+                                               'Time till seeking healthcare again after not being sent to schisto test, start'),
         'delay_till_hsi_b_repeated': Parameter(Types.REAL,
-                                               'Time till seeking healthcare again '
-                                               'after not being sent to schisto test, end'),
+                                               'Time till seeking healthcare again after not being sent to schisto test, end'),
 
         'PZQ_efficacy': Parameter(Types.REAL,
                                   'The efficacy of Praziquantel in clearing burden of any Schistosomiasis worm specieis'),
@@ -302,7 +300,7 @@ class Schisto(Module):
             'haematuria': None  # That's a very common symptom but no official DALY weight yet defined.
         }
         get_daly_weight = lambda _code: self.sim.modules['HealthBurden'].get_daly_weight(
-            _code) if _code is not None else 0.0
+            _code) if _code is not None else 0.0  # noqa: E731
 
         # todo ** Need to make sure that all the symptoms that could be caused by this module have an associated daly weight
         # (This is used in `report_dalys`.)
@@ -478,12 +476,6 @@ class SchistoSpecies:
         # assign initial worm burden
         self._assign_initial_worm_burden(population)
 
-        # assign the properties recording start of the prevalent period & start of high-intensity infections
-        # todo - needed?????
-        # df.loc[df.is_alive & (df[prop('infection_status')] != 'Non-infected'), prop('start_of_prevalent_period')] = date
-        # high_infected_idx = df.index[df[prop('infection_status')] == 'High-infection']
-        # df.loc[high_infected_idx, prop('start_of_high_infection')] = date
-
     def initialise_simulation(self, sim):
         """
         * Schedule natural history events for those with worm burden initially.
@@ -492,7 +484,8 @@ class SchistoSpecies:
         """
         df = sim.population.props
 
-        # Assign infection statuses and symptoms and schedule natural history events for those with worm burden initially.
+        # Assign infection statuses and symptoms and schedule natural history events for those with worm burden
+        # initially.
         self.update_infectious_status_and_symptoms(df.index[df.is_alive])
         self._schedule_death_of_worms_in_initial_population()
 
@@ -626,7 +619,8 @@ class SchistoSpecies:
         }
 
     def _assign_initial_harbouring_rate(self, population) -> None:
-        """Assign a harbouring rate to every individual in the initial populattion (based on their district of  residence)."""
+        """Assign a harbouring rate to every individual in the initial populattion (based on their district of
+        residence)."""
         df = population.props
         prop = self._prefix_species_property
         params = self.params
@@ -950,8 +944,8 @@ class SchistoMDAEvent(Event, PopulationScopeEventMixin):
         # Determine who receives the MDA
         idx_to_receive_mda = []
         for age_group, cov in self.coverage.items():
-            idx_to_receive_mda.extend(self._select_recipients(district=self.district, age_group=age_group, coverage=cov))
-
+            idx_to_receive_mda.extend(
+                self._select_recipients(district=self.district, age_group=age_group, coverage=cov))
 
         # Schedule the MDA HSI. This HSI will do the work for all the `person_id`s in `idx_to_receive_mda`, but
         # the HSI's argument `person_id` is attached only to the one of these people. This is to avoid the inefficiency
@@ -1089,7 +1083,8 @@ class HSI_Schisto_MDA(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'EPI': len(beneficaries_ids)})
         # The `EPI` appointment is a very small appointment and we that this this is the coding for 'de-worming'-type
         # activities in the DHIS2 data. We expect there will be one of these appointments for each of the
-        # beneficiaries, but, in fact, it may be more realistic to consider that the real requirement is fewer than that.
+        # beneficiaries, but, in fact, it may be more realistic to consider that the real requirement is fewer than
+        # that.
 
         self.ACCEPTED_FACILITY_LEVEL = '1a'
 
@@ -1123,8 +1118,6 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         """Call `log_infection_status` for each species."""
         for _spec in self.module.species.values():
             _spec.log_infection_status()
-
-
 
 #
 # class SchistoLoggingTotalEvent(RegularEvent, PopulationScopeEventMixin):
@@ -1240,7 +1233,6 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 #
 
 
-
 # def count_days_this_year(date_end, date_start):
 #     """Used for calculating PrevalentYears this year (that is the year of date_end)
 #     If the start_date is in the previous years only gives the number of days from
@@ -1299,7 +1291,3 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 #
 #     def apply(self, population):
 #         self.create_logger(population)
-
-
-
-

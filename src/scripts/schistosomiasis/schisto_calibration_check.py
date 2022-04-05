@@ -1,14 +1,10 @@
 """This file is an edited and updated version of the file `schisto_analysis.py` and has been created to allow a check
 that the model is working as originally intended."""
 
-import datetime
 from pathlib import Path
 
-import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
-from matplotlib.dates import DateFormatter
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file, unflatten_flattened_multi_index_in_logging, make_age_grp_types, \
@@ -20,18 +16,15 @@ from tlo.methods import demography, healthburden, healthsystem, schisto, enhance
 fitted_districts = ['Blantyre', 'Chiradzulu', 'Mulanje', 'Nsanje', 'Nkhotakota', 'Phalombe']
 
 resourcefilepath = Path("./resources")
-outputpath = Path("./outputs") / 'schisto'
+outputpath = Path("./outputs")
 
-def get_timestamp():
-    timestamp = str(datetime.datetime.now().replace(microsecond=0))
-    timestamp = timestamp.replace(" ", "_")
-    timestamp = timestamp.replace(":", "-")
-    return timestamp
+# Declare path for output graphs from this script
+make_graph_file_name = lambda name: outputpath / f"Schisto_{name}.png"  # noqa: E731
 
 
 # %% Run the simulation
-def run_simulation(popsize=10_000, mda_execute=True):
-
+popsize = 10_000
+def run_simulation(popsize=popsize, mda_execute=True):
     start_date = Date(2010, 1, 1)
     end_date = Date(2011, 2, 1)
 
@@ -56,7 +49,6 @@ def run_simulation(popsize=10_000, mda_execute=True):
                  schisto.Schisto(resourcefilepath=resourcefilepath, mda_execute=mda_execute),
                  )
 
-
     # initialise the population
     sim.make_initial_population(n=popsize)
 
@@ -66,17 +58,19 @@ def run_simulation(popsize=10_000, mda_execute=True):
     output = parse_log_file(sim.log_filepath)
     return sim, output
 
-sim, output = run_simulation(popsize=10000, mda_execute=False)
 
+sim, output = run_simulation(popsize=10000, mda_execute=False)
 
 # %% Extract and process the `pd.DataFrame`s needed
 species = ('mansoni', 'haematobium')
+
 
 def construct_dfs(schisto_log):
     return {
         k: unflatten_flattened_multi_index_in_logging(v.set_index('date'))
         for k, v in schisto_log.items() if k in [f'infection_status_{s}' for s in species]
     }
+
 
 dfs = construct_dfs(output['tlo.methods.schisto'])
 
@@ -114,8 +108,8 @@ for i, _spec in enumerate(species):
     ax.set_ylim(0, 0.50)
     ax.legend(loc=1)
 fig.tight_layout()
+fig.savefig(make_graph_file_name('prev_in_districts_all'))
 fig.show()
-
 
 # All Districts
 fig, axes = plt.subplots(1, 2, sharey=True)
@@ -131,8 +125,8 @@ for i, _spec in enumerate(species):
     ax.set_ylim(0, 0.50)
     ax.legend(loc=1)
 fig.tight_layout()
+fig.savefig(make_graph_file_name('prev_in_districts_fitted'))
 fig.show()
-
 
 
 # %% DALYS
@@ -140,11 +134,12 @@ fig.show()
 def get_model_dalys_schisto_2010():
     """Get the DALYS attributed to Schistosomiasis in 2010."""
     dalys = output['tlo.methods.healthburden']["dalys"]
-    scaling_factor = 16e6 / 10_000  # todo - this properly!
+    scaling_factor = 14.5e6 / popsize  # todo - this properly once dealt with https://github.com/UCL/TLOmodel/issues/536
     dalys_schisto = dalys.set_index('year').loc[2010].groupby(by='age_range')['Schistosomiasis'].sum()
     dalys_schisto.index = dalys_schisto.index.astype(make_age_grp_types())
     dalys_schisto.name = 'Model'
     return dalys_schisto.sort_index() * scaling_factor
+
 
 def get_gbd_dalys_schisto_2010():
     """Get the DALYS attributed to Schistosomiasis in 2010"""
@@ -152,6 +147,7 @@ def get_gbd_dalys_schisto_2010():
     return gbd_all.loc[
         (gbd_all.cause_name == 'Schistosomiasis') & (gbd_all.Year == 2010)
         ].groupby(by='Age_Grp')[['GBD_Est', 'GBD_Lower', 'GBD_Upper']].sum()
+
 
 dat = pd.concat([get_gbd_dalys_schisto_2010(), get_model_dalys_schisto_2010()], axis=1)
 
@@ -165,5 +161,5 @@ ax.set_ylabel('DALYS (2010)')
 ax.set_xticklabels(dat.index, rotation=90)
 ax.legend(loc=1)
 fig.tight_layout()
+fig.savefig(make_graph_file_name('dalys_2010'))
 fig.show()
-
