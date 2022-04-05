@@ -421,11 +421,11 @@ class HSI_Measles_Treatment(HSI_Event, IndividualScopeEventMixin):
 
         # for measles with severe diarrhoea
         if "diarrhoea" in symptoms:
-            item_codes += self.module.consumables['severe_diarrhoea']
+            item_codes.append(self.module.consumables['severe_diarrhoea'])
 
         # for measles with pneumonia
         if "respiratory_symptoms" in symptoms:
-            item_codes += self.module.consumables['severe_pneumonia']
+            item_codes.append(self.module.consumables['severe_pneumonia'])
 
         # request the treatment
         if self.get_consumables(item_codes):
