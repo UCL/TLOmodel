@@ -1660,8 +1660,7 @@ class HealthSystemLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         )
 
         # re-initialise empty dict with set keys
-        self.module.consumables.annual_consumables_log.update((key, []) for key in self.module.consumables.annual_consumables_log)
+        self.module.consumables.annual_consumables_log.update(
+            (key, []) for key in self.module.consumables.annual_consumables_log)
         self.module.annual_hsi_log.update((key, []) for key in self.module.annual_hsi_log)
         self.module.capacity_logs.update((key, []) for key in self.module.capacity_logs)
-
-
