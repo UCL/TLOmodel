@@ -1,3 +1,6 @@
+"""This file is an edited and updated version of the file `schisto_analysis.py` and has been created to allow a check
+that the model is working as originally intended."""
+
 import os
 from pathlib import Path
 

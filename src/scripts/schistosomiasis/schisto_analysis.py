@@ -1,3 +1,6 @@
+"""This file is part of the MRes work by Iwona Hawryluk. The model has been updated since this script was created and
+it does not run in full."""
+
 import datetime
 from pathlib import Path
 

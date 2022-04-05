@@ -169,7 +169,7 @@ class SymptomManager(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
         self.spurious_symptoms = spurious_symptoms
-        self.persons_with_newly_onset_symptoms = set()
+        self._persons_with_newly_onset_symptoms = set()
 
         self.generic_symptoms = {
             'fever',
@@ -364,7 +364,7 @@ class SymptomManager(Module):
             # Add this disease module as a cause of this symptom
 
             self.bsh.set(person_id, disease_module.name, columns=sy_columns)
-            self.persons_with_newly_onset_symptoms = self.persons_with_newly_onset_symptoms.union(person_id)
+            self._persons_with_newly_onset_symptoms = self._persons_with_newly_onset_symptoms.union(person_id)
 
             # If a duration is given, schedule the auto-resolve event to turn off these symptoms after specified time.
             if duration_in_days is not None:
@@ -435,7 +435,7 @@ class SymptomManager(Module):
             )
         ]
 
-    def has_what(self, person_id, disease_module: Module =None):
+    def has_what(self, person_id, disease_module: Module = None):
         """
         This is a helper function that will give a list of strings for the symptoms that a _single_ person
         is currently experiencing.
@@ -462,7 +462,7 @@ class SymptomManager(Module):
         else:
             return [s for s in self.symptom_names if df.loc[person_id, f'sy_{s}'] > 0]
 
-    def have_what(self, person_ids):
+    def have_what(self, person_ids: Sequence[int]):
         """Find the set of symptoms for a list of person_ids.
         NB. This is a fast implementation without the same amount checking as 'has_what'"""
         df = self.sim.population.props
@@ -470,7 +470,7 @@ class SymptomManager(Module):
             lambda p: [s for s in self.symptom_names if p[f'sy_{s}'] > 0], axis=1, result_type='reduce'
         ).rename('symptoms')
 
-    def causes_of(self, person_id, symptom_string):
+    def causes_of(self, person_id: int, symptom_string):
         """
         This is a helper function that will give a list of the disease modules causing a particular symptom for
         a particular person.
@@ -514,7 +514,8 @@ class SymptomManager(Module):
     def caused_by(self, disease_module: Module):
         """Find the persons experiencing symptoms due to a particular module.
         Returns a dict of the form {<<person_id>>, <<list_of_symptoms>>}."""
-        # todo find a faster form using bsh.get directly.
+        # todo find a faster form of this (using bsh.get directly, similar to have_what?)
+
         df = self.sim.population.props
         alive_persons_idx = df.index[df.is_alive]
 
@@ -527,10 +528,10 @@ class SymptomManager(Module):
         return symptoms_for_each_person
 
     def get_persons_with_newly_onset_symptoms(self):
-        return self.persons_with_newly_onset_symptoms
+        return self._persons_with_newly_onset_symptoms
 
     def reset_persons_with_newly_onset_symptoms(self):
-        self.persons_with_newly_onset_symptoms.clear()
+        self._persons_with_newly_onset_symptoms.clear()
 
 # ---------------------------------------------------------------------------------------------------------
 #   EVENTS
