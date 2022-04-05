@@ -7,10 +7,22 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from tlo import Date, Simulation, logging
-from tlo.analysis.utils import parse_log_file, unflatten_flattened_multi_index_in_logging, make_age_grp_types, \
-    format_gbd
-from tlo.methods import demography, healthburden, healthsystem, schisto, enhanced_lifestyle, \
-    symptommanager, healthseekingbehaviour, simplified_births
+from tlo.analysis.utils import (
+    format_gbd,
+    make_age_grp_types,
+    parse_log_file,
+    unflatten_flattened_multi_index_in_logging,
+)
+from tlo.methods import (
+    demography,
+    enhanced_lifestyle,
+    healthburden,
+    healthseekingbehaviour,
+    healthsystem,
+    schisto,
+    simplified_births,
+    symptommanager,
+)
 
 # Districts that are high prevalence and for which this model has been calibrated
 fitted_districts = ['Blantyre', 'Chiradzulu', 'Mulanje', 'Nsanje', 'Nkhotakota', 'Phalombe']
@@ -24,6 +36,8 @@ make_graph_file_name = lambda name: outputpath / f"Schisto_{name}.png"  # noqa: 
 
 # %% Run the simulation
 popsize = 10_000
+
+
 def run_simulation(popsize=popsize, mda_execute=True):
     start_date = Date(2010, 1, 1)
     end_date = Date(2011, 2, 1)
@@ -155,7 +169,7 @@ fig, ax = plt.subplots()
 ax.plot(dat.index, dat.GBD_Est.values, color='b', label='GBD')
 ax.fill_between(dat.index, dat.GBD_Lower.values, dat.GBD_Upper.values, alpha=0.5, color='b')
 ax.plot(dat.index, dat.Model.values, color='r', label='Model')
-ax.set_title(f"DALYS")
+ax.set_title("DALYS")
 ax.set_xlabel('Age-Group')
 ax.set_ylabel('DALYS (2010)')
 ax.set_xticklabels(dat.index, rotation=90)
@@ -163,3 +177,6 @@ ax.legend(loc=1)
 fig.tight_layout()
 fig.savefig(make_graph_file_name('dalys_2010'))
 fig.show()
+
+
+# todo - *** look over time ***

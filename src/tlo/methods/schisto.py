@@ -1,11 +1,10 @@
 from pathlib import Path
-from typing import Union, Optional, Sequence
+from typing import Optional, Sequence, Union
 
 import numpy as np
 import pandas as pd
 
-from tlo import Date
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
@@ -49,7 +48,15 @@ def get_age_group_mapper():
 
 
 class Schisto(Module):
-    """Schistosomiasis module"""
+    """Schistosomiasis module.
+    Two species of worm that cause Schistosomiasis are modelled independently. Worms are acquired by persons via the
+     environment. There is a delay between the acquisition of worms and the maturation to 'adults' worms; and a long
+     period before the adult worms die. The number of worms in a person (whether a high-intensity infection or not)
+     determines the symptoms they experience. These symptoms are associated with disability weights. There is no risk
+     of death. Treatment can be provided to persons who present following the onset of symptoms. Mass Drug
+     Administrations also give treatment to the general population, which clears any worm burden they have.
+    N.B. Formal fitting has only been undertaken for: ('Blantyre', 'Chiradzulu', 'Mulanje', 'Nsanje', 'Nkhotakota',
+    'Phalombe')"""
 
     INIT_DEPENDENCIES = {'Demography', 'SymptomManager'}
 
@@ -79,22 +86,21 @@ class Schisto(Module):
                                                     'Probability that infected child gets sent to lab test'),
         'prob_sent_to_lab_test_adults': Parameter(Types.REAL,
                                                   'Probability that an infected adults gets sent to lab test'),
-
         'delay_till_hsi_a_repeated': Parameter(Types.REAL,
-                                               'Time till seeking healthcare again after not being sent to schisto test, start'),
+                                               'Time till seeking healthcare again after not being sent to schisto '
+                                               'test: start'),
         'delay_till_hsi_b_repeated': Parameter(Types.REAL,
-                                               'Time till seeking healthcare again after not being sent to schisto test, end'),
-
+                                               'Time till seeking healthcare again after not being sent to schisto '
+                                               'test: end'),
         'PZQ_efficacy': Parameter(Types.REAL,
-                                  'The efficacy of Praziquantel in clearing burden of any Schistosomiasis worm specieis'),
-
-        # MDA parameters
-        # 'years_till_first_MDA': Parameter(Types.REAL, 'Years till the first historical MDA'),  # todo - remove from excel?
-
+                                  'The efficacy of Praziquantel in clearing burden of any Schistosomiasis worm '
+                                  'species'),
         'MDA_coverage_historical': Parameter(Types.DATA_FRAME,
-                                             'Probability of getting PZQ in the MDA for PSAC, SAC and Adults in historic rounds'),
+                                             'Probability of getting PZQ in the MDA for PSAC, SAC and Adults in '
+                                             'historic rounds'),
         'MDA_coverage_prognosed': Parameter(Types.DATA_FRAME,
-                                            'Probability of getting PZQ in the MDA for PSAC, SAC and Adults in future rounds, with the frequency given in months'),
+                                            'Probability of getting PZQ in the MDA for PSAC, SAC and Adults in future '
+                                            'rounds, with the frequency given in months'),
     }
 
     def __init__(self, name=None, resourcefilepath=None, mda_execute=True):
@@ -140,8 +146,6 @@ class Schisto(Module):
 
         # Define districts that this module will operate in:
         self.districts = self.sim.modules['Demography'].districts  # <- all districts
-        # N.B. Formal fitting has only been undertaken for: ('Blantyre', 'Chiradzulu', 'Mulanje', 'Nsanje',
-        # 'Nkhotakota', 'Phalombe')
 
         # Call `pre_initialise_population` for each `SchistoSpecies` helper module.
         for _spec in self.species.values():
@@ -299,8 +303,8 @@ class Schisto(Module):
             'hepatomegaly': 257,
             'haematuria': None  # That's a very common symptom but no official DALY weight yet defined.
         }
-        get_daly_weight = lambda _code: self.sim.modules['HealthBurden'].get_daly_weight(
-            _code) if _code is not None else 0.0  # noqa: E731
+        get_daly_weight = lambda _code: self.sim.modules['HealthBurden'].get_daly_weight(  # noqa: E731
+            _code) if _code is not None else 0.0
 
         # todo ** Need to make sure that all the symptoms that could be caused by this module have an associated daly weight
         # (This is used in `report_dalys`.)
@@ -461,14 +465,10 @@ class SchistoSpecies:
         """Set species-specific property values for the initial population."""
 
         df = population.props
-        date = self.schisto_module.sim.date
         prop = self._prefix_species_property
 
+        # assign aggregate_worm_burden (zero for everyone initially)
         df.loc[df.is_alive, prop('aggregate_worm_burden')] = 0
-        # df.loc[df.is_alive, prop('prevalent_days_this_year')] = 0
-        # df.loc[df.is_alive, prop('start_of_prevalent_period')] = pd.NaT  # todo - not sure if needed?
-        # df.loc[df.is_alive, prop('start_of_high_infection')] = pd.NaT  # todo - not sure if needed?
-        # df.loc[df.is_alive, prop('high_inf_days_this_year')] = 0  # todo - not sure if needed?
 
         # assign a harbouring rate
         self._assign_initial_harbouring_rate(population)
@@ -510,11 +510,6 @@ class SchistoSpecies:
         # Assign the default for a newly born child
         df.at[child_id, prop('infection_status')] = 'Non-infected'
         df.at[child_id, prop('aggregate_worm_burden')] = 0
-
-        # df.at[child_id, prop('prevalent_days_this_year')] = 0
-        # df.at[child_id, prop('start_of_prevalent_period')] = pd.NaT
-        # df.at[child_id, prop('start_of_high_infection')] = pd.NaT
-        # df.at[child_id, prop('high_inf_days_this_year')] = 0
 
         # Generate the harbouring rate depending on a district of residence.
         district = df.loc[child_id, 'district_of_residence']
@@ -704,45 +699,6 @@ class SchistoSpecies:
             description='Counts of infection status with this species by age-group and district.'
         )
 
-    # def _write_to_log_count_of_states_for_age_group(self, age_group: str) -> None:
-    #     """Write to the log for this species the count of persons by status within a particular age-group."""
-    #
-    #     prefix = self.name
-    #     df = self.schisto_module.sim.population.props
-    #     count_states = self._count_age_group_states_in_age_group(df, age_group)
-    #     logger.info(key=f"{age_group}_{prefix}",
-    #                 data={
-    #                     'Non_infected': count_states['Non-infected'],
-    #                     'Low_infections': count_states['Low-infection'],
-    #                     'High_infections': count_states['High-infection'],
-    #                     'Infected': count_states['infected_any'],
-    #                     'Prevalence': count_states['Prevalence'],
-    #                     'High-inf_Prevalence': count_states['High-inf_Prevalence'],
-    #                     'MeanWormBurden': count_states['MeanWormBurden']
-    #                 })
-    #
-    # def _count_age_group_states_in_age_group(self, age_group: str) -> dict:
-    #     """
-    #     :param age_group: The age-group in which to count the stages
-    #     :return: count_states: a dictionary of counts of individuals in age_group in different states on infection
-    #     """
-    #     districts = self.schisto_module.districts
-    #     df = self.schisto_module.sim.population.props
-    #
-    #     age_range = map_age_groups(age_group)  # returns a tuple
-    #
-    #     where = df.is_alive & df.age_years.between(*age_range) & df.district_of_residence.isin(districts)
-    #
-    #     count = {'Non-infected': 0, 'Low-infection': 0, 'High-infection': 0}
-    #     count.update(df.loc[where, f'{self.module.prefix}_infection_status'].value_counts().to_dict())
-    #
-    #     count['infected_any'] = count['Low-infection'] + count['High-infection']
-    #     count['total_pop_alive'] = count['infected_any'] + count['Non-infected']
-    #     count['Prevalence'] = count['infected_any'] / count['total_pop_alive']
-    #     count['High-inf_Prevalence'] = count['High-infection'] / count['total_pop_alive']
-    #     count['MeanWormBurden'] = df.loc[where, f'{self.module.prefix}_aggregate_worm_burden'].mean()
-    #     return count
-
 
 class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
     """A recurring event that causes infection of people with this species.
@@ -852,7 +808,7 @@ class SchistoMatureWorms(Event, IndividualScopeEventMixin):
 class SchistoWormsNatDeath(Event, IndividualScopeEventMixin):
     """Represents the death of adult worms.
      * Decreases the aggregate worm burden of an individual upon natural death of the adult worm.
-     * Updates the infection status of the person accordingly. todo - and symptoms?
+     * Updates the infection status and the symtoms of the person accordingly.
     Nb. This event checks the last day of PZQ treatment and if has been less than the lifespan of the worm it doesn't
     do anything (because the worms for which this event was raised will since have been killed by the PZQ)."""
 
@@ -882,38 +838,6 @@ class SchistoWormsNatDeath(Event, IndividualScopeEventMixin):
             # This event is for worms that have matured since the last treatment.
             df.loc[person_id, prop('aggregate_worm_burden')] = max(0, worms_now - self.number_of_worms_that_die)
             self.species.update_infectious_status_and_symptoms(idx=pd.Index([person_id]))
-
-        #
-        # worms_now = df.loc[person_id, prop('aggregate_worm_burden')]
-        # days_since_last_treatment = self.sim.date - df.loc[person_id, 'ss_last_PZQ_date']
-        # days_since_last_treatment = int(days_since_last_treatment / np.timedelta64(1, 'Y'))
-        #
-        # if days_since_last_treatment > params['worm_lifespan']:
-        #     df.loc[person_id, prop('aggregate_worm_burden')] = worms_now - self.number_of_worms_that_die
-        #
-        #     # clearance of the worms
-        #     if df.loc[person_id, prop('aggregate_worm_burden')] < params['low_intensity_threshold']:
-        #         df.loc[person_id, prop('infection_status')] = 'Non-infected'
-        #         # does not matter if low or high int infection
-        #         if df.loc[person_id, prop('infection_status')] != 'Non-infected':
-        #             # calculate prevalent period
-        #             prevalent_duration = self.sim.date - df.loc[person_id, prop('start_of_prevalent_period')]
-        #             prevalent_duration = int(prevalent_duration / np.timedelta64(1, 'D')) % 365
-        #             df.loc[person_id, prop('prevalent_days_this_year')] += prevalent_duration
-        #             df.loc[person_id, prop('start_of_prevalent_period')] = pd.NaT
-        #             df.loc[person_id, prop('start_of_high_infection')] = pd.NaT
-        #     else:
-        #         if df.loc[person_id, prop('infection_status')] == 'High-infection':
-        #             if df.loc[person_id, 'age_years'] < 5:
-        #                 threshold = params['high_intensity_threshold_PSAC']
-        #             else:
-        #                 threshold = params['high_intensity_threshold']
-        #             if df.loc[person_id, prop('aggregate_worm_burden')] < threshold:
-        #                 df.loc[person_id, prop('infection_status')] = 'Low-infection'
-        #                 high_inf_duration = self.sim.date - df.loc[person_id, prop('start_of_high_infection')]
-        #                 high_inf_duration = int(high_inf_duration / np.timedelta64(1, 'D')) % 365
-        #                 df.loc[person_id, prop('high_inf_days_this_year')] += high_inf_duration
-        #                 df.loc[person_id, prop('start_of_high_infection')] = pd.NaT
 
 
 class SchistoMDAEvent(Event, PopulationScopeEventMixin):
@@ -1118,176 +1042,3 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         """Call `log_infection_status` for each species."""
         for _spec in self.module.species.values():
             _spec.log_infection_status()
-
-#
-# class SchistoLoggingTotalEvent(RegularEvent, PopulationScopeEventMixin):
-#     def __init__(self, module):
-#         """This logger logs the prevalence of ANY type of schistosomiasis
-#         If both schisto modules are registered it will count people with s.haematobium OR s.mansoni
-#         If only one of the schisto modules registered, it will work as the normal logger, i.e.
-#         count people with the specific infection type
-#         """
-#         # run this event every month
-#         self.repeat = 1
-#         super().__init__(module, frequency=DateOffset(months=self.repeat))
-#         assert isinstance(module, Schisto)
-#
-#     def write_to_log(self, population, age_group):
-#         count_states = self.count_age_group_states(population, age_group)
-#         logger.info(key=f'{age_group}_Total',
-#                     data={
-#                         'Prevalence': count_states['Prevalence'],
-#                         'High_infections_Prevalence': count_states['High-inf_Prevalence'],
-#                     })
-#
-#     def count_age_group_states(self, population, age_group):
-#         """
-#         :param population:
-#         :param age_group:
-#         :return: count_states: a dictionary of counts of individuals in age_group in different states on infection
-#         """
-#         df = population.props
-#         age_range = map_age_groups(age_group)  # returns a tuple
-#
-#         where = df.is_alive & (df.age_years.between(age_range[0], age_range[1]))
-#
-#         inf = self.count_status(population, where, ['Low-infection', 'High-infection'])
-#         high_inf = self.count_status(population, where, ['High-infection'])
-#         total_pop_size = sum(where)
-#
-#         count_states = {}
-#         count_states.update({'Prevalence': inf / total_pop_size})
-#         count_states.update({'High-inf_Prevalence': high_inf / total_pop_size})
-#
-#         return count_states
-#
-#     def count_status(self, population, mask, status):
-#         module_prefix = self.module.module_prefix
-#         prefixes_for_each_species = [f"{module_prefix}_{_spec.prefix}" for _spec in self.module.species.values()]
-#
-#         df = population.props
-#         count = sum(
-#             mask &
-#             df[[f'{_prefix}_infection_status' for _prefix in prefixes_for_each_species]].isin(status).any(axis=1)
-#         )
-#
-#         return count
-#
-#     def apply(self, population):
-#         for age in ['PSAC', 'SAC', 'Adults', 'All']:
-#             self.write_to_log(population, age)
-#
-#
-# class SchistoLoggingPrevDistrictEvent(Event, PopulationScopeEventMixin):
-#     """Produces a log of prevalence and MWB in every district used for validating the parameters fit"""
-#     def __init__(self, module):
-#         super().__init__(module)
-#         assert isinstance(module, Schisto)
-#
-#     def create_logger(self, population, district):
-#         if isinstance(self.module, Schisto_Haematobium):
-#             inf_type = 'Haematobium'
-#         else:
-#             inf_type = 'Mansoni'
-#
-#         count_states = self.count_district_states(population, district)
-#         logger.info(key=f"{district}_{inf_type}",
-#                     data={
-#                         'Non_infected': count_states['Non-infected'],
-#                         'Low_infections': count_states['Low-infection'],
-#                         'High_infections': count_states['High-infection'],
-#                         'Infected': count_states['infected_any'],
-#                         'Prevalence': count_states['Prevalence'],
-#                         'MeanWormBurden': count_states['MeanWormBurden']
-#                     })
-#
-#     def count_district_states(self, population, district):
-#         """
-#         :param population:
-#         :param district:
-#         :return: count_states: a dictionary of counts of individuals in district in different states on infection
-#         """
-#         df = population.props
-#
-#         where = df.is_alive & (df.district_of_residence == district)
-#
-#         counts = {'Non-infected': 0, 'Low-infection': 0, 'High-infection': 0}
-#         counts.update(df.loc[where, f'{self.module.prefix}_infection_status'].value_counts().to_dict())
-#
-#         counts['infected_any'] = counts['Low-infection'] + counts['High-infection']
-#         counts['total_pop_alive'] = counts['infected_any'] + counts['Non-infected']
-#
-#         if counts['total_pop_alive'] > 0:
-#             counts['Prevalence'] = counts['infected_any'] / counts['total_pop_alive']
-#         else:
-#             counts['Prevalence'] = 0.0
-#
-#         counts['MeanWormBurden'] = df.loc[where, f'{self.module.prefix}_aggregate_worm_burden'].mean()
-#         return counts
-#
-#     def apply(self, population):
-#         districts = self.module.districts
-#         for distr in districts:
-#             self.create_logger(population, distr)
-#
-#
-
-
-# def count_days_this_year(date_end, date_start):
-#     """Used for calculating PrevalentYears this year (that is the year of date_end)
-#     If the start_date is in the previous years only gives the number of days from
-#      the beginning of the year till date_end, if it start_date is the same year then just gives the time elapsed"""
-#     year = date_end.year
-#     if date_start.year < year:
-#         date_start = pd.Timestamp(year=year, month=1, day=1)
-#     duration = date_end - date_start
-#     duration = int(duration / np.timedelta64(1, 'D'))
-#     assert duration >= 0, "Duration is negative!"
-#     return duration
-
-
-# def add_elements(el1, el2):
-#     """Helper function for multiple symptoms assignments
-#
-#     :param el1: np.nan or a list
-#     :param el2: list containing a single string with a symptom
-#     :return: either a sum of two lists or the list el2
-#     """
-#     if isinstance(el1, list):
-#         return el1 + el2
-#     return el2
-
-
-# class SchistoParamFittingLogging(Event, PopulationScopeEventMixin):
-#     """This Logging event should only be used for creating a lookup table for parameter fitting
-#     Otherwise should not be scheduled"""
-#     def __init__(self, module):
-#         super().__init__(module)
-#         assert isinstance(module, Schisto_Haematobium) or isinstance(module, Schisto_Mansoni)
-#
-#     def create_logger(self, population):
-#
-#         if isinstance(self.module, Schisto_Haematobium):
-#             inf_type = 'Haematobium'
-#             prefix = 'sh'
-#         else:
-#             inf_type = 'Mansoni'
-#             prefix = 'sm'
-#
-#         df = population.props
-#         df_alive = df[df.is_alive].copy()
-#         all_infected = len(df_alive.index[df_alive[f'{prefix}_aggregate_worm_burden'] > 1])
-#         total_pop = len(df_alive.index)
-#         prevalence = all_infected / total_pop
-#         mwb = df_alive[f'{prefix}_aggregate_worm_burden'].mean()
-#
-#         logger.info(key=f"{inf_type}",
-#                     data={
-#                         'Prevalence': prevalence,
-#                         'MWB': mwb,
-#                         'alpha': self.module.alpha,
-#                         'R0': self.module.r0
-#                     })
-#
-#     def apply(self, population):
-#         self.create_logger(population)
