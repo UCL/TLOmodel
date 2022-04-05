@@ -387,8 +387,10 @@ class Epi(Module):
             get_item_code_from_item_name("HPV vaccine"),
             get_item_code_from_item_name("Syringe, Autodisable SoloShot IX "),
             get_item_code_from_item_name("Safety box for used syringes/needles, 5 liter")]
-        self.cons_item_codes['td'] = get_item_codes_from_package_name("Tetanus toxoid (pregnant women)")
-
+        self.cons_item_codes['td'] = [
+            get_item_code_from_item_name("Tetanus toxoid, injection"),
+            get_item_code_from_item_name("Syringe, Autodisable SoloShot IX "),
+            get_item_code_from_item_name("Safety box for used syringes/needles, 5 liter")]
 
 # ---------------------------------------------------------------------------------
 # Individually Scheduled Vaccine Events
