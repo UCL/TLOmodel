@@ -17,7 +17,7 @@ from tlo.util import random_date
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-# todo make this relate to one another and not be indepdnet
+# todo make this relate to one another and not be independent
 def map_age_groups(age_group):
     """Helper function for obtaining the age range for each age_group
     It returns a tuple of two integers (a,b) such that the given age group is in range a <= group <= b,i.e.:
@@ -120,6 +120,9 @@ class Schisto(Module):
 
         # Property names for infection_status of all species
         self.cols_of_infection_status = [_spec.infection_status_property for _spec in self.species.values()]
+
+        # Age-group mapper
+        self.age_group_mapper = get_age_group_mapper()
 
     def read_parameters(self, data_folder):
         """Read parameters and register symptoms."""
@@ -692,7 +695,7 @@ class SchistoSpecies:
 
         df = self.schisto_module.sim.population.props
 
-        age_grp = df.loc[df.is_alive].age_years.map(get_age_group_mapper())
+        age_grp = df.loc[df.is_alive].age_years.map(self.schisto_module.age_group_mapper)
 
         data = df.loc[df.is_alive].groupby(by=[
             df.loc[df.is_alive, self.infection_status_property],

@@ -21,12 +21,9 @@ from tlo.methods import (
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
-# todo - run and produce plots using scripts
-# todo - switches to log or not
-# todo - clean up code (removing commented-out blocks)
-
-# todo - remaining issue  - update document to remove out-of-date things about code/framework, more tests, fit for other districts
-
+# todo - New issue
+#  * update document to remove out-of-date things about code/framework, more tests, fit for other districts
+#  * Improve calibration
 
 def get_simulation(seed, start_date, mda_execute=True):
     sim = Simulation(start_date=start_date, seed=seed)
