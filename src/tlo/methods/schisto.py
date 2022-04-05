@@ -19,13 +19,14 @@ logger.setLevel(logging.INFO)
 
 def age_groups():
     """Definition of the age-groups used in the module, as a tuple of two integers (a,b) such that the given age group
-     is in range a <= group <= b,i.e.:
+     is in range a <= group <= b. i.e.,
         0 <= PSAC <= 4
         5 <= SAC <= 14
         15 <= Adults
         0 <= All
     :param age_group: 'SAC', 'PSAC', 'Adults', 'All'"""
     return {'PSAC': (0, 4), 'SAC': (5, 14), 'Adults': (15, 120), 'All': (0, 120)}
+
 
 def get_age_group_mapper():
     """Return a dict of the form {<<age_years>>:<<age_group>>}, where `age_group` is ('SAC', 'PSAC', 'Adults')."""
@@ -192,15 +193,25 @@ class Schisto(Module):
 
         # Get the total weights for all those that have symptoms caused by this module.
         symptoms_being_caused = self.sim.modules['SymptomManager'].caused_by(self)
-        dw = pd.Series(symptoms_being_caused).apply(pd.Series).replace(self.disability_weights).fillna(0).sum(
-            axis=1).clip(upper=1.0)
-        # todo - problem on the line above, where a symptom is caused by this module but for which a disability weight isn't associated?
-        # todo - or problem of everything being empty?
-        # todo - Error is "ValueError: No axis named 1 for object type Series"
+
+        def get_total_disability_weight(list_of_symptoms: list) -> float:
+            """Returns the sum of the disability weights from a list of symptoms, capping at 1.0"""
+            dw = 0.0
+            if not list_of_symptoms:
+                return dw
+
+            for symptom in list_of_symptoms:
+                if symptom in self.disability_weights:
+                    dw += self.disability_weights.get(symptom)
+
+            return min(1.0, dw)
+
+        disability_weights_for_each_person_with_symptoms = pd.Series(symptoms_being_caused).apply(get_total_disability_weight)
+
 
         # Return pd.Series that include entries for all alive persons (filling 0.0 where they do not have any symptoms)
         df = self.sim.population.props
-        return pd.Series(index=df.index[df.is_alive], data=0.0).add(dw, fill_value=0.0)
+        return pd.Series(index=df.index[df.is_alive], data=0.0).add(disability_weights_for_each_person_with_symptoms, fill_value=0.0)
 
     def do_on_presentation_with_symptoms(self, person_id: int, symptoms: Union[list, set, tuple]) -> None:
         """Do when person presents to the GenericFirstAppt. If the person has certain set of symptoms, refer ta HSI for
@@ -251,7 +262,6 @@ class Schisto(Module):
                             'prob_sent_to_lab_test_children',
                             'prob_sent_to_lab_test_adults',
                             'PZQ_efficacy',
-                            'years_till_first_MDA'
                             ):
             parameters[_param_name] = param_list[_param_name]
 
@@ -626,7 +636,7 @@ class SchistoSpecies:
             in_the_district = df.index[df['district_of_residence'] == district]
             contact_rates = pd.Series(1, index=in_the_district)
             for age_group in ['PSAC', 'SAC', 'Adults']:
-                age_range = age_groups[age_group]
+                age_range = age_groups()[age_group]
                 in_the_district_and_age_group = \
                     df.index[(df['district_of_residence'] == district) &
                              (df['age_years'].between(age_range[0], age_range[1]))]
@@ -884,7 +894,7 @@ class SchistoMDAEvent(Event, PopulationScopeEventMixin):
         df = self.sim.population.props
         rng = self.module.rng
 
-        age_range = map_age_groups[age_group]  # returns a tuple (a,b) a <= age_group <= b
+        age_range = age_groups()[age_group]  # returns a tuple (a,b) a <= age_group <= b
 
         eligible = df.index[
             df['is_alive']
