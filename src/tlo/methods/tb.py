@@ -1333,6 +1333,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             # retention on IPT (PLHIV)
             self.sim.modules["Tb"].parameters["prob_retained_ipt_6_months"] = 0.8
 
+
         # improve preventive measures
         if scenario == 3:
 

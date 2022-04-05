@@ -878,6 +878,10 @@ class Hiv(Module):
         # 6) Store codes for the consumables needed
         hs = self.sim.modules["HealthSystem"]
 
+        # self.item_codes_for_consumables_required['hiv_rapid_test'] = \
+        #     hs.get_item_codes_from_package_name("HIV Testing Services")
+
+        # updated consumables listing
         self.item_codes_for_consumables_required['hiv_rapid_test'] = {
             hs.get_item_code_from_item_name("Blood collecting tube, 5 ml"): 1,
             hs.get_item_code_from_item_name("Disposables gloves, powder free, 100 pieces per box"): 1,
