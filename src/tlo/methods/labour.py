@@ -2833,7 +2833,7 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'NormalDelivery': 1})
         self.ALERT_OTHER_DISEASES = []
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 1})
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': 1})
 
     def apply(self, person_id, squeeze_factor):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
@@ -3093,7 +3093,7 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MajorSurg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': 2})
 
         self.timing = timing
 
@@ -3186,8 +3186,8 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
 
         # Here we edit the appointment footprint so only women receiving surgery require the surgical footprint
-        if mni[person_id]['referred_for_surgery'] or mni[person_id]['referred_for_cs']:
-            actual_appt_footprint['MajorSurg'] = actual_appt_footprint['MajorSurg']
+        if mni[person_id]['referred_for_cs']:
+            actual_appt_footprint['MajorSurg'] = actual_appt_footprint['Csection']
 
         elif (not mni[person_id]['referred_for_surgery'] and not mni[person_id]['referred_for_cs']) and\
                 mni[person_id]['referred_for_blood']:
