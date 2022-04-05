@@ -24,14 +24,17 @@ from tlo.methods import (
     symptommanager,
 )
 
-# Districts that are high prevalence and for which this model has been calibrated
-fitted_districts = ['Blantyre', 'Chiradzulu', 'Mulanje', 'Nsanje', 'Nkhotakota', 'Phalombe']
-
 resourcefilepath = Path("./resources")
 outputpath = Path("./outputs")
 
 # Declare path for output graphs from this script
-make_graph_file_name = lambda name: outputpath / f"Schisto_{name}.png"  # noqa: E731
+make_graph_file_name = lambda name: outputpath / f"Schisto_{name}.png"  # noqa: E73
+
+# Districts that are high prevalence and for which this model has been calibrated:
+fitted_districts = ['Blantyre', 'Chiradzulu', 'Mulanje', 'Nsanje', 'Nkhotakota', 'Phalombe']
+
+# Name of species that being considered:
+species = ('mansoni', 'haematobium')
 
 
 # %% Run the simulation
@@ -76,10 +79,10 @@ def run_simulation(popsize=popsize, mda_execute=True):
 sim, output = run_simulation(popsize=10000, mda_execute=False)
 
 # %% Extract and process the `pd.DataFrame`s needed
-species = ('mansoni', 'haematobium')
 
 
-def construct_dfs(schisto_log):
+def construct_dfs(schisto_log) -> dict:
+    """Create dict of pd.DataFrames containing counts of infection_status by date, district and age-group."""
     return {
         k: unflatten_flattened_multi_index_in_logging(v.set_index('date'))
         for k, v in schisto_log.items() if k in [f'infection_status_{s}' for s in species]
@@ -177,6 +180,3 @@ ax.legend(loc=1)
 fig.tight_layout()
 fig.savefig(make_graph_file_name('dalys_2010'))
 fig.show()
-
-
-# todo - *** look over time ***

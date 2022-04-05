@@ -17,34 +17,23 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-# todo make this relate to one another and not be independent
-def map_age_groups(age_group):
-    """Helper function for obtaining the age range for each age_group
-    It returns a tuple of two integers (a,b) such that the given age group is in range a <= group <= b,i.e.:
+def age_groups():
+    """Definition of the age-groups used in the module, as a tuple of two integers (a,b) such that the given age group
+     is in range a <= group <= b,i.e.:
         0 <= PSAC <= 4
         5 <= SAC <= 14
         15 <= Adults
         0 <= All
-
-    this will cover all ages because we look at the int variable of age
-    :param age_group: 'SAC', 'PSAC', 'Adults', 'All'
-    """
-    assert age_group in ('SAC', 'PSAC', 'Adults', 'All'), "Incorrect age group"
-    return {'PSAC': (0, 4), 'SAC': (5, 14), 'Adults': (15, 120), 'All': (0, 120)}[age_group]
-
+    :param age_group: 'SAC', 'PSAC', 'Adults', 'All'"""
+    return {'PSAC': (0, 4), 'SAC': (5, 14), 'Adults': (15, 120), 'All': (0, 120)}
 
 def get_age_group_mapper():
     """Return a dict of the form {<<age_years>>:<<age_group>>}, where `age_group` is ('SAC', 'PSAC', 'Adults')."""
-
-    def _age_grp(a):
-        if a < 5:
-            return 'PSAC'
-        elif a < 15:
-            return 'SAC'
-        else:
-            return 'Adults'
-
-    return {a: _age_grp(a) for a in range(0, 120)}
+    s = pd.Series(index=range(1 + 120), data='object')
+    for name, (low_limit, high_limit) in age_groups().items():
+        if (name != 'All'):
+            s.loc[(s.index >= low_limit) & (s.index <= high_limit)] = name
+    return s.to_dict()
 
 
 class Schisto(Module):
@@ -55,8 +44,9 @@ class Schisto(Module):
      determines the symptoms they experience. These symptoms are associated with disability weights. There is no risk
      of death. Treatment can be provided to persons who present following the onset of symptoms. Mass Drug
      Administrations also give treatment to the general population, which clears any worm burden they have.
+
     N.B. Formal fitting has only been undertaken for: ('Blantyre', 'Chiradzulu', 'Mulanje', 'Nsanje', 'Nkhotakota',
-    'Phalombe')"""
+    'Phalombe')."""
 
     INIT_DEPENDENCIES = {'Demography', 'SymptomManager'}
 
@@ -153,10 +143,9 @@ class Schisto(Module):
 
     def initialise_population(self, population):
         """Set the property values for the initial population."""
+
         df = population.props
-        df.loc[df.is_alive, f'{self.module_prefix}_last_PZQ_date'] = pd.Timestamp(year=1900, month=1,
-                                                                                  day=1)  # for simplicity to avoid NaT
-        # df.loc[df.is_alive, 'ss_scheduled_hsi_date'] = pd.NaT
+        df.loc[df.is_alive, f'{self.module_prefix}_last_PZQ_date'] = pd.NaT
 
         for _spec in self.species.values():
             _spec.initialise_population(population)
@@ -200,6 +189,7 @@ class Schisto(Module):
     def report_daly_values(self):
         """Report the daly values, as the sum of the disability weight associated with each symptom caused by this
         module."""
+
         # Get the total weights for all those that have symptoms caused by this module.
         symptoms_being_caused = self.sim.modules['SymptomManager'].caused_by(self)
         dw = pd.Series(symptoms_being_caused).apply(pd.Series).replace(self.disability_weights).fillna(0).sum(
@@ -290,6 +280,7 @@ class Schisto(Module):
 
     def _get_disability_weight(self) -> dict:
         """Return dict containing the disability weight (value) of each symptom (key)."""
+
         symptoms_to_disability_weight_mapping = {
             # These mapping are justified in the 'DALYS' worksheet of the ResourceFile.
             'anemia': 258,
@@ -316,6 +307,7 @@ class Schisto(Module):
 
     def _get_item_code_for_praziquantel(self) -> None:
         """Look-up the item code for Praziquantel"""
+
         return self.sim.modules['HealthSystem'].get_item_code_from_item_name("Praziquantel, 600 mg (donated)")
 
     def _schedule_mda_events(self) -> None:
@@ -480,8 +472,8 @@ class SchistoSpecies:
         """
         * Schedule natural history events for those with worm burden initially.
         * Schedule the WormBurdenEvent for this species. (A recurring instance of this event will be scheduled for
-        each species independently.)"
-        """
+        each species independently.)"""
+
         df = sim.population.props
 
         # Assign infection statuses and symptoms and schedule natural history events for those with worm burden
@@ -499,8 +491,7 @@ class SchistoSpecies:
     def on_birth(self, mother_id, child_id):
         """Initialise the species-specific properties for a newborn individual.
         :param mother_id: the ID for the mother for this child (redundant)
-        :param child_id: the new child
-        """
+        :param child_id: the new child"""
 
         df = self.schisto_module.sim.population.props
         prop = self._prefix_species_property
@@ -516,13 +507,13 @@ class SchistoSpecies:
         df.at[child_id, prop('harbouring_rate')] = rng.gamma(params['gamma_alpha'][district], size=1)
 
     def update_infectious_status_and_symptoms(self, idx: pd.Index) -> None:
-        """
+        """Updates the infection status and symptoms based on the current aggregate worm burden of this species.
          * Assigns the 'infection status' (High-infection, Low-infection, Non-infected) to the persons with ids given
-         in the `idx` argument, according their age (in years) of the person and their aggregate worm burden (of worms
-         of this species).
+         in the `idx` argument, according their age (in years) and their aggregate worm burden (of worms of this
+         species).
          * Causes the onset symptoms to the persons newly with high intensity infection.
-         * Removes the symptoms if a person no longer has a high intensity infection (from any species)
-         """
+         * Removes the symptoms if a person no longer has a high intensity infection (from any species)"""
+
         schisto_module = self.schisto_module
         df = schisto_module.sim.population.props
         prop = self._prefix_species_property
@@ -551,8 +542,7 @@ class SchistoSpecies:
 
         def _impose_symptoms_of_high_intensity_infection(idx: pd.Index) -> None:
             """Assign symptoms to the person with high intensity infection.
-            :param idx: indices of individuals
-            """
+            :param idx: indices of individuals"""
             if not len(idx):
                 return
 
@@ -596,12 +586,6 @@ class SchistoSpecies:
             ]
         sm.clear_symptoms(person_id=no_longer_high_infection, disease_module=schisto_module)
 
-    def log_counts_by_status_and_age_group(self) -> None:
-        """Write to the log the counts by persons in each status by each age-group"""
-        # todo this section could be simplified with groupby
-        for age in ['PSAC', 'SAC', 'Adults', 'All']:
-            self._write_to_log_count_of_states_for_age_group(age)
-
     def _update_parameters_from_schisto_module(self) -> None:
         """Update the internally-held parameters from the `Schisto` module that are specific to this species."""
 
@@ -642,7 +626,7 @@ class SchistoSpecies:
             in_the_district = df.index[df['district_of_residence'] == district]
             contact_rates = pd.Series(1, index=in_the_district)
             for age_group in ['PSAC', 'SAC', 'Adults']:
-                age_range = map_age_groups(age_group)
+                age_range = age_groups[age_group]
                 in_the_district_and_age_group = \
                     df.index[(df['district_of_residence'] == district) &
                              (df['age_years'].between(age_range[0], age_range[1]))]
@@ -772,8 +756,7 @@ class SchistoMatureWorms(Event, IndividualScopeEventMixin):
     """Represents the maturation of worms to adult worms.
     * Increases the aggregate worm burden of an individual upon maturation of the worms
     * Schedules the natural death of worms and symptoms development if High-infection
-    * Updates the infection status and symptoms of the person accordingly.
-    """
+    * Updates the infection status and symptoms of the person accordingly."""
 
     def __init__(self, module: Module, species: SchistoSpecies, person_id: int, number_of_worms_that_mature: int):
         super().__init__(module, person_id=person_id)
@@ -847,8 +830,7 @@ class SchistoMDAEvent(Event, PopulationScopeEventMixin):
     :param coverage: A dictionary of the form {<age_group>: <coverage>}, where <age_group> is one of ('PSAC', 'SAC',
      'Adults').
     :params months_between_repeat: The number of months between repeated occurrences of this event. (None for no
-     repeats).
-    """
+     repeats)."""
 
     def __init__(self, module: Module, district: str, coverage: dict, months_between_repeats: Optional[int]):
         super().__init__(module)
@@ -862,8 +844,7 @@ class SchistoMDAEvent(Event, PopulationScopeEventMixin):
         """ Represents the occurence of an MDA, in a particular year and district, which achieves a particular coverage
          (by age-group).
          * Schedules the MDA HSI for each person that is reached in the MDA.
-         * Schedules the recurrence of this event, if the MDA is to be repeated in the future.
-        """
+         * Schedules the recurrence of this event, if the MDA is to be repeated in the future."""
 
         # Determine who receives the MDA
         idx_to_receive_mda = []
@@ -903,7 +884,7 @@ class SchistoMDAEvent(Event, PopulationScopeEventMixin):
         df = self.sim.population.props
         rng = self.module.rng
 
-        age_range = map_age_groups(age_group)  # returns a tuple (a,b) a <= age_group <= b
+        age_range = map_age_groups[age_group]  # returns a tuple (a,b) a <= age_group <= b
 
         eligible = df.index[
             df['is_alive']
@@ -994,9 +975,8 @@ class HSI_Schisto_TreatmentFollowingDiagnosis(HSI_Event, IndividualScopeEventMix
 class HSI_Schisto_MDA(HSI_Event, IndividualScopeEventMixin):
     """This is a Health System Interaction Event for providing one or more persons with PZQ as part of a Mass Drug
     Administration (MDA). Note that the `person_id` declared as the `target` of this `HSI_Event` is only one of the
-    beneficaries. This is in, effect, a batch of individual HSI being handled within one HSI, for the sake of
-    computational efficiency.
-    """
+    beneficaries. This is in, effect, a "batch job" of individual HSI being handled within one HSI, for the sake of
+    computational efficiency."""
 
     def __init__(self, module, person_id, beneficaries_ids):
         super().__init__(module, person_id=person_id)
