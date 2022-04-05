@@ -206,12 +206,13 @@ class Schisto(Module):
 
             return min(1.0, dw)
 
-        disability_weights_for_each_person_with_symptoms = pd.Series(symptoms_being_caused).apply(get_total_disability_weight)
-
+        disability_weights_for_each_person_with_symptoms = pd.Series(symptoms_being_caused).apply(
+            get_total_disability_weight)
 
         # Return pd.Series that include entries for all alive persons (filling 0.0 where they do not have any symptoms)
         df = self.sim.population.props
-        return pd.Series(index=df.index[df.is_alive], data=0.0).add(disability_weights_for_each_person_with_symptoms, fill_value=0.0)
+        return pd.Series(index=df.index[df.is_alive], data=0.0).add(disability_weights_for_each_person_with_symptoms,
+                                                                    fill_value=0.0)
 
     def do_on_presentation_with_symptoms(self, person_id: int, symptoms: Union[list, set, tuple]) -> None:
         """Do when person presents to the GenericFirstAppt. If the person has certain set of symptoms, refer ta HSI for
@@ -306,10 +307,6 @@ class Schisto(Module):
         }
         get_daly_weight = lambda _code: self.sim.modules['HealthBurden'].get_daly_weight(  # noqa: E731
             _code) if _code is not None else 0.0
-
-        # todo ** Need to make sure that all the symptoms that could be caused by this module have an associated daly weight
-        # (This is used in `report_dalys`.)
-        # assert set(self.disability_weights.keys()) == any symptom could could be caused by this module.
 
         return {
             symptom: get_daly_weight(dw_code) for symptom, dw_code in symptoms_to_disability_weight_mapping.items()
