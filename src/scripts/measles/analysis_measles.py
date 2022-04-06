@@ -74,8 +74,7 @@ sim.register(demography.Demography(resourcefilepath=resources),
              healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
              epi.Epi(resourcefilepath=resources),
              measles.Measles(resourcefilepath=resources),
-             hiv.Hiv(resourcefilepath=resources)
-)
+             hiv.Hiv(resourcefilepath=resources))
 
 # create and run the simulation
 sim.make_initial_population(n=pop_size)
