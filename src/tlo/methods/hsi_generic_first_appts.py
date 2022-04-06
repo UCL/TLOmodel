@@ -169,6 +169,14 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                         topen=sim.date,
                         tclose=None)
 
+        # routine assessment for acute malnutrition
+        if 'Wasting' in sim.modules:
+            sim.modules['Wasting'].do_when_acute_malnutrition_assessment(person_id=person_id)
+
+         # routine assessment for chronic malnutrition
+        if 'Stunting' in sim.modules:
+            sim.modules['Stunting'].do_routine_assessment_for_chronic_undernutrition(person_id=person_id)
+
     elif age < 15:
         # ----------------------------------- CHILD 5-14 -----------------------------------
         if 'fever' in symptoms and "Malaria" in sim.modules:
