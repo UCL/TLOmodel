@@ -8,20 +8,21 @@ import matplotlib.pyplot as plt
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
-    antenatal_care,
+    care_of_women_during_pregnancy,
     contraception,
     demography,
     enhanced_lifestyle,
-    epi,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
     labour,
-    measles,
     newborn_outcomes,
     postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
+    measles,
+    epi,
+    hiv
 )
 
 # import pandas as pd
@@ -58,33 +59,22 @@ resources = Path('./resources')
 # Used to configure health system behaviour
 service_availability = ["*"]
 
-# We register all modules in a single call to the register method, calling once with multiple
-# objects. This is preferred to registering each module in multiple calls because we will be
-# able to handle dependencies if modules are registered together
-sim.register(
-    demography.Demography(resourcefilepath=resources),
-    healthsystem.HealthSystem(
-        resourcefilepath=resources,
-        service_availability=service_availability,
-        mode_appt_constraints=0,
-        ignore_cons_constraints=True,
-        ignore_priority=True,
-        capabilities_coefficient=1.0,
-        disable=True,
-    ),
-    symptommanager.SymptomManager(resourcefilepath=resources),
-    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
-    healthburden.HealthBurden(resourcefilepath=resources),
-    contraception.Contraception(resourcefilepath=resources),
-    enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
-    labour.Labour(resourcefilepath=resources),
-    antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resources),
-    pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resources),
-    postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resources),
-    newborn_outcomes.NewbornOutcomes(resourcefilepath=resources),
-    epi.Epi(resourcefilepath=resources),
-    measles.Measles(resourcefilepath=resources),
-)
+sim.register(demography.Demography(resourcefilepath=resources),
+             contraception.Contraception(resourcefilepath=resources),
+             enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
+             healthburden.HealthBurden(resourcefilepath=resources),
+             healthsystem.HealthSystem(resourcefilepath=resources,
+                                       service_availability=['*']),
+             labour.Labour(resourcefilepath=resources),
+             newborn_outcomes.NewbornOutcomes(resourcefilepath=resources),
+             care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resources),
+             symptommanager.SymptomManager(resourcefilepath=resources),
+             pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resources),
+             postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resources),
+             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
+             epi.Epi(resourcefilepath=resources),
+             measles.Measles(resourcefilepath=resources),
+             hiv.Hiv(resourcefilepath=resources))
 
 # create and run the simulation
 sim.make_initial_population(n=pop_size)

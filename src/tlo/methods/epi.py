@@ -363,7 +363,7 @@ class Epi(Module):
 
     def get_item_codes(self):
         """Look-up the item-codes for each vaccine and update `self.cons_item_codes`"""
-        get_item_codes_from_package_name = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
+        # get_item_codes_from_package_name = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
         get_item_code_from_item_name = self.sim.modules['HealthSystem'].get_item_code_from_item_name
 
         self.cons_item_codes['bcg'] = [

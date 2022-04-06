@@ -164,7 +164,8 @@ class Measles(Module):
             'severe_diarrhoea':
                 self.sim.modules['HealthSystem'].get_item_code_from_item_name("ORS, sachet"),
             'severe_pneumonia':
-                self.sim.modules['HealthSystem'].get_item_code_from_item_name("Oxygen, 1000 liters, primarily with oxygen cylinders")
+                self.sim.modules['HealthSystem'].get_item_code_from_item_name("Oxygen, 1000 liters, primarily with "
+                                                                              "oxygen cylinders")
         }
 
     def on_birth(self, mother_id, child_id):
@@ -421,11 +422,11 @@ class HSI_Measles_Treatment(HSI_Event, IndividualScopeEventMixin):
 
         # for measles with severe diarrhoea
         if "diarrhoea" in symptoms:
-            item_codes += self.module.consumables['severe_diarrhoea']
+            item_codes.append(self.module.consumables['severe_diarrhoea'])
 
         # for measles with pneumonia
         if "respiratory_symptoms" in symptoms:
-            item_codes += self.module.consumables['severe_pneumonia']
+            item_codes.append(self.module.consumables['severe_pneumonia'])
 
         # request the treatment
         if self.get_consumables(item_codes):
