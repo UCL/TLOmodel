@@ -2553,7 +2553,6 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                                   & df.age_years.between(25, 49)])
         female_inc_2549 = n_new_infections_female_2549 / denom_female_2549
 
-
         logger.info(
             key="infections_by_2age_groups_and_sex",
             data={

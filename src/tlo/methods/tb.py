@@ -18,10 +18,6 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
 
-from tlo.methods.consumables import (
-    Consumables
-)
-
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -1316,7 +1312,6 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
 
             # retention on IPT (PLHIV)
             self.sim.modules["Tb"].parameters["prob_retained_ipt_6_months"] = 0.8
-
 
         # improve preventive measures
         if scenario == 3:
