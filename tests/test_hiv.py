@@ -21,13 +21,12 @@ from tlo.methods import (
     labour,
     newborn_outcomes,
     postnatal_supervisor,
-    pregnancy_supervisor,
     pregnancy_helper_functions,
+    pregnancy_supervisor,
     simplified_births,
     symptommanager,
     tb,
 )
-
 from tlo.methods.healthseekingbehaviour import HealthSeekingBehaviourPoll
 from tlo.methods.healthsystem import HealthSystemScheduler
 from tlo.methods.hiv import (
