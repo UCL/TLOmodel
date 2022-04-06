@@ -654,7 +654,6 @@ class HSI_BladderCancer_Investigation_Following_Blood_Urine(HSI_Event, Individua
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        # Define the necessary information for an HSI
         self.TREATMENT_ID = "BladderCancer_Investigation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
@@ -712,16 +711,12 @@ class HSI_BladderCancer_Investigation_Following_Blood_Urine(HSI_Event, Individua
                     tclose=None
                 )
 
-    def did_not_run(self):
-        pass
-
 
 class HSI_BladderCancer_Investigation_Following_pelvic_pain(HSI_Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        # Define the necessary information for an HSI
         self.TREATMENT_ID = "BladderCancer_Investigation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
@@ -779,9 +774,6 @@ class HSI_BladderCancer_Investigation_Following_pelvic_pain(HSI_Event, Individua
                     tclose=None
                 )
 
-    def did_not_run(self):
-        pass
-
 
 class HSI_BladderCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     """
@@ -793,7 +785,7 @@ class HSI_BladderCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
 
         self.TREATMENT_ID = "BladderCancer_Treatment"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MajorSurg': 1, "Over5OPD": 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MajorSurg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})
 
@@ -828,9 +820,6 @@ class HSI_BladderCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             tclose=None,
             priority=0
         )
-
-    def did_not_run(self):
-        pass
 
 
 class HSI_BladderCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
@@ -884,9 +873,6 @@ class HSI_BladderCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin)
                 priority=0
             )
 
-    def did_not_run(self):
-        pass
-
 
 class HSI_BladderCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
     """
@@ -902,10 +888,10 @@ class HSI_BladderCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        # Define the necessary information for an HSI
         self.TREATMENT_ID = "BladderCancer_PalliativeCare"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        self.ACCEPTED_FACILITY_LEVEL = '3'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+        self.ACCEPTED_FACILITY_LEVEL = '2'
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 15})
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -931,9 +917,6 @@ class HSI_BladderCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
             tclose=None,
             priority=0
         )
-
-    def did_not_run(self):
-        pass
 
 
 # ---------------------------------------------------------------------------------------------------------
