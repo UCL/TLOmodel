@@ -708,9 +708,6 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
 #   todo: was missed, so the same test will not likely be repeated, at least not in the short term, so we even
 #   todo: though the symptom remains we don't want to keep repeating the HSI which triggers the diagnostic test
 
-    def did_not_run(self):
-        pass
-
 
 class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     """
@@ -723,7 +720,7 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
 
         self.TREATMENT_ID = "BreastCancer_Treatment"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MajorSurg": 1, "Over5OPD": 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MajorSurg": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": 5})
 
@@ -756,9 +753,6 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             tclose=None,
             priority=0
         )
-
-    def did_not_run(self):
-        pass
 
 
 class HSI_BreastCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
@@ -812,8 +806,6 @@ class HSI_BreastCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
                 priority=0
             )
 
-    def did_not_run(self):
-        pass
 
 
 class HSI_BreastCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
@@ -831,8 +823,9 @@ class HSI_BreastCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
 
         self.TREATMENT_ID = "BreastCancer_PalliativeCare"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        self.ACCEPTED_FACILITY_LEVEL = '3'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+        self.ACCEPTED_FACILITY_LEVEL = '2'
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 15})
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -860,9 +853,6 @@ class HSI_BreastCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
             tclose=None,
             priority=0
         )
-
-    def did_not_run(self):
-        pass
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -915,8 +905,8 @@ class BreastCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         n_ge15_f = (df.is_alive & (df.age_years >= 15) & (df.sex == 'F')).sum()
 
-# todo: the .between function I think includes the two dates so events on these dates counted twice
-# todo:_ I think we need to replace with date_lastlog <= x < date_now
+        # todo: the .between function I think includes the two dates so events on these dates counted twice
+        # todo:_ I think we need to replace with date_lastlog <= x < date_now
         n_newly_diagnosed_stage1 = \
             (df.brc_date_diagnosis.between(date_lastlog, date_now) & (df.brc_status == 'stage1')).sum()
         n_newly_diagnosed_stage2 = \
@@ -953,7 +943,3 @@ class BreastCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info(key='summary_stats',
                     description='summary statistics for breast cancer',
                     data=out)
-
-#       logger.info('%s|person_one|%s',
-#                    self.sim.date,
-#                    df.loc[13].to_dict())
