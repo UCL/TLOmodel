@@ -32,7 +32,7 @@ from tlo.methods import (
     pregnancy_supervisor,
     prostate_cancer,
     symptommanager,
-    tb
+    tb,
 )
 from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath

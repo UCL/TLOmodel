@@ -23,7 +23,7 @@ from tlo.methods import (
     pregnancy_helper_functions,
     pregnancy_supervisor,
     symptommanager,
-    tb
+    tb,
 )
 
 # The resource files
