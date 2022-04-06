@@ -75,7 +75,7 @@ class Hiv(Module):
 
     OPTIONAL_INIT_DEPENDENCIES = {"HealthBurden"}
 
-    ADDITIONAL_DEPENDENCIES = {'NewbornOutcomes'}
+    ADDITIONAL_DEPENDENCIES = {'Tb', 'NewbornOutcomes'}
 
     METADATA = {
         Metadata.DISEASE_MODULE,
