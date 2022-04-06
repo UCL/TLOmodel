@@ -495,7 +495,9 @@ def test_aids_symptoms_lead_to_treatment_being_initiated(seed):
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath,
                                                                # force symptoms to lead to health care seeking:
                                                                force_any_symptom_to_lead_to_healthcareseeking=True),
-                 hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True)
+                 epi.Epi(resourcefilepath=resourcefilepath),
+                 hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True),
+                 tb.Tb(resourcefilepath=resourcefilepath),
                  )
 
     # Let there be a 0% probability of TestAndRefer events being scheduled
@@ -930,7 +932,9 @@ def test_hsi_art_stopped_if_healthsystem_cannot_run_hsi_and_no_restart(seed):
                                            cons_availability='all'),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True)
+                 epi.Epi(resourcefilepath=resourcefilepath),
+                 hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True),
+                 tb.Tb(resourcefilepath=resourcefilepath),
                  )
 
     # Make the population
@@ -1024,7 +1028,9 @@ def test_hsi_art_stopped_if_healthsystem_cannot_run_hsi_but_will_restart(seed):
                                            cons_availability='all'),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True)
+                 epi.Epi(resourcefilepath=resourcefilepath),
+                 hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True),
+                 tb.Tb(resourcefilepath=resourcefilepath),
                  )
 
     # Make the population
@@ -1110,7 +1116,9 @@ def test_use_dummy_version(seed):
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 hiv.DummyHivModule(hiv_prev=1.0)
+                 epi.Epi(resourcefilepath=resourcefilepath),
+                 hiv.DummyHivModule(hiv_prev=1.0),
+                 tb.Tb(resourcefilepath=resourcefilepath),
                  )
 
     sim.make_initial_population(n=popsize)
@@ -1138,7 +1146,9 @@ def test_baseline_hiv_prevalence():
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False)
+                 epi.Epi(resourcefilepath=resourcefilepath),
+                 hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False),
+                 tb.Tb(resourcefilepath=resourcefilepath),
                  )
 
     # Make the population
