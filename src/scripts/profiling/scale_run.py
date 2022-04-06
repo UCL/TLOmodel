@@ -36,7 +36,6 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     hiv,
-    tb,
     labour,
     malaria,
     measles,
@@ -47,6 +46,7 @@ from tlo.methods import (
     pregnancy_supervisor,
     stunting,
     symptommanager,
+    tb,
     wasting,
 )
 
