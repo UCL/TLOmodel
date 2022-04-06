@@ -3117,7 +3117,6 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         # Create an empty list for injuries that are potentially healed without further medical intervention
         self.heal_with_time_injuries = []
 
-
     def apply(self, person_id, squeeze_factor):
         road_traffic_injuries = self.sim.modules['RTI']
         df = self.sim.population.props
