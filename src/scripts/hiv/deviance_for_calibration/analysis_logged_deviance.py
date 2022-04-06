@@ -33,8 +33,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
-popsize = 10000
+end_date = Date(2025, 1, 1)
+popsize = 20000
 
 # set up the log config
 log_config = {
@@ -53,7 +53,7 @@ log_config = {
 # Register the appropriate modules
 # need to call epi before tb to get bcg vax
 # seed = random.randint(0, 50000)
-seed = 4  # set seed for reproducibility
+seed = 32  # set seed for reproducibility
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
 sim.register(
     demography.Demography(resourcefilepath=resourcefilepath),
@@ -78,6 +78,8 @@ sim.register(
     tb.Tb(resourcefilepath=resourcefilepath),
     # deviance_measure.Deviance(resourcefilepath=resourcefilepath),
 )
+
+# sim.modules["Tb"].parameters["transmission_rate"] = 19.5
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)

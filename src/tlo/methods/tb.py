@@ -512,14 +512,6 @@ class Tb(Module):
             Predictor("hv_inf").when(True, p["rr_tb_hiv"]),
         )
 
-        # linear model for risk of active tb in baseline population 2010
-        # need to cluster majority of cases in plhiv
-        self.lm["active_tb_2010"] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            (p["incidence_active_tb_2010"]),
-            Predictor("hv_inf").when(True, p["rr_tb_hiv"]),
-        )
-
         # adults progressing to active disease
         self.lm["active_tb"] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
@@ -710,24 +702,16 @@ class Tb(Module):
         """
         this is new incidence active tb cases which will occur through 2010
         no differences in baseline active tb by age/sex
-        active infections will cluster in plhiv
         """
 
         df = population.props
         now = self.sim.date
         p = self.parameters
 
-        # risk active tb determined by hiv status
-        prob_active = self.lm["active_tb_2010"].predict(
-            df.loc[df.is_alive]
-        )  # this will return pd.Series of probabilities of active infection for each person alive
+        active_tb_idx = df.index[
+            (self.rng.random_sample(size=len(df)) < p["incidence_active_tb_2010"]) & df.is_alive
+            ]
 
-        mean_prob_active = prob_active.mean()
-        scaled_prob_active = prob_active / mean_prob_active
-        overall_prob_active = scaled_prob_active * p["incidence_active_tb_2010"]
-
-        new_active = self.rng.random_sample(len(overall_prob_active)) < overall_prob_active
-        active_tb_idx = new_active[new_active].index
         df.loc[active_tb_idx, "tb_strain"] = "ds"
 
         # allocate some active infections as mdr-tb
