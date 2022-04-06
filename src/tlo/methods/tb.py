@@ -717,17 +717,10 @@ class Tb(Module):
         now = self.sim.date
         p = self.parameters
 
-        # risk active tb determined by hiv status
-        prob_active = self.lm["active_tb_2010"].predict(
-            df.loc[df.is_alive]
-        )  # this will return pd.Series of probabilities of active infection for each person alive
+        active_tb_idx = df.index[
+            (self.rng.random_sample(size=len(df)) < p["incidence_active_tb_2010"]) & df.is_alive
+            ]
 
-        mean_prob_active = prob_active.mean()
-        scaled_prob_active = prob_active / mean_prob_active
-        overall_prob_active = scaled_prob_active * p["incidence_active_tb_2010"]
-
-        new_active = self.rng.random_sample(len(overall_prob_active)) < overall_prob_active
-        active_tb_idx = new_active[new_active].index
         df.loc[active_tb_idx, "tb_strain"] = "ds"
 
         # allocate some active infections as mdr-tb
