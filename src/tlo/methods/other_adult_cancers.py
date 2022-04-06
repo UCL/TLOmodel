@@ -630,13 +630,10 @@ class HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom(
     """
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["Over5OPD"] = 1
 
-        self.TREATMENT_ID = "OtherAdultCancer_Investigation_Following_other_adult_ca_symptom"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.TREATMENT_ID = "OtherAdultCancer_Investigation"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -692,9 +689,6 @@ class HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom(
                     tclose=None
                 )
 
-    def did_not_run(self):
-        pass
-
 
 class HSI_OtherAdultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     """
@@ -706,14 +700,10 @@ class HSI_OtherAdultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["MajorSurg"] = 1
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = "OtherAdultCancer_StartTreatment"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.TREATMENT_ID = "OtherAdultCancer_Treatment"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MajorSurg": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
-        self.ALERT_OTHER_DISEASES = []
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": 5})
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -758,14 +748,9 @@ class HSI_OtherAdultCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMix
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["Over5OPD"] = 1
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = "OtherAdultCancer_MonitorTreatment"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.TREATMENT_ID = "OtherAdultCancer_Treatment"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -822,14 +807,10 @@ class HSI_OtherAdultCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["Over5OPD"] = 1
-
-        # Define the necessary information for an HSI
         self.TREATMENT_ID = "OtherAdultCancer_PalliativeCare"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = '3'
-        self.ALERT_OTHER_DISEASES = []
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+        self.ACCEPTED_FACILITY_LEVEL = '2'
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 15})
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
