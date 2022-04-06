@@ -20,6 +20,7 @@ from tlo.methods import (
     labour,
     newborn_outcomes,
     postnatal_supervisor,
+    pregnancy_helper_functions,
     pregnancy_supervisor,
     simplified_births,
     symptommanager,
@@ -46,7 +47,7 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
-def get_sim(seed, use_simplified_birth=True):
+def get_sim(seed, use_simplified_birth=True, cons_availability='all'):
     """get sim with the checks for configuration of properties running in the HIV module"""
     start_date = Date(2010, 1, 1)
     popsize = 1000
@@ -57,7 +58,7 @@ def get_sim(seed, use_simplified_birth=True):
         sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                      simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                      enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                     healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+                     healthsystem.HealthSystem(resourcefilepath=resourcefilepath, cons_availability=cons_availability),
                      symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                      healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                      hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True)
@@ -70,7 +71,7 @@ def get_sim(seed, use_simplified_birth=True):
                      newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                      postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                      enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                     healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+                     healthsystem.HealthSystem(resourcefilepath=resourcefilepath, cons_availability=cons_availability),
                      symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                      healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                      hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True),
@@ -85,17 +86,6 @@ def get_sim(seed, use_simplified_birth=True):
 
     # Make the population
     sim.make_initial_population(n=popsize)
-    return sim
-
-
-def adjust_availability_of_consumables_for_hiv(sim, available=True):
-    all_item_codes = set()
-    for f in sim.modules['Hiv'].item_codes_for_consumables_required.values():
-        all_item_codes = all_item_codes.union(f.keys())
-
-    sim.modules['HealthSystem'].prob_item_codes_available.loc[all_item_codes] = 1.0 if available else 0.0
-
-    sim.modules['HealthSystem'].determine_availability_of_consumables_today()
     return sim
 
 
@@ -482,8 +472,7 @@ def test_aids_symptoms_lead_to_treatment_being_initiated(seed):
 
     # Make the population and simulate for 0 days to get everything initialised:
     sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
-    sim = adjust_availability_of_consumables_for_hiv(sim, available=True)
+    sim.simulate(end_date=sim.date)
 
     df = sim.population.props
 
@@ -530,7 +519,6 @@ def test_art_is_initiated_for_infants(seed):
 
     # Simulate for 0 days so as to complete all the initialisation steps
     sim = start_sim_and_clear_event_queues(sim)
-    sim = adjust_availability_of_consumables_for_hiv(sim, available=True)
 
     # Manipulate MTCT rates so that transmission always occurs at/before birth
     sim.modules['Hiv'].parameters["prob_mtct_treated"] = 1.0
@@ -544,14 +532,14 @@ def test_art_is_initiated_for_infants(seed):
     df = sim.population.props
     mother_id = df.loc[df.is_alive & (df.sex == "F")].index[0]
     df.at[mother_id, 'hv_inf'] = True
+    df.at[mother_id, 'is_pregnant'] = True
     df.at[mother_id, 'hv_date_inf'] = sim.date
     df.at[mother_id, 'date_of_last_pregnancy'] = sim.date
 
-    # Populate the minimum set of keys within the mni dict so the on_birth function will run
-    sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id] = {
-        'twin_count': 0,  'single_twin_still_birth': False, 'labour_state': 'term_labour',
-        'stillbirth_in_labour': False, 'abx_for_prom_given': False,  'corticosteroids_given': False,
-        'delivery_setting': 'health_centre', 'clean_birth_practices': False}
+    # Populate the mni
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], mother_id)
+    sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['delivery_setting'] = 'hospital'
 
     # Do birth
     child_id = sim.do_birth(mother_id)
@@ -562,18 +550,11 @@ def test_art_is_initiated_for_infants(seed):
     assert sim.population.props.at[child_id, "hv_inf"]
     assert not sim.population.props.at[child_id, "hv_diagnosed"]
 
-    # Populate the minimum set of keys within the nci dictionary so the newborn HSI will run
-    sim.modules['NewbornOutcomes'].newborn_care_info[child_id] = {
-        'ga_at_birth': df.at[mother_id, 'ps_gestational_age_in_weeks'], 'vit_k': False, 'tetra_eye_d': False,
-        'proph_abx': False, 'abx_for_prom_given': False, 'corticosteroids_given': False,
-        'delivery_setting': 'health_centre', 'clean_birth_practices': False, 'sought_care_for_complication': False,
-        'cause_of_death_after_birth': []}
-
     # Define the newborn HSI and run the event
-    newborn_care = newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant(
-        module=sim.modules['NewbornOutcomes'], person_id=child_id, facility_level_of_this_hsi='2')
+    newborn_pnc = newborn_outcomes.HSI_NewbornOutcomes_ReceivesPostnatalCheck(
+        module=sim.modules['NewbornOutcomes'], person_id=child_id)
 
-    newborn_care.apply(person_id=child_id, squeeze_factor=0.0)
+    newborn_pnc.apply(person_id=child_id, squeeze_factor=0.0)
 
     # Check that the child has a TestAndRefer event scheduled via the newborn HSI
     date_event, event = [
@@ -602,7 +583,6 @@ def test_hsi_testandrefer_and_circ(seed):
     """Test that the HSI for testing and referral to circumcision works as intended"""
     sim = get_sim(seed=seed)
     sim = start_sim_and_clear_event_queues(sim)
-    sim = adjust_availability_of_consumables_for_hiv(sim, available=True)
 
     # Make the chance of being referred 100%
     sim.modules['Hiv'].lm['lm_circ'] = LinearModel.multiplicative()
@@ -638,7 +618,6 @@ def test_hsi_testandrefer_and_behavchg(seed):
     """Test that the HSI for testing and behaviour change works as intended"""
     sim = get_sim(seed=seed)
     sim = start_sim_and_clear_event_queues(sim)
-    sim = adjust_availability_of_consumables_for_hiv(sim, available=True)
 
     # Make the chance of having behaviour change 100%
     sim.modules['Hiv'].lm['lm_behavchg'] = LinearModel.multiplicative()
@@ -666,7 +645,6 @@ def test_hsi_testandrefer_and_prep(seed):
     """Test that the HSI for testing and referral to PrEP works as intended"""
     sim = get_sim(seed=seed)
     sim = start_sim_and_clear_event_queues(sim)
-    sim = adjust_availability_of_consumables_for_hiv(sim, available=True)
 
     # Make the chance of being referred 100%
     sim.modules['Hiv'].lm['lm_prep'] = LinearModel.multiplicative()
@@ -744,7 +722,6 @@ def test_hsi_testandrefer_and_art(seed):
     sim = get_sim(seed=seed)
 
     sim = start_sim_and_clear_event_queues(sim)
-    sim = adjust_availability_of_consumables_for_hiv(sim, available=True)
 
     # Make the chance of being referred to ART following testing is 100%
     sim.modules['Hiv'].lm['lm_art'] = LinearModel.multiplicative()
@@ -832,11 +809,8 @@ def test_hsi_art_stopped_due_to_no_drug_available_and_no_restart(seed):
     """Check that if drug not available at HSI, person will default off ART.
     If set not to restart, will have no further HSI"""
 
-    sim = get_sim(seed=seed)
+    sim = get_sim(seed=seed, cons_availability='none')  # make sure consumables for art are *NOT* available:
     sim = start_sim_and_clear_event_queues(sim)
-
-    # make sure consumables for art are *NOT* available:
-    sim = adjust_availability_of_consumables_for_hiv(sim, available=False)
 
     # Get target person and make them HIV-positive adult, diagnosed and on ART
     df = sim.population.props
@@ -867,11 +841,8 @@ def test_hsi_art_stopped_due_to_no_drug_available_but_will_restart(seed):
     """Check that if drug not available at HSI, person will default off ART.
     If set not restart, will have a further HSI scheduled"""
 
-    sim = get_sim(seed=seed)
+    sim = get_sim(seed=seed, cons_availability='none')  # make sure consumables for art are *NOT* available:
     sim = start_sim_and_clear_event_queues(sim)
-
-    # make sure consumables for art are *NOT* available:
-    sim = adjust_availability_of_consumables_for_hiv(sim, available=False)
 
     # Get target person and make them HIV-positive adult, diagnosed and on ART
     df = sim.population.props
@@ -913,7 +884,8 @@ def test_hsi_art_stopped_if_healthsystem_cannot_run_hsi_and_no_restart(seed):
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            capabilities_coefficient=0.0,
-                                           mode_appt_constraints=2),
+                                           mode_appt_constraints=2,
+                                           cons_availability='all'),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True)
@@ -924,9 +896,6 @@ def test_hsi_art_stopped_if_healthsystem_cannot_run_hsi_and_no_restart(seed):
 
     # Get the simulation running and clear the event queues:
     sim = start_sim_and_clear_event_queues(sim)
-
-    # Make consumables all be available
-    sim = adjust_availability_of_consumables_for_hiv(sim, available=True)
 
     # make persons try to restart if HSI are not being run
     sim.modules['Hiv'].parameters["probability_of_seeking_further_art_appointment_if_appointment_not_available"] = 0.0
@@ -1009,7 +978,8 @@ def test_hsi_art_stopped_if_healthsystem_cannot_run_hsi_but_will_restart(seed):
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            capabilities_coefficient=0.0,
-                                           mode_appt_constraints=2),
+                                           mode_appt_constraints=2,
+                                           cons_availability='all'),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True)
@@ -1020,9 +990,6 @@ def test_hsi_art_stopped_if_healthsystem_cannot_run_hsi_but_will_restart(seed):
 
     # Get the simulation running and clear the event queues:
     sim = start_sim_and_clear_event_queues(sim)
-
-    # Make consumables all be available
-    sim = adjust_availability_of_consumables_for_hiv(sim, available=True)
 
     # make persons try to restart if HSI are not being run
     sim.modules['Hiv'].parameters["probability_of_seeking_further_art_appointment_if_appointment_not_available"] = 1.0

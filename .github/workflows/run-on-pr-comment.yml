@@ -20,10 +20,16 @@ on:
         description: The shell command(s) to run to execute test
         required: true
         type: string
+      timeout-minutes:
+        description: The timeout in minutes to halt job after
+        required: false
+        type: number
+        default: 360
 
 jobs:
   run_test_on_keyword_and_reply_with_result:
     runs-on: ${{ inputs.runs-on }}
+    timeout-minutes: ${{ inputs.timeout-minutes }}
     if: github.event.issue.pull_request && github.event.comment.body == format('/run {0}', inputs.keyword)
     steps:
     - name: Check permissions of commenting user
@@ -58,12 +64,12 @@ jobs:
       with:
         result-encoding: string
         script: |
-          const pr = await github.pulls.get({
+          const { data: pr } = await github.pulls.get({
             owner: context.issue.owner,
             repo: context.issue.repo,
             pull_number: context.issue.number,
           });
-          return pr.data.head.sha
+          return pr.head.sha
     - name: Checkout pull-request SHA
       uses: actions/checkout@v2
       with:
@@ -76,15 +82,31 @@ jobs:
       uses: actions/github-script@v4
       with:
         script: |
-          const workflow_run = await github.actions.getWorkflowRun({
+          const { data: workflow_jobs } = await github.actions.listJobsForWorkflowRun({
             owner: context.repo.owner,
             repo: context.repo.repo,
             run_id: context.runId,
           });
-          const result = "${{ job.status == 'success' && 'succeeded ✅' || 'failed ❌' }}"
+          const job = workflow_jobs.jobs[0];  // There should only be one job
+          const run_test_commands_step = job.steps.filter(
+            step => step.name == "Run test command(s)"
+          )[0];  // There should only be one step with this name
+          const result = (
+            run_test_commands_step.conclusion == 'success' 
+            ? 'succeeded ✅'
+            : 'failed ❌'
+          );
+          const started_date = new Date(run_test_commands_step.started_at);
+          const completed_date = new Date(run_test_commands_step.completed_at);
+          const time_minutes = ((completed_date - started_date) / 60000).toPrecision(3);
+          const details = [
+            `🆔 [${job.id}](${job.html_url})`,
+            `⏲️ ${time_minutes} minutes`,
+            `#️⃣ ${{ steps.sha.outputs.result }}`
+          ].join('\n');
           github.issues.createComment({
             issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,  
-            body: `[${{ inputs.description }} ${result}](${workflow_run.html_url})`,
+            body: `## ${{inputs.description }} ${result}\n${details}`,
           });

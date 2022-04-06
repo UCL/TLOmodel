@@ -11,6 +11,7 @@ from tlo.methods import (
     demography,
     depression,
     enhanced_lifestyle,
+    epi,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
@@ -19,6 +20,7 @@ from tlo.methods import (
     malaria,
     newborn_outcomes,
     postnatal_supervisor,
+    pregnancy_helper_functions,
     pregnancy_supervisor,
     symptommanager,
 )
@@ -40,9 +42,8 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
-def register_all_modules(ignore_cons_constraints, seed):
-    """Register all modules that are required for ANC to run (where we allow screening/treatment to occur for HIV,
-    Malaria, Depression as part of routine ANC)"""
+def register_all_modules(seed):
+    """Register all modules that are required for ANC to run"""
 
     sim = Simulation(start_date=start_date, seed=seed)
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -51,7 +52,7 @@ def register_all_modules(ignore_cons_constraints, seed):
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*'],
-                                           cons_availability='all'),
+                                           cons_availability='all'),  # went set disable=true, cant check HSI queue,
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
@@ -59,9 +60,8 @@ def register_all_modules(ignore_cons_constraints, seed):
                  labour.Labour(resourcefilepath=resourcefilepath),
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 malaria.Malaria(resourcefilepath=resourcefilepath),
-                 hiv.Hiv(resourcefilepath=resourcefilepath),
-                 depression.Depression(resourcefilepath=resourcefilepath))
+
+                 hiv.DummyHivModule())
 
     return sim
 
@@ -106,6 +106,9 @@ def run_sim_for_0_days_get_mother_id(sim):
     df = sim.population.props
     women_repro = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)]
     mother_id = women_repro.index[0]
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], mother_id)
+
     return mother_id
 
 
@@ -115,11 +118,30 @@ def test_perfect_run_of_anc_contacts_no_constraints(seed):
     the correct screening and medication-based interventions during ANC (at the correct gestational age).
     """
 
-    # Register the key modules and run the simulation for one day
-    sim = register_all_modules(ignore_cons_constraints=True, seed=seed)
+    # Register the modules called within ANC and run the simulation for one day
+    sim = Simulation(start_date=start_date, seed=seed)
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=['*'],
+                                           cons_availability='all'),  # went set disable=true, cant check HSI queue,
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 depression.Depression(resourcefilepath=resourcefilepath),
+                 malaria.Malaria(resourcefilepath=resourcefilepath),
+                 epi.Epi(resourcefilepath=resourcefilepath),
+                 hiv.Hiv(resourcefilepath=resourcefilepath))
+
     sim.make_initial_population(n=100)
 
-    params = sim.modules['CareOfWomenDuringPregnancy'].parameters
+    params = sim.modules['CareOfWomenDuringPregnancy'].current_parameters
     params_dep = sim.modules['Depression'].parameters
 
     # Set sensitivity/specificity of dx_tests to one
@@ -146,52 +168,64 @@ def test_perfect_run_of_anc_contacts_no_constraints(seed):
     # Set key pregnancy variables
     df.at[mother_id, 'is_pregnant'] = True
     df.at[mother_id, 'date_of_last_pregnancy'] = start_date
-    df.at[mother_id, 'ps_will_attend_four_or_more_anc'] = True
+    df.at[mother_id, 'ps_anc4'] = True
     df.at[mother_id, 'ps_date_of_anc1'] = start_date + pd.DateOffset(weeks=8)
     df.at[mother_id, 'ps_gestational_age_in_weeks'] = 10
-    sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id] = {'hypertension_onset': pd.NaT,
-                                                                             'gest_diab_onset': pd.NaT}
+    df.at[mother_id, 'li_bmi'] = 1
+    df.at[mother_id, 'la_parity'] = 0
+    df.at[mother_id, 'ps_prev_gest_diab'] = True
+
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
 
     # Set some complications that should be be detected in ANC leading to further action
     df.at[mother_id, 'ps_htn_disorders'] = 'mild_pre_eclamp'
     df.at[mother_id, 'de_depr'] = True
 
     # ensure care seeking will continue for all ANC visits
-    params = sim.modules['CareOfWomenDuringPregnancy'].parameters
-    params['ac_linear_equations']['anc_continues'] = \
-        LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            1)
+    params = sim.modules['CareOfWomenDuringPregnancy'].current_parameters
+    params['prob_seek_anc2'] = 1.0
+    params['prob_seek_anc3'] = 1.0
+    params['prob_seek_anc5'] = 1.0
+    params['prob_seek_anc6'] = 1.0
+    params['prob_seek_anc7'] = 1.0
+    params['prob_seek_anc8'] = 1.0
 
     # Set parameters used to determine if HCW will deliver intervention (if consumables available) to 1
-    params['prob_intervention_delivered_urine_ds'] = 1
-    params['prob_intervention_delivered_bp'] = 1
-    params['prob_intervention_delivered_depression_screen'] = 1
-    params['prob_intervention_delivered_ifa'] = 1
-    params['prob_intervention_delivered_bep'] = 1
-    params['prob_intervention_delivered_llitn'] = 1
-    params['prob_intervention_delivered_iptp'] = 1
-    params['prob_intervention_delivered_hiv_test'] = 1
-    params['prob_intervention_delivered_poct'] = 1
-    params['prob_intervention_delivered_tt'] = 1
+    params['prob_intervention_delivered_urine_ds'] = 1.0
+    params['prob_intervention_delivered_bp'] = 1.0
+    params['prob_intervention_delivered_depression_screen'] = 1.0
+    params['prob_intervention_delivered_ifa'] = 1.0
+    params['prob_intervention_delivered_gdm_test'] = 1.0
+    params['prob_adherent_ifa'] = 1.0
+    params['prob_intervention_delivered_bep'] = 1.0
+    params['prob_intervention_delivered_llitn'] = 1.0
+    params['prob_intervention_delivered_iptp'] = 1.0
+    params['prob_intervention_delivered_hiv_test'] = 1.0
+    params['prob_intervention_delivered_poct'] = 1.0
+    params['prob_intervention_delivered_tt'] = 1.0
+    params['sensitivity_blood_test_glucose'] = 1.0
+    params['specificity_blood_test_glucose'] = 1.0
+
+    # set coverage of tetatnus for her district to 1
+    sim.modules['Epi'].parameters['district_vaccine_coverage']['TT2+'] = 1.0
 
     # Register the anc HSIs
     first_anc = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(
-        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, facility_level_of_this_hsi='2')
+        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id)
     second_anc = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(
-        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, facility_level_of_this_hsi='2')
+        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id)
     third_anc = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(
-        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, facility_level_of_this_hsi='2')
+        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id)
     fourth_anc = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(
-        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, facility_level_of_this_hsi='2')
+        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id)
     fifth_anc = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(
-        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, facility_level_of_this_hsi='2')
+        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id)
     sixth_anc = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(
-        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, facility_level_of_this_hsi='2')
+        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id)
     seventh_anc = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(
-        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, facility_level_of_this_hsi='2')
+        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id)
     eight_anc = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(
-        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, facility_level_of_this_hsi='2')
+        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id)
 
     # ========================================== ANC 1 TESTING =======================================================
     # Here we test that during the first ANC contact, women receive the correct interventions
@@ -207,12 +241,9 @@ def test_perfect_run_of_anc_contacts_no_constraints(seed):
     assert (df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'] == 1)
 
     # Next, ensure that this woman has received key interventions that should have been started at ANC1: iron & folic
-    # acid supplementation, balanced energy and protein supplementation, insecticide treated bed net and a first
-    # tetanus vaccine
+    # acid supplementation, balanced energy and protein supplementation
     assert (df.at[mother_id, 'ac_receiving_iron_folic_acid'])
     assert (df.at[mother_id, 'ac_receiving_bep_supplements'])
-    assert (df.at[mother_id, 'ac_itn_provided'])
-    assert (df.at[mother_id, 'ac_ttd_received'] == 1)
 
     # We would expect som additional HSI events to have been scheduled for a woman on her first ANC and for this woman
     # specifically due to her complications (pre-eclampsia and depression)
@@ -223,6 +254,9 @@ def test_perfect_run_of_anc_contacts_no_constraints(seed):
     assert (df.at[mother_id, 'de_ever_diagnosed_depression'])
     assert depression.HSI_Depression_TalkingTherapy in hsi_events
     assert depression.HSI_Depression_Start_Antidepressant in hsi_events
+
+    # Additionally she should be scheduled to receive tetanus vaccination
+    assert epi.HSI_TdVaccine in hsi_events
 
     # Additionally she would be scheduled to undergo HIV testing as part of her ANC appointment
     assert hiv.HSI_Hiv_TestAndRefer in hsi_events
@@ -254,13 +288,14 @@ def test_perfect_run_of_anc_contacts_no_constraints(seed):
     # Now check she has received interventions specific to visit 2, calcium supplementation, the first dose of IPTP and
     # second dose of tetanus
     assert (df.at[mother_id, 'ac_receiving_calcium_supplements'])
-    assert (df.at[mother_id, 'ac_doses_of_iptp_received'] == 1)
-    assert (df.at[mother_id, 'ac_ttd_received'] == 2)
 
     # Here, we check that a woman with a pre-exsisting condition (pre-eclampsia) who is on treatment is not readmitted
     # if her condition has remained static (not progressed)
     hsi_events = find_and_return_hsi_events_list(sim, mother_id)
     assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare not in hsi_events
+
+    # Check scheduling for second tetanus vaccine
+    assert epi.HSI_TdVaccine in hsi_events
 
     # Check scheduling of the next ANC contact
     assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact in hsi_events
@@ -276,12 +311,10 @@ def test_perfect_run_of_anc_contacts_no_constraints(seed):
     # screening)
     df.at[mother_id, 'ps_gest_diab'] = 'uncontrolled'
     df.at[mother_id, 'ps_prev_gest_diab'] = True
+    df.at[mother_id, 'li_bmi'] = 4
 
     third_anc.apply(person_id=updated_mother_id, squeeze_factor=0.0)
     assert (df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'] == 3)
-
-    # Check the second dose of IPTp is given
-    assert (df.at[mother_id, 'ac_doses_of_iptp_received'] == 2)
 
     # Check that this woman has undergone screening for diabetes, and will be admitted for treatment
     hsi_events = find_and_return_hsi_events_list(sim, mother_id)
@@ -306,9 +339,6 @@ def test_perfect_run_of_anc_contacts_no_constraints(seed):
     fourth_anc.apply(person_id=updated_mother_id, squeeze_factor=0.0)
     assert (df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'] == 4)
 
-    # Check the third dose of IPTp is given
-    assert (df.at[mother_id, 'ac_doses_of_iptp_received'] == 3)
-
     hsi_events = find_and_return_hsi_events_list(sim, mother_id)
 
     # Check scheduling of the next ANC contact
@@ -323,12 +353,10 @@ def test_perfect_run_of_anc_contacts_no_constraints(seed):
 
     # The woman has experienced progression of her disease between appointments
     df.at[mother_id, 'ps_htn_disorders'] = 'severe_pre_eclamp'
+    sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['new_onset_spe'] = True
 
     fifth_anc.apply(person_id=updated_mother_id, squeeze_factor=0.0)
     assert (df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'] == 5)
-
-    # Check the fourth dose of IPTp is given
-    assert (df.at[mother_id, 'ac_doses_of_iptp_received'] == 4)
 
     # Check her severe pre-eclampsia has correctly been identified and she is scheduled to be admitted as an inpatient
     # (despite already being on antihypertensives)
@@ -371,9 +399,6 @@ def test_perfect_run_of_anc_contacts_no_constraints(seed):
     seventh_anc.apply(person_id=updated_mother_id, squeeze_factor=0.0)
     assert (df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'] == 7)
 
-    # Check the fifth and final dose of IPTp is given
-    assert (df.at[mother_id, 'ac_doses_of_iptp_received'] == 5)
-
     # Check scheduling of the next ANC contact
     hsi_events = find_and_return_hsi_events_list(sim, mother_id)
 
@@ -392,8 +417,6 @@ def test_perfect_run_of_anc_contacts_no_constraints(seed):
 
     # TODO: test that TB screening is happening correctly (not coded in TB yet)
     # TODO: test that other blood tests are occuring (hep b and syphilis- currently not linked to anything)
-    # TODO: test albendazole
-
     # todo: test with probabilities low/0? same with dx test?
 
 
@@ -402,14 +425,16 @@ def test_anc_contacts_that_should_not_run_wont_run(seed):
      reschedule, ANC visits for women when the HSI runs and is no longer appropriate for them """
 
     # Register the key modules and run the simulation for one day
-    sim = register_all_modules(ignore_cons_constraints=False, seed=seed)
+    sim = register_all_modules(seed)
     mother_id = run_sim_for_0_days_get_mother_id(sim)
 
-    params = sim.modules['CareOfWomenDuringPregnancy'].parameters
-    params['ac_linear_equations']['anc_continues'] = \
-        LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            1)
+    params = sim.modules['CareOfWomenDuringPregnancy'].current_parameters
+    params['prob_seek_anc2'] = 1.0
+    params['prob_seek_anc3'] = 1.0
+    params['prob_seek_anc5'] = 1.0
+    params['prob_seek_anc6'] = 1.0
+    params['prob_seek_anc7'] = 1.0
+    params['prob_seek_anc8'] = 1.0
 
     # Set key pregnancy variables
     df = sim.population.props
@@ -417,16 +442,19 @@ def test_anc_contacts_that_should_not_run_wont_run(seed):
     df.at[mother_id, 'date_of_last_pregnancy'] = start_date
     df.at[mother_id, 'ps_date_of_anc1'] = start_date + pd.DateOffset(weeks=8)
     sim.modules['Labour'].set_date_of_labour(mother_id)
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], mother_id)
 
     updated_mother_id = int(mother_id)
 
     # define HSIs
     first_anc = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(
-        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, facility_level_of_this_hsi='2')
+        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id)
     second_anc = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(
-        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, facility_level_of_this_hsi='2')
+        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id)
 
     sim.date = start_date + pd.DateOffset(weeks=8)
+
     # ----------------------------------------- ANC 1 ----------------------------------------------------------------
     # Set mother to being currently in labour
     df.at[mother_id, 'la_currently_in_labour'] = True
@@ -437,7 +465,7 @@ def test_anc_contacts_that_should_not_run_wont_run(seed):
     assert pd.isnull(df.at[mother_id, 'ac_date_next_contact'])
 
     # Reset labour variable and set gestational age to very young- ANC likely scheduled from last pregnancy and woman
-    # is now pregnant again. Therefore event shouldnt run
+    # is now pregnant again. Therefore event shouldn't run
     df.at[mother_id, 'la_currently_in_labour'] = False
     df.at[mother_id, 'ps_gestational_age_in_weeks'] = 4
 
@@ -449,7 +477,7 @@ def test_anc_contacts_that_should_not_run_wont_run(seed):
     # run
     df.at[mother_id, 'ps_gestational_age_in_weeks'] = 10
 
-    first_anc.apply(person_id=updated_mother_id, squeeze_factor=1)
+    first_anc.apply(person_id=updated_mother_id, squeeze_factor=1001)  # todo: replace
     assert (df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'] == 0)
     assert pd.isnull(df.at[mother_id, 'ac_date_next_contact'])
 
@@ -475,18 +503,19 @@ def test_anc_contacts_that_should_not_run_wont_run(seed):
     assert (df.at[mother_id, 'ps_date_of_anc1'] == (sim.date + pd.DateOffset(weeks=10)))
 
     # ----------------------------------- SUBSEQUENT ANC CONTACTS ----------------------------------------------------
-    # Next we check that subsequent ANC contacts wont run when they shouldnt
+    # Next we check that subsequent ANC contacts wont run when they shouldn't
 
     # Clear the event queue
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
 
     # Set this woman to be an inpatient
     df.at[mother_id, 'ps_gestational_age_in_weeks'] = 20
+    df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'] = 1
     df.at[mother_id, 'hs_is_inpatient'] = True
 
     # Run the event and check its hasnt ran as expected
     second_anc.apply(person_id=updated_mother_id, squeeze_factor=0)
-    assert (df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'] == 0)
+    assert (df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'] == 1)
 
     # check the event has been rescheduled for the next gestational age in the schedule
     health_system = sim.modules['HealthSystem']
@@ -495,13 +524,15 @@ def test_anc_contacts_that_should_not_run_wont_run(seed):
     assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact in hsi_events
     assert not pd.isnull(df.at[mother_id, 'ac_date_next_contact'])
 
+    # todo: expand this test
+
 
 def test_daisy_chain_care_seeking_logic_to_ensure_certain_number_of_contact(seed):
     """This test checks the logic around care seeking for the next ANC visit in the schedule. We test that women who are
      predicited at least 4 visits are automatically scheduled the next visit in the schedule (if that visit number is
     below 4). We also test that women who are not predicted 4 or more visits will seek care based on the value of a
     care seeking parameter"""
-    sim = register_all_modules(ignore_cons_constraints=False, seed=seed)
+    sim = register_all_modules(seed=seed)
     mother_id = run_sim_for_0_days_get_mother_id(sim)
     updated_mother_id = int(mother_id)
 
@@ -509,17 +540,15 @@ def test_daisy_chain_care_seeking_logic_to_ensure_certain_number_of_contact(seed
     df.at[mother_id, 'ps_gestational_age_in_weeks'] = 10
 
     # This woman has been determined to attend at least four visits
-    df.at[mother_id, 'ps_will_attend_four_or_more_anc'] = True
+    df.at[mother_id, 'ps_anc4'] = True
 
     # call the function called by all ANC HSIs to scheduled the next visit
     sim.modules['CareOfWomenDuringPregnancy'].antenatal_care_scheduler(individual_id=updated_mother_id,
                                                                        visit_to_be_scheduled=2,
-                                                                       recommended_gestation_next_anc=20,
-                                                                       facility_level='2')
+                                                                       recommended_gestation_next_anc=20)
 
     # As this woman is set to attend at least 4 ANC contacts, the next visit should be correctly sheduled at the correct
     # gestational age
-
     date_event = check_event_queue_for_event_and_return_scheduled_event_date(
         sim, queue_of_interest='hsi', individual_id=updated_mother_id,
         event_of_interest=care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact)
@@ -527,23 +556,19 @@ def test_daisy_chain_care_seeking_logic_to_ensure_certain_number_of_contact(seed
     assert date_event == (sim.date + pd.DateOffset(weeks=10))
     assert (df.at[mother_id, 'ac_date_next_contact'] == date_event)
 
-    # Clear the event queue and reset 'ps_will_attend_four_or_more_anc'
+    # Clear the event queue and reset 'ps_anc4'
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
     df.at[mother_id, 'ac_date_next_contact'] = pd.NaT
-    df.at[mother_id, 'ps_will_attend_four_or_more_anc'] = False
+    df.at[mother_id, 'ps_anc4'] = False
 
     # For women who are not predetermined to attend at least 4 anc contact we use a probability to determine if they
     # will return for the next visit. Here we set that to 0 and check that no event has been sheduled
-    params = sim.modules['CareOfWomenDuringPregnancy'].parameters
-    params['ac_linear_equations']['anc_continues'] = \
-        LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            0)
+    params = sim.modules['CareOfWomenDuringPregnancy'].current_parameters
+    params['prob_seek_anc3'] = 0
 
     sim.modules['CareOfWomenDuringPregnancy'].antenatal_care_scheduler(individual_id=updated_mother_id,
                                                                        visit_to_be_scheduled=3,
-                                                                       recommended_gestation_next_anc=26,
-                                                                       facility_level=2)
+                                                                       recommended_gestation_next_anc=26)
 
     health_system = sim.modules['HealthSystem']
     hsi_events = health_system.find_events_for_person(person_id=updated_mother_id)
@@ -554,19 +579,18 @@ def test_daisy_chain_care_seeking_logic_to_ensure_certain_number_of_contact(seed
 def test_initiation_of_treatment_for_maternal_anaemia_during_antenatal_inpatient_care(seed):
     """Test the treatment delivered to women who are admitted to the antenatal ward with anaemia of differing
     severities"""
-    sim = register_all_modules(ignore_cons_constraints=True, seed=seed)
+    sim = register_all_modules(seed)
     sim.make_initial_population(n=100)
 
     # Set DxTest parameters to 1 to ensure anaemia is detected correctly
-    params = sim.modules['CareOfWomenDuringPregnancy'].parameters
+    params = sim.modules['CareOfWomenDuringPregnancy'].current_parameters
     params['sensitivity_fbc_hb_test'] = 1.0
     params['specificity_fbc_hb_test'] = 1.0
 
     # Set treatment parameters to 1
-    params['effect_of_iron_replacement_for_resolving_iron_def'] = 1
-    params['effect_of_folate_replacement_for_resolving_folate_def'] = 1
-    params['effect_of_b12_replacement_for_resolving_b12_def'] = 1
-    params['treatment_effect_blood_transfusion_anaemia'] = 1
+    params['treatment_effect_blood_transfusion_anaemia'] = 1.0
+    params['prob_intervention_delivered_ifa'] = 1.0
+    params['prob_adherent_ifa'] = 1.0
 
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
@@ -579,17 +603,16 @@ def test_initiation_of_treatment_for_maternal_anaemia_during_antenatal_inpatient
     # set key pregnancy characteristics
     df.at[mother_id, 'is_pregnant'] = True
     df.at[mother_id, 'ps_gestational_age_in_weeks'] = 22
-    sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id] = {'severe_anaemia_resolution': pd.NaT}
+    sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id] = {'severe_anaemia_resolution': pd.NaT,
+                                                                             'delay_one_two': False,
+                                                                             'delay_three': False}
 
     # Set anaemia status
     df.at[mother_id, 'ps_anaemia_in_pregnancy'] = 'severe'
-    sim.modules['PregnancySupervisor'].deficiencies_in_pregnancy.set(mother_id, 'iron')
-    sim.modules['PregnancySupervisor'].deficiencies_in_pregnancy.set(mother_id, 'folate')
-    sim.modules['PregnancySupervisor'].deficiencies_in_pregnancy.set(mother_id, 'b12')
 
     # define inpatient treatment and run the event
     inpatient_hsi = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
-        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, facility_level_this_hsi=2)
+        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id)
     inpatient_hsi.apply(person_id=updated_mother_id, squeeze_factor=0.0)
 
     # Check that the woman has correctly been treated via blood transfusion and is no longer anaemic (and the correct
@@ -597,11 +620,6 @@ def test_initiation_of_treatment_for_maternal_anaemia_during_antenatal_inpatient
     assert (df.at[mother_id, 'ps_anaemia_in_pregnancy'] == 'none')
     assert (sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id][
                 'severe_anaemia_resolution'] == sim.date)
-
-    # Check that she has had treatment for underlying deficiencies and they have been corrected
-    assert not sim.modules['PregnancySupervisor'].deficiencies_in_pregnancy.has_all(mother_id, 'iron')
-    assert not sim.modules['PregnancySupervisor'].deficiencies_in_pregnancy.has_all(mother_id, 'folate')
-    assert not sim.modules['PregnancySupervisor'].deficiencies_in_pregnancy.has_all(mother_id, 'b12')
 
     # Check that she has now been started on regular iron and folic acid to reduce risk of future anaemia episodes
     assert df.at[mother_id, 'ac_receiving_iron_folic_acid']
@@ -618,7 +636,6 @@ def test_initiation_of_treatment_for_maternal_anaemia_during_antenatal_inpatient
 
     # The womans anaemia has returned between inpatient care and outpatient care, she has ANC visit in 2 weeks time
     df.at[mother_id, 'ps_anaemia_in_pregnancy'] = 'moderate'
-    sim.modules['PregnancySupervisor'].deficiencies_in_pregnancy.set(mother_id, 'iron')
     df.at[mother_id, 'ac_date_next_contact'] = sim.date + pd.DateOffset(weeks=2)
 
     # Run the outpatient appointment
@@ -632,14 +649,6 @@ def test_initiation_of_treatment_for_maternal_anaemia_during_antenatal_inpatient
         event_of_interest=care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare)
     assert date_event == sim.date
 
-    # Run the inpatient event again
-    params['effect_of_iron_replacement_for_resolving_anaemia'] = 1
-    inpatient_hsi.apply(person_id=updated_mother_id, squeeze_factor=0.0)
-
-    # Check she has been treated and is no longer anaemia and does nto have iron deficiency
-    assert not sim.modules['PregnancySupervisor'].deficiencies_in_pregnancy.has_all(mother_id, 'iron')
-    assert (df.at[mother_id, 'ps_anaemia_in_pregnancy'] == 'none')
-
     # Because she is due to have ANC in 2 weeks we check here that has been correctly identified and that she has not
     # been scheduled for outpatient care (as screening for anaemia will happen as part of routine treatment)
     hsi_events = find_and_return_hsi_events_list(sim, mother_id)
@@ -649,10 +658,16 @@ def test_initiation_of_treatment_for_maternal_anaemia_during_antenatal_inpatient
 def test_initiation_of_treatment_for_hypertensive_disorder_during_antenatal_inpatient_care(seed):
     """Test that the correct treatment is delivered to women with differing severities of hypertensive disorder when
     admitted to inpatient ward"""
-    sim = register_all_modules(ignore_cons_constraints=True, seed=seed)
+    sim = register_all_modules(seed)
     mother_id = run_sim_for_0_days_get_mother_id(sim)
 
     updated_mother_id = int(mother_id)
+
+    # set key parameters
+    params = sim.modules['Labour'].current_parameters
+    params['mean_hcw_competence_hc'] = 1
+    params['mean_hcw_competence_hp'] = 1
+    params['prob_hcw_avail_anticonvulsant'] = 1
 
     # set key pregnancy characteristics
     df = sim.population.props
@@ -664,7 +679,7 @@ def test_initiation_of_treatment_for_hypertensive_disorder_during_antenatal_inpa
 
     # define inpatient treatment and run the event
     inpatient_hsi = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
-        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, facility_level_this_hsi=2)
+        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id)
     inpatient_hsi.apply(person_id=updated_mother_id, squeeze_factor=0.0)
 
     # Check that she has been started on treatment and that no futher HSIs have been scheduled (i.e. her treatment is
@@ -689,8 +704,8 @@ def test_initiation_of_treatment_for_hypertensive_disorder_during_antenatal_inpa
     assert (df.at[mother_id, 'ac_mag_sulph_treatment'])
     assert (df.at[mother_id, 'ac_iv_anti_htn_treatment'])
 
-    # Check that this woman has been correctly marked as admitted for induction due to her condition
-    assert (df.at[mother_id, 'ac_admitted_for_immediate_delivery'] == 'induction_now')
+    # Check that this woman has been correctly marked as admission for assisted delivery of some form
+    assert df.at[mother_id, 'ac_admitted_for_immediate_delivery'] in ('induction_now', 'avd_now', 'caesarean_now')
 
     # Ensure the correct labour event is scheduled
     events = find_and_return_events_list(sim, mother_id)
@@ -700,7 +715,7 @@ def test_initiation_of_treatment_for_hypertensive_disorder_during_antenatal_inpa
 def test_initiation_of_treatment_for_gestational_diabetes_during_antenatal_inpatient_care(seed):
     """Test that the correct treatment is delivered to women with gestational diabetes when
     admitted to inpatient ward"""
-    sim = register_all_modules(ignore_cons_constraints=True, seed=seed)
+    sim = register_all_modules(seed)
     mother_id = run_sim_for_0_days_get_mother_id(sim)
 
     updated_mother_id = int(mother_id)
@@ -713,7 +728,7 @@ def test_initiation_of_treatment_for_gestational_diabetes_during_antenatal_inpat
 
     # define inpatient treatment and run the event
     inpatient_hsi = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
-        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, facility_level_this_hsi=2)
+        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id)
     inpatient_hsi.apply(person_id=updated_mother_id, squeeze_factor=0.0)
 
     # Check that she is now being treated with diet/exercise and her diabetes is assumed to be controlled
@@ -733,8 +748,8 @@ def test_initiation_of_treatment_for_gestational_diabetes_during_antenatal_inpat
     sim.event_queue.queue.clear()
 
     # Set the probability that diet and exercise alone will controll this womans diabetes to 0
-    params = sim.modules['PregnancySupervisor'].parameters
-    params['prob_glycaemic_control_diet_exercise'] = 0
+    params = sim.modules['PregnancySupervisor'].current_parameters
+    params['prob_glycaemic_control_diet_exercise'] = 0.0
 
     # Run the event
     glyc_event = pregnancy_supervisor.GestationalDiabetesGlycaemicControlEvent(
@@ -761,7 +776,7 @@ def test_initiation_of_treatment_for_gestational_diabetes_during_antenatal_inpat
     assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes in hsi_events  # noqa: E501
 
     # Set the probability that oral medication alone will control this womans diabetes to 0
-    params['prob_glycaemic_control_orals'] = 0
+    params['prob_glycaemic_control_orals'] = 0.0
 
     # run the event and check
     glyc_event.apply(mother_id)
@@ -780,9 +795,15 @@ def test_initiation_of_treatment_for_gestational_diabetes_during_antenatal_inpat
 def test_initiation_of_treatment_for_prom_with_or_without_chorioamnionitis_during_antenatal_inpatient_care(seed):
     """Test that the correct treatment is delivered to women with PROM +/- chorioamnionitis when admitted to inpatient
     ward"""
-    sim = register_all_modules(ignore_cons_constraints=True, seed=seed)
+    sim = register_all_modules(seed)
     mother_id = run_sim_for_0_days_get_mother_id(sim)
     updated_mother_id = int(mother_id)
+
+    # set key parameters
+    params = sim.modules['Labour'].current_parameters
+    params['mean_hcw_competence_hc'] = 1
+    params['mean_hcw_competence_hp'] = 1
+    params['prob_hcw_avail_iv_abx'] = 1
 
     # set key pregnancy characteristics
     df = sim.population.props
@@ -791,11 +812,11 @@ def test_initiation_of_treatment_for_prom_with_or_without_chorioamnionitis_durin
 
     # set complication
     df.at[mother_id, 'ps_premature_rupture_of_membranes'] = True
-    df.at[mother_id, 'ps_chorioamnionitis'] = 'none'
+    df.at[mother_id, 'ps_chorioamnionitis'] = False
 
     # define inpatient treatment and run the event
     inpatient_hsi = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
-        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, facility_level_this_hsi=2)
+        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id)
     inpatient_hsi.apply(person_id=updated_mother_id, squeeze_factor=0.0)
 
     # Check that antibiotics have been given
@@ -814,12 +835,11 @@ def test_initiation_of_treatment_for_prom_with_or_without_chorioamnionitis_durin
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
     sim.event_queue.queue.clear()
 
-    # Set the woman to have clinical infection (detectable via symptoms) and run the event
-    df.at[mother_id, 'ps_chorioamnionitis'] = 'clinical'
+    # Set the woman to have an infection and run the event
+    df.at[mother_id, 'ps_chorioamnionitis'] = True
     inpatient_hsi.apply(person_id=updated_mother_id, squeeze_factor=0.0)
 
     # Check she has received treatment and has correctly been scheduled for immediate delivery
-    assert df.at[mother_id, 'ac_received_abx_for_chorioamnionitis']
     assert (df.at[mother_id, 'ac_admitted_for_immediate_delivery'] == 'induction_now')
 
     date_event = check_event_queue_for_event_and_return_scheduled_event_date(
@@ -830,7 +850,7 @@ def test_initiation_of_treatment_for_prom_with_or_without_chorioamnionitis_durin
 def test_initiation_of_treatment_for_antepartum_haemorrhage_during_antenatal_inpatient_care(seed):
     """Test that the correct treatment is delivered to women with antenatal haemorrhage when admitted to inpatient
     ward"""
-    sim = register_all_modules(ignore_cons_constraints=True, seed=seed)
+    sim = register_all_modules(seed)
     mother_id = run_sim_for_0_days_get_mother_id(sim)
     updated_mother_id = int(mother_id)
 
@@ -842,10 +862,12 @@ def test_initiation_of_treatment_for_antepartum_haemorrhage_during_antenatal_inp
     # set complication properties
     df.at[mother_id, 'ps_antepartum_haemorrhage'] = 'severe'
     df.at[mother_id, 'ps_placental_abruption'] = True
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], mother_id)
 
     # define inpatient HSI and run in
     inpatient_hsi = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
-        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, facility_level_this_hsi=2)
+        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id)
     inpatient_hsi.apply(person_id=updated_mother_id, squeeze_factor=0.0)
 
     # Check that any woman with placental abruption is correctly scheduled for immediate caesarean regardless of
@@ -910,14 +932,19 @@ def test_initiation_of_treatment_for_antepartum_haemorrhage_during_antenatal_inp
 def test_scheduling_and_treatment_effect_of_post_abortion_care(seed):
     """Test women who present to the health system with complications of abortion are sent to the correct HSI, receive
     treatment and this reduces their risk of death from abortion complications """
-    sim = register_all_modules(ignore_cons_constraints=True, seed=seed)
+    sim = register_all_modules(seed)
     mother_id = run_sim_for_0_days_get_mother_id(sim)
     updated_mother_id = int(mother_id)
 
     # set key pregnancy characteristics
     df = sim.population.props
     df.at[mother_id, 'is_pregnant'] = False
-    sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id] = {'delete_mni': False}
+
+    # set key parameters
+    params = sim.modules['Labour'].current_parameters
+    params['mean_hcw_competence_hc'] = 1
+    params['mean_hcw_competence_hp'] = 1
+    params['prob_hcw_avail_retained_prod'] = 1
 
     # set complications
     sim.modules['PregnancySupervisor'].abortion_complications.set([mother_id], 'haemorrhage')
@@ -942,10 +969,8 @@ def test_scheduling_and_treatment_effect_of_post_abortion_care(seed):
         module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id)
     pac.apply(person_id=updated_mother_id, squeeze_factor=0.0)
 
-    # Check that this mother, who has all possible complications, correctly receives all possible treatments
-    assert sim.modules['CareOfWomenDuringPregnancy'].pac_interventions.has_all(mother_id, 'antibiotics')
-    assert sim.modules['CareOfWomenDuringPregnancy'].pac_interventions.has_all(mother_id, 'injury_repair')
-    assert sim.modules['CareOfWomenDuringPregnancy'].pac_interventions.has_all(mother_id, 'blood_products')
+    # Check that this mother receives treatments
+    assert df.at[mother_id, 'ac_received_post_abortion_care']
 
     # Define the death event
     death_event = pregnancy_supervisor.EarlyPregnancyLossDeathEvent(module=sim.modules['PregnancySupervisor'],
@@ -953,12 +978,11 @@ def test_scheduling_and_treatment_effect_of_post_abortion_care(seed):
                                                                     cause='spontaneous_abortion')
 
     # Replicate the death equation from the event so risk of death == 1 but treatment is completely effective
-    params = sim.modules['PregnancySupervisor'].parameters
-    params['ps_linear_equations']['spontaneous_abortion_death'] = \
+    sim.modules['PregnancySupervisor'].ps_linear_models['spontaneous_abortion_death'] = \
         LinearModel(
             LinearModelType.MULTIPLICATIVE,
             1,
-            Predictor('ac_post_abortion_care_interventions').when('>0', 0))
+            Predictor('ac_received_post_abortion_care').when(True, 0))
 
     # Run the death event
     death_event.apply(mother_id)
@@ -968,32 +992,24 @@ def test_scheduling_and_treatment_effect_of_post_abortion_care(seed):
 
     # Check that the mni will be deleted on the next daly poll and that treatment properties have been reset
     assert (sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['delete_mni'])
-    assert not sim.modules['CareOfWomenDuringPregnancy'].pac_interventions.has_all(mother_id, 'antibiotics')
-    assert not sim.modules['CareOfWomenDuringPregnancy'].pac_interventions.has_all(mother_id, 'injury_repair')
-    assert not sim.modules['CareOfWomenDuringPregnancy'].pac_interventions.has_all(mother_id, 'blood_products')
+    assert not df.at[mother_id, 'ac_received_post_abortion_care']
 
 
 def test_scheduling_and_treatment_effect_of_ectopic_pregnancy_case_management(seed):
     """Test women who present to the health system with complications of ectopic pregnancy are sent to the correct HSI,
     receive treatment and this reduces their risk of death from abortion complications """
-    sim = register_all_modules(ignore_cons_constraints=True, seed=seed)
+    sim = register_all_modules(seed)
     mother_id = run_sim_for_0_days_get_mother_id(sim)
     updated_mother_id = int(mother_id)
 
     # set key pregnancy characteristics
     df = sim.population.props
-    df.at[mother_id, 'is_pregnant'] = False
+    df.at[mother_id, 'is_pregnant'] = True
     df.at[mother_id, 'ps_ectopic_pregnancy'] = 'not_ruptured'
-    sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id] = {'delete_mni': False}
-
-    # Check treatment for not ruptured ectopic pregnancy
+    df.at[mother_id, 'ps_gestational_age_in_weeks'] = 8
 
     # set prob care seeking to 1
-    params = sim.modules['PregnancySupervisor'].parameters
-    params['ps_linear_equations']['care_seeking_pregnancy_loss'] = \
-        LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            1)
+    sim.modules['PregnancySupervisor'].current_parameters['prob_care_seeking_ectopic_pre_rupture'] = 1
 
     # define and run ectopic event
     ectopic_event = pregnancy_supervisor.EctopicPregnancyEvent(individual_id=mother_id,
@@ -1047,8 +1063,7 @@ def test_scheduling_and_treatment_effect_of_ectopic_pregnancy_case_management(se
     assert (sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['delete_mni'])
 
     # And That treatment averts risk of death in death event
-    params = sim.modules['PregnancySupervisor'].parameters
-    params['ps_linear_equations']['ectopic_pregnancy_death'] = \
+    sim.modules['PregnancySupervisor'].ps_linear_models['ectopic_pregnancy_death'] = \
         LinearModel(
             LinearModelType.MULTIPLICATIVE,
             1,
@@ -1064,6 +1079,94 @@ def test_scheduling_and_treatment_effect_of_ectopic_pregnancy_case_management(se
     # Check that the woman survived thanks to treatment
     assert df.at[mother_id, 'is_alive']
 
-# TODO: test treatment effects work as expected? (some of this is done in preg sup test)
-# todo: test when probabilities/consumables are blocked/reduced
-# todo: test when women of different gestations arrive at ANC
+
+def test_focused_anc_scheduling(seed):
+    """
+    Tests scheduling of Focused ANC HSI is occurring as expected.
+    """
+    def check_hsi_schedule_and_visit_number(vn, mother_id):
+        health_system = sim.modules['HealthSystem']
+        hsi_events = health_system.find_events_for_person(person_id=mother_id)
+
+        hsi_events_class_list = [e.__class__ for d, e in hsi_events]
+        assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FocusedANCVisit in hsi_events_class_list
+
+        hsi_events_other = [e for d, e in hsi_events]
+        for e in hsi_events_other:
+            if e.__class__ == care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FocusedANCVisit:
+                assert e.visit_number == vn
+
+    sim = register_all_modules(seed)
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+
+    # Select a woman from the dataframe of reproductive age
+    df = sim.population.props
+    women_repro = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)]
+    mother_id = women_repro.index[0]
+    updated_mother_id = int(mother_id)
+
+    # Set key pregnancy variables
+    df.at[mother_id, 'is_pregnant'] = True
+    df.at[mother_id, 'date_of_last_pregnancy'] = start_date
+    df.at[mother_id, 'ps_anc4'] = True
+    df.at[mother_id, 'ps_date_of_anc1'] = start_date + pd.DateOffset(weeks=8)
+    df.at[mother_id, 'ps_gestational_age_in_weeks'] = 10
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
+
+    # ensure care seeking will continue for all ANC visits
+    params = sim.modules['CareOfWomenDuringPregnancy'].current_parameters
+    params['prob_seek_anc2'] = 1.0
+    params['prob_seek_anc3'] = 1.0
+
+    params_ps = sim.modules['PregnancySupervisor'].current_parameters
+    params_ps['anc_service_structure'] = 4
+
+    # Register the anc HSI and apply
+    focused_anc = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(
+        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, visit_number=1)
+    focused_anc.apply(person_id=updated_mother_id, squeeze_factor=0.0)
+
+    # check the anc counter property has been updated and MNI keys have been added as expected
+    assert df.at[updated_mother_id, 'ac_total_anc_visits_current_pregnancy'] == 1
+    assert 'anc_ints' in sim.modules['PregnancySupervisor'].mother_and_newborn_info[updated_mother_id].keys()
+
+    # Ensure that HSI_CareOfWomenDuringPregnancy_FocusedANCVisit has been rescheduled and that the visit number has
+    # correctly increased to
+    check_hsi_schedule_and_visit_number(2, mother_id)
+
+    # clear event queue and increase gestational age
+    sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
+    df.at[updated_mother_id, 'ps_gestational_age_in_weeks'] = 22
+
+    # Repeat checks for remaining instances of the HSI in the ANC schedule
+    focused_anc = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(
+        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, visit_number=2)
+    focused_anc.apply(person_id=updated_mother_id, squeeze_factor=0.0)
+
+    assert df.at[updated_mother_id, 'ac_total_anc_visits_current_pregnancy'] == 2
+    check_hsi_schedule_and_visit_number(3, mother_id)
+
+    sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
+    df.at[updated_mother_id, 'ps_gestational_age_in_weeks'] = 30
+
+    focused_anc = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(
+        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, visit_number=3)
+    focused_anc.apply(person_id=updated_mother_id, squeeze_factor=0.0)
+
+    assert df.at[updated_mother_id, 'ac_total_anc_visits_current_pregnancy'] == 3
+    check_hsi_schedule_and_visit_number(4, mother_id)
+
+    sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
+    df.at[updated_mother_id, 'ps_gestational_age_in_weeks'] = 36
+
+    # At the fourth visit ensure that no futher routine ANC is scheduled
+    focused_anc = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(
+        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, visit_number=4)
+    focused_anc.apply(person_id=updated_mother_id, squeeze_factor=0.0)
+
+    assert df.at[updated_mother_id, 'ac_total_anc_visits_current_pregnancy'] == 4
+    health_system = sim.modules['HealthSystem']
+    hsi_events = health_system.find_events_for_person(person_id=updated_mother_id)
+    hsi_events_class_list = [e.__class__ for d, e in hsi_events]
+    assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FocusedANCVisit not in hsi_events_class_list

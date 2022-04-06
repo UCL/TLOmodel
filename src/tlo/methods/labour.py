@@ -1,18 +1,18 @@
-from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import scipy.stats
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel
-from tlo.methods import Metadata, labour_lm
+from tlo.methods import Metadata, labour_lm, pregnancy_helper_functions
 from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
-from tlo.methods.postnatal_supervisor import PostnatalWeekOneEvent
+from tlo.methods.postnatal_supervisor import PostnatalWeekOneMaternalEvent
 from tlo.util import BitsetHandler
 
 logger = logging.getLogger(__name__)
@@ -23,37 +23,44 @@ class Labour(Module):
     """This is module is responsible for the the process of labour, birth and the immediate postnatal period (up until
     48hrs post birth). This model has a number of core functions including; initiating the onset of labour for women on
     their pre-determined due date (or prior to this for preterm labour/admission for delivery), applying the incidence
-     of a core set of maternal complications ocurring in the intrapartum period and outcomes such as maternal death or
+     of a core set of maternal complications occurring in the intrapartum period and outcomes such as maternal death or
      still birth, scheduling birth for women surviving labour and applying risk of complications and outcomes in the
      postnatal period. Complications explicitly modelled in this module include obstructed labour, antepartum
      haemorrhage, maternal infection and sepsis, progression of hypertensive disorders, uterine rupture and postpartum
       haemorrhage. In addition to the natural history of labour this module manages care seeking for women in labour
       (for delivery or following onset of complications at a home birth) and includes HSIs which represent
-      Skilled Birth Attendance at either Basic or Comprehensive level emergency obstetric care facilities."""
+      Skilled Birth Attendance at either Basic or Comprehensive level emergency obstetric care facilities.
+      Following birth this module manages postnatal care delivered via HSI_Labour_ReceivesPostnatalCheck and schedules
+      PostnatalWeekOneMaternalEvent which represents the start of a womans postnatal period.
+      """
 
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-        # This dictionary will track incidence of complications of labour
-        self.labour_tracker = dict()
+        # First we define dictionaries which will store the current parameters of interest (to allow parameters to
+        # change between 2010 and 2020) and the linear models
+        self.current_parameters = dict()
+        self.la_linear_models = dict()
 
         # This list contains the individual_ids of women in labour, used for testing
         self.women_in_labour = list()
 
-        # These lists will contain possible complications and are used as checks in assert functions
+        # These lists will contain possible complications and are used as checks
         self.possible_intrapartum_complications = list()
         self.possible_postpartum_complications = list()
 
-    INIT_DEPENDENCIES = {
-        'Demography', 'Lifestyle', 'HealthSystem', 'PregnancySupervisor'
-    }
+        # Finally define a dictionary which will hold the required consumables for each intervention
+        self.item_codes_lab_consumables = dict()
+
+    INIT_DEPENDENCIES = {'Demography'}
+
+    OPTIONAL_INIT_DEPENDENCIES = {'Stunting'}
 
     ADDITIONAL_DEPENDENCIES = {
-        'CareOfWomenDuringPregnancy',
-        'Contraception',
+        'PostnatalSupervisor', 'CareOfWomenDuringPregnancy', 'Lifestyle', 'PregnancySupervisor',
+        'HealthSystem', 'Contraception',
         'NewbornOutcomes',
-        'PostnatalSupervisor'
     }
 
     METADATA = {
@@ -61,374 +68,471 @@ class Labour(Module):
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN,
     }
-
     # Declare Causes of Death
     CAUSES_OF_DEATH = {
-        'maternal': Cause(gbd_causes='Maternal disorders', label='Maternal disorders'),
-        'intrapartum stillbirth': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
-    }
+        'uterine_rupture': Cause(gbd_causes='Maternal disorders', label='Maternal Disorders'),
+        'intrapartum_sepsis': Cause(gbd_causes='Maternal disorders', label='Maternal Disorders'),
+        'antepartum_haemorrhage': Cause(gbd_causes='Maternal disorders', label='Maternal Disorders'),
+        'postpartum_sepsis': Cause(gbd_causes='Maternal disorders', label='Maternal Disorders'),
+        'postpartum_haemorrhage': Cause(gbd_causes='Maternal disorders', label='Maternal Disorders'),
+        'secondary_postpartum_haemorrhage': Cause(gbd_causes='Maternal disorders', label='Maternal Disorders'),
+        'severe_pre_eclampsia': Cause(gbd_causes='Maternal disorders', label='Maternal Disorders'),
+        'eclampsia': Cause(gbd_causes='Maternal disorders', label='Maternal Disorders')}
 
     # Declare Causes of Disability
     CAUSES_OF_DISABILITY = {
-        'Labour': Cause(gbd_causes='Maternal disorders', label='Maternal disorders')
+        'maternal': Cause(gbd_causes='Maternal disorders', label='Maternal Disorders')
     }
 
     PARAMETERS = {
-        #  ===================================  NATURAL HISTORY PARAMETERS =============================================
+        # n.b. Parameters are stored as LIST variables due to containing values to match both 2010 and 2015 data.
+
+        #  PARITY AT BASELINE...
         'intercept_parity_lr2010': Parameter(
-            Types.REAL, 'intercept value for linear regression equation predicating womens parity at 2010 baseline'),
+            Types.LIST, 'intercept value for linear regression equation predicating womens parity at 2010 baseline'),
         'effect_age_parity_lr2010': Parameter(
-            Types.REAL, 'effect of an increase in age by 1 year in the linear regression equation predicating '
+            Types.LIST, 'effect of an increase in age by 1 year in the linear regression equation predicating '
                         'womens parity at 2010 baseline'),
         'effect_mar_stat_2_parity_lr2010': Parameter(
-            Types.REAL, 'effect of a change in marriage status from comparison (level 1) in the linear '
-                        'regression equation predicating womens parity at 2010 baseline'),
+            Types.LIST, 'effect of a change in marriage status from comparison (level 1) in the linear '
+                        'regression equation predicating womans parity at 2010 baseline'),
         'effect_mar_stat_3_parity_lr2010': Parameter(
-            Types.REAL, 'effect of a change in marriage status from comparison (level 1) in the linear '
-                        'regression equation predicating womens parity at 2010 baseline'),
-        'effect_wealth_lev_5_parity_lr2010': Parameter(
-            Types.REAL, 'effect of a change in wealth status from comparison (level 1) in the linear '
-                        'regression equation predicating womens parity at 2010 baseline'),
+            Types.LIST, 'effect of a change in marriage status from comparison (level 1) in the linear '
+                        'regression equation predicating womans parity at 2010 baseline'),
         'effect_wealth_lev_4_parity_lr2010': Parameter(
-            Types.REAL, 'effect of an increase in wealth level in the linear regression equation predicating womens '
+            Types.LIST, 'effect of an increase in wealth level in the linear regression equation predicating womans '
                         'parity at 2010 base line'),
         'effect_wealth_lev_3_parity_lr2010': Parameter(
-            Types.REAL, 'effect of an increase in wealth level in the linear regression equation predicating womens '
+            Types.LIST, 'effect of an increase in wealth level in the linear regression equation predicating womans '
                         'parity at 2010 base line'),
         'effect_wealth_lev_2_parity_lr2010': Parameter(
-            Types.REAL, 'effect of an increase in wealth level in the linear regression equation predicating womens '
+            Types.LIST, 'effect of an increase in wealth level in the linear regression equation predicating womans '
                         'parity at 2010 base line'),
         'effect_wealth_lev_1_parity_lr2010': Parameter(
-            Types.REAL, 'effect of an increase in wealth level in the linear regression equation predicating womens '
+            Types.LIST, 'effect of an increase in wealth level in the linear regression equation predicating womans '
                         'parity at 2010 base line'),
-        'lower_limit_term_days': Parameter(
-            Types.REAL, 'minimum number of days gestation at which a woman can go into labour and be categorised as '
-                        'term'),
-        'upper_limit_term_days': Parameter(
-            Types.REAL, 'maximum number of days gestation at which a woman can go into labour and be categorised as '
-                        'term'),
-        'lower_limit_early_preterm_days': Parameter(
-            Types.REAL, 'minimum number of days gestation at which a woman can go into labour and be categorised as '
-                        'early preterm'),
-        'upper_limit_early_preterm_days': Parameter(
-            Types.REAL, 'maximum number of days gestation at which a woman can go into labour and be categorised as '
-                        'early preterm'),
-        'lower_limit_late_preterm_days': Parameter(
-            Types.REAL, 'minimum number of days gestation at which a woman can go into labour and be categorised as '
-                        'early preterm'),
-        'upper_limit_late_preterm_days': Parameter(
-            Types.REAL, 'maximum number of days gestation at which a woman can go into labour and be categorised as '
-                        'late preterm'),
-        'lower_limit_postterm_days': Parameter(
-            Types.REAL, 'minimum number of days gestation at which a woman can go into labour and be categorised as '
-                        'post term '),
-        'prob_pl_ol': Parameter(
-            Types.REAL, 'effect of an increase in wealth level in the linear regression equation predicating womens '
+        'effect_edu_lev_2_parity_lr2010': Parameter(
+            Types.LIST, 'effect of an increase in education level in the linear regression equation predicating womans '
                         'parity at 2010 base line'),
-        'prob_cephalopelvic_dis': Parameter(
-            Types.REAL, 'an individuals probability of experiencing CPD'),
-        'prob_malpresentation': Parameter(
-            Types.REAL, 'an individuals probability of experiencing malpresentation'),
-        'prob_malposition': Parameter(
-            Types.REAL, 'an individuals probability of experiencing malposition'),
+        'effect_edu_lev_3_parity_lr2010': Parameter(
+            Types.LIST, 'effect of an increase in education level in the linear regression equation predicating womans '
+                        'parity at 2010 base line'),
+        'effect_rural_parity_lr2010': Parameter(
+            Types.LIST, 'effect of rural living in the linear regression equation predicating womans parity at 2010 '
+                        'base line'),
+        'prob_previous_caesarean_at_baseline': Parameter(
+            Types.LIST, 'probability of previously having delivered via caesarean section at baseline'),
+
+        # POSTTERM RATE
+        'risk_post_term_labour': Parameter(
+            Types.LIST, 'risk of remaining pregnant past 42 weeks'),
+
+        # MISC...
+        'list_limits_for_defining_term_status': Parameter(
+            Types.LIST, 'List of number of days of gestation used to define term, early preterm, late preterm and '
+                        'post term delivery'),
+        'allowed_interventions': Parameter(
+            Types.LIST, 'list of interventions allowed to run, used in analysis'),
+
+        # BIRTH WEIGHT...
+        'mean_birth_weights': Parameter(
+            Types.LIST, 'list of mean birth weights from gestational age at birth 24-41 weeks'),
+        'standard_deviation_birth_weights': Parameter(
+            Types.LIST, 'list of standard deviations associated with mean birth weights from gestational age at '
+                        'birth 24-41 weeks'),
+        'residual_prob_of_macrosomia': Parameter(
+            Types.LIST, 'probability that those allocated to be normal birth weight and above will be macrosomic '
+                        '(>4kg)'),
+
+        # OBSTRUCTED LABOUR....
         'prob_obstruction_cpd': Parameter(
-            Types.REAL, 'risk of obstruction in a woman with CPD'),
-        'prob_obstruction_malpos': Parameter(
-            Types.REAL, 'risk of obstruction in a woman with malposition'),
-        'prob_obstruction_malpres': Parameter(
-            Types.REAL, 'risk of obstruction in a woman with malpresentation'),
+            Types.LIST, 'risk of a woman developing obstructed labour secondary to cephalopelvic disproportion'),
+        'rr_obstruction_cpd_stunted_mother': Parameter(
+            Types.LIST, 'relative risk of obstruction secondary to CPD in mothers who are stunted'),
+        'rr_obstruction_foetal_macrosomia': Parameter(
+            Types.LIST, 'relative risk of obstruction secondary to CPD in mothers who are carrying a macrosomic '
+                        'foetus'),
+        'prob_obstruction_malpos_malpres': Parameter(
+            Types.LIST, 'risk of a woman developing obstructed labour secondary to malposition or malpresentation'),
+        'prob_obstruction_other': Parameter(
+            Types.LIST, 'risk of a woman developing obstructed labour secondary to other causes'),
+
+        # ANTEPARTUM HAEMORRHAGE...
         'prob_placental_abruption_during_labour': Parameter(
-            Types.REAL, 'probability of a woman developing placental abruption during labour'),
+            Types.LIST, 'probability of a woman developing placental abruption during labour'),
         'prob_aph_placenta_praevia_labour': Parameter(
-            Types.REAL, 'probability of a woman with placenta praevia experiencing an APH during labour'),
+            Types.LIST, 'probability of a woman with placenta praevia experiencing an APH during labour'),
         'prob_aph_placental_abruption_labour': Parameter(
-            Types.REAL, 'probability of a woman with placental abruption experiencing an APH during labour'),
-        'prob_chorioamnionitis_ip': Parameter(
-            Types.REAL, 'probability of chorioamnionitis infection during labour'),
-        'prob_other_maternal_infection_ip': Parameter(
-            Types.REAL, 'probability of other obstetric infection in labour'),
-        'prob_endometritis_pp': Parameter(
-            Types.REAL, 'probability of endometritis infection following labour'),
-        'prob_skin_soft_tissue_inf_pp': Parameter(
-            Types.REAL, 'probability of a skin or soft tissue infection following labour'),
-        'prob_urinary_tract_inf_pp': Parameter(
-            Types.REAL, 'probability of a urinary tract infection following labour'),
-        'prob_other_maternal_infection_pp': Parameter(
-            Types.REAL, 'probability of other obstetric infections following labour'),
-        'prob_sepsis_chorioamnionitis': Parameter(
-            Types.REAL, 'risk of sepsis following chorioamnionitis infection'),
-        'prob_sepsis_other_maternal_infection_ip': Parameter(
-            Types.REAL, 'risk of sepsis following other intrapartum infection'),
-        'odds_uterine_rupture': Parameter(
-            Types.REAL, 'probability of a uterine rupture during labour'),
-        'or_ur_grand_multip': Parameter(
-            Types.REAL, 'relative risk of uterine rupture in women who have delivered >4 times previously'),
-        'or_ur_prev_cs': Parameter(
-            Types.REAL, 'relative risk of uterine rupture in women who have previously delivered via caesarean '
-                        'section'),
-        'or_ur_ref_ol': Parameter(
-            Types.REAL,
-            'relative risk of uterine rupture in women who have been referred in obstructed labour'),
+            Types.LIST, 'probability of a woman with placental abruption experiencing an APH during labour'),
+        'rr_placental_abruption_hypertension': Parameter(
+            Types.LIST, 'Relative risk of placental abruption in women with hypertension'),
+        'rr_placental_abruption_previous_cs': Parameter(
+            Types.LIST, 'Relative risk of placental abruption in women who delivered previously via caesarean section'),
         'severity_maternal_haemorrhage': Parameter(
             Types.LIST, 'probability a maternal hemorrhage is non-severe (<1000mls) or severe (>1000mls)'),
         'cfr_aph': Parameter(
-            Types.REAL, 'case fatality rate for antepartum haemorrhage during labour'),
-        'cfr_eclampsia': Parameter(
-            Types.REAL, 'case fatality rate for eclampsia during labours'),
-        'cfr_severe_pre_eclamp': Parameter(
-            Types.REAL, 'case fatality rate for severe pre eclampsia during labour'),
-        'cfr_sepsis': Parameter(
-            Types.REAL, 'case fatality rate for sepsis during labour'),
-        'cfr_uterine_rupture': Parameter(
-            Types.REAL, 'case fatality rate for uterine rupture in labour'),
-        'prob_ip_still_birth_unk_cause': Parameter(
-            Types.REAL, 'baseline probability of intrapartum still birth secondary to unknown cause'),
-        'rr_still_birth_maternal_death': Parameter(
-            Types.REAL, 'relative risk of still birth in mothers who have died during labour'),
-        'rr_still_birth_aph': Parameter(
-            Types.REAL, 'relative risk of still birth in mothers experiencing antepartum haemorrhage'),
-        'rr_still_birth_ol': Parameter(
-            Types.REAL, 'relative risk of still birth in mothers experiencing obstructed labour'),
-        'rr_still_birth_ur': Parameter(
-            Types.REAL, 'relative risk of still birth in mothers experiencing uterine rupture'),
-        'rr_still_birth_sepsis': Parameter(
-            Types.REAL, 'relative risk of still birth in mothers experiencing intrapartum sepsis'),
-        'rr_still_birth_spe': Parameter(
-            Types.REAL, 'relative risk of still birth in mothers experiencing severe pre-eclampsia'),
-        'rr_still_birth_ec': Parameter(
-            Types.REAL, 'relative risk of still birth in mothers experiencing eclampsia'),
-        'prob_both_twins_ip_still_birth': Parameter(
-            Types.REAL, 'probability that if this mother will experience still birth, and she is pregnant with twins, '
-                        'that neither baby will survive'),
-        'prob_uterine_atony': Parameter(
-            Types.REAL, 'probability of uterine atony following delivery'),
-        'prob_lacerations': Parameter(
-            Types.REAL, 'probability of genital tract lacerations following delivery'),
-        'prob_retained_placenta': Parameter(
-            Types.REAL, 'probability of placental retention following delievery'),
-        'prob_other_pph_cause': Parameter(
-            Types.REAL, 'probability of other pph causing factors'),
-        'prob_pph_uterine_atony': Parameter(
-            Types.REAL, 'risk of pph after experiencing uterine atony'),
-        'prob_pph_lacerations': Parameter(
-            Types.REAL, 'risk of pph after experiencing genital tract lacerations'),
-        'prob_pph_retained_placenta': Parameter(
-            Types.REAL, 'risk of pph after experiencing retained placenta'),
-        'prob_pph_other_causes': Parameter(
-            Types.REAL, 'risk of pph after experiencing otehr pph causes'),
+            Types.LIST, 'case fatality rate for antepartum haemorrhage during labour'),
+
+        # MATERNAL INFECTION...
+        'prob_sepsis_chorioamnionitis': Parameter(
+            Types.LIST, 'risk of sepsis following chorioamnionitis infection'),
+        'rr_sepsis_chorio_prom': Parameter(
+            Types.LIST, 'relative risk of chorioamnionitis following PROM'),
         'prob_sepsis_endometritis': Parameter(
-            Types.REAL, 'risk of sepsis following endometritis'),
-        'prob_sepsis_urinary_tract_inf': Parameter(
-            Types.REAL, 'risk of sepsis following urinary tract infection'),
-        'prob_sepsis_skin_soft_tissue_inf': Parameter(
-            Types.REAL, 'risk of sepsis following skin or soft tissue infection'),
-        'prob_sepsis_other_maternal_infection_pp': Parameter(
-            Types.REAL, 'risk of sepsis following other maternal postpartum infection'),
-        'cfr_pp_pph': Parameter(
-            Types.REAL, 'case fatality rate for postpartum haemorrhage'),
-        'rr_pph_death_anaemia': Parameter(
-            Types.REAL, 'relative risk increase of death in women who are anaemic at time of PPH'),
-        'cfr_pp_eclampsia': Parameter(
-            Types.REAL, 'case fatality rate for eclampsia following delivery'),
+            Types.LIST, 'risk of sepsis following endometritis'),
+        'rr_sepsis_endometritis_post_cs': Parameter(
+            Types.LIST, 'relative risk of endometritis following caesarean delivery'),
+        'prob_sepsis_urinary_tract': Parameter(
+            Types.LIST, 'risk of sepsis following urinary tract infection'),
+        'prob_sepsis_skin_soft_tissue': Parameter(
+            Types.LIST, 'risk of sepsis following skin or soft tissue infection'),
+        'rr_sepsis_sst_post_cs': Parameter(
+            Types.LIST, 'relative risk of skin/soft tissue sepsis following caesarean delivery'),
+        'cfr_sepsis': Parameter(
+            Types.LIST, 'case fatality rate for sepsis during labour'),
         'cfr_pp_sepsis': Parameter(
-            Types.REAL, 'case fatality rate for sepsis following delivery'),
+            Types.LIST, 'case fatality rate for sepsis following delivery'),
+
+        # UTERINE RUPTURE...
+        'prob_uterine_rupture': Parameter(
+            Types.LIST, 'probability of a uterine rupture during labour'),
+        'rr_ur_parity_2': Parameter(
+            Types.LIST, 'relative risk of uterine rupture in women who have delivered 2 times previously'),
+        'rr_ur_parity_3_or_4': Parameter(
+            Types.LIST, 'relative risk of uterine rupture in women who have delivered 3-4 times previously'),
+        'rr_ur_parity_5+': Parameter(
+            Types.LIST, 'relative risk of uterine rupture in women who have delivered > 5 times previously'),
+        'rr_ur_prev_cs': Parameter(
+            Types.LIST, 'relative risk of uterine rupture in women who have previously delivered via caesarean '
+                        'section'),
+        'rr_ur_obstructed_labour': Parameter(
+            Types.LIST,
+            'relative risk of uterine rupture in women who have been in obstructed labour'),
+        'cfr_uterine_rupture': Parameter(
+            Types.LIST, 'case fatality rate for uterine rupture in labour'),
+
+        # HYPERTENSIVE DISORDERS...
         'prob_progression_gest_htn': Parameter(
-            Types.REAL, 'probability of gestational hypertension progressing to severe gestational hypertension'
+            Types.LIST, 'probability of gestational hypertension progressing to severe gestational hypertension'
                         'during/after labour'),
         'prob_progression_severe_gest_htn': Parameter(
-            Types.REAL, 'probability of severe gestational hypertension progressing to severe pre-eclampsia '
+            Types.LIST, 'probability of severe gestational hypertension progressing to severe pre-eclampsia '
                         'during/after labour'),
         'prob_progression_mild_pre_eclamp': Parameter(
-            Types.REAL, 'probability of mild pre-eclampsia progressing to severe pre-eclampsia during/after labour'),
+            Types.LIST, 'probability of mild pre-eclampsia progressing to severe pre-eclampsia during/after labour'),
         'prob_progression_severe_pre_eclamp': Parameter(
-            Types.REAL, 'probability of severe pre-eclampsia progressing to eclampsia during/after labour'),
+            Types.LIST, 'probability of severe pre-eclampsia progressing to eclampsia during/after labour'),
+        'cfr_eclampsia': Parameter(
+            Types.LIST, 'case fatality rate for eclampsia during labours'),
+        'cfr_severe_pre_eclamp': Parameter(
+            Types.LIST, 'case fatality rate for severe pre eclampsia during labour'),
+        'cfr_pp_eclampsia': Parameter(
+            Types.LIST, 'case fatality rate for eclampsia following delivery'),
 
-        # ================================= HEALTH CARE SEEKING PARAMETERS ===========================================
+        # INTRAPARTUM STILLBIRTH...
+        'prob_ip_still_birth': Parameter(
+            Types.LIST, 'baseline probability of intrapartum still birth'),
+        'rr_still_birth_maternal_death': Parameter(
+            Types.LIST, 'relative risk of still birth in mothers who have died during labour'),
+        'rr_still_birth_ur': Parameter(
+            Types.LIST, 'relative risk of still birth in mothers experiencing uterine rupture'),
+        'rr_still_birth_ol': Parameter(
+            Types.LIST, 'relative risk of still birth in mothers experiencing obstructed labour'),
+        'rr_still_birth_aph': Parameter(
+            Types.LIST, 'relative risk of still birth in mothers experiencing antepartum haemorrhage'),
+        'rr_still_birth_hypertension': Parameter(
+            Types.LIST, 'relative risk of still birth in mothers experiencing hypertension'),
+        'rr_still_birth_sepsis': Parameter(
+            Types.LIST, 'relative risk of still birth in mothers experiencing intrapartum sepsis'),
+        'rr_still_birth_multiple_pregnancy': Parameter(
+            Types.LIST, 'relative risk of still birth in mothers pregnant with twins'),
+        'prob_both_twins_ip_still_birth': Parameter(
+            Types.LIST, 'probability that if this mother will experience still birth, and she is pregnant with twins, '
+                        'that neither baby will survive'),
+
+        # POSTPARTUM HAEMORRHAGE...
+        'prob_pph_uterine_atony': Parameter(
+            Types.LIST, 'risk of pph after experiencing uterine atony'),
+        'rr_pph_ua_hypertension': Parameter(
+            Types.LIST, 'relative risk risk of pph after secondary to uterine atony in hypertensive women'),
+        'rr_pph_ua_multiple_pregnancy': Parameter(
+            Types.LIST, 'relative risk risk of pph after secondary to uterine atony in women pregnant with twins'),
+        'rr_pph_ua_placental_abruption': Parameter(
+            Types.LIST, 'relative risk risk of pph after secondary to uterine atony in women with placental abruption'),
+        'rr_pph_ua_macrosomia': Parameter(
+            Types.LIST, 'relative risk risk of pph after secondary to uterine atony in women with macrosomic foetus'),
+        'rr_pph_ua_diabetes': Parameter(
+             Types.LIST, 'risk of pph after experiencing uterine atony'),
+        'prob_pph_retained_placenta': Parameter(
+            Types.LIST, 'risk of pph after experiencing retained placenta'),
+        'prob_pph_other_causes': Parameter(
+            Types.LIST, 'risk of pph after experiencing other pph causes'),
+        'cfr_pp_pph': Parameter(
+            Types.LIST, 'case fatality rate for postpartum haemorrhage'),
+        'rr_pph_death_anaemia': Parameter(
+            Types.LIST, 'relative risk increase of death in women who are anaemic at time of PPH'),
+
+        # CARE SEEKING FOR HEALTH CENTRE DELIVERY...
         'odds_deliver_in_health_centre': Parameter(
-            Types.REAL, 'odds of a woman delivering in a health centre compared to a hospital'),
+            Types.LIST, 'odds of a woman delivering in a health centre compared to a hospital'),
+        'rrr_hc_delivery_age_20_24': Parameter(
+            Types.LIST, 'relative risk ratio for a woman aged 20-24 delivering in a health centre compared to a '
+                        'hospital'),
         'rrr_hc_delivery_age_25_29': Parameter(
-            Types.REAL, 'relative risk ratio for a woman aged 25-29 delivering in a health centre compared to a '
+            Types.LIST, 'relative risk ratio for a woman aged 25-29 delivering in a health centre compared to a '
                         'hospital'),
         'rrr_hc_delivery_age_30_34': Parameter(
-            Types.REAL, 'relative risk ratio for a woman aged 30-34 delivering in a health centre compared to a '
+            Types.LIST, 'relative risk ratio for a woman aged 30-34 delivering in a health centre compared to a '
                         'hospital'),
         'rrr_hc_delivery_age_35_39': Parameter(
-            Types.REAL, 'relative risk ratio for a woman aged 35-39 delivering in a health centre compared to a '
+            Types.LIST, 'relative risk ratio for a woman aged 35-39 delivering in a health centre compared to a '
                         'hospital'),
         'rrr_hc_delivery_age_40_44': Parameter(
-            Types.REAL, 'relative risk ratio for a woman aged 40-44 delivering in a health centre compared to a '
+            Types.LIST, 'relative risk ratio for a woman aged 40-44 delivering in a health centre compared to a '
                         'hospital'),
         'rrr_hc_delivery_age_45_49': Parameter(
-            Types.REAL, 'relative risk ratio for a woman aged 45-49 delivering in a health centre compared to a '
+            Types.LIST, 'relative risk ratio for a woman aged 45-49 delivering in a health centre compared to a '
                         'hospital'),
-        'rrr_hc_delivery_rural': Parameter(
-            Types.REAL, 'relative risk ratio for a woman living in a rural setting delivery in a health centre compared'
-                        'to a hospital'),
+        'rrr_hc_delivery_wealth_4': Parameter(
+            Types.LIST, 'relative risk ratio of a woman at wealth level 4 delivering at health centre compared to a '
+                        'hospital'),
+        'rrr_hc_delivery_wealth_3': Parameter(
+            Types.LIST, 'relative risk ratio of a woman at wealth level 3 delivering at health centre compared to a '
+                        'hospital'),
+        'rrr_hc_delivery_wealth_2': Parameter(
+            Types.LIST, 'relative risk ratio of a woman at wealth level 2 delivering at health centre compared to a '
+                        'hospital'),
+        'rrr_hc_delivery_wealth_1': Parameter(
+            Types.LIST, 'relative risk ratio of a woman at wealth level 1 delivering at health centre compared to a '
+                        'hospital'),
         'rrr_hc_delivery_parity_3_to_4': Parameter(
-            Types.REAL, 'relative risk ratio for a woman with a parity of 3-4 delivering in a health centre compared to'
+            Types.LIST, 'relative risk ratio for a woman with a parity of 3-4 delivering in a health centre compared to'
                         'a hospital'),
         'rrr_hc_delivery_parity_>4': Parameter(
-            Types.REAL, 'relative risk ratio of a woman with a parity >4 delivering in health centre compared to a '
+            Types.LIST, 'relative risk ratio of a woman with a parity >4 delivering in health centre compared to a '
                         'hospital'),
+        'rrr_hc_delivery_rural': Parameter(
+            Types.LIST, 'relative risk ratio of a married woman delivering in a health centre compared to a hospital'),
         'rrr_hc_delivery_married': Parameter(
-            Types.REAL, 'relative risk ratio of a married woman delivering in a health centre compared to a hospital'),
+            Types.LIST, 'relative risk ratio of a married woman delivering in a health centre compared to a hospital'),
+
+        # CARE SEEKING FOR HOME BIRTH...
         'odds_deliver_at_home': Parameter(
-            Types.REAL, 'odds of a woman delivering at home compared to a hospital'),
+            Types.LIST, 'odds of a woman delivering at home compared to a hospital'),
+        'rrr_hb_delivery_age_20_24': Parameter(
+            Types.LIST, 'relative risk ratio for a woman aged 20-24 delivering at home compared to a '
+                        'hospital'),
+        'rrr_hb_delivery_age_25_29': Parameter(
+            Types.LIST, 'relative risk ratio for a woman aged 25-29 delivering at home compared to a '
+                        'hospital'),
+        'rrr_hb_delivery_age_30_34': Parameter(
+            Types.LIST, 'relative risk ratio for a woman aged 30-34 delivering at home compared to a '
+                        'hospital'),
         'rrr_hb_delivery_age_35_39': Parameter(
-            Types.REAL, 'relative risk ratio for a woman aged 35-39 delivering at home compared to a '
+            Types.LIST, 'relative risk ratio for a woman aged 35-39 delivering at home compared to a '
                         'hospital'),
         'rrr_hb_delivery_age_40_44': Parameter(
-            Types.REAL, 'relative risk ratio for a woman aged 40-44 delivering at home compared to a hospital'),
+            Types.LIST, 'relative risk ratio for a woman aged 40-44 delivering at home compared to a hospital'),
         'rrr_hb_delivery_age_45_49': Parameter(
-            Types.REAL, 'relative risk ratio for a woman aged 45-49 delivering at home compared to a hospital'),
-
+            Types.LIST, 'relative risk ratio for a woman aged 45-49 delivering at home compared to a hospital'),
+        'rrr_hb_delivery_rural': Parameter(
+            Types.LIST, 'relative risk ratio of a rural delivering at home compared to a hospital'),
+        'rrr_hb_delivery_primary_education': Parameter(
+            Types.LIST, 'relative risk ratio of a woman with a primary education delivering at home compared to a '
+                        'hospital'),
+        'rrr_hb_delivery_secondary_education': Parameter(
+            Types.LIST, 'relative risk ratio of a woman with a secondary education delivering at home compared to a '
+                        'hospital'),
+        'rrr_hb_delivery_wealth_4': Parameter(
+            Types.LIST, 'relative risk ratio of a woman at wealth level 4 delivering at home compared to a '
+                        'hospital'),
+        'rrr_hb_delivery_wealth_3': Parameter(
+            Types.LIST, 'relative risk ratio of a woman at wealth level 3 delivering at home compared to a '
+                        'hospital'),
+        'rrr_hb_delivery_wealth_2': Parameter(
+            Types.LIST, 'relative risk ratio of a woman at wealth level 2 delivering at home compared to a '
+                        'hospital'),
+        'rrr_hb_delivery_wealth_1': Parameter(
+            Types.LIST, 'relative risk ratio of a woman at wealth level 1 delivering at home compared to a '
+                        'hospital'),
         'rrr_hb_delivery_parity_3_to_4': Parameter(
-            Types.REAL, 'relative risk ratio for a woman with a parity of 3-4 delivering at home compared to'
+            Types.LIST, 'relative risk ratio for a woman with a parity of 3-4 delivering at home compared to'
                         'a hospital'),
         'rrr_hb_delivery_parity_>4': Parameter(
-            Types.REAL, 'relative risk ratio of a woman with a parity >4 delivering at home compared to a '
+            Types.LIST, 'relative risk ratio of a woman with a parity >4 delivering at home compared to a '
                         'hospital'),
+        'rrr_hb_delivery_married': Parameter(
+            Types.LIST, 'relative risk ratio of a married woman delivering in a home compared to a hospital'),
+
+        'probability_delivery_hospital': Parameter(
+            Types.LIST, 'probability of delivering in a hospital'),
+        'prob_delay_one_two_fd': Parameter(
+            Types.LIST, 'probability a woman seeking care during pregnancy will experience a type 1 or 2 delay when '
+                        'choosing to seek care (i.e. she is delayed in reaching the facility'),
+        'squeeze_threshold_for_delay_three_bemonc': Parameter(
+            Types.LIST, 'squeeze factor value over which an individual within a EMoNC HSI is said to experience type 3'
+                        ' delay i.e. delay in receiving appropriate care'),
+        'squeeze_threshold_for_delay_three_cemonc': Parameter(
+            Types.LIST, 'squeeze factor value over which an individual within a CEMoNC HSI is said to experience type 3'
+                        ' delay i.e. delay in receiving appropriate car1e'),
+        'squeeze_threshold_for_delay_three_pn': Parameter(
+            Types.LIST, 'squeeze factor value over which an individual within a postnatal HSI is said to experience '
+                        'type 3 delay i.e. delay in receiving appropriate care'),
+
+        # PNC CHECK...
+        'prob_timings_pnc': Parameter(
+            Types.LIST, 'probabilities that a woman who will receive a PNC check will receive care <48hrs post birth '
+                        'or > 48hrs post birth'),
+        'odds_will_attend_pnc': Parameter(
+            Types.LIST, 'baseline odss a woman will seek PNC for her and her newborn following delivery'),
+        'or_pnc_age_30_35': Parameter(
+            Types.LIST, 'odds ratio for women aged 30-35 attending PNC'),
+        'or_pnc_age_>35': Parameter(
+            Types.LIST, 'odds ratio for women aged > 35 attending PNC'),
+        'or_pnc_rural': Parameter(
+            Types.LIST, 'odds ratio for women who live rurally attending PNC'),
+        'or_pnc_wealth_level_1': Parameter(
+            Types.LIST, 'odds ratio for women from the highest wealth level attending PNC'),
+        'or_pnc_anc4+': Parameter(
+            Types.LIST, 'odds ratio for women who attended ANC4+ attending PNC'),
+        'or_pnc_caesarean_delivery': Parameter(
+            Types.LIST, 'odds ratio for women who delivered by caesarean attending PNC'),
+        'or_pnc_facility_delivery': Parameter(
+            Types.LIST, 'odds ratio for women who delivered in a health facility attending PNC'),
+        'or_pnc_parity_>4': Parameter(
+            Types.LIST, 'odds ratio for women with a parity of >4 attending PNC'),
+        'probs_of_attending_pn_event_by_day': Parameter(
+            Types.LIST, 'probabilities used in a weighted random draw to determine when a woman will attend the '
+                        'postnatal event'),
+
+        # EMERGENCY CARE SEEKING...
         'prob_careseeking_for_complication': Parameter(
-            Types.REAL, 'odds of a woman seeking skilled assistance after developing a complication at a home birth'),
-        'or_comp_careseeking_wealth_2': Parameter(
-            Types.REAL, 'odds ratio of a woman of wealth level 2 seeking assistance after developing a complication at '
-                        'a home birth '),
+            Types.LIST, 'odds of a woman seeking skilled assistance after developing a complication at a home birth'),
         'test_care_seeking_probs': Parameter(
             Types.LIST, 'dummy probabilities of delivery care seeking used in testing'),
 
-        # ================================= TREATMENT PARAMETERS =====================================================
+        # TREATMENT PARAMETERS...
+        'prob_delivery_modes_ec': Parameter(
+            Types.LIST, 'probabilities that a woman admitted with eclampsia will deliver normally, via caesarean or '
+                        'via assisted vaginal delivery'),
+        'prob_delivery_modes_spe': Parameter(
+            Types.LIST, 'probabilities that a woman admitted with severe pre-eclampsia will deliver normally, via '
+                        'caesarean or via assisted vaginal delivery'),
+        'residual_prob_avd': Parameter(
+            Types.LIST, 'probabilities that a woman will deliver via assisted vaginal delivery for an indication not '
+                        'explicitly modelled'),
+        'residual_prob_caesarean': Parameter(
+            Types.LIST, 'probabilities that a woman will deliver via caesarean section for an indication not '
+                        'explicitly modelled'),
+        'prob_adherent_ifa': Parameter(
+            Types.LIST, 'probability that a woman started on postnatal IFA will be adherent'),
+        'effect_of_ifa_for_resolving_anaemia': Parameter(
+            Types.LIST, 'relative effect of iron and folic acid on anaemia status'),
+        'number_ifa_tablets_required_postnatally': Parameter(
+            Types.LIST, 'total number of iron and folic acid tablets required during postnatal period'),
         'treatment_effect_maternal_infection_clean_delivery': Parameter(
-            Types.REAL, 'Effect of clean delivery practices on risk of maternal infection'),
-        'rr_pph_amtsl': Parameter(
-            Types.REAL, 'relative risk of severe postpartum haemorrhage following active management of the third '
+            Types.LIST, 'Effect of clean delivery practices on risk of maternal infection'),
+        'treatment_effect_maternal_chorio_abx_prom': Parameter(
+            Types.LIST, 'Relative effect of antibiotics for premature rupture of membranes on maternal risk of '
+                        'chorioamnionitis prior to birth'),
+        'treatment_effect_amtsl': Parameter(
+            Types.LIST, 'relative risk of severe postpartum haemorrhage following active management of the third '
                         'stage of labour'),
         'prob_haemostatis_uterotonics': Parameter(
-            Types.REAL, 'probability of uterotonics stopping a postpartum haemorrhage due to uterine atony '),
+            Types.LIST, 'probability of uterotonics stopping a postpartum haemorrhage due to uterine atony '),
+        'pph_treatment_effect_uterotonics_md': Parameter(
+            Types.LIST, 'effect of uterotonics on maternal death due to postpartum haemorrhage'),
         'prob_successful_manual_removal_placenta': Parameter(
-            Types.REAL, 'probability of manual removal of retained products arresting a post partum haemorrhage'),
+            Types.LIST, 'probability of manual removal of retained products arresting a post partum haemorrhage'),
+        'pph_treatment_effect_mrp_md': Parameter(
+            Types.LIST, 'effect of uterotonics on maternal death due to postpartum haemorrhage'),
         'success_rate_pph_surgery': Parameter(
-            Types.REAL, 'probability of surgery for postpartum haemorrhage being successful'),
-        'success_rate_surgical_removal_placenta': Parameter(
-            Types.REAL, 'probability of surgery for retained placenta being successful'),
-        'success_rate_uterine_repair': Parameter(
-            Types.REAL, 'probability repairing a ruptured uterus surgically'),
-        'prob_successful_assisted_vaginal_delivery': Parameter(
-            Types.REAL, 'probability of successful assisted vaginal delivery'),
-        'sensitivity_of_assessment_of_obstructed_labour_hc': Parameter(
-            Types.REAL, 'sensitivity of dx_test assessment by birth attendant for obstructed labour in a health '
-                        'centre'),
-        'sensitivity_of_assessment_of_obstructed_labour_hp': Parameter(
-            Types.REAL, 'sensitivity of dx_test assessment by birth attendant for obstructed labour in a level 1 '
-                        'hospital'),
-        'sensitivity_of_assessment_of_sepsis_hc': Parameter(
-            Types.REAL, 'sensitivity of dx_test assessment by birth attendant for maternal sepsis in a health centre'),
-        'sensitivity_of_assessment_of_sepsis_hp': Parameter(
-            Types.REAL, 'sensitivity of dx_test assessment by birth attendant for maternal sepsis in a level 1'
-                        'hospital'),
-        'sensitivity_of_assessment_of_severe_pe_hc': Parameter(
-            Types.REAL, 'sensitivity of dx_test assessment by birth attendant for severe pre-eclampsia in a level 1 '
-                        'hospital'),
-        'sensitivity_of_assessment_of_severe_pe_hp': Parameter(
-            Types.REAL, 'sensitivity of dx_test assessment by birth attendant for severe pre-eclampsia in a level 1 '
-                        'hospital'),
-        'sensitivity_of_assessment_of_hypertension_hc': Parameter(
-            Types.REAL, 'sensitivity of dx_test assessment by birth attendant for hypertension in a level 1 health '
-                        'centre'),
-        'sensitivity_of_assessment_of_hypertension_hp': Parameter(
-            Types.REAL, 'sensitivity of dx_test assessment by birth attendant for hypertension in a level 1 hospital'),
-        'sensitivity_of_assessment_of_antepartum_haem_hc': Parameter(
-            Types.REAL, 'sensitivity of dx_test assessment for referral by birth attendant for antepartum haemorrhage'
-                        ' in a health centre'),
-        'sensitivity_of_assessment_of_antepartum_haem_hp': Parameter(
-            Types.REAL, 'sensitivity of dx_test assessment for treatment by birth attendant for antepartum haemorrhage'
-                        ' in a level 1 hospital'),
-        'sensitivity_of_assessment_of_uterine_rupture_hc': Parameter(
-            Types.REAL, 'sensitivity of dx_test assessment by birth attendant for uterine rupture in a health centre'),
-        'sensitivity_of_assessment_of_uterine_rupture_hp': Parameter(
-            Types.REAL, 'sensitivity of dx_test assessment by birth attendant for uterine rupture in a level 1 '
-                        'hospital'),
-        'sensitivity_of_assessment_of_ec_hc': Parameter(
-            Types.REAL, 'sensitivity of dx_test assessment by birth attendant for eclampsia in a level 1 hospital'),
-        'sensitivity_of_assessment_of_ec_hp': Parameter(
-            Types.REAL, 'sensitivity of dx_test assessment by birth attendant for eclampsia in a level 1 '
-                        'hospital'),
-        'sensitivity_of_assessment_of_pph_hc': Parameter(
-            Types.REAL, 'sensitivity of dx_test assessment by birth attendant for postpartum haemorrhage in a level 1 '
-                        'hospital'),
-        'sensitivity_of_assessment_of_pph_hp': Parameter(
-            Types.REAL, 'sensitivity of dx_test assessment by birth attendant for postpartum haemorrhage in a level 1 '
-                        'hospital'),
+            Types.LIST, 'probability of surgery for postpartum haemorrhage being successful'),
+        'pph_treatment_effect_surg_md': Parameter(
+            Types.LIST, 'effect of surgery on maternal death due to postpartum haemorrhage'),
+        'pph_treatment_effect_hyst_md': Parameter(
+            Types.LIST, 'effect of hysterectomy on maternal death due to postpartum haemorrhage'),
+        'pph_bt_treatment_effect_md': Parameter(
+            Types.LIST, 'effect of blood transfusion treatment for postpartum haemorrhage on risk of maternal death'),
         'sepsis_treatment_effect_md': Parameter(
-            Types.REAL, 'effect of treatment for sepsis on risk of maternal death'),
+            Types.LIST, 'effect of treatment for sepsis on risk of maternal death'),
+        'success_rate_uterine_repair': Parameter(
+            Types.LIST, 'probability repairing a ruptured uterus surgically'),
+        'prob_successful_assisted_vaginal_delivery': Parameter(
+            Types.LIST, 'probability of successful assisted vaginal delivery'),
+        'ur_repair_treatment_effect_md': Parameter(
+            Types.LIST, 'effect of surgical uterine repair treatment for uterine rupture on risk of maternal death'),
+        'ur_treatment_effect_bt_md': Parameter(
+            Types.LIST, 'effect of blood transfusion treatment for uterine rupture on risk of maternal death'),
+        'ur_hysterectomy_treatment_effect_md': Parameter(
+            Types.LIST, 'effect of blood hysterectomy for uterine rupture on risk of maternal death'),
         'eclampsia_treatment_effect_severe_pe': Parameter(
-            Types.REAL, 'effect of treatment for severe pre eclampsia on risk of eclampsia'),
+            Types.LIST, 'effect of treatment for severe pre eclampsia on risk of eclampsia'),
         'eclampsia_treatment_effect_md': Parameter(
-            Types.REAL, 'effect of treatment for eclampsia on risk of maternal death'),
+            Types.LIST, 'effect of treatment for eclampsia on risk of maternal death'),
         'anti_htns_treatment_effect_md': Parameter(
-            Types.REAL, 'effect of IV anti hypertensive treatment on risk of death secondary to severe pre-eclampsia/'
+            Types.LIST, 'effect of IV anti hypertensive treatment on risk of death secondary to severe pre-eclampsia/'
                         'eclampsia stillbirth'),
         'anti_htns_treatment_effect_progression': Parameter(
-            Types.REAL,
+            Types.LIST,
             'effect of IV anti hypertensive treatment on risk of progression from mild to severe gestational'
             ' hypertension'),
         'aph_bt_treatment_effect_md': Parameter(
-            Types.REAL, 'effect of blood transfusion treatment for antepartum haemorrhage on risk of maternal death'),
-        'pph_treatment_effect_uterotonics_md': Parameter(
-            Types.REAL, 'effect of uterotonics on maternal death due to postpartum haemorrhage'),
-        'pph_treatment_effect_mrp_md': Parameter(
-            Types.REAL, 'effect of uterotonics on maternal death due to postpartum haemorrhage'),
-        'pph_treatment_effect_surg_md': Parameter(
-            Types.REAL, 'effect of surgery on maternal death due to postpartum haemorrhage'),
-        'pph_treatment_effect_hyst_md': Parameter(
-            Types.REAL, 'effect of hysterectomy on maternal death due to postpartum haemorrhage'),
-        'pph_bt_treatment_effect_md': Parameter(
-            Types.REAL, 'effect of blood transfusion treatment for postpartum haemorrhage on risk of maternal death'),
+            Types.LIST, 'effect of blood transfusion treatment for antepartum haemorrhage on risk of maternal death'),
+        'treatment_effect_blood_transfusion_anaemia': Parameter(
+            Types.LIST, 'effect of blood transfusion treatment for severe anaemia'),
         'aph_cs_treatment_effect_md': Parameter(
-            Types.REAL, 'effect of caesarean section for antepartum haemorrhage on risk of maternal death'),
-        'ur_repair_treatment_effect_md': Parameter(
-            Types.REAL, 'effect of surgical uterine repair treatment for uterine rupture on risk of maternal death'),
-        'ur_treatment_effect_bt_md': Parameter(
-            Types.REAL, 'effect of blood transfusion treatment for uterine rupture on risk of maternal death'),
-        'ur_hysterectomy_treatment_effect_md': Parameter(
-            Types.REAL, 'effect of blood hysterectomy for uterine rupture on risk of maternal death'),
+            Types.LIST, 'effect of caesarean section for antepartum haemorrhage on risk of maternal death'),
         'treatment_effect_avd_still_birth': Parameter(
-            Types.REAL, 'effect of assisted vaginal delivery on risk of intrapartum still birth'),
+            Types.LIST, 'effect of assisted vaginal delivery on risk of intrapartum still birth'),
         'treatment_effect_cs_still_birth': Parameter(
-            Types.REAL, 'effect of caesarean section delivery on risk of intrapartum still birth'),
-        'allowed_interventions': Parameter(
-            Types.LIST, 'list of interventions allowed to run, used in analysis'),
-        'squeeze_threshold_proph_ints': Parameter(
-            Types.REAL, 'squeeze factor threshold below which prophylactic interventions for birth cant be given'),
-        'squeeze_threshold_treatment_spe': Parameter(
-            Types.REAL, 'squeeze factor threshold below which treatment for severe pre-eclampsia cant be given'),
-        'squeeze_threshold_treatment_ol': Parameter(
-            Types.REAL, 'squeeze factor threshold below which treatment for obstructed labour cant be given'),
-        'squeeze_threshold_treatment_sep': Parameter(
-            Types.REAL, 'squeeze factor threshold below which treatment for maternal sepsis cant be given'),
-        'squeeze_threshold_treatment_htn': Parameter(
-            Types.REAL, 'squeeze factor threshold below which treatment for hypertension cant be given'),
-        'squeeze_threshold_treatment_ec': Parameter(
-            Types.REAL, 'squeeze factor threshold below which treatment for eclampsia cant be given'),
-        'squeeze_threshold_treatment_ur': Parameter(
-            Types.REAL, 'squeeze factor threshold below which treatment for uterine rupture cant be given'),
-        'squeeze_threshold_treatment_aph': Parameter(
-            Types.REAL, 'squeeze factor threshold below which treatment for antepartum haemorrhage cant be given'),
-        'squeeze_threshold_treatment_pph': Parameter(
-            Types.REAL, 'squeeze factor threshold below which treatment for antepartum haemorrhage cant be given'),
-        'squeeze_threshold_amtsl': Parameter(
-            Types.REAL, 'squeeze factor threshold below which treatment for amtsl cant be given'),
+            Types.LIST, 'effect of caesarean section delivery on risk of intrapartum still birth'),
 
-        # ================================= DALY WEIGHT PARAMETERS =====================================================
-        'daly_wt_haemorrhage_moderate': Parameter(
-            Types.REAL, 'DALY weight for a moderate maternal haemorrhage (<1 litre)'),
-        'daly_wt_haemorrhage_severe': Parameter(
-            Types.REAL, 'DALY weight for a severe maternal haemorrhage (>1 litre)'),
-        'daly_wt_maternal_sepsis': Parameter(
-            Types.REAL, 'DALY weight for maternal sepsis'),
-        'daly_wt_eclampsia': Parameter(
-            Types.REAL, 'DALY weight for eclampsia'),
-        'daly_wt_obstructed_labour': Parameter(
-            Types.REAL, 'DALY weight for obstructed labour')
+        # HEALTH CARE WORKER AVAILABILITY AND COMPETENCE...
+        'prob_hcw_avail_iv_abx': Parameter(
+            Types.LIST, 'average probability that a health facility providing EmONC care has a HCW available that can'
+                        ' delivery signal function - parenteral antibiotics'),
+        'prob_hcw_avail_uterotonic': Parameter(
+            Types.LIST, 'average probability that a health facility providing EmONC care has a HCW available that can'
+                        ' delivery signal function - parenteral uterotonics'),
+        'prob_hcw_avail_anticonvulsant': Parameter(
+            Types.LIST, 'average probability that a health facility providing EmONC care has a HCW available that can'
+                        ' delivery signal function - parenteral anticonvulsants'),
+        'prob_hcw_avail_man_r_placenta': Parameter(
+            Types.LIST, 'average probability that a health facility providing EmONC care has a HCW available that can'
+                        ' delivery signal function - manual removal of retained placenta'),
+        'prob_hcw_avail_avd': Parameter(
+            Types.LIST, 'average probability that a health facility providing EmONC care has a HCW available that can'
+                        ' delivery signal function - assisted vaginal delivery'),
+        'prob_hcw_avail_blood_tran': Parameter(
+            Types.LIST, 'average probability that a health facility providing EmONC care has a HCW available that can'
+                        ' delivery signal function - blood transfusion'),
+        'prob_hcw_avail_surg': Parameter(
+            Types.LIST, 'average probability that a health facility providing EmONC care has a HCW available that can'
+                        ' delivery signal function - obstetric surgery'),
+        'prob_hcw_avail_retained_prod': Parameter(
+            Types.LIST, 'average probability that a health facility providing EmONC care has a HCW available that can'
+                        ' delivery signal function - removal of retained products of conception'),
+        'prob_hcw_avail_neo_resus': Parameter(
+            Types.LIST, 'average probability that a health facility providing EmONC care has a HCW available that can'
+                        ' delivery signal function - neonatal resuscitation'),
+
+        'mean_hcw_competence_hc': Parameter(
+            Types.LIST, 'mean competence of HCW at delivering EmONC care at a health centre. A draw below this level '
+                        'prevents intervention delivery'),
+        'mean_hcw_competence_hp': Parameter(
+            Types.LIST, 'mean competence of HCW at delivering EmONC care at a hospital. A draw below this level '
+                        'prevents intervention delivery'),
+
+        # EFFECT OF DELAYS...
+        'treatment_effect_modifier_all_delays': Parameter(
+            Types.LIST, 'factor by which treatment effectiveness is reduced in the presences of multiple delays'),
+        'treatment_effect_modifier_one_delay': Parameter(
+            Types.LIST, 'factor by which treatment effectiveness is reduced in the presences of one delays'),
+
+        'prob_intervention_delivered_anaemia_assessment_pnc': Parameter(
+            Types.LIST, 'probability a woman will have their Hb levels checked during PNC given that the HSI has ran '
+                        'and the consumables are available (proxy for clinical quality)'),
     }
 
     PROPERTIES = {
@@ -442,8 +546,6 @@ class Labour(Module):
         'la_has_previously_delivered_preterm': Property(Types.BOOL, 'whether the woman has had a previous preterm '
                                                                     'delivery for any of her previous deliveries'),
         'la_obstructed_labour': Property(Types.BOOL, 'Whether this woman is experiencing obstructed labour'),
-        'la_obstructed_labour_causes': Property(Types.INT, 'bitset column holding list of possible causes of obstructed'
-                                                           ' labour'),
         'la_placental_abruption': Property(Types.BOOL, 'whether the woman has experienced placental abruption'),
         'la_antepartum_haem': Property(Types.CATEGORICAL, 'whether the woman has experienced an antepartum haemorrhage'
                                                           ' in this delivery and it severity',
@@ -455,14 +557,14 @@ class Labour(Module):
         'la_uterine_rupture_treatment': Property(Types.BOOL, 'whether this womans uterine rupture has been treated'),
         'la_sepsis': Property(Types.BOOL, 'whether this woman has developed sepsis due to an intrapartum infection'),
         'la_sepsis_pp': Property(Types.BOOL, 'whether this woman has developed sepsis due to a postpartum infection'),
-        'la_maternal_ip_infection': Property(Types.INT, 'bitset column holding list of infections'),
-        'la_maternal_pp_infection': Property(Types.INT, 'bitset column holding list of postpartum infections'),
         'la_sepsis_treatment': Property(Types.BOOL, 'If this woman has received treatment for maternal sepsis'),
         'la_eclampsia_treatment': Property(Types.BOOL, 'whether this womans eclampsia has been treated'),
         'la_severe_pre_eclampsia_treatment': Property(Types.BOOL, 'whether this woman has been treated for severe '
                                                                   'pre-eclampsia'),
         'la_maternal_hypertension_treatment': Property(Types.BOOL, 'whether this woman has been treated for maternal '
                                                                    'hypertension'),
+        'la_gest_htn_on_treatment': Property(Types.BOOL, 'whether this woman has is receiving regular '
+                                                         'antihypertensives'),
         'la_postpartum_haem': Property(Types.BOOL, 'whether the woman has experienced an postpartum haemorrhage in this'
                                                    'delivery'),
         'la_postpartum_haem_cause': Property(Types.INT, 'bitset column holding causes of postpartum haemorrhage'),
@@ -470,25 +572,26 @@ class Labour(Module):
                                                             '(bitset)'),
         'la_has_had_hysterectomy': Property(Types.BOOL, 'whether this woman has had a hysterectomy as treatment for a '
                                                         'complication of labour, and therefore is unable to conceive'),
-        'la_maternal_death_in_labour': Property(Types.BOOL, ' whether the woman has died as a result of this '
-                                                            'pregnancy'),
-        'la_maternal_death_in_labour_date': Property(Types.DATE, 'date of death for a date in pregnancy'),
         'la_date_most_recent_delivery': Property(Types.DATE, 'date of on which this mother last delivered'),
         'la_is_postpartum': Property(Types.BOOL, 'Whether a woman is in the postpartum period, from delivery until '
                                                  'day +42 (6 weeks)'),
+        'la_pn_checks_maternal': Property(Types.INT, 'Number of postnatal checks this woman has received'),
         'la_iron_folic_acid_postnatal': Property(Types.BOOL, 'Whether a woman is receiving iron and folic acid during '
                                                              'the postnatal period'),
     }
 
     def read_parameters(self, data_folder):
+        parameter_dataframe = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_LabourSkilledBirth'
+                                                                          'Attendance.xlsx',
+                                            sheet_name='parameter_values')
+        self.load_parameters_from_dataframe(parameter_dataframe)
 
-        dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_LabourSkilledBirthAttendance.xlsx',
-                            sheet_name='parameter_values')
-        self.load_parameters_from_dataframe(dfd)
+        # For the first period (2010-2015) we use the first value in each list as a parameter
+        pregnancy_helper_functions.update_current_parameter_dictionary(self, list_position=0)
 
     def initialise_population(self, population):
         df = population.props
-        params = self.parameters
+        params = self.current_parameters
 
         df.loc[df.is_alive, 'la_currently_in_labour'] = False
         df.loc[df.is_alive, 'la_intrapartum_still_birth'] = False
@@ -497,7 +600,6 @@ class Labour(Module):
         df.loc[df.is_alive, 'la_has_previously_delivered_preterm'] = False
         df.loc[df.is_alive, 'la_due_date_current_pregnancy'] = pd.NaT
         df.loc[df.is_alive, 'la_obstructed_labour'] = False
-        df.loc[df.is_alive, 'la_obstructed_labour_causes'] = 0
         df.loc[df.is_alive, 'la_placental_abruption'] = False
         df.loc[df.is_alive, 'la_antepartum_haem'] = 'none'
         df.loc[df.is_alive, 'la_antepartum_haem_treatment'] = False
@@ -505,239 +607,304 @@ class Labour(Module):
         df.loc[df.is_alive, 'la_uterine_rupture_treatment'] = False
         df.loc[df.is_alive, 'la_sepsis'] = False
         df.loc[df.is_alive, 'la_sepsis_pp'] = False
-        df.loc[df.is_alive, 'la_maternal_ip_infection'] = 0
-        df.loc[df.is_alive, 'la_maternal_pp_infection'] = 0
         df.loc[df.is_alive, 'la_sepsis_treatment'] = False
         df.loc[df.is_alive, 'la_eclampsia_treatment'] = False
         df.loc[df.is_alive, 'la_severe_pre_eclampsia_treatment'] = False
         df.loc[df.is_alive, 'la_maternal_hypertension_treatment'] = False
+        df.loc[df.is_alive, 'la_gest_htn_on_treatment'] = False
         df.loc[df.is_alive, 'la_postpartum_haem'] = False
         df.loc[df.is_alive, 'la_postpartum_haem_cause'] = 0
         df.loc[df.is_alive, 'la_postpartum_haem_treatment'] = 0
         df.loc[df.is_alive, 'la_has_had_hysterectomy'] = False
-        df.loc[df.is_alive, 'la_maternal_death_in_labour'] = False
-        df.loc[df.is_alive, 'la_maternal_death_in_labour_date'] = pd.NaT
         df.loc[df.is_alive, 'la_date_most_recent_delivery'] = pd.NaT
         df.loc[df.is_alive, 'la_is_postpartum'] = False
+        df.loc[df.is_alive, 'la_pn_checks_maternal'] = 0
+        df.loc[df.is_alive, 'la_iron_folic_acid_postnatal'] = False
 
-        # Maternal sepsis and haemorrhage are outcomes of preceding clinical events. We use a bitset handler to manage
-        # a property of the women that captures if she has experienced one or more of the necessary pre-ceding clinical
-        # events that could trigger sepsis of haemorrhage
-        self.intrapartum_infections = BitsetHandler(self.sim.population, 'la_maternal_ip_infection',
-                                                    ['chorioamnionitis', 'other_maternal_infection'])
-
-        self.postpartum_infections = BitsetHandler(self.sim.population, 'la_maternal_pp_infection',
-                                                   ['endometritis', 'urinary_tract_inf', 'skin_soft_tissue_inf',
-                                                    'other_maternal_infection'])
-
-        self.cause_of_primary_pph = BitsetHandler(self.sim.population, 'la_postpartum_haem_cause',
-                                                  ['uterine_atony', 'lacerations', 'retained_placenta',
-                                                   'other_pph_cause'])
-
-        self.cause_of_obstructed_labour = BitsetHandler(self.sim.population, 'la_obstructed_labour_causes',
-                                                        ['cephalopelvic_dis', 'malposition', 'malpresentation'])
-
-        # Additionally we store different potential treatments for postpartum haemorrhage in this way
+        #  we store different potential treatments for postpartum haemorrhage via bistet
         self.pph_treatment = BitsetHandler(self.sim.population, 'la_postpartum_haem_treatment',
-                                           ['uterotonics', 'manual_removal_placenta', 'surgery', 'hysterectomy'])
+                                           ['manual_removal_placenta', 'surgery', 'hysterectomy'])
 
         #  ----------------------------ASSIGNING PARITY AT BASELINE --------------------------------------------------
         # This equation predicts the parity of each woman at baseline (who is of reproductive age)
         parity_equation = LinearModel.custom(labour_lm.predict_parity, parameters=params)
 
         # We assign parity to all women of reproductive age at baseline
-        df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14), 'la_parity'] = np.ceil(
+        df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14), 'la_parity'] = \
             parity_equation.predict(df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14)])
-        )
 
-        assert (df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14), 'la_parity'] >= 0).all().all()
+        if not (df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14), 'la_parity'] >= 0).all().all():
+            logger.debug(key='error', data='Parity was calculated incorrectly at initialisation ')
+
+        #  ----------------------- ASSIGNING PREVIOUS CS DELIVERY AT BASELINE -----------------------------------------
+        # This equation determines the proportion of women at baseline who have previously delivered via caesarean
+        # section
+        reproductive_age_women = df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)
+
+        previous_cs = pd.Series(
+            self.rng.random_sample(len(reproductive_age_women.loc[reproductive_age_women])) <
+            self.current_parameters['prob_previous_caesarean_at_baseline'],
+            index=reproductive_age_women.loc[reproductive_age_women].index)
+
+        df.loc[previous_cs.loc[previous_cs].index, 'la_previous_cs_delivery'] = True
+
+    def get_and_store_labour_item_codes(self):
+        """
+        This function defines the required consumables for each intervention delivered during this module and stores
+        them in a module level dictionary called within HSIs
+         """
+        get_item_code_from_pkg = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
+
+        get_list_of_items = pregnancy_helper_functions.get_list_of_items
+
+        # ---------------------------------- IV DRUG ADMIN EQUIPMENT  -------------------------------------------------
+        self.item_codes_lab_consumables['iv_drug_equipment'] = \
+            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 20_each_CMST',
+                                     'IV giving/infusion set, with needle',
+                                     'Gloves, exam, latex, disposable, pair'])
+
+        # ---------------------------------- BLOOD TEST EQUIPMENT ---------------------------------------------------
+        self.item_codes_lab_consumables['blood_test_equipment'] =\
+            get_list_of_items(self, ['Blood collecting tube, 5 ml',
+                                     'Syringe, needle + swab',
+                                     'Gloves, exam, latex, disposable, pair'])
+
+        # -------------------------------------------- DELIVERY ------------------------------------------------------
+        # assuming CDK has blade, soap, cord tie
+        self.item_codes_lab_consumables['delivery_core'] =\
+            get_list_of_items(self, ['Clean delivery kit',
+                                     'Chlorhexidine 1.5% solution_5_CMST'])
+
+        self.item_codes_lab_consumables['delivery_optional'] = \
+            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 20_each_CMST',
+                                     'Apron, disposable, polythene_100_CMST',
+                                     'Gloves, exam, latex, disposable, pair',
+                                     'Gauze, swabs 8-ply 10cm x 10cm_100_CMST',
+                                     'Gauze pad, 10 x 10 cm, sterile',
+                                     'Cotton swab',
+                                     'Paracetamol 500mg_1000_CMST'])
+
+        # -------------------------------------------- CAESAREAN DELIVERY ------------------------------------------
+        # TODO: this package is incomplete?
+        # todo: replace- halothane with thiopental
+        self.item_codes_lab_consumables['caesarean_delivery_core'] =\
+            get_list_of_items(self, ['Halothane (fluothane)_250ml_CMST',
+                                     'Ceftriaxone 1g, PFR_each_CMST',
+                                     'Metronidazole 200mg_1000_CMST'])
+
+        self.item_codes_lab_consumables['caesarean_delivery_optional'] =\
+            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 20_each_CMST',
+                                     'Paracetamol 500mg _1000_CMST',
+                                     'Declofenac injection_each_CMST',
+                                     'Pethidine, 50 mg/ml, 2 ml ampoule',
+                                     'Foley catheter',
+                                     'Bag, urine, collecting, 2000 ml',
+                                     "Sodium lactate injection (Ringer's), 500 ml, with giving set",
+                                     'Sodium chloride, injectable solution, 0,9 %, 500 ml',
+                                     "Giving set iv administration + needle 15 drops/ml_each_CMST",
+                                     "Chlorhexidine 1.5% solution_5_CMST"])
+
+        # -------------------------------------------- OBSTETRIC SURGERY ----------------------------------------------
+        # TODO: this package may not be accurate yet
+        self.item_codes_lab_consumables['obstetric_surgery_core'] = \
+            get_list_of_items(self, ['Halothane (fluothane)_250ml_CMST',
+                                     'Ceftriaxone 1g, PFR_each_CMST',
+                                     'Metronidazole 200mg_1000_CMST'])
+
+        self.item_codes_lab_consumables['obstetric_surgery_optional'] = \
+            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 20_each_CMST',
+                                     'Paracetamol 500mg _1000_CMST',
+                                     'Declofenac injection_each_CMST',
+                                     'Pethidine, 50 mg/ml, 2 ml ampoule',
+                                     'Foley catheter',
+                                     'Bag, urine, collecting, 2000 ml',
+                                     "Sodium lactate injection (Ringer's), 500 ml, with giving set",
+                                     'Sodium chloride, injectable solution, 0,9 %, 500 ml',
+                                     "Giving set iv administration + needle 15 drops/ml_each_CMST"])
+
+        # -------------------------------------------- ABX FOR PROM -------------------------------------------------
+        self.item_codes_lab_consumables['abx_for_prom'] = \
+            get_list_of_items(self, ['Benzathine benzylpenicillin, powder for injection, 2.4 million IU'])
+
+        # -------------------------------------------- ANTENATAL STEROIDS ---------------------------------------------
+        self.item_codes_lab_consumables['antenatal_steroids'] = \
+            get_list_of_items(self, ['Dexamethasone 5mg/ml, 5ml_each_CMST',
+                                     'Betamethasone, 12 mg injection'])
+
+        # -------------------------------------  INTRAVENOUS ANTIHYPERTENSIVES ---------------------------------------
+        self.item_codes_lab_consumables['iv_antihypertensives'] = \
+            get_list_of_items(self, ['Hydralazine, powder for injection, 20 mg ampoule'])
+
+        # --------------------------------------- ORAL ANTIHYPERTENSIVES ---------------------------------------------
+        self.item_codes_lab_consumables['oral_antihypertensives'] = \
+            get_list_of_items(self, ['Methyldopa 250mg_1000_CMST'])
+
+        # ----------------------------------  SEVERE PRE-ECLAMPSIA/ECLAMPSIA  -----------------------------------------
+        self.item_codes_lab_consumables['magnesium_sulfate'] = \
+            get_list_of_items(self, ['Magnesium sulfate, injection, 500 mg/ml in 10-ml ampoule'])
+
+        self.item_codes_lab_consumables['eclampsia_management_optional'] = \
+            get_list_of_items(self, ['Misoprostol, tablet, 200 mcg',
+                                     'Oxytocin, injection, 10 IU in 1 ml ampoule',
+                                     'Sodium chloride, injectable solution, 0,9 %, 500 ml',
+                                     'Cannula iv  (winged with injection pot) 20_each_CMST',
+                                     'IV giving/infusion set, with needle',
+                                     'Gloves, exam, latex, disposable, pair',
+                                     'Oxygen, 1000 liters, primarily with oxygen cylinders',
+                                     'Complete blood count',
+                                     'Blood collecting tube, 5 ml',
+                                     'Syringe, needle + swab',
+                                     'Foley catheter',
+                                     'Bag, urine, collecting, 2000 ml'])
+
+        # -------------------------------------  OBSTRUCTED LABOUR  ---------------------------------------------------
+        self.item_codes_lab_consumables['obstructed_labour'] = \
+            get_list_of_items(self, ['Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml',
+                                     'Ampicillin, powder for injection, 500 mg, vial',
+                                     'Gentamycin, injection, 40 mg/ml in 2 ml vial',
+                                     'Sodium chloride, injectable solution, 0,9 %, 500 ml',
+                                     'Cannula iv  (winged with injection pot) 20_each_CMST',
+                                     'IV giving/infusion set, with needle',
+                                     'Gloves, exam, latex, disposable, pair',
+                                     'Complete blood count',
+                                     'Blood collecting tube, 5 ml',
+                                     'Syringe, needle + swab',
+                                     'Foley catheter',
+                                     'Bag, urine, collecting, 2000 ml',
+                                     'Paracetamol 500mg _1000_CMST',
+                                     'Pethidine, 50 mg/ml, 2 ml ampoule',
+                                     'Gauze, swabs 8-ply 10cm x 10cm_100_CMST',
+                                     'Suture pack'])
+
+        # -------------------------------------  OBSTETRIC FORCEPS  ---------------------------------------------------
+        self.item_codes_lab_consumables['forceps'] = get_list_of_items(self, ['Forceps, obstetric'])
+
+        # -------------------------------------  OBSTETRIC VACUUM   ---------------------------------------------------
+        self.item_codes_lab_consumables['vacuum'] = get_list_of_items(self, ['Vacuum, obstetric'])
+
+        # -------------------------------------  MATERNAL SEPSIS  -----------------------------------------------------
+        # todo: helen allott recommended clindamycin but not available as IV
+        self.item_codes_lab_consumables['maternal_sepsis_core'] =\
+            get_list_of_items(self, ['Ampicillin, powder for injection, 500 mg, vial',
+                                     'Gentamycin, injection, 40 mg/ml in 2 ml vial',
+                                     'Metronidazole, injection, 500 mg in 100 ml vial'])
+
+        self.item_codes_lab_consumables['maternal_sepsis_optional'] = \
+            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 20_each_CMST',
+                                     'Oxygen, 1000 liters, primarily with oxygen cylinders',
+                                     'Paracetamol, tablet, 500 mg',
+                                     'Giving set iv administration + needle 15 drops/ml_each_CMST',
+                                     'Foley catheter',
+                                     'Bag, urine, collecting, 2000 ml',
+                                     'Syringe, needle + swab',
+                                     'Gloves, exam, latex, disposable, pair',
+                                     'Complete blood count',
+                                     'Blood collecting tube, 5 ml',
+                                     'Syringe, needle + swab'])
+
+        # -------------------------------------  ACTIVE MANAGEMENT THIRD STAGE  ---------------------------------------
+        self.item_codes_lab_consumables['amtsl'] = \
+            get_item_code_from_pkg('Active management of the 3rd stage of labour')
+
+        # -------------------------------------  POSTPARTUM HAEMORRHAGE  ---------------------------------------
+        # TODO: helen allott recommended tranexamic acid - not availble
+        self.item_codes_lab_consumables['pph_core'] = \
+            get_list_of_items(self, ['Oxytocin, injection, 10 IU in 1 ml ampoule',
+                                     'Misoprostol, tablet, 200 mcg'])
+
+        self.item_codes_lab_consumables['pph_optional'] = \
+            get_list_of_items(self, ['Pethidine, 50 mg/ml, 2 ml ampoule',
+                                     'Oxygen, 1000 liters, primarily with oxygen cylinders',
+                                     'Cannula iv  (winged with injection pot) 20_each_CMST',
+                                     'Bag, urine, collecting, 2000 ml',
+                                     'Foley catheter',
+                                     'Giving set iv administration + needle 15 drops/ml_each_CMST',
+                                     'Syringe, needle + swab',
+                                     'Gloves, exam, latex, disposable, pair',
+                                     'Complete blood count',
+                                     'Blood collecting tube, 5 ml',
+                                     'Syringe, needle + swab'])
+
+        # -------------------------------------  BLOOD TRANSFUSION  ---------------------------------------
+        self.item_codes_lab_consumables['blood_transfusion'] = get_list_of_items(self, ['Blood, one unit'])
+
+        # ------------------------------------------ FULL BLOOD COUNT -------------------------------------------------
+        self.item_codes_lab_consumables['full_blood_count'] = get_list_of_items(self, ['Complete blood count'])
+
+        # ---------------------------------- IRON AND FOLIC ACID ------------------------------------------------------
+        self.item_codes_lab_consumables['iron_folic_acid'] = \
+            get_item_code_from_pkg('Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg')
 
     def initialise_simulation(self, sim):
 
+        # We call the following function to store the required consumables for the simulation run within the appropriate
+        # dictionary
+        self.get_and_store_labour_item_codes()
+
         # We set the LoggingEvent to run a the last day of each year to produce statistics for that year
-        sim.schedule_event(LabourLoggingEvent(self), sim.date + DateOffset(years=1))
+        sim.schedule_event(LabourLoggingEvent(self), sim.date + DateOffset(days=1))
 
         # This list contains all the women who are currently in labour and is used for checks/testing
         self.women_in_labour = []
 
-        # This dictionary is the complication tracker used by the logger to output incidence of complications/outcomes
-        self.labour_tracker = {'ip_stillbirth': 0, 'maternal_death': 0, 'obstructed_labour': 0,
-                               'antepartum_haem': 0, 'antepartum_haem_death': 0, 'sepsis': 0, 'sepsis_death': 0,
-                               'eclampsia': 0, 'severe_pre_eclampsia': 0, 'severe_pre_eclamp_death': 0,
-                               'eclampsia_death': 0, 'uterine_rupture': 0, 'uterine_rupture_death': 0,
-                               'postpartum_haem': 0, 'postpartum_haem_death': 0,
-                               'sepsis_pp': 0, 'home_birth': 0, 'health_centre_birth': 0,
-                               'hospital_birth': 0, 'caesarean_section': 0, 'early_preterm': 0,
-                               'late_preterm': 0, 'post_term': 0, 'term': 0}
-
         # This list contains all possible complications/outcomes of the intrapartum and postpartum phase- its used in
         # assert functions as a test
-        self.possible_intrapartum_complications = ['cephalopelvic_dis', 'malposition', 'malpresentation',
-                                                   'obstructed_labour', 'placental_abruption',
-                                                   'antepartum_haem', 'chorioamnionitis',
-                                                   'other_maternal_infection', 'uterine_rupture', 'sepsis',
-                                                   'severe_pre_eclamp', 'eclampsia']
+        self.possible_intrapartum_complications = ['obstruction_cpd', 'obstruction_malpos_malpres', 'obstruction_other',
+                                                   'placental_abruption', 'antepartum_haem', 'sepsis',
+                                                   'sepsis_chorioamnionitis', 'uterine_rupture',  'severe_pre_eclamp',
+                                                   'eclampsia']
 
-        self.possible_postpartum_complications = ['sepsis', 'endometritis', 'skin_soft_tissue_inf', 'urinary_tract_inf',
-                                                  'other_maternal_infection', 'sepsis_pp', 'uterine_atony',
-                                                  'lacerations', 'retained_placenta', 'other_pph_cause',
-                                                  'postpartum_haem', 'severe_pre_eclamp', 'eclampsia']
-
-        # =======================Register dx_tests for complications during labour/postpartum=======================
-        # We register all the dx_tests needed within the labour HSI events. For simplicity we use the dx_test here to
-        # represent clinical assessment of a woman for a specific complication. If a dx_test assessment returns True a
-        # woman will be given treatment (provided their are available consumables and the squeeze is not too high)
-
-        # We vary the 'sensitivity' of these assessment between health centres and hospitals to allow for future
-        # calibration to SARA survey data which varies by facility type ...(hp = hospital, hc= health centre)
-
-        p = self.parameters
+        self.possible_postpartum_complications = ['sepsis_endometritis', 'sepsis_skin_soft_tissue',
+                                                  'sepsis_urinary_tract', 'pph_uterine_atony', 'pph_retained_placenta',
+                                                  'pph_other', 'severe_pre_eclamp', 'eclampsia', 'postpartum_haem',
+                                                  'sepsis']
+        # define any dx_tests
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-
-            # Obstructed Labour diagnosis
-            assess_obstructed_labour_hc=DxTest(
-                property='la_obstructed_labour',
-                sensitivity=p['sensitivity_of_assessment_of_obstructed_labour_hc']),
-
-            assess_obstructed_labour_hp=DxTest(
-                property='la_obstructed_labour',
-                sensitivity=p['sensitivity_of_assessment_of_obstructed_labour_hp']),
-
-            # Sepsis diagnosis intrapartum...
-            # dx_tests for intrapartum and postpartum sepsis only differ in the 'property' variable
-            assess_sepsis_hc_ip=DxTest(
-                property='la_sepsis',
-                sensitivity=p['sensitivity_of_assessment_of_sepsis_hc']),
-
-            assess_sepsis_hp_ip=DxTest(
-                property='la_sepsis',
-                sensitivity=p['sensitivity_of_assessment_of_sepsis_hp']),
-
-            # Sepsis diagnosis postpartum
-            assess_sepsis_hc_pp=DxTest(
-                property='la_sepsis_pp',
-                sensitivity=p['sensitivity_of_assessment_of_sepsis_hc']),
-
-            assess_sepsis_hp_pp=DxTest(
-                property='la_sepsis_pp',
-                sensitivity=p['sensitivity_of_assessment_of_sepsis_hp']),
-
-            # Hypertension diagnosis
-            assess_hypertension_hc=DxTest(
-                property='ps_htn_disorders', target_categories=['gest_htn', 'severe_gest_htn',
-                                                                'mild_pre_eclamp', 'severe_pre_eclamp', 'eclampsia'],
-                sensitivity=p['sensitivity_of_assessment_of_hypertension_hc']),
-
-            assess_hypertension_hp=DxTest(
-                property='ps_htn_disorders', target_categories=['gest_htn', 'severe_gest_htn',
-                                                                'mild_pre_eclamp', 'severe_pre_eclamp', 'eclampsia'],
-                sensitivity=p['sensitivity_of_assessment_of_hypertension_hp']),
-
-            # severe pre-eclampsia diagnosis
-            assess_severe_pe_hc=DxTest(
-                property='ps_htn_disorders', target_categories=['severe_pre_eclamp'],
-                sensitivity=p['sensitivity_of_assessment_of_severe_pe_hc']),
-
-            assess_severe_pe_hp=DxTest(
-                property='ps_htn_disorders', target_categories=['severe_pre_eclamp'],
-                sensitivity=p['sensitivity_of_assessment_of_severe_pe_hp']),
-
-            # Eclampsia diagnosis
-            assess_eclampsia_hc=DxTest(
-                property='ps_htn_disorders', target_categories=['eclampsia'],
-                sensitivity=p['sensitivity_of_assessment_of_ec_hc']),
-
-            assess_eclampsia_hp=DxTest(
-                property='ps_htn_disorders', target_categories=['eclampsia'],
-                sensitivity=p['sensitivity_of_assessment_of_ec_hp']),
-
-            # Antepartum Haemorrhage
-            assess_aph_hc=DxTest(
-                property='la_antepartum_haem', target_categories=['mild_moderate', 'severe'],
-                sensitivity=p['sensitivity_of_assessment_of_antepartum_haem_hc']),
-
-            assess_aph_hp=DxTest(
-                property='la_antepartum_haem', target_categories=['mild_moderate', 'severe'],
-                sensitivity=p['sensitivity_of_assessment_of_antepartum_haem_hc']),
-
-            # Uterine Rupture
-            assess_uterine_rupture_hc=DxTest(
-                property='la_uterine_rupture',
-                sensitivity=p['sensitivity_of_assessment_of_uterine_rupture_hc']),
-
-            assess_uterine_rupture_hp=DxTest(
-                property='la_uterine_rupture',
-                sensitivity=p['sensitivity_of_assessment_of_uterine_rupture_hp']),
-
-            # Postpartum haemorrhage
-            assess_pph_hc=DxTest(
-                property='la_postpartum_haem',
-                sensitivity=p['sensitivity_of_assessment_of_pph_hc']),
-
-            assess_pph_hp=DxTest(
-                property='la_postpartum_haem',
-                sensitivity=p['sensitivity_of_assessment_of_pph_hp']),
+            full_blood_count_hb_pn=DxTest(
+                property='pn_anaemia_following_pregnancy',
+                target_categories=['mild', 'moderate', 'severe'],
+                item_codes=self.item_codes_lab_consumables['full_blood_count'],
+                sensitivity=1.0),
         )
 
         # ======================================= LINEAR MODEL EQUATIONS ==============================================
         # Here we define the equations that will be used throughout this module using the linear
         # model and stored them as a parameter
-
-        # TODO: process of 'selection' of important predictors in linear equations is ongoing, a linear model that
-        #  is empty of predictors at the end of this process will be converted to a set probability
-        params = self.parameters
-        params['la_labour_equations'] = {
+        params = self.current_parameters
+        self.la_linear_models = {
 
             # This equation predicts the parity of each woman at baseline (who is of reproductive age)
             'parity': LinearModel.custom(labour_lm.predict_parity, parameters=params),
 
             # This equation is used to calculate a womans risk of obstructed labour. As we assume obstructed labour can
             # only occur following on of three preceding causes, this model is additive
-            'obstructed_labour_ip': LinearModel.custom(labour_lm.predict_obstructed_labour_ip,
-                                                       module=self),
+            'obstruction_cpd_ip': LinearModel.custom(labour_lm.predict_obstruction_cpd_ip, module=self),
 
-            # This equation is used to calculate a womans risk of developing chorioamnionitis infection during the
-            # intrapartum phase of labour and is mitigated by clean delivery
-            'chorioamnionitis_ip': LinearModel.custom(labour_lm.predict_chorioamnionitis_ip,
-                                                      parameters=params),
+            # This equation is used to calculate a womans risk of developing sepsis due to chorioamnionitis infection
+            # during the intrapartum phase of labour and is mitigated by clean delivery
+            'sepsis_chorioamnionitis_ip': LinearModel.custom(labour_lm.predict_sepsis_chorioamnionitis_ip,
+                                                             parameters=params),
 
-            # This equation is used to calculate a womans risk of developing other undefined infection during the
-            # intrapartum phase of labour and is mitigated by clean delivery
-            'other_maternal_infection_ip': LinearModel.custom(labour_lm.predict_other_maternal_infections_ip,
-                                                              parameters=params),
+            # This equation is used to calculate a womans risk of developing sepsis due to endometritis infection
+            # during the postpartum phase of labour and is mitigated by clean delivery
+            'sepsis_endometritis_pp': LinearModel.custom(labour_lm.predict_sepsis_endometritis_pp, parameters=params),
 
-            # This equation is used to calculate a womans risk of developing endometritis infection during the
+            # This equation is used to calculate a womans risk of developing sepsis due to skin or soft tissue
+            # infection during the
             # postpartum phase of labour and is mitigated by clean delivery
-            'endometritis_pp': LinearModel.custom(labour_lm.predict_endometritis_pp, parameters=params),
-
-            # This equation is used to calculate a womans risk of developing skin or soft tissue infection during the
-            # postpartum phase of labour and is mitigated by clean delivery
-            'skin_soft_tissue_inf_pp': LinearModel.custom(labour_lm.predict_skin_soft_tissue_inf_pp, parameters=params),
+            'sepsis_skin_soft_tissue_pp': LinearModel.custom(labour_lm.predict_sepsis_skin_soft_tissue_pp,
+                                                             parameters=params),
 
             # This equation is used to calculate a womans risk of developing a urinary tract infection during the
             # postpartum phase of labour and is mitigated by clean delivery
-            'urinary_tract_inf_pp': LinearModel.custom(labour_lm.predict_urinary_tract_inf_pp, parameters=params),
-
-            # This equation is used to calculate a womans risk of developing other undefined infection during the
-            # postpartum phase of labour and is mitigated by clean delivery
-            'other_maternal_infection_pp': LinearModel.custom(labour_lm.predict_other_maternal_infection_pp,
-                                                              parameters=params),
-
-            # This equation is used to calculate a womans risk risk of developing intrapartum sepsis. We assume sepsis
-            # can only occur in the presence of a preceding infection therefore this model is additive
-            'sepsis_ip': LinearModel.custom(labour_lm.predict_sepsis_ip, module=self),
+            'sepsis_urinary_tract_pp': LinearModel.custom(labour_lm.predict_sepsis_urinary_tract_pp,
+                                                          parameters=params),
 
             # This equation is used to calculate a womans risk of death following sepsis during labour and is mitigated
             # by treatment
-            'sepsis_death': LinearModel.custom(labour_lm.predict_sepsis_death, parameters=params),
+            'intrapartum_sepsis_death': LinearModel.custom(labour_lm.predict_sepsis_death, parameters=params),
+            'postpartum_sepsis_death': LinearModel.custom(labour_lm.predict_sepsis_death, parameters=params),
 
-            # This equation is used to calculate a womans risk risk of developing postpartum sepsis. We assume sepsis
-            # can only occur in the presence of a preceding infection therefore this model is additive
-            'sepsis_pp': LinearModel.custom(labour_lm.predict_sepsis_pp, module=self),
-
-            # This equation is used to calculate a womans risk of death following postpartum sepsis and is mitigated
-            # by treatment
-            'sepsis_pp_death': LinearModel.custom(labour_lm.predict_sepsis_pp_death, parameters=params),
 
             # This equation is used to calculate a womans risk of death following eclampsia and is mitigated
             # by treatment delivered either immediately prior to admission for delivery or during labour
@@ -745,11 +912,8 @@ class Labour(Module):
 
             # This equation is used to calculate a womans risk of death following eclampsia and is mitigated
             # by treatment delivered either immediately prior to admission for delivery or during labour
-            'eclampsia_pp_death': LinearModel.custom(labour_lm.predict_eclampsia_pp_death, parameters=params),
-
-            # This equation is used to calculate a womans risk of death following eclampsia and is mitigated
-            # by treatment delivered either immediately prior to admission for delivery or during labour
-            'severe_pre_eclamp_death': LinearModel.custom(labour_lm.predict_severe_pre_eclamp_death, parameters=params),
+            'severe_pre_eclampsia_death': LinearModel.custom(labour_lm.predict_severe_pre_eclamp_death,
+                                                             parameters=params),
 
             # This equation is used to calculate a womans risk of placental abruption in labour
             'placental_abruption_ip': LinearModel.custom(labour_lm.predict_placental_abruption_ip, parameters=params),
@@ -760,16 +924,19 @@ class Labour(Module):
 
             # This equation is used to calculate a womans risk of death following antepartum haemorrhage. Risk is
             # mitigated by treatment
-            'antepartum_haem_death': LinearModel.custom(labour_lm.predict_antepartum_haem_death, parameters=params),
+            'antepartum_haemorrhage_death': LinearModel.custom(labour_lm.predict_antepartum_haem_death,
+                                                               parameters=params),
 
-            # This equation is used to calculate a womans risk of postpartum haemorrhage. We assume PPH can only occur
-            # in the presence of a preceding causes (uterine atony/retained placenta/lacerations/other) therefore this
-            # model is additive
-            'postpartum_haem_pp': LinearModel.custom(labour_lm.predict_postpartum_haem_pp, module=self),
+            # This equation is used to calculate a womans risk of postpartum haemorrhage due to uterine atony
+            'pph_uterine_atony_pp': LinearModel.custom(labour_lm.predict_pph_uterine_atony_pp, module=self),
+
+            # This equation is used to calculate a womans risk of postpartum haemorrhage due to retained placenta
+            'pph_retained_placenta_pp': LinearModel.custom(labour_lm.predict_pph_retained_placenta_pp,
+                                                           parameters=params),
 
             # This equation is used to calculate a womans risk of death following postpartum haemorrhage. Risk is
             # mitigated by treatment
-            'postpartum_haem_pp_death': LinearModel.custom(labour_lm.predict_postpartum_haem_pp_death, module=self),
+            'postpartum_haemorrhage_death': LinearModel.custom(labour_lm.predict_postpartum_haem_pp_death, module=self),
 
             # This equation is used to calculate a womans risk of uterine rupture
             'uterine_rupture_ip': LinearModel.custom(labour_lm.predict_uterine_rupture_ip, parameters=params),
@@ -793,11 +960,22 @@ class Labour(Module):
             'probability_delivery_at_home': LinearModel.custom(
                 labour_lm.predict_probability_delivery_at_home, parameters=params),
 
-            # This equation calculates a womans probability of seeking care following a complication during labour or
-            # immediately after birth
-            'care_seeking_for_complication': LinearModel.custom(
-                labour_lm.predict_care_seeking_for_complication, parameters=params),
+            # This equation is used to determine the probability that a woman will seek care for PNC after delivery
+            'postnatal_check': LinearModel.custom(
+                labour_lm.predict_postnatal_check, parameters=params),
         }
+
+        # Here we create a dict with all the models to be scaled and the 'target' rate parameter
+        mod = self.la_linear_models
+        models_to_be_scaled = [[mod['uterine_rupture_ip'], 'prob_uterine_rupture'],
+                               [mod['postnatal_check'], 'odds_will_attend_pnc'],
+                               [mod['probability_delivery_at_home'], 'odds_deliver_at_home'],
+                               [mod['probability_delivery_health_centre'], 'odds_deliver_in_health_centre']]
+
+        # Scale all models updating the parameter used as the intercept of the linear models
+        for model in models_to_be_scaled:
+            pregnancy_helper_functions.scale_linear_model_at_initialisation(
+                self, model=model[0], parameter_key=model[1])
 
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
@@ -809,7 +987,6 @@ class Labour(Module):
         df.at[child_id, 'la_previous_cs_delivery'] = False
         df.at[child_id, 'la_has_previously_delivered_preterm'] = False
         df.at[child_id, 'la_obstructed_labour'] = False
-        df.at[child_id, 'la_obstructed_labour_causes'] = 0
         df.at[child_id, 'la_placental_abruption'] = False
         df.at[child_id, 'la_antepartum_haem'] = 'none'
         df.at[child_id, 'la_antepartum_haem_treatment'] = False
@@ -817,22 +994,21 @@ class Labour(Module):
         df.at[child_id, 'la_uterine_rupture_treatment'] = False
         df.at[child_id, 'la_sepsis'] = False
         df.at[child_id, 'la_sepsis_pp'] = False
-        df.at[child_id, 'la_maternal_ip_infection'] = 0
-        df.at[child_id, 'la_maternal_pp_infection'] = 0
         df.at[child_id, 'la_sepsis_treatment'] = False
         df.at[child_id, 'la_eclampsia_treatment'] = False
         df.at[child_id, 'la_severe_pre_eclampsia_treatment'] = False
         df.at[child_id, 'la_maternal_hypertension_treatment'] = False
+        df.at[child_id, 'la_gest_htn_on_treatment'] = False
         df.at[child_id, 'la_postpartum_haem'] = False
         df.at[child_id, 'la_postpartum_haem_cause'] = 0
         df.at[child_id, 'la_postpartum_haem_treatment'] = 0
         df.at[child_id, 'la_has_had_hysterectomy'] = False
-        df.at[child_id, 'la_maternal_death_in_labour'] = False
-        df.at[child_id, 'la_maternal_death_in_labour_date'] = pd.NaT
         df.at[child_id, 'la_date_most_recent_delivery'] = pd.NaT
         df.at[child_id, 'la_is_postpartum'] = False
+        df.at[child_id, 'la_pn_checks_maternal'] = 0
+        df.at[child_id, 'la_iron_folic_acid_postnatal'] = False
 
-    def further_on_birth_labour(self, mother_id, child_id):
+    def further_on_birth_labour(self, mother_id):
         """
         This function is called by the on_birth function of NewbornOutcomes module. This function contains additional
         code related to the labour module that should be ran on_birth for all births - it has been
@@ -841,24 +1017,20 @@ class Labour(Module):
         :param mother_id: mothers individual id
         """
         df = self.sim.population.props
-        mother = df.loc[mother_id]
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
-        # If a mothers labour has resulted in an intrapartum still birth her child is still generated by the simulation
-        # but the death is recorded through the InstantaneousDeath function
+        # log delivery setting
+        logger.info(key='delivery_setting_and_mode', data={'mother': mother_id,
+                                                           'facility_type': mni[mother_id]['delivery_setting'],
+                                                           'mode': mni[mother_id]['mode_of_delivery']})
 
         # Store only live births to a mother parity
-        if ~mother.la_intrapartum_still_birth:
+        if not df.at[mother_id, 'la_intrapartum_still_birth']:
             df.at[mother_id, 'la_parity'] += 1  # Only live births contribute to parity
-            logger.info(key='live_birth', data={'mother': mother_id,
-                                                'child': child_id})
 
-        if mother.la_intrapartum_still_birth:
-            self.sim.modules['Demography'].do_death(individual_id=child_id, cause='intrapartum stillbirth',
-                                                    originating_module=self.sim.modules['Labour'])
-
-        # We use this variable in the postnatal supervisor module to track postpartum women
-        df.at[mother_id, 'la_is_postpartum'] = True
-        df.at[mother_id, 'la_date_most_recent_delivery'] = self.sim.date
+        # Currently we assume women who received antihypertensive in the antenatal period will continue to use them
+        if df.at[mother_id, 'ac_gest_htn_on_treatment']:
+            df.at[mother_id, 'la_gest_htn_on_treatment'] = True
 
     def on_hsi_alert(self, person_id, treatment_id):
         """ This is called whenever there is an HSI event commissioned by one of the other disease modules."""
@@ -869,6 +1041,7 @@ class Labour(Module):
         logger.debug(key='message', data='This is Labour reporting my health values')
         df = self.sim.population.props  # shortcut to population properties data frame
 
+        # All dalys related to maternal outcome are outputted by the pregnancy supervisor module...
         daly_series = pd.Series(data=0, index=df.index[df.is_alive])
 
         return daly_series
@@ -884,20 +1057,28 @@ class Labour(Module):
         :param individual_id: individual_id
         """
         df = self.sim.population.props
+        params = self.current_parameters
         logger.debug(key='message', data=f'person {individual_id} is having their labour scheduled on date '
                                          f'{self.sim.date}', )
 
         # Check only alive newly pregnant women are scheduled to this function
-        assert df.at[individual_id, 'is_alive'] and df.at[individual_id, 'is_pregnant']
-        assert df.at[individual_id, 'date_of_last_pregnancy'] == self.sim.date
+        if (not df.at[individual_id, 'is_alive'] and
+            not df.at[individual_id, 'is_pregnant'] and
+           (not df.at[individual_id, 'date_of_last_pregnancy'] == self.sim.date)):
+            logger.debug(key='error', data=f'Attempt to schedule labour for woman {individual_id} inappropriately')
+            return
 
-        # At the point of conception we schedule labour to onset for all women between 37 and 44 weeks gestation age.
-        # As a womans pregnancy progresses she has a risk of early labour onset applied from 24 weeks within the
-        # pregnancy supervisor module
+        # At the point of conception we schedule labour to onset for all women between after 37 weeks gestation - first
+        # we determine if she will go into labour post term (41+ weeks)
+        if self.rng.random_sample() < params['risk_post_term_labour']:
+            df.at[individual_id, 'la_due_date_current_pregnancy'] = \
+                (df.at[individual_id, 'date_of_last_pregnancy'] + pd.DateOffset(
+                    days=(7 * 39) + self.rng.randint(0, 7 * 4)))
 
-        # n.b 35 weeks from conception = 37 weeks gestational age (see PregnancySupervisorEvent)
-        df.at[individual_id, 'la_due_date_current_pregnancy'] = \
-            (df.at[individual_id, 'date_of_last_pregnancy'] + pd.DateOffset(days=(7 * 35) + self.rng.randint(0, 7 * 7)))
+        else:
+            df.at[individual_id, 'la_due_date_current_pregnancy'] = \
+                (df.at[individual_id, 'date_of_last_pregnancy'] + pd.DateOffset(
+                    days=(7 * 35) + self.rng.randint(0, 7 * 4)))
 
         self.sim.schedule_event(LabourOnsetEvent(self, individual_id),
                                 df.at[individual_id, 'la_due_date_current_pregnancy'])
@@ -905,7 +1086,9 @@ class Labour(Module):
         # Here we check that no one is scheduled to go into labour before 37 gestational age (35 weeks foetal age,
         # ensuring all preterm labour comes from the pregnancy supervisor module
         days_until_labour = df.at[individual_id, 'la_due_date_current_pregnancy'] - self.sim.date
-        assert days_until_labour >= pd.Timedelta(245, unit='d')
+        if not days_until_labour >= pd.Timedelta(245, unit='d'):
+            logger.debug(key='error', data=f'Labour scheduled for woman {individual_id} beyond the maximum estimated '
+                                           f'possible length of pregnancy')
 
     def predict(self, eq, person_id):
         """
@@ -923,15 +1106,26 @@ class Labour(Module):
         mode_of_delivery = mni[person_id]['mode_of_delivery']
         received_clean_delivery = mni[person_id]['clean_birth_practices']
         received_abx_for_prom = mni[person_id]['abx_for_prom_given']
+        amtsl_given = mni[person_id]['amtsl_given']
+        delivery_setting = mni[person_id]['delivery_setting']
+        delay_one_two = mni[person_id]['delay_one_two']
+        delay_three = mni[person_id]['delay_three']
+
+        macrosomia = mni[person_id]['birth_weight'] == 'macrosomia'
 
         # We run a random draw and return the outcome
         return self.rng.random_sample() < eq.predict(person,
                                                      received_clean_delivery=received_clean_delivery,
                                                      received_abx_for_prom=received_abx_for_prom,
                                                      mode_of_delivery=mode_of_delivery,
-                                                     received_blood_transfusion=has_rbt)[person_id]
+                                                     received_blood_transfusion=has_rbt,
+                                                     amtsl_given=amtsl_given,
+                                                     macrosomia=macrosomia,
+                                                     delivery_setting=delivery_setting,
+                                                     delay_one_two=delay_one_two,
+                                                     delay_three=delay_three)[person_id]
 
-    def reset_due_date(self, ind_or_df, id_or_index, new_due_date):
+    def reset_due_date(self, id_or_index, new_due_date):
         """
         This function is called at various points in the PregnancySupervisor module to reset the due-date of women who
         may have experience pregnancy loss or will now go into pre-term labour on new due-date
@@ -942,12 +1136,7 @@ class Labour(Module):
         """
         df = self.sim.population.props
 
-        if ind_or_df == 'individual':
-            change = df.at
-        else:
-            change = df.loc
-
-        change[id_or_index, 'la_due_date_current_pregnancy'] = new_due_date
+        df.loc[id_or_index, 'la_due_date_current_pregnancy'] = new_due_date
 
     def check_labour_can_proceed(self, individual_id):
         """
@@ -960,15 +1149,15 @@ class Labour(Module):
         person = df.loc[individual_id]
 
         # If the mother has died OR has lost her pregnancy OR is already in labour then the labour events wont run
-        if ~person.is_alive or ~person.is_pregnant or person.la_currently_in_labour:
+        if not person.is_alive or not person.is_pregnant or person.la_currently_in_labour:
             logger.debug(key='message', data=f'person {individual_id} has just reached LabourOnsetEvent on '
                                              f'{self.sim.date}, however this is event is no longer relevant for this '
                                              f'individual and will not run')
             return False
 
         # If she is alive, pregnant, not in labour AND her due date is today then the event will run
-        elif person.is_alive and person.is_pregnant and (person.la_due_date_current_pregnancy == self.sim.date) \
-                and ~person.la_currently_in_labour:
+        if person.is_alive and person.is_pregnant and (person.la_due_date_current_pregnancy == self.sim.date) \
+                and not person.la_currently_in_labour:
 
             # If the woman in not currently an inpatient then we assume this is her normal labour
             if person.ac_admitted_for_immediate_delivery == 'none':
@@ -988,7 +1177,7 @@ class Labour(Module):
 
         # If she is alive, pregnant, not in labour BUT her due date is not today, however shes been admitted then we
         # labour can progress as she requires early delivery
-        elif person.is_alive and person.is_pregnant and ~person.la_currently_in_labour and \
+        if person.is_alive and person.is_pregnant and not person.la_currently_in_labour and \
             (person.la_due_date_current_pregnancy != self.sim.date) and (person.ac_admitted_for_immediate_delivery !=
                                                                          'none'):
 
@@ -1001,8 +1190,7 @@ class Labour(Module):
             df.at[individual_id, 'la_due_date_current_pregnancy'] = self.sim.date
             return True
 
-        else:
-            return False
+        return False
 
     def set_intrapartum_complications(self, individual_id, complication):
         """This function is called either during a LabourAtHomeEvent OR HSI_Labour_ReceivesSkilledBirthAttendanceDuring
@@ -1013,19 +1201,25 @@ class Labour(Module):
          are set accordingly including properties which map to disability weights to capture DALYs
         :param individual_id: individual_id
         :param complication: (STR) the complication passed to the function which is being evaluated
-        ['cephalopelvic_dis', 'malposition', 'malpresentation','obstructed_labour', 'placental_abruption',
-        'antepartum_haem', 'chorioamnionitis', 'other_maternal_infection', 'uterine_rupture', 'sepsis']
+        ['obstruction_cpd', 'obstruction_malpos_malpres', 'obstruction_other', 'placental_abruption',
+        'antepartum_haem', 'sepsis_chorioamnionitis', 'uterine_rupture']
         """
         df = self.sim.population.props
-        params = self.parameters
+        params = self.current_parameters
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         # First we run check to ensure only women who have started the labour process are passed to this function
-        assert mni[individual_id]['delivery_setting'] != 'none'
+        if mni[individual_id]['delivery_setting'] == 'none':
+            logger.debug(key='error', data=f'Mother {individual_id} is having risk of complications applied but has no '
+                                           f'delivery setting')
+            return
 
         # Then we check that only complications from the master complication list are passed to the function (to ensure
         # any typos for string variables are caught)
-        assert complication in self.possible_intrapartum_complications
+        if complication not in self.possible_intrapartum_complications:
+            logger.debug(key='error', data=f'A complication ("{complication}") was passed to '
+                                           f'set_intrapartum_complications')
+            return
 
         # Women may have been admitted for delivery from the antenatal ward because they have developed a complication
         # in pregnancy requiring delivery. Here we make sure women admitted due to these complications do not experience
@@ -1040,23 +1234,17 @@ class Labour(Module):
             if (complication == 'placental_abruption') and df.at[individual_id, 'ps_placental_abruption']:
                 return
 
-            # Women admitted with histological chorioamnionitis from the community are more at risk of sepsis
-            if (complication == 'chorioamnionitis') and (df.at[individual_id, 'ps_chorioamnionitis'] == 'histological'):
-                return
-
             # Women admitted with clinical chorioamnionitis from the community are assumed to be septic in labour
-            if (complication == 'sepsis') and (df.at[individual_id, 'ps_chorioamnionitis'] == 'clinical'):
-                df.at[individual_id, f'la_{complication}'] = True
+            if (complication == 'sepsis_chorioamnionitis') and df.at[individual_id, 'ps_chorioamnionitis']:
                 return
 
         # For the preceding complications that can cause obstructed labour, we apply risk using a set probability
-        if (complication == 'cephalopelvic_dis') or (complication == 'malposition') or (complication ==
-                                                                                        'malpresentation'):
+        if complication in ('obstruction_malpos_malpres', 'obstruction_other'):
             result = self.rng.random_sample() < params[f'prob_{complication}']
 
         # Otherwise we use the linear model to predict likelihood of a complication
         else:
-            result = self.predict(params['la_labour_equations'][f'{complication}_ip'], individual_id)
+            result = self.predict(self.la_linear_models[f'{complication}_ip'], individual_id)
 
         # --------------------------------------- COMPLICATION ------------------------------------------------------
         # If 'result' == True, this woman will experience the complication passed to the function
@@ -1065,32 +1253,58 @@ class Labour(Module):
                                              f'{self.sim.date}')
 
             # For 'complications' stored in a biset property - they are set here
-            if (complication == 'cephalopelvic_dis') or (complication == 'malposition') or (complication ==
-                                                                                            'malpresentation'):
-                self.cause_of_obstructed_labour.set(individual_id, complication)
+            if complication in ('obstruction_cpd', 'obstruction_malpres_malpos', 'obstruction_other'):
 
-            elif (complication == 'chorioamnionitis') or (complication == 'other_maternal_infection'):
-                self.intrapartum_infections.set(individual_id, complication)
+                df.at[individual_id, 'la_obstructed_labour'] = True
+                pregnancy_helper_functions.store_dalys_in_mni(individual_id, mni, 'obstructed_labour_onset',
+                                                              self.sim.date)
+
+                if complication == 'obstruction_cpd':
+                    mni[individual_id]['cpd'] = True
 
             # Otherwise they are stored as individual properties (women with undiagnosed placental abruption may present
             # to labour)
             elif complication == 'placental_abruption':
                 df.at[individual_id, 'la_placental_abruption'] = True
+                logger.info(key='maternal_complication', data={'person': individual_id,
+                                                               'type': 'placental_abruption',
+                                                               'timing': 'intrapartum'})
 
             elif complication == 'antepartum_haem':
                 random_choice = self.rng.choice(['mild_moderate', 'severe'],
                                                 p=params['severity_maternal_haemorrhage'])
                 df.at[individual_id, f'la_{complication}'] = random_choice
-                if random_choice != 'severe':
-                    self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(individual_id, 'mild_mod_aph_onset')
-                else:
-                    self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(individual_id, 'severe_aph_onset')
 
-            else:
-                df.at[individual_id, f'la_{complication}'] = True
-                self.labour_tracker[f'{complication}'] += 1
-                if complication == 'obstructed_labour' or complication == 'uterine_rupture' or complication == 'sepsis':
-                    self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(individual_id, f'{complication}_onset')
+                if random_choice != 'severe':
+                    pregnancy_helper_functions.store_dalys_in_mni(individual_id, mni, 'mild_mod_aph_onset',
+                                                                  self.sim.date)
+                    logger.info(key='maternal_complication', data={'person': individual_id,
+                                                                   'type': 'mild_mod_antepartum_haemorrhage',
+                                                                   'timing': 'intrapartum'})
+
+                else:
+                    pregnancy_helper_functions.store_dalys_in_mni(individual_id, mni, 'severe_aph_onset',
+                                                                  self.sim.date)
+                    logger.info(key='maternal_complication', data={'person': individual_id,
+                                                                   'type': 'severe_antepartum_haemorrhage',
+                                                                   'timing': 'intrapartum'})
+
+            elif complication == 'sepsis_chorioamnionitis':
+                df.at[individual_id, 'la_sepsis'] = True
+                mni[individual_id]['chorio_in_preg'] = True
+                pregnancy_helper_functions.store_dalys_in_mni(individual_id, mni, 'sepsis_onset',
+                                                              self.sim.date)
+                logger.info(key='maternal_complication', data={'person': individual_id,
+                                                               'type': 'sepsis',
+                                                               'timing': 'intrapartum'})
+
+            elif complication == 'uterine_rupture':
+                df.at[individual_id, 'la_uterine_rupture'] = True
+                pregnancy_helper_functions.store_dalys_in_mni(individual_id, mni, f'{complication}_onset',
+                                                              self.sim.date)
+                logger.info(key='maternal_complication', data={'person': individual_id,
+                                                               'type': 'uterine_rupture',
+                                                               'timing': 'intrapartum'})
 
     def set_postpartum_complications(self, individual_id, complication):
         """
@@ -1102,83 +1316,71 @@ class Labour(Module):
          are set accordingly including properties which map to disability weights to capture DALYs
         :param individual_id: individual_id
         :param complication: (STR) the complication passed to the function which is being evaluated [
-        'endometritis', 'skin_soft_tissue_inf', 'urinary_tract_inf', 'other_maternal_infection', 'sepsis',
-        'uterine_atony','lacerations', 'retained_placenta', 'other_pph_cause','postpartum_haem']
+        'sepsis_endometritis', 'sepsis_skin_soft_tissue', 'sepsis_urinary_tract', 'pph_uterine_atony',
+        'pph_retained_placenta', 'pph_other']
         """
         df = self.sim.population.props
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-        params = self.parameters
+        params = self.current_parameters
 
         # This function follows a roughly similar pattern as set_intrapartum_complications
-        assert mni[individual_id]['delivery_setting'] != 'none'
-        assert complication in self.possible_postpartum_complications
+        if mni[individual_id]['delivery_setting'] == 'none':
+            logger.debug(key='error', data=f'Mother {individual_id} is having risk of complications applied but has no '
+                                           f'delivery setting')
+            return
 
-        # For the complications than can contribute to postpartum bleeding we use a fixed probability to apply risk
-        # (not a linear equation). Women who received active management of labour have a reduced risk of uterine atony
-        # or retained placenta- both of which can contribute to postpartum bleeding
-        if complication == 'uterine_atony' or complication == 'retained_placenta':
+        if complication not in self.possible_postpartum_complications:
+            logger.debug(key='error', data=f'A complication ("{complication}") was passed to '
+                                           f'set_postpartum_complications')
+            return
 
-            if mni[individual_id]['amtsl_given']:
-                risk_of_pph_cause = params[f'prob_{complication}'] * params['rr_pph_amtsl']
-                result = risk_of_pph_cause > self.rng.random_sample()
-
-            else:
-                result = params[f'prob_{complication}'] > self.rng.random_sample()
-
-        # Next we determine if this woman has experienced any of the other potential preceding causes of PPH
-        elif complication == 'lacerations' or complication == 'other_pph_cause':
-            result = self.rng.random_sample() < params[f'prob_{complication}']
+        #  We determine if this woman has experienced any of the other potential preceding causes of PPH
+        if complication == 'pph_other':
+            result = self.rng.random_sample() < params['prob_pph_other_causes']
 
         # For the other complications which can be passed to this function we use the linear model to return a womans
         # risk and compare that to a random draw
         else:
-            result = self.predict(params['la_labour_equations'][f'{complication}_pp'], individual_id)
+            result = self.predict(self.la_linear_models[f'{complication}_pp'], individual_id)
 
         # ------------------------------------- COMPLICATION ---------------------------------------------------------
         # If result == True the complication has happened and the appropriate changes to the data frame are made
         if result:
-            logger.debug(key='message', data=f'person {individual_id} has developed {complication} during the'
-                                             f' postpartum phase of a birth on date {self.sim.date}')
+            if complication in ('sepsis_endometritis', 'sepsis_urinary_tract', 'sepsis_skin_soft_tissue'):
 
-            if complication == 'endometritis' or \
-                complication == 'skin_soft_tissue_inf' or \
-                complication == 'urinary_tract_inf' or \
-               complication == 'other_maternal_infection':
-                self.postpartum_infections.set(individual_id, complication)
+                df.at[individual_id, 'la_sepsis_pp'] = True
+                pregnancy_helper_functions.store_dalys_in_mni(individual_id, mni, 'sepsis_onset', self.sim.date)
 
-            if complication == 'sepsis':
-                # We run a check here to ensure only women with an infection can develop sepsis
-                assert self.postpartum_infections.has_any([individual_id], 'endometritis', 'urinary_tract_inf',
-                                                          'skin_soft_tissue_inf', 'other_maternal_infection',
-                                                          first=True)
+                if complication == 'sepsis_endometritis':
+                    mni[individual_id]['endo_pp'] = True
 
-                df.at[individual_id, f'la_{complication}_pp'] = True
-                self.labour_tracker[f'{complication}_pp'] += 1
-                self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(individual_id, f'{complication}_onset')
+            if complication in ('pph_uterine_atony', 'pph_retained_placenta', 'pph_other'):
+                # Set primary complication to true
+                df.at[individual_id, 'la_postpartum_haem'] = True
 
-            if complication == 'uterine_atony' or \
-                complication == 'lacerations' or \
-                complication == 'retained_placenta' or \
-               complication == 'other_pph_cause':
-                self.cause_of_primary_pph.set([individual_id], complication)
+                logger.info(key='maternal_complication', data={'person': individual_id,
+                                                               'type': f'{complication}',
+                                                               'timing': 'intrapartum'})
 
-            if complication == 'postpartum_haem':
-
-                # Similarly we make sure that PPH can only occur after a preceding cause
-                assert self.cause_of_primary_pph.has_any([individual_id], 'uterine_atony', 'lacerations',
-                                                         'retained_placenta', 'other_pph_cause', first=True)
-
-                df.at[individual_id, f'la_{complication}'] = True
-                self.labour_tracker[f'{complication}'] += 1
+                # Store mni variables used during treatment
+                if complication == 'pph_uterine_atony':
+                    mni[individual_id]['uterine_atony'] = True
+                if complication == 'pph_retained_placenta':
+                    mni[individual_id]['retained_placenta'] = True
 
                 # We set the severity to map to DALY weights
-                random_choice = self.rng.choice(['non_severe', 'severe'], size=1,
-                                                p=params['severity_maternal_haemorrhage'])
+                if pd.isnull(mni[individual_id]['mild_mod_pph_onset']) and pd.isnull(mni[individual_id]['severe_pph_'
+                                                                                                        'onset']):
 
-                if random_choice == 'non_severe':
-                    self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(individual_id, 'mild_mod_pph_onset')
-                else:
-                    self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(individual_id, 'severe_pph_onset')
+                    random_choice = self.rng.choice(['non_severe', 'severe'], size=1,
+                                                    p=params['severity_maternal_haemorrhage'])
+
+                    if random_choice == 'non_severe':
+                        pregnancy_helper_functions.store_dalys_in_mni(individual_id, mni, 'mild_mod_pph_onset',
+                                                                      self.sim.date)
+                    else:
+                        pregnancy_helper_functions.store_dalys_in_mni(individual_id, mni, 'severe_pph_onset',
+                                                                      self.sim.date)
 
     def progression_of_hypertensive_disorders(self, individual_id, property_prefix):
         """
@@ -1191,7 +1393,8 @@ class Labour(Module):
         :param property_prefix: (STR) 'pn' or 'ps'
         """
         df = self.sim.population.props
-        params = self.parameters
+        params = self.current_parameters
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         # n.b. on birth women whose hypertension will continue into the postnatal period have their disease state stored
         # in a new property therefore antenatal/intrapartum hypertension is 'ps_htn_disorders' and postnatal is
@@ -1215,10 +1418,12 @@ class Labour(Module):
 
             if risk_progression_spe_ec > self.rng.random_sample():
                 df.at[individual_id, f'{property_prefix}_htn_disorders'] = 'eclampsia'
-                self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(individual_id, 'eclampsia_onset')
-                self.labour_tracker['eclampsia'] += 1
+                pregnancy_helper_functions.store_dalys_in_mni(individual_id, mni, 'eclampsia_onset',
+                                                              self.sim.date)
 
-                logger.debug(key='msg', data=f'Mother {individual_id} has developed eclampsia_{property_prefix}')
+                logger.info(key='maternal_complication', data={'person': individual_id,
+                                                               'type': 'eclampsia',
+                                                               'timing': 'intrapartum'})
 
         # Or from mild to severe gestational hypertension, risk reduced by treatment
         if df.at[individual_id, f'{property_prefix}_htn_disorders'] == 'gest_htn':
@@ -1227,88 +1432,33 @@ class Labour(Module):
                     'anti_htns_treatment_effect_progression']
             else:
                 risk_prog_gh_sgh = params['prob_progression_gest_htn']
+
             if risk_prog_gh_sgh > self.rng.random_sample():
                 df.at[individual_id, f'{property_prefix}_htn_disorders'] = 'severe_gest_htn'
-                logger.debug(key='msg', data=f'Mother {individual_id} has developed severe_gest_htn_{property_prefix}')
+
+                logger.info(key='maternal_complication', data={'person': individual_id,
+                                                               'type': 'severe_gest_htn',
+                                                               'timing': 'intrapartum'})
 
         # Or from severe gestational hypertension to severe pre-eclampsia...
         if df.at[individual_id, f'{property_prefix}_htn_disorders'] == 'severe_gest_htn':
             if params['prob_progression_severe_gest_htn'] > self.rng.random_sample():
                 df.at[individual_id, f'{property_prefix}_htn_disorders'] = 'severe_pre_eclamp'
-                self.labour_tracker['severe_pre_eclampsia'] += 1
-                logger.debug(key='msg', data=f'Mother {individual_id} has developed severe_pre_eclamp_'
-                                             f'{property_prefix}')
+                mni[individual_id]['new_onset_spe'] = True
+
+                logger.info(key='maternal_complication', data={'person': individual_id,
+                                                               'type': 'severe_pre_eclamp',
+                                                               'timing': 'intrapartum'})
 
         # Or from mild pre-eclampsia to severe pre-eclampsia...
         if df.at[individual_id, f'{property_prefix}_htn_disorders'] == 'mild_pre_eclamp':
             if params['prob_progression_mild_pre_eclamp'] > self.rng.random_sample():
                 df.at[individual_id, f'{property_prefix}_htn_disorders'] = 'severe_pre_eclamp'
-                self.labour_tracker['severe_pre_eclampsia'] += 1
-                logger.debug(key='msg', data=f'Mother {individual_id} has developed severe_pre_eclamp_'
-                                             f'{property_prefix}')
+                mni[individual_id]['new_onset_spe'] = True
 
-    def set_maternal_death_status_intrapartum(self, individual_id, cause):
-        """
-        This function is called by the LabourDeathEvent. A 'cause' of death is passed to this function and a linear
-        model is used to calculate if the cause will contribute to this womans death during labour
-        :param individual_id: individual_id
-        :param cause: (STR) complication which may cause death
-        """
-        df = self.sim.population.props
-        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-        params = self.parameters
-
-        # Check that only the correct causes are being passed to the function
-        assert cause in self.possible_intrapartum_complications
-
-        # todo: only allow death from severe haemorrhage (IP and PP)
-
-        # We determine if this woman will die of the complication defined in the function
-        if self.predict(params['la_labour_equations'][f'{cause}_death'], individual_id):
-            logger.debug(key='message', data=f'{cause} has contributed to person {individual_id} death during labour')
-
-            mni[individual_id]['death_in_labour'] = True
-            mni[individual_id]['cause_of_death_in_labour'].append(cause)
-
-            # This information is passed to the event where the InstantaneousDeathEvent is scheduled - this allows for
-            # the application of multiple risk of death from multiple complications
-            df.at[individual_id, 'la_maternal_death_in_labour'] = True
-            df.at[individual_id, 'la_maternal_death_in_labour_date'] = self.sim.date
-            self.labour_tracker[f'{cause}_death'] += 1
-
-        else:
-            # As eclampsia is a transient acute event, if women survive we reset their disease state to severe
-            # pre-eclampsia
-            if cause == 'eclampsia':
-                df.at[individual_id, 'ps_htn_disorders'] = 'severe_pre_eclamp'
-
-    def set_maternal_death_status_postpartum(self, individual_id, cause):
-        """
-        This function is called by from within the apply_risk_of_early_postpartum_death function (below).
-        A 'cause' of death is passed to this function and a linear model is used to calculate if the cause will
-        contribute to this womans death following labour
-        :param individual_id: individual_id
-        :param cause: (STR) complication which may cause death
-        """
-        df = self.sim.population.props
-        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-        params = self.parameters
-
-        assert cause in self.possible_postpartum_complications
-
-        if self.predict(params['la_labour_equations'][f'{cause}_pp_death'], individual_id):
-            logger.debug(key='message',
-                         data=f'{cause} has contributed to person {individual_id} death following labour')
-
-            self.labour_tracker[f'{cause}_death'] += 1
-            mni[individual_id]['death_postpartum'] = True
-            mni[individual_id]['cause_of_death_in_labour'].append(f'{cause}_postpartum')
-            df.at[individual_id, 'la_maternal_death_in_labour'] = True
-            df.at[individual_id, 'la_maternal_death_in_labour_date'] = self.sim.date
-
-        else:
-            if cause == 'eclampsia':
-                df.at[individual_id, 'pn_htn_disorders'] = 'severe_pre_eclamp'
+                logger.info(key='maternal_complication', data={'person': individual_id,
+                                                               'type': 'severe_pre_eclamp',
+                                                               'timing': 'intrapartum'})
 
     def apply_risk_of_early_postpartum_death(self, individual_id):
         """
@@ -1323,95 +1473,101 @@ class Labour(Module):
         """
         df = self.sim.population.props
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+        params = self.current_parameters
 
-        # We ensure that this function is only being applied to the correct women
+        # Check the right women are at risk of death
         self.postpartum_characteristics_checker(individual_id)
 
-        # We then move through each complication to calculate risk of death
-        if df.at[individual_id, 'pn_htn_disorders'] == 'eclampsia':
-            self.set_maternal_death_status_postpartum(individual_id, cause='eclampsia')
+        # Function checks df for any potential cause of death, uses CFR parameters to determine risk of death
+        # (either from one or multiple causes) and if death occurs returns the cause
+        potential_cause_of_death = pregnancy_helper_functions.check_for_risk_of_death_from_cause_maternal(
+            self, individual_id=individual_id)
 
-        if df.at[individual_id, 'la_postpartum_haem']:
-            self.set_maternal_death_status_postpartum(individual_id, cause='postpartum_haem')
-
-        if df.at[individual_id, 'la_sepsis_pp']:
-            self.set_maternal_death_status_postpartum(individual_id, cause='sepsis')
-
-        if mni[individual_id]['death_postpartum']:
-            self.labour_tracker['maternal_death'] += 1
-            self.sim.modules['Demography'].do_death(individual_id=individual_id, cause='maternal',
+        # If a cause is returned death is scheduled
+        if potential_cause_of_death:
+            self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=potential_cause_of_death,
                                                     originating_module=self.sim.modules['Labour'])
 
-            logger.debug(key='message', data=f'Mother {individual_id} has died due to postpartum complications')
+        # If she hasn't died from any complications, we reset some key properties that resolve after risk of death
+        # has been applied
+        else:
 
-        # For women who have survived we first reset all the appropriate variables as this is the last function ran
-        # within the module
-        elif not mni[individual_id]['death_postpartum']:
-            # ================================ RESET LABOUR MODULE VARIABLES =========================================
-            # Reset labour variable
-            df.at[individual_id, 'la_currently_in_labour'] = False
-            df.at[individual_id, 'la_due_date_current_pregnancy'] = pd.NaT
+            # Reset delay property
+            mni[individual_id]['delay_one_two'] = False
+            mni[individual_id]['delay_three'] = False
 
-            # Followed by all bitset variables
-            self.intrapartum_infections.unset(
-                [individual_id], 'chorioamnionitis', 'other_maternal_infection')
-            self.postpartum_infections.unset(
-                [individual_id], 'endometritis', 'urinary_tract_inf', 'skin_soft_tissue_inf',
-                'other_maternal_infection')
-            self.cause_of_obstructed_labour.unset(
-                [individual_id], 'cephalopelvic_dis', 'malpresentation', 'malposition')
-            self.cause_of_primary_pph.unset(
-                [individual_id], 'uterine_atony', 'lacerations', 'retained_placenta', 'other_pph_cause')
+            if df.at[individual_id, 'pn_htn_disorders'] == 'eclampsia':
+                df.at[individual_id, 'pn_htn_disorders'] = 'severe_pre_eclamp'
 
-            # Other complication variables
-            df.at[individual_id, 'la_intrapartum_still_birth'] = False
-            df.at[individual_id, 'la_postpartum_haem'] = False
-            df.at[individual_id, 'la_obstructed_labour'] = False
-            df.at[individual_id, 'la_placental_abruption'] = False
-            df.at[individual_id, 'la_antepartum_haem'] = 'none'
-            df.at[individual_id, 'la_uterine_rupture'] = False
-            df.at[individual_id, 'la_sepsis'] = False
-            df.at[individual_id, 'la_sepsis_pp'] = False
-            df.at[individual_id, 'la_postpartum_haem'] = False
+            if (df.at[individual_id, 'pn_htn_disorders'] == 'severe_pre_eclamp') and (mni[individual_id]['new_onset'
+                                                                                                         '_spe']):
+                mni[individual_id]['new_onset_spe'] = False
 
-            # Treatment variables
-            df.at[individual_id, 'la_antepartum_haem_treatment'] = False
-            df.at[individual_id, 'la_uterine_rupture_treatment'] = False
+            if df.at[individual_id, 'pn_postpartum_haem_secondary']:
+                df.at[individual_id, 'pn_postpartum_haem_secondary'] = False
+
+            if df.at[individual_id, 'pn_sepsis_late_postpartum']:
+                df.at[individual_id, 'pn_sepsis_late_postpartum'] = False
+
             df.at[individual_id, 'la_severe_pre_eclampsia_treatment'] = False
             df.at[individual_id, 'la_maternal_hypertension_treatment'] = False
             df.at[individual_id, 'la_eclampsia_treatment'] = False
             df.at[individual_id, 'la_sepsis_treatment'] = False
+
+            mni[individual_id]['retained_placenta'] = False
+            mni[individual_id]['uterine_atony'] = False
             self.pph_treatment.unset(
-                [individual_id], 'uterotonics', 'manual_removal_placenta', 'surgery', 'hysterectomy')
+                [individual_id], 'manual_removal_placenta', 'surgery', 'hysterectomy')
 
-        # todo: This event looks at the mother and child  pair an applies risk of complications- therefore I cant
-        #  condition on the mother being alive for the event to be schedule (otherwise newborns of mothers who died in
-        #  labour or after labour dont get risk applied) - should be fine as event wont run on mothers who arent alive
+            # ================================ SCHEDULE POSTNATAL WEEK ONE EVENT =================================
+            # For women who have survived first 24 hours after birth we reset all the key labour variables and
+            # scheduled them to attend the first event in the PostnatalSupervisorModule - PostnatalWeekOne Event
 
-        # ================================ SCHEDULE POSTNATAL WEEK ONE EVENT =====================================
-        # For women who have survived first 24 hours after birth we scheduled them to attend the first event in the
-        # PostnatalSupervisorModule - PostnatalWeekOne Event
+            if not mni[individual_id]['passed_through_week_one']:
 
-        # This event determines if women/newborns will develop complications in week one. We stagger when women
-        # arrive at this event to simulate bunching of complications in the first few days after birth
+                df.at[individual_id, 'la_currently_in_labour'] = False
+                df.at[individual_id, 'la_due_date_current_pregnancy'] = pd.NaT
 
-        days_post_birth_td = self.sim.date - df.at[individual_id, 'la_date_most_recent_delivery']
-        days_post_birth_int = int(days_post_birth_td / np.timedelta64(1, 'D'))
+                #  complication variables
+                df.at[individual_id, 'la_intrapartum_still_birth'] = False
+                df.at[individual_id, 'la_postpartum_haem'] = False
+                df.at[individual_id, 'la_obstructed_labour'] = False
+                df.at[individual_id, 'la_placental_abruption'] = False
+                df.at[individual_id, 'la_antepartum_haem'] = 'none'
+                df.at[individual_id, 'la_uterine_rupture'] = False
+                df.at[individual_id, 'la_sepsis'] = False
+                df.at[individual_id, 'la_sepsis_pp'] = False
 
-        assert days_post_birth_int < 6
+                # Labour specific treatment variables
+                df.at[individual_id, 'la_antepartum_haem_treatment'] = False
+                df.at[individual_id, 'la_uterine_rupture_treatment'] = False
 
-        # change to parameter
-        day_for_event = int(self.rng.choice([0, 1, 2, 3, 4, 5], p=[0.3, 0.3, 0.2, 0.1, 0.05, 0.05]))
+                # This event determines if women will develop complications in week one. We stagger when women
+                # arrive at this event to simulate bunching of complications in the first few days after birth
+                days_post_birth_td = self.sim.date - df.at[individual_id, 'la_date_most_recent_delivery']
+                days_post_birth_int = int(days_post_birth_td / np.timedelta64(1, 'D'))
 
-        # Ensure no women go to this event after week 1
-        if day_for_event + days_post_birth_int > 5:
-            day_for_event = 0
+                if not days_post_birth_int < 6:
+                    logger.debug(key='error', data=f'Mother {individual_id} scheduled to PN week one at >1 '
+                                                   f'week postnatal')
 
-        self.sim.schedule_event(PostnatalWeekOneEvent(self.sim.modules['PostnatalSupervisor'], individual_id),
-                                self.sim.date + DateOffset(days=day_for_event))
+                day_for_event = int(self.rng.choice([2, 3, 4, 5, 6], p=params['probs_of_attending_pn_event_by_day']))
 
-        # Here we remove all women (dead and alive) who have passed through the labour events from the checker list
-        self.women_in_labour.remove(individual_id)
+                # Ensure no women go to this event after week 1
+                if day_for_event + days_post_birth_int > 6:
+                    day_for_event = 1
+
+                self.sim.schedule_event(
+                    PostnatalWeekOneMaternalEvent(self.sim.modules['PostnatalSupervisor'], individual_id),
+                    self.sim.date + DateOffset(days=day_for_event))
+
+            elif mni[individual_id]['passed_through_week_one']:
+                if individual_id not in self.women_in_labour:
+                    logger.debug(key='error', data=f'Mother {individual_id} is still stored in self.women_in_labour')
+
+                if df.at[individual_id, 'la_currently_in_labour']:
+                    logger.debug(key='error', data=f'Mother {individual_id} is currently in labour within '
+                                                   f'apply_risk_of_early_postpartum_death')
 
     def labour_characteristics_checker(self, individual_id):
         """This function is called at multiples points in the module to ensure women of the right characteristics are
@@ -1422,13 +1578,17 @@ class Labour(Module):
         df = self.sim.population.props
         mother = df.loc[individual_id]
 
-        assert individual_id in self.women_in_labour
-        assert mother.sex == 'F'
-        assert mother.age_years > 14
-        assert mother.age_years < 51
-        assert mother.la_currently_in_labour
-        assert mother.ps_gestational_age_in_weeks >= 22
-        assert not pd.isnull(mother.la_due_date_current_pregnancy)
+        if(
+            individual_id not in self.women_in_labour or
+            mother.sex != 'F' or
+            mother.age_years < 14 or
+            mother.age_years > 51 or
+            not mother.la_currently_in_labour or
+            mother.ps_gestational_age_in_weeks < 22 or
+            pd.isnull(mother.la_due_date_current_pregnancy)
+          ):
+            logger.debug(key='error', data=f'Person {individual_id} has characteristics that mean they should'
+                                           f' not be in labour ')
 
     def postpartum_characteristics_checker(self, individual_id):
         """This function is called at multiples points in the module to ensure women of the right characteristics are
@@ -1437,26 +1597,47 @@ class Labour(Module):
         :param individual_id: individual_id
         """
         df = self.sim.population.props
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         mother = df.loc[individual_id]
 
-        assert individual_id in self.women_in_labour
-        assert mother.sex == 'F'
-        assert mother.age_years > 14
-        assert mother.age_years < 51
-        assert mother.la_currently_in_labour
+        if (
+            individual_id not in mni or
+            mother.sex != 'F' or
+            mother.age_years < 14 or
+            mother.age_years > 51 or
+            not mother.la_is_postpartum or
+            (not mni[individual_id]['passed_through_week_one'] and individual_id not in self.women_in_labour)
+        ):
+            logger.debug(key='error', data=f'Person {individual_id} has characteristics that mean they should'
+                                           f' not be in the postnatal period ')
 
     # ============================================== HSI FUNCTIONS ====================================================
     # Management of each complication is housed within its own function, defined here in the module, and all follow a
-    # similar pattern ...
-    #                   a.) The required consumables for the intervention(s) are defined
-    #                   b.) The woman is assessed for a complication using the dx_test function. Specificity of
-    #                       assessment varies between facility type (hospital or health centre)
-    #                   c.) If she has the complication and it is correctly identified by HCWs, they check
-    #                       consumables are available
-    #                   d.) If the consumables are available- she will receive treatment
+    # similar pattern in which consumables are requested and the intervention is delivered if they are available
 
     # The function is only called if the squeeze factor of the HSI calling the function is below a set 'threshold' for
     # each intervention. Thresholds will vary between intervention
+
+    def check_emonc_signal_function_will_run(self, sf, f_lvl):
+        """
+        This function runs a check against parameters describing the mean availability of HCWs capable of delivering
+        this intervention in the health system and the mean HCW competence to determine if a EmONC signal function of
+        interest will run (pending consumable check)
+        :param sf: (str) signal function
+        :param f_lvl: (str) facility level
+        :return: bool True or False
+        """
+        params = self.current_parameters
+
+        if f_lvl == '1a':
+            competence = params['mean_hcw_competence_hc']
+        else:
+            competence = params['mean_hcw_competence_hp']
+
+        if (self.rng.random_sample() < params[f'prob_hcw_avail_{sf}']) and (self.rng.random_sample() < competence):
+            return True
+
+        return False
 
     def prophylactic_labour_interventions(self, hsi_event):
         """
@@ -1465,729 +1646,591 @@ class Labour(Module):
         :param hsi_event: HSI event in which the function has been called:
         """
         df = self.sim.population.props
-        params = self.parameters
+        params = self.current_parameters
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         person_id = hsi_event.target
-        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        cons = self.item_codes_lab_consumables
 
         # params['allowed_interventions'] contains a list of interventions delivered in this module. Removal of
         # interventions from this list within test/analysis will stop this intervention from running
         if 'prophylactic_labour_interventions' not in params['allowed_interventions']:
             return
-        else:
-            # ----------------------------------CLEAN DELIVERY PRACTICES ---------------------------------------------
-            # The first in this suite of interventions is clean delivery practices. We assume clean birth practices are
-            # delivered if a clean birth kit is available at the facility
-            # pkg_code_clean_delivery_kit = pd.unique(
-            #     consumables.loc[consumables['Intervention_Pkg'] == 'Clean practices and immediate essential newborn '
-            #                                                        'care (in facility)', 'Intervention_Pkg_Code'])[0]
 
-            # all_available = hsi_event.get_all_consumables(
-            #     pkg_codes=[pkg_code_clean_delivery_kit])
-            all_available = True
+        #  We determine if the HCW will administer antibiotics for women with premature rupture of membranes
+        if df.at[person_id, 'ps_premature_rupture_of_membranes']:
 
-            # If available we store this intervention in the mni dictionary. Clean delivery will reduce a mothers risk
-            # of intrapartum infections
-            if all_available:
-                mni[person_id]['clean_birth_practices'] = True
-                logger.debug(key='message', data=f'Mother {person_id} will be able to experience clean birth practices '
-                                                 f'during her delivery as the consumables are available')
+            # The mother may have received these antibiotics already if she presented to the antenatal ward from the
+            # community following PROM. We store this in the mni dictionary
+            if df.at[person_id, 'ac_received_abx_for_prom']:
+                mni[person_id]['abx_for_prom_given'] = True
+
             else:
-                logger.debug(key='message', data=f'Mother {person_id} will not be able to experience clean birth '
-                                                 f'practices during her delivery as the consumables arent available')
+                # Run HCW check
+                sf_check = self.check_emonc_signal_function_will_run(sf='iv_abx',
+                                                                     f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
 
-            # --------------------------------- ANTIBIOTICS FOR PROM/PPROM -------------------------------------------
-            # Next we determine if the HCW will administer antibiotics for women with premature rupture of membranes
-            if df.at[person_id, 'ps_premature_rupture_of_membranes']:
+                # If she has not already receive antibiotics, we check for consumables
+                avail = hsi_event.get_consumables(item_codes=cons['abx_for_prom'],
+                                                  optional_item_codes=cons['iv_drug_equipment'])
 
-                # The mother may have received these antibiotics already if she presented to the antenatal ward from the
-                # community following PROM. We store this in the mni dictionary
-                if df.at[person_id, 'ac_received_abx_for_prom']:
+                # Then query if these consumables are available during this HSI And provide if available.
+                # Antibiotics for from reduce risk of newborn sepsis within the first
+                # week of life
+                if avail and sf_check:
                     mni[person_id]['abx_for_prom_given'] = True
 
-                else:
-                    # If she has not already receive antibiotics, we check for consumables
-                    # item_code_benpen = pd.unique(
-                    #     consumables.loc[
-                    #         consumables['Items'] ==
-                    #         'Benzathine benzylpenicillin, powder for injection, 2.4 million IU',
-                    #         'Item_Code'])[0]
-                    item_code_benpen = 0
-                    # item_code_wfi = pd.unique(consumables.loc[consumables['Items'] ==
-                    # 'Water for injection, 10ml_Each_CMST', 'Item_Code'])[0]
-                    # item_code_needle = pd.unique(
-                    #     consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
-                    # item_code_gloves = pd.unique(
-                    #     consumables.loc[consumables['Items'] ==
-                    #     'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
+        # ------------------------------ STEROIDS FOR PRETERM LABOUR -------------------------------
+        # Next we see if women in pre term labour will receive antenatal corticosteroids
+        if mni[person_id]['labour_state'] == 'early_preterm_labour' or \
+           mni[person_id]['labour_state'] == 'late_preterm_labour':
 
-                    # consumables_abx_for_prom = {
-                    #     'Intervention_Package_Code': {},
-                    #     'Item_Code': {item_code_benpen: 4, item_code_wfi: 1, item_code_needle: 1,
-                    #                   item_code_gloves: 1}}
+            # todo: condition using EMONC data
+            avail = hsi_event.get_consumables(item_codes=cons['antenatal_steroids'],
+                                              optional_item_codes=cons['iv_drug_equipment'])
 
-                    # Then query if these consumables are available during this HSI
-                    # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-                    #     hsi_event=hsi_event,
-                    #     cons_req_as_footprint=consumables_abx_for_prom)
-                    outcome_of_request_for_consumables = {
-                        'Intervention_Package_Code': defaultdict(lambda: True),
-                        'Item_Code': defaultdict(lambda: True)
-                    }
+            # If available they are given. Antenatal steroids reduce a preterm newborns chance of developing
+            # respiratory distress syndrome and of death associated with prematurity
+            if avail:
+                mni[person_id]['corticosteroids_given'] = True
 
-                    # And provide if available. Antibiotics for from reduce risk of newborn sepsis within the first
-                    # week of life
-                    if outcome_of_request_for_consumables['Item_Code'][item_code_benpen]:
-                        mni[person_id]['abx_for_prom_given'] = True
-                        logger.debug(key='message', data=f'This facility has provided antibiotics for mother '
-                                                         f'{person_id} who is a risk of sepsis due to PROM')
-                    else:
-                        logger.debug(key='message', data='This facility has no antibiotics for the treatment of PROM.')
-
-            # ------------------------------ STEROIDS FOR PRETERM LABOUR -------------------------------
-            # Next we see if women in pre term labour will receive antenatal corticosteroids
-            if mni[person_id]['labour_state'] == 'early_preterm_labour' or \
-               mni[person_id]['labour_state'] == 'late_preterm_labour':
-
-                # item_code_steroids_prem_dexamethasone = pd.unique(
-                #     consumables.loc[consumables['Items'] == 'Dexamethasone 5mg/ml, 5ml_each_CMST', 'Item_Code'])[0]
-                # item_code_steroids_prem_betamethasone = pd.unique(
-                #     consumables.loc[consumables['Items'] == 'Betamethasone, 12 mg injection', 'Item_Code'])[0]
-                item_code_steroids_prem_dexamethasone = 0
-                item_code_steroids_prem_betamethasone = 0
-
-                # consumables_steriod_preterm = {
-                #     'Intervention_Package_Code': {},
-                #     'Item_Code': {item_code_steroids_prem_dexamethasone: 1, item_code_steroids_prem_betamethasone: 1}}
-
-                # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-                #     hsi_event=hsi_event,
-                #     cons_req_as_footprint=consumables_steriod_preterm)
-                outcome_of_request_for_consumables = {
-                    'Intervention_Package_Code': defaultdict(lambda: True),
-                    'Item_Code': defaultdict(lambda: True)
-                }
-
-                # If available they are given. Antenatal steriods reduce a preterm newborns chance of developing
-                # respiratory distress syndrome and of death associated with prematurity
-                if (outcome_of_request_for_consumables['Item_Code'][
-                    item_code_steroids_prem_dexamethasone]) and \
-                   (outcome_of_request_for_consumables['Item_Code'][item_code_steroids_prem_betamethasone]):
-
-                    mni[person_id]['corticosteroids_given'] = True
-                    logger.debug(key='message', data=f'This facility has provided corticosteroids for mother '
-                                                     f'{person_id} who is in preterm labour')
-
-                else:
-                    logger.debug(key='message', data='This facility has no steroids for women in preterm labour.')
-
-    def assessment_and_treatment_of_severe_pre_eclampsia_mgso4(self, hsi_event, facility_type):
-        """This function represents the diagnosis and management of severe pre-eclampsia during labour. This function
-        defines the required consumables, uses the dx_test to determine a woman with severe pre-eclampsia is correctly
-        identified, and administers the intervention if so. The intervention is intravenous magnesium sulphate.
-        It is called by HSI_Labour_PresentsForSkilledBirthAttendanceInLabour
-        :param hsi_event: HSI event in which the function has been called:
-        :param facility_type: type of facility this intervention is being delivered in
-        (STR) 'hc' == health centre, 'hp' == hospital
+    def determine_delivery_mode_in_spe_or_ec(self, person_id, hsi_event, complication):
         """
-        df = self.sim.population.props
-        params = self.parameters
-        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        person_id = hsi_event.target
-
-        # Women who have been admitted for delivery due to severe pre-eclampsia AND have already received magnesium
-        # before moving to the labour ward do not receive the intervention again
-        if (df.at[person_id, 'ac_admitted_for_immediate_delivery'] != 'none') and df.at[person_id,
-                                                                                        'ac_mag_sulph_treatment']:
-
-            logger.debug(key='msg', data=f'Mother {person_id} has already received magnesium therapy following '
-                                         f' to the antenatal ward prior to onset of labour ')
-            return
-
-        if 'assessment_and_treatment_of_severe_pre_eclampsia' not in params['allowed_interventions']:
-            return
-
-        else:
-            # Define the required consumables
-            # pkg_code_severe_pre_eclampsia = pd.unique(
-            #     consumables.loc[consumables['Intervention_Pkg'] == 'Management of eclampsia',
-            #                     'Intervention_Pkg_Code'])[0]
-            # all_available = hsi_event.get_all_consumables(
-            #     pkg_codes=[pkg_code_severe_pre_eclampsia])
-            all_available = True
-
-            # Here we run a dx_test function to determine if the birth attendant will correctly identify this womans
-            # severe pre-eclampsia, and therefore administer treatment
-            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=f'assess_'
-                                                                                       f'severe_pe_{facility_type}',
-                                                                       hsi_event=hsi_event):
-
-                # If so, and the consumables are available - the intervention is delivered. IV magnesium reduces the
-                # probability that a woman with severe pre-eclampsia will experience eclampsia in labour
-                if all_available:
-                    df.at[person_id, 'la_severe_pre_eclampsia_treatment'] = True
-                    logger.debug(key='message', data=f'mother {person_id} has has their severe pre-eclampsia '
-                                                     f'identified during delivery. As consumables are available '
-                                                     f'they will receive treatment')
-
-                elif df.at[person_id, 'ps_htn_disorders'] == 'severe_pre_eclamp':
-                    logger.debug(key='message', data=f'mother {person_id} has not had their severe pre-eclampsia '
-                                                     f'identified during delivery and will not be treated')
-
-    def assessment_and_treatment_of_hypertension(self, hsi_event, facility_type):
+        This function is called following treatment for either severe pre-eclampsia or eclampsia during labour and
+        determines if women with these conditions will undergo vaginal, assisted vaginal or caesarean section due to
+         their complication
+        :param person_id: mothers individual id
+        :param hsi_event: HSI event
+        :param complication: (STR) severe_pre_eclamp OR eclampsia
         """
-        This function represents the diagnosis and management of hypertension during labour. This function
-        defines the required consumables, uses the dx_test to determine a woman with hypertension is correctly
-        identified, and administers the intervention if so. The intervention is intravenous antihypertensives.
-        It is called by HSI_Labour_PresentsForSkilledBirthAttendanceInLabour
-        :param hsi_event: HSI event in which the function has been called:
-        :param facility_type: type of facility this intervention is being delivered in
-        (STR) 'hc' == health centre, 'hp' == hospital
-        """
-        df = self.sim.population.props
-        person_id = hsi_event.target
-        params = self.parameters
-        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-
-        if df.at[person_id, 'ac_iv_anti_htn_treatment']:
-            return
-
-        if 'assessment_and_treatment_of_hypertension' not in params['allowed_interventions']:
-            return
-        else:
-            # item_code_hydralazine = pd.unique(
-            #     consumables.loc[consumables['Items'] == 'Hydralazine, powder for injection, 20 mg ampoule',
-            #                     'Item_Code'])[0]
-            # item_code_wfi = pd.unique(
-            #     consumables.loc[consumables['Items'] == 'Water for injection, 10ml_Each_CMST', 'Item_Code'])[0]
-            # item_code_needle = pd.unique(
-            #     consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
-            # item_code_gloves = pd.unique(
-            #     consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
-
-            item_code_hydralazine = 0
-            item_code_wfi = 0
-            item_code_needle = 0
-            item_code_gloves = 0
-            # consumables_gest_htn_treatment = {
-            #     'Intervention_Package_Code': {},
-            #     'Item_Code': {item_code_hydralazine: 1,
-            #                   item_code_wfi: 1,
-            #                   item_code_gloves: 1,
-            #                   item_code_needle: 1}}
-
-            # Then query if these consumables are available during this HSI
-            # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            #     hsi_event=hsi_event,
-            #     cons_req_as_footprint=consumables_gest_htn_treatment)
-            outcome_of_request_for_consumables = {
-                'Intervention_Package_Code': defaultdict(lambda: True),
-                'Item_Code': defaultdict(lambda: True)
-            }
-
-            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=f'assess_'
-                                                                                       f'hypertension_{facility_type}',
-                                                                       hsi_event=hsi_event):
-
-                # If they are available then the woman is started on treatment. Intravenous antihypertensive reduce a
-                # womans risk of progression from mild to severe gestational hypertension ANd reduce risk of death for
-                # women with severe pre-eclampsia and eclampsia
-                if (outcome_of_request_for_consumables['Item_Code'][item_code_hydralazine]) and \
-                    (outcome_of_request_for_consumables['Item_Code'][item_code_wfi]) and \
-                    (outcome_of_request_for_consumables['Item_Code'][item_code_needle]) and \
-                   (outcome_of_request_for_consumables['Item_Code'][item_code_gloves]):
-                    df.at[person_id, 'la_maternal_hypertension_treatment'] = True
-                    logger.debug(key='message', data=f'mother {person_id} has has their hypertension identified during '
-                                                     f'delivery. As consumables are available they will receive'
-                                                     f' treatment')
-
-            elif df.at[person_id, 'ps_htn_disorders'] != 'none':
-                logger.debug(key='message', data=f'mother {person_id} has not had their hypertension identified during '
-                                                 f'delivery and will not be treated')
-
-    def assessment_and_treatment_of_eclampsia(self, hsi_event, facility_type):
-        """
-        This function represents the diagnosis and management of eclampsia during or following labour. This function
-        defines the required consumables, uses the dx_test to determine a woman with eclampsia is correctly
-        identified, and administers the intervention if so. The intervention is intravenous magnesium sulphate.
-        It is called by either HSI_Labour_PresentsForSkilledBirthAttendanceInLabour
-        or HSI_Labour_ReceivesCareForPostpartumPeriod
-        :param hsi_event: HSI event in which the function has been called:
-        :param facility_type: type of facility this intervention is being delivered in
-        (STR) 'hc' == health centre, 'hp' == hospital
-        """
-        df = self.sim.population.props
-        person_id = hsi_event.target
-        params = self.parameters
-        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-
-        if 'assessment_and_treatment_of_eclampsia' not in params['allowed_interventions']:
-            return
-        else:
-            # pkg_code_eclampsia = pd.unique(
-            #     consumables.loc[consumables['Intervention_Pkg'] == 'Management of eclampsia',
-            #                     'Intervention_Pkg_Code'])[0]
-
-            # all_available = hsi_event.get_all_consumables(
-            #     pkg_codes=[pkg_code_eclampsia])
-            all_available = True
-
-            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=f'assess_'
-                                                                                       f'eclampsia_{facility_type}',
-                                                                       hsi_event=hsi_event):
-
-                if all_available:
-                    # Treatment with magnesium reduces a womans risk of death from eclampsia
-                    df.at[person_id, 'la_eclampsia_treatment'] = True
-                    logger.debug(key='message', data=f'mother {person_id} has has their eclampsia identified during '
-                                                     f'delivery. As consumables are available they will receive '
-                                                     f'treatment')
-
-                elif df.at[person_id, 'ps_htn_disorders'] == 'eclampsia':
-                    logger.debug(key='message', data=f'mother {person_id} has not had their eclampsia identified '
-                                                     f'during delivery and will not be treated')
-
-    def assessment_and_treatment_of_obstructed_labour_via_avd(self, hsi_event, facility_type):
-        """
-        This function represents the diagnosis and management of obstructed labour during labour. This function
-        defines the required consumables, uses the dx_test to determine a woman with obstructed labour is correctly
-        identified, and administers the intervention if so. The intervention in this function is assisted vaginal
-        delivery. It is called by either HSI_Labour_PresentsForSkilledBirthAttendanceInLabour
-        :param hsi_event: HSI event in which the function has been called:
-        :param facility_type: type of facility this intervention is being delivered in
-        (STR) 'hc' == health centre, 'hp' == hospital
-        """
-        df = self.sim.population.props
+        params = self.current_parameters
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-        params = self.parameters
-        person_id = hsi_event.target
-        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
-        if 'assessment_and_treatment_of_obstructed_labour' not in params['allowed_interventions']:
-            return
-        else:
-            # pkg_code_obstructed_labour = pd.unique(
-            #     consumables.loc[consumables['Intervention_Pkg'] == 'Management of obstructed labour',
-            #                     'Intervention_Pkg_Code'])[0]
-            # item_code_forceps = pd.unique(consumables.loc[consumables['Items'] ==
-            # 'Forceps, obstetric', 'Item_Code'])[0]
-            # item_code_vacuum = pd.unique(consumables.loc[consumables['Items'] == 'Vacuum, obstetric', 'Item_Code'])[0]
-            pkg_code_obstructed_labour = 0
-            item_code_forceps = 0
-            item_code_vacuum = 0
-            # consumables_obstructed_labour = {'Intervention_Package_Code': {pkg_code_obstructed_labour: 1},
-            #                                  'Item_Code': {item_code_forceps: 1, item_code_vacuum: 1}}
+        # We use a weighted random draw to determine the delivery mode of this woman depending on her complication
+        # (eclampsia, the more severe of the two conditions, is assumed to be more likely to lead to caesarean section)
+        delivery_modes = ['vaginal', 'avd', 'cs']
+        mode = self.rng.choice(delivery_modes, p=params[f'prob_delivery_modes_{complication}'])
 
-            # outcome_of_request_for_consumables_ol = self.sim.modules['HealthSystem'].request_consumables(
-            #     hsi_event=hsi_event,
-            #     cons_req_as_footprint=consumables_obstructed_labour)
-            outcome_of_request_for_consumables_ol = {
-                'Intervention_Package_Code': defaultdict(lambda: True),
-                'Item_Code': defaultdict(lambda: True)
-            }
+        if mode == 'avd':
+            self.assessment_for_assisted_vaginal_delivery(hsi_event, for_spe=True)
 
-            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=f'assess_'
-                                                                                       f'obstructed_'
-                                                                                       f'labour_{facility_type}',
-                                                                       hsi_event=hsi_event):
+        elif mode == 'cs':
+            mni[person_id]['referred_for_cs'] = True
+            mni[person_id]['cs_indication'] = 'spe_ec'
 
-                # If the general package is available AND the facility has the correct tools to carry out the delivery
-                # then it can occur
-                if (outcome_of_request_for_consumables_ol['Intervention_Package_Code'][pkg_code_obstructed_labour]) \
-                    and ((outcome_of_request_for_consumables_ol['Item_Code'][item_code_forceps]) or
-                         (outcome_of_request_for_consumables_ol['Item_Code'][item_code_vacuum])):
-
-                    logger.debug(key='message', data=f'mother {person_id} has had her obstructed labour identified'
-                                                     f'during delivery. Staff will attempt an assisted vaginal delivery'
-                                                     f'as the equipment is available')
-
-                    # We assume women with CPD cannot be delivered via AVD and will require a caesarean
-                    if self.cause_of_obstructed_labour.has_any([person_id], 'cephalopelvic_dis', first=True):
-                        treatment_success = False
-                    else:
-                        treatment_success = params['prob_successful_assisted_vaginal_delivery'] > \
-                                            self.rng.random_sample()
-
-                    # If AVD was successful then we record the mode of delivery. We use this variable to reduce risk of
-                    # intrapartum still birth when applying risk in the death event
-                    if treatment_success:
-                        mni[person_id]['mode_of_delivery'] = 'instrumental'
-
-                    # Otherwise if the delivery is unsuccessful woman will be referred for a caesarean
-                    else:
-                        logger.debug(key='message', data=f'Following a failed assisted vaginal delivery other '
-                                                         f'{person_id} will need additional treatment')
-
-                        mni[person_id]['referred_for_cs'] = True
-
-            elif df.at[person_id, 'la_obstructed_labour']:
-                logger.debug(key='message', data=f'mother {person_id} has not had their obstructed labour identified '
-                                                 f'during delivery and will not be treated')
-
-    def assessment_and_treatment_of_maternal_sepsis(self, hsi_event, facility_type, labour_stage):
-        """
-        This function represents the diagnosis and management of maternal sepsis during or following labour. This
-        function defines the required consumables, uses the dx_test to determine a woman with sepsis is correctly
-        identified, and administers the intervention if so. The intervention in this function is maternal sepsis case
-        management. It is called by either HSI_Labour_PresentsForSkilledBirthAttendanceInLabour
-        or HSI_Labour_ReceivesCareForPostpartumPeriod
+    def assessment_and_treatment_of_severe_pre_eclampsia_mgso4(self, hsi_event, labour_stage):
+        """This function represents the diagnosis and management of severe pre-eclampsia during labour. This function
+        defines the required consumables and administers the intervention if available. The intervention is
+        intravenous magnesium sulphate.  It is called by HSI_Labour_PresentsForSkilledBirthAttendanceInLabour or
+        HSI_Labour_ReceivesPostnatalCheck
         :param hsi_event: HSI event in which the function has been called:
-        :param facility_type: type of facility this intervention is being delivered in
         (STR) 'hc' == health centre, 'hp' == hospital
         :param labour_stage: intrapartum or postpartum period of labour (STR) 'ip' or 'pp':
         """
         df = self.sim.population.props
-        params = self.parameters
+        params = self.current_parameters
         person_id = hsi_event.target
-        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        cons = self.item_codes_lab_consumables
 
-        if 'assessment_and_treatment_of_maternal_sepsis' not in params['allowed_interventions']:
+        # Women who have been admitted for delivery due to severe pre-eclampsia AND have already received magnesium
+        # before moving to the labour ward do not receive the intervention again
+        if (df.at[person_id, 'ac_admitted_for_immediate_delivery'] != 'none') and \
+           df.at[person_id, 'ac_mag_sulph_treatment']:
             return
-        else:
-            # pkg_code_sepsis = pd.unique(
-            #     consumables.loc[consumables['Intervention_Pkg'] == 'Maternal sepsis case management',
-            #                     'Intervention_Pkg_Code'])[0]
 
-            # all_available = hsi_event.get_all_consumables(
-            #     pkg_codes=[pkg_code_sepsis])
-            all_available = True
+        if ('assessment_and_treatment_of_severe_pre_eclampsia' not in params['allowed_interventions']) or \
+           (df.at[person_id, 'la_severe_pre_eclampsia_treatment'] and (labour_stage == 'pp')):
+            return
 
-            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=f'assess_'
-                                                                                       f'sepsis_{facility_type}_'
-                                                                                       f'{labour_stage}',
-                                                                       hsi_event=hsi_event):
+        if (df.at[person_id, 'ps_htn_disorders'] == 'severe_pre_eclamp') or \
+           (df.at[person_id, 'pn_htn_disorders'] == 'severe_pre_eclamp'):
 
-                # If delivered this intervention reduces a womans risk of dying from sepsis
-                if all_available:
-                    logger.debug(key='message', data=f'mother {person_id} has has their sepsis identified during '
-                                                     f'delivery. As consumables are available they will receive '
-                                                     f'treatment')
+            # Determine if this person will deliver vaginally or via caesarean
+            if (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'none') and (labour_stage == 'ip'):
+                self.determine_delivery_mode_in_spe_or_ec(person_id, hsi_event, 'spe')
 
-                    df.at[person_id, 'la_sepsis_treatment'] = True
+            # Run HCW check
+            sf_check = self.check_emonc_signal_function_will_run(sf='anticonvulsant',
+                                                                 f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
 
-            elif df.at[person_id, 'la_sepsis'] or df.at[person_id, 'la_sepsis_pp']:
-                logger.debug(key='message', data=f'mother {person_id} has not had their sepsis identified during '
-                                                 f'delivery and will not be treated')
+            # Define the required consumables
+            avail = hsi_event.get_consumables(item_codes=cons['magnesium_sulfate'],
+                                              optional_item_codes=cons['eclampsia_management_optional'])
 
-    def assessment_and_plan_for_antepartum_haemorrhage(self, hsi_event, facility_type):
+            # If the consumables are available - the intervention is delivered. IV magnesium reduces the
+            # probability that a woman with severe pre-eclampsia will experience eclampsia in labour
+            if avail and sf_check:
+                df.at[person_id, 'la_severe_pre_eclampsia_treatment'] = True
+
+    def assessment_and_treatment_of_hypertension(self, hsi_event):
         """
-        This function represents the diagnosis of antepartum haemorrhage during  labour. This
-        function uses the dx_test to determine a woman with antepartum haemorrhage is correctly identified, and ensure
-        that woman is referred for comprehensive care via caesarean section and blood transfusion.
-        It is called by either HSI_Labour_PresentsForSkilledBirthAttendanceInLabour
+        This function represents the diagnosis and management of hypertension during labour. This function
+        defines the required consumable  and administers the intervention if available. The intervention is
+        intravenous magnesium sulphate.  It is called by HSI_Labour_PresentsForSkilledBirthAttendanceInLabour or
+        HSI_Labour_ReceivesPostnatalCheck
         :param hsi_event: HSI event in which the function has been called:
-        :param facility_type: type of facility this intervention is being delivered in
         (STR) 'hc' == health centre, 'hp' == hospital
         """
         df = self.sim.population.props
-        params = self.parameters
+        person_id = hsi_event.target
+        params = self.current_parameters
+        cons = self.item_codes_lab_consumables
+
+        # If the treatment is not allowed to be delivered or it has already been delivered the function won't run
+        if ('assessment_and_treatment_of_hypertension' not in params['allowed_interventions']) or \
+           df.at[person_id, 'ac_iv_anti_htn_treatment'] or df.at[person_id, 'la_maternal_hypertension_treatment']:
+            return
+
+        if (df.at[person_id, 'ps_htn_disorders'] != 'none') or (df.at[person_id, 'pn_htn_disorders'] != 'none'):
+
+            # Then query if these consumables are available during this HSI
+            avail = hsi_event.get_consumables(item_codes=cons['iv_antihypertensives'],
+                                              optional_item_codes=cons['iv_drug_equipment'])
+
+            # If they are available then the woman is started on treatment. Intravenous antihypertensive reduce a
+            # womans risk of progression from mild to severe gestational hypertension ANd reduce risk of death for
+            # women with severe pre-eclampsia and eclampsia
+            if avail:
+                df.at[person_id, 'la_maternal_hypertension_treatment'] = True
+
+                avail = hsi_event.get_consumables(
+                    item_codes=self.item_codes_lab_consumables['oral_antihypertensives'])
+
+                if avail:
+                    df.at[person_id, 'la_gest_htn_on_treatment'] = True
+
+    def assessment_and_treatment_of_eclampsia(self, hsi_event, labour_stage):
+        """
+        This function represents the diagnosis and management of eclampsia during or following labour. This function
+        defines the required consumables and administers the intervention if available. The intervention is
+        intravenous magnesium sulphate.  It is called by HSI_Labour_PresentsForSkilledBirthAttendanceInLabour or
+        HSI_Labour_ReceivesPostnatalCheck
+        :param hsi_event: HSI event in which the function has been called:
+        (STR) 'hc' == health centre, 'hp' == hospital
+        :param labour_stage: intrapartum or postpartum period of labour (STR) 'ip' or 'pp':
+        """
+        df = self.sim.population.props
+        person_id = hsi_event.target
+        params = self.current_parameters
+        cons = self.item_codes_lab_consumables
+
+        if 'assessment_and_treatment_of_eclampsia' not in params['allowed_interventions']:
+            return
+
+        if (df.at[person_id, 'ps_htn_disorders'] == 'eclampsia') or \
+           (df.at[person_id, 'pn_htn_disorders'] == 'eclampsia'):
+
+            # Run HCW check
+            sf_check = self.check_emonc_signal_function_will_run(sf='anticonvulsant',
+                                                                 f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
+
+            avail = hsi_event.get_consumables(item_codes=cons['magnesium_sulfate'],
+                                              optional_item_codes=cons['eclampsia_management_optional'])
+
+            if (labour_stage == 'ip') and (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'none'):
+                self.determine_delivery_mode_in_spe_or_ec(person_id, hsi_event, 'ec')
+
+            if avail and sf_check:
+                # Treatment with magnesium reduces a womans risk of death from eclampsia
+                df.at[person_id, 'la_eclampsia_treatment'] = True
+
+    def assessment_for_assisted_vaginal_delivery(self, hsi_event, for_spe):
+        """
+        This function represents the diagnosis and management of obstructed labour during labour. This function
+        defines the required consumables and administers the intervention if available. The intervention in this
+        function is assisted vaginal delivery. It is called by either HSI_Labour_PresentsForSkilledBirthAttendanceIn
+        Labour
+        :param hsi_event: HSI event in which the function has been called:
+        :param for_spe: BOOL if this function is applied to woman with severe pre-eclampsia
+        (STR) 'hc' == health centre, 'hp' == hospital
+        """
+        df = self.sim.population.props
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+        params = self.current_parameters
+        person_id = hsi_event.target
+        cons = self.item_codes_lab_consumables
+
+        if ('assessment_and_treatment_of_obstructed_labour' not in params['allowed_interventions']) or \
+            (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'caesarean_now') or \
+           (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'caesarean_future'):
+            return
+
+        if df.at[person_id, 'la_obstructed_labour'] or for_spe:
+            # Define the consumables...
+            hsi_event.get_consumables(item_codes=cons['obstructed_labour'])
+            avail_forceps = hsi_event.get_consumables(item_codes=cons['forceps'])
+            avail_vacuum = hsi_event.get_consumables(item_codes=cons['vacuum'])
+
+            # run HCW check
+            sf_check = self.check_emonc_signal_function_will_run(sf='avd',
+                                                                 f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
+
+            # We assume women with CPD cannot be delivered via AVD and will require a caesarean
+            if not mni[person_id]['cpd']:
+                # If the general package is available AND the facility has the correct tools to carry out the
+                # delivery then it can occur
+                if (avail_forceps or avail_vacuum) and sf_check:
+
+                    # If AVD was successful then we record the mode of delivery. We use this variable to reduce
+                    # risk of intrapartum still birth when applying risk in the death event
+                    if params['prob_successful_assisted_vaginal_delivery'] > self.rng.random_sample():
+                        mni[person_id]['mode_of_delivery'] = 'instrumental'
+
+                    else:
+                        # If unsuccessful, this woman will require a caesarean section
+                        mni[person_id]['referred_for_cs'] = True
+                        mni[person_id]['cs_indication'] = 'ol_failed_avd'  # todo: update?
+                        logger.info(key='cs_ol', data={'person': person_id})
+
+            else:
+                mni[person_id]['referred_for_cs'] = True
+                mni[person_id]['cs_indication'] = 'ol'
+                logger.info(key='cs_ol', data={'person': person_id})
+
+    def assessment_and_treatment_of_maternal_sepsis(self, hsi_event, labour_stage):
+        """
+        This function represents the diagnosis and management of maternal sepsis during or following labour. This
+        function defines the required consumables and administers the intervention if they are available. The
+        intervention in this function is maternal sepsis case management. It is called by either
+         HSI_Labour_PresentsForSkilledBirthAttendanceInLabour OR  HSI_Labour_ReceivesPostnatalCheck
+        :param hsi_event: HSI event in which the function has been called:
+        (STR) 'hc' == health centre, 'hp' == hospital
+        :param labour_stage: intrapartum or postpartum period of labour (STR) 'ip' or 'pp':
+        """
+        df = self.sim.population.props
+        params = self.current_parameters
+        person_id = hsi_event.target
+        cons = self.item_codes_lab_consumables
+
+        if 'assessment_and_treatment_of_maternal_sepsis' not in params['allowed_interventions']:
+            return
+
+        if (
+            df.at[person_id, 'la_sepsis'] or
+            df.at[person_id, 'la_sepsis_pp'] or
+            ((labour_stage == 'ip') and df.at[person_id, 'ps_chorioamnionitis'] and
+             (df.at[person_id, 'ac_admitted_for_immediate_delivery'] != 'none')) or
+           (labour_stage == 'pp' and df.at[person_id, 'pn_sepsis_late_postpartum'])):
+
+            # run HCW check
+            sf_check = self.check_emonc_signal_function_will_run(sf='iv_abx',
+                                                                 f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
+
+            avail = hsi_event.get_consumables(item_codes=cons['maternal_sepsis_core'],
+                                              optional_item_codes=cons['maternal_sepsis_optional'])
+
+            # If delivered this intervention reduces a womans risk of dying from sepsis
+            if avail and sf_check:
+                df.at[person_id, 'la_sepsis_treatment'] = True
+
+    def assessment_and_plan_for_antepartum_haemorrhage(self, hsi_event):
+        """
+        This function represents the diagnosis of antepartum haemorrhage during  labour. This
+        function ensures that woman is referred for comprehensive care via caesarean section and blood transfusion.
+        It is called by  HSI_Labour_PresentsForSkilledBirthAttendanceInLabour
+        :param hsi_event: HSI event in which the function has been called:
+        (STR) 'hc' == health centre, 'hp' == hospital
+        """
+        df = self.sim.population.props
+        params = self.current_parameters
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         person_id = hsi_event.target
 
         if 'assessment_and_plan_for_referral_antepartum_haemorrhage' not in params['allowed_interventions']:
             return
-        else:
-            # We assume that any woman who has been referred from antenatal inpatient care due to haemorrhage are
-            # automatically scheduled for blood transfusion
-            if (df.at[person_id, 'ps_antepartum_haemorrhage'] != 'none') and (df.at[person_id,
-                                                                                    'ac_admitted_for_immediate_'
-                                                                                    'delivery'] != 'none'):
 
-                mni[person_id]['referred_for_blood'] = True
-                logger.debug(key='message', data=f'mother {person_id} who was admitted for treatment following an '
-                                                 f'antepartum haemorrhage will be referred for treatment ')
+        # We assume that any woman who has been referred from antenatal inpatient care due to haemorrhage are
+        # automatically scheduled for blood transfusion
+        if (df.at[person_id, 'ps_antepartum_haemorrhage'] != 'none') and (df.at[person_id,
+                                                                                'ac_admitted_for_immediate_'
+                                                                                'delivery'] != 'none'):
 
-            else:
-                # Otherwise the same format is followed, women are evaluated via the dx_test function. If bleeding is
-                # determined then they will be referred for caesarean delivery
+            mni[person_id]['referred_for_blood'] = True
 
-                # Caesarean delivery reduces the risk of intrapartum still birth and blood transfusion reduces the risk
-                # of maternal death due to bleeding
-                if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=f'assess_'
-                                                                                           f'aph_{facility_type}',
-                                                                           hsi_event=hsi_event):
-                    mni[person_id]['referred_for_cs'] = True
-                    mni[person_id]['referred_for_blood'] = True
+        elif df.at[person_id, 'la_antepartum_haem'] != 'none':
 
-                    logger.debug(key='message', data=f'mother {person_id} has has their antepartum haemorrhage '
-                                                     f'identified during delivery. They will now be referred for '
-                                                     f'additional treatment')
+            # Caesarean delivery reduces the risk of intrapartum still birth and blood transfusion reduces the risk
+            # of maternal death due to bleeding
+            mni[person_id]['referred_for_cs'] = True
+            mni[person_id]['cs_indication'] = 'la_aph'
+            mni[person_id]['referred_for_blood'] = True
 
-                elif df.at[person_id, 'la_antepartum_haem'] != 'none':
-                    logger.debug(key='message', data=f'mother {person_id} has not had their antepartum haemorrhage '
-                                                     f'identified during delivery and will not be referred for '
-                                                     f'treatment')
-
-    def assessment_for_referral_uterine_rupture(self, hsi_event, facility_type):
+    def assessment_for_referral_uterine_rupture(self, hsi_event):
         """
-        This function represents the diagnosis of uterine rupture during  labour. This
-        function uses the dx_test to determine a woman with uterine rupture is correctly identified, and ensure
-        that woman is referred for comprehensive care via caesarean section, surgical repair and blood transfusion.
+        This function represents the diagnosis of uterine rupture during  labour and ensures
+        that a woman is referred for comprehensive care via caesarean section, surgical repair and blood transfusion.
         It is called by either HSI_Labour_PresentsForSkilledBirthAttendanceInLabour
         :param hsi_event: HSI event in which the function has been called:
-        :param facility_type: type of facility this intervention is being delivered in
         (STR) 'hc' == health centre, 'hp' == hospital
         """
         df = self.sim.population.props
-        params = self.parameters
+        params = self.current_parameters
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         person_id = hsi_event.target
 
         if 'assessment_and_plan_for_referral_uterine_rupture' not in params['allowed_interventions']:
             return
-        else:
-            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=f'assess_'
-                                                                                       f'uterine_'
-                                                                                       f'rupture_{facility_type}',
-                                                                       hsi_event=hsi_event):
-                logger.debug(key='message', data='mother %d has has their uterine rupture identified during delivery. '
-                                                 'They will now be referred for additional treatment')
 
-                mni[person_id]['referred_for_surgery'] = True
-                mni[person_id]['referred_for_cs'] = True
-                mni[person_id]['referred_for_blood'] = True
-
-            elif df.at[person_id, 'la_uterine_rupture']:
-                logger.debug(key='message', data=f'mother {person_id} has not had their uterine_rupture identified '
-                                                 f'during delivery and will not be referred for treatment')
+        if df.at[person_id, 'la_uterine_rupture']:
+            mni[person_id]['referred_for_surgery'] = True
+            mni[person_id]['referred_for_cs'] = True
+            mni[person_id]['cs_indication'] = 'ur'
+            mni[person_id]['referred_for_blood'] = True
 
     def active_management_of_the_third_stage_of_labour(self, hsi_event):
         """
         This function represents the administration of active management of the third stage of labour. This
-        function checks the availibility of consumables and delivers the intervention accordingly. It is called by
+        function checks the availability of consumables and delivers the intervention accordingly. It is called by
         HSI_Labour_PresentsForSkilledBirthAttendanceFollowingLabour
         :param hsi_event: HSI event in which the function has been called:
         """
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-        params = self.parameters
+        params = self.current_parameters
         person_id = hsi_event.target
-        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        cons = self.item_codes_lab_consumables
 
         if 'active_management_of_the_third_stage_of_labour' not in params['allowed_interventions']:
             return
-        else:
-            # pkg_code_am = pd.unique(
-            #     consumables.loc[consumables['Intervention_Pkg'] == 'Active management of the 3rd stage of labour',
-            #                     'Intervention_Pkg_Code'])[0]
 
-            # all_available = hsi_event.get_all_consumables(
-            #     pkg_codes=[pkg_code_am])
-            all_available = True
+        avail = hsi_event.get_consumables(item_codes=cons['amtsl'],
+                                          optional_item_codes=cons['iv_drug_equipment'])
 
-            # This treatment reduces a womans risk of developing uterine atony AND retained placenta, both of which are
-            # preceding causes of postpartum haemorrhage
-            if all_available:
-                logger.debug(key='message', data=f'mother {person_id} did not receive active management of the third '
-                                                 f'stage of labour')
-                mni[person_id]['amtsl_given'] = True
-            else:
-                logger.debug(key='message', data=f'mother {person_id} did not receive active management of the third '
-                                                 f'stage of labour')
+        # run HCW check
+        sf_check = self.check_emonc_signal_function_will_run(sf='uterotonic',
+                                                             f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
 
-    def assessment_and_treatment_of_pph_uterine_atony(self, hsi_event, facility_type):
+        # This treatment reduces a womans risk of developing uterine atony AND retained placenta, both of which are
+        # preceding causes of postpartum haemorrhage
+        if avail and sf_check:
+            mni[person_id]['amtsl_given'] = True
+
+    def assessment_and_treatment_of_pph_uterine_atony(self, hsi_event):
         """
         This function represents the diagnosis and management of postpartum haemorrhage secondary to uterine atony
-        following labour. This function defines the required consumables, uses the dx_test to determine a woman with
-        PPH/UA is correctly identified, and administers the intervention if so. The intervention in this function is
-        intravenous uterotonics followed by referral for further care in the event of continued haemorrhage.
-         It is called by HSI_Labour_ReceivesCareForPostpartumPeriod
-        :param hsi_event: HSI event in which the function has been called:
-        :param facility_type: type of facility this intervention is being delivered in
-        (STR) 'hc' == health centre, 'hp' == hospital
+        following labour. This function defines the required consumables and administers the intervention if they are
+        available. The intervention in this function is  intravenous uterotonics followed by referral for further care
+        in the event of continued haemorrhage. It is called by HSI_Labour_ReceivesPostnatalCheck
+        :param hsi_event: HSI event in which the function has been called
         """
+        df = self.sim.population.props
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-        params = self.parameters
+        params = self.current_parameters
         person_id = hsi_event.target
-        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        cons = self.item_codes_lab_consumables
 
         if 'assessment_and_treatment_of_pph_uterine_atony' not in params['allowed_interventions']:
             return
-        else:
 
-            # pkg_code_pph = pd.unique(
-            #     consumables.loc[consumables['Intervention_Pkg'] == 'Treatment of postpartum hemorrhage',
-            #                     'Intervention_Pkg_Code'])[0]
+        if df.at[person_id, 'la_postpartum_haem'] and not mni[person_id]['retained_placenta']:
 
-            # consumables_needed_pph = {'Intervention_Package_Code': {pkg_code_pph: 1}, 'Item_Code': {}}
+            avail = hsi_event.get_consumables(item_codes=cons['pph_core'],
+                                              optional_item_codes=cons['pph_optional'])
+            # run HCW check
+            sf_check = self.check_emonc_signal_function_will_run(sf='uterotonic',
+                                                                 f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
 
-            # outcome_of_request_for_consumables_pph = self.sim.modules['HealthSystem'].request_consumables(
-            #     hsi_event=hsi_event,
-            #     cons_req_as_footprint=consumables_needed_pph)
-            outcome_of_request_for_consumables_pph = {
-                'Intervention_Package_Code': defaultdict(lambda: True),
-                'Item_Code': defaultdict(lambda: True)
-            }
+            if avail and sf_check:
 
-            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=f'assess_pph_{facility_type}',
-                                                                       hsi_event=hsi_event):
-                if outcome_of_request_for_consumables_pph:
+                # We apply a probability that this treatment will stop a womans bleeding in the first instance
+                # meaning she will not require further treatment
+                if params['prob_haemostatis_uterotonics'] > self.rng.random_sample():
 
-                    # We apply a probability that this treatment will stop a womans bleeding in the first instance
-                    # meaning she will not require further treatment
-                    if params['prob_haemostatis_uterotonics'] > self.rng.random_sample():
-                        logger.debug(key='msg', data=f'mother {person_id} received uterotonics for her PPH which has '
-                                                     f'resolved')
+                    # Bleeding has stopped, this woman will not be at risk of death
+                    df.at[person_id, 'la_postpartum_haem'] = False
+                    mni[person_id]['uterine_atony'] = False
 
-                        # We store the treatment in a bitset column, where it will be used to reduce risk of death
-                        # after PPH. Additionally she is referred for blood which also reduces risk of death
-                        self.pph_treatment.set([person_id], 'uterotonics')
-                        mni[person_id]['referred_for_blood'] = True
+                # If uterotonics do not stop bleeding the woman is referred for additional treatment
+                else:
+                    mni[person_id]['referred_for_surgery'] = True
+                    mni[person_id]['referred_for_blood'] = True
 
-                    # If uterotonics do not stop bleeding the woman is referred for additional treatment
-                    else:
-                        logger.debug(key='msg',
-                                     data=f'mother {person_id} received uterotonics for her PPH which has not'
-                                          f' resolved and she will need additional treatment')
-                        mni[person_id]['referred_for_surgery'] = True
-                        mni[person_id]['referred_for_blood'] = True
-                        return True
-
-    def assessment_and_treatment_of_pph_retained_placenta(self, hsi_event, facility_type):
+    def assessment_and_treatment_of_pph_retained_placenta(self, hsi_event):
         """
         This function represents the diagnosis and management of postpartum haemorrhage secondary to retained placenta
-        following labour. This function defines the required consumables, uses the dx_test to determine a woman with
-        PPH/RP is correctly identified, and administers the intervention if so. The intervention in this function is
-        manual removal of placenta (bedside) followed by referral for further care in the event of continued
-        haemorrhage. It is called by HSI_Labour_ReceivesCareForPostpartumPeriod
+        following labour. This function defines the required consumables and administers the intervention if they are
+        available. The intervention in this function is manual removal of placenta (bedside) followed by referral for
+        further care in the event of continued haemorrhage. It is called by HSI_Labour_ReceivesPostnatalCheck
         :param hsi_event: HSI event in which the function has been called:
-        :param facility_type: type of facility this intervention is being delivered in
-        (STR) 'hc' == health centre, 'hp' == hospital
         """
+        df = self.sim.population.props
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-        params = self.parameters
+        params = self.current_parameters
         person_id = hsi_event.target
-        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
         if 'assessment_and_treatment_of_pph_retained_placenta' not in params['allowed_interventions']:
             return
-        else:
-            # pkg_code_pph = pd.unique(consumables.loc[consumables['Intervention_Pkg'] == 'Treatment of postpartum '
-            #                                                                             'hemorrhage',
-            #                                          'Intervention_Pkg_Code'])[0]
 
-            # all_available = hsi_event.get_all_consumables(
-            #     pkg_codes=[pkg_code_pph])
-            all_available = True
+        if (
+            (df.at[person_id, 'la_postpartum_haem'] and mni[person_id]['retained_placenta']) or
+            df.at[person_id, 'pn_postpartum_haem_secondary']
+             ):
 
-            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=f'assess_pph_{facility_type}',
-                                                                       hsi_event=hsi_event):
-                if all_available:
+            # Log the consumables but dont condition the treatment on their availability - the primary mechanism of this
+            # intervention doesnt require consumables
+            hsi_event.get_consumables(item_codes=self.item_codes_lab_consumables['pph_optional'])
 
-                    # Similar to uterotonics we apply a probability that this intervention will successfully stop
-                    # bleeding to ensure some women go on to require further care
-                    if params['prob_successful_manual_removal_placenta'] > self.rng.random_sample():
-                        logger.debug(key='msg', data=f'mother {person_id} undergone MRP due to retained placenta and '
-                                                     f'her PPH has resolved')
-                        self.pph_treatment.set([person_id], 'manual_removal_placenta')
-                        mni[person_id]['referred_for_blood'] = True
+            # run HCW check
+            sf_check = self.check_emonc_signal_function_will_run(sf='man_r_placenta',
+                                                                 f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
 
-                    else:
-                        logger.debug(key='msg',
-                                     data=f'mother {person_id} undergone MRP due to retained placenta and her PPH has '
-                                          f'not resolved- she will need further treatment')
-                        mni[person_id]['referred_for_surgery'] = True
-                        mni[person_id]['referred_for_blood'] = True
+            # Similar to uterotonics we apply a probability that this intervention will successfully stop
+            # bleeding to ensure some women go on to require further care
+            if sf_check and (params['prob_successful_manual_removal_placenta'] > self.rng.random_sample()):
+
+                df.at[person_id, 'la_postpartum_haem'] = False
+                mni[person_id]['retained_placenta'] = False
+
+                if df.at[person_id, 'pn_postpartum_haem_secondary']:
+                    df.at[person_id, 'pn_postpartum_haem_secondary'] = False
+
+            else:
+                mni[person_id]['referred_for_surgery'] = True
+                mni[person_id]['referred_for_blood'] = True
 
     def surgical_management_of_pph(self, hsi_event):
         """
         This function represents the surgical management of postpartum haemorrhage (all-cause) following labour. This
-        function is either called during HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare or
-        HSI_Labour_ReceivesCareFollowingCaesareanSection for women who have PPH and medical management has failed.
+        function is called during HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare for women who have PPH and
+        medical management has failed.
         :param hsi_event: HSI event in which the function has been called
         """
         person_id = hsi_event.target
         df = self.sim.population.props
-        params = self.parameters
+        params = self.current_parameters
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+        cons = self.item_codes_lab_consumables
 
-        if df.at[person_id, 'la_postpartum_haem'] and \
-            self.cause_of_primary_pph.has_any([person_id], 'uterine_atony', first=True) \
-           and not self.pph_treatment.has_all(person_id, 'uterotonics'):
+        # We log the log the required consumables and condition the surgery happening on the availability of the
+        # first consumable in this package, the anaesthetic required for the surgery
+        avail = hsi_event.get_consumables(item_codes=cons['obstetric_surgery_core'],
+                                          optional_item_codes=cons['obstetric_surgery_optional'])
+
+        # run HCW check
+        sf_check = self.check_emonc_signal_function_will_run(sf='surg',
+                                                             f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
+
+        if not mni[person_id]['retained_placenta']:
 
             # We apply a probability that surgical techniques will be effective
             treatment_success_pph = params['success_rate_pph_surgery'] > self.rng.random_sample()
 
             # And store the treatment which will dramatically reduce risk of death
-            if treatment_success_pph:
-                logger.debug(key='msg',
-                                 data=f'mother {person_id} undergone surgery to manage her PPH which resolved')
+            if treatment_success_pph and avail and sf_check:
                 self.pph_treatment.set(person_id, 'surgery')
 
             # If the treatment is unsuccessful then women will require a hysterectomy to stop the bleeding
-            elif ~treatment_success_pph:
-                logger.debug(key='msg', data=f'mother {person_id} undergone surgery to manage her PPH, she required'
-                                             f' a hysterectomy to stop the bleeding')
-
+            elif not treatment_success_pph and avail and sf_check:
                 self.pph_treatment.set(person_id, 'hysterectomy')
                 df.at[person_id, 'la_has_had_hysterectomy'] = True
 
         # Next we apply the effect of surgical treatment for women with retained placenta
-        if df.at[person_id, 'la_postpartum_haem'] and self.cause_of_primary_pph.has_any(
-            [person_id], 'retained_placenta', first=True) and not self.pph_treatment.has_all(person_id,
-                                                                                             'manual_removal_placenta'):
+        elif (mni[person_id]['retained_placenta'] and not self.pph_treatment.has_all(person_id,
+                                                                                     'manual_removal_placenta')
+              and sf_check and avail):
 
             self.pph_treatment.set(person_id, 'surgery')
-            logger.debug(key='msg',
-                         data=f'mother {person_id} undergone surgical removal of a retained placenta ')
 
     def blood_transfusion(self, hsi_event):
         """
-        This function represents the blood transfusion during or after labour. This
-        function is either called during HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare or
-        HSI_Labour_ReceivesCareFollowingCaesareanSection for women who have experience blood loss due to antepartum
-        haemorrhage, postpartum haemorrhage or uterine rupture
+        This function represents the blood transfusion during or after labour. This function is called during
+        HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare for women who have experience blood loss due to
+        antepartum haemorrhage, postpartum haemorrhage or uterine rupture
         :param hsi_event: HSI event in which the function has been called
         """
         person_id = hsi_event.target
-        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+        params = self.current_parameters
+        df = self.sim.population.props
+        cons = self.item_codes_lab_consumables
+
+        # Check consumables
+        avail = hsi_event.get_consumables(item_codes=cons['blood_transfusion'],
+                                          optional_item_codes=cons['iv_drug_equipment'])
+        # check HCW
+        sf_check = self.check_emonc_signal_function_will_run(sf='blood_tran',
+                                                             f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
+
+        if avail and sf_check:
+            mni[person_id]['received_blood_transfusion'] = True
+
+            # We assume that anaemia is corrected by blood transfusion
+            if df.at[person_id, 'pn_anaemia_following_pregnancy'] != 'none':
+                if params['treatment_effect_blood_transfusion_anaemia'] > self.rng.random_sample():
+                    pregnancy_helper_functions.store_dalys_in_mni(person_id, mni, 'severe_anaemia_resolution',
+                                                                  self.sim.date)
+                    df.at[person_id, 'pn_anaemia_following_pregnancy'] = 'none'
+
+    def assessment_and_treatment_of_anaemia(self, hsi_event):
+        """
+        This function represents the management of postnatal anaemia including iron and folic acid administration and
+        blood testing. Women with severe anaemia are scheduled to receive blood. It is called during
+        HSI_Labour_ReceivesPostnatalCheck
+        :param hsi_event: HSI event in which the function has been called
+        """
+        df = self.sim.population.props
+        person_id = hsi_event.target
+        params = self.current_parameters
+        mother = df.loc[person_id]
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
-        # item_code_bt1 = pd.unique(consumables.loc[consumables['Items'] == 'Blood, one unit', 'Item_Code'])[0]
-        # item_code_bt2 = \
-        #     pd.unique(consumables.loc[consumables['Items'] == 'Lancet, blood, disposable', 'Item_Code'])[0]
-        # item_code_bt3 = pd.unique(consumables.loc[consumables['Items'] == 'Test, hemoglobin', 'Item_Code'])[0]
-        # item_code_bt4 = pd.unique(consumables.loc[consumables['Items'] == 'IV giving/infusion set, with needle',
-        #                                           'Item_Code'])[0]
-        item_code_bt1 = 0
-        item_code_bt2 = 0
-        item_code_bt3 = 0
-        item_code_bt4 = 0
+        # Use dx_test function to assess anaemia status
+        test_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
+            dx_tests_to_run='full_blood_count_hb_pn', hsi_event=hsi_event)
 
-        # consumables_needed_bt = {'Intervention_Package_Code': {}, 'Item_Code': {item_code_bt1: 2, item_code_bt2: 1,
-        #                                                                         item_code_bt3: 1, item_code_bt4: 2}}
+        hsi_event.get_consumables(item_codes=self.item_codes_lab_consumables['blood_test_equipment'])
 
-        # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-        #     hsi_event=hsi_event, cons_req_as_footprint=consumables_needed_bt)
-        outcome_of_request_for_consumables = {
-            'Intervention_Package_Code': defaultdict(lambda: True),
-            'Item_Code': defaultdict(lambda: True)
-        }
+        # Check consumables
+        if test_result:
+            # Start iron and folic acid supplementation for women not already receiving this
+            if not mother.la_iron_folic_acid_postnatal:
 
-        # If they're available, the event happens
-        if (outcome_of_request_for_consumables['Item_Code'][item_code_bt1]) \
-            and (outcome_of_request_for_consumables['Item_Code'][item_code_bt2]) \
-            and (outcome_of_request_for_consumables['Item_Code'][item_code_bt3]) \
-           and (outcome_of_request_for_consumables['Item_Code'][item_code_bt4]):
+                days = int((6 - df.at[person_id, 'pn_postnatal_period_in_weeks']) * 7)
+                cons = {_i: days for _i in self.item_codes_lab_consumables['iron_folic_acid']}
+                avail = hsi_event.get_consumables(item_codes=cons)
 
-            mni[person_id]['received_blood_transfusion'] = True
-            logger.debug(key='message', data=f'Mother {person_id} has received a blood transfusion due following a'
-                                             f' maternal haemorrhage')
-        else:
-            logger.debug(key='message', data=f'Mother {person_id} was unable to receive a blood transfusion due to '
-                                             f'insufficient consumables')
+                # Start iron and folic acid treatment
+                if avail:
+                    df.at[person_id, 'la_iron_folic_acid_postnatal'] = True
+
+                    if self.rng.random_sample() < params['effect_of_ifa_for_resolving_anaemia']:
+
+                        # Store date of resolution for daly calculations
+                        pregnancy_helper_functions.store_dalys_in_mni(
+                            person_id, mni, f'{df.at[person_id, "pn_anaemia_following_pregnancy"]}_anaemia_resolution',
+                            self.sim.date)
+
+                        df.at[person_id, 'pn_anaemia_following_pregnancy'] = 'none'
+
+        # Severe anaemia would require treatment via blood transfusion
+            if mother.pn_anaemia_following_pregnancy == 'severe':
+                mni[person_id]['referred_for_blood'] = True
+
+    def assessment_for_depression(self, hsi_event):
+        """
+        This function schedules depression screening for women who attend postnatal care via the Depression module. It
+        is called within HSI_Labour_ReceivesPostnatalCheck.
+        :param hsi_event: HSI event in which the function has been called
+        """
+        df = self.sim.population.props
+        person_id = hsi_event.target
+
+        if 'Depression' in self.sim.modules.keys():
+            if not df.at[person_id, 'de_ever_diagnosed_depression']:
+                self.sim.modules['Depression'].do_when_suspected_depression(person_id, hsi_event)
 
     def interventions_delivered_pre_discharge(self, hsi_event):
         """
         This function contains the interventions that are delivered to women prior to discharge. This are considered
         part of essential postnatal care and currently include testing for HIV and postnatal iron and folic acid
-        supplementation. It is called by HSI_Labour_ReceivesCareForPostpartumPeriod
+        supplementation. It is called by HSI_Labour_ReceivesPostnatalCheck
         :param hsi_event: HSI event in which the function has been called:
         """
         df = self.sim.population.props
         person_id = int(hsi_event.target)
-        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        params = self.current_parameters
 
+        # HIV testing occurs within the HIV module for women who havent already been diagnosed
         if 'Hiv' in self.sim.modules.keys():
-            if ~df.at[person_id, 'hv_diagnosed']:
+            if not df.at[person_id, 'hv_diagnosed']:
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     HSI_Hiv_TestAndRefer(person_id=person_id, module=self.sim.modules['Hiv']),
                     topen=self.sim.date,
@@ -2195,36 +2238,73 @@ class Labour(Module):
                     priority=0)
 
         # ------------------------------- Postnatal iron and folic acid ---------------------------------------------
-        # item_code_iron_folic_acid = pd.unique(
-        #     consumables.loc[consumables['Items'] ==
-        #     'Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg', 'Item_Code'])[0]
-        item_code_iron_folic_acid = 0
-
-        # consumables_iron = {
-        #     'Intervention_Package_Code': {},
-        #     'Item_Code': {item_code_iron_folic_acid: 93}}
-
-        # Check there availability
-        # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-        #     hsi_event=hsi_event,
-        #     cons_req_as_footprint=consumables_iron)
-        outcome_of_request_for_consumables = {
-            'Intervention_Package_Code': defaultdict(lambda: True),
-            'Item_Code': defaultdict(lambda: True)
-        }
+        cons = {_i: params['number_ifa_tablets_required_postnatally'] for _i in
+                self.item_codes_lab_consumables['iron_folic_acid']}
+        avail = hsi_event.get_consumables(item_codes=cons)
 
         # Women are started on iron and folic acid for the next three months which reduces risk of anaemia in the
         # postnatal period
-        if outcome_of_request_for_consumables['Item_Code'][item_code_iron_folic_acid]:
+        if avail and (self.rng.random_sample() < params['prob_adherent_ifa']):
             df.at[person_id, 'la_iron_folic_acid_postnatal'] = True
 
-        # TODO: link up with Tara and EPI module to code postnatal immunisation
+    def run_if_receives_skilled_birth_attendance_cant_run(self, hsi_event):
+        """
+        This function is called by HSI_Labour_PresentsForSkilledBirthAttendanceFollowingLabour if the HSI is unable to
+        run on the date it has been scheduled for. For these women who cannot deliver in a facility despite presenting
+         for care, they will be scheduled to undergo a home birth via LabourAtHomeEvent and will continue with the
+         correct schedule of labour events
+        :param hsi_event: HSI event in which the function has been called:
+        """
+        person_id = hsi_event.target
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+        logger.debug(key='message', data=f'HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour will not run for '
+                                         f'{person_id}')
+
+        # Women may have presented to HSI_Labour_PresentsForSkilledBirthAttendanceFollowingLabour following
+        # complications at a home birth. Those women should not be scheduled to LabourAtHomeEvent
+        if not mni[person_id]['sought_care_for_complication']:
+            mni[person_id]['delivery_setting'] = 'home_birth'
+            self.sim.schedule_event(LabourAtHomeEvent(self, person_id), self.sim.date)
+            mni[person_id]['hsi_cant_run'] = True
+
+    def run_if_receives_postnatal_check_cant_run(self, hsi_event):
+        """
+        This function is called by HSI_Labour_ReceivesPostnatalCheck if the HSI is unable to
+        run on the date it has been scheduled for. For these women who have may have experienced life threatening
+        complications we apply risk of death in this function, as it would have been applied in the HSI which can not
+        run
+        :param hsi_event: HSI event in which the function has been called:
+        """
+        person_id = hsi_event.target
+        logger.debug(key='message', data=f'HSI_Labour_ReceivesPostnatalCheck will not run for {person_id}')
+        self.apply_risk_of_early_postpartum_death(person_id)
+
+    def run_if_receives_comprehensive_emergency_obstetric_care_cant_run(self, hsi_event):
+        """
+        This function is called by HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare if the HSI is unable to
+        run on the date it has been scheduled for. For these women who have may have experienced life threatening
+        complications we apply risk of death in this function, as it would have been applied in the HSI which can not
+        run
+        :param hsi_event: HSI event in which the function has been called:
+        """
+        person_id = hsi_event.target
+        logger.debug(key='message', data=f'HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare will not run for'
+                                         f' {person_id}')
+
+        # For women referred to this event after the postnatal SBA HSI we apply risk of death (as if should have been
+        # applied in this event if it ran)
+        if hsi_event.timing == 'postpartum':
+            self.apply_risk_of_early_postpartum_death(person_id)
 
 
 class LabourOnsetEvent(Event, IndividualScopeEventMixin):
     """
     This is the LabourOnsetEvent. It is scheduled by the set_date_of_labour function for all women who are newly
-    pregnant. It represents the start of a womans labour and is the first event all woman who are going to give birth
+    pregnant. In addition it is scheduled via the Pregnancy Supervisor module for women who are going into preterm
+    labour and by the Care of Women During Pregnancy module for women who require emergency delivery as an intervention
+    to treat a pregnancy-threatening complication.
+
+    It represents the start of a womans labour and is the first event all woman who are going to give birth
     pass through - regardless of mode of delivery or if they are already an inpatient. This event performs a number of
     different functions including populating the mni dictionary to store additional variables important to labour
     and HSIs, determining if and where a woman will seek care for delivery, schedules the LabourAtHome event and the
@@ -2237,7 +2317,7 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
 
     def apply(self, individual_id):
         df = self.sim.population.props
-        params = self.module.parameters
+        params = self.module.current_parameters
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         # First we use this check to determine if labour can precede (includes checks on is_alive)
@@ -2251,39 +2331,8 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
             # We then run the labour_characteristics_checker as a final check that only appropriate women are here
             self.module.labour_characteristics_checker(individual_id)
 
-            # Append labor specific variables to the mni
-            labour_variables = {'labour_state': None,
-                                # Term Labour (TL), Early Preterm (EPTL), Late Preterm (LPTL) or Post Term (POTL)
-                                'delivery_setting': None,  # home_birth, health_centre, hospital
-                                'twin_count': 0,
-                                'twin_one_comps': False,
-                                'sought_care_for_twin_one': False,
-                                'bf_status_twin_one': 'none',
-                                'eibf_status_twin_one': False,
-                                'delayed_pp_infection': False,
-                                'onset_of_delayed_inf': 0,
-                                'corticosteroids_given': False,
-                                'clean_birth_practices': False,
-                                'abx_for_prom_given': False,
-                                'abx_for_pprom_given': False,
-                                'amtsl_given': False,
-                                'mode_of_delivery': 'vaginal_delivery',
-                                # vaginal_delivery, instrumental, caesarean_section
-                                'squeeze_to_high_for_hsi': False,  # True (T) or False (F)
-                                'squeeze_to_high_for_hsi_pp': False,  # True (T) or False (F)
-                                'sought_care_for_complication': False,  # True (T) or False (F)
-                                'sought_care_labour_phase': 'none',  # none, intrapartum, postpartum
-                                'referred_for_cs': False,  # True (T) or False (F)
-                                'referred_for_blood': False,  # True (T) or False (F)
-                                'received_blood_transfusion': False,  # True (T) or False (F)
-                                'referred_for_surgery': False,  # True (T) or False (F)'
-                                'death_in_labour': False,  # True (T) or False (F)
-                                'cause_of_death_in_labour': [],
-                                'single_twin_still_birth': False,  # True (T) or False (F)
-                                'death_postpartum': False,  # True (T) or False (F)
-                                }
-
-            mni[individual_id].update(labour_variables)
+            # Update the mni with new variables
+            pregnancy_helper_functions.update_mni_dictionary(self.module, individual_id)
 
             # ===================================== LABOUR STATE  =====================================================
             # Next we categories each woman according to her gestation age at delivery. These categories include term
@@ -2297,37 +2346,97 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
 
             # We use parameters containing the upper and lower limits, in days, that a mothers pregnancy has to be to be
             # categorised accordingly
-            if params['lower_limit_term_days'] <= gestational_age_in_days <= params['upper_limit_term_days']:
+            if params['list_limits_for_defining_term_status'][0] <= gestational_age_in_days <= \
+               params['list_limits_for_defining_term_status'][1]:
 
-                self.module.labour_tracker['term'] += 1
                 mni[individual_id]['labour_state'] = 'term_labour'
 
             # Here we allow a woman to go into early preterm labour with a gestational age of 23 (limit is 24) to
             # account for PregnancySupervisor only updating weekly
-            elif params['lower_limit_early_preterm_days'] <= gestational_age_in_days <= params['upper_limit_early_'
-                                                                                               'preterm_days']:
+            elif params['list_limits_for_'
+                        'defining_term_status'][2] <= gestational_age_in_days <= params['list_limits_for_'
+                                                                                        'defining_term_status'][3]:
 
                 mni[individual_id]['labour_state'] = 'early_preterm_labour'
-                self.module.labour_tracker['early_preterm'] += 1
                 df.at[individual_id, 'la_has_previously_delivered_preterm'] = True
 
-            elif params['lower_limit_late_preterm_days'] <= gestational_age_in_days <= params['upper_limit_late_'
-                                                                                              'preterm_days']:
+                logger.info(key='maternal_complication', data={'person': individual_id,
+                                                               'type': 'early_preterm_labour',
+                                                               'timing': 'intrapartum'})
+
+            elif params['list_limits_for_defining_term_status'][4] <= gestational_age_in_days <= params['list_limits'
+                                                                                                        '_for_defining'
+                                                                                                        '_term_'
+                                                                                                        'status'][5]:
 
                 mni[individual_id]['labour_state'] = 'late_preterm_labour'
-                self.module.labour_tracker['late_preterm'] += 1
                 df.at[individual_id, 'la_has_previously_delivered_preterm'] = True
 
-            elif gestational_age_in_days >= params['lower_limit_postterm_days']:
+                logger.info(key='maternal_complication', data={'person': individual_id,
+                                                               'type': 'late_preterm_labour',
+                                                               'timing': 'intrapartum'})
+
+            elif gestational_age_in_days >= params['list_limits_for_defining_term_status'][6]:
 
                 mni[individual_id]['labour_state'] = 'postterm_labour'
-                self.module.labour_tracker['post_term'] += 1
+
+                logger.info(key='maternal_complication', data={'person': individual_id,
+                                                               'type': 'post_term_labour',
+                                                               'timing': 'intrapartum'})
+
+            labour_state = mni[individual_id]['labour_state']
 
             # We check all women have had their labour state set
-            assert mni[individual_id]['labour_state'] is not None
-            labour_state = mni[individual_id]['labour_state']
+            if labour_state is None:
+                logger.debug(key='error', data=f'Mother {individual_id} has not had their labour state stored in '
+                                               f'the mni')
+
             logger.debug(key='message', data=f'This is LabourOnsetEvent, person {individual_id} has now gone into '
                                              f'{labour_state} on date {self.sim.date}')
+
+            # ----------------------------------- FOETAL WEIGHT/BIRTH WEIGHT ----------------------------------------
+            # Here we determine the weight of the foetus being carried by this mother, this is calculated here to allow
+            # the size of the baby to effect risk of certain maternal complications (i.e. obstructed labour)
+            if df.at[individual_id, 'ps_gestational_age_in_weeks'] < 24:
+                mean_birth_weight_list_location = 1
+            else:
+                mean_birth_weight_list_location = int(min(41, df.at[individual_id, 'ps_gestational_age_in_weeks']) - 24)
+
+            standard_deviation = params['standard_deviation_birth_weights'][mean_birth_weight_list_location]
+
+            # We randomly draw this newborns weight from a normal distribution around the mean for their gestation
+            birth_weight = self.module.rng.normal(loc=params['mean_birth_weights'][mean_birth_weight_list_location],
+                                                  scale=standard_deviation)
+
+            # Then we calculate the 10th and 90th percentile, these are the case definition for 'small for gestational
+            # age and 'large for gestational age'
+            small_for_gestational_age_cutoff = scipy.stats.norm.ppf(
+                0.1, loc=params['mean_birth_weights'][mean_birth_weight_list_location], scale=standard_deviation)
+
+            large_for_gestational_age_cutoff = scipy.stats.norm.ppf(
+                0.9, loc=params['mean_birth_weights'][mean_birth_weight_list_location], scale=standard_deviation)
+
+            # Make the appropriate changes to the mni dictionary (both are stored as property of the newborn on birth)
+            if birth_weight >= 4000:
+                mni[individual_id]['birth_weight'] = 'macrosomia'
+            elif birth_weight >= 2500:
+                if self.module.rng.random_sample() < params['residual_prob_of_macrosomia']:
+                    mni[individual_id]['birth_weight'] = 'macrosomia'
+                else:
+                    mni[individual_id]['birth_weight'] = 'normal_birth_weight'
+            elif 1500 <= birth_weight < 2500:
+                mni[individual_id]['birth_weight'] = 'low_birth_weight'
+            elif 1000 <= birth_weight < 1500:
+                mni[individual_id]['birth_weight'] = 'very_low_birth_weight'
+            elif birth_weight < 1000:
+                mni[individual_id]['birth_weight'] = 'extremely_low_birth_weight'
+
+            if birth_weight < small_for_gestational_age_cutoff:
+                mni[individual_id]['birth_size'] = 'small_for_gestational_age'
+            elif birth_weight > large_for_gestational_age_cutoff:
+                mni[individual_id]['birth_size'] = 'large_for_gestational_age'
+            else:
+                mni[individual_id]['birth_size'] = 'average_for_gestational_age'
 
             # ===================================== CARE SEEKING AND DELIVERY SETTING ================================
             # Next we determine if women who are now in labour will seek care for delivery. We assume women who have
@@ -2336,19 +2445,20 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
             if df.at[individual_id, 'ac_admitted_for_immediate_delivery'] == 'none':
 
                 # Here we calculate this womans predicted risk of home birth and health centre birth
-                pred_hb_delivery = params['la_labour_equations']['probability_delivery_at_home'].predict(
+                pred_hb_delivery = self.module.la_linear_models['probability_delivery_at_home'].predict(
                     df.loc[[individual_id]])[individual_id]
-                pred_hc_delivery = params['la_labour_equations']['probability_delivery_health_centre'].predict(
+                pred_hc_delivery = self.module.la_linear_models['probability_delivery_health_centre'].predict(
                     df.loc[[individual_id]])[individual_id]
+                pred_hp_delivery = params['probability_delivery_hospital']
 
                 # The denominator is calculated
-                denom = 1 + pred_hb_delivery + pred_hc_delivery
+                denom = pred_hp_delivery + pred_hb_delivery + pred_hc_delivery
 
                 # Followed by the probability of each of the three outcomes - home birth, health centre birth or
                 # hospital birth
                 prob_hb = pred_hb_delivery / denom
                 prob_hc = pred_hc_delivery / denom
-                prob_hp = 1 / denom
+                prob_hp = pred_hp_delivery / denom
 
                 # And a probability weighted random draw is used to determine where the woman will deliver
                 facility_types = ['home_birth', 'health_centre', 'hospital']
@@ -2366,15 +2476,13 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                 mni[individual_id]['delivery_setting'] = 'hospital'
 
             # Check all women's 'delivery setting' is set
-            assert mni[individual_id]['delivery_setting'] is not None
+            if mni[individual_id]['delivery_setting'] is None:
+                logger.debug(key='error', data=f'Mother {individual_id} did not have their delivery setting stored in '
+                                               f'the mni')
 
             # Women delivering at home move the the LabourAtHomeEvent as they will not receive skilled birth attendance
             if mni[individual_id]['delivery_setting'] == 'home_birth':
                 self.sim.schedule_event(LabourAtHomeEvent(self.module, individual_id), self.sim.date)
-
-                logger.info(key='message', data=f'This is LabourOnsetEvent, person {individual_id} as they has chosen '
-                                                f'not to seek care at a health centre for delivery and will give birth '
-                                                f'at home on date {self.sim.date}')
 
             # Otherwise the appropriate HSI is scheduled
             elif mni[individual_id]['delivery_setting'] == 'health_centre':
@@ -2384,26 +2492,16 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                                                                     topen=self.sim.date,
                                                                     tclose=self.sim.date + DateOffset(days=1))
 
-                logger.info(key='message', data=f'This is LabourOnsetEvent, scheduling '
-                                                f'HSI_Labour_PresentsForSkilledAttendanceInLabour on date '
-                                                f'{self.sim.date} for person {individual_id} as they have chosen to '
-                                                f'seek care at a health centre for delivery')
-
-            # TODO: hospital care could be delivered at level 1,2 or 3 but at the moment it made sense to limit to
-            #  1 and 2. need to look at the data to make sure the right number of women are at district hospitals
-            #  versus higher level hospitals
-
             elif mni[individual_id]['delivery_setting'] == 'hospital':
-                facility_level = self.module.rng.choice(['1a', '1b'])  # todo note choice
+                facility_level = self.module.rng.choice(['1a', '1b'])
                 hospital_delivery = HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(
                     self.module, person_id=individual_id, facility_level_of_this_hsi=facility_level)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(hospital_delivery, priority=0,
                                                                     topen=self.sim.date,
                                                                     tclose=self.sim.date + DateOffset(days=1))
-                logger.info(key='message', data=f'This is LabourOnsetEvent, scheduling '
-                                                f'HSI_Labour_PresentsForSkilledAttendanceInLabour on date '
-                                                f'{self.sim.date} for person {individual_id} as they have chosen to '
-                                                f'seek care at a hospital for delivery')
+
+            # Determine if the labouring woman will be delayed in attending for facility delivery
+            pregnancy_helper_functions.check_if_delayed_careseeking(self.module, individual_id)
 
             # ======================================== SCHEDULING BIRTH AND DEATH EVENTS ============================
             # We schedule all women to move through both the death and birth event.
@@ -2413,54 +2511,49 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
             self.sim.schedule_event(LabourDeathAndStillBirthEvent(self.module, individual_id), self.sim.date +
                                     DateOffset(days=4))
 
-            logger.debug(key='message', data=f'This is LabourOnsetEvent scheduling a potential death for mother '
-                                             f'{individual_id} which will occur on'
-                                             f' {self.sim.date + DateOffset(days=4)}')
-
             # After the death event women move to the Birth Event where, for surviving women and foetus, birth occurs
             # in the simulation
-            self.sim.schedule_event(BirthEvent(self.module, individual_id), self.sim.date + DateOffset(days=5))
-
-            logger.debug(key='message', data=f'This is LabourOnsetEvent scheduling a birth on date to mother'
-                                             f' {individual_id} which will occur on '
-                                             f'{self.sim.date + DateOffset(days=5)}')
+            self.sim.schedule_event(BirthAndPostnatalOutcomesEvent(self.module, individual_id), self.sim.date +
+                                    DateOffset(days=5))
 
 
 class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
     """
-    This is the LabourAtHomeEvent. It is scheduled by the LabourOnsetEvent for women who will not
-    seek care at a health facility. This event applies the probability that women delivering at home will experience
+    This is the LabourAtHomeEvent. It is scheduled by the LabourOnsetEvent for women who will not seek delivery care at
+    a  health facility. This event applies the probability that women delivering at home will experience
     complications associated with the intrapartum phase of labour and makes the appropriate changes to the data frame.
      Additionally this event applies a probability that women who develop complications during a home birth may choose
-     to seek care from at a health facility. In that case the appropriate HSI is scheduled
+     to seek care from at a health facility. In that case the appropriate HSI is scheduled.
      """
-
     def __init__(self, module, individual_id):
         super().__init__(module, person_id=individual_id)
 
     def apply(self, individual_id):
         df = self.sim.population.props
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-        params = self.module.parameters
+        params = self.module.current_parameters
 
         if not df.at[individual_id, 'is_alive']:
             return
 
         # Check only women delivering at home pass through this event and that the right characteristics are present
-        assert mni[individual_id]['delivery_setting'] == 'home_birth'
-        self.module.labour_characteristics_checker(individual_id)
+        if not mni[individual_id]['delivery_setting'] == 'home_birth':
+            logger.debug(key='error', data=f'Mother {individual_id} arrived at home birth event incorrectly')
+            return
 
-        logger.debug(key='message', data=f'Mother {individual_id}  is now going to deliver at home')
-        self.module.labour_tracker['home_birth'] += 1
+        self.module.labour_characteristics_checker(individual_id)
 
         # ===================================  APPLICATION OF COMPLICATIONS ===========================================
         # Using the complication_application function we loop through each complication and determine if a woman
         # will experience any of these if she has delivered at home
-
-        for complication in ['cephalopelvic_dis', 'malpresentation', 'malposition', 'obstructed_labour',
-                             'placental_abruption', 'antepartum_haem', 'chorioamnionitis',
-                             'other_maternal_infection', 'sepsis', 'uterine_rupture']:
+        for complication in ['obstruction_cpd', 'obstruction_malpos_malpres', 'obstruction_other',
+                             'placental_abruption', 'antepartum_haem', 'sepsis_chorioamnionitis', 'uterine_rupture']:
             self.module.set_intrapartum_complications(individual_id, complication=complication)
+
+        if df.at[individual_id, 'la_obstructed_labour']:
+            logger.info(key='maternal_complication', data={'mother': individual_id,
+                                                           'type': 'obstructed_labour',
+                                                           'timing': 'intrapartum'})
 
         # And we determine if any existing hypertensive disorders would worsen
         self.module.progression_of_hypertensive_disorders(individual_id, property_prefix='ps')
@@ -2470,19 +2563,22 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
 
         # (Women who have been scheduled a home birth after seeking care at a facility that didnt have capacity to
         # deliver the HSI will not try to seek care if they develop a complication)
-        if not mni[individual_id]['squeeze_to_high_for_hsi']:
+        if not mni[individual_id]['hsi_cant_run']:
 
             if df.at[individual_id, 'la_obstructed_labour'] or \
                 (df.at[individual_id, 'la_antepartum_haem'] != 'none') or \
                 df.at[individual_id, 'la_sepsis'] or \
                 (df.at[individual_id, 'ps_htn_disorders'] == 'eclampsia') or \
-                (df.at[individual_id, 'ps_htn_disorders'] == 'severe_pre_eclamp') or \
-               df.at[individual_id, 'la_uterine_rupture']:
+                ((df.at[individual_id, 'ps_htn_disorders'] == 'severe_pre_eclamp') and
+                 mni[individual_id]['new_onset_spe']) or df.at[individual_id, 'la_uterine_rupture']:
 
-                if self.module.predict(params['la_labour_equations']['care_seeking_for_complication'], individual_id):
+                if self.module.rng.random_sample() < params['prob_careseeking_for_complication']:
 
                     mni[individual_id]['sought_care_for_complication'] = True
                     mni[individual_id]['sought_care_labour_phase'] = 'intrapartum'
+
+                    # Assume all women who develop complications at home incur effect of delay
+                    mni[individual_id]['delay_one_two'] = True
 
                     # We assume women present to the health system through the generic a&e appointment
                     from tlo.methods.hsi_generic_first_appts import (
@@ -2493,262 +2589,55 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
                         module=self.module,
                         person_id=individual_id)
 
-                    logger.debug(key='message', data=f'mother {individual_id} will now seek care for a complication'
-                                                     f' that has developed during labour')
                     self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                                         priority=0,
                                                                         topen=self.sim.date,
                                                                         tclose=self.sim.date + DateOffset(days=1))
-                else:
-                    logger.debug(key='message', data=f'mother {individual_id} will not seek care following a '
-                                                     f'complication that has developed during labour')
-
-
-class BirthEvent(Event, IndividualScopeEventMixin):
-    """This is the BirthEvent. It is scheduled by LabourOnsetEvent. For women who survived labour, the appropriate
-    variables are reset/updated and the function do_birth is executed. This event schedules PostPartumLabourEvent for
-    those women who have survived"""
-
-    def __init__(self, module, mother_id):
-        super().__init__(module, person_id=mother_id)
-
-    def apply(self, mother_id):
-        df = self.sim.population.props
-        person = df.loc[mother_id]
-        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-
-        # This event tells the simulation that the woman's pregnancy is over and generates the new child in the
-        # data frame
-        logger.info(key='message', data=f'mother {mother_id} at birth event')
-
-        # Check the correct amount of time has passed between labour onset and birth event and that women at the event
-        # have the right characteristics present
-
-        assert (self.sim.date - df.at[mother_id, 'la_due_date_current_pregnancy']) == pd.to_timedelta(5, unit='D')
-        self.module.labour_characteristics_checker(mother_id)
-
-        # =============================================== BIRTH ====================================================
-        # If the mother is alive and still pregnant we generate a  child and the woman is scheduled to move to the
-        # postpartum event to determine if she experiences any additional complications (intrapartum stillbirths still
-        # trigger births for monitoring purposes)
-
-        if person.is_alive and person.is_pregnant:
-            logger.info(key='message', data=f'A Birth is now occurring, to mother {mother_id}')
-
-            # If the mother is pregnant with twins, we call the do_birth function twice and then link the twins
-            # (via sibling id) in the newborn module
-            if person.ps_multiple_pregnancy:
-                child_one = self.sim.do_birth(mother_id)
-                child_two = self.sim.do_birth(mother_id)
-                logger.debug(key='message', data=f'Mother {mother_id} will now deliver twins {child_one} & {child_two}')
-                self.sim.modules['NewbornOutcomes'].link_twins(child_one, child_two, mother_id)
-            else:
-                self.sim.do_birth(mother_id)
-
-            # ====================================== SCHEDULING POSTPARTUM EVENTS ======================================
-            # Women who have birth at home will next pass to this event, again applying risk of complications
-            if mni[mother_id]['delivery_setting'] == 'home_birth':
-                self.sim.schedule_event(PostpartumLabourAtHomeEvent(self.module, mother_id), self.sim.date)
-                logger.debug(key='message', data=f'This is BirthEvent scheduling PostpartumLabourAtHomeEvent for '
-                                                 f'person {mother_id} on date {self.sim.date}')
-
-            # Otherwise we scheduled the next HSI event that manages care immediately after birth
-            else:
-                # Women who have delivered vaginally pass to HSI_Labour_ReceivesSkilledBirthAttendanceFollowingLabour
-                # for management of the postpartum period
-                if mni[mother_id]['mode_of_delivery'] == 'vaginal_delivery' or \
-                  mni[mother_id]['mode_of_delivery'] == 'instrumental':
-
-                    health_centre_care = HSI_Labour_ReceivesSkilledBirthAttendanceFollowingLabour(
-                        self.module, person_id=mother_id, facility_level_of_this_hsi='1a')
-
-                    all_facility_care = HSI_Labour_ReceivesSkilledBirthAttendanceFollowingLabour(
-                        self.module, person_id=mother_id,
-                        facility_level_of_this_hsi=self.module.rng.choice(['1a', '1b'])
-                    )
-
-                    if mni[mother_id]['delivery_setting'] == 'health_centre':
-                        logger.debug(key='message', data='This is BirthEvent scheduling HSI_Labour_ReceivesCareFor'
-                                                         f'PostpartumPeriod for person {mother_id} on date'
-                                                         f' {self.sim.date}')
-                        self.sim.modules['HealthSystem'].schedule_hsi_event(health_centre_care,
-                                                                            priority=0,
-                                                                            topen=self.sim.date,
-                                                                            tclose=self.sim.date + DateOffset(days=1))
-
-                    elif mni[mother_id]['delivery_setting'] == 'hospital':
-                        logger.info(key='message', data='This is BirthEvent scheduling '
-                                                        'HSI_Labour_ReceivesCareForPostpartumPeriod for person '
-                                                        f'{mother_id}')
-
-                        self.sim.modules['HealthSystem'].schedule_hsi_event(all_facility_care,
-                                                                            priority=0,
-                                                                            topen=self.sim.date,
-                                                                            tclose=self.sim.date + DateOffset(days=1))
-                else:
-                    # Women who delivered via c-section are scheduled to a different HSI
-                    post_cs_care = HSI_Labour_ReceivesCareFollowingCaesareanSection(
-                        self.module, person_id=mother_id,
-                        facility_level_of_this_hsi=self.module.rng.choice(['1a', '1b']))
-
-                    logger.info(key='message', data='This is BirthEvent scheduling '
-                                                    f'HSI_Labour_ReceivesCareFollowingCaesareanSection for person '
-                                                    f'{mother_id}who gave birth via caesarean section  on date '
-                                                    f'{self.sim.date}')
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(post_cs_care,
-                                                                        priority=0,
-                                                                        topen=self.sim.date,
-                                                                        tclose=self.sim.date + DateOffset(days=1))
-
-        # If the mother has died during childbirth the child is still generated with is_alive=false to monitor
-        # stillbirth rates. She will not pass through the postpartum complication events
-        if ~person.is_alive and ~person.la_intrapartum_still_birth and person.la_maternal_death_in_labour:
-            logger.info(key='message', data=f'A Birth is now occurring, to mother {mother_id} who died in childbirth '
-                                            f'but her child survived')
-
-            if person.ps_multiple_pregnancy:
-                child_one = self.sim.do_birth(mother_id)
-                child_two = self.sim.do_birth(mother_id)
-                self.sim.modules['NewbornOutcomes'].link_twins(child_one, child_two, mother_id)
-            else:
-                self.sim.do_birth(mother_id)
-
-
-class PostpartumLabourAtHomeEvent(Event, IndividualScopeEventMixin):
-    """
-    This is PostpartumLabourAtHomeEvent. This event is scheduled by BirthEvent for women whose laboured and gave
-    birth at home OR HSI_Labour_ReceivesCareForPostpartumPeriod for women who couldnt receive in-facility postpartum
-    care due to high squeeze factor. This event applies risk of postpartum complications and determines if women
-    experiencing complications will seek care. Finally is calls the apply_risk_of_early_postpartum_death function to
-     determine if women experiencing the postpartum phase of labour at home will die.
-     """
-
-    def __init__(self, module, individual_id):
-        super().__init__(module, person_id=individual_id)
-
-    def apply(self, individual_id):
-        df = self.sim.population.props
-        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-        params = self.module.parameters
-
-        assert (self.sim.date - df.at[individual_id, 'la_due_date_current_pregnancy']) == pd.to_timedelta(5, unit='D')
-        self.module.postpartum_characteristics_checker(individual_id)
-
-        # Event should only run if woman is still alive
-        if not df.at[individual_id, 'is_alive']:
-            return
-        else:
-            logger.debug(key='msg', data=f'Mother {individual_id} has arrived at PostpartumLabourAtHomeEvent and it '
-                                         f'will run')
-
-        # We first determine if this woman will experience any complications immediately following/ or in the days after
-        # birth
-        for complication in ['endometritis', 'urinary_tract_inf', 'skin_soft_tissue_inf', 'other_maternal_infection',
-                             'sepsis', 'uterine_atony', 'lacerations', 'retained_placenta', 'other_pph_cause',
-                             'postpartum_haem']:
-            self.module.set_postpartum_complications(individual_id, complication=complication)
-
-        self.module.progression_of_hypertensive_disorders(individual_id, property_prefix='pn')
-
-        # For women who experience a complication at home immediately following birth we use a care seeking equation to
-        # determine if they will now seek additional care for management of this complication
-
-        # Women who have come home, following a facility delivery, due to high squeeze will not try and seek care
-        # for any complications
-
-        if df.at[individual_id, 'la_sepsis_pp'] or (df.at[individual_id, 'ps_htn_disorders'] == 'eclampsia') or \
-            (df.at[individual_id, 'ps_htn_disorders'] == 'severe_pre_eclamp') or df.at[individual_id,
-                                                                                       'la_postpartum_haem']:
-
-            if not mni[individual_id]['squeeze_to_high_for_hsi_pp'] and\
-              (self.module.predict(params['la_labour_equations']['care_seeking_for_complication'], individual_id)):
-
-                # If this woman choses to seek care, she will present to the health system via the generic emergency
-                # system and be referred on to receive specific care
-                mni[individual_id]['sought_care_for_complication'] = True
-                mni[individual_id]['sought_care_labour_phase'] = 'postpartum'
-
-                from tlo.methods.hsi_generic_first_appts import (
-                    HSI_GenericEmergencyFirstApptAtFacilityLevel1,
-                )
-
-                event = HSI_GenericEmergencyFirstApptAtFacilityLevel1(
-                    module=self.module, person_id=individual_id)
-
-                self.sim.modules['HealthSystem'].schedule_hsi_event(
-                        event,
-                        priority=0,
-                        topen=self.sim.date,
-                        tclose=self.sim.date + DateOffset(days=1))
-
-                logger.debug(key='message',
-                             data=f'mother {individual_id} will now seek care for a complication that'
-                                  f'has developed following labour on date {self.sim.date}')
-            else:
-                logger.debug(key='message', data=f'mother {individual_id} will not seek care for a complication that'
-                                                 f'has developed following labour on date {self.sim.date}')
-
-                # For women who dont seek care for complications following birth we immediately apply risk of death
-                self.module.apply_risk_of_early_postpartum_death(individual_id)
-
-        else:
-            # Women without complications still pass through this event
-            self.module.apply_risk_of_early_postpartum_death(individual_id)
 
 
 class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
     """
-    This is the LabourDeathAndStillBirthEvent. It is scheduled by the LabourOnsetEvent for all women in the labour
-    module following the application of complications (and possibly treatment) for women who have given birth at home
-    OR in a facility . This event determines if women who have experienced complications in labour will die or
-    experience an intrapartum stillbirth.
-    """
-
+     This is the LabourDeathAndStillBirthEvent. It is scheduled by the LabourOnsetEvent for all women in the labour
+     module following the application of complications (and possibly treatment) for women who have given birth at home
+     OR in a facility . This event determines if women who have experienced complications in labour will die or
+     experience an intrapartum stillbirth.
+     """
     def __init__(self, module, individual_id):
         super().__init__(module, person_id=individual_id)
 
     def apply(self, individual_id):
         df = self.sim.population.props
-        params = self.module.parameters
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+        params = self.module.current_parameters
 
         if not df.at[individual_id, 'is_alive']:
             return
 
-        # Check the correct amount of time has passed between labour onset and postpartum event
-        assert (self.sim.date - df.at[individual_id, 'la_due_date_current_pregnancy']) == pd.to_timedelta(4, unit='D')
+        # Check the correct amount of time has passed between labour onset and this event event
+        if not (self.sim.date - df.at[individual_id, 'la_due_date_current_pregnancy']) == pd.to_timedelta(4, unit='D'):
+            logger.debug(key='error', data=f'Mother {individual_id} arrived at LabourDeathAndStillBirthEvent at the '
+                                           f'wrong date')
+
         self.module.labour_characteristics_checker(individual_id)
 
-        # We cycle through each complication and apply risk of death using the set_maternal_death_status_intrapartum
-        # described above
-        if df.at[individual_id, 'ps_htn_disorders'] == 'severe_pre_eclamp':
-            self.module.set_maternal_death_status_intrapartum(individual_id, cause='severe_pre_eclamp')
+        # Function checks df for any potential cause of death, uses CFR parameters to determine risk of death
+        # (either from one or multiple causes) and if death occurs returns the cause
+        potential_cause_of_death = pregnancy_helper_functions.check_for_risk_of_death_from_cause_maternal(
+            self.module, individual_id=individual_id)
 
-        if df.at[individual_id, 'ps_htn_disorders'] == 'eclampsia':
-            self.module.set_maternal_death_status_intrapartum(individual_id, cause='eclampsia')
+        # If a cause is returned death is scheduled
+        if potential_cause_of_death:
+            self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=potential_cause_of_death,
+                                                    originating_module=self.sim.modules['Labour'])
 
-        if (df.at[individual_id, 'la_antepartum_haem'] == 'none') or \
-            ((df.at[individual_id, 'ps_antepartum_haemorrhage'] != 'none') and
-             (df.at[individual_id, 'ac_admitted_for_immediate_delivery'] != 'none')):
+            mni[individual_id]['death_in_labour'] = True
 
-            self.module.set_maternal_death_status_intrapartum(individual_id, cause='antepartum_haem')
-
-        if df.at[individual_id, 'la_sepsis']:
-            self.module.set_maternal_death_status_intrapartum(individual_id, cause='sepsis')
-
-        if df.at[individual_id, 'la_uterine_rupture']:
-            self.module.set_maternal_death_status_intrapartum(individual_id, cause='uterine_rupture')
-
-        # Next we determine if this woman will experience an intrapartum still birth. We assume any women who have had
-        # to deliver before 24 weeks will experience stillbirth
-
-        # Otherwise all woman have a risk of still birth applied which is increased by complications in labour.
-        # Treatment modelled to reduce risk of intrapartum stillbirth include assisted vaginal delivery and
-        # caesarean section
-
-        outcome_of_still_birth_equation = self.module.predict(params['la_labour_equations']['intrapartum_still_birth'],
+        # Next we determine if she will experience a stillbirth during her delivery
+        outcome_of_still_birth_equation = self.module.predict(self.module.la_linear_models['intrapartum_still_birth'],
                                                               individual_id)
 
+        # We also assume that if a womans labour has started prior to 24 weeks the baby would not survive and we class
+        # this as a stillbirth
         if (df.at[individual_id, 'ps_gestational_age_in_weeks'] < 24) or outcome_of_still_birth_equation:
             logger.debug(key='message', data=f'person {individual_id} has experienced an intrapartum still birth')
 
@@ -2756,9 +2645,9 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
 
             # If this woman will experience a stillbirth and she was not pregnant with twins OR she was pregnant with
             # twins but both twins have died during labour we reset/set the appropriate variables
-            if ~df.at[individual_id, 'ps_multiple_pregnancy'] or (df.at[individual_id, 'ps_multiple_pregnancy'] and
-                                                                  (random_draw < params['prob_both_twins_ip_still_'
-                                                                                        'birth'])):
+            if not df.at[individual_id, 'ps_multiple_pregnancy'] or \
+                (df.at[individual_id, 'ps_multiple_pregnancy'] and (random_draw < params['prob_both_twins_ip_still_'
+                                                                                         'birth'])):
 
                 df.at[individual_id, 'la_intrapartum_still_birth'] = True
                 # This variable is therefore only ever true when the pregnancy has ended in stillbirth
@@ -2773,36 +2662,148 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
                                                                                           'birth'])):
                 df.at[individual_id, 'ps_prev_stillbirth'] = True
                 mni[individual_id]['single_twin_still_birth'] = True
+                logger.debug(key='message', data=f'single twin stillbirth for {individual_id}')
 
-        # For a woman who die (due to the effect of one or more of the above complications) we schedule the death event
-        if mni[individual_id]['death_in_labour']:
-            self.module.labour_tracker['maternal_death'] += 1
-            self.sim.modules['Demography'].do_death(individual_id=individual_id, cause='maternal',
-                                                    originating_module=self.sim.modules['Labour'])
-
-            # Log the maternal death
-            logger.info(key='message', data=f'This is LabourDeathEvent scheduling a death for person {individual_id} on'
-                                            f' date {self.sim.date} who died due to intrapartum complications')
-
-            labour_complications = {'person_id': individual_id,
-                                    'death_date': self.sim.date,
-                                    'labour_profile': mni[individual_id]}
-
-            logger.info(key='labour_complications', data=labour_complications, description='mni dictionary for a woman '
-                                                                                           'who has died in labour')
-
-            if mni[individual_id]['death_in_labour'] and df.at[individual_id, 'la_intrapartum_still_birth']:
-                # We delete the mni dictionary if both mother and baby have died in labour, if the mother has died but
-                # the baby has survived we delete the dictionary following the on_birth function of NewbornOutcomes
-                del mni[individual_id]
+        if mni[individual_id]['death_in_labour'] and df.at[individual_id, 'la_intrapartum_still_birth']:
+            # We delete the mni dictionary if both mother and baby have died in labour, if the mother has died but
+            # the baby has survived we delete the dictionary following the on_birth function of NewbornOutcomes
+            del mni[individual_id]
 
         if df.at[individual_id, 'la_intrapartum_still_birth'] or mni[individual_id]['single_twin_still_birth']:
-            self.module.labour_tracker['ip_stillbirth'] += 1
-            logger.info(key='message', data=f'A Still Birth has occurred, to mother {individual_id}')
-            still_birth = {'mother_id': individual_id,
-                           'date_of_ip_stillbirth': self.sim.date}
+            logger.info(key='intrapartum_stillbirth', data={'mother_id': individual_id,
+                                                            'date_of_ip_stillbirth': self.sim.date})
 
-            logger.info(key='intrapartum_stillbirth', data=still_birth, description='record of intrapartum stillbirth')
+        # Finally reset delay property
+        if individual_id in mni:
+            mni[individual_id]['delay_one_two'] = False
+            mni[individual_id]['delay_three'] = False
+
+
+class BirthAndPostnatalOutcomesEvent(Event, IndividualScopeEventMixin):
+    """
+    This is BirthAndPostnatalOutcomesEvent. It is scheduled by LabourOnsetEvent when women go into labour. This event
+    calls the do_birth function for all women who have gone into labour to generate a newborn within the simulation.
+    Additionally this event applies the incidence of complications immediately following birth and determines if each
+    woman will receive a full postnatal check-up and when.
+    """
+    def __init__(self, module, mother_id):
+        super().__init__(module, person_id=mother_id)
+
+    def apply(self, mother_id):
+        df = self.sim.population.props
+        person = df.loc[mother_id]
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+        params = self.module.current_parameters
+
+        # This event tells the simulation that the woman's pregnancy is over and generates the new child in the
+        # data frame - Check the correct amount of time has passed between labour onset and birth event and that women
+        # at the event have the right characteristics present
+
+        if not (self.sim.date - df.at[mother_id, 'la_due_date_current_pregnancy']) == pd.to_timedelta(5, unit='D'):
+            logger.debug(key='error', data=f'Mother {mother_id} arrived at BirthAndPostnatalOutcomesEvent at the '
+                                           f'wrong date')
+
+        self.module.labour_characteristics_checker(mother_id)
+
+        if not person.is_alive and person.la_intrapartum_still_birth:
+            return
+
+        # =============================================== BIRTH ====================================================
+        # If the mother is alive and still pregnant OR has died but the foetus has survived we generate a child.
+
+        # Live women are scheduled to move to the postpartum event to determine if they experiences any additional
+        # complications
+
+        if (person.is_alive and person.is_pregnant and not person.la_intrapartum_still_birth) or \
+           (not person.is_alive and mni[mother_id]['death_in_labour'] and not person.la_intrapartum_still_birth):
+            logger.info(key='message', data=f'A Birth is now occurring, to mother {mother_id}')
+
+            # If the mother is pregnant with twins, we call the do_birth function twice and then link the twins
+            # (via sibling id) in the newborn module
+            if person.ps_multiple_pregnancy:
+                child_one = self.sim.do_birth(mother_id)
+
+                if not mni[mother_id]['single_twin_still_birth']:
+                    child_two = self.sim.do_birth(mother_id)
+                    logger.debug(key='message', data=f'Mother {mother_id} will now deliver twins {child_one} & '
+                                                     f'{child_two}')
+                    self.sim.modules['NewbornOutcomes'].link_twins(child_one, child_two, mother_id)
+            else:
+                self.sim.do_birth(mother_id)
+
+        df = self.sim.population.props
+
+        # If the mother survived labour but experienced a stillbirth we reset all the relevant pregnancy variables now
+        if df.at[mother_id, 'is_alive'] and df.at[mother_id, 'la_intrapartum_still_birth']:
+            self.sim.modules['Labour'].further_on_birth_labour(mother_id)
+            self.sim.modules['PregnancySupervisor'].further_on_birth_pregnancy_supervisor(mother_id)
+            self.sim.modules['PostnatalSupervisor'].further_on_birth_postnatal_supervisor(mother_id)
+            self.sim.modules['CareOfWomenDuringPregnancy'].further_on_birth_care_of_women_in_pregnancy(mother_id)
+
+        # Next we apply the risk of complications following delivery
+        if df.at[mother_id, 'is_alive']:
+
+            df.at[mother_id, 'la_is_postpartum'] = True
+            df.at[mother_id, 'la_date_most_recent_delivery'] = self.sim.date
+
+            for complication in ['sepsis_endometritis', 'sepsis_urinary_tract', 'sepsis_skin_soft_tissue',
+                                 'pph_uterine_atony', 'pph_retained_placenta', 'pph_other']:
+                self.module.set_postpartum_complications(mother_id, complication=complication)
+
+            if df.at[mother_id, 'la_sepsis_pp']:
+                logger.info(key='maternal_complication', data={'person': mother_id,
+                                                               'type': 'sepsis_postnatal',
+                                                               'timing': 'postnatal'})
+            if df.at[mother_id, 'la_postpartum_haem']:
+                logger.info(key='maternal_complication', data={'person': mother_id,
+                                                               'type': 'primary_postpartum_haemorrhage',
+                                                               'timing': 'postnatal'})
+
+            self.module.progression_of_hypertensive_disorders(mother_id, property_prefix='pn')
+
+            # Following this we determine if this woman will receive/seek care for postnatal care after delivery
+            if(df.at[mother_id, 'la_sepsis_pp'] or
+                df.at[mother_id, 'la_postpartum_haem'] or
+                ((df.at[mother_id, 'pn_htn_disorders'] == 'severe_pre_eclamp') and mni[mother_id]['new_onset_spe']) or
+               (df.at[mother_id, 'pn_htn_disorders'] == 'eclampsia')):
+
+                # Women with complications have a higher baseline probability of seeking postnatal care
+                prob_pnc = params['prob_careseeking_for_complication']
+                has_comps = True
+
+            else:
+                # We use a linear model to determine if women without complications will receive any postnatal care
+                prob_pnc = self.module.la_linear_models['postnatal_check'].predict(
+                    df.loc[[mother_id]],
+                    mode_of_delivery=pd.Series(mni[mother_id]['mode_of_delivery'], index=df.loc[[mother_id]].index),
+                    delivery_setting=pd.Series(mni[mother_id]['delivery_setting'], index=df.loc[[mother_id]].index)
+                )[mother_id]
+                has_comps = False
+
+            # If she will receive PNC, we determine if this will happen less than 48 hours from birth or later
+            if self.module.rng.random_sample() < prob_pnc:
+                timing = self.module.rng.choice(['<48', '>48'], p=params['prob_timings_pnc'])
+
+                if timing == '<48' or has_comps:
+                    mni[mother_id]['will_receive_pnc'] = 'early'
+
+                    early_event = HSI_Labour_ReceivesPostnatalCheck(
+                        module=self.module, person_id=mother_id)
+
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(
+                        early_event,
+                        priority=0,
+                        topen=self.sim.date,
+                        tclose=self.sim.date + DateOffset(days=1))
+
+                else:
+                    # For women who do not have prompt PNC, we determine if they will die from complications occurring
+                    # following birth that have not been treated
+                    mni[mother_id]['will_receive_pnc'] = 'late'
+                    self.module.apply_risk_of_early_postpartum_death(mother_id)
+            else:
+                # Similarly for women who will not receive PNC at all we apply risk of death
+                self.module.apply_risk_of_early_postpartum_death(mother_id)
 
 
 class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, IndividualScopeEventMixin):
@@ -2824,7 +2825,6 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
     factor of the HSI is below a predetermined threshold of each intervention. CEmONC level interventions are managed
     within HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare
     """
-
     def __init__(self, module, person_id, facility_level_of_this_hsi):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Labour)
@@ -2838,73 +2838,57 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
     def apply(self, person_id, squeeze_factor):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         df = self.sim.population.props
-        params = self.module.parameters
-        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        params = self.module.current_parameters
+        cons = self.module.item_codes_lab_consumables
 
         if not df.at[person_id, 'is_alive']:
             return
 
-        logger.info(key='message', data=f'This is HSI_Labour_PresentsForSkilledAttendanceInLabour: Mother {person_id} '
-                                        f'has presented to a health facility on date {self.sim.date} following the '
-                                        f'onset of her labour')
-
         # First we capture women who have presented to this event during labour at home. Currently we just set these
-        # women to be delivering at a health centre (this will need to be randomised to match any availble data)
+        # women to be delivering at a health centre (this will need to be randomised to match any available data)
         if mni[person_id]['delivery_setting'] == 'home_birth' and mni[person_id]['sought_care_for_complication']:
             mni[person_id]['delivery_setting'] = 'health_centre'
 
-        # Next delivery setting is captured in the labour_tracker, processed by the logger and reset yearly
-        if mni[person_id]['delivery_setting'] == 'health_centre':
-            self.module.labour_tracker['health_centre_birth'] += 1
-
-        elif mni[person_id]['delivery_setting'] == 'hospital':
-            self.module.labour_tracker['hospital_birth'] += 1
-
         # Next we check this woman has the right characteristics to be at this event
         self.module.labour_characteristics_checker(person_id)
-        assert mni[person_id]['delivery_setting'] != 'home_birth'
-        assert (self.sim.date - df.at[person_id, 'la_due_date_current_pregnancy']) < pd.to_timedelta(3, unit='D')
 
-        # We use this variable to prevent repetition when calling functions in this event
-        if mni[person_id]['delivery_setting'] == 'health_centre':
-            facility_type_code = 'hc'
-        else:
-            facility_type_code = 'hp'
+        # Log potential error
+        if mni[person_id]['delivery_setting'] == 'home_birth':
+            logger.debug(key='error', data=f'Mother {person_id} is receiving SBA with delivery setting as home birth')
 
+        # Here we ensure that women who were admitted via the antenatal ward for assisted/caesarean delivery have the
+        # correct variables updated leading to referral for delivery
         if (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'caesarean_now') or \
-                (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'caesarean_later'):
+                (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'caesarean_future'):
             mni[person_id]['referred_for_cs'] = True
 
-        # LOG CONSUMABLES FOR DELIVERY...
-        # We assume all deliveries require this basic package of consumables but we do not condition the event running
-        # on their availability
-        # pkg_code_delivery = pd.unique(
-        #     consumables.loc[consumables['Intervention_Pkg'] == 'Vaginal delivery - skilled attendance',
-        #                     'Intervention_Pkg_Code'])[0]
+        elif df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'avd_now':
+            self.module.assessment_for_assisted_vaginal_delivery(self, for_spe=True)
 
-        # self.get_all_consumables(
-        #     pkg_codes=[pkg_code_delivery])
+        # and then if the squeeze factor is too high we assume delay in receiving interventions occurs (increasing risk
+        # of death if complications occur)
+        pregnancy_helper_functions.check_if_delayed_care_delivery(self.module, squeeze_factor, person_id,
+                                                                  hsi_type='bemonc')
+
+        # LOG CONSUMABLES FOR DELIVERY...
+        # We assume all deliveries require this basic package of consumables
+        avail = self.get_consumables(item_codes=cons['delivery_core'],
+                                     optional_item_codes=cons['delivery_optional'],)
+
+        # If the clean delivery kit consumable is available, we assume women benefit from clean delivery
+        if avail:
+            mni[person_id]['clean_birth_practices'] = True
 
         # ===================================== PROPHYLACTIC CARE ===================================================
         # The following function manages the consumables and administration of prophylactic interventions in labour
-        # (clean delivery practice, antibiotics for PROM, steroids for preterm labour). This intervention, like all
-        # other in the event will only occur if the squeeze factor is below a preset threshold
+        # (clean delivery practice, antibiotics for PROM, steroids for preterm labour)
 
-        if squeeze_factor < params['squeeze_threshold_proph_ints']:
-            self.module.prophylactic_labour_interventions(self)
-        else:
-            # Otherwise she receives no benefit of prophylaxis
-            logger.debug(key='message', data=f'mother {person_id} did not receive prophylactic labour interventions due'
-                                             f'to high squeeze')
+        self.module.prophylactic_labour_interventions(self)
 
         # ================================= PROPHYLACTIC MANAGEMENT PRE-ECLAMPSIA  ==============================
         # Next we see if women with severe pre-eclampsia will be identified and treated, reducing their risk of
         # eclampsia
-        if squeeze_factor < params['squeeze_threshold_treatment_spe']:
-            self.module.assessment_and_treatment_of_severe_pre_eclampsia_mgso4(self, facility_type_code)
-        else:
-            logger.debug(key='message', data=f'mother {person_id} did not receive assessment or treatment of severe '
-                                             f'pre-eclampsia due to high squeeze')
+        self.module.assessment_and_treatment_of_severe_pre_eclampsia_mgso4(self, 'ip')
 
         # ===================================== APPLYING COMPLICATION INCIDENCE =======================================
         # Following administration of prophylaxis we assess if this woman will develop any complications during labour.
@@ -2912,44 +2896,52 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         # again
 
         if not mni[person_id]['sought_care_for_complication']:
-            for complication in ['cephalopelvic_dis', 'malpresentation', 'malposition', 'obstructed_labour',
-                                 'placental_abruption', 'antepartum_haem', 'chorioamnionitis',
-                                 'other_maternal_infection', 'sepsis']:
+            for complication in ['obstruction_cpd', 'obstruction_malpos_malpres', 'obstruction_other',
+                                 'placental_abruption', 'antepartum_haem', 'sepsis_chorioamnionitis',
+                                 'uterine_rupture']:
+
                 # Uterine rupture is the only complication we dont apply the risk of here due to the causal link
                 # between obstructed labour and uterine rupture. Therefore we want interventions for obstructed labour
                 # to reduce the risk of uterine rupture
 
                 self.module.set_intrapartum_complications(person_id, complication=complication)
+            self.module.progression_of_hypertensive_disorders(person_id, property_prefix='ps')
 
-        self.module.progression_of_hypertensive_disorders(person_id, property_prefix='ps')
+            if df.at[person_id, 'la_obstructed_labour']:
+                logger.info(key='maternal_complication', data={'mother': person_id,
+                                                               'type': 'obstructed_labour',
+                                                               'timing': 'intrapartum'})
 
         # ======================================= COMPLICATION MANAGEMENT ==========================
         # Next, women in labour are assessed for complications and treatment delivered if a need is identified and
         # consumables are available
 
-        if squeeze_factor < params['squeeze_threshold_treatment_ol']:
-            self.module.assessment_and_treatment_of_obstructed_labour_via_avd(self, facility_type_code)
+        self.module.assessment_for_assisted_vaginal_delivery(self, for_spe=False)
+        self.module.assessment_and_treatment_of_maternal_sepsis(self, 'ip')
+        self.module.assessment_and_treatment_of_hypertension(self)
+        self.module.assessment_and_plan_for_antepartum_haemorrhage(self)
+        self.module.assessment_and_treatment_of_eclampsia(self, 'ip')
+        self.module.assessment_for_referral_uterine_rupture(self)
 
-        if squeeze_factor < params['squeeze_threshold_treatment_sep']:
-            self.module.assessment_and_treatment_of_maternal_sepsis(self, facility_type_code, 'ip')
+        # -------------------------- Active Management of the third stage of labour ----------------------------------
+        # Prophylactic treatment to prevent postpartum bleeding is applied
+        if not mni[person_id]['sought_care_for_complication']:
+            self.module.active_management_of_the_third_stage_of_labour(self)
 
-        if squeeze_factor < params['squeeze_threshold_treatment_htn']:
-            self.module.assessment_and_treatment_of_hypertension(self, facility_type_code)
+        # -------------------------- Caesarean section/AVD for un-modelled reason ------------------------------------
+        # We apply a probability to women who have not already been allocated to undergo assisted/caesarean delivery
+        # that they will require assisted/caesarean delivery to capture indications which are not explicitly modelled
+        if not mni[person_id]['referred_for_cs'] and (not mni[person_id]['mode_of_delivery'] == 'instrumental'):
+            if df.at[person_id, 'ps_multiple_pregnancy']:
+                mni[person_id]['referred_for_cs'] = True
+                mni[person_id]['cs_indication'] = 'twins'
 
-        if squeeze_factor < params['squeeze_threshold_treatment_aph']:
-            self.module.assessment_and_plan_for_antepartum_haemorrhage(self, facility_type_code)
+            elif self.module.rng.random_sample() < params['residual_prob_caesarean']:
+                mni[person_id]['referred_for_cs'] = True
+                mni[person_id]['cs_indication'] = 'other'
 
-        if squeeze_factor < params['squeeze_threshold_treatment_ec']:
-            self.module.assessment_and_treatment_of_eclampsia(self, facility_type_code)
-
-        # Now we apply the risk of uterine rupture to all women who will deliver vaginally
-        if mni[person_id]['mode_of_delivery'] == 'vaginal_delivery' and not mni[person_id]['referred_for_cs']:
-            self.module.set_intrapartum_complications(
-                person_id, complication='uterine_rupture')
-
-        # Uterine rupture follows the same pattern as antepartum haemorrhage
-        if squeeze_factor < params['squeeze_threshold_treatment_ur']:
-            self.module.assessment_for_referral_uterine_rupture(self, facility_type_code)
+            elif self.module.rng.random_sample() < params['residual_prob_avd']:
+                self.module.assessment_for_assisted_vaginal_delivery(self, for_spe=True)
 
         # ========================================== SCHEDULING CEMONC CARE =========================================
         # Finally women who require additional treatment have the appropriate HSI scheduled to deliver further care
@@ -2959,8 +2951,7 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
            mni[person_id]['referred_for_blood']:
 
             surgical_management = HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(
-                self.module, person_id=person_id, facility_level_of_this_hsi=self.ACCEPTED_FACILITY_LEVEL,
-                timing='intrapartum')
+                self.module, person_id=person_id, timing='intrapartum')
             self.sim.modules['HealthSystem'].schedule_hsi_event(surgical_management,
                                                                 priority=0,
                                                                 topen=self.sim.date,
@@ -2978,162 +2969,113 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         ):
             return self.make_appt_footprint({'CompDelivery': 1})
 
+    def never_ran(self):
+        self.module.run_if_receives_skilled_birth_attendance_cant_run(self)
+
     def did_not_run(self):
-        person_id = self.target
-        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-
-        # If a woman has chosen to deliver in a facility from the onset of labour, but the squeeze factor is too high,
-        # she will be forced to return home to deliver
-        if not mni[person_id]['sought_care_for_complication']:
-            logger.debug(key='message', data=f'squeeze factor is too high for this event to run for mother {person_id} '
-                                             f'on date {self.sim.date} and she will now deliver at home')
-
-            mni[person_id]['delivery_setting'] = 'home_birth'
-            mni[person_id]['squeeze_to_high_for_hsi'] = True
-            self.sim.schedule_event(LabourAtHomeEvent(self.module, person_id), self.sim.date)
-
-        # If a woman has presented to this event during labour due to a complication, she will not receive any treatment
-        if mni[person_id]['sought_care_for_complication']:
-            logger.debug(key='message', data=f'squeeze factor is too high for this event to run for mother {person_id} '
-                                             f'on date {self.sim.date} and she could not receive care for the '
-                                             f'complications developed during her home birth')
-
+        self.module.run_if_receives_skilled_birth_attendance_cant_run(self)
         return False
 
     def not_available(self):
-        """This is called when the HSI is passed to the health system scheduler but not scheduled as the TREATMENT_ID
-        is not allowed under the 'services_available' parameter of the health system.
-        Note that this called at the time of the event being passed to the Health System at schedule_hsi_event(...) and
-        not at the time when the HSI is intended to be run (as specified by the 'topen' parameter in that call)"""
-        person_id = self.target
-        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-        # If a woman has chosen to deliver in a facility but this event isnt allowed with the set service configuration
-        # then she will deliver at home
-        logger.debug(key='message', data=f'This event is not in the allowed service availability and therefore cannot '
-                                         f'run for mother {person_id} on date {self.sim.date}, she will now deliver at '
-                                         f'home')
-
-        if not mni[person_id]['sought_care_for_complication']:
-            mni[person_id]['delivery_setting'] = 'home_birth'
-            self.sim.schedule_event(LabourAtHomeEvent(self.module, person_id), self.sim.date)
+        self.module.run_if_receives_skilled_birth_attendance_cant_run(self)
 
 
-class HSI_Labour_ReceivesSkilledBirthAttendanceFollowingLabour(HSI_Event, IndividualScopeEventMixin):
+class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
     """
-    This is the HSI HSI_Labour_ReceivesSkilledBirthAttendanceFollowingLabour. This event is scheduled by the
-    PostpartumLabourEvent and broadly represents care delivered by a skilled birth attendant following vaginal delivery
-    in a BEmONC facility. Care following caesarean delivery is managed in another event. The structure and flow of this
-    event is largely similar to HSI_Labour_ReceivesSkilledBirth AttendanceDuringLabour as described above.
+    This is HSI_Labour_ReceivesPostnatalCheck. It is scheduled by BirthAndPostnatalOutcomesEvent for all women who
+    will receive full postnatal checkup after birth . This event represents the postpartum care contact after
+    delivery and includes assessment and treatment of severe pre-eclampsia, hypertension, sepsis and postpartum
+    bleeding. In addition woman are scheduled HIV screening if appropriate and started on postnatal iron tablets
     """
-    def __init__(self, module, person_id, facility_level_of_this_hsi):
+    def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Labour)
 
-        self.TREATMENT_ID = 'Labour_ReceivesSkilledBirthAttendanceFollowingLabour'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 1})
+        self.TREATMENT_ID = 'Labour_ReceivesPostnatalCheck'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ALERT_OTHER_DISEASES = []
-        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})
 
     def apply(self, person_id, squeeze_factor):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         df = self.sim.population.props
-        params = self.module.parameters
+        params = self.module.current_parameters
 
-        logger.info(key='message', data='This is HSI_Labour_ReceivesCareForPostpartumPeriodFacilityLevel1: Providing '
-                                        f'skilled attendance following birth for person {person_id}')
+        if not df.at[person_id, 'is_alive'] or pd.isnull(df.at[person_id, 'la_date_most_recent_delivery']):
+            return None
 
-        if not df.at[person_id, 'is_alive']:
-            return
+        # Ensure that women who were scheduled to receive early PNC have received care prior to passing through
+        # PostnatalWeekOneMaternalEvent
+        if (mni[person_id]['will_receive_pnc'] == 'early') and not mni[person_id]['passed_through_week_one']:
+            if not self.sim.date < (df.at[person_id, 'la_date_most_recent_delivery'] + pd.DateOffset(days=2)):
+                logger.debug(key='error', data=f'Mother {person_id} attended early PNC too late')
 
-        assert mni[person_id]['mode_of_delivery'] == 'vaginal_delivery' or \
-            mni[person_id]['mode_of_delivery'] == 'instrumental'
+            if not df.at[person_id, 'la_pn_checks_maternal'] == 0:
+                logger.debug(key='error', data=f'Mother {person_id} attended early PNC twice')
 
-        if mni[person_id]['delivery_setting'] == 'home_birth' and mni[person_id]['sought_care_for_complication']:
-            mni[person_id]['delivery_setting'] = 'health_centre'
+        elif mni[person_id]['will_receive_pnc'] == 'late' and not mni[person_id]['passed_through_week_one']:
+            if not self.sim.date >= (df.at[person_id, 'la_date_most_recent_delivery'] + pd.DateOffset(days=2)):
+                logger.debug(key='error', data=f'Mother {person_id} attended late PNC too early')
 
-        # We run similar checks as the labour HSI
+            if not df.at[person_id, 'la_pn_checks_maternal'] == 0:
+                logger.debug(key='error', data=f'Mother {person_id} attended late PNC twice')
+
+        # Run checks
         self.module.postpartum_characteristics_checker(person_id)
-        assert mni[person_id]['delivery_setting'] != 'home_birth'
 
-        # -------------------------- Active Management of the third stage of labour ----------------------------------
-        # Prophylactic treatment to prevent postpartum bleeding is applied
-        if not mni[person_id]['sought_care_for_complication'] and squeeze_factor < params['squeeze_threshold_amtsl']:
-            self.module.active_management_of_the_third_stage_of_labour(self)
+        # log the PNC visit
+        logger.info(key='postnatal_check', data={'person_id': person_id,
+                                                 'delivery_setting': mni[person_id]['delivery_setting'],
+                                                 'visit_number':  df.at[person_id, 'la_pn_checks_maternal'],
+                                                 'timing':  mni[person_id]['will_receive_pnc']})
 
-        # ===================================== APPLYING COMPLICATION INCIDENCE =======================================
-        # Again we use the mothers individual risk of each complication to determine if she will experience any
-        # complications using the set_complications_during_facility_birth function.
-        if not mni[person_id]['sought_care_for_complication']:
+        df.at[person_id, 'la_pn_checks_maternal'] += 1
 
-            for complication in ['endometritis', 'urinary_tract_inf', 'skin_soft_tissue_inf',
-                                 'other_maternal_infection', 'sepsis',
-                                 'uterine_atony', 'lacerations', 'retained_placenta', 'other_pph_cause',
-                                 'postpartum_haem']:
-                self.module.set_postpartum_complications(person_id, complication=complication)
-            self.module.progression_of_hypertensive_disorders(person_id, property_prefix='pn')
+        # If the squeeze factor is too high we assume delay in receiving interventions occurs (increasing risk
+        # of death if complications occur)
+        pregnancy_helper_functions.check_if_delayed_care_delivery(self.module, squeeze_factor, person_id, hsi_type='pn')
 
-        # ======================================= COMPLICATION MANAGEMENT =============================================
-        # And then determine if interventions will be delivered...
-        if mni[person_id]['delivery_setting'] == 'health_centre':
-            facility_type_code = 'hc'
-        else:
-            facility_type_code = 'hp'
+        # Perform assessments and treatment for each of the major complications that can occur after birth
+        self.module.assessment_and_treatment_of_eclampsia(self, 'pp')
+        self.module.assessment_and_treatment_of_pph_retained_placenta(self)
+        self.module.assessment_and_treatment_of_pph_uterine_atony(self)
 
-        if squeeze_factor < params['squeeze_threshold_treatment_sep']:
-            self.module.assessment_and_treatment_of_maternal_sepsis(self, facility_type_code, 'pp')
-        if squeeze_factor < params['squeeze_threshold_treatment_htn']:
-            self.module.assessment_and_treatment_of_hypertension(self, facility_type_code)
-        if squeeze_factor < params['squeeze_threshold_treatment_pph']:
-            self.module.assessment_and_treatment_of_pph_retained_placenta(self, facility_type_code)
-            self.module.assessment_and_treatment_of_pph_uterine_atony(self, facility_type_code)
-        if squeeze_factor < params['squeeze_threshold_treatment_ec']:
-            self.module.assessment_and_treatment_of_eclampsia(self, facility_type_code)
+        self.module.assessment_and_treatment_of_maternal_sepsis(self, 'pp')
 
+        self.module.assessment_and_treatment_of_severe_pre_eclampsia_mgso4(self, 'pp')
+        self.module.assessment_and_treatment_of_hypertension(self)
+
+        if self.module.rng.random_sample() < params['prob_intervention_delivered_anaemia_assessment_pnc']:
+            self.module.assessment_and_treatment_of_anaemia(self)
+
+        self.module.assessment_for_depression(self)
         self.module.interventions_delivered_pre_discharge(self)
 
-        # ========================================== SCHEDULING CeMONC CARE ==========================================
+        # Schedule higher level care for women requiring comprehensive treatment
         if mni[person_id]['referred_for_surgery'] or mni[person_id]['referred_for_blood']:
             surgical_management = HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(
-                self.module, person_id=person_id, facility_level_of_this_hsi=self.ACCEPTED_FACILITY_LEVEL,
-                timing='postpartum')
+                self.module, person_id=person_id, timing='postpartum')
             self.sim.modules['HealthSystem'].schedule_hsi_event(surgical_management,
                                                                 priority=0,
                                                                 topen=self.sim.date,
                                                                 tclose=self.sim.date + DateOffset(days=1))
 
         # ====================================== APPLY RISK OF DEATH===================================================
-        # For women who experience a complication following birth in a facility, but do not require additional care,
-        # we apply risk of death considering the treatment effect applied (women referred on have this risk applied
-        # later)
         if not mni[person_id]['referred_for_surgery'] and not mni[person_id]['referred_for_blood']:
             self.module.apply_risk_of_early_postpartum_death(person_id)
 
-        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
-        return actual_appt_footprint
+        return self.EXPECTED_APPT_FOOTPRINT
+
+    def never_ran(self):
+        self.module.run_if_receives_postnatal_check_cant_run(self)
 
     def did_not_run(self):
-        person_id = self.target
-        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-
-        logger.debug(key='message', data='HSI_Labour_ReceivesCareForPostpartumPeriod: did not run as the squeeze factor'
-                                         f'is too high, mother {person_id} will return home on date {self.sim.date}')
-
-        # Women who delivered at a facility, but can receive no more care due to high squeeze, will go home for the
-        # immediate period after birth- where there risk of complications is applied
-        if mni[person_id]['delivery_setting'] != 'home_birth':
-            mni[person_id]['squeeze_to_high_for_hsi_pp'] = True
-            self.sim.schedule_event(PostpartumLabourAtHomeEvent(self.module, person_id), self.sim.date)
-
+        self.module.run_if_receives_postnatal_check_cant_run(self)
         return False
 
     def not_available(self):
-        person_id = self.target
-        logger.debug(key='message', data='This event is not in the allowed service availability and therefore cannot '
-                                         f'run for mother {person_id} on date {self.sim.date}, she will now deliver at '
-                                         f'home')
-
-        self.sim.schedule_event(PostpartumLabourAtHomeEvent(self.module, person_id), self.sim.date)
+        self.module.run_if_receives_postnatal_check_cant_run(self)
 
 
 class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, IndividualScopeEventMixin):
@@ -3143,14 +3085,13 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
     during or following labour Currently we assume that if this even runs and the consumables are available then the
     intervention is delivered i.e. we dont apply squeeze factor threshold.
     """
-
-    def __init__(self, module, person_id, facility_level_of_this_hsi, timing):
+    def __init__(self, module, person_id, timing):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Labour)
 
         self.TREATMENT_ID = 'Labour_ReceivesComprehensiveEmergencyObstetricCare'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MajorSurg': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1b'  # facility_level_of_this_hsi
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})
 
@@ -3159,11 +3100,13 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-        params = self.module.parameters
-        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        params = self.module.current_parameters
+        cons = self.module.item_codes_lab_consumables
 
-        logger.debug(key='msg', data='This is HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare running for '
-                                     f'mother {person_id}')
+        # If the squeeze factor is too high we assume delay in receiving interventions occurs (increasing risk
+        # of death if complications occur)
+        pregnancy_helper_functions.check_if_delayed_care_delivery(self.module, squeeze_factor, person_id,
+                                                                  hsi_type='cemonc')
 
         # We use the variable self.timing to differentiate between women sent to this event during labour and women
         # sent after labour
@@ -3172,32 +3115,27 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         # For women arriving to this event during labour who have been referred for caesarean the intervention is
         # delivered
         if mni[person_id]['referred_for_cs'] and self.timing == 'intrapartum':
-            self.module.labour_tracker['caesarean_section'] += 1
 
-            # pkg_code_cs = pd.unique(
-            #     consumables.loc[
-            #         consumables['Intervention_Pkg'] == 'Cesearian Section with indication (with complication)',
-            #         'Intervention_Pkg_Code'])[0]
+            # We log the log the required consumables and condition the caesarean happening on the availability of the
+            # first consumable in this package, the anaesthetic required for the surgery
+            avail = self.get_consumables(item_codes=cons['caesarean_delivery_core'],
+                                         optional_item_codes=cons['caesarean_delivery_optional'])
 
-            # all_available = self.get_all_consumables(
-            #     pkg_codes=[pkg_code_cs])
-            all_available = True
+            # We check that the HCW will deliver the intervention
+            sf_check = self.module.check_emonc_signal_function_will_run(sf='surg',
+                                                                        f_lvl=self.ACCEPTED_FACILITY_LEVEL)
 
-            # We check if the consumables are available but we dont condition the event happening on the result of the
-            # check
-            if all_available:
-                logger.debug(key='message',
-                             data='All the required consumables are available and will can be used for this'
-                                  f'caesarean delivery for mother {person_id}.')
-            else:
-                logger.debug(key='message', data='The required consumables are not available for this caesarean '
-                                                 f'delivery for mother {person_id}')
+            if avail and sf_check:
+                person = df.loc[person_id]
+                logger.info(key='caesarean_delivery', data=person.to_dict())
+                logger.info(key='cs_indications', data={'id': person_id,
+                                                        'indication': mni[person_id]['cs_indication']})
 
-            # The appropriate variables in the MNI and dataframe are stored. Current caesarean section reduces risk of
-            # intrapartum still birth and death due to antepartum haemorrhage
-            mni[person_id]['mode_of_delivery'] = 'caesarean_section'
-            mni[person_id]['amtsl_given'] = True
-            df.at[person_id, 'la_previous_cs_delivery'] = True
+                # The appropriate variables in the MNI and dataframe are stored. Current caesarean section reduces risk
+                # of intrapartum still birth and death due to antepartum haemorrhage
+                mni[person_id]['mode_of_delivery'] = 'caesarean_section'
+                mni[person_id]['amtsl_given'] = True
+                df.at[person_id, 'la_previous_cs_delivery'] = True
 
         # ================================ SURGICAL MANAGEMENT OF RUPTURED UTERUS =====================================
         # Women referred after the labour HSI following correct identification of ruptured uterus will also need to
@@ -3205,43 +3143,33 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         if mni[person_id]['referred_for_surgery'] and self.timing == 'intrapartum' and df.at[person_id,
                                                                                              'la_uterine_rupture']:
 
-            # We dont have a specific package code for general surgery...
-            # dummy_surg_pkg_code = pd.unique(consumables.loc[consumables['Intervention_Pkg'] ==
-            #                                                 'Cesearian Section with indication (with complication)',
-            #                                                 'Intervention_Pkg_Code'])[0]
+            # We log the log the required consumables and condition the surgery happening on the availability of the
+            # first consumable in this package, the anaesthetic required for the surgery
+            avail = self.get_consumables(item_codes=cons['obstetric_surgery_core'],
+                                         optional_item_codes=cons['obstetric_surgery_optional'])
 
-            # Again we check for the consumables but dont condition on consumables being avaible for the event to
-            # happen
-            # all_available = self.get_all_consumables(
-            #     pkg_codes=[dummy_surg_pkg_code])
-            all_available = True
-
-            if all_available:
-                logger.debug(key='message',
-                             data='Consumables required for surgery are available and therefore have been '
-                                  'used')
-            else:
-                logger.debug(key='message',
-                             data='Consumables required for surgery are unavailable and therefore have not '
-                                  'been used')
+            sf_check = self.module.check_emonc_signal_function_will_run(sf='surg',
+                                                                        f_lvl=self.ACCEPTED_FACILITY_LEVEL)
 
             # We apply a probability that repair surgery will be successful which will reduce risk of death from
             # uterine rupture
             treatment_success_ur = params['success_rate_uterine_repair'] > self.module.rng.random_sample()
 
-            if treatment_success_ur:
+            if avail and treatment_success_ur and sf_check:
                 df.at[person_id, 'la_uterine_rupture_treatment'] = True
+
             # Unsuccessful repair will lead to this woman requiring a hysterectomy. Hysterectomy will also reduce risk
             # of death from uterine rupture but leads to permanent infertility in the simulation
-            elif ~treatment_success_ur:
+            elif avail and sf_check and not treatment_success_ur:
                 df.at[person_id, 'la_has_had_hysterectomy'] = True
 
         # ============================= SURGICAL MANAGEMENT OF POSTPARTUM HAEMORRHAGE==================================
         # Women referred for surgery immediately following labour will need surgical management of postpartum bleeding
         # Treatment is varied accordingly to underlying cause of bleeding
 
-        if mni[person_id]['referred_for_surgery'] and self.timing == 'postpartum' and df.at[person_id,
-                                                                                            'la_postpartum_haem']:
+        if (mni[person_id]['referred_for_surgery'] and
+            (self.timing == 'postpartum') and
+           (df.at[person_id, 'la_postpartum_haem'] or df.at[person_id, 'pn_postpartum_haem_secondary'])):
             self.module.surgical_management_of_pph(self)
 
         # =========================================== BLOOD TRANSFUSION ===============================================
@@ -3253,7 +3181,6 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         # Women who have passed through the postpartum SBA HSI have not yet had their risk of death calculated because
         # they required interventions delivered via this event. We now determine if these women will survive
         if self.timing == 'postpartum':
-            logger.debug(key='msg', data=f'{person_id} apply_risk_of_early_postpartum_death')
             self.module.apply_risk_of_early_postpartum_death(person_id)
 
         actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
@@ -3266,140 +3193,15 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
                 mni[person_id]['referred_for_blood']:
             actual_appt_footprint['MajorSurg'] = actual_appt_footprint['InpatientDays']
 
+    def never_ran(self):
+        self.module.run_if_receives_comprehensive_emergency_obstetric_care_cant_run(self)
+
     def did_not_run(self):
-        person_id = self.target
-        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-
-        logger.debug(key='message', data='HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare: did not run as the '
-                                         f'squeeze factor is too high, mother {person_id} did not receive care')
-
-        # For women who cant deliver via caesarean we apply risk of uterine rupture (which was blocked before)
-        if mni[person_id]['referred_for_cs'] and self.timing == 'intrapartum':
-            logger.debug(key='message', data=f'squeeze factor is too high for this event to run for mother'
-                                             f' {person_id} on date {self.sim.date} and she is unable to deliver via '
-                                             f'caesarean section')
-            self.module.set_intrapartum_complications(
-                person_id, complication='uterine_rupture')
-
-        # For women referred to this event after the postnatal SBA HSI we apply risk of death (as if should have been
-        # applied in this event if it ran)
-        elif self.timing == 'postpartum':
-            logger.debug(key='msg', data=f'{person_id} apply_risk_of_early_postpartum_death')
-            self.module.apply_risk_of_early_postpartum_death(person_id)
-
+        self.module.run_if_receives_comprehensive_emergency_obstetric_care_cant_run(self)
         return False
 
     def not_available(self):
-        person_id = self.target
-        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-
-        logger.debug(key='message', data='HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare is not in the '
-                                         f'allowed service availability and therefore cannot run for mother {person_id}'
-                                         f'meaning she will not receive CEmONC interventions she requires')
-
-        if mni[person_id]['referred_for_cs'] and self.timing == 'intrapartum':
-            self.module.set_intrapartum_complications(
-                person_id, complication='uterine_rupture')
-
-        elif self.timing == 'postpartum':
-            logger.debug(key='msg', data=f'{person_id} apply_risk_of_early_postpartum_death')
-            self.module.apply_risk_of_early_postpartum_death(person_id)
-
-
-class HSI_Labour_ReceivesCareFollowingCaesareanSection(HSI_Event, IndividualScopeEventMixin):
-    """
-    This is HSI_Labour_ReceivesCareFollowingCaesareanSection. It is scheduled via the BirthEvent for all women who have
-    delivered via caesarean section and represents the care provided by a skilled birth attendant to women post
-    section.  The structure and flow of this event is largely similar to
-    HSI_Labour_ReceivesSkilledBirthAttendanceFollowingLabour as described above.
-    """
-
-    def __init__(self, module, person_id, facility_level_of_this_hsi):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, Labour)
-
-        self.TREATMENT_ID = 'Labour_ReceivesCareFollowingCaesareanSection'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 1})
-        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
-        self.ALERT_OTHER_DISEASES = []
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})
-
-    def apply(self, person_id, squeeze_factor):
-        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-        df = self.sim.population.props
-        params = self.module.parameters
-
-        logger.debug(key='message', data='Labour_ReceivesCareFollowingCaesareanSection is firing')
-
-        if not df.at[person_id, 'is_alive']:
-            return
-
-        assert mni[person_id]['mode_of_delivery'] == 'caesarean_section'
-        assert mni[person_id]['referred_for_cs']
-
-        # This event represents care women receive after delivering via caesarean section
-        # Women pass through different 'post delivery' events depending on mode of delivery due to how risk and
-        # treatment of certain complications, such as postpartum haemorrhage, are managed
-
-        # ===================================== APPLYING COMPLICATION INCIDENCE =======================================
-        # Here we apply the risk that this woman will develop and infection or experience worsening hypertension after
-        # her caesarean
-        for complication in ['endometritis', 'urinary_tract_inf', 'skin_soft_tissue_inf',
-                             'other_maternal_infection', 'sepsis', 'uterine_atony', 'other_pph_cause',
-                             'postpartum_haem']:
-            self.module.set_postpartum_complications(person_id, complication=complication)
-
-        self.module.progression_of_hypertensive_disorders(person_id, property_prefix='pn')
-
-        # ======================================= PPH MANAGEMENT =============================================
-        outcome_of_pph_management = self.module.assessment_and_treatment_of_pph_uterine_atony(self, 'hp')
-        if outcome_of_pph_management:
-            self.module.surgical_management_of_pph(self)
-            self.module.blood_transfusion(self)
-
-        # ======================================= COMPLICATION MANAGEMENT =============================================
-        # Next we apply the effect of any treatments
-        if squeeze_factor < params['squeeze_threshold_treatment_sep']:
-            self.module.assessment_and_treatment_of_maternal_sepsis(self, 'hp', 'pp')
-        if squeeze_factor < params['squeeze_threshold_treatment_htn']:
-            self.module.assessment_and_treatment_of_hypertension(self, 'hp')
-        if squeeze_factor < params['squeeze_threshold_treatment_ec']:
-            self.module.assessment_and_treatment_of_eclampsia(self, 'hp')
-
-        self.module.interventions_delivered_pre_discharge(self)
-
-        # ====================================== APPLY RISK OF DEATH===================================================
-        logger.debug(key='msg', data=f'{person_id} apply_risk_of_early_postpartum_death')
-        self.module.apply_risk_of_early_postpartum_death(person_id)
-
-    def did_not_run(self):
-        person_id = self.target
-        logger.debug(key='message', data=f'squeeze factor is too high for this event to run for mother {person_id} on '
-                                         f'date {self.sim.date} and she is unable to receive post caesarean care')
-
-        # For simulation runs where the squeeze is set too high for the event to run we apply risk of complications and
-        # death as this would have happened within the HSI
-        for complication in ['endometritis', 'urinary_tract_inf', 'skin_soft_tissue_inf',
-                             'other_maternal_infection', 'sepsis']:
-            self.module.set_postpartum_complications(person_id, complication=complication)
-
-        self.module.progression_of_hypertensive_disorders(person_id, property_prefix='pn')
-        self.module.apply_risk_of_early_postpartum_death(person_id)
-
-        return False
-
-    def not_available(self):
-        person_id = self.target
-
-        logger.debug(key='message', data=f'HSI_Labour_ReceivesCareFollowingCaesareanSection is not allowed in the '
-                                         f'current service availability, for mother {person_id} '
-                                         f'and she is unable to receive care after caesarean section')
-
-        for complication in ['endometritis', 'urinary_tract_inf', 'skin_soft_tissue_inf',
-                             'other_maternal_infection', 'sepsis']:
-            self.module.set_postpartum_complications(person_id, complication=complication)
-        self.module.progression_of_hypertensive_disorders(person_id, property_prefix='pn')
-        self.module.apply_risk_of_early_postpartum_death(person_id)
+        self.module.run_if_receives_comprehensive_emergency_obstetric_care_cant_run(self)
 
 
 class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -3412,110 +3214,23 @@ class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         df = self.sim.population.props
+        repro_women = df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)
 
-        # Previous Year...
-        one_year_prior = self.sim.date - np.timedelta64(1, 'Y')
-        total_births_last_year = len(df.index[(df.date_of_birth > one_year_prior) & (df.date_of_birth < self.sim.date)])
+        hysterectomy = df.is_alive & (df.sex == 'F') & df.la_has_had_hysterectomy & (df.age_years > 14) & (df.age_years
+                                                                                                           < 50)
+        labour = df.is_alive & (df.sex == 'F') & df.la_currently_in_labour & (df.age_years > 14) & (df.age_years
+                                                                                                    < 50)
+        postnatal = df.is_alive & (df.sex == 'F') & df.la_is_postpartum & (df.age_years > 14) & (df.age_years
+                                                                                                 < 50)
+        inpatient = df.is_alive & (df.sex == 'F') & df.hs_is_inpatient & (df.age_years > 14) & (df.age_years
+                                                                                                < 50)
 
-        # Denominators...
-        total_ip_maternal_deaths_last_year = len(df.index[df.la_maternal_death_in_labour & (
-            df.la_maternal_death_in_labour_date > one_year_prior) & (df.la_maternal_death_in_labour_date <
-                                                                     self.sim.date)])
-        if total_ip_maternal_deaths_last_year == 0:
-            total_ip_maternal_deaths_last_year = 1
+        prop_hyst = (len(hysterectomy.loc[hysterectomy]) / len(repro_women.loc[repro_women])) * 100
+        prop_in_labour = (len(labour.loc[labour]) / len(repro_women.loc[repro_women])) * 100
+        prop_pn = (len(postnatal.loc[postnatal]) / len(repro_women.loc[repro_women])) * 100
+        prop_ip = (len(inpatient.loc[inpatient]) / len(repro_women.loc[repro_women])) * 100
 
-        if total_births_last_year == 0:
-            total_births_last_year = 1
-
-        # yearly number of complications
-        deaths = self.module.labour_tracker['maternal_death']
-        still_births = self.module.labour_tracker['ip_stillbirth']
-        ol = self.module.labour_tracker['obstructed_labour']
-        aph = self.module.labour_tracker['antepartum_haem']
-        ur = self.module.labour_tracker['uterine_rupture']
-        ec = self.module.labour_tracker['eclampsia']
-        spe = self.module.labour_tracker['severe_pre_eclampsia']
-        pph = self.module.labour_tracker['postpartum_haem']
-        sep = self.module.labour_tracker['sepsis']
-        sep_pp = self.module.labour_tracker['sepsis_pp']
-
-        # yearly number deliveries by setting
-        home = self.module.labour_tracker['home_birth']
-        hospital = self.module.labour_tracker['health_centre_birth']
-        health_centre = self.module.labour_tracker['hospital_birth']
-        cs_deliveries = self.module.labour_tracker['caesarean_section']
-
-        ept = self.module.labour_tracker['early_preterm']
-        lpt = self.module.labour_tracker['late_preterm']
-        pt = self.module.labour_tracker['post_term']
-        t = self.module.labour_tracker['term']
-
-        # TODO: division by zero crashes code on small runs
-
-        dict_for_output = {
-            'total_births_last_year': total_births_last_year,
-            'maternal_deaths_checker': deaths,
-            'maternal_deaths_df': total_ip_maternal_deaths_last_year,
-            'still_births': still_births,
-            'sbr': still_births / total_births_last_year * 100,
-            'intrapartum_mmr': total_ip_maternal_deaths_last_year / total_births_last_year * 100000,
-            'home_births_crude': home,
-            'home_births_prop': home / total_births_last_year * 100,
-            'health_centre_births': health_centre / total_births_last_year * 100,
-            'hospital_births': hospital / total_births_last_year * 100,
-            'cs_delivery_rate': cs_deliveries / total_births_last_year * 100,
-            'ol_incidence': ol / total_births_last_year * 100,
-            'aph_incidence': aph / total_births_last_year * 100,
-            'ur_incidence': ur / total_births_last_year * 100,
-            'ec_incidence': ec / total_births_last_year * 100,
-            'spe_incidence': spe / total_births_last_year * 100,
-            'sep_incidence': sep + sep_pp / total_births_last_year * 100,
-            'sep_incidence_pp': sep_pp / total_births_last_year * 100,
-            'pph_incidence': pph / total_births_last_year * 100,
-        }
-
-        dict_crude_cases = {'intrapartum_mmr': total_ip_maternal_deaths_last_year,
-                            'ol_cases': ol,
-                            'aph_cases': aph,
-                            'ur_cases': ur,
-                            'ec_cases': ec,
-                            'spe_cases': spe,
-                            'sep_cases': sep,
-                            'sep_cases_pp': sep_pp,
-                            'pph_cases': pph}
-
-        deliveries = {'ept': ept / total_births_last_year * 100,
-                      'lpt': lpt / total_births_last_year * 100,
-                      'term': t / total_births_last_year * 100,
-                      'post_term': pt / total_births_last_year * 100}
-
-        # deaths
-        sep_d = self.module.labour_tracker['sepsis_death']
-        ur_d = self.module.labour_tracker['uterine_rupture_death']
-        aph_d = self.module.labour_tracker['antepartum_haem_death']
-        ec_d = self.module.labour_tracker['eclampsia_death']
-        pph_d = self.module.labour_tracker['postpartum_haem_death']
-
-        deaths = {'sepsis': sep_d,
-                  'uterine_rupture': ur_d,
-                  'aph': aph_d,
-                  'eclampsia': ec_d,
-                  'postpartum_haem': pph_d,
-                  }
-
-        logger.info(key='labour_summary_stats_incidence', data=dict_for_output, description='Yearly incidence summary '
-                                                                                            'statistics output from '
-                                                                                            'the labour module')
-        logger.info(key='labour_summary_stats_crude_cases', data=dict_crude_cases, description='Yearly crude '
-                                                                                               'summary statistics '
-                                                                                               'output from the labour '
-                                                                                               'module')
-        logger.info(key='labour_summary_stats_delivery', data=deliveries, description='Yearly delivery summary '
-                                                                                      'statistics output from the '
-                                                                                      'labour module')
-        logger.info(key='labour_summary_stats_death', data=deaths, description='Yearly death summary statistics '
-                                                                               'output from the labour module')
-
-        # Reset the EventTracker
-        for k in self.module.labour_tracker:
-            self.module.labour_tracker[k] = 0
+        logger.info(key='women_data_debug', data={'hyst': prop_hyst,
+                                                  'labour': prop_in_labour,
+                                                  'pn': prop_pn,
+                                                  'ip': prop_ip})

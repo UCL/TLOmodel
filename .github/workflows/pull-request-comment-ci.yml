@@ -12,5 +12,16 @@ jobs:
     with:
       runs-on: self-hosted
       keyword: scaled-sim
-      commands: python -m cProfile src/scripts/profiling/scale_run.py --show-progress-bar --ignore-warnings
-      description: Scale run of model
+      commands: tox -v -e profile
+      description: Profiled scale run of model
+      timeout-minutes: 8640
+
+  multiple_seed_tests:
+    uses: ./.github/workflows/run-on-pr-comment.yml
+    with:
+      runs-on: self-hosted
+      keyword: multiple-seed-tests
+      commands: |
+        tox -v -e py38,report -- pytest --seed 2671936806 3512589365 --cov --cov-report=term-missing -vv tests
+      description: Run of tests over multiple seeds
+      timeout-minutes: 8640

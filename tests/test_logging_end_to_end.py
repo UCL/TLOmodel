@@ -1,3 +1,5 @@
+import pickle
+from collections.abc import Mapping
 from io import StringIO
 
 import pandas as pd
@@ -174,18 +176,13 @@ class TestWriteAndReadLog:
         assert log_input.col4_cat.equals(log_df.cat)
 
 
-class TestParseLogAtLoggingLevel:
-    def test_same_level(self, log_path):
-        parsed_log = parse_log_file(log_path, level=logging.INFO)
+def test_parse_log_file(log_path):
+    parsed_log = parse_log_file(log_path)
+    assert isinstance(parsed_log, Mapping)
+    assert 'tlo.test' in parsed_log
 
-        assert 'tlo.test' in parsed_log.keys()
 
-    def test_parse_log_at_higher_level(self, log_path):
-        parsed_log = parse_log_file(log_path, level=logging.CRITICAL)
-
-        assert parsed_log == {}
-
-    def test_parse_log_at_lower_level(self, log_path):
-        parsed_log = parse_log_file(log_path, level=logging.DEBUG)
-
-        assert 'tlo.test' in parsed_log.keys()
+def test_parsed_log_object_pickleable(log_path, tmp_path):
+    parsed_log = parse_log_file(log_path)
+    with open(tmp_path / "parsed_log.pickle", "wb") as pickle_file:
+        pickle.dump(parsed_log, pickle_file, pickle.HIGHEST_PROTOCOL)

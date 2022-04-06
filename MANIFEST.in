@@ -19,5 +19,7 @@ recursive-exclude resources *
 recursive-exclude docs/reference tlo.*.rst
 exclude docs/reference/tlo.rst
 exclude docs/reference/modules.rst
+exclude docs/_*.rst
+exclude docs/hsi_events.csv
 
 global-exclude *.py[cod] __pycache__ *.so *.dylib .ipynb_checkpoints/** *~
