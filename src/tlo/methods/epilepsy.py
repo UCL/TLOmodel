@@ -1,16 +1,15 @@
 from pathlib import Path
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
-from tlo.methods.symptommanager import Symptom
 from tlo.methods.healthsystem import HSI_Event
-
+from tlo.methods.symptommanager import Symptom
 
 # todo: note this code is becoming very depracated and does not include health interactions
 

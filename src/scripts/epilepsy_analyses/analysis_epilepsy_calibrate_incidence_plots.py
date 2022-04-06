@@ -12,6 +12,7 @@ from tlo.analysis.utils import (
     get_scenario_outputs,
     load_pickled_dataframes,
 )
+
 # NOTE THAT THIS FILE PATH IS UNIQUE EACH INDIVIDUAL AND WILL BE DIFFERENT FOR EACH USER
 outputspath = Path('./outputs/rmjlra2@ucl.ac.uk/')
 

@@ -3,9 +3,9 @@ from tlo.methods import (
     demography,
     enhanced_lifestyle,
     epilepsy,
+    healthburden,
     healthseekingbehaviour,
     healthsystem,
-    healthburden,
     simplified_births,
     symptommanager,
 )
