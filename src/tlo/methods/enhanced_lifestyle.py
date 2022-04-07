@@ -2,7 +2,6 @@
 Lifestyle module
 Documentation: 04 - Methods Repository/Method_Lifestyle.xlsx
 """
-import datetime
 from pathlib import Path
 
 import numpy as np
@@ -289,18 +288,34 @@ class Lifestyle(Module):
         'li_bmi': Property(
             Types.INT, 'bmi: 1 (<18) 2 (18-24.9)  3 (25-29.9) 4 (30-34.9) 5 (35+)' 'bmi is 0 until age 15'
         ),
+
+        # new property waiting for confirmation from either Andrew or Tim
+        'li_date_weight_reduction': Property(Types.DATE, 'Date last possible decrease in category of bmi'),
+
         'li_exposed_to_campaign_weight_reduction': Property(
             Types.BOOL, 'currently exposed to population campaign for ' 'weight reduction if BMI >= 25'
         ),
         'li_low_ex': Property(Types.BOOL, 'currently low exercise'),
+
+        # new property waiting for confirmation from either Andrew or Tim
+        'li_date_exercise_increase': Property(Types.DATE, 'Date last transitioned from low exercise to not low exercise'),
+
         'li_exposed_to_campaign_exercise_increase': Property(
             Types.BOOL, 'currently exposed to population campaign for ' 'increase exercise if low ex'
         ),
         'li_high_salt': Property(Types.BOOL, 'currently high salt intake'),
+
+        # new property waiting for confirmation from either Andrew or Tim
+        'li_date_salt_reduction': Property(Types.DATE, 'Date last transitioned from high salt to not high salt'),
+
         'li_exposed_to_campaign_salt_reduction': Property(
             Types.BOOL, 'currently exposed to population campaign for ' 'salt reduction if high salt'
         ),
         'li_high_sugar': Property(Types.BOOL, 'currently high sugar intake'),
+
+        # new property waiting for confirmation from either Andrew or Tim
+        'li_date_sugar_reduction': Property(Types.DATE, 'Date last transitioned from high sugar to not high sugar'),
+
         'li_exposed_to_campaign_sugar_reduction': Property(
             Types.BOOL, 'currently exposed to population campaign for ' 'sugar reduction if high sugar'
         ),
@@ -310,6 +325,11 @@ class Lifestyle(Module):
             Types.BOOL, 'currently exposed to population campaign to' 'quit smoking if tob'
         ),
         'li_ex_alc': Property(Types.BOOL, 'current excess alcohol'),
+
+        # new property waiting for confirmation from either Andrew or Tim
+        'li_date_alcohol_reduction': Property(Types.DATE, 'Date last transitioned from excess alcohol to not excess '
+                                                          'alcohol'),
+
         'li_exposed_to_campaign_alcohol_reduction': Property(
             Types.BOOL, 'currently exposed to population campaign for ' 'alcohol reduction if ex alc'
         ),
@@ -342,10 +362,14 @@ class Lifestyle(Module):
         )
 
         self.load_parameters_from_dataframe(dfd)
+        # todo: unless some modules are requesting dates for campaign start I would suggest deleting the below
+        #  commented lines if the above proposed properties are to be adopted.for the property
+        #  `li_exposed_to_campaign_*(scenario)` we will set True or false based on whether the prosed properties
+        #  have Dates or are pd.NaT. **see implementation in initialise_population, on_birth and Lifestyle Event
         # Manually set dates for campaign starts for now todo - fix this
-        p['start_date_campaign_exercise_increase'] = datetime.date(2010, 7, 1)
-        p['start_date_campaign_quit_smoking'] = datetime.date(2010, 7, 1)
-        p['start_date_campaign_alcohol_reduction'] = datetime.date(2010, 7, 1)
+        # p['start_date_campaign_exercise_increase'] = datetime.date(2010, 7, 1)
+        # p['start_date_campaign_quit_smoking'] = datetime.date(2010, 7, 1)
+        # p['start_date_campaign_alcohol_reduction'] = datetime.date(2010, 7, 1)
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -361,17 +385,37 @@ class Lifestyle(Module):
         df['li_urban'] = False
         df['li_wealth'].values[:] = 3
         df['li_bmi'] = 0
+
+        # new property waiting for confirmation from either Andrew or Tim
+        df['li_date_weight_reduction'] = pd.NaT
+
         df['li_exposed_to_campaign_weight_reduction'] = False
         df['li_low_ex'] = False
+
+        # new property waiting for confirmation from either Andrew or Tim
+        df['li_date_exercise_increase'] = pd.NaT
+
         df['li_exposed_to_campaign_exercise_increase'] = False
         df['li_high_salt'] = False
+
+        # new property waiting for confirmation from either Andrew or Tim
+        df['li_date_salt_reduction'] = pd.NaT
+
         df['li_exposed_to_campaign_salt_reduction'] = False
         df['li_high_sugar'] = False
+
+        # new property waiting for confirmation from either Andrew or Tim
+        df['li_date_sugar_reduction'] = pd.NaT
+
         df['li_exposed_to_campaign_sugar_reduction'] = False
         df['li_tob'] = False
         df['li_date_not_tob'] = pd.NaT
         df['li_exposed_to_campaign_quit_smoking'] = False
         df['li_ex_alc'] = False
+
+        # new property waiting for confirmation from either Andrew or Tim
+        df['li_date_alcohol_reduction'] = pd.NaT
+
         df['li_exposed_to_campaign_alcohol_reduction'] = False
         df['li_mar_stat'].values[:] = 1
         df['li_in_ed'] = False
@@ -795,17 +839,37 @@ class Lifestyle(Module):
         df.at[child_id, 'li_urban'] = df.at[_id_inherit_from, 'li_urban']
         df.at[child_id, 'li_wealth'] = df.at[_id_inherit_from, 'li_wealth']
         df.at[child_id, 'li_bmi'] = 0
+
+        # new property waiting for confirmation from either Andrew or Tim
+        df.at[child_id, 'li_date_weight_reduction'] = pd.NaT
+
         df.at[child_id, 'li_exposed_to_campaign_weight_reduction'] = False
         df.at[child_id, 'li_low_ex'] = False
+
+        # new property waiting for confirmation from either Andrew or Tim
+        df.at[child_id, 'li_date_exercise_increase'] = pd.NaT
+
         df.at[child_id, 'li_exposed_to_campaign_exercise_increase'] = False
         df.at[child_id, 'li_high_salt'] = df.at[_id_inherit_from, 'li_high_salt']
+
+        # new property waiting for confirmation from either Andrew or Tim
+        df.at[child_id, 'li_date_salt_reduction'] = pd.NaT
+
         df.at[child_id, 'li_exposed_to_campaign_salt_reduction'] = False
         df.at[child_id, 'li_high_sugar'] = df.at[_id_inherit_from, 'li_high_sugar']
+
+        # new property waiting for confirmation from either Andrew or Tim
+        df.at[child_id, 'li_date_sugar_reduction'] = pd.NaT
+
         df.at[child_id, 'li_exposed_to_campaign_sugar_reduction'] = False
         df.at[child_id, 'li_tob'] = False
         df.at[child_id, 'li_date_not_tob'] = pd.NaT
         df.at[child_id, 'li_exposed_to_campaign_quit_smoking'] = False
         df.at[child_id, 'li_ex_alc'] = False
+
+        # new property waiting for confirmation from either Andrew or Tim
+        df.at[child_id, 'li_date_alcohol_reduction'] = pd.NaT
+
         df.at[child_id, 'li_exposed_to_campaign_alcohol_reduction'] = False
         df.at[child_id, 'li_mar_stat'] = 1
         df.at[child_id, 'li_in_ed'] = False
@@ -947,7 +1011,7 @@ class Lifestyle(Module):
                 'prop_bmi_45_wealth1': prop_bmi_45_wealth1,
                 'prop_bmi_45_wealth5': prop_bmi_45_wealth5,
                 'prop_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1':
-                prop_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1
+                    prop_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1
             }
         else:
             bmi_proportions = {
@@ -993,7 +1057,10 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         """Apply this event to the population.
         :param population: the current population
         """
-        df = population.props
+        self.handle_all_transitions()
+
+    def handle_all_transitions(self):
+        df = self.sim.population.props
         m = self.module
         rng = m.rng
 
@@ -1029,11 +1096,18 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         newly_not_low_ex_idx = low_ex_idx[random_draw < eff_rate_not_low_ex]
         df.loc[newly_not_low_ex_idx, 'li_low_ex'] = False
 
+        # date transition from low exercise to not low exercise. waiting for confirmation.
+        df.loc[newly_not_low_ex_idx, 'li_date_exercise_increase'] = self.sim.date
+
         # todo: this line below to start a general population campaign
         #  to increase exercise not working yet (same for others below)
         all_idx_campaign_exercise_increase = df.index[
-            df.is_alive & (self.sim.date == m.parameters['start_date_campaign_exercise_increase'])
-        ]
+            # df.is_alive & (self.sim.date == m.parameters['start_date_campaign_exercise_increase'])
+
+            # select individuals who are alive and have transitioned from low exercise to not low exercise.
+            # waiting for confirmation from Andrew or Tim. if confirmed then i will delete the above todo
+            df.is_alive & pd.notnull(df.li_date_exercise_increase)
+            ]
         df.loc[all_idx_campaign_exercise_increase, 'li_exposed_to_campaign_exercise_increase'] = True
 
         # -------------------- TOBACCO USE ---------------------------------------------------------
@@ -1061,8 +1135,11 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[newly_not_tob_idx, 'li_date_not_tob'] = self.sim.date
 
         all_idx_campaign_quit_smoking = df.index[
-            df.is_alive & (self.sim.date == m.parameters['start_date_campaign_quit_smoking'])
-        ]
+            # df.is_alive & (self.sim.date == m.parameters['start_date_campaign_quit_smoking'])
+
+            # select individuals who are alive and have transitioned from tobacco to no tobacco. waiting confirmation
+            df.is_alive & pd.notnull(df.li_date_not_tob)
+            ]
         df.loc[all_idx_campaign_quit_smoking, 'li_exposed_to_campaign_quit_smoking'] = True
 
         # -------------------- EXCESSIVE ALCOHOL ---------------------------------------------------
@@ -1088,9 +1165,15 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         newly_not_ex_alc_idx = ex_alc_idx[random_draw < eff_rate_not_ex_alc]
         df.loc[newly_not_ex_alc_idx, 'li_ex_alc'] = False
 
+        # date of transition from excess alcohol to not excess alcohol. waiting confirmation
+        df.loc[newly_not_ex_alc_idx, 'li_date_alcohol_reduction'] = self.sim.date
+
         all_idx_campaign_alcohol_reduction = df.index[
-            df.is_alive & (self.sim.date == m.parameters['start_date_campaign_alcohol_reduction'])
-        ]
+            # df.is_alive & (self.sim.date == m.parameters['start_date_campaign_alcohol_reduction'])
+
+            # select all individuals who are alive and are exposed to campaign alcohol reduction. waiting confirmation
+            df.is_alive & pd.notnull(df.li_date_alcohol_reduction)
+            ]
         df.loc[all_idx_campaign_alcohol_reduction, 'li_exposed_to_campaign_alcohol_reduction'] = True
 
         # -------------------- MARITAL STATUS ------------------------------------------------------
@@ -1284,7 +1367,15 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         newly_not_high_salt_idx = high_salt_idx[random_draw < eff_rate_not_high_salt]
         df.loc[newly_not_high_salt_idx, 'li_high_salt'] = False
 
-        all_idx_campaign_salt_reduction = df.index[df.is_alive & (self.sim.date == datetime.date(2010, 7, 1))]
+        # date transition from high salt to not high salt. waiting for confirmation
+        df.loc[newly_not_high_salt_idx, 'li_date_salt_reduction'] = self.sim.date
+
+        all_idx_campaign_salt_reduction = df.index[
+            # df.is_alive & (self.sim.date == datetime.date(2010, 7, 1))
+
+            # select individuals alive and have transitioned from high salt to not high salt. waiting for confirmation
+            df.is_alive & pd.notnull(df.li_date_salt_reduction)
+        ]
         df.loc[all_idx_campaign_salt_reduction, 'li_exposed_to_campaign_salt_reduction'] = True
 
         # -------------------- HIGH SUGAR ----------------------------------------------------------
@@ -1305,7 +1396,15 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         newly_not_high_sugar_idx = high_sugar_idx[random_draw < eff_rate_not_high_sugar]
         df.loc[newly_not_high_sugar_idx, 'li_high_sugar'] = False
 
-        all_idx_campaign_sugar_reduction = df.index[df.is_alive & (self.sim.date == datetime.date(2010, 7, 1))]
+        # date transition from high sugar to not high sugar. waiting for confirmation
+        df.loc[newly_not_high_sugar_idx, 'li_date_sugar_reduction'] = self.sim.date
+
+        all_idx_campaign_sugar_reduction = df.index[
+            # df.is_alive & (self.sim.date == datetime.date(2010, 7, 1))
+
+            # select individuals who have transitioned from high sugar to not high sugar. waiting for confirmation
+            df.is_alive & pd.notnull(df.li_date_sugar_reduction)
+            ]
         df.loc[all_idx_campaign_sugar_reduction, 'li_exposed_to_campaign_sugar_reduction'] = True
 
         # -------------------- BMI ----------------------------------------------------------
@@ -1346,7 +1445,15 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         newly_decrease_bmi_cat_idx = bmi_cat_3_to_5_idx[random_draw < eff_rate_lower_bmi]
         df.loc[newly_decrease_bmi_cat_idx, 'li_bmi'] = df['li_bmi'] - 1
 
-        all_idx_campaign_weight_reduction = df.index[df.is_alive & (self.sim.date == datetime.date(2010, 7, 1))]
+        # date possible decrease in category of bmi. waiting for confirmation
+        df.loc[newly_decrease_bmi_cat_idx, 'li_date_weight_reduction'] = self.sim.date
+
+        all_idx_campaign_weight_reduction = df.index[
+            # df.is_alive & (self.sim.date == datetime.date(2010, 7, 1))
+
+            # select individuals who have decreased their bmi category
+            df.is_alive & pd.notnull(df.li_date_weight_reduction)
+        ]
         df.loc[all_idx_campaign_weight_reduction, 'li_exposed_to_campaign_weight_reduction'] = True
 
         # --- FSW ---
@@ -1355,7 +1462,9 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
 class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """Handles lifestyle logging"""
-
+    # todo: add more logs for urban/rural population, exercise, tobacco use, excess alcohol, marital status,
+    #  education, sanitation, access to hand washing, clean drinking water, wood burn stove, high sugar, high salt,
+    #  BMI, sex workers
     def __init__(self, module):
         """schedule logging to repeat every 3 months
         """
