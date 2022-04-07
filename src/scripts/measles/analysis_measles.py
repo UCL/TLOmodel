@@ -12,17 +12,17 @@ from tlo.methods import (
     contraception,
     demography,
     enhanced_lifestyle,
-    epi,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    hiv,
     labour,
-    measles,
     newborn_outcomes,
     postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
+    measles,
+    epi,
+    hiv
 )
 
 # import pandas as pd
