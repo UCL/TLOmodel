@@ -2,6 +2,7 @@ import datetime
 import os
 from collections import namedtuple
 from pathlib import Path
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -132,7 +133,8 @@ def test_consumables_availability_options(seed):
 
 
 def test_override_cons_availability(seed):
-    """Check that the availability of a consumable can be over-ridden."""
+    """Check that the availability of a consumable can be over-ridden and that this take precdence over the
+    `cons_availability` parameter."""
     intrinsic_availability = {
         0: 0.0,  # Not available
         1: 1.0,  # Available
@@ -145,55 +147,82 @@ def test_override_cons_availability(seed):
         months=[1],
         facility_ids=[0])
 
-    def request_item(cons, item_code):
+    def request_item(cons, item_code: Union[list, int]):
         """Use the internal helper function of the Consumables class to make the request."""
-        return cons._request_consumables(
-            item_codes={item_code: 1}, to_log=False, facility_info=facility_info_0
-        )[item_code]
+        if isinstance(item_code, int):
+            item_code = [item_code]
+
+        return all(cons._request_consumables(
+            item_codes={_i: 1 for _i in item_code}, to_log=False, facility_info=facility_info_0
+        ).values())
 
     rng = get_rng(seed)
     date = datetime.datetime(2010, 1, 1)
 
-    # Create consumables class
-    cons = Consumables(data=data, rng=rng, availability='default')
+    for _availability in ('default', 'all', 'none'):
 
-    # Check before overriding availability
-    for _ in range(1000):
-        cons.processing_at_start_of_new_day(date=date)
+        # Create consumables class
+        cons = Consumables(data=data, rng=rng, availability=_availability)
 
-        # Request item that is not available and not over-ridden
-        assert False is request_item(cons, 0)
+        # Check before overriding availability
+        for _ in range(1000):
+            cons.processing_at_start_of_new_day(date=date)
 
-        # Request item that is available and not over-ridden
-        assert True is request_item(cons, 1)
+            if _availability == 'default':
+                # Request item that is not available and not over-ridden
+                assert False is request_item(cons, 0)
 
-        # Request item that is not available but later over-ridden to be available
-        assert False is request_item(cons, 2)
+                # Request item that is available and not over-ridden
+                assert True is request_item(cons, 1)
 
-        # Request item that is available but later over-ridden to be not available
-        assert True is request_item(cons, 3)
+                # Request item that is not available but later over-ridden to be available
+                assert False is request_item(cons, 2)
 
-    # Do over-riding of availability of item_codes 2 and 3
-    cons.override_availability({
-        2: 1.0,
-        3: 0.0
-    })
+                # Request item that is available but later over-ridden to be not available
+                assert True is request_item(cons, 3)
 
-    # Check after overriding availability
-    for _ in range(1000):
-        cons.processing_at_start_of_new_day(date=date)
+            elif _availability == 'all':
+                # If 'cons_availability='all'` then all the items are available:
+                assert True is request_item(cons, [0, 1, 2, 3])
 
-        # Request item that is not available and not over-ridden
-        assert False is request_item(cons, 0)
+            elif _availability == 'none':
+                # If 'cons_availability='none'` then none of items are available:
+                assert False is request_item(cons, [0, 1, 2, 3])
 
-        # Request item that is available and not over-ridden
-        assert True is request_item(cons, 1)
+        # Do over-riding of availability of item_codes 2 and 3
+        cons.override_availability({
+            2: 1.0,
+            3: 0.0
+        })
 
-        # Request item that is not available but over-ridden to be available
-        assert True is request_item(cons, 2)
+        # Check after overriding availability
+        for _ in range(1000):
+            cons.processing_at_start_of_new_day(date=date)
 
-        # Request item that is available but over-ridden to be not available
-        assert False is request_item(cons, 3)
+            if _availability == 'default':
+                # Request item that is not available and not over-ridden
+                assert False is request_item(cons, 0)
+
+                # Request item that is available and not over-ridden
+                assert True is request_item(cons, 1)
+
+                # Request item that is not available but over-ridden to be available
+                assert True is request_item(cons, 2)
+
+                # Request item that is available but over-ridden to be not available
+                assert False is request_item(cons, 3)
+
+            elif _availability == 'all':
+                # When everything defaults to being available, everything will be available, except the consumable (3)
+                # that is over-ridden to not be available.
+                assert True is request_item(cons, [0, 1, 2])
+                assert False is request_item(cons, 3)
+
+            elif _availability == 'none':
+                # When everything defaults to not being available, everything will be not available, except the
+                # consumable (2) that is over-ridden to be available.
+                assert False is request_item(cons, [0, 1, 3])
+                assert True is request_item(cons, 2)
 
 
 @pytest.mark.slow

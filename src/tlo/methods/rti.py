@@ -105,6 +105,7 @@ class RTI(Module):
         '7101': 7,
         '7113': 56,
         '813do': 240,
+        '811': 70,
         '812': 70,
         '813eo': 240,
         '813bo': 240,
@@ -988,6 +989,11 @@ class RTI(Module):
         'blocked_interventions': Parameter(
             Types.LIST,
             "A list of interventions that are blocked in a simulation"
+        ),
+        'unavailable_treatment_mortality_mais_cutoff': Parameter(
+            Types.INT,
+            "A cut-off score above which an injury will result in additional mortality if the person has "
+            "sought healthcare and not received it."
         )
 
     }
@@ -2808,6 +2814,7 @@ class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
         self.daly_wt_femur_fracture_short_term = p['daly_wt_femur_fracture_short_term']
         self.daly_wt_femur_fracture_long_term_without_treatment = \
             p['daly_wt_femur_fracture_long_term_without_treatment']
+        self.no_treatment_mortality_mais_cutoff = p['unavailable_treatment_mortality_mais_cutoff']
 
     def apply(self, population):
         df = population.props
@@ -2842,6 +2849,9 @@ class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
                     mais_scores.append(self.module.ASSIGN_INJURIES_AND_DALY_CHANGES[injury][0][-1])
                 max_untreated_injury = max(mais_scores)
                 prob_death = probabilities_of_death[str(max_untreated_injury)]
+                if df.loc[person, 'rt_med_int'] and (max_untreated_injury < self.no_treatment_mortality_mais_cutoff):
+                    # filter out non serious injuries from the consideration of mortality
+                    prob_death = 0
                 if rand_for_death < prob_death:
                     # If determined to die, schedule a death without med
                     df.loc[person, 'rt_no_med_death'] = True
