@@ -3674,7 +3674,7 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
         else:
             self.module.item_codes_for_consumables_required['shock_treatment_adult'] = {
                 get_item_code("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 1,
-                get_item_code('Cannula iv  (winged with injection pot) 20_each_CMST'): 1,
+                get_item_code('Cannula iv  (winged with injection pot) 18_each_CMST'): 1,
                 get_item_code('Blood, one unit'): 1,
                 get_item_code("Oxygen, 1000 liters, primarily with oxygen cylinders"): 1
             }
@@ -4537,7 +4537,7 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
             # tools to begin surgery
             get_item_code("Scalpel blade size 22 (individually wrapped)_100_CMST"): 1,
             # administer an IV
-            get_item_code("Cannula iv  (winged with injection pot) 20_each_CMST"): 1,
+            get_item_code('Cannula iv  (winged with injection pot) 18_each_CMST'): 1,
             get_item_code("Giving set iv administration + needle 15 drops/ml_each_CMST"): 1,
             get_item_code("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 1,
             # repair incision made
