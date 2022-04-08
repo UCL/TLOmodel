@@ -1223,7 +1223,6 @@ class HealthSystem(Module):
                     **log_info}
             )
 
-
         if self.record_hsi_event_details:
             self.hsi_event_details.add(
                 HSIEventDetails(

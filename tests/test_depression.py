@@ -5,8 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from tlo import Date, Simulation, logging
-from tlo.analysis.utils import parse_log_file
+from tlo import Date, Simulation
 from tlo.lm import LinearModel, LinearModelType
 from tlo.methods import (
     demography,
@@ -132,8 +131,6 @@ def test_hsi_functions(tmpdir, seed):
         sim.modules['Depression'].parameters['prob_3m_selfharm_depr']
     )
 
-    f = sim.configure_logging("log", directory=tmpdir, custom_levels={"*": logging.INFO})
-
     sim.make_initial_population(n=2000)
 
     df = sim.population.props
@@ -192,8 +189,6 @@ def test_hsi_functions_no_medication_available(tmpdir, seed):
         LinearModelType.MULTIPLICATIVE,
         sim.modules['Depression'].parameters['prob_3m_selfharm_depr']
     )
-
-    f = sim.configure_logging("log", directory=tmpdir, custom_levels={"*": logging.INFO})
 
     sim.make_initial_population(n=2000)
 
