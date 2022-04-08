@@ -48,9 +48,9 @@ class TestScenario(BaseScenario):
 
     def __init__(self):
         super().__init__()
-        self.seed = randint(0, 5000)
+        self.seed = 5
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2035, 1, 1)
+        self.end_date = Date(2050, 12, 31)
         self.pop_size = 500000
         self.number_of_draws = 5
         self.runs_per_draw = 5

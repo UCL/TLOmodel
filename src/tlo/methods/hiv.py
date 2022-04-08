@@ -1811,6 +1811,10 @@ class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
         if not person["hv_is_on_prep"]:
             logger.warning(key="message", data="This event should not be running")
 
+        # check still eligible, person must be <30 years old or a fsw
+        if (person["age_years"] > 30) or not person["li_is_sexworker"]:
+            return
+
         # Determine if this appointment is actually attended by the person who has already started on PrEP
         if (
             m.rng.random_sample()

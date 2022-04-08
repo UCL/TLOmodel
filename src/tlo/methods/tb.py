@@ -512,14 +512,6 @@ class Tb(Module):
             Predictor("hv_inf").when(True, p["rr_tb_hiv"]),
         )
 
-        # linear model for risk of active tb in baseline population 2010
-        # need to cluster majority of cases in plhiv
-        self.lm["active_tb_2010"] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            (p["incidence_active_tb_2010"]),
-            Predictor("hv_inf").when(True, p["rr_tb_hiv"]),
-        )
-
         # adults progressing to active disease
         self.lm["active_tb"] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
@@ -710,7 +702,6 @@ class Tb(Module):
         """
         this is new incidence active tb cases which will occur through 2010
         no differences in baseline active tb by age/sex
-        active infections will cluster in plhiv
         """
 
         df = population.props
