@@ -1,5 +1,5 @@
 import pandas as pd
-
+from tlo.methods import pregnancy_helper_functions
 
 def predict_early_onset_neonatal_sepsis(self, df, rng=None, **externals):
     """
@@ -106,10 +106,8 @@ def predict_not_breathing_at_birth_death(self, df, rng=None, **externals):
     result = params['cfr_failed_to_transition']
 
     if person['nb_received_neonatal_resus']:
-        if externals['delay']:
-            treatment_effect = 1 - ((1 - params['treatment_effect_resuscitation']) * 0.75)
-        else:
-            treatment_effect = params['treatment_effect_resuscitation']
+        treatment_effect = pregnancy_helper_functions.get_treatment_effect(
+            False, externals['delay'], 'treatment_effect_resuscitation', params)
 
         result *= treatment_effect
 
@@ -127,8 +125,12 @@ def predict_enceph_death(self, df, rng=None, **externals):
 
     if person['nb_encephalopathy'] == 'severe_enceph':
         result *= params['cfr_multiplier_severe_enceph']
+
     if person['nb_received_neonatal_resus']:
-        result *= params['treatment_effect_resuscitation']
+        treatment_effect = pregnancy_helper_functions.get_treatment_effect(
+            False, externals['delay'], 'treatment_effect_resuscitation', params)
+
+        result *= treatment_effect
 
     return pd.Series(data=[result], index=df.index)
 
@@ -143,9 +145,16 @@ def predict_neonatal_sepsis_death(self, df, rng=None, **externals):
     result = params['cfr_early_onset_sepsis']
 
     if person['nb_inj_abx_neonatal_sepsis']:
-        result *= params['treatment_effect_inj_abx_sep']
+        treatment_effect = pregnancy_helper_functions.get_treatment_effect(
+            False, externals['delay'], 'treatment_effect_inj_abx_sep', params)
+
+        result *= treatment_effect
+
     if person['nb_supp_care_neonatal_sepsis']:
-        result *= params['treatment_effect_supp_care_sep']
+        treatment_effect = pregnancy_helper_functions.get_treatment_effect(
+            False, externals['delay'], 'treatment_effect_supp_care_sep', params)
+
+        result *= treatment_effect
 
     return pd.Series(data=[result], index=df.index)
 
@@ -160,10 +169,8 @@ def predict_respiratory_distress_death(self, df, rng=None, **externals):
     result = params['cfr_respiratory_distress_syndrome']
 
     if person['nb_received_neonatal_resus']:
-        if externals['delay']:
-            treatment_effect = 1 - ((1 - params['treatment_effect_resuscitation_preterm']) * 0.75)
-        else:
-            treatment_effect = params['treatment_effect_resuscitation_preterm']
+        treatment_effect = pregnancy_helper_functions.get_treatment_effect(
+            False, externals['delay'], 'treatment_effect_resuscitation_preterm', params)
 
         result *= treatment_effect
 
