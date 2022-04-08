@@ -992,7 +992,7 @@ class SimplifiedPregnancyAndLabour(Module):
         super().__init__(name='Labour')
 
     def read_parameters(self, *args):
-        self.parameters['prob_live_birth'] = 0.67
+        self.parameters['prob_live_birth'] = 0.73
         # This is a reasonable estimate for the current versions of the Labour and other modules
 
     def initialise_population(self, population):
