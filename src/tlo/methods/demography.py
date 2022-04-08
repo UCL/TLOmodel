@@ -21,8 +21,13 @@ from tlo.methods.causes import (
 )
 from tlo.util import create_age_range_lookup
 
+# Standard logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+# Detailed logger
+logger_detail = logging.getLogger(f"{__name__}.detail")
+logger_detail.setLevel(logging.INFO)
 
 # Limits for setting up age range categories
 MIN_AGE_FOR_RANGE = 0
@@ -362,9 +367,8 @@ class Demography(Module):
         assert not hasattr(individual_id, '__iter__'), 'do_death must be called for one individual at a time.'
 
         df = self.sim.population.props
-        person = df.loc[individual_id]
 
-        if not person['is_alive']:
+        if not df.at[individual_id, 'is_alive']:
             return
 
         # Check that the cause is declared, and declared for use by the originating module:
@@ -375,6 +379,8 @@ class Demography(Module):
 
         # Register the death:
         df.loc[individual_id, ['is_alive', 'date_of_death', 'cause_of_death']] = (False, self.sim.date, cause)
+
+        person = df.loc[individual_id]
 
         # Log the death
         # - log the line-list of summary information about each death
@@ -395,9 +401,9 @@ class Demography(Module):
         logger.info(key='death', data=data_to_log_for_each_death)
 
         # - log all the properties for the deceased person
-        logger.info(key='properties_of_deceased_persons',
-                    data=person.to_dict(),
-                    description='values of all properties at the time of death for deceased persons')
+        logger_detail.info(key='properties_of_deceased_persons',
+                           data=person.to_dict(),
+                           description='values of all properties at the time of death for deceased persons')
 
         # Report the deaths to the healthburden module (if present) so that it tracks the live years lost
         if 'HealthBurden' in self.sim.modules.keys():
