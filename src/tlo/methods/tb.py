@@ -1893,11 +1893,9 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         assert isinstance(suppress_footprint, bool)
         self.suppress_footprint = suppress_footprint
 
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = "Tb_ScreeningAndRefer"
+        self.TREATMENT_ID = "Tb_Test_Screening"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         """Do the screening and referring to next tests"""
@@ -2113,11 +2111,9 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
         assert isinstance(suppress_footprint, bool)
         self.suppress_footprint = suppress_footprint
 
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = "Tb_Xray"
+        self.TREATMENT_ID = "Tb_Test_Xray"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
 
@@ -2194,11 +2190,9 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
         assert isinstance(suppress_footprint, bool)
         self.suppress_footprint = suppress_footprint
 
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = "Tb_Xray"
+        self.TREATMENT_ID = "Tb_Test_Xray"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
         self.ACCEPTED_FACILITY_LEVEL = '2'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
 
@@ -2261,10 +2255,9 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Tb)
 
-        self.TREATMENT_ID = "Tb_Treatment_Initiation"
+        self.TREATMENT_ID = "Tb_Treatment"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"TBNew": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         """This is a Health System Interaction Event - start TB treatment
@@ -2390,14 +2383,9 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Tb)
 
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.make_appt_footprint({"TBFollowUp": 1})
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = "Tb_FollowUp"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.TREATMENT_ID = "Tb_Treatment"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"TBFollowUp": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         p = self.module.parameters
@@ -2526,10 +2514,9 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-        self.TREATMENT_ID = "Tb_Ipt"
+        self.TREATMENT_ID = "Tb_Prevention_Ipt"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
 
