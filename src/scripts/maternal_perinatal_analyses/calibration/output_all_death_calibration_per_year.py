@@ -113,39 +113,22 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
                                                            death_results_labels, 100000, sim_years)
 
     # Output indirect deaths...
-    # TODO: postnatal
-    other_preg_deaths = extract_results(
+    indirect_deaths = extract_results(
         results_folder,
-        module="tlo.methods.demography",
-        key="death",
+        module="tlo.methods.demography.detail",
+        key="properties_of_deceased_persons",
         custom_generate_series=(
-            lambda df: df.assign(year=df['date'].dt.year).groupby(['year', 'label', 'pregnancy'])['year'].count()),
-    )
+            lambda df: df.loc[(df['is_pregnant'] | df['la_is_postpartum']) &
+                              df['cause_of_death'].str.contains(
+                                  'AIDS|Malaria|TB|Suicide|ever_stroke|diabetes|chronic_ischemic_hd|'
+                                  'ever_heart_attack|ever_stroke|chronic_kidney_disease')].assign(
+                year=df['date'].dt.year).groupby(['year'])['year'].count()))
 
-    indirect_causes = ['AIDS', 'Malaria', 'TB', 'Stroke', 'Heart Disease', 'Diabetes', 'Kidney Disease',
-                       'Depression / Self-harm']
-    indirect_deaths = list()
-    indirect_lq = list()
-    indirect_uq = list()
+    id_preg_data = analysis_utility_functions.get_mean_and_quants(indirect_deaths, sim_years)
 
-    for year in sim_years:
-        id_deaths_per_year = 0
-        id_lqs_year = 0
-        id_uqs_year = 0
-
-        for cause in indirect_causes:
-            if cause in other_preg_deaths.loc[year, :, True].index:
-                id_deaths_per_year += other_preg_deaths.loc[year, cause, True].mean()
-                id_lqs_year += other_preg_deaths.loc[year, cause, True].quantile(0.025)
-                id_uqs_year += other_preg_deaths.loc[year, cause, True].quantile(0.925)
-
-        indirect_deaths.append(id_deaths_per_year)
-        indirect_lq.append(id_lqs_year)
-        indirect_uq.append(id_uqs_year)
-
-    id_mmr_data = [[(x / y) * 100000 for x, y in zip(indirect_deaths, total_births_per_year_ex2010)],
-                   [(x / y) * 100000 for x, y in zip(indirect_lq, total_births_per_year_ex2010)],
-                   [(x / y) * 100000 for x, y in zip(indirect_uq, total_births_per_year_ex2010)]]
+    id_mmr_data = [[(x / y) * 100000 for x, y in zip(id_preg_data[0], total_births_per_year_ex2010)],
+                   [(x / y) * 100000 for x, y in zip(id_preg_data[1], total_births_per_year_ex2010)],
+                   [(x / y) * 100000 for x, y in zip(id_preg_data[2], total_births_per_year_ex2010)]]
 
     total_mmr_data = [[x + y for x, y in zip(id_mmr_data[0], mm[0])],
                       [x + y for x, y in zip(id_mmr_data[1], mm[1])],
@@ -154,20 +137,31 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
     for data, title, l_colour, f_colour in zip([mm, id_mmr_data, total_mmr_data], ['Direct', 'Indirect', 'Total'],
                                    ['deepskyblue', 'mediumpurple', 'coral'], ['b', 'mediumslateblue', 'lightcoral']):
 
+        if title == 'Direct':
+            mp = 0.7
+        elif title == 'Indirect':
+            mp = 0.3
+        else:
+            mp = 1
+
         fig, ax = plt.subplots()
         ax.plot(sim_years, data[0], label="Model (mean)", color=l_colour)
         ax.fill_between(sim_years, data[1], data[2], color=f_colour, alpha=.1)
-        plt.errorbar(2010, 675, yerr=(780-570)/2, label='DHS 2010', fmt='o', color='green', ecolor='mediumseagreen',
+        plt.errorbar(2010, (675*mp), yerr=((780*mp)-(570*mp))/2, label='DHS 2010', fmt='o', color='green',
+                     ecolor='mediumseagreen',
                      elinewidth=3, capsize=0)
-        plt.errorbar(2015, 439, yerr=(531-348)/2, label='DHS 2015', fmt='o', color='green', ecolor='mediumseagreen',
+        plt.errorbar(2015, (439*mp), yerr=((531*mp)-(348*mp))/2, label='DHS 2015', fmt='o', color='green',
+                     ecolor='mediumseagreen',
                      elinewidth=3, capsize=0)
-        ax.plot([2011, 2015, 2017], [444, 370, 349], label="WHO MMEIG", color='red')
-        ax.fill_between([2011, 2015, 2017], [347, 269, 244], [569, 517, 507], color='pink', alpha=.1)
-        ax.plot([2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019], [242, 235, 229, 223, 219, 219, 217, 214, 209],
+        ax.plot([2011, 2015, 2017], [(444*mp), (370*mp), (349*mp)], label="WHO MMEIG", color='red')
+        ax.fill_between([2011, 2015, 2017], [(347*mp), (269*mp), (244*mp)], [(569*mp), (517*mp), (507*mp)],
+                        color='pink', alpha=.1)
+        ax.plot([2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019],
+                [242*mp, 235*mp, 229*mp, 223*mp, 219*mp, 219*mp, 217*mp, 214*mp, 209*mp],
                 label="GBD (2019)", color='black')
         ax.fill_between([2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019],
-                        [168, 165, 158, 151, 150, 146, 141, 141, 134],
-                        [324, 313, 310, 307, 304, 307, 304, 300, 294], color='grey', alpha=.1)
+                        [168*mp, 165*mp, 158*mp, 151*mp, 150*mp, 146*mp, 141*mp, 141*mp, 134*mp],
+                        [324*mp, 313*mp, 310*mp, 307*mp, 304*mp, 307*mp, 304*mp, 300*mp, 294*mp], color='grey', alpha=.1)
         if title == 'Direct':
             ax.set(ylim=(0, 750))
         else:
@@ -200,6 +194,19 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
     plt.show()
 
     # ---------------------------------------- PROPORTION OF INDIRECT DEATHS BY CAUSE --------------------------------
+    indirect_deaths_by_cause = extract_results(
+        results_folder,
+        module="tlo.methods.demography.detail",
+        key="properties_of_deceased_persons",
+        custom_generate_series=(
+            lambda df: df.loc[(df['is_pregnant'] | df['la_is_postpartum']) &
+                              df['cause_of_death'].str.contains(
+                                  'AIDS|Malaria|TB|Suicide|ever_stroke|diabetes|chronic_ischemic_hd|'
+                                  'ever_heart_attack|chronic_kidney_disease')].assign(
+                year=df['date'].dt.year).groupby(['year', 'cause_of_death'])['year'].count()))
+
+    indirect_causes = ['AIDS', 'Malaria', 'TB', 'Suicide', 'ever_stroke', 'diabetes', 'chronic_ischemic_hd',
+                       'ever_heart_attack', 'chronic_kidney_disease']
 
     indirect_deaths_means = {}
 
@@ -207,9 +214,9 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
         indirect_deaths_means.update({complication: []})
 
         for year in sim_years:
-            if complication in other_preg_deaths.loc[year, :, True].index:
+            if complication in indirect_deaths_by_cause.loc[year].index:
                 births = births_results_exc_2010.loc[year].mean()
-                deaths = other_preg_deaths.loc[year, complication, True].mean()
+                deaths = indirect_deaths_by_cause.loc[year, complication].mean()
                 indirect_deaths_means[complication].append((deaths/births) * 100000)
             else:
                 indirect_deaths_means[complication].append(0)
@@ -217,35 +224,44 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
     labels = sim_years
     width = 0.35  # the width of the bars: can also be len(x) sequence
     fig, ax = plt.subplots()
-    ax.bar(labels, indirect_deaths_means['Depression / Self-harm'], width, label='Self-harm',
+
+    ax.bar(labels, indirect_deaths_means['chronic_kidney_disease'], width, label='CKD',
+           bottom=[a + b + c + d + e + f + g + h for a, b, c, d, e, f, g, h in zip(
+               indirect_deaths_means['AIDS'],  indirect_deaths_means['Malaria'], indirect_deaths_means['TB'],
+               indirect_deaths_means['Suicide'],  indirect_deaths_means['ever_stroke'],
+               indirect_deaths_means['diabetes'],indirect_deaths_means['chronic_ischemic_hd'],
+               indirect_deaths_means['ever_heart_attack'], )],
+           color='pink')
+
+    ax.bar(labels, indirect_deaths_means['ever_heart_attack'], width, label='MI',
            bottom=[a+b+c+d+e+f+g for a, b, c, d, e, f, g in zip(indirect_deaths_means['AIDS'],
                                                                 indirect_deaths_means['Malaria'],
                                                                 indirect_deaths_means['TB'],
-                                                                indirect_deaths_means['Stroke'],
-                                                                indirect_deaths_means['Heart Disease'],
-                                                                indirect_deaths_means['Diabetes'],
-                                                                indirect_deaths_means['Kidney Disease'])],
+                                                                indirect_deaths_means['Suicide'],
+                                                                indirect_deaths_means['ever_stroke'],
+                                                                indirect_deaths_means['diabetes'],
+                                                                indirect_deaths_means['chronic_ischemic_hd'])],
            color='darkred')
 
-    ax.bar(labels, indirect_deaths_means['Kidney Disease'], width, label='Kidney disease',
+    ax.bar(labels, indirect_deaths_means['chronic_ischemic_hd'], width, label='Chronic HD',
            bottom=[a+b+c+d+e+f for a, b, c, d, e,f in zip(indirect_deaths_means['AIDS'],
                                                           indirect_deaths_means['Malaria'],
                                                           indirect_deaths_means['TB'],
-                                                          indirect_deaths_means['Stroke'],
-                                                          indirect_deaths_means['Heart Disease'],
-                                                          indirect_deaths_means['Diabetes'])], color='grey')
+                                                          indirect_deaths_means['Suicide'],
+                                                          indirect_deaths_means['ever_stroke'],
+                                                          indirect_deaths_means['diabetes'])], color='grey')
 
-    ax.bar(labels, indirect_deaths_means['Diabetes'], width, label='Diabetes',
+    ax.bar(labels, indirect_deaths_means['diabetes'], width, label='Diabetes',
            bottom=[a+b+c+d+e for a, b, c, d, e in zip(indirect_deaths_means['AIDS'], indirect_deaths_means['Malaria'],
-                                                      indirect_deaths_means['TB'], indirect_deaths_means['Stroke'],
-                                                      indirect_deaths_means['Heart Disease'])], color='darkorange')
+                                                      indirect_deaths_means['TB'], indirect_deaths_means['Suicide'],
+                                                      indirect_deaths_means['ever_stroke'])], color='darkorange')
 
-    ax.bar(labels, indirect_deaths_means['Heart Disease'], width, label='CVD',
+    ax.bar(labels, indirect_deaths_means['ever_stroke'], width, label='Stoke',
            bottom=[a + b + c + d for a, b, c, d in zip(indirect_deaths_means['AIDS'],
                                                        indirect_deaths_means['Malaria'],
                                                        indirect_deaths_means['TB'],
-                                                       indirect_deaths_means['Stroke'])], color='yellowgreen')
-    ax.bar(labels, indirect_deaths_means['Stroke'], width, label='Stroke',
+                                                       indirect_deaths_means['Suicide'])], color='yellowgreen')
+    ax.bar(labels, indirect_deaths_means['Suicide'], width, label='Suicide',
            bottom=[a + b + c for a, b, c in zip(indirect_deaths_means['AIDS'],
                                                 indirect_deaths_means['Malaria'],
                                                 indirect_deaths_means['TB'])], color='cornflowerblue')
