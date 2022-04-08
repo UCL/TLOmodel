@@ -16,7 +16,6 @@ tlo batch-submit src/scripts/hiv/deviance_for_calibration/calibration_script.py
 weds 16th feb runs:
 Job ID: calibration_script-2022-02-16T202042Z
 
-
 this ^^ is the large calibration run (100 jobs, pop=760k)
 
 
