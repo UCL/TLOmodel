@@ -355,11 +355,10 @@ def test_py_calc_w_mask(simulation):
 
 
 def test_max_age_initial(seed):
-    """Check that the option to the `Demography` module `max_age_initial` works as expected
-     * `max_age_initial=None`: persons of ages up to MAX_AGE are included in the initial population
+    """Check that the parameter in the `Demography` module, `max_age_initial`, works as expected
      * `max_age_initial=X`: only persons up to and including age_years (age in whole years) up to X are included in the
       initial population.
-     * `max_age_initial=0`: results in an error being thrown.
+     * `max_age_initial=0` or `>MAX_AGE`: results in an error being thrown.
     """
 
     from tlo.methods.demography import MAX_AGE
@@ -369,13 +368,11 @@ def test_max_age_initial(seed):
         resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
         sim = Simulation(start_date=start_date, seed=seed)
         sim.register(
-            demography.Demography(resourcefilepath=resourcefilepath, max_age_initial=_max_age_initial)
+            demography.Demography(resourcefilepath=resourcefilepath)
         )
+        sim.modules['Demography'].parameters['max_age_initial'] = _max_age_initial
         sim.make_initial_population(n=50_000)
         return sim.population.props.age_years.max()
-
-    # `max_age_initial=None`
-    assert 20 <= max_age_in_sim_with_max_age_initial_argument(None) <= MAX_AGE
 
     # `max_age_initial=5` (using integer)
     assert max_age_in_sim_with_max_age_initial_argument(5) <= 5
@@ -386,3 +383,7 @@ def test_max_age_initial(seed):
     # `max_age_initial=0`
     with pytest.raises(ValueError):
         max_age_in_sim_with_max_age_initial_argument(0)
+
+    # `max_age_initial>MAX_AGE`
+    with pytest.raises(ValueError):
+        max_age_in_sim_with_max_age_initial_argument(MAX_AGE + 1)

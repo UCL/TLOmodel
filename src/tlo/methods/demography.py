@@ -8,7 +8,6 @@ The core demography module and its associated events.
 import math
 from collections import defaultdict
 from pathlib import Path
-from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -37,7 +36,7 @@ class Demography(Module):
     The core demography module.
     """
 
-    def __init__(self, name=None, resourcefilepath=None, max_age_initial: Optional[int] = None):
+    def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
         self.initial_model_to_data_popsize_ratio = None  # will store scaling factor
@@ -47,12 +46,6 @@ class Demography(Module):
         self.gbd_causes_of_death_not_represented_in_disease_modules = set()
         #  will store causes of death in GBD not represented in the simulation
         self.other_death_poll = None    # will hold pointer to the OtherDeathPoll object
-
-        # Handle argument `max_age_initial`:The oldest age (in whole years) in the initial population.
-        if not isinstance(max_age_initial, (int, float, type(None))) or (max_age_initial == 0):
-            raise ValueError("The value of max_age_initial is not recognised or is 0.")
-        else:
-            self.max_age_initial = int(max_age_initial) if max_age_initial is not None else None
 
     AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = create_age_range_lookup(
         min_age=MIN_AGE_FOR_RANGE,
@@ -65,6 +58,7 @@ class Demography(Module):
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
     PARAMETERS = {
+        'max_age_initial': Parameter(Types.INT, 'The oldest age (in whole years) in the initial population'),
         'pop_2010': Parameter(Types.DATA_FRAME, 'Population in 2010 for initialising population'),
         'district_num_to_district_name': Parameter(Types.DICT, 'Mapping from district_num to district name'),
         'district_num_to_region_name': Parameter(Types.DICT, 'Mapping from district_num to region name'),
@@ -116,11 +110,12 @@ class Demography(Module):
     }
 
     def read_parameters(self, data_folder):
-        """Read parameter values from file, if required.
-        Loads the 'Interpolated Pop Structure' worksheet from the Demography Excel workbook.
-        :param data_folder: path of a folder supplied to the Simulation containing data files.
-          Typically modules would read a particular file within here.
-        """
+        """Load the parameters from `ResourceFile_Demography_parameters.csv` and data from other `ResourceFiles`."""
+
+        # General parameters
+        self.load_parameters_from_dataframe(pd.read_csv(
+            self.resourcefilepath / 'demography' / 'ResourceFile_Demography_parameters.csv')
+        )
 
         # Initial population size:
         self.parameters['pop_2010'] = pd.read_csv(
@@ -201,9 +196,10 @@ class Demography(Module):
         init_pop = self.parameters['pop_2010']
         init_pop['prob'] = init_pop['Count'] / init_pop['Count'].sum()
 
-        if self.max_age_initial is not None:
-            init_pop = self._edit_init_pop_to_prevent_persons_greater_than_max_age(
-                init_pop, max_age=self.max_age_initial)
+        init_pop = self._edit_init_pop_to_prevent_persons_greater_than_max_age(
+            init_pop,
+            max_age=self.parameters['max_age_initial']
+        )
 
         # randomly pick from the init_pop sheet, to allocate characteristic to each person in the df
         demog_char_to_assign = init_pop.iloc[self.rng.choice(init_pop.index.values,
@@ -313,9 +309,12 @@ class Demography(Module):
         )
 
     def _edit_init_pop_to_prevent_persons_greater_than_max_age(self, df, max_age: int):
-        """Return an edited version of the pd.DataFrame describing the probability of persons in the population being
+        """Return an edited version of the `pd.DataFrame` describing the probability of persons in the population being
         created with certain characteristics to reflect the constraint the persons aged greater than `max_age_initial`
         should not be created."""
+
+        if (max_age == 0) or (max_age > MAX_AGE):
+            raise ValueError("The value of parameter `max_age_initial` is not valid.")
 
         _df = df.drop(df.index[df.Age > max_age])  # Remove characteristics with age greater than max_age
         _df.prob = _df.prob / _df.prob.sum()  # Rescale `prob` so that it sums to 1.0
