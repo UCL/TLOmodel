@@ -114,7 +114,7 @@ class Demography(Module):
 
         # General parameters
         self.load_parameters_from_dataframe(pd.read_csv(
-            self.resourcefilepath / 'demography' / 'ResourceFile_Demography_parameters.csv')
+            Path(self.resourcefilepath) / 'demography' / 'ResourceFile_Demography_parameters.csv')
         )
 
         # Initial population size:
