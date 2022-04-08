@@ -33,10 +33,10 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
+end_date = Date(2035, 1, 1)
 popsize = 5000
 
-scenario = 1
+scenario = 3
 
 # set up the log config
 log_config = {
@@ -112,12 +112,12 @@ TB_inc = output["tlo.methods.tb"]["tb_incidence"]
 years = pd.to_datetime(TB_inc["date"]).dt.year
 TB_inc.index = pd.to_datetime(years, format="%Y")
 # todo change scenario
-activeTB_inc_rate_sc1 = (TB_inc["num_new_active_tb"] / popsize) * 100000
+activeTB_inc_rate_sc3 = (TB_inc["num_new_active_tb"] / popsize) * 100000
 
 prev_and_inc_over_time = output["tlo.methods.hiv"][
     "summary_inc_and_prev_for_adults_and_children_and_fsw"
 ]
 prev_and_inc_over_time = prev_and_inc_over_time.set_index("date")
 # todo change scenario
-hiv_inc_sc1 = prev_and_inc_over_time["hiv_adult_inc_1549"] * 100
+hiv_inc_sc3 = prev_and_inc_over_time["hiv_adult_inc_1549"] * 100
 

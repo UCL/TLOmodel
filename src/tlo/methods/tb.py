@@ -733,19 +733,19 @@ class Tb(Module):
         # tb_scheduled_date_active is picked up by regular event TbActiveEvent
         # and properties updated at that point
         for person_id in all_new_active:
-            date_active = now + pd.DateOffset(days=self.rng.randint(0, 365))
+            date_active = now + pd.DateOffset(days=self.rng.randint(0, 330))
             df.at[person_id, "tb_scheduled_date_active"] = date_active
 
-            # schedule treatment for proportion of baseline active cases
-            if self.rng.random_sample() < p["rate_treatment_baseline_active"]:
-                # set HSI for 30 days after active onset, as active poll occurs monthly
-                # need to ensure properties are updated before screening
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    HSI_Tb_StartTreatment(person_id=person_id, module=self),
-                    topen=date_active + pd.DateOffset(days=7),
-                    tclose=None,
-                    priority=0,
-                )
+            # # schedule treatment for proportion of baseline active cases
+            # if self.rng.random_sample() < p["rate_treatment_baseline_active"]:
+            #     # set HSI for 30 days after active onset, as active poll occurs monthly
+            #     # need to ensure properties are updated before screening
+            #     self.sim.modules["HealthSystem"].schedule_hsi_event(
+            #         HSI_Tb_StartTreatment(person_id=person_id, module=self),
+            #         topen=date_active + pd.DateOffset(days=7),
+            #         tclose=None,
+            #         priority=0,
+            #     )
 
     def progression_to_active(self, population):
         # from the new latent infections, select and schedule progression to active disease

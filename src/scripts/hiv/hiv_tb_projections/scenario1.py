@@ -43,9 +43,6 @@ from tlo.methods import (
 )
 from tlo.scenario import BaseScenario
 
-# todo need set series of seeds to replicate results in scenario 3
-# seq[0,1,2,...] ?
-# will each run pick a seed sequentially?
 
 class TestScenario(BaseScenario):
     # this imports the resource filepath automatically
