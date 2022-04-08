@@ -102,7 +102,22 @@ for key, dfs in output.items():
             print(f)
             pickle.dump(dfs, f)
 
-tmp = output["tlo.methods.healthsystem.summary"]["health_system_annual_logs"]
-new = tmp[['date', 'treatment_counts']].copy()
-new2 = pd.DataFrame(new['treatment_counts'].to_list())
+# tmp = output["tlo.methods.healthsystem.summary"]["health_system_annual_logs"]
+# new = tmp[['date', 'treatment_counts']].copy()
+# new2 = pd.DataFrame(new['treatment_counts'].to_list())
+
+
+# Active TB incidence per 100,000 person-years - annual outputs
+TB_inc = output["tlo.methods.tb"]["tb_incidence"]
+years = pd.to_datetime(TB_inc["date"]).dt.year
+TB_inc.index = pd.to_datetime(years, format="%Y")
+# todo change scenario
+activeTB_inc_rate_sc1 = (TB_inc["num_new_active_tb"] / popsize) * 100000
+
+prev_and_inc_over_time = output["tlo.methods.hiv"][
+    "summary_inc_and_prev_for_adults_and_children_and_fsw"
+]
+prev_and_inc_over_time = prev_and_inc_over_time.set_index("date")
+# todo change scenario
+hiv_inc_sc1 = prev_and_inc_over_time["hiv_adult_inc_1549"] * 100
 

@@ -1321,7 +1321,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         if scenario == 3:
 
             # reduce risk of HIV - applies to whole adult population
-            self.sim.modules["Hiv"].parameters["beta"] = self.sim.modules["Hiv"].parameters["beta"] * 0.9
+            self.sim.modules["Hiv"].parameters["beta"] = self.sim.modules["Hiv"].parameters["beta"] * 0.8
 
             # increase PrEP coverage for FSW after HIV test
             self.sim.modules["Hiv"].parameters["prob_prep_for_fsw_after_hiv_test"] = 0.5
@@ -1338,7 +1338,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             p["age_eligibility_for_ipt"] = 100
 
             # increase coverage of IPT
-            p["ipt_coverage"]["coverage_plhiv"] = 0.6
+            p["ipt_coverage"]["coverage_plhiv"] = 0.75
             p["ipt_coverage"]["coverage_paediatric"] = 0.8  # this will apply to contacts of all ages
 
 
