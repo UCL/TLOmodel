@@ -603,3 +603,91 @@ def test_all_appt_types_can_run(seed):
             print(_line)
 
     assert 0 == len(error_msg)
+
+
+@pytest.mark.slow
+def test_two_loggers_in_healthsystem(seed, tmpdir):
+    """Check that two different loggers are used by the HealthSystem for more/less detailed logged information with
+    the format expected."""
+
+    # Create a dummy disease module (to be the parent of the dummy HSI)
+    class DummyModule(Module):
+        METADATA = {Metadata.DISEASE_MODULE}
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            sim.modules['HealthSystem'].schedule_hsi_event(HSI_Dummy(self, person_id=0),
+                                                           topen=self.sim.date,
+                                                           tclose=None,
+                                                           priority=0)
+
+    # Create a dummy HSI event:
+    class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = 'Dummy'
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ConWithDCSA': 1})
+            self.ACCEPTED_FACILITY_LEVEL = '0'
+
+        def apply(self, person_id, squeeze_factor):
+            # Request a consumable
+            self.get_consumables(item_codes=0)
+
+            # Schedule another occurrence of itself tomorrow.
+            sim.modules['HealthSystem'].schedule_hsi_event(self,
+                                                           topen=self.sim.date + pd.DateOffset(days=1),
+                                                           tclose=None,
+                                                           priority=0)
+
+    sim = Simulation(start_date=start_date, seed=seed, log_config={
+        'filename': 'tmpfile',
+        'directory': tmpdir,
+        'custom_levels': {
+            "tlo.methods.healthsystem": logging.INFO,
+            "tlo.methods.healthsystem.summary": logging.INFO
+        }
+    })
+
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        DummyModule(),
+        sort_modules=False,
+        check_all_dependencies=False
+    )
+    sim.make_initial_population(n=1000)
+    sim.simulate(end_date=start_date + pd.DateOffset(years=1, days=1))
+    log = parse_log_file(sim.log_filepath)
+
+    # Standard log
+    assert "tlo.methods.healthsystem" in log
+    assert {'HSI_Event', 'Capacity', 'Consumables'}.issubset(log["tlo.methods.healthsystem"].keys())
+    assert {'date', 'TREATMENT_ID', 'did_run', 'Squeeze_Factor', 'Number_By_Appt_Type_Code', 'Person_ID'} == \
+           set(log["tlo.methods.healthsystem"]['HSI_Event'].columns)
+    assert {'date', 'Frac_Time_Used_Overall', 'Frac_Time_Used_By_Facility_ID'
+            } == set(log["tlo.methods.healthsystem"]['Capacity'].columns)
+
+    # Summary log
+    assert "tlo.methods.healthsystem.summary" in log
+    assert {'health_system_annual_logs'}.issubset(log["tlo.methods.healthsystem.summary"].keys())
+    assert {"date", "treatment_counts", "consumables_available", "consumables_not_available", "hsi_treatment_id",
+            "numbers_appts", "capacity"
+            } == set(log["tlo.methods.healthsystem.summary"]['health_system_annual_logs'].columns)
+
+    # check correspondence between the two
+    summary = log["tlo.methods.healthsystem.summary"]['health_system_annual_logs']
+    detailed_hsi_event = log["tlo.methods.healthsystem"]['HSI_Event']
+    detailed_consumables = log["tlo.methods.healthsystem"]['Consumables']
+
+    assert summary['hsi_treatment_id'][0] == \
+           detailed_hsi_event.loc[pd.to_datetime(detailed_hsi_event.date).dt.year == 2010].groupby('TREATMENT_ID').size().to_dict()
+    assert summary['consumables_available'][0] == \
+            len(detailed_consumables.loc[pd.to_datetime(detailed_consumables.date).dt.year == 2010]['Item_Available'].apply(lambda x: list(eval(x).keys())[0] if x != "{}" else None).dropna())
+    assert summary['consumables_not_available'][0] == \
+           len(detailed_consumables.loc[pd.to_datetime(detailed_consumables.date).dt.year == 2010][
+                   'Item_NotAvailable'].apply(lambda x: list(eval(x).keys())[0] if x != "{}" else None).dropna())

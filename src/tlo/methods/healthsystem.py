@@ -653,6 +653,9 @@ class HealthSystem(Module):
             self.healthsystemscheduler = HealthSystemScheduler(self)
             sim.schedule_event(self.healthsystemscheduler, sim.date)
 
+        # Schedule the `HealthSystemLoggingEvent` to first occur in one year
+        sim.schedule_event(HealthSystemLoggingEvent(self), sim.date + pd.DateOffset(years=1))
+
         # Determine service_availability
         self.set_service_availability()
 
@@ -1632,8 +1635,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
 class HealthSystemLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
-        """ Log aggregated outputs from health system
-        """
+        """Log aggregated outputs from health system"""
 
         self.repeat = 12
         super().__init__(module, frequency=DateOffset(months=self.repeat))
@@ -1663,7 +1665,7 @@ class HealthSystemLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # write to logger
         logger_summary.info(
             key="health_system_annual_logs",
-            description="summary of health system demand each year",
+            description="Summary of health system demand during the year immediately prior.",
             data={
                 "treatment_counts": treatment_counts,
                 "consumables_available": cons_available,
