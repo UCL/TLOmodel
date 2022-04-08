@@ -1902,10 +1902,9 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
         self.referred_from = referred_from
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "Hiv_TestAndRefer"
+        self.TREATMENT_ID = "Hiv_Test"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"VCTNegative": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         """Do the testing and referring to other services"""
@@ -2025,10 +2024,9 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        self.TREATMENT_ID = "Hiv_Circumcision"
+        self.TREATMENT_ID = "Hiv_Prevention_Circumcision"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MaleCirc": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         """Do the circumcision for this man"""
@@ -2054,10 +2052,9 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Hiv)
 
-        self.TREATMENT_ID = "Hiv_StartOrContinueOnPrep"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
+        self.TREATMENT_ID = "Hiv_Prevention_Prep"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1, "VCTNegative": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         """Start PrEP for this person; or continue them on PrEP for 3 more months"""
@@ -2114,10 +2111,9 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Hiv)
 
-        self.TREATMENT_ID = "Hiv_Treatment_InitiationOrContinuation"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1, "NewAdult": 1})
+        self.TREATMENT_ID = "Hiv_Treatment"
+        self.EXPECTED_APPT_FOOTPRINT = self._make_appt_footprint_according_age_and_patient_status(self.person_id)
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.ALERT_OTHER_DISEASES = []
 
         self.counter_for_did_not_run = 0
 
@@ -2312,6 +2308,20 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             priority=1,
         )
 
+    def _make_appt_footprint_according_age_and_patient_status(self, person_id):
+        """Returns the appointment footprint for this person according to their current status:
+         * `NewAdult` for an adult, newly starting (or re-starting) treatment
+         * `EstNonCom` for an adult, already on treatment
+         * `Peds` for a child - whether newly starting or already on treatment
+        """
+
+        if self.sim.population.props.at[person_id, 'age_years'] < 15:
+            return self.make_appt_footprint({"Peds": 1})  # Child
+
+        if self.sim.population.props.at[person_id, 'hv_art'] == "not":
+            return self.make_appt_footprint({"NewAdult": 1})  # Adult newly starting treatment
+        else:
+            return self.make_appt_footprint({"EstNonCom": 1})  # Adult already on treatment
 
 # ---------------------------------------------------------------------------
 #   Logging
