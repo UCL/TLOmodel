@@ -1216,8 +1216,13 @@ class HealthSystem(Module):
         )
 
         if self.store_hsi_events_that_have_run:
-            log_info['date'] = self.sim.date
-            self.store_of_hsi_events_that_have_run.append(log_info)
+            self.store_of_hsi_events_that_have_run.append(
+                {
+                    'HSI_Event': str(hsi_event.__class__).replace("<class '", "").replace("'>", ""),
+                    'date': self.sim.date,
+                    **log_info}
+            )
+
 
         if self.record_hsi_event_details:
             self.hsi_event_details.add(
