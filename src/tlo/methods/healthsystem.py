@@ -976,10 +976,6 @@ class HealthSystem(Module):
             # Check that this can accept the squeeze argument
             assert _accepts_argument(hsi_event.run, 'squeeze_factor')
 
-            # Check that at least one type of appointment is required
-            assert len(hsi_event.EXPECTED_APPT_FOOTPRINT) > 0, (
-                'No appointment types required in the EXPECTED_APPT_FOOTPRINT'
-            )
             # Check that the event does not request an appointment at a facility
             # level which is not possible
             appt_type_to_check_list = hsi_event.EXPECTED_APPT_FOOTPRINT.keys()
