@@ -362,7 +362,7 @@ class SchistoSpecies:
     @property
     def PROPERTIES(self):
         """The species-specific properties for this species."""
-        return {self._prefix_species_property(k): v for k, v in self._properties.items()}
+        return {self.prefix_species_property(k): v for k, v in self._properties.items()}
 
     @property
     def _parameters(self):
@@ -399,7 +399,7 @@ class SchistoSpecies:
                 Types.REAL, 'Rate of harbouring new worms of this species (Poisson), drawn from gamma distribution'),
         }
 
-    def _prefix_species_property(self, generic_property_name: str) -> str:
+    def prefix_species_property(self, generic_property_name: str) -> str:
         """Add the prefix to a `generic_property_name` to get the name of the species-specific property for this
         species."""
         return f"{self.schisto_module.module_prefix}_{self.prefix}_{generic_property_name}"
@@ -412,7 +412,7 @@ class SchistoSpecies:
     @property
     def infection_status_property(self):
         """Return the property that identifies the infection_status of the person with respect to this species."""
-        return self._prefix_species_property('infection_status')
+        return self.prefix_species_property('infection_status')
 
     def load_parameters_from_workbook(self, workbook) -> dict:
         """Load parameters from ResourceFile (loaded by pd.read_excel as `workbook`) that are specific to this
@@ -457,7 +457,7 @@ class SchistoSpecies:
         """Set species-specific property values for the initial population."""
 
         df = population.props
-        prop = self._prefix_species_property
+        prop = self.prefix_species_property
 
         # assign aggregate_worm_burden (zero for everyone initially)
         df.loc[df.is_alive, prop('aggregate_worm_burden')] = 0
@@ -494,7 +494,7 @@ class SchistoSpecies:
         :param child_id: the new child"""
 
         df = self.schisto_module.sim.population.props
-        prop = self._prefix_species_property
+        prop = self.prefix_species_property
         params = self.params
         rng = self.schisto_module.rng
 
@@ -516,7 +516,7 @@ class SchistoSpecies:
 
         schisto_module = self.schisto_module
         df = schisto_module.sim.population.props
-        prop = self._prefix_species_property
+        prop = self.prefix_species_property
         params = self.params
         params = self.params
         rng = schisto_module.rng
@@ -601,7 +601,7 @@ class SchistoSpecies:
         """Assign a harbouring rate to every individual in the initial populattion (based on their district of
         residence)."""
         df = population.props
-        prop = self._prefix_species_property
+        prop = self.prefix_species_property
         params = self.params
         districts = self.schisto_module.districts
         rng = self.schisto_module.rng
@@ -614,7 +614,7 @@ class SchistoSpecies:
     def _assign_initial_worm_burden(self, population) -> None:
         """Assign initial distribution of worms to each person (based on district and age-group)."""
         df = population.props
-        prop = self._prefix_species_property
+        prop = self.prefix_species_property
         params = self.params
         districts = self.schisto_module.districts
         rng = self.schisto_module.rng
@@ -647,7 +647,7 @@ class SchistoSpecies:
     def _schedule_death_of_worms_in_initial_population(self) -> None:
         """Schedule death of worms assigned to the initial population"""
         df = self.schisto_module.sim.population.props
-        prop = self._prefix_species_property
+        prop = self.prefix_species_property
         params = self.params
         rng = self.schisto_module.rng
         date = self.schisto_module.sim.date
@@ -697,7 +697,7 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         params = self.species.params
         rng = self.module.rng
-        prop = self.species._prefix_species_property
+        prop = self.species.prefix_species_property
 
         betas = [params['beta_PSAC'], params['beta_SAC'], params['beta_Adults']]
         R0 = params['R0']
@@ -765,7 +765,7 @@ class SchistoMatureWorms(Event, IndividualScopeEventMixin):
 
     def apply(self, person_id):
         df = self.sim.population.props
-        prop = self.species._prefix_species_property
+        prop = self.species.prefix_species_property
         params = self.species.params
 
         person = df.loc[person_id]
@@ -802,7 +802,7 @@ class SchistoWormsNatDeath(Event, IndividualScopeEventMixin):
 
     def apply(self, person_id):
         df = self.sim.population.props
-        prop = self.species._prefix_species_property
+        prop = self.species.prefix_species_property
         params = self.species.params
         person = df.loc[person_id]
 
