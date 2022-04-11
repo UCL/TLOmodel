@@ -98,8 +98,8 @@ class Schisto(Module):
 
         # Add properties and parameters declared by each species:
         for _spec in self.species.values():
-            self.PROPERTIES.update(_spec.PROPERTIES)
-            self.PARAMETERS.update(_spec.PARAMETERS)
+            self.PROPERTIES.update(_spec.get_properties())
+            self.PARAMETERS.update(_spec.get_parameters())
 
         # Property names for infection_status of all species
         self.cols_of_infection_status = [_spec.infection_status_property for _spec in self.species.values()]
@@ -354,19 +354,9 @@ class SchistoSpecies:
         # Store parameters specific to this species (for ease of access)
         self.params = dict()
 
-    @property
-    def PARAMETERS(self):
+    def get_parameters(self):
         """The species-specific parameters for this species."""
-        return {self._prefix_species_parameter(k): v for k, v in self._parameters.items()}
-
-    @property
-    def PROPERTIES(self):
-        """The species-specific properties for this species."""
-        return {self.prefix_species_property(k): v for k, v in self._properties.items()}
-
-    @property
-    def _parameters(self):
-        return {
+        params = {
             # 'delay_a': Parameter(Types.REAL, 'End of the latent period in days, start'),
             # 'delay_b': Parameter(Types.REAL, 'End of the latent period in days, end'),
             # 'symptoms': Parameter(Types.LIST, 'Symptoms of the schistosomiasis infection, dependent on the module'),
@@ -386,10 +376,11 @@ class SchistoSpecies:
             'gamma_alpha': Parameter(Types.DATA_FRAME, 'Parameter alpha for Gamma distribution for harbouring rates'),
             'R0': Parameter(Types.DATA_FRAME, 'Effective reproduction number, for the FOI'),
         }
+        return {self._prefix_species_parameter(k): v for k, v in params.items()}
 
-    @property
-    def _properties(self):
-        return {
+    def get_properties(self):
+        """The species-specific properties for this species."""
+        properties = {
             'infection_status': Property(
                 Types.CATEGORICAL, 'Current status of schistosomiasis infection for this species',
                 categories=['Non-infected', 'Low-infection', 'High-infection']),
@@ -398,6 +389,7 @@ class SchistoSpecies:
             'harbouring_rate': Property(
                 Types.REAL, 'Rate of harbouring new worms of this species (Poisson), drawn from gamma distribution'),
         }
+        return {self.prefix_species_property(k): v for k, v in properties.items()}
 
     def prefix_species_property(self, generic_property_name: str) -> str:
         """Add the prefix to a `generic_property_name` to get the name of the species-specific property for this
