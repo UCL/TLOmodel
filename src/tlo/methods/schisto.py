@@ -16,25 +16,13 @@ from tlo.util import random_date
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-
-def age_groups():
-    """Definition of the age-groups used in the module, as a tuple of two integers (a,b) such that the given age group
-     is in range a <= group <= b. i.e.,
-        0 <= PSAC <= 4
-        5 <= SAC <= 14
-        15 <= Adults
-        0 <= All
-    :param age_group: 'SAC', 'PSAC', 'Adults', 'All'"""
-    return {'PSAC': (0, 4), 'SAC': (5, 14), 'Adults': (15, 120), 'All': (0, 120)}
-
-
-def get_age_group_mapper():
-    """Return a dict of the form {<<age_years>>:<<age_group>>}, where `age_group` is ('SAC', 'PSAC', 'Adults')."""
-    s = pd.Series(index=range(1 + 120), data='object')
-    for name, (low_limit, high_limit) in age_groups().items():
-        if (name != 'All'):
-            s.loc[(s.index >= low_limit) & (s.index <= high_limit)] = name
-    return s.to_dict()
+# Definition of the age-groups used in the module, as a tuple of two integers (a,b) such that the given age group
+#  is in range a <= group <= b. i.e.,
+#     0 <= PSAC <= 4
+#     5 <= SAC <= 14
+#     15 <= Adults
+#     0 <= All
+_AGE_GROUPS = {'PSAC': (0, 4), 'SAC': (5, 14), 'Adults': (15, 120), 'All': (0, 120)}
 
 
 class Schisto(Module):
@@ -117,7 +105,11 @@ class Schisto(Module):
         self.cols_of_infection_status = [_spec.infection_status_property for _spec in self.species.values()]
 
         # Age-group mapper
-        self.age_group_mapper = get_age_group_mapper()
+        s = pd.Series(index=range(1 + 120), data='object')
+        for name, (low_limit, high_limit) in _AGE_GROUPS.items():
+            if name != 'All':
+                s.loc[(s.index >= low_limit) & (s.index <= high_limit)] = name
+        self.age_group_mapper = s.to_dict()
 
     def read_parameters(self, data_folder):
         """Read parameters and register symptoms."""
@@ -633,7 +625,7 @@ class SchistoSpecies:
             in_the_district = df.index[df['district_of_residence'] == district]
             contact_rates = pd.Series(1, index=in_the_district)
             for age_group in ['PSAC', 'SAC', 'Adults']:
-                age_range = age_groups()[age_group]
+                age_range = _AGE_GROUPS[age_group]
                 in_the_district_and_age_group = \
                     df.index[(df['district_of_residence'] == district) &
                              (df['age_years'].between(age_range[0], age_range[1]))]
@@ -891,7 +883,7 @@ class SchistoMDAEvent(Event, PopulationScopeEventMixin):
         df = self.sim.population.props
         rng = self.module.rng
 
-        age_range = age_groups()[age_group]  # returns a tuple (a,b) a <= age_group <= b
+        age_range = _AGE_GROUPS[age_group]  # returns a tuple (a,b) a <= age_group <= b
 
         eligible = df.index[
             df['is_alive']
