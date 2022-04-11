@@ -446,7 +446,7 @@ class SchistoSpecies:
 
         return {self._prefix_species_parameter(k): v for k, v in parameters.items()}
 
-    def pre_initialiase_population(self):
+    def pre_initialise_population(self):
         """Do things before generating the population (but after read_parameters) and any parameter updating."""
 
         # Save species-specific parameter in this class, copying from the `Schisto` module. (We have to do this step
