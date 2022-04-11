@@ -74,7 +74,7 @@ class Consumables:
 
         # Convert to dict-of-sets to enable checking of item_code availability.
         self._is_available = defaultdict(set)
-        for _fac_id, _item in items_available_this_month:
+        for _fac_id, _item in items_available_this_month.to_list():
             self._is_available[_fac_id].add(_item)
 
         # Update the default return value (based on the average probability of availability of items at the facility)

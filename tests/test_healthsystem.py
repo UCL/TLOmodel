@@ -665,11 +665,14 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
     sim.make_initial_population(n=1000)
 
     # Replace consumables class with version that declares only one consumable, available with probability 0.5
+    mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "ResourceFile_Master_Facilities_List.csv")
+    all_fac_ids = set(mfl.loc[mfl.Facility_Level != '5'].Facility_ID)
+
     sim.modules['HealthSystem'].consumables = Consumables(
         data=create_dummy_data_for_cons_availability(
             intrinsic_availability={0: 0.5, 1: 1.0},
             months=list(range(1, 13)),
-            facility_ids=[0]),
+            facility_ids=list(all_fac_ids)),
         rng=sim.modules['HealthSystem'].rng,
         availability='default'
     )
