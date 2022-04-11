@@ -544,19 +544,8 @@ class HealthSystem(Module):
         # Create pointer for the HealthSystemScheduler event
         self.healthsystemscheduler = None
 
-        # aggregated outputs: hsi
-        keys = ["date",
-                "treatment_id",
-                "actual_appt_footprint",
-                ]
-        # initialise empty dict with set keys
-        self.annual_hsi_log = {k: [] for k in keys}
-
-        # aggregated outputs: fraction HCW time used
-        keys = ["date",
-                "Frac_Time_Used_Overall",
-                ]
-        self.capacity_logs = {k: [] for k in keys}
+        # Create pointer to the `HealthSystemSummaryCounter` helper class
+        self._summary_counter = HealthSystemSummaryCounter()
 
     def read_parameters(self, data_folder):
 
@@ -652,9 +641,6 @@ class HealthSystem(Module):
         if not (self.disable or self.disable_and_reject_all):
             self.healthsystemscheduler = HealthSystemScheduler(self)
             sim.schedule_event(self.healthsystemscheduler, sim.date)
-
-        # Schedule the `HealthSystemLoggingEvent` to first occur in one year
-        sim.schedule_event(HealthSystemLoggingEvent(self), sim.date + pd.DateOffset(years=1))
 
         # Determine service_availability
         self.set_service_availability()
@@ -1223,13 +1209,12 @@ class HealthSystem(Module):
             # key appointment types that are non-zero
             log_info['Number_By_Appt_Type_Code'] = actual_appt_footprint
             log_info['Person_ID'] = hsi_event.target
+            log_info['did_run'] = did_run
 
             if squeeze_factor == np.inf:
                 log_info['Squeeze_Factor'] = 100.0  # arbitrarily high value to replace infinity
             else:
                 log_info['Squeeze_Factor'] = squeeze_factor
-
-        log_info['did_run'] = did_run
 
         self.write_to_hsi_log(
             treatment_id=log_info['TREATMENT_ID'],
@@ -1239,16 +1224,13 @@ class HealthSystem(Module):
             did_run=log_info['did_run']
         )
 
-        # aggregated logger
-        self.annual_hsi_log["date"].append(self.sim.date.year)
-        self.annual_hsi_log["treatment_id"].append(hsi_event.TREATMENT_ID)
-        # actual_appt_footprint can be blank counter
-        if actual_appt_footprint:
-            appt_name = list(actual_appt_footprint.keys())
+        if did_run:
+            self._summary_counter.record_hsi_event(
+                treatment_id=log_info['TREATMENT_ID'],
+                appt_footprint=actual_appt_footprint
+            )
 
-            for value in appt_name:
-                self.annual_hsi_log["actual_appt_footprint"].append(value)
-
+        # Storage for the purpose of testing / documentation
         if self.store_hsi_events_that_have_run:
             log_info['date'] = self.sim.date
             self.store_of_hsi_events_that_have_run.append(log_info)
@@ -1327,8 +1309,8 @@ class HealthSystem(Module):
                     data=log_capacity,
                     description='daily summary of utilisation and capacity of health system resources')
 
-        self.capacity_logs["date"].append(self.sim.date.year)
-        self.capacity_logs["Frac_Time_Used_Overall"].append(fraction_time_used_across_all_facilities)
+        self._summary_counter.record_hs_status(
+            fraction_time_used_across_all_facilities=fraction_time_used_across_all_facilities)
 
     def remove_beddays_footprint(self, person_id):
         # removing bed_days from a particular individual if any
@@ -1373,6 +1355,11 @@ class HealthSystem(Module):
         """
         self.consumables.override_availability(item_codes)
 
+    def log_end_of_year_summary_statistics(self) -> None:
+        """Write to log the current states of the summary counters and reset them."""
+        self._summary_counter.write_to_log_and_reset_counters()
+        self.consumables.write_to_log_and_reset_counters()
+
 
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     """
@@ -1397,6 +1384,10 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
     def __init__(self, module: HealthSystem):
         super().__init__(module, frequency=DateOffset(days=1))
+
+    @staticmethod
+    def _is_today_last_day_of_the_year(date):
+        return (date.month == 12) and (date.day == 31)
 
     def apply(self, population):
 
@@ -1627,57 +1618,65 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             total_footprint=total_footprint
         )
 
+        # 9) Log the end-of-year summaries (if today is the last day of the year)
+        if self._is_today_last_day_of_the_year(self.sim.date):
+            self.module.log_end_of_year_summary_statistics()
 
 # ---------------------------------------------------------------------------
 #   Logging
 # ---------------------------------------------------------------------------
 
 
-class HealthSystemLoggingEvent(RegularEvent, PopulationScopeEventMixin):
-    def __init__(self, module):
-        """Log aggregated outputs from health system"""
+class HealthSystemSummaryCounter:
+    """Helper class to keep running counts of HSI and the state of the HealthSystem and logging summaries."""
 
-        self.repeat = 12
-        super().__init__(module, frequency=DateOffset(months=self.repeat))
+    def __init__(self):
+        self._reset_internal_stores()
 
-    def apply(self, population):
-        # get some summary statistics
+    def _reset_internal_stores(self) -> None:
+        """Create empty versions of the data structures used to store a running records."""
 
-        # ------------------------------------ SUMMARIES ------------------------------------
-        # aggregate data passed to dicts for each year
+        self._treatment_ids = defaultdict(int)  # Running record of the `TREATMENT_ID`s of `HSI_Event`s
+        self._appts = defaultdict(int)  # Running record of the Appointments of `HSI_Event`s that have run
+        self._frac_time_used_overall = []  # Running record of the usage of the healthcare system
 
-        # consumables
-        cons = self.module.consumables.annual_consumables_log
+    def record_hsi_event(self, treatment_id: str, appt_footprint: Counter) -> None:
+        """Add information about an `HSI_Event` to the running summaries."""
 
-        treatment_counts = Counter(cons["treatment_id"])
-        cons_available = Counter(cons["consumables_available"])
-        cons_not_available = Counter(cons["consumables_not_available"])
+        # Count the treatment_id:
+        self._treatment_ids[treatment_id] += 1
 
-        # HSIs
-        hsi = self.module.annual_hsi_log
-        numbers_treatment_id = Counter(hsi["treatment_id"])
-        numbers_appts = Counter(hsi["actual_appt_footprint"])
+        # Count each type of appointment:
+        for _appt_type, _number in appt_footprint.items():
+            self._appts[_appt_type] += _number
 
-        # fraction HCW time used - average over 12 months
-        capacity = self.module.capacity_logs["Frac_Time_Used_Overall"]
-        mean_capacity = sum(capacity) / len(capacity)
+    def record_hs_status(self, fraction_time_used_across_all_facilities: float) -> None:
+        """Record a current status metric of the HealthSystem."""
 
-        # write to logger
+        # The fraction of all healthcare worker time that is used:
+        self._frac_time_used_overall.append(fraction_time_used_across_all_facilities)
+
+    def write_to_log_and_reset_counters(self):
+        """Log summary statistics reset the counters."""
+
         logger_summary.info(
-            key="health_system_annual_logs",
-            description="Summary of health system demand during the year immediately prior.",
+            key="HSI_Event",
+            description="Counts of the HSI_Events that have occurred in this calendar year by TREATMENT_ID, "
+                        "and counts of the 'Appt_Type's that have occurred in this calendar year.",
             data={
-                "treatment_counts": treatment_counts,
-                "consumables_available": cons_available,
-                "consumables_not_available": cons_not_available,
-                "hsi_treatment_id": numbers_treatment_id,
-                "numbers_appts": numbers_appts,
-                "capacity": mean_capacity,
+                "TREATMENT_ID": self._treatment_ids,
+                "Number_By_Appt_Type_Code": self._appts,
             },
         )
 
-        # re-initialise empty dict with set keys
-        self.module.consumables.annual_consumables_log.update(
-            (key, []) for key in self.module.consumables.annual_consumables_log)
-        self.module.annual_hsi_log.update((key, []) for key in self.module.annual_hsi_log)
-        self.module.capacity_logs.update((key, []) for key in self.module.capacity_logs)
+        logger_summary.info(
+            key="Capacity",
+            description="The fraction of all the healthcare worker time that is used each day, averaged over this "
+                        "calendar year.",
+            data={
+                "average_Frac_Time_Used_Overall": np.mean(self._frac_time_used_overall),
+                # <-- leaving space here for additional summary measures that may be needed in the future.
+            },
+        )
+
+        self._reset_internal_stores()

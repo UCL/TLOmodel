@@ -19,6 +19,7 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
+from tlo.methods.consumables import Consumables, create_dummy_data_for_cons_availability
 from tlo.methods.healthsystem import HSI_Event
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -607,8 +608,8 @@ def test_all_appt_types_can_run(seed):
 
 @pytest.mark.slow
 def test_two_loggers_in_healthsystem(seed, tmpdir):
-    """Check that two different loggers are used by the HealthSystem for more/less detailed logged information with
-    the format expected."""
+    """Check that two different loggers are used by the HealthSystem for more/less detailed logged information and that
+     these are consistent with one another."""
 
     # Create a dummy disease module (to be the parent of the dummy HSI)
     class DummyModule(Module):
@@ -631,8 +632,8 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
         def __init__(self, module, person_id):
             super().__init__(module, person_id=person_id)
             self.TREATMENT_ID = 'Dummy'
-            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ConWithDCSA': 1})
-            self.ACCEPTED_FACILITY_LEVEL = '0'
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'Under5OPD': 1})
+            self.ACCEPTED_FACILITY_LEVEL = '1a'
 
         def apply(self, person_id, squeeze_factor):
             # Request a consumable
@@ -644,6 +645,7 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
                                                            tclose=None,
                                                            priority=0)
 
+    # Set up simulation:
     sim = Simulation(start_date=start_date, seed=seed, log_config={
         'filename': 'tmpfile',
         'directory': tmpdir,
@@ -661,33 +663,101 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
         check_all_dependencies=False
     )
     sim.make_initial_population(n=1000)
-    sim.simulate(end_date=start_date + pd.DateOffset(years=1, days=1))
+
+    # Replace consumables class with version that declares only one consumable, available with probability 0.5
+    sim.modules['HealthSystem'].consumables = Consumables(
+        data=create_dummy_data_for_cons_availability(
+            intrinsic_availability={0: 0.5, 1: 1.0},
+            months=list(range(1, 13)),
+            facility_ids=[0]),
+        rng=sim.modules['HealthSystem'].rng,
+        availability='default'
+    )
+
+    sim.simulate(end_date=start_date + pd.DateOffset(years=2))
     log = parse_log_file(sim.log_filepath)
 
-    # Standard log
-    assert "tlo.methods.healthsystem" in log
-    assert {'HSI_Event', 'Capacity', 'Consumables'}.issubset(log["tlo.methods.healthsystem"].keys())
-    assert {'date', 'TREATMENT_ID', 'did_run', 'Squeeze_Factor', 'Number_By_Appt_Type_Code', 'Person_ID'} == \
-           set(log["tlo.methods.healthsystem"]['HSI_Event'].columns)
-    assert {'date', 'Frac_Time_Used_Overall', 'Frac_Time_Used_By_Facility_ID'
-            } == set(log["tlo.methods.healthsystem"]['Capacity'].columns)
-
-    # Summary log
-    assert "tlo.methods.healthsystem.summary" in log
-    assert {'health_system_annual_logs'}.issubset(log["tlo.methods.healthsystem.summary"].keys())
-    assert {"date", "treatment_counts", "consumables_available", "consumables_not_available", "hsi_treatment_id",
-            "numbers_appts", "capacity"
-            } == set(log["tlo.methods.healthsystem.summary"]['health_system_annual_logs'].columns)
-
-    # check correspondence between the two
-    summary = log["tlo.methods.healthsystem.summary"]['health_system_annual_logs']
+    # Standard log:
     detailed_hsi_event = log["tlo.methods.healthsystem"]['HSI_Event']
+    detailed_capacity = log["tlo.methods.healthsystem"]['Capacity']
     detailed_consumables = log["tlo.methods.healthsystem"]['Consumables']
+    assert {'date', 'TREATMENT_ID', 'did_run', 'Squeeze_Factor', 'Number_By_Appt_Type_Code', 'Person_ID'
+            } == set(detailed_hsi_event.columns)
+    assert {'date', 'Frac_Time_Used_Overall', 'Frac_Time_Used_By_Facility_ID'
+            } == set(detailed_capacity.columns)
+    assert {'date', 'TREATMENT_ID', 'Item_Available', 'Item_NotAvailable'
+            } == set(detailed_consumables.columns)
 
-    assert summary['hsi_treatment_id'][0] == \
-           detailed_hsi_event.loc[pd.to_datetime(detailed_hsi_event.date).dt.year == 2010].groupby('TREATMENT_ID').size().to_dict()
-    assert summary['consumables_available'][0] == \
-            len(detailed_consumables.loc[pd.to_datetime(detailed_consumables.date).dt.year == 2010]['Item_Available'].apply(lambda x: list(eval(x).keys())[0] if x != "{}" else None).dropna())
-    assert summary['consumables_not_available'][0] == \
-           len(detailed_consumables.loc[pd.to_datetime(detailed_consumables.date).dt.year == 2010][
-                   'Item_NotAvailable'].apply(lambda x: list(eval(x).keys())[0] if x != "{}" else None).dropna())
+    # Summary log:
+    summary_hsi_event = log["tlo.methods.healthsystem.summary"]["HSI_Event"]
+    summary_capacity = log["tlo.methods.healthsystem.summary"]["Capacity"]
+    summary_consumables = log["tlo.methods.healthsystem.summary"]["Consumables"]
+
+    # Check correspondence between the two logs
+    #  - Counts of TREATMENT_ID (total over entire period of log)
+    assert summary_hsi_event['TREATMENT_ID'].apply(pd.Series)['Dummy'].sum() == \
+           detailed_hsi_event.groupby('TREATMENT_ID').size()['Dummy']
+
+    #  - Appointments (total over entire period of the log)
+    assert summary_hsi_event['Number_By_Appt_Type_Code'].apply(pd.Series).sum().to_dict() == \
+        detailed_hsi_event['Number_By_Appt_Type_Code'].apply(pd.Series).sum().to_dict()
+
+    #  - Average fraction of HCW time used (year by year)
+    assert summary_capacity.set_index(pd.to_datetime(summary_capacity.date).dt.year
+                                      )['average_Frac_Time_Used_Overall'].round(4).to_dict() == \
+        detailed_capacity.set_index(pd.to_datetime(detailed_capacity.date).dt.year
+                                    )['Frac_Time_Used_Overall'].groupby(level=0).mean().round(4).to_dict()
+
+    #  - Consumables (total over entire period of log that are available / not available)  # add _Item_
+    assert summary_consumables['Item_Available'].apply(pd.Series).sum().to_dict() == \
+           detailed_consumables['Item_Available'].apply(
+               lambda x: {f'{k}': v for k, v in eval(x).items()}).apply(pd.Series).sum().to_dict()
+    assert summary_consumables['Item_NotAvailable'].apply(pd.Series).sum().to_dict() == \
+           detailed_consumables['Item_NotAvailable'].apply(
+               lambda x: {f'{k}': v for k, v in eval(x).items()}).apply(pd.Series).sum().to_dict()
+
+
+@pytest.mark.slow
+def test_create_old_format(seed, tmpdir):
+    """Check that helper function to convert the summary log into Tara's original format works."""
+
+    def create_summary_log_in_old_format(summary_log):
+        """Helper function to enable Tara's scripts to work with the new names in the HealthSystem summary logs.
+        Provide the `summary_log`.
+        i.e., ```summary_log = parse_log_file(sim.log_filepath)["tlo.methods.healthsystem.summary"]```
+        """
+        return {
+            'health_system_annual_logs': pd.DataFrame({
+                "date": summary_log['HSI_Event']["date"],
+                "capacity": summary_log['Capacity']['average_Frac_Time_Used_Overall'],
+                "hsi_treatment_id": summary_log['HSI_Event']['TREATMENT_ID'],
+                "numbers_appts": summary_log['HSI_Event']['Number_By_Appt_Type_Code'],
+                "treatment_counts": summary_log['HSI_Event']['TREATMENT_ID'],
+                "consumables_available": summary_log['Consumables']['Item_Available'],
+                "consumables_not_available": summary_log['Consumables']['Item_NotAvailable'],
+            })
+        }
+
+    sim = Simulation(start_date=start_date, seed=seed, log_config={
+        'filename': 'tmpfile',
+        'directory': tmpdir,
+        'custom_levels': {
+            "tlo.methods.healthsystem": logging.INFO,
+            "tlo.methods.healthsystem.summary": logging.INFO
+        }
+    })
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        sort_modules=False,
+        check_all_dependencies=False
+    )
+    sim.make_initial_population(n=1000)
+    sim.simulate(end_date=start_date + pd.DateOffset(years=2))
+    log = parse_log_file(sim.log_filepath)
+
+    summary_log_in_old_format = create_summary_log_in_old_format(log["tlo.methods.healthsystem.summary"])
+
+    assert {"date", "consumables_available", "consumables_not_available", "hsi_treatment_id", "numbers_appts",
+            "capacity", "treatment_counts"
+            } == set(summary_log_in_old_format['health_system_annual_logs'].columns)
