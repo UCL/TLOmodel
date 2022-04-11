@@ -524,7 +524,7 @@ class SchistoSpecies:
         sm = self.schisto_module.sim.modules['SymptomManager']
         cols_of_infection_status = self.schisto_module.cols_of_infection_status
 
-        if not len(idx):
+        if not len(idx) > 0:
             return
 
         def _inf_status(age: int, agg_wb: int) -> str:
@@ -543,7 +543,7 @@ class SchistoSpecies:
         def _impose_symptoms_of_high_intensity_infection(idx: pd.Index) -> None:
             """Assign symptoms to the person with high intensity infection.
             :param idx: indices of individuals"""
-            if not len(idx):
+            if not len(idx) > 0:
                 return
 
             for symptom, prev in possible_symptoms.items():
