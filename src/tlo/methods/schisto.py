@@ -306,9 +306,8 @@ class Schisto(Module):
             symptom: get_daly_weight(dw_code) for symptom, dw_code in symptoms_to_disability_weight_mapping.items()
         }
 
-    def _get_item_code_for_praziquantel(self) -> None:
+    def _get_item_code_for_praziquantel(self) -> int:
         """Look-up the item code for Praziquantel"""
-
         return self.sim.modules['HealthSystem'].get_item_code_from_item_name("Praziquantel, 600 mg (donated)")
 
     def _schedule_mda_events(self) -> None:
