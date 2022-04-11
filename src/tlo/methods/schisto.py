@@ -134,7 +134,7 @@ class Schisto(Module):
 
         # Call `pre_initialise_population` for each `SchistoSpecies` helper module.
         for _spec in self.species.values():
-            _spec._update_parameters_from_schisto_module()
+            _spec.update_parameters_from_schisto_module()
 
     def initialise_population(self, population):
         """Set the property values for the initial population."""
@@ -452,7 +452,7 @@ class SchistoSpecies:
 
         # Save species-specific parameter in this class, copying from the `Schisto` module. (We have to do this step
         # because the module may have updated the parameters).
-        self._update_parameters_from_schisto_module()
+        self.update_parameters_from_schisto_module()
 
     def initialise_population(self, population):
         """Set species-specific property values for the initial population."""
@@ -587,7 +587,7 @@ class SchistoSpecies:
             ]
         sm.clear_symptoms(person_id=no_longer_high_infection, disease_module=schisto_module)
 
-    def _update_parameters_from_schisto_module(self) -> None:
+    def update_parameters_from_schisto_module(self) -> None:
         """Update the internally-held parameters from the `Schisto` module that are specific to this species."""
 
         def remove_prefix(text, prefix):
