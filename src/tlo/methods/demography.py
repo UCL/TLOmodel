@@ -21,8 +21,13 @@ from tlo.methods.causes import (
 )
 from tlo.util import create_age_range_lookup
 
+# Standard logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+# Detailed logger
+logger_detail = logging.getLogger(f"{__name__}.detail")
+logger_detail.setLevel(logging.INFO)
 
 # Limits for setting up age range categories
 MIN_AGE_FOR_RANGE = 0
@@ -58,6 +63,7 @@ class Demography(Module):
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
     PARAMETERS = {
+        'max_age_initial': Parameter(Types.INT, 'The oldest age (in whole years) in the initial population'),
         'pop_2010': Parameter(Types.DATA_FRAME, 'Population in 2010 for initialising population'),
         'district_num_to_district_name': Parameter(Types.DICT, 'Mapping from district_num to district name'),
         'district_num_to_region_name': Parameter(Types.DICT, 'Mapping from district_num to region name'),
@@ -109,11 +115,12 @@ class Demography(Module):
     }
 
     def read_parameters(self, data_folder):
-        """Read parameter values from file, if required.
-        Loads the 'Interpolated Pop Structure' worksheet from the Demography Excel workbook.
-        :param data_folder: path of a folder supplied to the Simulation containing data files.
-          Typically modules would read a particular file within here.
-        """
+        """Load the parameters from `ResourceFile_Demography_parameters.csv` and data from other `ResourceFiles`."""
+
+        # General parameters
+        self.load_parameters_from_dataframe(pd.read_csv(
+            Path(self.resourcefilepath) / 'demography' / 'ResourceFile_Demography_parameters.csv')
+        )
 
         # Initial population size:
         self.parameters['pop_2010'] = pd.read_csv(
@@ -193,6 +200,11 @@ class Demography(Module):
 
         init_pop = self.parameters['pop_2010']
         init_pop['prob'] = init_pop['Count'] / init_pop['Count'].sum()
+
+        init_pop = self._edit_init_pop_to_prevent_persons_greater_than_max_age(
+            init_pop,
+            max_age=self.parameters['max_age_initial']
+        )
 
         # randomly pick from the init_pop sheet, to allocate characteristic to each person in the df
         demog_char_to_assign = init_pop.iloc[self.rng.choice(init_pop.index.values,
@@ -301,6 +313,18 @@ class Demography(Module):
                   'mother_age_at_pregnancy': _mother_age_at_pregnancy}
         )
 
+    def _edit_init_pop_to_prevent_persons_greater_than_max_age(self, df, max_age: int):
+        """Return an edited version of the `pd.DataFrame` describing the probability of persons in the population being
+        created with certain characteristics to reflect the constraint the persons aged greater than `max_age_initial`
+        should not be created."""
+
+        if (max_age == 0) or (max_age > MAX_AGE):
+            raise ValueError("The value of parameter `max_age_initial` is not valid.")
+
+        _df = df.drop(df.index[df.Age > max_age])  # Remove characteristics with age greater than max_age
+        _df.prob = _df.prob / _df.prob.sum()  # Rescale `prob` so that it sums to 1.0
+        return _df.reset_index(drop=True)
+
     def process_causes_of_death(self):
         """
         1) Register all causes of deaths defined by Module
@@ -343,9 +367,8 @@ class Demography(Module):
         assert not hasattr(individual_id, '__iter__'), 'do_death must be called for one individual at a time.'
 
         df = self.sim.population.props
-        person = df.loc[individual_id]
 
-        if not person['is_alive']:
+        if not df.at[individual_id, 'is_alive']:
             return
 
         # Check that the cause is declared, and declared for use by the originating module:
@@ -356,6 +379,8 @@ class Demography(Module):
 
         # Register the death:
         df.loc[individual_id, ['is_alive', 'date_of_death', 'cause_of_death']] = (False, self.sim.date, cause)
+
+        person = df.loc[individual_id]
 
         # Log the death
         # - log the line-list of summary information about each death
@@ -376,9 +401,9 @@ class Demography(Module):
         logger.info(key='death', data=data_to_log_for_each_death)
 
         # - log all the properties for the deceased person
-        logger.info(key='properties_of_deceased_persons',
-                    data=person.to_dict(),
-                    description='values of all properties at the time of death for deceased persons')
+        logger_detail.info(key='properties_of_deceased_persons',
+                           data=person.to_dict(),
+                           description='values of all properties at the time of death for deceased persons')
 
         # Report the deaths to the healthburden module (if present) so that it tracks the live years lost
         if 'HealthBurden' in self.sim.modules.keys():
