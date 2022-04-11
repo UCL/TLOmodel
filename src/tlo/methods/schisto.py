@@ -862,7 +862,7 @@ class SchistoMDAEvent(Event, PopulationScopeEventMixin):
                 hsi_event=HSI_Schisto_MDA(
                     self.module,
                     person_id=idx_to_receive_mda[0],
-                    beneficaries_ids=idx_to_receive_mda
+                    beneficiaries_ids=idx_to_receive_mda
                 ),
                 topen=self.sim.date,
                 tclose=self.sim.date + pd.DateOffset(months=1),
@@ -975,22 +975,22 @@ class HSI_Schisto_TreatmentFollowingDiagnosis(HSI_Event, IndividualScopeEventMix
 class HSI_Schisto_MDA(HSI_Event, IndividualScopeEventMixin):
     """This is a Health System Interaction Event for providing one or more persons with PZQ as part of a Mass Drug
     Administration (MDA). Note that the `person_id` declared as the `target` of this `HSI_Event` is only one of the
-    beneficaries. This is in, effect, a "batch job" of individual HSI being handled within one HSI, for the sake of
+    beneficiaries. This is in, effect, a "batch job" of individual HSI being handled within one HSI, for the sake of
     computational efficiency."""
 
-    def __init__(self, module, person_id, beneficaries_ids: Optional[Sequence] = None):
+    def __init__(self, module, person_id, beneficiaries_ids: Optional[Sequence] = None):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Schisto)
-        self.beneficaries_ids = beneficaries_ids
+        self.beneficiaries_ids = beneficiaries_ids
 
         self.TREATMENT_ID = 'Schisto_MDA'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
-            'EPI': len(beneficaries_ids) if beneficaries_ids else 1})
+            'EPI': len(beneficiaries_ids) if beneficiaries_ids else 1})
         # The `EPI` appointment is appropriate because it's a very small appointment, and we note that this is used in
         # the coding for 'de-worming'-type activities in the DHIS2 data. We show that expect there will be one of these
         # appointments for each of the beneficiaries, whereas, in fact, it may be more realistic to consider that the
         # real requirement is fewer than that.
-        # This class is created when running `tlo_hsi_event.py`, which doesn't provide the argument `beneficaries_ids`
+        # This class is created when running `tlo_hsi_event.py`, which doesn't provide the argument `beneficiaries_ids`
         # but does require that `self.EXPECTED_APPT_FOOTPRINT` is valid. So, in this case, we let
         # `self.EXPECTED_APPT_FOOTPRINT` show that this requires 1 * that appointment type.
 
@@ -1000,7 +1000,7 @@ class HSI_Schisto_MDA(HSI_Event, IndividualScopeEventMixin):
         """Provide the treatment to the beneficiaries of this HSI."""
 
         # Find which of the beneficiaries are still alive
-        beneficaries_still_alive = list(set(self.beneficaries_ids).intersection(
+        beneficiaries_still_alive = list(set(self.beneficiaries_ids).intersection(
             self.sim.population.props.index[self.sim.population.props.is_alive]
         ))
 
@@ -1008,12 +1008,12 @@ class HSI_Schisto_MDA(HSI_Event, IndividualScopeEventMixin):
         # being available.This is because we expect that special planning would be undertaken in order to ensure the
         # availability of the drugs on the day(s) when the MDA is planned.
         if self.get_consumables(
-            optional_item_codes={self.module.item_code_for_praziquantel: len(beneficaries_still_alive)}
+            optional_item_codes={self.module.item_code_for_praziquantel: len(beneficiaries_still_alive)}
         ):
-            self.module.do_effect_of_treatment(person_id=beneficaries_still_alive)
+            self.module.do_effect_of_treatment(person_id=beneficiaries_still_alive)
 
         # Return the update appointment that reflects the actual number of beneficiaries.
-        return self.make_appt_footprint({'EPI': len(beneficaries_still_alive)})
+        return self.make_appt_footprint({'EPI': len(beneficiaries_still_alive)})
 
 
 class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
