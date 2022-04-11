@@ -262,7 +262,7 @@ def check_format_of_consumables_file(df, fac_ids):
 
 
 class ConsumablesSummaryCounter:
-    """Helper class to keep running counts of consumables log."""
+    """Helper class to keep running counts of consumable."""
 
     def __init__(self):
         self._reset_internal_stores()
