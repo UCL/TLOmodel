@@ -1185,10 +1185,10 @@ class HealthSystem(Module):
     def record_hsi_event(self, hsi_event, actual_appt_footprint=None, squeeze_factor=None, did_run=True):
         """
         Record the processing of an HSI event.
-        If this is an individual-level HSI event, it will also record the actual appointment footprint
-        :param hsi_event: The hsi event (containing the initial expectations of footprints)
-        :param actual_appt_footprint: The actual appt footprint to log (if individual event)
-        :param squeeze_factor: The squueze factor (if individual event)
+        If this is an individual-level HSI_Event, it will also record the actual appointment footprint
+        :param hsi_event: The HSI_Event (containing the initial expectations of footprints)
+        :param actual_appt_footprint: The actual Appointment Footprint (if individual event)
+        :param squeeze_factor: The squeeze factor (if individual event)
         """
 
         if isinstance(hsi_event.target, tlo.population.Population):
@@ -1198,60 +1198,52 @@ class HealthSystem(Module):
             log_info['Number_By_Appt_Type_Code'] = 'Population'  # remove the appt-types with zeros
             log_info['Person_ID'] = -1  # Junk code
             log_info['Squeeze_Factor'] = 0
-
-        else:
-            # Individual HSI-Event:
-            assert actual_appt_footprint is not None
-            assert squeeze_factor is not None
-
-            log_info = dict()
-            log_info['TREATMENT_ID'] = hsi_event.TREATMENT_ID
-            # key appointment types that are non-zero
-            log_info['Number_By_Appt_Type_Code'] = actual_appt_footprint
-            log_info['Person_ID'] = hsi_event.target
             log_info['did_run'] = did_run
 
-            if squeeze_factor == np.inf:
-                log_info['Squeeze_Factor'] = 100.0  # arbitrarily high value to replace infinity
-            else:
-                log_info['Squeeze_Factor'] = squeeze_factor
+        else:
+            # Individual HSI-Event
 
-        self.write_to_hsi_log(
-            treatment_id=log_info['TREATMENT_ID'],
-            number_by_appt_type_code=log_info['Number_By_Appt_Type_Code'],
-            person_id=log_info['Person_ID'],
-            squeeze_factor=log_info['Squeeze_Factor'],
-            did_run=log_info['did_run']
-        )
+            _squeeze_factor = squeeze_factor if squeeze_factor != np.inf else 100.0
 
-        if did_run:
-            self._summary_counter.record_hsi_event(
-                treatment_id=log_info['TREATMENT_ID'],
-                appt_footprint=actual_appt_footprint
+            self.write_to_hsi_log(
+                treatment_id=hsi_event.TREATMENT_ID,
+                number_by_appt_type_code=actual_appt_footprint,
+                person_id=hsi_event.target,
+                squeeze_factor=_squeeze_factor,
+                did_run=did_run
             )
 
-        # Storage for the purpose of testing / documentation
-        if self.store_hsi_events_that_have_run:
-            log_info['date'] = self.sim.date
-            self.store_of_hsi_events_that_have_run.append(log_info)
-
-        if self.record_hsi_event_details:
-            self.hsi_event_details.add(
-                HSIEventDetails(
-                    event_name=type(hsi_event).__name__,
-                    module_name=type(hsi_event.module).__name__,
-                    treatment_id=hsi_event.TREATMENT_ID,
-                    facility_level=getattr(
-                        hsi_event, 'ACCEPTED_FACILITY_LEVEL', None
-                    ),
-                    appt_footprint=(
-                        tuple(actual_appt_footprint)
-                        if actual_appt_footprint is not None
-                        else tuple(getattr(hsi_event, 'EXPECTED_APPT_FOOTPRINT', {}))
-                    ),
-                    beddays_footprint=tuple(sorted(hsi_event.BEDDAYS_FOOTPRINT.items()))
+            # Storage for the purpose of testing / documentation
+            if self.store_hsi_events_that_have_run:
+                self.store_of_hsi_events_that_have_run.append(
+                    {
+                        'HSI_Event': str(hsi_event.__class__).replace("<class '", "").replace("'>", ""),
+                        'date': self.sim.date,
+                        'TREATMENT_ID': hsi_event.TREATMENT_ID,
+                        'did_run': did_run,
+                        'Appt_Footprint': actual_appt_footprint,
+                        'Squeeze_Factor': _squeeze_factor,
+                        'Person_ID': hsi_event.target
+                    }
                 )
-            )
+
+            if self.record_hsi_event_details:
+                self.hsi_event_details.add(
+                    HSIEventDetails(
+                        event_name=type(hsi_event).__name__,
+                        module_name=type(hsi_event.module).__name__,
+                        treatment_id=hsi_event.TREATMENT_ID,
+                        facility_level=getattr(
+                            hsi_event, 'ACCEPTED_FACILITY_LEVEL', None
+                        ),
+                        appt_footprint=(
+                            tuple(actual_appt_footprint)
+                            if actual_appt_footprint is not None
+                            else tuple(getattr(hsi_event, 'EXPECTED_APPT_FOOTPRINT', {}))
+                        ),
+                        beddays_footprint=tuple(sorted(hsi_event.BEDDAYS_FOOTPRINT.items()))
+                    )
+                )
 
     def write_to_hsi_log(self,
                          treatment_id,
@@ -1260,7 +1252,7 @@ class HealthSystem(Module):
                          squeeze_factor,
                          did_run
                          ):
-        """Write the log `HSI_Event` with one entry per HSI event."""
+        """Write the log `HSI_Event` and add to the summary counter."""
         logger.info(key="HSI_Event",
                     data={
                         'TREATMENT_ID': treatment_id,
@@ -1271,6 +1263,12 @@ class HealthSystem(Module):
                     },
                     description="record of each HSI event"
                     )
+
+        if did_run:
+            self._summary_counter.record_hsi_event(
+                treatment_id=treatment_id,
+                appt_footprint=number_by_appt_type_code
+            )
 
     def log_current_capabilities(self, current_capabilities, total_footprint):
         """
