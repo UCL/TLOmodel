@@ -12,6 +12,7 @@ or locally using:
 
 from tlo import Date, logging
 from tlo.methods import (
+    alri,
     bladder_cancer,
     breast_cancer,
     cardio_metabolic_disorders,
@@ -35,7 +36,9 @@ from tlo.methods import (
     postnatal_supervisor,
     pregnancy_supervisor,
     prostate_cancer,
+    stunting,
     symptommanager,
+    wasting
 )
 from tlo.scenario import BaseScenario
 
@@ -81,7 +84,10 @@ class LongRun(BaseScenario):
             postnatal_supervisor.PostnatalSupervisor(resourcefilepath=self.resources),
 
             # - Conditions of Early Childhood
+            alri.Alri(resourcefilepath=self.resources),
             diarrhoea.Diarrhoea(resourcefilepath=self.resources),
+            stunting.Stunting(resourcefilepath=self.resources),
+            wasting.Wasting(resourcefilepath=self.resources),
 
             # - Communicable Diseases
             hiv.Hiv(resourcefilepath=self.resources),
