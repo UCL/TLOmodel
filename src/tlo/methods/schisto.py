@@ -104,6 +104,8 @@ class Schisto(Module):
         # Property names for infection_status of all species
         self.cols_of_infection_status = [_spec.infection_status_property for _spec in self.species.values()]
 
+        self.districts = None
+
         # Age-group mapper
         s = pd.Series(index=range(1 + 120), data='object')
         for name, (low_limit, high_limit) in _AGE_GROUPS.items():
