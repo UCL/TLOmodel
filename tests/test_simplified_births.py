@@ -9,7 +9,7 @@ from pandas._libs.tslibs.offsets import DateOffset
 from tlo import Date, Simulation, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.methods import demography, simplified_births
-from tlo.methods.wholemodel import fullmodel
+from tlo.methods.fullmodel import fullmodel
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 

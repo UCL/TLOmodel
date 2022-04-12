@@ -12,7 +12,7 @@ from tlo.methods import Metadata, demography
 from tlo.methods.causes import Cause
 from tlo.methods.demography import AgeUpdateEvent
 from tlo.methods.diarrhoea import increase_risk_of_death, make_treatment_perfect
-from tlo.methods.wholemodel import fullmodel
+from tlo.methods.fullmodel import fullmodel
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
