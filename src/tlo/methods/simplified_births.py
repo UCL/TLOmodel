@@ -65,12 +65,12 @@ class SimplifiedBirths(Module):
         # (Mocked property, usually managed by Newborn_outcomes module)
         'nb_low_birth_weight_status': Property(Types.CATEGORICAL, 'temporary property',
                                                categories=['extremely_low_birth_weight', 'very_low_birth_weight',
-                                                           'low_birth_weight', 'normal_birth_weight']),
+                                                           'low_birth_weight', 'normal_birth_weight', 'macrosomia']),
 
         # (Mocked property, managed by Newborn_outcomes module)
         'nb_size_for_gestational_age': Property(Types.CATEGORICAL, 'temporary property',
-                                                categories=['small_for_gestational_age',
-                                                            'average_for_gestational_age']),
+                                                categories=['small_for_gestational_age', 'average_for_gestational_age',
+                                                            'large_for_gestational_age']),
 
         # (Mocked property, usually managed by Newborn_outcomes module)
         'nb_late_preterm': Property(Types.BOOL, 'temporary property'),
