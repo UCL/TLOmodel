@@ -254,7 +254,7 @@ class Demography(Module):
         self.other_death_poll = OtherDeathPoll(self)
         sim.schedule_event(self.other_death_poll, sim.date)
 
-        # Log the initial population scaling-factor (to that of this module and that of `tlo.methods.population`)
+        # Log the initial population scaling-factor (to the logger of this module and that of `tlo.methods.population`)
         for _logger in (logger,  logging.getLogger('tlo.methods.population')):
             _logger.info(
                 key='scaling_factor',

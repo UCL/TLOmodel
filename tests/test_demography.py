@@ -220,6 +220,7 @@ def test_calc_of_scaling_factor(tmpdir, seed):
     assert output['tlo.methods.demography']['scaling_factor'].at[0, 'scaling_factor'] == \
            output['tlo.methods.population']['scaling_factor'].at[0, 'scaling_factor']
 
+
 def test_py_calc(simulation):
     # make population of one person:
     simulation.make_initial_population(n=1)
