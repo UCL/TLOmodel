@@ -510,11 +510,10 @@ class SchistoSpecies:
         df = schisto_module.sim.population.props
         prop = self.prefix_species_property
         params = self.params
-        params = self.params
         rng = schisto_module.rng
         possible_symptoms = params["symptoms"]
-        sm = self.schisto_module.sim.modules['SymptomManager']
-        cols_of_infection_status = self.schisto_module.cols_of_infection_status
+        sm = schisto_module.sim.modules['SymptomManager']
+        cols_of_infection_status = schisto_module.cols_of_infection_status
 
         if not len(idx) > 0:
             return
