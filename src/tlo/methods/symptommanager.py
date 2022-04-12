@@ -169,7 +169,7 @@ class SymptomManager(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
         self.spurious_symptoms = spurious_symptoms
-        self.persons_with_newly_onset_symptoms = set()
+        self._persons_with_newly_onset_symptoms = set()
 
         self.generic_symptoms = {
             'fever',
@@ -188,6 +188,7 @@ class SymptomManager(Module):
 
         self.all_registered_symptoms = set()
         self.symptom_names = set()
+        self.modules_that_can_impose_symptoms = set()
 
         self.recognised_module_names = None
         self.spurious_symptom_resolve_event = None
@@ -206,7 +207,6 @@ class SymptomManager(Module):
         Stores the symptom classes that are passed. Registration must be done before 'pre-initialise population' is
         called.
         The disease module associated with each symptom is also stored.
-        :disease_module: the disease module that is registering a particular symptom
         :param symptoms_to_register: instance(s) of class Symptom
         :return:
         """
@@ -261,13 +261,13 @@ class SymptomManager(Module):
         self.recognised_module_names = [
             m.name for m in self.sim.modules.values() if Metadata.USES_SYMPTOMMANAGER in m.METADATA
         ]
-        modules_that_can_impose_symptoms = [self.name] + self.recognised_module_names
+        self.modules_that_can_impose_symptoms = [self.name] + self.recognised_module_names
 
         # Establish the BitSetHandler for the symptoms
         self.bsh = BitsetHandler(
             population=self.sim.population,
             column=None,
-            elements=modules_that_can_impose_symptoms
+            elements=self.modules_that_can_impose_symptoms
         )
         # NB. Bitset handler will establish such that everyone has no symptoms. i.e. can check below:
         # symptom_col_names = [self.get_column_name_for_symptom(s) for s in self.symptom_names]
@@ -364,7 +364,7 @@ class SymptomManager(Module):
             # Add this disease module as a cause of this symptom
 
             self.bsh.set(person_id, disease_module.name, columns=sy_columns)
-            self.persons_with_newly_onset_symptoms = self.persons_with_newly_onset_symptoms.union(person_id)
+            self._persons_with_newly_onset_symptoms = self._persons_with_newly_onset_symptoms.union(person_id)
 
             # If a duration is given, schedule the auto-resolve event to turn off these symptoms after specified time.
             if duration_in_days is not None:
@@ -435,7 +435,7 @@ class SymptomManager(Module):
             )
         ]
 
-    def has_what(self, person_id, disease_module=None):
+    def has_what(self, person_id, disease_module: Module = None):
         """
         This is a helper function that will give a list of strings for the symptoms that a _single_ person
         is currently experiencing.
@@ -462,7 +462,7 @@ class SymptomManager(Module):
         else:
             return [s for s in self.symptom_names if df.loc[person_id, f'sy_{s}'] > 0]
 
-    def have_what(self, person_ids):
+    def have_what(self, person_ids: Sequence[int]):
         """Find the set of symptoms for a list of person_ids.
         NB. This is a fast implementation without the same amount checking as 'has_what'"""
         df = self.sim.population.props
@@ -470,7 +470,7 @@ class SymptomManager(Module):
             lambda p: [s for s in self.symptom_names if p[f'sy_{s}'] > 0], axis=1, result_type='reduce'
         ).rename('symptoms')
 
-    def causes_of(self, person_id, symptom_string):
+    def causes_of(self, person_id: int, symptom_string):
         """
         This is a helper function that will give a list of the disease modules causing a particular symptom for
         a particular person.
@@ -511,11 +511,23 @@ class SymptomManager(Module):
         sy_columns = [self.get_column_name_for_symptom(sym) for sym in self.symptom_names]
         self.bsh.unset(person_id, disease_module.name, columns=sy_columns)
 
+    def caused_by(self, disease_module: Module):
+        """Find the persons experiencing symptoms due to a particular module.
+        Returns a dict of the form {<<person_id>>, <<list_of_symptoms>>}."""
+
+        df = self.sim.population.props
+        symptom_columns = [self.get_column_name_for_symptom(s) for s in self.symptom_names]
+        symptom_is_caused_by_disease = self.bsh.has(df.is_alive, disease_module.name, columns=symptom_columns)
+        symptoms_caused_by_disease = symptom_is_caused_by_disease.apply(lambda row: list(row[row].index), axis=1)
+        symptoms_for_each_person = {k: [s[3:] for s in v] for k, v in symptoms_caused_by_disease.items() if len(v) > 0}
+
+        return symptoms_for_each_person
+
     def get_persons_with_newly_onset_symptoms(self):
-        return self.persons_with_newly_onset_symptoms
+        return self._persons_with_newly_onset_symptoms
 
     def reset_persons_with_newly_onset_symptoms(self):
-        self.persons_with_newly_onset_symptoms.clear()
+        self._persons_with_newly_onset_symptoms.clear()
 
 # ---------------------------------------------------------------------------------------------------------
 #   EVENTS

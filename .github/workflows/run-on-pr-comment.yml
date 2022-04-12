@@ -69,7 +69,7 @@ jobs:
             repo: context.issue.repo,
             pull_number: context.issue.number,
           });
-          return pr.head.sha
+          return pr.head.sha;
     - name: Checkout pull-request SHA
       uses: actions/checkout@v2
       with:
@@ -82,22 +82,47 @@ jobs:
       uses: actions/github-script@v4
       with:
         script: |
-          const { data: workflow_jobs } = await github.actions.listJobsForWorkflowRun({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            run_id: context.runId,
-          });
-          const job = workflow_jobs.jobs[0];  // There should only be one job
-          const run_test_commands_step = job.steps.filter(
-            step => step.name == "Run test command(s)"
-          )[0];  // There should only be one step with this name
-          const result = (
-            run_test_commands_step.conclusion == 'success' 
-            ? 'succeeded ✅'
-            : 'failed ❌'
-          );
-          const started_date = new Date(run_test_commands_step.started_at);
-          const completed_date = new Date(run_test_commands_step.completed_at);
+          // There can be a delay between steps completing and this being reflected
+          // in information queried from REST API, therefore we poll for the list of
+          // jobs associated with workflow run at interval of 1 second until the
+          // status of the previous "Run test command(s)" step indicates completed or
+          // a maximum number of attempts have been reached
+          const maximum_attempts = 5;
+          let got_completed_step_info = false;
+          let attempts = 0;
+          let job, step;
+          while (!got_completed_step_info & attempts < maximum_attempts) {
+            await new Promise(r => setTimeout(r, 1000));  // Wait for 1 second
+            const { data: run_jobs } = await github.actions.listJobsForWorkflowRun({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: context.runId,
+            });
+            const in_progress_jobs = run_jobs.jobs.filter(
+              job => job.status == "in_progress"
+            );  
+            // There should only be only one job in progress
+            if (in_progress_jobs.length > 1) {
+              throw "Multiple jobs triggered by same keyword";
+            }
+            job = in_progress_jobs[0];
+            const run_test_commands_steps = job.steps.filter(
+              step => step.name == "Run test command(s)"
+            );
+            // There should only be one step with name "Run test command(s)"
+            if (run_test_commands_steps.length > 1) {
+              throw "Multiple steps with name 'Run test command(s)'";
+            }
+            step = run_test_commands_steps[0];
+            got_completed_step_info = (step.status == "completed");
+            attempts += 1;
+          }
+          if (!got_completed_step_info) {
+            throw `Could not get completed step data in ${maximum_attempts} attempts`;
+          }
+          const result = step.conclusion == 'success' ? 'succeeded ✅' : 'failed ❌';
+          const started_date = new Date(step.started_at);
+          const completed_date = new Date(step.completed_at);
           const time_minutes = ((completed_date - started_date) / 60000).toPrecision(3);
           const details = [
             `🆔 [${job.id}](${job.html_url})`,
