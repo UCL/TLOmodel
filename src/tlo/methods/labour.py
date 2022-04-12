@@ -2833,7 +2833,7 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'NormalDelivery': 1})
         self.ALERT_OTHER_DISEASES = []
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': 1})
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': 2})
 
     def apply(self, person_id, squeeze_factor):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
@@ -2996,6 +2996,7 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
         self.ALERT_OTHER_DISEASES = []
         self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})
+        # todo: i think maybe beddays need to be captured seperately for women who receive treatment
 
     def apply(self, person_id, squeeze_factor):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
@@ -3093,7 +3094,7 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MajorSurg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': 2})
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': 3})
 
         self.timing = timing
 
