@@ -636,8 +636,8 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
             self.ACCEPTED_FACILITY_LEVEL = '1a'
 
         def apply(self, person_id, squeeze_factor):
-            # Request a consumable
-            self.get_consumables(item_codes=0)
+            # Request a consumable (either 0 or 1)
+            self.get_consumables(item_codes=self.module.rng.choice((0, 1), p=(0.5, 0.5)))
 
             # Schedule another occurrence of itself tomorrow.
             sim.modules['HealthSystem'].schedule_hsi_event(self,
@@ -670,7 +670,7 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
 
     sim.modules['HealthSystem'].consumables = Consumables(
         data=create_dummy_data_for_cons_availability(
-            intrinsic_availability={0: 0.5, 1: 1.0},
+            intrinsic_availability={0: 0.5, 1: 0.5},
             months=list(range(1, 13)),
             facility_ids=list(all_fac_ids)),
         rng=sim.modules['HealthSystem'].rng,
