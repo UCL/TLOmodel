@@ -51,6 +51,7 @@ class Demography(Module):
         self.gbd_causes_of_death_not_represented_in_disease_modules = set()
         #  will store causes of death in GBD not represented in the simulation
         self.other_death_poll = None    # will hold pointer to the OtherDeathPoll object
+        self.districts = None  # will store all the districts in a list
 
     AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = create_age_range_lookup(
         min_age=MIN_AGE_FOR_RANGE,
@@ -128,6 +129,7 @@ class Demography(Module):
         )
 
         # Lookup dicts to map from district_num_of_residence (in the df) and District name and Region name
+        self.districts = self.parameters['pop_2010']['District'].drop_duplicates().to_list()
         self.parameters['district_num_to_district_name'] = \
             self.parameters['pop_2010'][['District_Num', 'District']].drop_duplicates()\
                                                                      .set_index('District_Num')['District']\
