@@ -751,7 +751,7 @@ class HSI_Depression_TalkingTherapy(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
 
         self.TREATMENT_ID = 'Depression_TalkingTherapy'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MentOPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
 
     def apply(self, person_id, squeeze_factor):
