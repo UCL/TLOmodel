@@ -53,30 +53,30 @@ def fullmodel(
     all_modules.extend([
         demography.Demography(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(
             resourcefilepath=resourcefilepath,
-            spurious_symptoms=symptommanager_spurious_symptoms,
-        ),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-        ])
+            spurious_symptoms=symptommanager_spurious_symptoms),
+    ])
 
     # HealthSystem and the Expanded Programme on Immunizations
     all_modules.extend([
+        epi.Epi(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(
             resourcefilepath=resourcefilepath,
             disable=healthsystem_disable,
             mode_appt_constraints=healthsystem_mode_appt_constraints,
             capabilities_coefficient=healthsystem_capabilities_coefficient,
             record_hsi_event_details=healthsystem_record_hsi_event_details),
-        epi.Epi(resourcefilepath=resourcefilepath)
     ])
 
     # Contraception, Pregnancy, Labour, etc. (or SimplifiedBirths)
     if use_simplified_births:
-        all_modules.append(
-            simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath)
-        )
+        all_modules.extend([
+            simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+            # newborn_outcomes.DummyNewbornOutcomesModule(),
+        ])
     else:
         all_modules.extend([
             contraception.Contraception(resourcefilepath=resourcefilepath, use_healthsystem=True),
@@ -89,8 +89,8 @@ def fullmodel(
 
     # Conditions of Early Childhood
     all_modules.extend([
-        diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
         alri.Alri(resourcefilepath=resourcefilepath),
+        diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
         stunting.Stunting(resourcefilepath=resourcefilepath),
         wasting.Wasting(resourcefilepath=resourcefilepath),
     ])
