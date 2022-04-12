@@ -270,31 +270,32 @@ class ConsumablesSummaryCounter:
     def _reset_internal_stores(self) -> None:
         """Create empty versions of the data structures used to store a running records."""
 
-        self._items_logged = {
+        self._items = {
             'Available': defaultdict(int),
             'NotAvailable': defaultdict(int)
         }
 
     def record_availability(self, items_available: dict, items_not_available: dict) -> None:
         """Add information about the availability of requested items to the running summaries."""
+
         # Record items that were available
         for _item, _num in items_available.items():
-            self._items_logged['Available'][_item] += _num
+            self._items['Available'][_item] += _num
 
         # Record items that were not available
         for _item, _num in items_not_available.items():
-            self._items_logged['NotAvailable'][_item] += _num
+            self._items['NotAvailable'][_item] += _num
 
     def write_to_log_and_reset_counters(self):
-        """Log summary statistics reset the counters."""
+        """Log summary statistics reset the data structures."""
 
         logger_summary.info(
             key="Consumables",
             description="Counts of the items that were requested in this calendar year, which were available and"
                         "not available.",
             data={
-                "Item_Available": self._items_logged['Available'],
-                "Item_NotAvailable": self._items_logged['NotAvailable'],
+                "Item_Available": self._items['Available'],
+                "Item_NotAvailable": self._items['NotAvailable'],
             },
         )
 

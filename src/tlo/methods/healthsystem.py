@@ -1655,7 +1655,7 @@ class HealthSystemSummaryCounter:
         self._frac_time_used_overall.append(fraction_time_used_across_all_facilities)
 
     def write_to_log_and_reset_counters(self):
-        """Log summary statistics reset the counters."""
+        """Log summary statistics reset the data structures."""
 
         logger_summary.info(
             key="HSI_Event",
