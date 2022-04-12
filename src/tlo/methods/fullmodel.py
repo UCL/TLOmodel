@@ -29,11 +29,11 @@ from tlo.methods import (
     pregnancy_supervisor,
     prostate_cancer,
     rti,
+    schisto,
     simplified_births,
     stunting,
     symptommanager,
     wasting,
-    schisto,
 )
 
 

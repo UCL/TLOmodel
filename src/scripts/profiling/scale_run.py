@@ -20,7 +20,7 @@ import shared
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
-from tlo.methods.wholemodel import fullmodel
+from tlo.methods.fullmodel import fullmodel
 
 # Parse arguments defining run options
 parser = argparse.ArgumentParser(description="Run model at scale")
@@ -180,7 +180,7 @@ sim = Simulation(
 
 # Register the appropriate modules with the arguments passed through
 sim.register(
-    fullmodel(
+    *fullmodel(
         resourcefilepath=resourcefilepath,
         use_simplified_births=False,
         symptommanager_spurious_symptoms=not args.disable_spurious_symptoms,

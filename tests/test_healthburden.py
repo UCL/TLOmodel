@@ -21,8 +21,8 @@ from tlo.methods import (
 from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.diarrhoea import increase_risk_of_death, make_treatment_perfect
-from tlo.methods.healthburden import Get_Current_DALYS
 from tlo.methods.fullmodel import fullmodel
+from tlo.methods.healthburden import Get_Current_DALYS
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
