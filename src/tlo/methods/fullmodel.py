@@ -33,6 +33,7 @@ from tlo.methods import (
     stunting,
     symptommanager,
     wasting,
+    schisto,
 )
 
 
@@ -100,6 +101,7 @@ def fullmodel(
         hiv.Hiv(resourcefilepath=resourcefilepath),
         malaria.Malaria(resourcefilepath=resourcefilepath),
         measles.Measles(resourcefilepath=resourcefilepath),
+        schisto.Schisto(resourcefilepath=resourcefilepath)
         # tb.TB(resourcefilepath=resourcefilepath)  <-- awaiting PR #541
     ])
 
