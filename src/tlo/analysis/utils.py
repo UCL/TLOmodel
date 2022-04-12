@@ -253,8 +253,8 @@ def extract_results(results_folder: Path,
             return 1.0
         else:
             try:
-                return load_pickled_dataframes(results_folder, _draw, _run, 'tlo.methods.demography'
-                                               )['tlo.methods.demography']['scaling_factor']['scaling_factor'].values[0]
+                return load_pickled_dataframes(results_folder, _draw, _run, 'tlo.methods.population'
+                                               )['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
             except KeyError:
                 return 1.0
 
@@ -410,9 +410,9 @@ def compare_number_of_deaths(logfile: Path, resourcefilepath: Path):
     output = parse_log_file(logfile)
 
     # 1) Get model outputs:
-    # - get scaling factor if it has been computed:
-    if 'scaling_factor' in output['tlo.methods.demography']:
-        sf = output['tlo.methods.demography']['scaling_factor']['scaling_factor'].values[0]
+    # - get scaling factor:
+    if 'scaling_factor' in output['tlo.methods.population']:
+        sf = output['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
     else:
         sf = 1.0
 
