@@ -31,6 +31,7 @@ from tlo.methods import (
     postnatal_supervisor,
     pregnancy_supervisor,
     prostate_cancer,
+    schisto,
     symptommanager,
 )
 from tlo.methods.causes import Cause
@@ -128,6 +129,7 @@ def test_cause_of_disability_being_registered(seed):
         postnatal_supervisor.PostnatalSupervisor(resourcefilepath=rfp),
         newborn_outcomes.NewbornOutcomes(resourcefilepath=rfp),
         healthburden.HealthBurden(resourcefilepath=rfp),
+        schisto.Schisto(resourcefilepath=rfp),
 
         # Supporting modules:
         diarrhoea.DiarrhoeaPropertiesOfOtherModules()
