@@ -1,11 +1,11 @@
 {
   "scenario_script_path": "src/scripts/hiv/deviance_for_calibration/calibration_script.py",
-  "scenario_seed": 28646,
+  "scenario_seed": 26332,
   "runs_per_draw": 5,
   "draws": [
     {
       "draw_number": 0,
-      "draw_seed": 732266762,
+      "draw_seed": 1640092806,
       "parameters": {
         "Hiv": {
           "beta": 0.1092199663383177
@@ -17,7 +17,7 @@
     },
     {
       "draw_number": 1,
-      "draw_seed": 1948966462,
+      "draw_seed": 1951991624,
       "parameters": {
         "Hiv": {
           "beta": 0.1251759310573124
@@ -29,7 +29,7 @@
     },
     {
       "draw_number": 2,
-      "draw_seed": 165692146,
+      "draw_seed": 1357874574,
       "parameters": {
         "Hiv": {
           "beta": 0.1354630213936761
@@ -41,7 +41,7 @@
     },
     {
       "draw_number": 3,
-      "draw_seed": 56327826,
+      "draw_seed": 1281356408,
       "parameters": {
         "Hiv": {
           "beta": 0.1048337868088496
@@ -53,7 +53,7 @@
     },
     {
       "draw_number": 4,
-      "draw_seed": 1697951047,
+      "draw_seed": 960847409,
       "parameters": {
         "Hiv": {
           "beta": 0.09618417158882275
@@ -65,7 +65,7 @@
     },
     {
       "draw_number": 5,
-      "draw_seed": 974184254,
+      "draw_seed": 1256218534,
       "parameters": {
         "Hiv": {
           "beta": 0.1633537478967886
@@ -77,7 +77,7 @@
     },
     {
       "draw_number": 6,
-      "draw_seed": 25105019,
+      "draw_seed": 762283449,
       "parameters": {
         "Hiv": {
           "beta": 0.1485934528805072
@@ -89,7 +89,7 @@
     },
     {
       "draw_number": 7,
-      "draw_seed": 1353632261,
+      "draw_seed": 1900165771,
       "parameters": {
         "Hiv": {
           "beta": 0.142714659997171
@@ -101,7 +101,7 @@
     },
     {
       "draw_number": 8,
-      "draw_seed": 592906079,
+      "draw_seed": 1142824366,
       "parameters": {
         "Hiv": {
           "beta": 0.1797383517205509
@@ -113,7 +113,7 @@
     },
     {
       "draw_number": 9,
-      "draw_seed": 940643562,
+      "draw_seed": 526855472,
       "parameters": {
         "Hiv": {
           "beta": 0.1156975483894789
@@ -125,7 +125,7 @@
     },
     {
       "draw_number": 10,
-      "draw_seed": 2018525792,
+      "draw_seed": 2014252111,
       "parameters": {
         "Hiv": {
           "beta": 0.1582445877140324
@@ -137,7 +137,7 @@
     },
     {
       "draw_number": 11,
-      "draw_seed": 688475247,
+      "draw_seed": 378839817,
       "parameters": {
         "Hiv": {
           "beta": 0.1723923019555519
@@ -149,7 +149,7 @@
     },
     {
       "draw_number": 12,
-      "draw_seed": 1674387423,
+      "draw_seed": 285240812,
       "parameters": {
         "Hiv": {
           "beta": 0.1219879084345556
@@ -161,7 +161,7 @@
     },
     {
       "draw_number": 13,
-      "draw_seed": 211207668,
+      "draw_seed": 1788777333,
       "parameters": {
         "Hiv": {
           "beta": 0.1526213097814324
@@ -173,7 +173,7 @@
     },
     {
       "draw_number": 14,
-      "draw_seed": 1489514737,
+      "draw_seed": 1340711948,
       "parameters": {
         "Hiv": {
           "beta": 0.08962167806637754
@@ -185,7 +185,7 @@
     },
     {
       "draw_number": 15,
-      "draw_seed": 1226226659,
+      "draw_seed": 12858118,
       "parameters": {
         "Hiv": {
           "beta": 0.09076835045300408
@@ -197,7 +197,7 @@
     },
     {
       "draw_number": 16,
-      "draw_seed": 813065629,
+      "draw_seed": 1466073666,
       "parameters": {
         "Hiv": {
           "beta": 0.1327200267141945
@@ -209,7 +209,7 @@
     },
     {
       "draw_number": 17,
-      "draw_seed": 1674632438,
+      "draw_seed": 1905316958,
       "parameters": {
         "Hiv": {
           "beta": 0.1114031589331815
@@ -221,7 +221,7 @@
     },
     {
       "draw_number": 18,
-      "draw_seed": 746839750,
+      "draw_seed": 1357722106,
       "parameters": {
         "Hiv": {
           "beta": 0.08198091757227693
@@ -233,7 +233,7 @@
     },
     {
       "draw_number": 19,
-      "draw_seed": 1741348404,
+      "draw_seed": 442528735,
       "parameters": {
         "Hiv": {
           "beta": 0.1670571099749963
@@ -243,5 +243,7 @@
         }
       }
     }
-  ]
+  ],
+  "commit": "be3a6d8eab04b9e4e2bbf241cab6d8eaf8aa68ef",
+  "github": "https://github.com/UCL/TLOmodel/blob/be3a6d8eab04b9e4e2bbf241cab6d8eaf8aa68ef/src/scripts/hiv/deviance_for_calibration/calibration_script.py"
 }

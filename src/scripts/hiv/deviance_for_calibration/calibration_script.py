@@ -26,7 +26,8 @@ Download result files for a completed job:
 tlo batch-download calibration_script-2022-04-08T141523Z
 
 12th Apr 2022
-Job ID: calibration_script-2022-04-08T141523Z
+Job ID: calibration_script-2022-04-12T190518Z
+
 
 """
 
