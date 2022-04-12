@@ -741,11 +741,10 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 # ---------------------------------------------------------------------------------------------------------
 
 class HSI_Depression_TalkingTherapy(HSI_Event, IndividualScopeEventMixin):
-    """
-    This is a Health System Interaction Event in which a person receives a short period of talking therapy.
-    This only happens if the squeeze-factor is sufficiently low.
-    The facility_level is modified as a input parameter.
-    """
+    """This is a Health System Interaction Event in which a person receives a session of talking therapy. It is one
+    of a course of 5 sessions (at months 0, 6, 12, 18, 24). If one of these HSI does not happen
+    then no further sessions occur. Sessions after the first have no direct effect, as the only property affected is
+    reflects ever having had one session of talking therapy."""
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -753,13 +752,25 @@ class HSI_Depression_TalkingTherapy(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Depression_TalkingTherapy'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MentOPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.num_of_sessions_had = 0  # A counter for the number of sessions of talking therapy had
 
     def apply(self, person_id, squeeze_factor):
-        if squeeze_factor == 0.0:
-            self.sim.population.props.at[person_id, 'de_ever_talk_ther'] = True
-        else:
-            # If squeeze_factor non-zero then do nothing and do not take up any time.
-            return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        """Set the property `de_ever_talk_ther` to be True and schedule the next session in the course if the person
+        has not yet had 5 sessions."""
+
+        self.num_of_sessions_had += 1
+
+        df = self.sim.population.props
+        if not df.at[person_id, 'de_ever_talk_ther']:
+            df.at[person_id, 'de_ever_talk_ther'] = True
+
+        if self.num_of_sessions_had < 5:
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=self,
+                topen=self.sim.date + pd.DateOffset(months=6),
+                tclose=None,
+                priority=1
+            )
 
 
 class HSI_Depression_Start_Antidepressant(HSI_Event, IndividualScopeEventMixin):
