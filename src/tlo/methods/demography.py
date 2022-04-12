@@ -47,6 +47,15 @@ class Demography(Module):
         #  will store causes of death in GBD not represented in the simulation
         self.other_death_poll = None    # will hold pointer to the OtherDeathPoll object
 
+        # initialise empty dict with set keys
+        keys = ["date",
+                "age",
+                "sex",
+                "cause"
+                ]
+        # initialise empty dict with set keys
+        self.demog_outputs = {k: [] for k in keys}
+
     AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = create_age_range_lookup(
         min_age=MIN_AGE_FOR_RANGE,
         max_age=MAX_AGE_FOR_RANGE,
@@ -374,6 +383,12 @@ class Demography(Module):
             })
 
         logger.info(key='death', data=data_to_log_for_each_death)
+
+        # save outputs to dict for calibration
+        self.demog_outputs["date"] += [self.sim.date.year]
+        self.demog_outputs["age"] += [person['age_years']]
+        self.demog_outputs["sex"] += [person['sex']]
+        self.demog_outputs["cause"] += [cause]
 
         # - log all the properties for the deceased person
         logger.info(key='properties_of_deceased_persons',

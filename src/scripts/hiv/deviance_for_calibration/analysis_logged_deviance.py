@@ -20,6 +20,7 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
     tb,
+    deviance_measure,
 )
 
 # Where will outputs go
@@ -33,7 +34,7 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2016, 1, 1)
+end_date = Date(2015, 1, 1)
 popsize = 2000
 
 # set up the log config
@@ -42,7 +43,7 @@ log_config = {
     "directory": outputpath,
     "custom_levels": {
         "*": logging.WARNING,
-        # "tlo.methods.deviance_measure": logging.INFO,
+        "tlo.methods.deviance_measure": logging.INFO,
         "tlo.methods.hiv": logging.INFO,
         "tlo.methods.tb": logging.INFO,
         "tlo.methods.demography": logging.INFO,
@@ -76,7 +77,7 @@ sim.register(
     epi.Epi(resourcefilepath=resourcefilepath),
     hiv.Hiv(resourcefilepath=resourcefilepath),
     tb.Tb(resourcefilepath=resourcefilepath),
-    # deviance_measure.Deviance(resourcefilepath=resourcefilepath),
+    deviance_measure.Deviance(resourcefilepath=resourcefilepath),
 )
 
 # Run the simulation and flush the logger
