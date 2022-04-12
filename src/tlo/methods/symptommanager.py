@@ -514,16 +514,12 @@ class SymptomManager(Module):
     def caused_by(self, disease_module: Module):
         """Find the persons experiencing symptoms due to a particular module.
         Returns a dict of the form {<<person_id>>, <<list_of_symptoms>>}."""
-        # todo find a faster form of this (using bsh.get directly, similar to have_what?)
 
         df = self.sim.population.props
-        alive_persons_idx = df.index[df.is_alive]
-
-        symptoms_for_each_person = dict()
-        for idx in alive_persons_idx:
-            _has_what = self.has_what(person_id=idx, disease_module=disease_module)
-            if _has_what:
-                symptoms_for_each_person[idx] = _has_what
+        symptom_columns = [self.get_column_name_for_symptom(s) for s in self.symptom_names]
+        symptom_is_caused_by_disease = self.bsh.has(df.is_alive, disease_module.name, columns=symptom_columns)
+        symptoms_caused_by_disease = symptom_is_caused_by_disease.apply(lambda row: list(row[row].index), axis=1)
+        symptoms_for_each_person = {k: [s[3:] for s in v] for k, v in symptoms_caused_by_disease.items() if len(v) > 0}
 
         return symptoms_for_each_person
 
