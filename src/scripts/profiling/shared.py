@@ -41,6 +41,12 @@ def dataframe_hash(sim: Simulation) -> str:
     Only uses at the population dataframe
     TODO: add simulation queue
     """
+
+    def coerce_lists_to_tuples(df: pd.DataFrame) -> pd.DataFrame:
+        """Coerce columns in a pd.DataFrame that are lists to tuples. This step is needed before hashing a pd.DataFrame
+        as list are not hashable."""
+        return df.applymap(lambda x: tuple(x) if isinstance(x, list) else x)
+
     return hashlib.sha1(pd.util.hash_pandas_object(coerce_lists_to_tuples(sim.population.props)).values).hexdigest()
 
 
@@ -54,9 +60,3 @@ def save_population(sim: Simulation) -> None:
     filename = 'profiling_population_%010x.pickle' % random.randrange(16**10)
     df.to_pickle(filename)
     logger.info(key="msg", data=f"Pickled population dataframe: {filename}")
-
-
-def coerce_lists_to_tuples(df: pd.DataFrame) -> pd.DataFrame:
-    """Coerce columns in a pd.DataFrame that are lists to tuples. This step is needed before hashing a pd.DataFrame
-    as list as not hashable."""
-    return df.applymap(lambda x: tuple(x) if isinstance(x, list) else x)
