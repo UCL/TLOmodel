@@ -11,7 +11,7 @@ or locally using:
 """
 
 from tlo import Date, logging
-from tlo.methods.wholemodel import fullmodel
+from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
 
 
