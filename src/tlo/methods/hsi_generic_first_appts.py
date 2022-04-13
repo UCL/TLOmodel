@@ -138,6 +138,9 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
         if 'RTI' in sim.modules:
             sim.modules['RTI'].do_rti_diagnosis_and_treatment(person_id)
 
+    if 'Schisto' in sim.modules:
+        sim.modules['Schisto'].do_on_presentation_with_symptoms(person_id=person_id, symptoms=symptoms)
+
     if age < 5:
         # ----------------------------------- CHILD < 5 -----------------------------------
         if 'diarrhoea' in symptoms:
@@ -168,6 +171,10 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                         priority=1,
                         topen=sim.date,
                         tclose=None)
+
+        # Routine assessments
+        if 'Stunting' in sim.modules:
+            sim.modules['Stunting'].do_routine_assessment_for_chronic_undernutrition(person_id=person_id)
 
     elif age < 15:
         # ----------------------------------- CHILD 5-14 -----------------------------------
