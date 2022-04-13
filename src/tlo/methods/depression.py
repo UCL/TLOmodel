@@ -751,7 +751,7 @@ class HSI_Depression_TalkingTherapy(HSI_Event, IndividualScopeEventMixin):
 
         self.TREATMENT_ID = 'Depression_TalkingTherapy'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MentOPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.num_of_sessions_had = 0  # A counter for the number of sessions of talking therapy had
 
     def apply(self, person_id, squeeze_factor):
