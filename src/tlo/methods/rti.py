@@ -4893,6 +4893,8 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
         assert len(relevant_codes) > 0
         # choose an injury to treat
         treated_code = rng.choice(relevant_codes)
+        # need to determine whether this person has an injury which will treated with external fixation
+        # external_fixation_codes = ['811', '812', '813a', '813b', '813c']
         request_outcome = self.get_consumables(
             self.module.item_codes_for_consumables_required['minor_surgery']
         )
