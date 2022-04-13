@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from scripts.profiling import shared
 from tlo import Date, Simulation
@@ -19,6 +20,7 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
+@pytest.mark.slow
 def test_dtypes_and_checksum(seed):
     """Check that types of all properties are as expected and that the checksum can be generated."""
 
