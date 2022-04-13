@@ -1565,8 +1565,7 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
         self.condition = condition
 
     def apply(self, person_id, squeeze_factor):
-        if self.condition == 'chronic_kidney_disease':
-            self.ACCEPTED_FACILITY_LEVEL = '3'
+
         df = self.sim.population.props
         person = df.loc[person_id]
         m = self.sim.modules['CardioMetabolicDisorders']
