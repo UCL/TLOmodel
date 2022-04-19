@@ -1611,10 +1611,15 @@ class Labour(Module):
         """
         params = self.current_parameters
 
-        if f_lvl == '1a':
-            competence = params['mean_hcw_competence_hc']
+        if sf in ('surg', 'blood_tran'):
+            list_pos = 1
         else:
-            competence = params['mean_hcw_competence_hp']
+            list_pos = 0
+
+        if f_lvl == '1a':
+            competence = params['mean_hcw_competence_hc'][list_pos]
+        else:
+            competence = params['mean_hcw_competence_hp'][list_pos]
 
         if (self.rng.random_sample() < params[f'prob_hcw_avail_{sf}']) and (self.rng.random_sample() < competence):
             return True
