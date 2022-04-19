@@ -3051,7 +3051,7 @@ class HSI_RTI_Imaging_Event(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, RTI)
         self.TREATMENT_ID = 'Rti_Imaging'  # This must begin with the module name
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Diag'})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'DiagRadio'})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
 
     def apply(self, person_id, squeeze_factor):
