@@ -542,7 +542,7 @@ class Labour(Module):
         'la_intrapartum_still_birth': Property(Types.BOOL, 'whether this womans most recent pregnancy has ended '
                                                            'in a stillbirth'),
         'la_parity': Property(Types.REAL, 'total number of previous deliveries'),
-        'la_previous_cs_delivery': Property(Types.BOOL, 'whether this woman has ever delivered via caesarean section'),
+        'la_previous_cs_delivery': Property(Types.REAL, 'total number of previous deliveries'),
         'la_has_previously_delivered_preterm': Property(Types.BOOL, 'whether the woman has had a previous preterm '
                                                                     'delivery for any of her previous deliveries'),
         'la_obstructed_labour': Property(Types.BOOL, 'Whether this woman is experiencing obstructed labour'),
@@ -596,7 +596,7 @@ class Labour(Module):
         df.loc[df.is_alive, 'la_currently_in_labour'] = False
         df.loc[df.is_alive, 'la_intrapartum_still_birth'] = False
         df.loc[df.is_alive, 'la_parity'] = 0
-        df.loc[df.is_alive, 'la_previous_cs_delivery'] = False
+        df.loc[df.is_alive, 'la_previous_cs_delivery'] = 0
         df.loc[df.is_alive, 'la_has_previously_delivered_preterm'] = False
         df.loc[df.is_alive, 'la_due_date_current_pregnancy'] = pd.NaT
         df.loc[df.is_alive, 'la_obstructed_labour'] = False
@@ -646,7 +646,7 @@ class Labour(Module):
             self.current_parameters['prob_previous_caesarean_at_baseline'],
             index=reproductive_age_women.loc[reproductive_age_women].index)
 
-        df.loc[previous_cs.loc[previous_cs].index, 'la_previous_cs_delivery'] = True
+        df.loc[previous_cs.loc[previous_cs].index, 'la_previous_cs_delivery'] = 1
 
     def get_and_store_labour_item_codes(self):
         """
@@ -966,7 +966,7 @@ class Labour(Module):
         df.at[child_id, 'la_currently_in_labour'] = False
         df.at[child_id, 'la_intrapartum_still_birth'] = False
         df.at[child_id, 'la_parity'] = 0
-        df.at[child_id, 'la_previous_cs_delivery'] = False
+        df.at[child_id, 'la_previous_cs_delivery'] = 0
         df.at[child_id, 'la_has_previously_delivered_preterm'] = False
         df.at[child_id, 'la_obstructed_labour'] = False
         df.at[child_id, 'la_placental_abruption'] = False
@@ -2913,11 +2913,7 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         # We apply a probability to women who have not already been allocated to undergo assisted/caesarean delivery
         # that they will require assisted/caesarean delivery to capture indications which are not explicitly modelled
         if not mni[person_id]['referred_for_cs'] and (not mni[person_id]['mode_of_delivery'] == 'instrumental'):
-            if df.at[person_id, 'ps_multiple_pregnancy']:
-                mni[person_id]['referred_for_cs'] = True
-                mni[person_id]['cs_indication'] = 'twins'
-
-            if df.at[person_id, 'la_previous_cs_delivery']:
+            if df.at[person_id, 'la_previous_cs_delivery'] > 1:
                 mni[person_id]['referred_for_cs'] = True
                 mni[person_id]['cs_indication'] = 'previous_scar'
 
@@ -3119,7 +3115,7 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
             sf_check = self.module.check_emonc_signal_function_will_run(sf='surg',
                                                                         f_lvl=self.ACCEPTED_FACILITY_LEVEL)
 
-            if avail and sf_check:
+            if avail and sf_check or (mni[person_id]['cs_indication'] == 'other'):
                 person = df.loc[person_id]
                 logger.info(key='caesarean_delivery', data=person.to_dict())
                 logger.info(key='cs_indications', data={'id': person_id,
@@ -3129,7 +3125,7 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
                 # of intrapartum still birth and death due to antepartum haemorrhage
                 mni[person_id]['mode_of_delivery'] = 'caesarean_section'
                 mni[person_id]['amtsl_given'] = True
-                df.at[person_id, 'la_previous_cs_delivery'] = True
+                df.at[person_id, 'la_previous_cs_delivery'] += 1
 
         # ================================ SURGICAL MANAGEMENT OF RUPTURED UTERUS =====================================
         # Women referred after the labour HSI following correct identification of ruptured uterus will also need to
