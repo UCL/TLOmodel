@@ -841,11 +841,6 @@ class HealthSystem(Module):
         else:
             _cons_availability = self.arg_cons_availability
 
-        # For logical consistency, when the HealthSystem is disabled, cons_availability should be 'all', irrespective of
-        # what arguments/parameters are provided.
-        if self.disable:
-            _cons_availability = 'all'
-
         # Log the service_availability
         logger.info(key="message",
                     data=f"Running Health System With the Following Consumables Availability: "
