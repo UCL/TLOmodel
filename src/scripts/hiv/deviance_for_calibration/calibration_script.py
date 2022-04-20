@@ -23,7 +23,7 @@ Display information about a job:
 tlo batch-job tlo_q1_demo-123 --tasks
 
 Download result files for a completed job:
-tlo batch-download calibration_script-2022-04-08T141523Z
+tlo batch-download calibration_script-2022-04-12T190518Z
 
 12th Apr 2022
 Job ID: calibration_script-2022-04-12T190518Z
@@ -52,7 +52,7 @@ from tlo.methods import (
 )
 from tlo.scenario import BaseScenario
 
-number_of_draws = 20
+number_of_draws = 1
 runs_per_draw = 5
 
 
