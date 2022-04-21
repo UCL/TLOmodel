@@ -125,6 +125,10 @@ class Hiv(Module):
 
     PARAMETERS = {
         # Baseline characteristics
+        "unaids_prevalence_adjustment_factor": Parameter(
+            Types.REAL, "adjustment for baseline age-specific prevalence values from unaids to give correct"
+                        "overall population prevalence"
+        ),
         "time_inf": Parameter(
             Types.DATA_FRAME, "prob of time since infection for baseline adult pop"
         ),
@@ -543,7 +547,7 @@ class Hiv(Module):
             prev_2010, on=["age_years", "sex"], how="left"
         )["prop_hiv_mw2021_v14"]
 
-        # probability based on risk factors
+        # probability of being hiv-positive based on risk factors
         rel_prob_by_risk_factor = LinearModel.multiplicative(
             Predictor("li_is_sexworker").when(True, params["rr_fsw"]),
             Predictor("li_is_circ").when(True, params["rr_circumcision"]),
@@ -577,8 +581,9 @@ class Hiv(Module):
             p["rel_prob_by_risk_factor"] / p["mean_of_rel_prob_within_age_sex_group"]
         )
         # add scaling factor 1.1 to match overall unaids prevalence
+        # different assumptions on pop size result in slightly different overall prevalence so use adjustment factor
         p["overall_prob_of_infec"] = (
-            p["scaled_rel_prob_by_risk_factor"] * p["prob_of_infec"] * 1.1
+            p["scaled_rel_prob_by_risk_factor"] * p["prob_of_infec"] * p["unaids_prevalence_adjustment_factor"]
         )
         # this needs to be series of True/False
         infec = (
