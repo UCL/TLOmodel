@@ -288,11 +288,8 @@ def test_check_tb_test_under_each_scenario(seed):
     )
 
     # select test for each person under baseline scenario - standard guidelines
-    test_for_hiv_negative = sim.modules["Tb"].select_tb_test(hiv_neg_person)
-    assert test_for_hiv_negative == "sputum"
-
-    test_for_hiv_positive = sim.modules["Tb"].select_tb_test(hiv_pos_person)
-    assert test_for_hiv_positive == "xpert"
+    assert "sputum" == sim.modules["Tb"].select_tb_test(hiv_neg_person)
+    assert "xpert" == sim.modules["Tb"].select_tb_test(hiv_pos_person)
 
     # screen and test hiv_neg_person
     screening_appt = tb.HSI_Tb_ScreeningAndRefer(person_id=hiv_neg_person,
@@ -317,15 +314,12 @@ def test_check_tb_test_under_each_scenario(seed):
     scenario_change_event.apply(sim.population)
 
     # select test for each person under baseline scenario - standard guidelines
-    test_for_hiv_negative = sim.modules["Tb"].select_tb_test(hiv_neg_person)
     # this person should still qualify for sputum as they have not been treated
-    assert test_for_hiv_negative == "sputum"
-
-    test_for_hiv_positive = sim.modules["Tb"].select_tb_test(hiv_pos_person)
-    assert test_for_hiv_positive == "xpert"
+    assert "sputum" == sim.modules["Tb"].select_tb_test(hiv_neg_person)
+    assert "xpert" == sim.modules["Tb"].select_tb_test(hiv_pos_person)
 
     # ------------------------- scenario 1 ------------------------- #
-    sim = get_sim()
+    sim = get_sim(seed=seed)
 
     # Make the population
     sim.make_initial_population(n=popsize)
@@ -365,20 +359,14 @@ def test_check_tb_test_under_each_scenario(seed):
         duration_in_days=None,
     )
 
-    # select test for each person under scenario 3, should be standard at first
-    test_for_hiv_negative = sim.modules["Tb"].select_tb_test(hiv_neg_person)
-    assert test_for_hiv_negative == "sputum"
-
-    test_for_hiv_positive = sim.modules["Tb"].select_tb_test(hiv_pos_person)
-    assert test_for_hiv_positive == "xpert"
+    # select test for each person under scenario 1, should be standard at first
+    assert "sputum" == sim.modules["Tb"].select_tb_test(hiv_neg_person)
+    assert "xpert" == sim.modules["Tb"].select_tb_test(hiv_pos_person)
 
     # apply scenario change, re-test, should be xpert for all
     scenario_change_event = tb.ScenarioSetupEvent(module=sim.modules['Tb'])
     scenario_change_event.apply(sim.population)
 
     # select test for each person under changed guidelines
-    test_for_hiv_negative = sim.modules["Tb"].select_tb_test(hiv_neg_person)
-    assert test_for_hiv_negative == "xpert"
-
-    test_for_hiv_positive = sim.modules["Tb"].select_tb_test(hiv_pos_person)
-    assert test_for_hiv_positive == "xpert"
+    assert "xpert" == sim.modules["Tb"].select_tb_test(hiv_neg_person)
+    assert "xpert" == sim.modules["Tb"].select_tb_test(hiv_pos_person)

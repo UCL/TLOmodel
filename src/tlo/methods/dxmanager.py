@@ -234,7 +234,6 @@ class DxTest:
         """
         # Must be an individual level HSI and not a population level HSI
         assert isinstance(hsi_event, IndividualScopeEventMixin), 'DxManager requires individual-level HSI_Event'
-        # assert isinstance(hsi_event.target, int), 'DxManager requires individual-level HSI_Event'
         assert pd.notnull(hsi_event.target), f'DxManager error "{hsi_event.target}" is not an integer'
         person_id = hsi_event.target
 
