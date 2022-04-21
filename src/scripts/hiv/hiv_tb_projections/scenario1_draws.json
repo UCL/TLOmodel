@@ -9,10 +9,10 @@
       "parameters": {
         "Tb": {
           "scenario": 1,
-          "transmission_rate": 16.7
+          "transmission_rate": 15.8
         },
         "Hiv": {
-          "beta": 0.125
+          "beta": 0.109
         }
       }
     },
@@ -22,10 +22,10 @@
       "parameters": {
         "Tb": {
           "scenario": 1,
-          "transmission_rate": 18.0
+          "transmission_rate": 15.4
         },
         "Hiv": {
-          "beta": 0.121
+          "beta": 0.133
         }
       }
     },
@@ -35,10 +35,10 @@
       "parameters": {
         "Tb": {
           "scenario": 1,
-          "transmission_rate": 15.8
+          "transmission_rate": 16.7
         },
         "Hiv": {
-          "beta": 0.109
+          "beta": 0.125
         }
       }
     },
@@ -48,10 +48,10 @@
       "parameters": {
         "Tb": {
           "scenario": 1,
-          "transmission_rate": 19.2
+          "transmission_rate": 16.2
         },
         "Hiv": {
-          "beta": 0.116
+          "beta": 0.082
         }
       }
     },
@@ -61,12 +61,14 @@
       "parameters": {
         "Tb": {
           "scenario": 1,
-          "transmission_rate": 15.4
+          "transmission_rate": 16.1
         },
         "Hiv": {
-          "beta": 0.133
+          "beta": 0.143
         }
       }
     }
-  ]
+  ],
+  "commit": "45bfbb6ee328ebc99199b279b494b73c5e9d766a",
+  "github": "https://github.com/UCL/TLOmodel/blob/45bfbb6ee328ebc99199b279b494b73c5e9d766a/src/scripts/hiv/hiv_tb_projections/scenario1.py"
 }
