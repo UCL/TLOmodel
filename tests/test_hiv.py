@@ -1122,6 +1122,19 @@ def test_baseline_hiv_prevalence():
     """
     check baseline prevalence set correctly
     """
+
+    # get data on 2010 prevalence
+    # HIV resourcefile
+    xls = pd.ExcelFile(resourcefilepath / "ResourceFile_HIV.xlsx")
+    prev_data = pd.read_excel(xls, sheet_name="DHS_prevalence")
+
+    adult_prev_1549_data = prev_data.loc[
+        (prev_data.Year == 2010, "HIV prevalence among general population 15-49")].values[0] / 100
+    female_prev_1549_data = prev_data.loc[
+        (prev_data.Year == 2010, "HIV prevalence among women 15-49")].values[0] / 100
+    male_prev_1549_data = prev_data.loc[
+        (prev_data.Year == 2010, "HIV prevalence among men 15-49")].values[0] / 100
+
     start_date = Date(2010, 1, 1)
     popsize = 100000
     sim = Simulation(start_date=start_date, seed=0)
@@ -1145,14 +1158,14 @@ def test_baseline_hiv_prevalence():
     adult_prev_1549 = len(
         df[df.hv_inf & df.is_alive & df.age_years.between(15, 49)]
     ) / len(df[df.is_alive & df.age_years.between(15, 49)])
-    assert adult_prev_1549 > 0.1
+    assert np.isclose(adult_prev_1549, adult_prev_1549_data, rtol=0.02)
 
     female_prev_1549 = len(
         df[df.hv_inf & df.is_alive & df.age_years.between(15, 49) & (df.sex == "F")]
     ) / len(df[df.is_alive & df.age_years.between(15, 49) & (df.sex == "F")])
-    assert female_prev_1549 > 0.11
+    assert np.isclose(female_prev_1549, female_prev_1549_data, rtol=0.02)
 
     male_prev_1549 = len(
         df[df.hv_inf & df.is_alive & df.age_years.between(15, 49) & (df.sex == "M")]
     ) / len(df[df.is_alive & df.age_years.between(15, 49) & (df.sex == "M")])
-    assert male_prev_1549 > 0.08
+    assert np.isclose(male_prev_1549, male_prev_1549_data, rtol=0.02)
