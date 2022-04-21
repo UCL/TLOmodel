@@ -1590,7 +1590,7 @@ class RTI(Module):
                 logger.debug(key='rti_general_message',
                              data=f"This is rti do for major surgery person {person_id} asked for treatment but "
                                   f"doesn't need it.")
-                # for each injury which has been assigned to be treated by major surgery make sure that the injury hasn't
+            # for each injury which has been assigned to be treated by major surgery make sure that the injury hasn't
             # already been treated
             for code in person.rt_injuries_for_major_surgery:
                 column, found_code = self.rti_find_injury_column(person_id, [code])
