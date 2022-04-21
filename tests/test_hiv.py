@@ -1118,7 +1118,8 @@ def test_hsi_art_stopped_if_healthsystem_cannot_run_hsi_but_will_restart(seed):
 #     assert df.loc[df.is_alive, 'hv_inf'].all()
 
 
-def test_baseline_hiv_prevalence():
+@pytest.mark.slow
+def test_baseline_hiv_prevalence(seed):
     """
     check baseline prevalence set correctly
     """
@@ -1137,7 +1138,7 @@ def test_baseline_hiv_prevalence():
 
     start_date = Date(2010, 1, 1)
     popsize = 100000
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -1158,14 +1159,14 @@ def test_baseline_hiv_prevalence():
     adult_prev_1549 = len(
         df[df.hv_inf & df.is_alive & df.age_years.between(15, 49)]
     ) / len(df[df.is_alive & df.age_years.between(15, 49)])
-    assert np.isclose(adult_prev_1549, adult_prev_1549_data, rtol=0.02)
+    assert np.isclose(adult_prev_1549, adult_prev_1549_data, rtol=0.05)
 
     female_prev_1549 = len(
         df[df.hv_inf & df.is_alive & df.age_years.between(15, 49) & (df.sex == "F")]
     ) / len(df[df.is_alive & df.age_years.between(15, 49) & (df.sex == "F")])
-    assert np.isclose(female_prev_1549, female_prev_1549_data, rtol=0.02)
+    assert np.isclose(female_prev_1549, female_prev_1549_data, rtol=0.05)
 
     male_prev_1549 = len(
         df[df.hv_inf & df.is_alive & df.age_years.between(15, 49) & (df.sex == "M")]
     ) / len(df[df.is_alive & df.age_years.between(15, 49) & (df.sex == "M")])
-    assert np.isclose(male_prev_1549, male_prev_1549_data, rtol=0.02)
+    assert np.isclose(male_prev_1549, male_prev_1549_data, rtol=0.05)

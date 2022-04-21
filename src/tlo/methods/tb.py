@@ -1584,14 +1584,13 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
 
         # -------- 2) assign symptoms --------
         for person_id in active_idx:
-            for symptom in self.module.symptom_list:
-                self.sim.modules["SymptomManager"].change_symptom(
-                    person_id=person_id,
-                    symptom_string=symptom,
-                    add_or_remove="+",
-                    disease_module=self.module,
-                    duration_in_days=None,
-                )
+            self.sim.modules["SymptomManager"].change_symptom(
+                person_id=person_id,
+                symptom_string=self.module.symptom_list,
+                add_or_remove="+",
+                disease_module=self.module,
+                duration_in_days=None,
+            )
 
         # -------- 3) if HIV+ assign smear status and schedule AIDS onset --------
         active_and_hiv = df.loc[

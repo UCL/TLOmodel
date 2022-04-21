@@ -38,13 +38,13 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
-def get_sim(use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True):
+def get_sim(seed, use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True):
     """
     get sim with the checks for configuration of properties running in the TB module
     """
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the appropriate modules
     if use_simplified_birth:
@@ -90,14 +90,14 @@ def get_sim(use_simplified_birth=True, disable_HS=False, ignore_con_constraints=
 
 
 # simple checks
-def test_basic_run():
+def test_basic_run(seed):
     """ test basic run and properties assigned correctly
     """
 
     end_date = Date(2012, 12, 31)
     popsize = 1000
 
-    sim = get_sim(use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
+    sim = get_sim(seed, use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
 
     # set high transmission rate and all are fast progressors
     sim.modules['Tb'].parameters['transmission_rate'] = 0.5
@@ -140,7 +140,7 @@ def test_basic_run():
 
 
 # check natural history of TB infection
-def test_natural_history():
+def test_natural_history(seed):
     """
     test natural history and progression
     need to have disable_HS=False to ensure events enter queue
@@ -151,7 +151,7 @@ def test_natural_history():
 
     popsize = 10
 
-    sim = get_sim(use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
+    sim = get_sim(seed, use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
 
     # set all to be fast progressors
     sim.modules['Tb'].parameters['prop_fast_progressor'] = 1.0
@@ -232,7 +232,7 @@ def test_natural_history():
     assert df.at[person_id, 'tb_diagnosed']
 
 
-def test_treatment_schedule():
+def test_treatment_schedule(seed):
     """ test treatment schedules
     check dates of follow-up appts following schedule
     check treatment ends at appropriate time
@@ -242,7 +242,7 @@ def test_treatment_schedule():
 
     # disable HS, all HSI events will run, but won't be in the HSI queue
     # they will enter the sim.event_queue
-    sim = get_sim(use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
+    sim = get_sim(seed, use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
 
     # Make the population
     sim.make_initial_population(n=popsize)
@@ -266,14 +266,13 @@ def test_treatment_schedule():
 
     # assign symptoms
     symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
-    for symptom in symptom_list:
-        sim.modules["SymptomManager"].change_symptom(
-            person_id=person_id,
-            symptom_string=symptom,
-            add_or_remove="+",
-            disease_module=sim.modules['Tb'],
-            duration_in_days=None,
-        )
+    sim.modules["SymptomManager"].change_symptom(
+        person_id=person_id,
+        symptom_string=symptom_list,
+        add_or_remove="+",
+        disease_module=sim.modules['Tb'],
+        duration_in_days=None,
+    )
 
     # screen and test person_id
     screening_appt = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id,
@@ -309,7 +308,7 @@ def test_treatment_schedule():
     assert df.at[person_id, 'tb_strain'] == 'ds'  # should not have changed
 
 
-def test_treatment_failure():
+def test_treatment_failure(seed):
     """
     test treatment failure occurs and
     retreatment properties / follow-up occurs correctly
@@ -318,7 +317,7 @@ def test_treatment_failure():
     popsize = 10
 
     # allow HS to run and queue events
-    sim = get_sim(use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
+    sim = get_sim(seed, use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
 
     # Make the population
     sim.make_initial_population(n=popsize)
@@ -345,14 +344,13 @@ def test_treatment_failure():
 
     # assign symptoms
     symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
-    for symptom in symptom_list:
-        sim.modules["SymptomManager"].change_symptom(
-            person_id=person_id,
-            symptom_string=symptom,
-            add_or_remove="+",
-            disease_module=sim.modules['Tb'],
-            duration_in_days=None,
-        )
+    sim.modules["SymptomManager"].change_symptom(
+        person_id=person_id,
+        symptom_string=symptom_list,
+        add_or_remove="+",
+        disease_module=sim.modules['Tb'],
+        duration_in_days=None,
+    )
 
     # screen and test person_id
     screening_appt = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id,
@@ -409,14 +407,14 @@ def test_treatment_failure():
     assert followup_event[0] > sim.date
 
 
-def test_children_referrals():
+def test_children_referrals(seed):
     """
     check referrals for children
     should be x-ray at screening/testing
     """
     popsize = 10
 
-    sim = get_sim(use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
+    sim = get_sim(seed, use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
 
     # Make the population
     sim.make_initial_population(n=popsize)
@@ -443,14 +441,13 @@ def test_children_referrals():
     # give the symptoms
     symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
 
-    for symptom in symptom_list:
-        sim.modules["SymptomManager"].change_symptom(
-            person_id=person_id,
-            symptom_string=symptom,
-            add_or_remove="+",
-            disease_module=sim.modules['Tb'],
-            duration_in_days=None,
-        )
+    sim.modules["SymptomManager"].change_symptom(
+        person_id=person_id,
+        symptom_string=symptom_list,
+        add_or_remove="+",
+        disease_module=sim.modules['Tb'],
+        duration_in_days=None,
+    )
 
     assert set(sim.modules['SymptomManager'].has_what(person_id)) == symptom_list
 
@@ -487,7 +484,7 @@ def test_children_referrals():
     assert df.at[person_id, 'tb_diagnosed']
 
 
-def test_latent_prevalence():
+def test_latent_prevalence(seed):
     """
     test overall proportion of new latent cases which progress to active
     should be 14% fast progressors, 67% hiv+ fast progressors
@@ -498,7 +495,7 @@ def test_latent_prevalence():
     popsize = 100
 
     # allow HS to run and queue events
-    sim = get_sim(use_simplified_birth=True, disable_HS=True, ignore_con_constraints=True)
+    sim = get_sim(seed, use_simplified_birth=True, disable_HS=True, ignore_con_constraints=True)
 
     # Make the population
     sim.make_initial_population(n=popsize)
@@ -532,7 +529,7 @@ def test_latent_prevalence():
     assert 0.05 <= prop_fast <= 0.3
 
     # ------------------ HIV-positive progression risk ---------------- #
-    sim = get_sim(use_simplified_birth=True, disable_HS=True, ignore_con_constraints=True)
+    sim = get_sim(seed, use_simplified_birth=True, disable_HS=True, ignore_con_constraints=True)
 
     # Make the population
     sim.make_initial_population(n=popsize)
@@ -564,7 +561,7 @@ def test_latent_prevalence():
     assert 0.5 <= prop_fast <= 1.0
 
 
-def test_relapse_risk():
+def test_relapse_risk(seed):
     """
     check risk of relapse
     """
@@ -575,7 +572,7 @@ def test_relapse_risk():
     popsize = 10
 
     # allow HS to run and queue events
-    sim = get_sim(use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
+    sim = get_sim(seed, use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
     sim.modules['Tb'].parameters['monthly_prob_relapse_tx_incomplete'] = 1.0
 
     # Make the population
@@ -604,14 +601,14 @@ def test_relapse_risk():
     assert not df.at[person_id, 'tb_scheduled_date_active'] == pd.NaT
 
 
-def test_ipt_to_child_of_tb_mother():
+def test_ipt_to_child_of_tb_mother(seed):
     """
     if child born to mother with diagnosed tb, check give ipt
     """
     popsize = 10
 
     # allow HS to run and queue events
-    sim = get_sim(use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
+    sim = get_sim(seed, use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
 
     # make IPT protection against active disease perfect
     sim.modules['Tb'].parameters['rr_ipt_child'] = 0.0
@@ -669,7 +666,7 @@ def test_ipt_to_child_of_tb_mother():
             assert False
 
 
-def test_mdr():
+def test_mdr(seed):
     """
     mdr infection to first-line treatment
     failure on first line
@@ -682,7 +679,7 @@ def test_mdr():
 
     # disable HS, all HSI events will run, but won't be in the HSI queue
     # they will enter the sim.event_queue
-    sim = get_sim(use_simplified_birth=True, disable_HS=True, ignore_con_constraints=True)
+    sim = get_sim(seed, use_simplified_birth=True, disable_HS=True, ignore_con_constraints=True)
 
     # change sensitivity of xpert test to ensure mdr diagnosis on treatment failure
     sim.modules['Tb'].parameters['sens_xpert'] = 1.0
@@ -708,14 +705,13 @@ def test_mdr():
 
     # assign symptoms
     symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
-    for symptom in symptom_list:
-        sim.modules["SymptomManager"].change_symptom(
-            person_id=person_id,
-            symptom_string=symptom,
-            add_or_remove="+",
-            disease_module=sim.modules['Tb'],
-            duration_in_days=None,
-        )
+    sim.modules["SymptomManager"].change_symptom(
+        person_id=person_id,
+        symptom_string=symptom_list,
+        add_or_remove="+",
+        disease_module=sim.modules['Tb'],
+        duration_in_days=None,
+    )
 
     # screen and test person_id
     # no previous infection and HIV-negative so will get sputum smear test
@@ -760,7 +756,7 @@ def test_mdr():
     assert df.at[person_id, 'tb_treated_mdr']
 
 
-def test_cause_of_death():
+def test_cause_of_death(seed):
     """
     schedule death for people with tb and tb-hiv
     check causes of death are assigned correctly
@@ -768,7 +764,7 @@ def test_cause_of_death():
 
     popsize = 10
 
-    sim = get_sim(use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
+    sim = get_sim(seed, use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
 
     # set mortality rates to 1
     sim.modules['Tb'].parameters['death_rate_smear_pos_untreated'] = 1.0

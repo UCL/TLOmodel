@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from tlo import Date, Simulation
 from tlo.methods import (
@@ -26,13 +27,13 @@ except NameError:
     resourcefilepath = 'resources'
 
 
-def get_sim():
+def get_sim(seed):
     """
     register all necessary modules for the tests to run
     """
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the appropriate modules
     sim.register(
@@ -61,7 +62,8 @@ def get_sim():
     return sim
 
 
-def test_scenario_ipt_expansion():
+@pytest.mark.slow
+def test_scenario_ipt_expansion(seed):
     """ test scenario IPT expansion is set up correctly
     should be expanded age eligibility in scenarios 2 and 4
     otherwise only ages <5 are eligible
@@ -69,7 +71,7 @@ def test_scenario_ipt_expansion():
 
     popsize = 100
 
-    sim = get_sim()
+    sim = get_sim(seed=seed)
 
     # stop PLHIV getting IPT for purpose of tests
     sim.modules['Tb'].parameters['ipt_coverage'].coverage_plhiv = 0
@@ -92,7 +94,7 @@ def test_scenario_ipt_expansion():
     # assign active TB to person 0
     person_id = 0
 
-    # assign person_id active tb
+    # assign person_id 0 active tb
     df.at[person_id, 'tb_inf'] = 'active'
     df.at[person_id, 'tb_strain'] = 'ds'
     df.at[person_id, 'tb_date_active'] = sim.date
@@ -102,14 +104,13 @@ def test_scenario_ipt_expansion():
 
     # assign symptoms
     symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
-    for symptom in symptom_list:
-        sim.modules["SymptomManager"].change_symptom(
-            person_id=person_id,
-            symptom_string=symptom,
-            add_or_remove="+",
-            disease_module=sim.modules['Tb'],
-            duration_in_days=None,
-        )
+    sim.modules["SymptomManager"].change_symptom(
+        person_id=person_id,
+        symptom_string=symptom_list,
+        add_or_remove="+",
+        disease_module=sim.modules['Tb'],
+        duration_in_days=None,
+    )
 
     # run diagnosis (HSI_Tb_ScreeningAndRefer) for person 0
     assert "tb_sputum_test_smear_positive" in sim.modules["HealthSystem"].dx_manager.dx_tests
@@ -151,14 +152,13 @@ def test_scenario_ipt_expansion():
 
     # assign symptoms
     symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
-    for symptom in symptom_list:
-        sim.modules["SymptomManager"].change_symptom(
-            person_id=person_id,
-            symptom_string=symptom,
-            add_or_remove="+",
-            disease_module=sim.modules['Tb'],
-            duration_in_days=None,
-        )
+    sim.modules["SymptomManager"].change_symptom(
+        person_id=person_id,
+        symptom_string=symptom_list,
+        add_or_remove="+",
+        disease_module=sim.modules['Tb'],
+        duration_in_days=None,
+    )
 
     # run HSI_Tb_ScreeningAndRefer for person 1
     # check ages again of those scheduled for HSI_Tb_Start_or_Continue_Ipt
@@ -221,14 +221,13 @@ def test_scenario_ipt_expansion():
 
     # assign symptoms
     symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
-    for symptom in symptom_list:
-        sim.modules["SymptomManager"].change_symptom(
-            person_id=person_id,
-            symptom_string=symptom,
-            add_or_remove="+",
-            disease_module=sim.modules['Tb'],
-            duration_in_days=None,
-        )
+    sim.modules["SymptomManager"].change_symptom(
+        person_id=person_id,
+        symptom_string=symptom_list,
+        add_or_remove="+",
+        disease_module=sim.modules['Tb'],
+        duration_in_days=None,
+    )
 
     # run diagnosis (HSI_Tb_ScreeningAndRefer) for person 0
     assert "tb_sputum_test_smear_positive" in sim.modules["HealthSystem"].dx_manager.dx_tests
@@ -270,14 +269,13 @@ def test_scenario_ipt_expansion():
 
     # assign symptoms
     symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
-    for symptom in symptom_list:
-        sim.modules["SymptomManager"].change_symptom(
-            person_id=person_id,
-            symptom_string=symptom,
-            add_or_remove="+",
-            disease_module=sim.modules['Tb'],
-            duration_in_days=None,
-        )
+    sim.modules["SymptomManager"].change_symptom(
+        person_id=person_id,
+        symptom_string=symptom_list,
+        add_or_remove="+",
+        disease_module=sim.modules['Tb'],
+        duration_in_days=None,
+    )
 
     # run HSI_Tb_ScreeningAndRefer for person 3
     # check ages again of those scheduled for HSI_Tb_Start_or_Continue_Ipt
@@ -304,13 +302,14 @@ def test_scenario_ipt_expansion():
     assert (ages_of_ipt_candidates > 5.0).any()
 
 
-def test_check_tb_test_under_each_scenario():
+@pytest.mark.slow
+def test_check_tb_test_under_each_scenario(seed):
     """ test correct test is scheduled under each scenario
     """
 
     popsize = 10
 
-    sim = get_sim()
+    sim = get_sim(seed=seed)
 
     # Make the population
     sim.make_initial_population(n=popsize)
@@ -346,14 +345,13 @@ def test_check_tb_test_under_each_scenario():
 
     # assign symptoms
     symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
-    for symptom in symptom_list:
-        sim.modules["SymptomManager"].change_symptom(
-            person_id=both_people,
-            symptom_string=symptom,
-            add_or_remove="+",
-            disease_module=sim.modules['Tb'],
-            duration_in_days=None,
-        )
+    sim.modules["SymptomManager"].change_symptom(
+        person_id=both_people,
+        symptom_string=symptom_list,
+        add_or_remove="+",
+        disease_module=sim.modules['Tb'],
+        duration_in_days=None,
+    )
 
     # select test for each person under baseline scenario - standard guidelines
     test_for_hiv_negative = sim.modules["Tb"].select_tb_test(hiv_neg_person)
@@ -425,14 +423,13 @@ def test_check_tb_test_under_each_scenario():
 
     # assign symptoms
     symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
-    for symptom in symptom_list:
-        sim.modules["SymptomManager"].change_symptom(
-            person_id=both_people,
-            symptom_string=symptom,
-            add_or_remove="+",
-            disease_module=sim.modules['Tb'],
-            duration_in_days=None,
-        )
+    sim.modules["SymptomManager"].change_symptom(
+        person_id=both_people,
+        symptom_string=symptom_list,
+        add_or_remove="+",
+        disease_module=sim.modules['Tb'],
+        duration_in_days=None,
+    )
 
     # select test for each person under scenario 3, should be standard at first
     test_for_hiv_negative = sim.modules["Tb"].select_tb_test(hiv_neg_person)
