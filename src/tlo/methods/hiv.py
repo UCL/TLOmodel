@@ -1515,13 +1515,13 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # adult testing trends also informed by demographic characteristics
         # relative probability of testing - this may skew testing rates higher or lower than moh reports
-        rr_of_test = self.module.lm["lm_spontaneous_test_12m"].predict(df[df.is_alive])
+        rr_of_test = self.module.lm["lm_spontaneous_test_12m"].predict(df[df.is_alive & (df.age_years >= 15)])
         mean_prob_test = (rr_of_test * testing_rate_adults).mean()
         scaled_prob_test = (rr_of_test * testing_rate_adults) / mean_prob_test
         overall_prob_test = scaled_prob_test * testing_rate_adults
 
-        random_draw = rng.random_sample(size=len(df[df.is_alive]))
-        adult_tests_idx = df.loc[df.is_alive & (random_draw < overall_prob_test)].index
+        random_draw = rng.random_sample(size=len(df[df.is_alive & (df.age_years >= 15)]))
+        adult_tests_idx = df.loc[df.is_alive & (df.age_years >= 15) & (random_draw < overall_prob_test)].index
 
         idx_will_test = child_tests_idx.union(adult_tests_idx)
 

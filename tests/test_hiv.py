@@ -90,26 +90,12 @@ def get_sim(seed, use_simplified_birth=True, cons_availability='all'):
         "proportion_reduction_in_risk_of_hiv_aq_if_on_prep"
     ] = 1.0
     # Let there be a 100% probability of TestAndRefer events being scheduled
-    # sim.modules['Hiv'].parameters['prob_spontaneous_test_12m'] = 1.0
     testing_rates = sim.modules["Hiv"].parameters["hiv_testing_rates"]
     testing_rates["annual_testing_rate_children"] = 1.0
     testing_rates["annual_testing_rate_adults"] = 1.0
 
     # Make the population
     sim.make_initial_population(n=popsize)
-    return sim
-
-
-def adjust_availability_of_consumables_for_hiv(sim, available=True):
-    all_item_codes = set()
-    for f in sim.modules['Hiv'].item_codes_for_consumables_required.values():
-        all_item_codes = all_item_codes.union(f.keys())
-
-    sim.modules["HealthSystem"].prob_item_codes_available.loc[all_item_codes] = (
-        1.0 if available else 0.0
-    )
-
-    sim.modules["HealthSystem"].determine_availability_of_consumables_today()
     return sim
 
 
@@ -449,12 +435,12 @@ def test_test_and_refer_event_scheduled_by_main_event_poll(seed):
 
     sim = get_sim(seed=seed)
 
+    # set baseline testing probability to far exceed 1.0 to ensure everyone assigned a test after lm and scaling
+    sim.modules['Hiv'].parameters["hiv_testing_rates"]["annual_testing_rate_children"] = 100
+    sim.modules['Hiv'].parameters["hiv_testing_rates"]["annual_testing_rate_adults"] = 100
+
     # Simulate for 0 days so as to complete all the initialisation steps
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
-
-    # Control the number of people for whom there should be a TestAndReferEvent
-    # (parameter for prob of testing is 100% for adults and children - set in get_sim()
-    # num_not_diagnosed = sum(~df.hv_diagnosed & df.is_alive)
 
     # Run a polling event
     pollevent = hiv.HivRegularPollingEvent(module=sim.modules["Hiv"])
@@ -464,15 +450,12 @@ def test_test_and_refer_event_scheduled_by_main_event_poll(seed):
     dates_of_tr_events = [
         ev[1] for ev in sim.modules['HealthSystem'].HSI_EVENT_QUEUE if isinstance(ev[4], hiv.HSI_Hiv_TestAndRefer)
     ]
-    # with testing rate=1, not all adults will test due to linear model and scaling
-    # check some tests being scheduled
-    assert len(dates_of_tr_events)
-    assert all(
-        [
-            (sim.date <= d <= (sim.date + pd.DateOffset(months=12)))
-            for d in dates_of_tr_events
-        ]
-    )
+
+    df = sim.population.props
+    num_not_diagnosed = sum(~df.hv_diagnosed & df.is_alive)
+    # diagnosed adults can re-test, so should have more tests than undiagnosed people
+    assert num_not_diagnosed <= len(dates_of_tr_events)
+    assert all([(sim.date <= d <= (sim.date + pd.DateOffset(months=12))) for d in dates_of_tr_events])
 
 
 def test_aids_symptoms_lead_to_treatment_being_initiated(seed):
