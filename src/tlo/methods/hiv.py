@@ -125,10 +125,6 @@ class Hiv(Module):
 
     PARAMETERS = {
         # Baseline characteristics
-        "unaids_prevalence_adjustment_factor": Parameter(
-            Types.REAL, "adjustment for baseline age-specific prevalence values from unaids to give correct"
-                        "overall population prevalence"
-        ),
         "time_inf": Parameter(
             Types.DATA_FRAME, "prob of time since infection for baseline adult pop"
         ),
@@ -136,6 +132,9 @@ class Hiv(Module):
         "treatment_cascade": Parameter(Types.DATA_FRAME, "spectrum estimates of treatment cascade"),
         # Natural history - transmission - overall rates
         "beta": Parameter(Types.REAL, "Transmission rate"),
+        "unaids_prevalence_adjustment_factor": Parameter(
+            Types.REAL, "adjustment for baseline age-specific prevalence values to give correct population prevalence"
+        ),
         "prob_mtct_untreated": Parameter(
             Types.REAL, "Probability of mother to child transmission"
         ),
@@ -583,7 +582,7 @@ class Hiv(Module):
         # add scaling factor 1.1 to match overall unaids prevalence
         # different assumptions on pop size result in slightly different overall prevalence so use adjustment factor
         p["overall_prob_of_infec"] = (
-            p["scaled_rel_prob_by_risk_factor"] * p["prob_of_infec"] * p["unaids_prevalence_adjustment_factor"]
+            p["scaled_rel_prob_by_risk_factor"] * p["prob_of_infec"] * params["unaids_prevalence_adjustment_factor"]
         )
         # this needs to be series of True/False
         infec = (
@@ -1706,6 +1705,7 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
 
         self.cause = cause
+        assert self.cause in ["AIDS_non_TB", "AIDS_TB"]
 
     def apply(self, person_id):
         df = self.sim.population.props
@@ -1742,8 +1742,11 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
 
 class HivAidsTbDeathEvent(Event, IndividualScopeEventMixin):
     """
-    Causes someone to die of AIDS-TB, death dependent on tb treatment status
+    This event is caused by someone co-infected with HIV and active TB
+    it causes someone to die of AIDS-TB, death dependent on tb treatment status
+    and not affected by ART status
     can be called by Tb or Hiv module
+    if the random draw doesn't result in AIDS-TB death, an AIDS death (HivAidsDeathEvent) will be scheduled
     """
 
     def __init__(self, module, person_id, cause):
@@ -2295,21 +2298,19 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         person_id = self.target
         self.module.stops_treatment(person_id)
 
-        # sample whether will NOT seek further appt
-        if self.module.rng.random_sample() >= self.module.parameters[
+        # sample whether person will seek further appt
+        if self.module.rng.random_sample() < self.module.parameters[
             "probability_of_seeking_further_art_appointment_if_appointment_not_available"
         ]:
-            return
-
-        # otherwise schedule HSI
-        self.sim.modules["HealthSystem"].schedule_hsi_event(
-            HSI_Hiv_StartOrContinueTreatment(
-                person_id=person_id, module=self.module
-            ),
-            topen=self.sim.date + pd.DateOffset(days=14),
-            tclose=self.sim.date + pd.DateOffset(days=21),
-            priority=1,
-        )
+            # schedule HSI
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                HSI_Hiv_StartOrContinueTreatment(
+                    person_id=person_id, module=self.module
+                ),
+                topen=self.sim.date + pd.DateOffset(days=14),
+                tclose=self.sim.date + pd.DateOffset(days=21),
+                priority=1,
+            )
 
     def _make_appt_footprint_according_age_and_patient_status(self, person_id):
         """Returns the appointment footprint for this person according to their current status:

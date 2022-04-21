@@ -526,11 +526,11 @@ class Tb(Module):
                 '(hv_inf == True) & '
                 '(hv_art != "on_VL_suppressed") & '
                 '(tb_on_ipt == False) & '
-                '(sy_aids_symptoms == False)',
+                '(sy_aids_symptoms > 0)',
                 p["rr_tb_hiv"],
             ),
             # hiv+, AIDS, not on ART, not on IPT
-            Predictor("sy_aids_symptoms").when(True, p["rr_tb_aids"]),
+            Predictor("sy_aids_symptoms").when(">0", p["rr_tb_aids"]),
             # hiv+, no AIDS, on ART, no IPT
             Predictor().when(
                 '(hv_inf == True) & '
@@ -573,11 +573,11 @@ class Tb(Module):
                 '(hv_inf == True) & '
                 '(hv_art != "on_VL_suppressed") & '
                 '(tb_on_ipt == False) & '
-                '(sy_aids_symptoms == False)',
+                '(sy_aids_symptoms > 0)',
                 p["rr_tb_hiv"],
             ),
             # hiv+, not on ART, AIDS symptoms
-            Predictor("sy_aids_symptoms").when(True, p["rr_tb_aids"]),
+            Predictor("sy_aids_symptoms").when(">0", p["rr_tb_aids"]),
             # hiv+, on ART, no IPT
             Predictor().when(
                 '(hv_inf == True) & '
@@ -744,7 +744,9 @@ class Tb(Module):
                 )
 
     def progression_to_active(self, population):
-        # from the new latent infections, select and schedule progression to active disease
+        """
+        from the new latent infections, select and schedule progression to active disease
+        """
 
         df = population.props
         p = self.parameters
@@ -901,79 +903,7 @@ class Tb(Module):
             else "sputum"
         )
 
-    def initialise_population(self, population):
-
-        df = population.props
-
-        # if HIV is not registered, create a dummy property
-        if "Hiv" not in self.sim.modules:
-            population.make_test_property("hv_inf", Types.BOOL)
-            population.make_test_property("sy_aids_symptoms", Types.INT)
-            population.make_test_property("hv_art", Types.STRING)
-
-            df["hv_inf"] = False
-            df["sy_aids_symptoms"] = 0
-            df["hv_art"] = "not"
-
-        # Set our property values for the initial population
-        df["tb_inf"].values[:] = "uninfected"
-        df["tb_strain"].values[:] = "none"
-
-        df["tb_date_latent"] = pd.NaT
-        df["tb_scheduled_date_active"] = pd.NaT
-        df["tb_date_active"] = pd.NaT
-        df["tb_smear"] = False
-
-        # ------------------ testing status ------------------ #
-        df["tb_ever_tested"] = False
-        df["tb_diagnosed"] = False
-        df["tb_date_diagnosed"] = pd.NaT
-        df["tb_diagnosed_mdr"] = False
-
-        # ------------------ treatment status ------------------ #
-        df["tb_on_treatment"] = False
-        df["tb_date_treated"] = pd.NaT
-        df["tb_treatment_regimen"].values[:] = "none"
-        df["tb_ever_treated"] = False
-        df["tb_treatment_failure"] = False
-
-        df["tb_on_ipt"] = False
-        df["tb_date_ipt"] = pd.NaT
-
-        # ------------------ infection status ------------------ #
-
-        self.baseline_active(
-            population
-        )  # allocate active infections from baseline population
-        self.baseline_latent(
-            population
-        )  # allocate baseline prevalence of latent infections
-        self.send_for_screening(
-            population
-        )  # send some baseline population for screening
-
-    def initialise_simulation(self, sim):
-        """
-        * 1) Schedule the regular TB events
-        * 2) Schedule the Logging Event
-        * 3) Define the DxTests
-        * 4) Define the treatment options
-        """
-
-        # 1) Regular events
-        sim.schedule_event(TbActiveEvent(self), sim.date + DateOffset(months=0))
-        sim.schedule_event(TbRegularPollingEvent(self), sim.date + DateOffset(years=1))
-        sim.schedule_event(TbEndTreatmentEvent(self), sim.date + DateOffset(days=30.5))
-        sim.schedule_event(TbRelapseEvent(self), sim.date + DateOffset(months=1))
-        sim.schedule_event(TbSelfCureEvent(self), sim.date + DateOffset(months=1))
-
-        sim.schedule_event(ScenarioSetupEvent(self), self.parameters["scenario_start_date"])
-
-        # 2) Logging
-        sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(days=364))
-
-        # 3) -------- Define the DxTests and get the consumables required --------
-
+    def get_consumables_for_dx_and_tx(self):
         p = self.parameters
         # consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
         hs = self.sim.modules["HealthSystem"]
@@ -1091,6 +1021,79 @@ class Tb(Module):
         # ipt
         self.item_codes_for_consumables_required['tb_ipt'] = {
             hs.get_item_code_from_item_name("Isoniazid Preventive Therapy"): 1}
+
+    def initialise_population(self, population):
+
+        df = population.props
+
+        # if HIV is not registered, create a dummy property
+        if "Hiv" not in self.sim.modules:
+            population.make_test_property("hv_inf", Types.BOOL)
+            population.make_test_property("sy_aids_symptoms", Types.INT)
+            population.make_test_property("hv_art", Types.STRING)
+
+            df["hv_inf"] = False
+            df["sy_aids_symptoms"] = 0
+            df["hv_art"] = "not"
+
+        # Set our property values for the initial population
+        df["tb_inf"].values[:] = "uninfected"
+        df["tb_strain"].values[:] = "none"
+
+        df["tb_date_latent"] = pd.NaT
+        df["tb_scheduled_date_active"] = pd.NaT
+        df["tb_date_active"] = pd.NaT
+        df["tb_smear"] = False
+
+        # ------------------ testing status ------------------ #
+        df["tb_ever_tested"] = False
+        df["tb_diagnosed"] = False
+        df["tb_date_diagnosed"] = pd.NaT
+        df["tb_diagnosed_mdr"] = False
+
+        # ------------------ treatment status ------------------ #
+        df["tb_on_treatment"] = False
+        df["tb_date_treated"] = pd.NaT
+        df["tb_treatment_regimen"].values[:] = "none"
+        df["tb_ever_treated"] = False
+        df["tb_treatment_failure"] = False
+
+        df["tb_on_ipt"] = False
+        df["tb_date_ipt"] = pd.NaT
+
+        # ------------------ infection status ------------------ #
+
+        self.baseline_active(
+            population
+        )  # allocate active infections from baseline population
+        self.baseline_latent(
+            population
+        )  # allocate baseline prevalence of latent infections
+        self.send_for_screening(
+            population
+        )  # send some baseline population for screening
+
+    def initialise_simulation(self, sim):
+        """
+        * 1) Schedule the regular TB events
+        * 2) Schedule the Logging Event
+        * 3) Define the DxTests and treatment options
+        """
+
+        # 1) Regular events
+        sim.schedule_event(TbActiveEvent(self), sim.date + DateOffset(months=0))
+        sim.schedule_event(TbRegularPollingEvent(self), sim.date + DateOffset(years=1))
+        sim.schedule_event(TbEndTreatmentEvent(self), sim.date + DateOffset(months=1))
+        sim.schedule_event(TbRelapseEvent(self), sim.date + DateOffset(months=1))
+        sim.schedule_event(TbSelfCureEvent(self), sim.date + DateOffset(months=1))
+
+        sim.schedule_event(ScenarioSetupEvent(self), self.parameters["scenario_start_date"])
+
+        # 2) Logging
+        sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(days=364))
+
+        # 3) Define the DxTests and get the consumables required
+        self.get_consumables_for_dx_and_tx()
 
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual
