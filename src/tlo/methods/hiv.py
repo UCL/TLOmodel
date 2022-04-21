@@ -882,6 +882,7 @@ class Hiv(Module):
         #     hs.get_item_codes_from_package_name("HIV Testing Services")
 
         # updated consumables listing
+        # todo check when updated consumables PR goes in
         self.item_codes_for_consumables_required['hiv_rapid_test'] = {
             hs.get_item_code_from_item_name("Blood collecting tube, 5 ml"): 1,
             hs.get_item_code_from_item_name("Disposables gloves, powder free, 100 pieces per box"): 1,
@@ -1008,7 +1009,7 @@ class Hiv(Module):
             self.mtct_during_breastfeeding(mother_id, child_id)
 
         # ----------------------------------- HIV testing --------------------------
-        if "care_of_women_during_pregnancy" not in self.sim.modules:
+        if "CareOfWomenDuringPregnancy" not in self.sim.modules:
             # if mother's HIV status not known, schedule test at delivery
             # usually performed by care_of_women_during_pregnancy module
             if not mother.hv_diagnosed and \
@@ -1039,9 +1040,6 @@ class Hiv(Module):
                     topen=self.sim.date + pd.DateOffset(weeks=6),
                     tclose=None,
                 )
-
-    def on_hsi_alert(self, person_id, treatment_id):
-        raise NotImplementedError
 
     def report_daly_values(self):
         """Report DALYS for HIV, based on current symptomatic state of persons."""
@@ -1120,15 +1118,12 @@ class Hiv(Module):
 
         if age == 0.0:
             # The person is infected prior to, or at, birth:
-            months_to_death = int(
-                max(
-                    0.0,
-                    self.rng.exponential(
+            months_to_death = int(self.rng.exponential(
                         scale=p["mean_survival_for_infants_infected_prior_to_birth"]
                     )
                     * 12,
                 )
-            )
+
             months_to_aids = int(
                 max(
                     0.0,
@@ -1480,104 +1475,112 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                     HivInfectionEvent(self.module, idx), date_of_infection
                 )
 
+        # ----------------------------------- SPONTANEOUS TESTING -----------------------------------
+        def spontaneous_testing(current_year):
+
+            # extract annual testing rates from MoH Reports
+            test_rates = p["hiv_testing_rates"]
+
+            # reduce testing rates to account for additional testing through ANC/symptoms
+            testing_rate_children = test_rates.loc[
+                                        test_rates.year == current_year, "annual_testing_rate_children"
+                                    ].values[0] * 0.6
+            testing_rate_adults = test_rates.loc[
+                                      test_rates.year == current_year, "annual_testing_rate_adults"
+                                  ].values[0] * 0.6
+            random_draw = rng.random_sample(size=len(df))
+
+            child_tests_idx = df.loc[
+                df.is_alive
+                & ~df.hv_diagnosed
+                & (df.age_years < 15)
+                & (random_draw < testing_rate_children)
+                ].index
+
+            # adult testing trends also informed by demographic characteristics
+            # relative probability of testing - this may skew testing rates higher or lower than moh reports
+            rr_of_test = self.module.lm["lm_spontaneous_test_12m"].predict(df[df.is_alive & (df.age_years >= 15)])
+            mean_prob_test = (rr_of_test * testing_rate_adults).mean()
+            scaled_prob_test = (rr_of_test * testing_rate_adults) / mean_prob_test
+            overall_prob_test = scaled_prob_test * testing_rate_adults
+
+            random_draw = rng.random_sample(size=len(df[df.is_alive & (df.age_years >= 15)]))
+            adult_tests_idx = df.loc[df.is_alive & (df.age_years >= 15) & (random_draw < overall_prob_test)].index
+
+            idx_will_test = child_tests_idx.union(adult_tests_idx)
+
+            for person_id in idx_will_test:
+                date_test = self.sim.date + pd.DateOffset(
+                    days=self.module.rng.randint(0, 365 * fraction_of_year_between_polls)
+                )
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=HSI_Hiv_TestAndRefer(person_id=person_id, module=self.module, referred_from='HIV_poll'),
+                    priority=1,
+                    topen=date_test,
+                    tclose=self.sim.date + pd.DateOffset(
+                        months=self.frequency.months
+                    ),  # (to occur before next polling)
+                )
+
+        # ----------------------------------- PrEP poll for AGYW -----------------------------------
+        def prep_for_agyw():
+
+            # select highest risk agyw
+            agyw_idx = df.loc[
+                df.is_alive
+                & ~df.hv_diagnosed
+                & df.age_years.between(15, 30)
+                & (df.sex == "F")
+                & ~df.hv_is_on_prep
+                ].index
+
+            rr_of_infection_in_agyw = self.module.lm["rr_of_infection"].predict(
+                df.loc[agyw_idx]
+            )
+            # scale to equal 1 then multiply by prob of prep
+            # highest risk AGYW will have highest probability of getting prep
+            mean_risk = rr_of_infection_in_agyw.mean()
+            scaled_risk = rr_of_infection_in_agyw / mean_risk
+            overall_risk_and_prob_of_prep = scaled_risk * p["prob_prep_for_agyw"]
+
+            # give prep
+            give_prep = df.loc[(
+                                   self.module.rng.random_sample(len(overall_risk_and_prob_of_prep))
+                                   < overall_risk_and_prob_of_prep)
+                               & df.is_alive
+                               & ~df.hv_diagnosed
+                               & df.age_years.between(15, 30)
+                               & (df.sex == "F")
+                               & ~df.hv_is_on_prep
+                               ].index
+
+            for person in give_prep:
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=HSI_Hiv_StartOrContinueOnPrep(person_id=person,
+                                                            module=self.module),
+                    priority=1,
+                    topen=self.sim.date,
+                    tclose=self.sim.date + pd.DateOffset(
+                        months=self.frequency.months
+                    )
+                )
+
         # Horizontal transmission: Male --> Female
         horizontal_transmission(from_sex="M", to_sex="F")
 
         # Horizontal transmission: Female --> Male
         horizontal_transmission(from_sex="F", to_sex="M")
 
-        # ----------------------------------- SPONTANEOUS TESTING -----------------------------------
-
-        # extract annual testing rates from MoH Reports
-        test_rates = p["hiv_testing_rates"]
-
+        # testing
         # if year later than 2020, set testing rates to those reported in 2020
         if self.sim.date.year < 2021:
             current_year = self.sim.date.year
         else:
             current_year = 2020
+        spontaneous_testing(current_year=current_year)
 
-        # reduce testing rates to account for additional testing through ANC/symptoms
-        testing_rate_children = test_rates.loc[
-                                    test_rates.year == current_year, "annual_testing_rate_children"
-                                ].values[0] * 0.6
-        testing_rate_adults = test_rates.loc[
-                                  test_rates.year == current_year, "annual_testing_rate_adults"
-                              ].values[0] * 0.6
-        random_draw = rng.random_sample(size=len(df))
-
-        child_tests_idx = df.loc[
-            df.is_alive
-            & ~df.hv_diagnosed
-            & (df.age_years < 15)
-            & (random_draw < testing_rate_children)
-            ].index
-
-        # adult testing trends also informed by demographic characteristics
-        # relative probability of testing - this may skew testing rates higher or lower than moh reports
-        rr_of_test = self.module.lm["lm_spontaneous_test_12m"].predict(df[df.is_alive & (df.age_years >= 15)])
-        mean_prob_test = (rr_of_test * testing_rate_adults).mean()
-        scaled_prob_test = (rr_of_test * testing_rate_adults) / mean_prob_test
-        overall_prob_test = scaled_prob_test * testing_rate_adults
-
-        random_draw = rng.random_sample(size=len(df[df.is_alive & (df.age_years >= 15)]))
-        adult_tests_idx = df.loc[df.is_alive & (df.age_years >= 15) & (random_draw < overall_prob_test)].index
-
-        idx_will_test = child_tests_idx.union(adult_tests_idx)
-
-        for person_id in idx_will_test:
-            date_test = self.sim.date + pd.DateOffset(
-                days=self.module.rng.randint(0, 365 * fraction_of_year_between_polls)
-            )
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                hsi_event=HSI_Hiv_TestAndRefer(person_id=person_id, module=self.module, referred_from='HIV_poll'),
-                priority=1,
-                topen=date_test,
-                tclose=self.sim.date + pd.DateOffset(
-                    months=self.frequency.months
-                ),  # (to occur before next polling)
-            )
-
-        # ----------------------------------- PrEP poll for AGYW -----------------------------------
-        # select highest risk agyw
-        agyw_idx = df.loc[
-            df.is_alive
-            & ~df.hv_diagnosed
-            & df.age_years.between(15, 30)
-            & (df.sex == "F")
-            & ~df.hv_is_on_prep
-            ].index
-
-        rr_of_infection_in_agyw = self.module.lm["rr_of_infection"].predict(
-            df.loc[agyw_idx]
-        )
-        # scale to equal 1 then multiply by prob of prep
-        # highest risk AGYW will have highest probability of getting prep
-        mean_risk = rr_of_infection_in_agyw.mean()
-        scaled_risk = rr_of_infection_in_agyw / mean_risk
-        overall_risk_and_prob_of_prep = scaled_risk * p["prob_prep_for_agyw"]
-
-        # give prep
-        give_prep = df.loc[(
-                               self.module.rng.random_sample(len(overall_risk_and_prob_of_prep))
-                               < overall_risk_and_prob_of_prep)
-                           & df.is_alive
-                           & ~df.hv_diagnosed
-                           & df.age_years.between(15, 30)
-                           & (df.sex == "F")
-                           & ~df.hv_is_on_prep
-                           ].index
-
-        for person in give_prep:
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                hsi_event=HSI_Hiv_StartOrContinueOnPrep(person_id=person,
-                                                        module=self.module),
-                priority=1,
-                topen=self.sim.date,
-                tclose=self.sim.date + pd.DateOffset(
-                    months=self.frequency.months
-                )
-            )
+        # PrEP for AGYW
+        prep_for_agyw()
 
 
 # ---------------------------------------------------------------------------
