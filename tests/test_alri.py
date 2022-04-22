@@ -701,6 +701,8 @@ def test_classification_based_on_symptoms_and_imci(sim_hs_all_consumables):
         ('fast_breathing_pneumonia', {'symptoms': ['tachypnoea'], 'facility_level': '1b', 'age_exact_years': 0.1}),
         ('not_handled_at_facility_0', {'symptoms': ['tachypnoea'], 'facility_level': '0', 'age_exact_years': 0.1}),
         ('cough_or_cold', {'symptoms': ['cough'], 'facility_level': '1a', 'age_exact_years': 0.5}),
+        ('serious_bacterial_infection', {'symptoms': ['cough', 'danger_signs', 'difficult_breathing', 'fever', 'chest_indrawing'], 'facility_level': '2', 'age_exact_years': 0.1}),
+        ('danger_signs_pneumonia', {'symptoms': ['cough', 'danger_signs', 'difficult_breathing', 'fever', 'chest_indrawing'], 'facility_level': '2', 'age_exact_years': 1})
     )
 
     recognised_classifications = {
@@ -712,7 +714,7 @@ def test_classification_based_on_symptoms_and_imci(sim_hs_all_consumables):
         'not_handled_at_facility_0'
     }
 
-    pneumonia_classification_with_oximeter = sim.modules['Alri'].final_classification
+    final_classification_hw_and_oximeter = sim.modules['Alri'].final_classification
     symptom_based_classification = sim.modules['Alri'].imci_classification_based_on_symptoms
 
     for correct_classification_on_symptoms, chars in classification_on_symptoms:
@@ -721,20 +723,23 @@ def test_classification_based_on_symptoms_and_imci(sim_hs_all_consumables):
         assert correct_classification_on_symptoms == symptom_based_classification(**chars)
 
         # Check IMCI classification if oximeter not available (should be same as symptoms)
-        assert correct_classification_on_symptoms == pneumonia_classification_with_oximeter(
+        assert correct_classification_on_symptoms == final_classification_hw_and_oximeter(
             hw_assigned_classification=correct_classification_on_symptoms,  # Assumes perfect quality of care by the health workers
+            age_exact_years=0.5,
             oximeter_available=False,
             oxygen_saturation='<90%')
 
         # Check that IMCI classification if oximter available but no low oxygen saturation (should be same as symptoms)
-        assert correct_classification_on_symptoms == pneumonia_classification_with_oximeter(
+        assert correct_classification_on_symptoms == final_classification_hw_and_oximeter(
             hw_assigned_classification=correct_classification_on_symptoms,
+            age_exact_years=0.5,
             oximeter_available=True,
             oxygen_saturation='>=93%')
 
         # Check that IMCI classification if oximter available and low oxygen saturation (should be'danger_signs_pneumonia' irrespective of symptoms)
-        assert 'danger_signs_pneumonia' == pneumonia_classification_with_oximeter(
+        assert 'danger_signs_pneumonia' == final_classification_hw_and_oximeter(
             hw_assigned_classification=correct_classification_on_symptoms,
+            age_exact_years=0.5,
             oximeter_available=True,
             oxygen_saturation='<90%')
 
@@ -751,7 +756,7 @@ def test_do_effects_of_alri_treatment(sim_hs_all_consumables):
     params = sim.modules['Alri'].parameters
     params['5day_amoxicillin_treatment_failure_by_day6'] = 0.0
     params['5day_amoxicillin_relapse_by_day14'] = 0.0
-    params['1st_line_antibiotic_treatment_failure_by_day2'] = 0.0
+    params['1st_line_antibiotic_for_severe_pneumonia_treatment_failure_by_day2'] = 0.0
 
     # start simulation
     sim.simulate(end_date=start_date)
@@ -784,11 +789,15 @@ def test_do_effects_of_alri_treatment(sim_hs_all_consumables):
     death_event = death_event_tuple[1]
     assert date_of_scheduled_death > sim.date
 
+    # give a classification
+    df.at[person_id, 'ri_symptom_based_pneumonia_classification'] = 'danger_signs_pneumonia'
+
     # Run the 'do_alri_treatment' function (as if from the HSI_IMCI_Pneumonia_Treatment_Inpatient_level_2)
     sim.modules['Alri'].do_effects_of_alri_treatment(person_id=person_id,
                                                      hsi_event=HSI_IMCI_Pneumonia_Treatment_Inpatient_level_2(
                                                          person_id=person_id, module=sim.modules['Alri']),
-                                                     treatment='IMCI_Treatment_severe_pneumonia')
+                                                     antibiotic='1st_line_IV_antibiotics',
+                                                     oxygen=True)
 
     # Run the death event that was originally scheduled) - this should have no effect and the person should not die
     sim.date = date_of_scheduled_death

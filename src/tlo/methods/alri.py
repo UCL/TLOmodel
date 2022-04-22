@@ -575,6 +575,16 @@ class Alri(Module):
                       'probability of treatment failure by day 2 '
                       'of first line antibiotic treatment for severe pneumonia'
                       ),
+        'rr_1st_line_treatment_failure_low_oxygen_saturation':
+            Parameter(Types.REAL,
+                      'relative rate of treatment failure with first line of antibiotics '
+                      'among children with low oxygen saturation < 90%'
+                      ),
+        '2nd_line_antibiotic_for_severe_pneumonia_mortality':
+            Parameter(Types.REAL,
+                      'mortality among children who changed to 2nd line antibiotics '
+                      ),
+
         'sensitivity_of_assessment_and_classification_of_IMCI_pneumonia':
             Parameter(Types.REAL,
                       'probability of treatment failure by day 2 '
@@ -941,136 +951,32 @@ class Alri(Module):
 
         # # # # # # Dosages by age # # # # # #
 
-        # # Antibiotic therapy -------------------
-        #
-        # # Antibiotics for non-severe pneumonia - oral amoxicillin for 5 days
-        # self.consumables_used_in_hsi['Amoxicillin_tablet_or_suspension'] = {
-        #     get_item_code(item='Amoxycillin 250mg_1000_CMST'): lambda _age:
-        #     0.01 if (1/6 <= _age < 1) else (0.02 if (1 <= _age < 3) else 0.03),
-        #     get_item_code(item='Amoxycillin 125mg/5ml suspension, PFR_0.025_CMST'): lambda _age:
-        #     1 if (1/6 <= _age < 1) else (2 if (1 <= _age < 3) else 3),
-        # }
-        #
-        # # Antibiotic therapy for severe pneumonia - ampicillin package
-        # self.consumables_used_in_hsi['Ampicillin_gentamicin_therapy_for_severe_pneumonia'] = {
-        #     get_item_code(item='Ampicillin injection 500mg, PFR_each_CMST'): lambda _age:
-        #     8 if (1/6 <= _age < 1/3) else (16 if (1/3 <= _age < 1) else (24 if (1 <= _age < 3) else 40)),
-        #     get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST'): lambda _age:
-        #     2.81 if (1/6 <= _age < 1/3) else (4.69 if (1/3 <= _age < 1) else (7.03 if (1 <= _age < 3) else 9.37)),
-        #     get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
-        #     get_item_code(item='Syringe, needle + swab'): 1
-        # }
-        #
-        # # Antibiotic therapy for severe pneumonia - benzylpenicillin package when ampicillin is not available
-        # self.consumables_used_in_hsi['Benzylpenicillin_gentamicin_therapy_for_severe_pneumonia'] = {
-        #     get_item_code(item='Benzylpenicillin 3g (5MU), PFR_each_CMST'): lambda _age:
-        #     8 if (1/6 <= _age < 1/3) else (15 if (1/3 <= _age < 1) else (24 if (1 <= _age < 3) else 34)),
-        #     get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST'): lambda _age:
-        #     2.81 if (1/6 <= _age < 1/3) else (4.69 if (1/3 <= _age < 1) else (7.03 if (1 <= _age < 3) else 9.37)),
-        #     get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
-        #     get_item_code(item='Syringe, needle + swab'): 1
-        # }
-        #
-        # # Second line of antibiotics for severe pneumonia
-        # self.consumables_used_in_hsi['Ceftriaxone_therapy_for_severe_pneumonia'] = {
-        #     get_item_code(item='Ceftriaxone 1g, PFR_each_CMST'): lambda _age:
-        #     1.5 if (1/6 <= _age < 1/3) else (3 if (1/3 <= _age < 1) else (5 if (1 <= _age < 3) else 7)),
-        #     get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
-        #     get_item_code(item='Syringe, needle + swab'): 1
-        # }
-        #
-        # # Second line of antibiotics for severe pneumonia, if Staph is suspected
-        # self.consumables_used_in_hsi['2nd_line_Antibiotic_therapy_for_severe_staph_pneumonia'] = {
-        #     get_item_code(item='cloxacillin 500 mg, powder for injection_50_IDA'): lambda _age:
-        #     5.6 if (1/6 <= _age < 1/3) else (11.2 if (1/3 <= _age < 1) else (16.8 if (1 <= _age < 3) else 22.4)),
-        #     get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST'): lambda _age:
-        #     2.81 if (1/6 <= _age < 1/3) else (4.69 if (1/3 <= _age < 1) else (7.03 if (1 <= _age < 3) else 9.37)),
-        #     get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
-        #     get_item_code(item='Syringe, needle + swab'): 1
-        # }
-        #
-        # # First dose of antibiotic before referral -------------------
-        #
-        # # Referral process in iCCM for severe pneumonia, and at health centres for HIV exposed/infected
-        # self.consumables_used_in_hsi['oral_amoxicillin_for_referral'] = {
-        #     get_item_code(item='Amoxycillin 250mg_1000_CMST'): lambda _age:
-        #     0.001 if (1/6 <= _age < 1) else (0.002 if (1 <= _age < 3) else 0.003)
-        # }
-        # # Referral process at health centres for severe cases
-        # self.consumables_used_in_hsi['First_dose_IM_antibiotics_for_referral'] = {
-        #     get_item_code(item='Ampicillin injection 500mg, PFR_each_CMST'): lambda _age:
-        #     0.4 if (1/6 <= _age < 1/3) else (0.8 if (1/3 <= _age < 1) else (1.4 if (1 <= _age < 3) else 2)),
-        #     get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST'): lambda _age:
-        #     0.56 if (1/6 <= _age < 1/3) else (0.94 if (1/3 <= _age < 1) else (1.41 if (1 <= _age < 3) else 1.87)),
-        #     get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
-        #     get_item_code(item='Syringe, needle + swab'): 1
-        # }
-        #
-        # # Oxygen, pulse oximetry and x-ray -------------------
-        #
-        # # Oxygen for hypoxaemia
-        # self.consumables_used_in_hsi['Oxygen_Therapy'] = \
-        #     [get_item_code(item='Oxygen, 1000 liters, primarily with oxygen cylinders')] + \
-        #     [get_item_code(item='Nasal prongs')]
-        #
-        # # Pulse oximetry
-        # self.consumables_used_in_hsi['Pulse_oximetry'] = \
-        #     [get_item_code(item='Oxygen, 1000 liters, primarily with oxygen cylinders')]
-        # # use oxygen code to fill in consumable availability for pulse oximetry
-        #
-        # # X-ray scan
-        # self.consumables_used_in_hsi['X_ray_scan'] = \
-        #     [get_item_code(item='X-ray')]
-        #
-        # # Optional consumables -------------------
-        #
-        # # Paracetamol
-        # self.consumables_used_in_hsi['Paracetamol_tablet'] = {
-        #     get_item_code(item='Paracetamol, tablet, 100 mg'): lambda _age: 12 if (1/6 <= _age < 3) else 18
-        # }
-        #
-        # # Maintenance of fluids via nasograstric tube
-        # self.consumables_used_in_hsi['Fluid_Maintenance'] = \
-        #     [get_item_code(item='Tube, nasogastric CH 8_each_CMST')]
-        #
-        # # Bronchodilator
-        # # inhaled
-        # self.consumables_used_in_hsi['Inhaled_Brochodilator'] = {
-        #     get_item_code(item='Salbutamol sulphate 1mg/ml, 5ml_each_CMST'): 2
-        # }
-        # # oral
-        # self.consumables_used_in_hsi['Oral_Brochodilator'] = [
-        #     get_item_code(item='Salbutamol, syrup, 2 mg/5 ml'),
-        #     get_item_code(item='Salbutamol, tablet, 4 mg')
-        # ]
-
         # Antibiotic therapy -------------------
-        # TODO: PLACE HOLDER FOR MAKING ALL INTERGER
 
         # Antibiotics for non-severe pneumonia - oral amoxicillin for 5 days
         self.consumables_used_in_hsi['Amoxicillin_tablet_or_suspension'] = {
             get_item_code(item='Amoxycillin 250mg_1000_CMST'): lambda _age:
-            1 if (1/6 <= _age < 1) else (2 if (1 <= _age < 3) else 3),
+            0.01 if (1 / 6 <= _age < 1) else (0.02 if (1 <= _age < 3) else 0.03),
             get_item_code(item='Amoxycillin 125mg/5ml suspension, PFR_0.025_CMST'): lambda _age:
-            1 if (1/6 <= _age < 1) else (2 if (1 <= _age < 3) else 3),
+            1 if (1 / 6 <= _age < 1) else (2 if (1 <= _age < 3) else 3),
         }
 
         # Antibiotic therapy for severe pneumonia - ampicillin package
         self.consumables_used_in_hsi['Ampicillin_gentamicin_therapy_for_severe_pneumonia'] = {
             get_item_code(item='Ampicillin injection 500mg, PFR_each_CMST'): lambda _age:
-            8 if (1/6 <= _age < 1/3) else (16 if (1/3 <= _age < 1) else (24 if (1 <= _age < 3) else 40)),
+            8 if (1 / 6 <= _age < 1 / 3) else (16 if (1 / 3 <= _age < 1) else (24 if (1 <= _age < 3) else 40)),
             get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST'): lambda _age:
-            3 if (1/6 <= _age < 1/3) else (5 if (1/3 <= _age < 1) else (7 if (1 <= _age < 3) else 9)),
+            2.81 if (1 / 6 <= _age < 1 / 3) else (4.69 if (1 / 3 <= _age < 1) else (7.03 if (1 <= _age < 3) else 9.37)),
             get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
             get_item_code(item='Syringe, needle + swab'): 1
         }
 
-        # Antibiotic therapy for severe pneumonia - benzylpenicillin package
+        # Antibiotic therapy for severe pneumonia - benzylpenicillin package when ampicillin is not available
         self.consumables_used_in_hsi['Benzylpenicillin_gentamicin_therapy_for_severe_pneumonia'] = {
             get_item_code(item='Benzylpenicillin 3g (5MU), PFR_each_CMST'): lambda _age:
-            8 if (1/6 <= _age < 1/3) else (15 if (1/3 <= _age < 1) else (24 if (1 <= _age < 3) else 34)),
+            8 if (1 / 6 <= _age < 1 / 3) else (15 if (1 / 3 <= _age < 1) else (24 if (1 <= _age < 3) else 34)),
             get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST'): lambda _age:
-            3 if (1/6 <= _age < 1/3) else (5 if (1/3 <= _age < 1) else (7 if (1 <= _age < 3) else 9)),
+            2.81 if (1 / 6 <= _age < 1 / 3) else (4.69 if (1 / 3 <= _age < 1) else (7.03 if (1 <= _age < 3) else 9.37)),
             get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
             get_item_code(item='Syringe, needle + swab'): 1
         }
@@ -1078,7 +984,7 @@ class Alri(Module):
         # Second line of antibiotics for severe pneumonia
         self.consumables_used_in_hsi['Ceftriaxone_therapy_for_severe_pneumonia'] = {
             get_item_code(item='Ceftriaxone 1g, PFR_each_CMST'): lambda _age:
-            1 if (1/6 <= _age < 1/3) else (3 if (1/3 <= _age < 1) else (5 if (1 <= _age < 3) else 7)),
+            1.5 if (1 / 6 <= _age < 1 / 3) else (3 if (1 / 3 <= _age < 1) else (5 if (1 <= _age < 3) else 7)),
             get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
             get_item_code(item='Syringe, needle + swab'): 1
         }
@@ -1086,9 +992,9 @@ class Alri(Module):
         # Second line of antibiotics for severe pneumonia, if Staph is suspected
         self.consumables_used_in_hsi['2nd_line_Antibiotic_therapy_for_severe_staph_pneumonia'] = {
             get_item_code(item='cloxacillin 500 mg, powder for injection_50_IDA'): lambda _age:
-            6 if (1/6 <= _age < 1/3) else (11 if (1/3 <= _age < 1) else (17 if (1 <= _age < 3) else 22)),
+            5.6 if (1 / 6 <= _age < 1 / 3) else (11.2 if (1 / 3 <= _age < 1) else (16.8 if (1 <= _age < 3) else 22.4)),
             get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST'): lambda _age:
-            3 if (1/6 <= _age < 1/3) else (5 if (1/3 <= _age < 1) else (7 if (1 <= _age < 3) else 9)),
+            2.81 if (1 / 6 <= _age < 1 / 3) else (4.69 if (1 / 3 <= _age < 1) else (7.03 if (1 <= _age < 3) else 9.37)),
             get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
             get_item_code(item='Syringe, needle + swab'): 1
         }
@@ -1098,14 +1004,14 @@ class Alri(Module):
         # Referral process in iCCM for severe pneumonia, and at health centres for HIV exposed/infected
         self.consumables_used_in_hsi['First_dose_oral_amoxicillin_for_referral'] = {
             get_item_code(item='Amoxycillin 250mg_1000_CMST'): lambda _age:
-            1 if (1/6 <= _age < 1) else (2 if (1 <= _age < 3) else 3)
+            0.001 if (1 / 6 <= _age < 1) else (0.002 if (1 <= _age < 3) else 0.003)
         }
         # Referral process at health centres for severe cases
         self.consumables_used_in_hsi['First_dose_IM_antibiotics_for_referral'] = {
             get_item_code(item='Ampicillin injection 500mg, PFR_each_CMST'): lambda _age:
-            4 if (1/6 <= _age < 1/3) else (8 if (1/3 <= _age < 1) else (1 if (1 <= _age < 3) else 2)),
+            0.4 if (1 / 6 <= _age < 1 / 3) else (0.8 if (1 / 3 <= _age < 1) else (1.4 if (1 <= _age < 3) else 2)),
             get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST'): lambda _age:
-            1 if (1/6 <= _age < 1/3) else (2 if (1/3 <= _age < 1) else (3 if (1 <= _age < 3) else 4)),
+            0.56 if (1 / 6 <= _age < 1 / 3) else (0.94 if (1 / 3 <= _age < 1) else (1.41 if (1 <= _age < 3) else 1.87)),
             get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
             get_item_code(item='Syringe, needle + swab'): 1
         }
@@ -1114,28 +1020,32 @@ class Alri(Module):
 
         # Oxygen for hypoxaemia
         self.consumables_used_in_hsi['Oxygen_Therapy'] = {
-            get_item_code(item='Oxygen, 1000 liters, primarily with oxygen cylinders'): 5,
+            get_item_code(item='Oxygen, 1000 liters, primarily with oxygen cylinders'): 1,
             get_item_code(item='Nasal prongs'): 1
         }
+
         # Pulse oximetry
-        self.consumables_used_in_hsi['Pulse_oximetry'] = \
-            get_item_code(item='Oxygen, 1000 liters, primarily with oxygen cylinders')
+        self.consumables_used_in_hsi['Pulse_oximetry'] = {
+            get_item_code(item='Oxygen, 1000 liters, primarily with oxygen cylinders'): 1
+        }
         # use oxygen code to fill in consumable availability for pulse oximetry
 
         # X-ray scan
-        self.consumables_used_in_hsi['X_ray_scan'] = \
-            get_item_code(item='X-ray')
+        self.consumables_used_in_hsi['X_ray_scan'] = {
+            get_item_code(item='X-ray'): 1
+        }
 
         # Optional consumables -------------------
 
         # Paracetamol
         self.consumables_used_in_hsi['Paracetamol_tablet'] = {
-            get_item_code(item='Paracetamol, tablet, 100 mg'): lambda _age: 12 if (1/6 <= _age < 3) else 18
+            get_item_code(item='Paracetamol, tablet, 100 mg'): lambda _age: 12 if (1 / 6 <= _age < 3) else 18
         }
 
         # Maintenance of fluids via nasograstric tube
-        self.consumables_used_in_hsi['Fluid_Maintenance'] = \
-            get_item_code(item='Tube, nasogastric CH 8_each_CMST')
+        self.consumables_used_in_hsi['Fluid_Maintenance'] = {
+            get_item_code(item='Tube, nasogastric CH 8_each_CMST'): 1
+        }
 
         # Bronchodilator
         # inhaled
@@ -1143,10 +1053,10 @@ class Alri(Module):
             get_item_code(item='Salbutamol sulphate 1mg/ml, 5ml_each_CMST'): 2
         }
         # oral
-        self.consumables_used_in_hsi['Oral_Brochodilator'] = [
-            get_item_code(item='Salbutamol, syrup, 2 mg/5 ml'),
-            get_item_code(item='Salbutamol, tablet, 4 mg')
-        ]
+        self.consumables_used_in_hsi['Oral_Brochodilator'] = {
+            get_item_code(item='Salbutamol, syrup, 2 mg/5 ml'): 1,
+            get_item_code(item='Salbutamol, tablet, 4 mg'): 1
+        }
 
     def end_episode(self, person_id):
         """End the episode infection for a person (i.e. reset all properties to show no current infection or
@@ -1320,18 +1230,21 @@ class Alri(Module):
             else:
                 return 'cough_or_cold'
 
-    def imci_classification_with_SpO2_measure(self, symptom_classification, oxygen_saturation):
+    def imci_classification_by_SpO2_measure(self, age_exact_years, symptom_classification, oxygen_saturation):
         """
         Based on symptoms and potential use of pulse oximetry for measurement of hypoxaemia,
         and return classification based on symptoms and SpO2 level
         """
 
         if oxygen_saturation == '<90%':
-            return 'danger_signs_pneumonia'
+            if age_exact_years < (1.0 / 6.0):
+                return 'serious_bacterial_infection'
+            else:
+                return 'danger_signs_pneumonia'
         else:
             return symptom_classification
 
-    def classification_given_by_health_worker(self, symptoms, imci_symptom_based_classification,
+    def classification_given_by_health_worker(self, symptoms, person_id, imci_symptom_based_classification,
                                               hsi_event, facility_level):
         """
         Apply the sensitivities of correct classification and treatment decision - quality of care -
@@ -1341,6 +1254,8 @@ class Alri(Module):
 
         rng = self.rng
         p = self.parameters
+        df = self.sim.population.props
+        person = df.loc[person_id]
 
         run_quality_care = \
             lambda _dx_test: self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=_dx_test,
@@ -1377,7 +1292,8 @@ class Alri(Module):
                 if run_quality_care('assess_and_classify_IMCI_severe_pneumonia_level1'):
                     return imci_symptom_based_classification
                 else:
-                    return rng.choice(['chest_indrawing_pneumonia', 'cough_or_cold'],  # chest_indrawing_pneumonia reflects non-severe pneumonia, applies for fast_breathing pneumonia
+                    return rng.choice(['chest_indrawing_pneumonia', 'cough_or_cold'],
+                                      # chest_indrawing_pneumonia reflects non-severe pneumonia, applies for fast_breathing pneumonia
                                       p=[p['prob_IMCI_severe_pneumonia_treated_as_non_severe_pneumonia'],
                                          1 - p['prob_IMCI_severe_pneumonia_treated_as_non_severe_pneumonia']])
             elif imci_symptom_based_classification in ('cough_or_cold', 'serious_bacterial_infection'):
@@ -1405,9 +1321,9 @@ class Alri(Module):
             else:
                 raise ValueError(f'symptom based classification {imci_symptom_based_classification}'
                                  f'with symptoms {symptoms}'
-                                 f' not recognised at facility level 2')
+                                 f' not recognised at facility level 2, with age: {person.age_exact_years}, alive? {person.is_alive} person {person_id}')
 
-    def final_classification(self, hw_assigned_classification, oxygen_saturation, oximeter_available):
+    def final_classification(self, hw_assigned_classification, age_exact_years, oxygen_saturation, oximeter_available):
         """
         Based on symptoms and health workers sensitivity of assessment and classification,
         check for the use of pulse oximetry for measurement of hypoxaemia,
@@ -1415,7 +1331,10 @@ class Alri(Module):
         """
 
         if oximeter_available and (oxygen_saturation == '<90%'):
-            return 'danger_signs_pneumonia'
+            if age_exact_years < (1.0 / 6.0):
+                return 'serious_bacterial_infection'
+            else:
+                return 'danger_signs_pneumonia'
         else:
             return hw_assigned_classification
 
@@ -1443,8 +1362,10 @@ class Alri(Module):
                 return_individual_results=True).values())
 
         do_treatment = \
-            lambda _treatment_str: self.do_effects_of_alri_treatment(person_id=person_id,
-                                                                     hsi_event=hsi_event, treatment=[_treatment_str])
+            lambda _antibiotic_str, _oxygen_bool: self.do_effects_of_alri_treatment(person_id=person_id,
+                                                                                    hsi_event=hsi_event,
+                                                                                    antibiotic=_antibiotic_str,
+                                                                                    oxygen=_oxygen_bool)
 
         if classification is None:
             raise ValueError(f'for person {person_id} classification {classification} is None, for HSI {hsi_event} '
@@ -1454,7 +1375,7 @@ class Alri(Module):
         def do_if_fast_breathing_pneumonia(facility_level):
             if facility_level == '0':
                 if get_any_cons('Amoxicillin_tablet_or_suspension'):
-                    do_treatment('5day_oral_amoxicillin')
+                    do_treatment('5day_oral_amoxicillin', 'False')
                     logger.debug(key='message',
                                  data=f'ALRI_HSI_Event: treatment given for person {person_id} with '
                                       f'fast_breathing_pneumonia {classification} at level (0) {facility_level}  hsi {hsi_event} '
@@ -1468,7 +1389,7 @@ class Alri(Module):
 
             elif facility_level == '1a':
                 if get_any_cons('Amoxicillin_tablet_or_suspension'):
-                    do_treatment('5day_oral_amoxicillin')
+                    do_treatment('5day_oral_amoxicillin', 'False')
                     logger.debug(key='message',
                                  data=f'ALRI_HSI_Event: treatment GIVEN for person {person_id} with '
                                       f'fast_breathing_pneumonia {classification} at level (1a) {facility_level} hsi {hsi_event} '
@@ -1482,7 +1403,7 @@ class Alri(Module):
 
             elif facility_level == '1b':
                 if get_any_cons('Amoxicillin_tablet_or_suspension'):
-                    do_treatment('5day_oral_amoxicillin')
+                    do_treatment('5day_oral_amoxicillin', 'False')
                     logger.debug(key='message',
                                  data=f'ALRI_HSI_Event: treatment GIVEN for person {person_id} with '
                                       f'fast_breathing_pneumonia {classification} at level (1b) {facility_level} hsi {hsi_event} '
@@ -1496,7 +1417,7 @@ class Alri(Module):
 
             elif facility_level == '2':
                 if get_any_cons('Amoxicillin_tablet_or_suspension'):
-                    do_treatment('5day_oral_amoxicillin')
+                    do_treatment('5day_oral_amoxicillin', 'False')
                     logger.debug(key='message',
                                  data=f'ALRI_HSI_Event: treatment GIVEN for person {person_id} with '
                                       f'fast_breathing_pneumonia {classification} at level (2) {facility_level} hsi {hsi_event} '
@@ -1521,7 +1442,7 @@ class Alri(Module):
 
             elif facility_level == '1a':
                 if get_any_cons('Amoxicillin_tablet_or_suspension'):
-                    do_treatment('5day_oral_amoxicillin')
+                    do_treatment('5day_oral_amoxicillin', 'False')
                     logger.debug(key='message',
                                  data=f'ALRI_HSI_Event: treatment GIVEN for person {person_id} with '
                                       f'chest_indrawing_pneumonia {classification} at level (1a) {facility_level} hsi {hsi_event} '
@@ -1535,7 +1456,7 @@ class Alri(Module):
 
             elif facility_level == '1b':
                 if get_any_cons('Amoxicillin_tablet_or_suspension'):
-                    do_treatment('5day_oral_amoxicillin')
+                    do_treatment('5day_oral_amoxicillin', 'False')
                     logger.debug(key='message',
                                  data=f'ALRI_HSI_Event: treatment GIVEN for person {person_id} with '
                                       f'chest_indrawing_pneumonia {classification} at level (1b) {facility_level} hsi {hsi_event} '
@@ -1549,7 +1470,7 @@ class Alri(Module):
 
             elif facility_level == '2':
                 if get_any_cons('Amoxicillin_tablet_or_suspension'):
-                    do_treatment('5day_oral_amoxicillin')
+                    do_treatment('5day_oral_amoxicillin', 'False')
                     logger.debug(key='message',
                                  data=f'ALRI_HSI_Event: treatment GIVEN for person {person_id} with '
                                       f'chest_indrawing_pneumonia {classification} at level (2) {facility_level} hsi {hsi_event} '
@@ -1590,7 +1511,7 @@ class Alri(Module):
             elif facility_level == '1b':
                 if oxygen_saturation == '<90%':  # need oxygen to survive
                     if get_cons('Oxygen_Therapy') and get_cons('Ampicillin_gentamicin_therapy_for_severe_pneumonia'):
-                        do_treatment(['1st_line_IV_antibiotics', 'oxygen'])
+                        do_treatment('1st_line_IV_antibiotics', 'True')
                         logger.debug(key='message',
                                      data=f'ALRI_HSI_Event: treatment GIVEN for person {person_id} with '
                                           f'danger_signs_pneumonia {classification} at level (1b) {facility_level} hsi {hsi_event} '
@@ -1605,7 +1526,7 @@ class Alri(Module):
                 else:
                     # TODO: add on a script analysis giving oxygen at SpO2 <93%
                     if get_cons('Ampicillin_gentamicin_therapy_for_severe_pneumonia'):
-                        do_treatment('1st_line_IV_antibiotics')
+                        do_treatment('1st_line_IV_antibiotics', 'False')
                         logger.debug(key='message',
                                      data=f'ALRI_HSI_Event: treatment GIVEN for person {person_id} with '
                                           f'danger_signs_pneumonia {classification} at level (1b) {facility_level} hsi {hsi_event} '
@@ -1620,7 +1541,7 @@ class Alri(Module):
             elif facility_level == '2':
                 if oxygen_saturation == '<90%':  # need oxygen to survive
                     if get_cons('Oxygen_Therapy') and get_cons('Ampicillin_gentamicin_therapy_for_severe_pneumonia'):
-                        do_treatment(['1st_line_IV_antibiotics', 'oxygen'])
+                        do_treatment('1st_line_IV_antibiotics', 'True')
                         logger.debug(key='message',
                                      data=f'ALRI_HSI_Event: treatment GIVEN for person {person_id} with '
                                           f'danger_signs_pneumonia {classification} at level (2) {facility_level} hsi {hsi_event} '
@@ -1629,7 +1550,7 @@ class Alri(Module):
                     get_cons('Oxygen_Therapy')
                     # TODO: add on a script analysis giving oxygen at SpO2 <93%
                     if get_cons('Ampicillin_gentamicin_therapy_for_severe_pneumonia'):
-                        do_treatment('1st_line_IV_antibiotics')
+                        do_treatment('1st_line_IV_antibiotics', 'False')
                         logger.debug(key='message',
                                      data=f'ALRI_HSI_Event: treatment GIVEN for person {person_id} with '
                                           f'danger_signs_pneumonia {classification} at level (2) {facility_level} hsi {hsi_event} '
@@ -1653,7 +1574,7 @@ class Alri(Module):
 
             elif facility_level == '1b':
                 if get_cons('Oxygen_Therapy') and get_cons('Ampicillin_gentamicin_therapy_for_severe_pneumonia'):
-                    do_treatment(['1st_line_IV_antibiotics', 'oxygen'])
+                    do_treatment('1st_line_IV_antibiotics', 'True')
                     logger.debug(key='message',
                                  data=f'ALRI_HSI_Event: treatment GIVEN for person {person_id} with '
                                       f'serious_bacterial_infection {classification} at level (1b) {facility_level} hsi {hsi_event} '
@@ -1667,7 +1588,7 @@ class Alri(Module):
 
             elif facility_level == '2':
                 if get_cons('Oxygen_Therapy') and get_cons('Ampicillin_gentamicin_therapy_for_severe_pneumonia'):
-                    do_treatment(['1st_line_IV_antibiotics', 'oxygen'])
+                    do_treatment('1st_line_IV_antibiotics', 'True')
                     logger.debug(key='message',
                                  data=f'ALRI_HSI_Event: treatment GIVEN for person {person_id} with '
                                       f'serious_bacterial_infection {classification} at level (2) {facility_level} hsi {hsi_event} '
@@ -1738,8 +1659,8 @@ class Alri(Module):
 
         # check that person is not on treatment for the current episode
         if df.loc[person_id, 'ri_on_treatment'] and (
-                df.loc[person_id, 'ri_start_of_current_episode'] <= self.sim.date <=
-                df.loc[person_id, 'ri_end_of_current_episode']):
+            df.loc[person_id, 'ri_start_of_current_episode'] <= self.sim.date <=
+            df.loc[person_id, 'ri_end_of_current_episode']):
             return
 
         # get the iCCM/IMCI classification based on symptoms alone
@@ -1748,11 +1669,14 @@ class Alri(Module):
             symptoms=symptoms,
             facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL)
 
+        assert symptom_based_classification is not np.nan
+
         # update the property
         df.at[person_id, 'ri_symptom_based_pneumonia_classification'] = symptom_based_classification
 
         # classification based on SpO2
-        SpO2_based_classification = self.imci_classification_with_SpO2_measure(
+        SpO2_based_classification = self.imci_classification_by_SpO2_measure(
+            age_exact_years=person.age_exact_years,
             symptom_classification=symptom_based_classification,
             oxygen_saturation=person.ri_SpO2_level
         )
@@ -1760,6 +1684,7 @@ class Alri(Module):
         # classification given by the health workers
         hw_assigned_classification = self.classification_given_by_health_worker(
             hsi_event=hsi_event,
+            person_id=person_id,
             symptoms=symptoms,
             imci_symptom_based_classification=symptom_based_classification,
             facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL)
@@ -1767,6 +1692,7 @@ class Alri(Module):
         # if pulse oximeter available, get the changes in classification
         classification = self.final_classification(
             hw_assigned_classification=hw_assigned_classification,
+            age_exact_years=person.age_exact_years,
             oxygen_saturation=person.ri_SpO2_level,
             oximeter_available=hsi_event.get_consumables(item_codes=self.consumables_used_in_hsi['Pulse_oximetry'])
         )
@@ -1779,6 +1705,9 @@ class Alri(Module):
             oxygen_saturation=person.ri_SpO2_level,
             hsi_event=hsi_event)
 
+        if classification == np.nan:
+            raise ValueError(f'classification {classification} is nan for symptoms {symptoms}')
+
         # log the event for this person
         logger.info(
             key='classification',
@@ -1790,7 +1719,7 @@ class Alri(Module):
                   'final_classification': classification}
         )
 
-    def do_effects_of_alri_treatment(self, person_id, hsi_event, treatment):
+    def do_effects_of_alri_treatment(self, person_id, hsi_event, antibiotic, oxygen):
         """Helper function that enacts the effects of a treatment to Alri caused by a pathogen.
         It will only do something if the Alri is caused by a pathogen (this module).
         * Log the treatment
@@ -1800,59 +1729,116 @@ class Alri(Module):
         """
 
         df = self.sim.population.props
-        imci_classification = df.at[person_id, 'ri_symptom_based_pneumonia_classification']
-
-        df = self.sim.population.props
-        person = df.loc[person_id]
         p = self.parameters
+
+        person = df.loc[person_id]
+
+        imci_symptom_based_classification = person.ri_symptom_based_pneumonia_classification
 
         # Do nothing if the person is not infected with a pathogen that can cause ALRI
         if not person['ri_current_infection_status']:
             return
 
-        # log the event for this person
-        logger.info(
-            key='classification_and_treatment',
-            data={'person': person_id,
-                  'treatment': treatment}
-        )
+        # short-cut
+        age = person.age_exact_years
+        get_cons = lambda _item_str: hsi_event.get_consumables(
+            item_codes={k: v(age) if isinstance(v, types.LambdaType) else v
+                        for k, v in self.consumables_used_in_hsi[_item_str].items()})
 
         # Record that the person is now on treatment:
         df.loc[person_id, ('ri_on_treatment', 'ri_ALRI_tx_start_date')] = (True, self.sim.date)
 
+        # update the treatment properties
+        if any(elem in ['3day_oral_amoxicillin', '5day_oral_amoxicillin',
+                        '1st_line_IV_antibiotics', '2nd_line_IV_antibiotics'] for elem in antibiotic):
+            df.at[person_id, 'ri_tx_antibiotic_therapy'] = antibiotic
+
+        if oxygen:
+            df.at[person_id, 'ri_tx_oxygen_therapy'] = True
+
         def treatment_will_fail(treatment):
             """Determine if the treatment will fail"""
-            # First check for the treatment given to the correct classification for the condition -----
-            if treatment == '1st_line_IV_antibiotics' and (imci_classification == 'danger_sings_pneumonia'):
-                df.at[person_id, 'ri_tx_antibiotic_therapy'] = '5day_oral_amoxicillin'
-                return p['1st_line_antibiotic_for_severe_pneumonia_treatment_failure_by_day2'] > self.rng.rand()
 
-            if treatment == '3day_oral_amoxicillin' and (
-                    imci_classification == 'fast_breathing_pneumonia'):
-                return self.parameters['3day_amoxicillin_for_fast_breathing_treatment_failure_or_relapse'] > self.rng.rand()
+            # for no hypoxaemia (SpO2 >= 90%) -----
+            if person.ri_SpO2_level != '<90%':
 
-            if treatment == '5day_oral_amoxicillin' and (
-                    imci_classification == 'chest_indrawing_pneumonia'):
-                return self.parameters['5day_amoxicillin_for_chest_indrawing_treatment_failure_or_relapse'] > self.rng.rand()
+                # chest-indrawing pneumonia
+                if imci_symptom_based_classification == 'chest_indrawing_pneumonia':
+                    if '5day_oral_amoxicillin' in treatment:
+                        return p['5day_amoxicillin_for_chest_indrawing_treatment_failure_or_relapse'] \
+                               > self.rng.rand()
+                    elif '3day_oral_amoxicillin' in treatment:
+                        return p['3day_amoxicillin_for_chest_indrawing_treatment_failure_or_relapse'] \
+                               > self.rng.rand()
+                    else:
+                        raise ValueError(f'treatment {treatment} for '
+                                         f'classification {imci_symptom_based_classification} not given '
+                                         f'to chest-indrawing pneumonia without hypoxaemia')
 
-            # Check for the treatment given to the incorrect classification for the condition -----
-            # for classification == 'chest_indrawing_pneumonia' given oral antibiotics as per fast_breathing_pneumonia
-            if treatment == '3day_oral_amoxicillin' and (
-                    imci_classification == 'chest_indrawing_pneumonia'):
-                return self.parameters['3day_amoxicillin_for_chest_indrawing_treatment_failure_or_relapse'] > self.rng.rand()
+                # fast-breathing pneumonia
+                elif imci_symptom_based_classification == 'fast_breathing_pneumonia':
+                    if '3day_oral_amoxicillin' in treatment:
+                        return p['3day_amoxicillin_for_fast_breathing_treatment_failure_or_relapse'] \
+                               > self.rng.rand()
+                    elif '5day_oral_amoxicillin' in treatment:
+                        return p['5day_amoxicillin_for_chest_indrawing_treatment_failure_or_relapse'] \
+                               > self.rng.rand()
+                    else:
+                        raise ValueError(f'treatment {treatment} for '
+                                         f'classification {imci_symptom_based_classification} not given '
+                                         f'to fast-breathing pneumonia without hypoxaemia')
 
-            # for classification == 'danger_signs_pneumonia' given oral antibiotics as per non-severe pneumonia
-            if treatment == '5day_oral_amoxicillin' and (
-                    imci_classification == 'danger_signs_pneumonia'):
-                return 0.1 > self.rng.rand()
+                # danger-signs pneumonia
+                elif imci_symptom_based_classification in ('danger_signs_pneumonia', 'serious_bacterial_infection'):
+                    if '1st_line_IV_antibiotics' in treatment:
+                        return p['1st_line_antibiotic_for_severe_pneumonia_treatment_failure_by_day2'] \
+                               > self.rng.rand()
+                    elif '5day_oral_amoxicillin' in treatment:
+                        return True
+                    else:
+                        raise ValueError(f'treatment {treatment} for '
+                                         f'classification {imci_symptom_based_classification} not recognised '
+                                         f'in applying in treatment effect')
 
-        if not treatment_will_fail(treatment):
+                else:
+                    raise ValueError(f'classification {imci_symptom_based_classification} not recognised '
+                                     f'in applying in treatment effect')
+
+            # for hypoxaemia (SpO2 < 90%) -----
+            elif person.ri_SpO2_level == '<90%':
+                if imci_symptom_based_classification in ('fast_breathing_pneumonia', 'chest_indrawing_pneumonia'):
+                    return True
+
+                # danger-signs pneumonia
+                elif imci_symptom_based_classification in ('danger_signs_pneumonia', 'serious_bacterial_infection'):
+                    if '1st_line_IV_antibiotics' in treatment:
+                        return p['1st_line_antibiotic_for_severe_pneumonia_treatment_failure_by_day2'] * \
+                               p['rr_1st_line_treatment_failure_low_oxygen_saturation'] > self.rng.rand()
+                    else:
+                        return True
+
+                else:
+                    raise ValueError(f'treatment {treatment} for '
+                                     f'classification {imci_symptom_based_classification} not recognised')
+
+            else:
+                raise ValueError(f'SpO2 level {person.ri_SpO2_level} for person {person_id} not recognised '
+                                 f'applying in treatment effect')
+
+        if not treatment_will_fail(treatment=[antibiotic, oxygen]):
             self.cancel_death_and_schedule_cure(person_id)
         else:
-            if treatment == 'IMCI_Treatment_severe_pneumonia' and (imci_classification == 'danger_sings_pneumonia'):
-                hsi_event.get_consumables(
-                    item_codes=self.consumables_used_in_hsi['2nd_line_Antibiotic_Therapy_for_Severe_Pneumonia'])
-            #TODO: schedule follow-ups here
+
+            if '1st_line_IV_antibiotics' in antibiotic and \
+                    (imci_symptom_based_classification in ('danger_signs_pneumonia', 'serious_bacterial_infection')):
+                get_cons('Ceftriaxone_therapy_for_severe_pneumonia')
+            if '1st_line_IV_antibiotics' in antibiotic and \
+                (imci_symptom_based_classification == 'danger_sings_pneumonia') and \
+                    (person.ri_primary_pathogen == 'Staph_aureus' or
+                     person.ri_secondary_bacterial_pathogen == 'Staph_aureus'):
+                get_cons('2nd_line_Antibiotic_therapy_for_severe_staph_pneumonia')
+
+            # TODO: schedule follow-ups here
 
 
 class Models:
@@ -1903,11 +1889,11 @@ class Models:
                         conditions_are_mutually_exclusive=True,
                         conditions_are_exhaustive=True
                     ).when(0, age_effects[0])
-                     .when(1, age_effects[1])
-                     .when(2, age_effects[2])
-                     .when(3, age_effects[3])
-                     .when(4, age_effects[4])
-                     .when('>= 5', 0.0),
+                        .when(1, age_effects[1])
+                        .when(2, age_effects[2])
+                        .when(3, age_effects[3])
+                        .when(4, age_effects[4])
+                        .when('>= 5', 0.0),
                     Predictor('li_wood_burn_stove').when(False, p['rr_ALRI_indoor_air_pollution']),
                     Predictor().when('(va_measles_all_doses == False) & (age_years >= 1)',
                                      p['rr_ALRI_incomplete_measles_immunisation']),
