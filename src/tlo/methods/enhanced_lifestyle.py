@@ -29,6 +29,11 @@ class Lifestyle(Module):
 
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
+
+        # define a dictionary that will hold all linear models defined in Linear models class
+        self.all_models_dict = dict()
+
+        # get resource file path
         self.resourcefilepath: Path = resourcefilepath
 
     INIT_DEPENDENCIES = {'Demography'}
@@ -349,6 +354,18 @@ class Lifestyle(Module):
         p['start_date_campaign_quit_smoking'] = datetime.date(2010, 7, 1)
         p['start_date_campaign_alcohol_reduction'] = datetime.date(2010, 7, 1)
 
+        # get all linear models defined in linear models class
+        self.all_models_dict = {
+            'tobacco_use_linear_model': {
+                'init': LifestyleModels.tobacco_use_linear_model(),
+                'update': LifestyleModels.tobacco_use_linear_model()
+            },
+            'education_linear_models': {
+                'init': LifestyleModels.education_linear_models(),
+                'update': LifestyleModels.education_linear_models()
+            }
+        }
+
     def initialise_population(self, population):
         """Set our property values for the initial population.
         :param population: the population of individuals
@@ -360,35 +377,35 @@ class Lifestyle(Module):
 
         # -------------------- DEFAULTS ------------------------------------------------------------
 
-        df['li_urban'] = False
-        df['li_wealth'].values[:] = 3
-        df['li_bmi'] = 0
-        df['li_exposed_to_campaign_weight_reduction'] = False
-        df['li_low_ex'] = False
-        df['li_exposed_to_campaign_exercise_increase'] = False
-        df['li_high_salt'] = False
-        df['li_exposed_to_campaign_salt_reduction'] = False
-        df['li_high_sugar'] = False
-        df['li_exposed_to_campaign_sugar_reduction'] = False
-        df['li_tob'] = False
-        df['li_date_not_tob'] = pd.NaT
-        df['li_exposed_to_campaign_quit_smoking'] = False
-        df['li_ex_alc'] = False
-        df['li_exposed_to_campaign_alcohol_reduction'] = False
-        df['li_mar_stat'].values[:] = 1
-        df['li_in_ed'] = False
-        df['li_ed_lev'].values[:] = 1
-        df['li_unimproved_sanitation'] = True
-        df['li_no_access_handwashing'] = True
-        df['li_no_clean_drinking_water'] = True
-        df['li_wood_burn_stove'] = True
-        df['li_date_trans_to_urban'] = pd.NaT
-        df['li_date_acquire_improved_sanitation'] = pd.NaT
-        df['li_date_acquire_access_handwashing'] = pd.NaT
-        df['li_date_acquire_clean_drinking_water'] = pd.NaT
-        df['li_date_acquire_non_wood_burn_stove'] = pd.NaT
-        df['li_is_sexworker'] = False
-        df['li_is_circ'] = False
+        df.loc[df.is_alive, 'li_urban'] = False
+        df.loc[df.is_alive, 'li_wealth'].values[:] = 3
+        df.loc[df.is_alive, 'li_bmi'] = 0
+        df.loc[df.is_alive, 'li_exposed_to_campaign_weight_reduction'] = False
+        df.loc[df.is_alive, 'li_low_ex'] = False
+        df.loc[df.is_alive, 'li_exposed_to_campaign_exercise_increase'] = False
+        df.loc[df.is_alive, 'li_high_salt'] = False
+        df.loc[df.is_alive, 'li_exposed_to_campaign_salt_reduction'] = False
+        df.loc[df.is_alive, 'li_high_sugar'] = False
+        df.loc[df.is_alive, 'li_exposed_to_campaign_sugar_reduction'] = False
+        df.loc[df.is_alive, 'li_tob'] = False
+        df.loc[df.is_alive, 'li_date_not_tob'] = pd.NaT
+        df.loc[df.is_alive, 'li_exposed_to_campaign_quit_smoking'] = False
+        df.loc[df.is_alive, 'li_ex_alc'] = False
+        df.loc[df.is_alive, 'li_exposed_to_campaign_alcohol_reduction'] = False
+        df.loc[df.is_alive, 'li_mar_stat'].values[:] = 1
+        df.loc[df.is_alive, 'li_in_ed'] = False
+        df.loc[df.is_alive, 'li_ed_lev'].values[:] = 1
+        df.loc[df.is_alive, 'li_unimproved_sanitation'] = True
+        df.loc[df.is_alive, 'li_no_access_handwashing'] = True
+        df.loc[df.is_alive, 'li_no_clean_drinking_water'] = True
+        df.loc[df.is_alive, 'li_wood_burn_stove'] = True
+        df.loc[df.is_alive, 'li_date_trans_to_urban'] = pd.NaT
+        df.loc[df.is_alive, 'li_date_acquire_improved_sanitation'] = pd.NaT
+        df.loc[df.is_alive, 'li_date_acquire_access_handwashing'] = pd.NaT
+        df.loc[df.is_alive, 'li_date_acquire_clean_drinking_water'] = pd.NaT
+        df.loc[df.is_alive, 'li_date_acquire_non_wood_burn_stove'] = pd.NaT
+        df.loc[df.is_alive, 'li_is_sexworker'] = False
+        df.loc[df.is_alive, 'li_is_circ'] = False
         # todo: express all rates per year and divide by 4 inside program
 
         # -------------------- URBAN-RURAL STATUS --------------------------------------------------
@@ -989,6 +1006,26 @@ class Lifestyle(Module):
 
         return bmi_proportions
 
+
+class LifestyleModels:
+    """Helper class to store all linear models for the Lifestyle module. We have used two types of linear models
+    namely logistic and multiplicative linear models. We currently have defined linear models for the following;
+            1.  tobacco use
+            2.  low exercise
+            3.  education
+            4.  marital status
+            5.  unimproved sanitation
+            6.  no clean drinking
+            7.  wood burn stove
+            8.  no access hand washing
+            9.  salt intake """
+
+    def __init__(self, module):
+        # initialise variables
+        self.module = module
+        self.rng = self.module.rng
+        self.params = module.parameters
+
     def tobacco_use_linear_model(self) -> LinearModel:
         """A function to create a Linear Model for tobacco use. Here we are using Logistic Linear Model. it is
         designed to accept the outputs of standard logistic regression, which are based on 'odds'. The relationship
@@ -997,17 +1034,17 @@ class Lifestyle(Module):
         Model to predict final outcomes based on population properties """
 
         # get the baseline odds
-        tobacco_use_baseline_odds: float = (self.parameters['init_p_tob_age1519_m_wealth1'] /
-                                            (1 - self.parameters['init_p_tob_age1519_m_wealth1']))
+        tobacco_use_baseline_odds: float = (self.params['init_p_tob_age1519_m_wealth1'] /
+                                            (1 - self.params['init_p_tob_age1519_m_wealth1']))
 
         # get population properties and apply effects
         tobacco_use_linear_model = LinearModel(LinearModelType.LOGISTIC,
                                                tobacco_use_baseline_odds,
-                                               Predictor('sex').when('F', self.parameters['init_or_tob_f']),
+                                               Predictor('sex').when('F', self.params['init_or_tob_f']),
                                                Predictor().when('(sex == "M") & (age_years >= 20) & (age_years < 40)',
-                                                                self.parameters['init_or_tob_age2039_m']),
+                                                                self.params['init_or_tob_age2039_m']),
                                                Predictor().when('(sex == "M") & (age_years >= 40)',
-                                                                self.parameters['init_or_tob_agege40_m']),
+                                                                self.params['init_or_tob_agege40_m']),
                                                Predictor('li_wealth').when(2, 2)
                                                .when(3, 3)
                                                .when(4, 4)
@@ -1026,33 +1063,33 @@ class Lifestyle(Module):
         education_lm_dict: Dict[str, LinearModel] = dict()
 
         # get the baseline of education for all individuals over 5 years old
-        p_some_ed = self.parameters['init_age2030_w5_some_ed']
+        p_some_ed = self.params['init_age2030_w5_some_ed']
 
         # get the baseline of education level 3
-        p_ed_lev_3 = self.parameters['init_prop_age2030_w5_some_ed_sec']
+        p_ed_lev_3 = self.params['init_prop_age2030_w5_some_ed_sec']
 
         some_education_linear_model = LinearModel(LinearModelType.MULTIPLICATIVE,  # choose linear model type
                                                   p_some_ed,  # intercept (default probability for all individuals)
 
                                                   # adjust probability of some education based on age
                                                   Predictor('age_years').when('<13',
-                                                                              self.parameters[
+                                                                              self.params[
                                                                                   'init_rp_some_ed_age0513'])
-                                                  .when('.between(30, 39)', self.parameters['init_rp_some_ed_age3040'])
-                                                  .when('.between(40, 49)', self.parameters['init_rp_some_ed_age4050'])
-                                                  .when('.between(50, 59)', self.parameters['init_rp_some_ed_age5060'])
-                                                  .when('>=60', self.parameters['init_rp_some_ed_agege60']),
+                                                  .when('.between(30, 39)', self.params['init_rp_some_ed_age3040'])
+                                                  .when('.between(40, 49)', self.params['init_rp_some_ed_age4050'])
+                                                  .when('.between(50, 59)', self.params['init_rp_some_ed_age5060'])
+                                                  .when('>=60', self.params['init_rp_some_ed_agege60']),
 
                                                   # adjust probability of some education based on wealth
-                                                  Predictor('li_wealth').when(1, self.parameters[
+                                                  Predictor('li_wealth').when(1, self.params[
                                                       'init_rp_some_ed_per_higher_wealth'] ** 4)
-                                                  .when(2, self.parameters[
+                                                  .when(2, self.params[
                                                       'init_rp_some_ed_per_higher_wealth'] ** 3)
-                                                  .when(3, self.parameters[
+                                                  .when(3, self.params[
                                                       'init_rp_some_ed_per_higher_wealth'] ** 2)
-                                                  .when(4, self.parameters[
+                                                  .when(4, self.params[
                                                       'init_rp_some_ed_per_higher_wealth'] ** 1)
-                                                  .when(5, self.parameters[
+                                                  .when(5, self.params[
                                                       'init_rp_some_ed_per_higher_wealth'] ** 0)
                                                   )
 
@@ -1063,26 +1100,26 @@ class Lifestyle(Module):
                                                      # adjust baseline of education level 3 for age
                                                      Predictor('age_years').when('<13', 0)
                                                      .when('.between(13, 19)',
-                                                           self.parameters['init_rp_some_ed_sec_age1320'])
+                                                           self.params['init_rp_some_ed_sec_age1320'])
                                                      .when('.between(30, 39)',
-                                                           self.parameters['init_rp_some_ed_sec_age3040'])
+                                                           self.params['init_rp_some_ed_sec_age3040'])
                                                      .when('.between(40, 49)',
-                                                           self.parameters['init_rp_some_ed_sec_age4050'])
+                                                           self.params['init_rp_some_ed_sec_age4050'])
                                                      .when('.between(50, 59)',
-                                                           self.parameters['init_rp_some_ed_sec_age5060'])
+                                                           self.params['init_rp_some_ed_sec_age5060'])
                                                      .when('>=60',
-                                                           self.parameters['init_rp_some_ed_sec_agege60']),
+                                                           self.params['init_rp_some_ed_sec_agege60']),
 
                                                      # adjust baseline of education level 3 for wealth
                                                      Predictor('li_wealth').when(1, (
-                                                         self.parameters['init_rp_some_ed_sec_per_higher_wealth'] ** 4))
-                                                     .when(2, (self.parameters[
+                                                         self.params['init_rp_some_ed_sec_per_higher_wealth'] ** 4))
+                                                     .when(2, (self.params[
                                                                    'init_rp_some_ed_sec_per_higher_wealth'] ** 3))
-                                                     .when(3, (self.parameters[
+                                                     .when(3, (self.params[
                                                                    'init_rp_some_ed_sec_per_higher_wealth'] ** 2))
-                                                     .when(4, (self.parameters[
+                                                     .when(4, (self.params[
                                                                    'init_rp_some_ed_sec_per_higher_wealth'] ** 1))
-                                                     .when(5, (self.parameters[
+                                                     .when(5, (self.params[
                                                                    'init_rp_some_ed_sec_per_higher_wealth'] ** 0))
                                                      )
 
@@ -1094,31 +1131,82 @@ class Lifestyle(Module):
         # return a linear model dictionary
         return education_lm_dict
 
-    def other_remaining_linear_models(self) -> Dict[str, LinearModel]:
-        """A function to create linear models for different properties of Lifestyle module. After creating the
-        models, we return a dictionary containing all linear models """
-        # create a dictionary to hold all created linear models
-        all_lm_dict: Dict[str, LinearModel] = dict()
+    def low_exercise_linear_model(self) -> LinearModel:
+        """A function to create a linear model for lower exercise property of Lifestyle module. Here we are using
+        Logistic linear model and we are looking at an individual's probability of being low exercise based on
+        gender and rural or urban based. Finally, we return a dictionary containing low exercise linear models """
 
-        # -------------------- LOW EXERCISE LINEAR MODEL--------------------------------------------------------
         # get baseline odds for exercise
-        init_odds_low_ex_urban_m = (self.parameters['init_p_low_ex_urban_m']
-                                    / (1 - self.parameters['init_p_low_ex_urban_m']))
+        init_odds_low_ex_urban_m: float = (self.params['init_p_low_ex_urban_m']
+                                           / (1 - self.params['init_p_low_ex_urban_m']))
 
-        # create exercise linear model
-        exercise_lm = LinearModel(LinearModelType.LOGISTIC,
-                                  init_odds_low_ex_urban_m,
-                                  Predictor('sex').when('F', self.parameters['init_or_low_ex_f']),
-                                  Predictor('li_urban').when(False, self.parameters['init_or_low_ex_rural'])
-                                  )
+        # create low exercise linear model
+        low_exercise_lm = LinearModel(LinearModelType.LOGISTIC,
+                                      init_odds_low_ex_urban_m,
+                                      Predictor('sex').when('F', self.params['init_or_low_ex_f']),
+                                      Predictor('li_urban').when(False, self.params['init_or_low_ex_rural'])
+                                      )
 
-        # add low exercise linear model to the dictionary
-        all_lm_dict['exercise_lm'] = exercise_lm
+        # return low exercise dictionary
+        return low_exercise_lm
 
-        # -------------------- UNIMPROVED SANITATION LINEAR MODEL -----------------------------------------
+    def marital_status_linear_model(self) -> LinearModel:
+        """A function to create linear model for individual's marital status. Here, We are using a multiplicative
+        linear model and we are assigning individual's marital status based on their age group.In this module,
+        marital status is in three categories;
+                1.  Never Married
+                2.  Currently Married
+                3   Divorced or Widowed
+        """
+        # get a population dataframe
+        df = self.module.sim.population.props
+
+        # select population of different age groups
+        age_15_19 = df.index[df.is_alive & df.age_years.between(15, 19)]
+        age_20_29 = df.index[df.is_alive & df.age_years.between(20, 29)]
+        age_30_39 = df.index[df.is_alive & df.age_years.between(30, 39)]
+        age_40_49 = df.index[df.is_alive & df.age_years.between(40, 49)]
+        age_50_59 = df.index[df.is_alive & df.age_years.between(50, 59)]
+        age_gte60 = df.index[df.is_alive & (df.age_years >= 60)]
+
+        # set intercept for marital status (default is 1 - Never Married)
+        mar_status_intercept: int = 1
+
+        # create marital status linear model
+        mar_status_lm = LinearModel(LinearModelType.MULTIPLICATIVE,
+                                    mar_status_intercept,
+                                    Predictor('age_years').when('.between(15, 19)', self.rng.choice(
+                                        [1, 2, 3], size=len(age_15_19), p=self.params['init_dist_mar_stat_age1520']
+                                    ))
+                                    .when('.between(20, 29)', self.rng.choice(
+                                        [1, 2, 3], size=len(age_20_29), p=self.params['init_dist_mar_stat_age2030']
+                                    ))
+                                    .when('.between(30, 39)', self.rng.choice(
+                                        [1, 2, 3], size=len(age_30_39), p=self.params['init_dist_mar_stat_age3040']
+                                    ))
+                                    .when('.between(40, 49)', self.rng.choice(
+                                        [1, 2, 3], size=len(age_40_49), p=self.params['init_dist_mar_stat_age4050']
+                                    ))
+                                    .when('.between(50, 59)', self.rng.choice(
+                                        [1, 2, 3], size=len(age_50_59), p=self.params['init_dist_mar_stat_age5060']
+                                    ))
+                                    .when('>= 60', self.rng.choice(
+                                        [1, 2, 3], size=len(age_gte60), p=self.params['init_dist_mar_stat_agege60']
+                                    ))
+                                    ,
+                                    )
+
+        # return marital status dictionary
+        return mar_status_lm
+
+    def un_improved_sanitation_linear_model(self) -> LinearModel:
+        """A function to create linear model for unimproved sanitation. Here, We are using a Logistic linear model
+        and we are looking at an individual's probability of unimproved sanitation based on whether they are rural or
+        urban based. Finally we return a linear model """
+
         # get the baseline odds for unimproved sanitation
-        init_odds_un_imp_san = self.parameters['init_p_unimproved_sanitation_urban'] / (
-            1 - self.parameters['init_p_unimproved_sanitation_urban'])
+        init_odds_un_imp_san: float = self.params['init_p_unimproved_sanitation_urban'] / (
+            1 - self.params['init_p_unimproved_sanitation_urban'])
 
         # create an unimproved sanitation linear model
         un_imp_san_lm = LinearModel(LinearModelType.LOGISTIC,
@@ -1126,81 +1214,91 @@ class Lifestyle(Module):
 
                                     # update odds according to determinants of unimproved sanitation (rural status
                                     # the only determinant)
-                                    Predictor('li_urban').when(False, self.parameters[
+                                    Predictor('li_urban').when(False, self.params[
                                         'init_or_unimproved_sanitation_rural'])
                                     )
 
-        # add unimproved sanitation linear model to the dictionary
-        all_lm_dict['un_imp_san_lm'] = un_imp_san_lm
+        # return unimproved sanitation linear model
+        return un_imp_san_lm
 
-        # -------------------- NO CLEAN DRINKING WATER LINEAR MODEL---------------------------------------------------
+    def no_clean_drinking_water_linear_model(self) -> LinearModel:
+        """This function creates a linear model for no clean drinking water property. Here, we are using Logistic
+        linear model and looking at individual's probability to have no clean drinking water based on whether they
+        are rural or urban. """
+
         # get baseline odds for no clean drinking water
-        init_odds_no_clean_drinking_water = self.parameters['init_p_no_clean_drinking_water_urban'] / (
-            1 - self.parameters['init_p_no_clean_drinking_water_urban']
+        init_odds_no_clean_drinking_water: float = self.params['init_p_no_clean_drinking_water_urban'] / (
+            1 - self.params['init_p_no_clean_drinking_water_urban']
         )
 
         # create no clean drinking water linear model
         no_clean_drinking_water_lm = LinearModel(LinearModelType.LOGISTIC,
                                                  init_odds_no_clean_drinking_water,
-                                                 Predictor('li_urban').when(False, self.parameters[
+                                                 Predictor('li_urban').when(False, self.params[
                                                      'init_or_no_clean_drinking_water_rural'])
                                                  )
 
-        # add no clean drinking water linear model to the dictionary
-        all_lm_dict['no_clean_drinking_water_lm'] = no_clean_drinking_water_lm
+        # return no clean drinking water linear model
+        return no_clean_drinking_water_lm
 
-        # -------------------- WOOD BURN STOVE LINEAR MODEL---------------------------------------------------
+    def wood_burn_stove_linear_model(self) -> LinearModel:
+        """This function create a linear model for wood burn stove property. Here, we are using logistic linear model
+        and looking at individual's probability of using wood burn stove based on whether they are rural or urban  """
+
         # get baseline odds for wood burn stove
-        init_odds_wood_burn_stove = self.parameters['init_p_wood_burn_stove_urban'] / (
-                                                        1 - self.parameters['init_p_wood_burn_stove_urban'])
+        init_odds_wood_burn_stove: float = self.params['init_p_wood_burn_stove_urban'] / (
+            1 - self.params['init_p_wood_burn_stove_urban'])
 
         # create wood burn stove linear model
         wood_burn_stove_lm = LinearModel(LinearModelType.LOGISTIC,
                                          init_odds_wood_burn_stove,
                                          Predictor('li_urban').when(False,
-                                                                    self.parameters['init_or_wood_burn_stove_rural'])
+                                                                    self.params['init_or_wood_burn_stove_rural'])
                                          )
 
-        # add wood burn stove linear model to the dictionary
-        all_lm_dict['wood_burn_stove_lm'] = wood_burn_stove_lm
+        # return wood burn stove linear model
+        return wood_burn_stove_lm
 
-        # -------------------- NO ACCESS HANDWASHING LINEAR MODEL ---------------------------------------------------
-        # get baseline odds for all individuals with no access handwashing
-        odds_no_access_handwashing = 1 / (1 - self.parameters['init_p_no_access_handwashing_wealth1'])
+    def no_access_hand_washing(self) -> LinearModel:
+        """This function creates a linear model for no access to hand-washing property.  Here, we are using Logistic
+        linear model and looking at individual's probability of having no access to hand washing based on their
+        wealth level/status. Finally, we return a no access to hand-washing linear model """
 
-        # create linear model for no access to handwashing
-        no_access_handwashing_lm = LinearModel(LinearModelType.LOGISTIC,
-                                               odds_no_access_handwashing,
-                                               Predictor('li_wealth').when(2, self.parameters[
-                                                   'init_or_no_access_handwashing_per_lower_wealth'])
-                                               .when(3, self.parameters[
-                                                   'init_or_no_access_handwashing_per_lower_wealth'] ** 2)
-                                               .when(4, self.parameters[
-                                                   'init_or_no_access_handwashing_per_lower_wealth'] ** 3)
-                                               .when(5, self.parameters[
-                                                   'init_or_no_access_handwashing_per_lower_wealth'] ** 4)
-                                               )
+        # get baseline odds for individuals with no access to hand-washing
+        odds_no_access_hand_washing: float = 1 / (1 - self.params['init_p_no_access_handwashing_wealth1'])
 
-        # add no access handwashing linear model to the dictionary
-        all_lm_dict['no_access_handwashing_lm'] = no_access_handwashing_lm
+        # create linear model for no access to hand-washing
+        no_access_hand_washing_lm = LinearModel(LinearModelType.LOGISTIC,
+                                                odds_no_access_hand_washing,
+                                                Predictor('li_wealth').when(2, self.params[
+                                                    'init_or_no_access_handwashing_per_lower_wealth'])
+                                                .when(3, self.params[
+                                                    'init_or_no_access_handwashing_per_lower_wealth'] ** 2)
+                                                .when(4, self.params[
+                                                    'init_or_no_access_handwashing_per_lower_wealth'] ** 3)
+                                                .when(5, self.params[
+                                                    'init_or_no_access_handwashing_per_lower_wealth'] ** 4)
+                                                )
 
-        # -------------------- SALT INTAKE LINEAR MODEL----------------------------------------------------------
+        # return no access hand-washing linear model
+        return no_access_hand_washing_lm
+
+    def salt_intake_linear_model(self) -> LinearModel:
+        """"A function to create a linear model for salt intake property. Here, we are using logistic linear model
+        and looking at individual's probability of high salt intake based on whether they are rural or urban """
 
         # get a baseline odds for salt intake
-        odds_high_salt = self.parameters['init_p_high_salt_urban'] / (1 -
-                                                                      self.parameters['init_p_high_salt_urban'])
+        odds_high_salt: float = self.params['init_p_high_salt_urban'] / (1 -
+                                                                         self.params['init_p_high_salt_urban'])
 
         # create salt intake linear model
         high_salt_lm = LinearModel(LinearModelType.LOGISTIC,
                                    odds_high_salt,
-                                   Predictor('li_urban').when(False, self.parameters[
+                                   Predictor('li_urban').when(False, self.params[
                                        'init_or_high_salt_rural'])
                                    )
-        # add salt intake linear model to the dictionary
-        all_lm_dict['high_salt_lm'] = high_salt_lm
-
-        # finally we return the dictionary containing all remaining linear models
-        return all_lm_dict
+        # return salt intake linear model
+        return high_salt_lm
 
 
 class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
