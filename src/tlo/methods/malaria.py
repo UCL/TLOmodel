@@ -321,8 +321,8 @@ class Malaria(Module):
         df.loc[alive & df.age_exact_years.between(0.5, 1), "ma_age_edited"] = 0.5
         df.loc[alive_over_one, "ma_age_edited"] = df.loc[alive_over_one, "age_years"].astype(float)
 
-        # select new infections
-        alive_uninfected = alive & ~df.ma_is_infected
+        # select new infections, not on IPTp
+        alive_uninfected = alive & ~df.ma_is_infected & ~df.ma_iptp
         now_infected = _draw_incidence_for("monthly_prob_inf", alive_uninfected)
         df.loc[now_infected, "ma_is_infected"] = True
         df.loc[now_infected, "ma_date_infected"] = now  # TODO: scatter dates across month
