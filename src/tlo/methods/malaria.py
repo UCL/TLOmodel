@@ -486,6 +486,9 @@ class Malaria(Module):
         df.at[child_id, "ma_tx_counter"] = 0
         df.at[child_id, "ma_iptp"] = False
 
+        # reset mother's IPTp status to False
+        df.at[mother_id, "ma_iptp"] = False
+
     def on_hsi_alert(self, person_id, treatment_id):
         """This is called whenever there is an HSI event commissioned by one of the other disease modules.
         """
@@ -688,7 +691,6 @@ class MalariaScheduleTesting(RegularEvent, PopulationScopeEventMixin):
             )
 
 
-# TODO link this with ANC appts
 class MalariaIPTp(RegularEvent, PopulationScopeEventMixin):
     """ malaria prophylaxis for pregnant women
     """
@@ -1151,6 +1153,10 @@ class HSI_MalariaIPTp(HSI_Event, IndividualScopeEventMixin):
                              data=f'HSI_MalariaIPTp: giving IPTp for person {person_id}')
 
                 df.at[person_id, "ma_iptp"] = True
+
+                # if currently infected, IPTp will clear the infection
+                df.at[person_id, "ma_is_infected"] = False
+                df.at[person_id, "ma_inf_type"] = "none"
 
     def did_not_run(self):
 
