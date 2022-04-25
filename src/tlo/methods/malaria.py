@@ -1158,6 +1158,11 @@ class HSI_MalariaIPTp(HSI_Event, IndividualScopeEventMixin):
                 df.at[person_id, "ma_is_infected"] = False
                 df.at[person_id, "ma_inf_type"] = "none"
 
+                # clear any symptoms
+                self.sim.modules["SymptomManager"].clear_symptoms(
+                    person_id=person_id, disease_module=self.module
+                )
+
     def did_not_run(self):
 
         logger.debug(key='message',
