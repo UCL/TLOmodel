@@ -542,8 +542,8 @@ class LogsDict(Mapping):
             return KeyError
 
     def __contains__(self, k):
-        # return true if key is found in module specific log files dictionary else return KeyError
-        return True if k in self._logfile_names_and_paths else KeyError
+        # if key k is a valid logfile entry
+        return k in self._logfile_names_and_paths
 
     def items(self):
         # parse module-specific log file and return results as a generator

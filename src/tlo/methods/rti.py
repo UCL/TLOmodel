@@ -105,6 +105,7 @@ class RTI(Module):
         '7101': 7,
         '7113': 56,
         '813do': 240,
+        '811': 70,
         '812': 70,
         '813eo': 240,
         '813bo': 240,
@@ -988,6 +989,11 @@ class RTI(Module):
         'blocked_interventions': Parameter(
             Types.LIST,
             "A list of interventions that are blocked in a simulation"
+        ),
+        'unavailable_treatment_mortality_mais_cutoff': Parameter(
+            Types.INT,
+            "A cut-off score above which an injury will result in additional mortality if the person has "
+            "sought healthcare and not received it."
         )
 
     }
@@ -2808,6 +2814,7 @@ class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
         self.daly_wt_femur_fracture_short_term = p['daly_wt_femur_fracture_short_term']
         self.daly_wt_femur_fracture_long_term_without_treatment = \
             p['daly_wt_femur_fracture_long_term_without_treatment']
+        self.no_treatment_mortality_mais_cutoff = p['unavailable_treatment_mortality_mais_cutoff']
 
     def apply(self, population):
         df = population.props
@@ -2842,6 +2849,9 @@ class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
                     mais_scores.append(self.module.ASSIGN_INJURIES_AND_DALY_CHANGES[injury][0][-1])
                 max_untreated_injury = max(mais_scores)
                 prob_death = probabilities_of_death[str(max_untreated_injury)]
+                if df.loc[person, 'rt_med_int'] and (max_untreated_injury < self.no_treatment_mortality_mais_cutoff):
+                    # filter out non serious injuries from the consideration of mortality
+                    prob_death = 0
                 if rand_for_death < prob_death:
                     # If determined to die, schedule a death without med
                     df.loc[person, 'rt_no_med_death'] = True
@@ -3654,7 +3664,7 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
             self.module.item_codes_for_consumables_required['shock_treatment_child'] = {
                 get_item_code("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 1,
                 get_item_code("Dextrose (glucose) 5%, 1000ml_each_CMST"): 1,
-                get_item_code('Cannula iv  (winged with injection pot) 20_each_CMST'): 1,
+                get_item_code('Cannula iv  (winged with injection pot) 18_each_CMST'): 1,
                 get_item_code('Blood, one unit'): 1,
                 get_item_code("Oxygen, 1000 liters, primarily with oxygen cylinders"): 1
             }
@@ -3664,7 +3674,7 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
         else:
             self.module.item_codes_for_consumables_required['shock_treatment_adult'] = {
                 get_item_code("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 1,
-                get_item_code('Cannula iv  (winged with injection pot) 20_each_CMST'): 1,
+                get_item_code('Cannula iv  (winged with injection pot) 18_each_CMST'): 1,
                 get_item_code('Blood, one unit'): 1,
                 get_item_code("Oxygen, 1000 liters, primarily with oxygen cylinders"): 1
             }
@@ -3880,7 +3890,7 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
         # If they have an open fracture, ask for consumables to treat fracture
         if open_fracture_counts > 0:
             self.module.item_codes_for_consumables_required['open_fracture_treatment'] = {
-                get_item_code('ceftriaxon 500 mg, powder for injection_10_IDA'): 1,
+                get_item_code('Ceftriaxone 1g, PFR_each_CMST'): 1,
                 get_item_code('Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST'): 1,
                 get_item_code("Gauze, absorbent 90cm x 40m_each_CMST"): 1,
                 get_item_code('Suture pack'): 1,
@@ -4527,7 +4537,7 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
             # tools to begin surgery
             get_item_code("Scalpel blade size 22 (individually wrapped)_100_CMST"): 1,
             # administer an IV
-            get_item_code("Cannula iv  (winged with injection pot) 20_each_CMST"): 1,
+            get_item_code('Cannula iv  (winged with injection pot) 18_each_CMST'): 1,
             get_item_code("Giving set iv administration + needle 15 drops/ml_each_CMST"): 1,
             get_item_code("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 1,
             # repair incision made
@@ -4848,7 +4858,7 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
             # tools to begin surgery
             get_item_code("Scalpel blade size 22 (individually wrapped)_100_CMST"): 1,
             # administer an IV
-            get_item_code("Cannula iv  (winged with injection pot) 20_each_CMST"): 1,
+            get_item_code('Cannula iv  (winged with injection pot) 18_each_CMST'): 1,
             get_item_code("Giving set iv administration + needle 15 drops/ml_each_CMST"): 1,
             get_item_code("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 1,
             # repair incision made
@@ -4884,11 +4894,7 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
         # choose an injury to treat
         treated_code = rng.choice(relevant_codes)
         # need to determine whether this person has an injury which will treated with external fixation
-        external_fixation_codes = ['811', '812', '813a', '813b', '813c']
-        if treated_code in external_fixation_codes:
-            self.module.item_codes_for_consumables_required['minor_surgery'].update(
-                {get_item_code('External fixator'): 1}
-            )
+        # external_fixation_codes = ['811', '812', '813a', '813b', '813c']
         request_outcome = self.get_consumables(
             self.module.item_codes_for_consumables_required['minor_surgery']
         )

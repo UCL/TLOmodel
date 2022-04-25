@@ -1,6 +1,7 @@
 import datetime
 import warnings
 from collections import defaultdict
+from itertools import repeat
 from typing import Dict, List, Optional
 
 import numpy as np
@@ -30,7 +31,7 @@ class Consumables:
 
     def __init__(self, data: pd.DataFrame = None, rng: np.random = None, availability: str = 'default') -> None:
 
-        assert availability in ['none', 'default', 'all'], "Argument `availability` is not recognised."
+        assert availability in ('none', 'default', 'all'), "Argument `availability` is not recognised."
         self.cons_availability = availability  # Governs availability  - none/default/all
         self.item_codes = set()  # All item_codes that are recognised.
 
@@ -54,9 +55,16 @@ class Consumables:
         the HealthSystem.
         * Saves the data as `self._prob_item_codes_available`
         * Saves the set of all recognised item_codes to `self.item_codes`
+        * Over-rides the availability of all items to be always or never available according the specification of the
+         argument `cons_availability`.
         """
         self.item_codes = set(df.item_code)  # Record all consumables identified
         self._prob_item_codes_available = df.set_index(['month', 'Facility_ID', 'item_code'])['available_prop']
+
+        if self.cons_availability == 'all':
+            self.override_availability(dict(zip(self.item_codes, repeat(1.0))))
+        elif self.cons_availability == 'none':
+            self.override_availability(dict(zip(self.item_codes, repeat(0.0))))
 
     def _refresh_availability_of_consumables(self, date: datetime.datetime):
         """Update the availability of all items based on the data for the probability of availability, givem the current
@@ -128,16 +136,8 @@ class Consumables:
         if not self.item_codes.issuperset(item_codes.keys()):
             self._not_recognised_item_codes.add((treatment_id, tuple(set(item_codes.keys()) - self.item_codes)))
 
-        # Determine availability of consumables:
-        if self.cons_availability == 'all':
-            # All item_codes available available if all consumables should be considered available by default.
-            available = {k: True for k in item_codes}
-        elif self.cons_availability == 'none':
-            # All item_codes not available if consumables should be considered not available by default.
-            available = {k: False for k in item_codes.keys()}
-        else:
-            available = self._lookup_availability_of_consumables(item_codes=item_codes,
-                                                                 facility_info=facility_info)
+        # Look-up whether each of these items is available in this facility currently:
+        available = self._lookup_availability_of_consumables(item_codes=item_codes, facility_info=facility_info)
 
         # Log the request and the outcome:
         if to_log:
@@ -164,8 +164,12 @@ class Consumables:
 
         if facility_info is None:
             # If `facility_info` is None, it implies that the HSI has not been initialised because the HealthSystem
-            #  is running with `disable=True`.
-            return {_i: True for _i in item_codes.keys()}
+            #  is running with `disable=True`. Therefore, accept the default behaviour indicated by the argument saved
+            #  in `self.cons_availability`. If the behaviour is `default`, then let the consumable be available.
+            if self.cons_availability in ('all', 'default'):
+                return {_i: True for _i in item_codes}
+            else:
+                return {_i: False for _i in item_codes}
 
         for _i in item_codes.keys():
             if _i in self.item_codes:

@@ -841,11 +841,6 @@ class HealthSystem(Module):
         else:
             _cons_availability = self.arg_cons_availability
 
-        # For logical consistency, when the HealthSystem is disabled, cons_availability should be 'all', irrespective of
-        # what arguments/parameters are provided.
-        if self.disable:
-            _cons_availability = 'all'
-
         # Log the service_availability
         logger.info(key="message",
                     data=f"Running Health System With the Following Consumables Availability: "
@@ -1517,6 +1512,10 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             facility_id=self.module.bed_days.get_facility_id_for_beds(persons_id=event.target),
                             footprint=event.BEDDAYS_FOOTPRINT
                         )
+
+                    # Check that a facility has been assigned to this HSI
+                    assert event.facility_info is not None, \
+                        f"Cannot run HSI {event.TREATMENT_ID} without facility_info being defined."
 
                     # Run the HSI event (allowing it to return an updated appt_footprint)
                     actual_appt_footprint = event.run(squeeze_factor=squeeze_factor)
