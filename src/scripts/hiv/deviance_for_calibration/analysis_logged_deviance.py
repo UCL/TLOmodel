@@ -33,8 +33,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2025, 1, 1)
-popsize = 5000
+end_date = Date(2020, 1, 1)
+popsize = 15000
 
 # set up the log config
 log_config = {
@@ -79,7 +79,7 @@ sim.register(
 )
 
 # sim.modules["Tb"].parameters["transmission_rate"] = 19.5
-sim.modules["Hiv"].parameters["prob_prep_for_agyw"] = 0.2
+# sim.modules["Hiv"].parameters["prob_prep_for_agyw"] = 0.2
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)

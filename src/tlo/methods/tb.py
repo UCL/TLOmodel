@@ -1228,13 +1228,14 @@ class Tb(Module):
 
         # risk of relapse if <2 years post treatment start, includes risk if HIV+
         # get df of those eligible
-        relapse_risk_early = df.loc[
-            df.tb_ever_treated
-            & (now < (df.tb_date_treated + pd.DateOffset(days=732.5)))
-            ].index
+        # relapse_risk_early = df.loc[
+        #     df.tb_ever_treated
+        #     & (now < (df.tb_date_treated + pd.DateOffset(days=732.5)))
+        #     ].index
 
         risk_of_relapse_early = self.lm["risk_relapse_2yrs"].predict(
-            df.loc[relapse_risk_early]
+            df.loc[df.tb_ever_treated
+            & (now < (df.tb_date_treated + pd.DateOffset(years=2)))]
         )
 
         will_relapse = (
@@ -1244,13 +1245,14 @@ class Tb(Module):
 
         # risk of relapse if >=2 years post treatment start, includes risk if HIV+
         # get df of those eligible
-        relapse_risk_later = df.loc[
-            df.tb_ever_treated
-            & (now >= (df.tb_date_treated + pd.DateOffset(days=732.5)))
-            ].index
+        # relapse_risk_later = df.loc[
+        #     df.tb_ever_treated
+        #     & (now >= (df.tb_date_treated + pd.DateOffset(days=732.5)))
+        #     ].index
 
         risk_of_relapse_later = self.lm["risk_relapse_late"].predict(
-            df.loc[relapse_risk_later]
+            df.loc[df.tb_ever_treated
+            & (now >= (df.tb_date_treated + pd.DateOffset(years=2)))]
         )
 
         will_relapse_later = (
@@ -1602,7 +1604,7 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                   p["transmission_rate"]
                   * (tmp["smear_pos"] + (tmp["smear_neg"] * p["rel_inf_smear_ng"]))
               ) / tmp["is_alive"]
-        foi = pd.Series(foi, index=districts)
+        # foi = pd.Series(foi, index=districts)
 
         foi = foi.fillna(0)  # fill any missing values with 0
 
@@ -1611,7 +1613,6 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # look up value for each row in df
         foi_for_individual = df["district_of_residence"].map(foi_dict)
-        # foi_for_individual = foi_for_individual.fillna(0)  # newly added rows to df will have nan entries
 
         # -------------- national-level transmission -------------- #
 
@@ -1638,7 +1639,7 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # adjust individual risk by bcg status
         risk_tb = pd.Series(0, dtype=float, index=df.index)  # individual risk: district and national
-        risk_tb += ((1 - p["mixing_parameter"]) * foi_for_individual.values) + (p["mixing_parameter"] * foi_national)
+        risk_tb += (p["mixing_parameter"] * foi_for_individual.values) + ((1 - p["mixing_parameter"]) * foi_national)
         risk_tb.loc[df.va_bcg_all_doses & df.age_years < 10] *= p["rr_bcg_inf"]
         risk_tb.loc[~df.is_alive] = 0
 
