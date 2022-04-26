@@ -78,7 +78,7 @@ sim.register(
     # deviance_measure.Deviance(resourcefilepath=resourcefilepath),
 )
 
-# sim.modules["Tb"].parameters["transmission_rate"] = 19.5
+sim.modules["Tb"].parameters["transmission_rate"] = 6.5
 # sim.modules["Hiv"].parameters["prob_prep_for_agyw"] = 0.2
 
 # Run the simulation and flush the logger

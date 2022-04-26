@@ -1738,6 +1738,16 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
                     ),
                     now,
                 )
+        else:
+            # if Hiv not registered, give HIV+ person same time to death as HIV-
+            for person_id in active_and_hiv:
+                date_of_tb_death = self.sim.date + pd.DateOffset(
+                    months=int(rng.uniform(low=1, high=6))
+                )
+                self.sim.schedule_event(
+                    event=TbDeathEvent(person_id=person_id, module=self.module, cause="AIDS_TB"),
+                    date=date_of_tb_death,
+                )
 
         # -------- 4) if HIV- assign smear status and schedule death --------
         active_no_hiv = active_idx[~active_idx.isin(active_and_hiv)]
@@ -1810,11 +1820,10 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[all_self_cure, "tb_diagnosed"] = False
         df.loc[all_self_cure, "tb_smear"] = False
 
-        for person_id in all_self_cure:
-            # this will clear all tb symptoms
-            self.sim.modules["SymptomManager"].clear_symptoms(
-                person_id=person_id, disease_module=self.module
-            )
+        # this will clear all tb symptoms
+        self.sim.modules["SymptomManager"].clear_symptoms(
+            person_id=all_self_cure, disease_module=self.module
+        )
 
 
 # ---------------------------------------------------------------------------

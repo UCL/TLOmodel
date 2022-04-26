@@ -298,9 +298,7 @@ def test_treatment_schedule(seed):
 
     # end treatment, change sim.date so person will be ready to stop treatment
     sim.date = Date(2010, 12, 31)
-    tx_end_event = tb.TbEndTreatmentEvent(module=sim.modules['Tb'])
-
-    tx_end_event.apply(sim.population)
+    sim.modules['Tb'].end_treatment(sim.population)
 
     # check individual properties consistent with treatment end
     assert not df.at[person_id, 'tb_on_treatment']
@@ -373,9 +371,7 @@ def test_treatment_failure(seed):
     sim.date = Date(2010, 12, 31)
 
     # make treatment fail
-    tx_end_event = tb.TbEndTreatmentEvent(module=sim.modules['Tb'])
-
-    tx_end_event.apply(sim.population)
+    sim.modules['Tb'].end_treatment(sim.population)
 
     # check individual properties consistent with treatment failure
     assert df.at[person_id, 'tb_treatment_failure']
@@ -594,8 +590,7 @@ def test_relapse_risk(seed):
     df.at[person_id, 'age_years'] = 25
 
     # run relapse event
-    relapse_event = tb.TbRelapseEvent(module=sim.modules['Tb'])
-    relapse_event.apply(population=sim.population)
+    sim.modules['Tb'].relapse_event(sim.population)
 
     # check relapse to active tb is scheduled to occur
     assert not df.at[person_id, 'tb_scheduled_date_active'] == pd.NaT
@@ -731,9 +726,7 @@ def test_mdr(seed):
 
     # end treatment, change sim.date so person will be ready to stop treatment
     sim.date = Date(2010, 12, 31)
-    tx_end_event = tb.TbEndTreatmentEvent(module=sim.modules['Tb'])
-
-    tx_end_event.apply(sim.population)
+    sim.modules['Tb'].end_treatment(sim.population)
 
     # check individual properties consistent with treatment failure
     assert df.at[person_id, 'tb_treatment_failure']
