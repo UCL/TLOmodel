@@ -25,7 +25,7 @@ logger.setLevel(logging.INFO)
 class Tb(Module):
     """Set up the baseline population with TB prevalence"""
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None, resourcefilepath=None, run_with_checks=False):
         super().__init__(name)
 
         self.resourcefilepath = resourcefilepath
@@ -35,6 +35,9 @@ class Tb(Module):
         self.symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
         self.district_list = list()
         self.item_codes_for_consumables_required = dict()
+
+        assert isinstance(run_with_checks, bool)
+        self.run_with_checks = run_with_checks
 
         # tb outputs needed for calibration/
         keys = ["date",
@@ -1087,6 +1090,12 @@ class Tb(Module):
         # 3) Define the DxTests and get the consumables required
         self.get_consumables_for_dx_and_tx()
 
+        # 4) (Optionally) Schedule the event to check the configuration of all properties
+        if self.run_with_checks:
+            sim.schedule_event(
+                TbCheckPropertiesEvent(self), sim.date + pd.DateOffset(months=1)
+            )
+
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual
         allocate IPT for child if mother diagnosed with TB
@@ -1415,6 +1424,41 @@ class Tb(Module):
         # leave tb_strain property set in case of relapse
         df.loc[cure_idx, "tb_inf"] = "latent"
         df.loc[cure_idx, "tb_smear"] = False
+
+    def check_config_of_properties(self):
+        """check that the properties are currently configured correctly"""
+        df = self.sim.population.props
+        df_alive = df.loc[df.is_alive]
+
+        # basic check types of columns and dtypes
+        orig = self.sim.population.new_row
+        assert (df.dtypes == orig.dtypes).all()
+
+        def is_subset(col_for_set, col_for_subset):
+            # Confirms that the series of col_for_subset is true only for a subset of the series for col_for_set
+            return set(col_for_subset.loc[col_for_subset].index).issubset(
+                col_for_set.loc[col_for_set].index
+            )
+
+        # Check that core properties of current status are never None/NaN/NaT
+        assert not df_alive.tb_inf.isna().any()
+        assert not df_alive.tb_strain.isna().any()
+        assert not df_alive.tb_smear.isna().any()
+        assert not df_alive.tb_on_treatment.isna().any()
+        assert not df_alive.tb_treatment_regimen.isna().any()
+        assert not df_alive.tb_ever_treated.isna().any()
+        assert not df_alive.tb_on_ipt.isna().any()
+
+        # Check that the core TB properties are 'nested' in the way expected.
+        assert is_subset(
+            col_for_set=(df_alive.tb_inf != "uninfected"), col_for_subset=df_alive.tb_diagnosed
+        )
+        assert is_subset(
+            col_for_set=df_alive.tb_diagnosed, col_for_subset=df_alive.tb_on_treatment
+        )
+
+        # Check that if person is infected, the dates of active TB is NOT missing
+        assert not df_alive.loc[(df_alive.tb_inf == "active"), "tb_date_active"].isna().all()
 
 
 # # ---------------------------------------------------------------------------
@@ -1935,7 +1979,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
             if test == "sputum":
                 ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
-                    {"Over5OPD": 1, "LabTBMicro": 1}
+                    {**{self.EXPECTED_APPT_FOOTPRINT}, **{"LabTBMicro": 1}}
                 )
                 # relevant test depends on smear status (changes parameters on sensitivity/specificity
                 if smear_status:
@@ -2810,3 +2854,15 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 "tbIptCoverage": ipt_coverage,
             },
         )
+
+# ---------------------------------------------------------------------------
+#   Debugging / Checking Events
+# ---------------------------------------------------------------------------
+
+
+class TbCheckPropertiesEvent(RegularEvent, PopulationScopeEventMixin):
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=1))  # runs every month
+
+    def apply(self, population):
+        self.module.check_config_of_properties()

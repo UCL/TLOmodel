@@ -877,9 +877,6 @@ class Hiv(Module):
         # 6) Store codes for the consumables needed
         hs = self.sim.modules["HealthSystem"]
 
-        # self.item_codes_for_consumables_required['hiv_rapid_test'] = \
-        #     hs.get_item_codes_from_package_name("HIV Testing Services")
-
         # updated consumables listing
         # todo check when updated consumables PR goes in
         self.item_codes_for_consumables_required['hiv_rapid_test'] = {
@@ -2316,6 +2313,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         """Returns the appointment footprint for this person according to their current status:
          * `NewAdult` for an adult, newly starting (or re-starting) treatment
          * `EstNonCom` for an adult, already on treatment
+         (NB. This is an appointment type that assumes that the patient does not have complications.)
          * `Peds` for a child - whether newly starting or already on treatment
         """
 
