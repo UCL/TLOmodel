@@ -1586,7 +1586,6 @@ class RTI(Module):
             # Check whether the person sent to surgery has an injury which actually requires surgery
             _, counts = RTI.rti_find_and_count_injuries(person_injuries, surgically_treated_codes)
             if counts == 0:
-                pass
                 logger.debug(key='rti_general_message',
                              data=f"This is rti do for major surgery person {person_id} asked for treatment but "
                                   f"doesn't need it.")
