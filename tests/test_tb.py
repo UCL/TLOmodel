@@ -518,7 +518,7 @@ def test_latent_prevalence(seed):
     # check proportion HIV- adults who have active scheduled
     assert (count / len(df.loc[df.is_alive])) < 0.25
 
-    # how many are progressing fast  (~14% fast)
+    # how many are progressing fast (~14% fast)
     count2 = len(df.loc[(df.tb_scheduled_date_active == sim.date)].index)
 
     prop_fast = count2 / len(df.loc[df.is_alive])
