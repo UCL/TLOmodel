@@ -1661,6 +1661,8 @@ class RTI(Module):
             # Check whether the person requesting minor surgeries has an injury that requires minor surgery
             _, counts = RTI.rti_find_and_count_injuries(person_injuries, surgically_treated_codes)
             if counts == 0:
+                logger.debug(key='rti_general_message',
+                             data=f"person {person_id} was assigned for a minor surgery but has no injury")
                 return
             # schedule the minor surgery
             if 'Minor Surgery' not in self.parameters['blocked_interventions']:
@@ -1698,6 +1700,8 @@ class RTI(Module):
             idx, counts = RTI.rti_find_and_count_injuries(person_injuries,
                                                           self.PROPERTIES.get('rt_injury_1').categories[1:])
             if counts == 0:
+                logger.debug(key='rti_general_message',
+                             data=f"person {person_id} requested pain relief but does not need it")
                 return
             # schedule pain management
             self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -1726,6 +1730,8 @@ class RTI(Module):
             # Check they have a laceration which needs stitches
             _, counts = RTI.rti_find_and_count_injuries(person_injuries, laceration_codes)
             if counts == 0:
+                logger.debug(key='rti_general_message',
+                             data=f"person {person_id} requested a suture but does not need it")
                 return
             # request suture
             self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -1789,6 +1795,8 @@ class RTI(Module):
             # Check to see whether they have a burn which needs treatment
             _, counts = RTI.rti_find_and_count_injuries(person_injuries, burn_codes)
             if counts == 0:
+                logger.debug(key='rti_general_message',
+                             data=f"person {person_id} requested burn treatment but does not need it")
                 return
             # if this person is alive ask for the hsi event
             self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -1823,6 +1831,8 @@ class RTI(Module):
             # Check they have an injury treated by HSI_RTI_Fracture_Cast
             _, counts = RTI.rti_find_and_count_injuries(person_injuries, fracture_codes)
             if counts == 0:
+                logger.debug(key='rti_general_message',
+                             data=f"person {person_id} requested a fracture cast but does not need it")
                 return
             # if this person is alive request the hsi
             if 'Fracture Casts' not in self.parameters['blocked_interventions']:
@@ -1858,10 +1868,10 @@ class RTI(Module):
             # Check that they have an open fracture
             _, counts = RTI.rti_find_and_count_injuries(person_injuries, open_fracture_codes)
             if counts == 0:
-                return
                 logger.debug(key='rti_general_message',
                              data=f"This is rti_ask_for_open_frac person {person_id} asked for treatment but doesn't"
                                   f"need it.")
+                return
             # if the person is alive request the hsi
             for i in range(0, counts):
                 # schedule the treatments, say the treatments occur a day apart for now
@@ -1892,10 +1902,10 @@ class RTI(Module):
             # Check that they have a burn/laceration
             _, counts = RTI.rti_find_and_count_injuries(person_injuries, codes_for_tetanus)
             if counts == 0:
-                return
                 logger.debug(key='rti_general_message',
                              data=f"This is rti_ask_for_tetanus person {person_id} asked for treatment but doesn't"
                                   f"need it.")
+                return
 
             # if this person is alive, ask for the hsi
             self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -3426,10 +3436,11 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         _, counts = RTI.rti_find_and_count_injuries(person_injuries,
                                                     self.module.PROPERTIES.get('rt_injury_1').categories[1:-1])
         if counts == 0:
-            return self.make_appt_footprint({})
             logger.debug(key='rti_general_message',
                          data=f"This is RTIMedicalInterventionEvent person {person_id} asked for treatment but doesn't"
                               f"need it.")
+            return self.make_appt_footprint({})
+
         # log the number of injuries this person has
         logger.info(key='number_of_injuries_in_hospital',
                     data={'number_of_injuries': counts},
@@ -4196,10 +4207,11 @@ class HSI_RTI_Tetanus_Vaccine(HSI_Event, IndividualScopeEventMixin):
                              '1114', '2114', '3113', '4113', '5113', '7113', '8113']
         _, counts = RTI.rti_find_and_count_injuries(person_injuries, codes_for_tetanus)
         if counts == 0:
-            return self.make_appt_footprint({})
             logger.debug(key='rti_general_message',
                          data=f"This is RTI tetanus vaccine person {person_id} asked for treatment but doesn't"
-                              f"need it.")        # If they have a laceration/burn ask request the tetanus vaccine
+                              f"need it.")
+            return self.make_appt_footprint({})
+        # If they have a laceration/burn ask request the tetanus vaccine
         if counts > 0:
             get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
             self.module.item_codes_for_consumables_required['tetanus_treatment'] = {
@@ -4610,10 +4622,11 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
         # check the people sent here have at least one injury treated by this HSI event
         _, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, surgically_treated_codes)
         if counts == 0:
-            return self.make_appt_footprint({})
             logger.debug(key='rti_general_message',
                          data=f"This is RTI major surgery person {person_id} asked for treatment but doesn't"
                               f"need it.")
+            return self.make_appt_footprint({})
+
         # People can be sent here for multiple surgeries, but only one injury can be treated at a time. Decide which
         # injury is being treated in this surgery
         # find index for untreated injuries
@@ -4914,10 +4927,10 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
         # check they have at least one injury treated by minor surgery
         _, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, surgically_treated_codes)
         if counts == 0:
-            return self.make_appt_footprint({})
             logger.debug(key='rti_general_message',
                          data=f"This is RTI minor surgery person {person_id} asked for treatment but doesn't"
                               f"need it.")
+            return self.make_appt_footprint({})
             # find the injuries which will be treated here
         relevant_codes = np.intersect1d(df.loc[person_id, 'rt_injuries_for_minor_surgery'], surgically_treated_codes)
         # Check that a code has been selected to be treated
