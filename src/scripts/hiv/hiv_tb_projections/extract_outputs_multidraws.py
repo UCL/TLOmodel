@@ -16,11 +16,11 @@ outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
 
 # download all files (and get most recent [-1])
 results_folder1 = get_scenario_outputs("scenario1.py", outputspath)[-1]
-results_folder2 = get_scenario_outputs("scenario2.py", outputspath)[-1]
+# results_folder2 = get_scenario_outputs("scenario2.py", outputspath)[-1]
 results_folder3 = get_scenario_outputs("scenario3.py", outputspath)[-1]
 
 # look at one log (so can decide what to extract)
-log = load_pickled_dataframes(results_folder2)
+log = load_pickled_dataframes(results_folder1)
 
 # ---------------------------------- Fraction HCW time-------------------------------------
 
@@ -41,19 +41,19 @@ hcw1["lower"] = capacity1.quantile(q=0.025, axis=1)
 hcw1["upper"] = capacity1.quantile(q=0.975, axis=1)
 
 
-capacity2 = extract_results(
-    results_folder2,
-    module="tlo.methods.healthsystem.summary",
-    key="health_system_annual_logs",
-    custom_generate_series=(
-        lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['capacity'].mean()
-    ),
-)
-capacity2.columns = capacity2.columns.get_level_values(0)
-hcw2 = pd.DataFrame(index=capacity2.index, columns=["median", "lower", "upper"])
-hcw2["median"] = capacity2.median(axis=1)
-hcw2["lower"] = capacity2.quantile(q=0.025, axis=1)
-hcw2["upper"] = capacity2.quantile(q=0.975, axis=1)
+# capacity2 = extract_results(
+#     results_folder2,
+#     module="tlo.methods.healthsystem.summary",
+#     key="health_system_annual_logs",
+#     custom_generate_series=(
+#         lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['capacity'].mean()
+#     ),
+# )
+# capacity2.columns = capacity2.columns.get_level_values(0)
+# hcw2 = pd.DataFrame(index=capacity2.index, columns=["median", "lower", "upper"])
+# hcw2["median"] = capacity2.median(axis=1)
+# hcw2["lower"] = capacity2.quantile(q=0.025, axis=1)
+# hcw2["upper"] = capacity2.quantile(q=0.975, axis=1)
 
 capacity3 = extract_results(
     results_folder3,

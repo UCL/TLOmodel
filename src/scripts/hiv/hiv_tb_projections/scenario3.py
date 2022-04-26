@@ -95,7 +95,7 @@ class TestScenario(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         return {
             'Tb': {
-                'scenario': 1,
+                'scenario': 3,
                 'transmission_rate': [15.8, 15.4, 16.7, 16.2, 16.1][draw_number]
             },
             'Hiv': {
