@@ -1227,12 +1227,6 @@ class Tb(Module):
         # should return risk=0 for everyone not eligible for relapse
 
         # risk of relapse if <2 years post treatment start, includes risk if HIV+
-        # get df of those eligible
-        # relapse_risk_early = df.loc[
-        #     df.tb_ever_treated
-        #     & (now < (df.tb_date_treated + pd.DateOffset(days=732.5)))
-        #     ].index
-
         risk_of_relapse_early = self.lm["risk_relapse_2yrs"].predict(
             df.loc[df.tb_ever_treated
             & (now < (df.tb_date_treated + pd.DateOffset(years=2)))]
@@ -1244,12 +1238,6 @@ class Tb(Module):
         idx_will_relapse_early = will_relapse[will_relapse].index
 
         # risk of relapse if >=2 years post treatment start, includes risk if HIV+
-        # get df of those eligible
-        # relapse_risk_later = df.loc[
-        #     df.tb_ever_treated
-        #     & (now >= (df.tb_date_treated + pd.DateOffset(days=732.5)))
-        #     ].index
-
         risk_of_relapse_later = self.lm["risk_relapse_late"].predict(
             df.loc[df.tb_ever_treated
             & (now >= (df.tb_date_treated + pd.DateOffset(years=2)))]
@@ -1717,14 +1705,13 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[active_idx, "tb_smear"] = False  # default property
 
         # -------- 2) assign symptoms --------
-        for person_id in active_idx:
-            self.sim.modules["SymptomManager"].change_symptom(
-                person_id=person_id,
-                symptom_string=self.module.symptom_list,
-                add_or_remove="+",
-                disease_module=self.module,
-                duration_in_days=None,
-            )
+        self.sim.modules["SymptomManager"].change_symptom(
+            person_id=active_idx,
+            symptom_string=self.module.symptom_list,
+            add_or_remove="+",
+            disease_module=self.module,
+            duration_in_days=None,
+        )
 
         # -------- 3) if HIV+ assign smear status and schedule AIDS onset --------
         active_and_hiv = df.loc[
