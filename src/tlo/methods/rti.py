@@ -994,6 +994,11 @@ class RTI(Module):
             Types.INT,
             "A cut-off score above which an injury will result in additional mortality if the person has "
             "sought healthcare and not received it."
+        ),
+        'consider_death_no_treatment_ISS_cut_off': Parameter(
+            Types.INT,
+            "A cut-off score above which an injuries will be considered severe enough to cause mortality in those who"
+            "have not sought care."
         )
 
     }
@@ -2815,6 +2820,7 @@ class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
         self.daly_wt_femur_fracture_long_term_without_treatment = \
             p['daly_wt_femur_fracture_long_term_without_treatment']
         self.no_treatment_mortality_mais_cutoff = p['unavailable_treatment_mortality_mais_cutoff']
+        self.no_treatment_ISS_cut_off = p['consider_death_no_treatment_ISS_cut_off']
 
     def apply(self, population):
         df = population.props
@@ -2852,7 +2858,7 @@ class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
                 if df.loc[person, 'rt_med_int'] and (max_untreated_injury < self.no_treatment_mortality_mais_cutoff):
                     # filter out non serious injuries from the consideration of mortality
                     prob_death = 0
-                if rand_for_death < prob_death:
+                if (rand_for_death < prob_death) and (df.loc[person, 'rt_ISS_score'] > self.no_treatment_ISS_cut_off):
                     # If determined to die, schedule a death without med
                     df.loc[person, 'rt_no_med_death'] = True
                     self.sim.modules['Demography'].do_death(individual_id=person, cause="RTI_death_without_med",
