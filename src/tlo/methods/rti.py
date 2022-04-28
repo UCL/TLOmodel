@@ -2116,7 +2116,7 @@ class RTI(Module):
             df.at[person_id, 'rt_debugging_DALY_wt'] = 0
         # catch rounding point errors where the disability weights should be zero but aren't
         if df.at[person_id, 'rt_disability'] < 0:
-            df.at[person_id, 'rt_disability'] = df.at[person_id, 'rt_debugging_DALY_wt']
+            df.at[person_id, 'rt_disability'] = 0
         # Catch cases where the disability burden is greater than one in reality but needs to be
         # capped at one, if not report the true disability burden
         if df.at[person_id, 'rt_debugging_DALY_wt'] > 1:
