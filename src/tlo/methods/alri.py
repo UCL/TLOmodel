@@ -585,11 +585,6 @@ class Alri(Module):
                       'mortality among children who changed to 2nd line antibiotics '
                       ),
 
-        'sensitivity_of_assessment_and_classification_of_IMCI_pneumonia':
-            Parameter(Types.REAL,
-                      'probability of treatment failure by day 2 '
-                      'of first line antibiotic treatment for severe pneumonia'
-                      ),
         'sensitivity_of_classification_of_fast_breathing_pneumonia_facility_level0':
             Parameter(Types.REAL,
                       'sensitivity of correct classification and treatment decision by the HSA trained in iCCM,'
