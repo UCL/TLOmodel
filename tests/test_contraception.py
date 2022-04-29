@@ -26,6 +26,7 @@ def run_sim(tmpdir,
             no_changes_in_contraception=False,
             no_initial_contraception_use=False,
             equalised_risk_of_preg=None,
+            unlimited_runs_of_hsi=False
             ):
     """Run basic checks on function of contraception module"""
 
@@ -122,6 +123,9 @@ def run_sim(tmpdir,
             equalised_risk_of_preg
         sim.modules['Contraception'].processed_params['p_pregnancy_with_contraception_per_month'].loc[:, :] = \
             equalised_risk_of_preg
+
+    if unlimited_runs_of_hsi:
+        sim.modules['Contraception'].parameters['max_number_of_runs_of_hsi_if_consumable_not_available'] = 10_000
 
     if not run:
         return sim
@@ -649,14 +653,14 @@ def test_contraception_coverage_with_use_healthsystem(tmpdir, seed):
 
         def find_average_availability(items: List, level: str):
             """Find the probability that all the items are available at level 1a."""
-            facilities_at_1a = set([x.id for x in sim.modules['HealthSystem']._facilities_for_each_district[level].values()])
+            facilities = set([x.id for x in sim.modules['HealthSystem']._facilities_for_each_district[level].values()])
             return np.prod(
-               [cons.loc[(slice(None), facilities_at_1a, _item)].mean() for _item in items]
+               [cons.loc[(slice(None), facilities, _item)].mean() for _item in items]
             )
 
-        for fac_level in ('1a', '1b'):
+        for fac_level in ('1a', '1b', '2'):
             av_availability = {
-                k: find_average_availability(items=set(v.keys()) if isinstance(v, dict) else set(v), level='1a')
+                k: find_average_availability(items=set(v.keys()) if isinstance(v, dict) else set(v), level=fac_level)
                 for k, v in item_codes.items()
             }
             print(f'Probability of all items being available at {fac_level}: {av_availability}')
@@ -673,9 +677,10 @@ def test_contraception_coverage_with_use_healthsystem(tmpdir, seed):
                 seed,
                 use_healthsystem=True,
                 consumables_available='default',
-                popsize=5000,
+                popsize=5_000,
                 end_date=Date(2011, 12, 31),
-                equalised_risk_of_preg=0.0
+                equalised_risk_of_preg=0.0,
+                unlimited_runs_of_hsi=True
                 )
     )
 
@@ -684,17 +689,19 @@ def test_contraception_coverage_with_use_healthsystem(tmpdir, seed):
                 seed,
                 use_healthsystem=False,
                 consumables_available='default',
-                popsize=5000,
+                popsize=5_000,
                 end_date=Date(2011, 12, 31),
-                equalised_risk_of_preg=0.0
+                equalised_risk_of_preg=0.0,
+                unlimited_runs_of_hsi=True
                 )
     )
 
-    def compare_dictionaries(A: Dict, B: Dict, tol: float = 0.05):
-        """True if the elements of A and B are equal within some tolerance. """
+    def compare_dictionaries(A: Dict, B: Dict, tol: float):
+        """True if the elements of A and B are equal within some tolerance (expressed as the fraction of the sum of the
+         values in the dict). """
 
-        def equals(a: int, b: int, tol: float):
-            """True if the difference between a and b is less than tol."""
+        def equals(a: int, b: int, tol: int):
+            """True if the difference between a and b is less than tol (expressed as the absolute difference)."""
             return abs(a - b) < tol
 
         _tol = int(tol * np.mean([sum(_x.values()) for _x in (A, B)]))
@@ -704,4 +711,3 @@ def test_contraception_coverage_with_use_healthsystem(tmpdir, seed):
     print(f"{contraception_use_healthsystem_true=}")
     print(f"{contraception_use_healthsystem_false=}")
     assert compare_dictionaries(contraception_use_healthsystem_true, contraception_use_healthsystem_false, tol=0.01)
-

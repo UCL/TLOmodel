@@ -79,7 +79,10 @@ class Contraception(Module):
             Types.LIST, "Scaling factor (by age-group: 15-19, 20-24, ..., 45-49) on the monthly risk of pregnancy and "
                         "contraceptive failure rate. This value is found through calibration so that, at the beginning "
                         "of the simulation, the age-specific monthly probability of a woman having a live birth matches"
-                        " the WPP age-specific fertility rate value for the same year.")
+                        " the WPP age-specific fertility rate value for the same year."),
+
+        'max_number_of_runs_of_hsi_if_consumable_not_available': Parameter(
+            Types.INT, "The maximum number of time an HSI can run (repeats occur if the consumables are not available"),
     }
 
     all_contraception_states = {
@@ -937,8 +940,6 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         self.ACCEPTED_FACILITY_LEVEL = _facility_level
         self.ALERT_OTHER_DISEASES = []
 
-        self.MAX_NUMBER_OF_RUNS = 10  # Maximum number of runs (repeats when consumables not available)
-
     def apply(self, person_id, squeeze_factor):
         """If the relevant consumable is available, do change in contraception and log it"""
 
@@ -964,10 +965,12 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
                 old=current_method,
                 new=_new_contraceptive
             )
-            # (N.B. If the current method is the same as the new method, do nothing else (not even logging))
+            # (N.B. If the current method is the same as the new method, there is no logging.)
 
         # If the intended change was not possible due to non-available consumable, reschedule the appointment
-        if not cons_available and (self._number_of_times_run < self.MAX_NUMBER_OF_RUNS):
+        if not cons_available and (
+            self._number_of_times_run < self.module.parameters['max_number_of_runs_of_hsi_if_consumable_not_available']
+        ):
             self.reschedule()
 
     def reschedule(self):
