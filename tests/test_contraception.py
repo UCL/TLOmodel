@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List
 
 import numpy as np
 import pandas as pd
@@ -641,35 +641,27 @@ def test_contraception_coverage_with_use_healthsystem(tmpdir, seed):
     as when `use_healthsystem=False` (despite the possibility of consumables not being always available when using the
     healthsystem)."""
 
-    # Find availability of consumables
-    sim = run_sim(tmpdir, seed, run=False, consumables_available='default')
-    contraception = sim.modules['Contraception']
-    item_codes = contraception.get_item_code_for_each_contraceptive()
-    cons = sim.modules['HealthSystem'].consumables._prob_item_codes_available
+    def report_availability_of_consumables():
+        """Helper function to find the availability of consumables used in the Contraception module."""
+        sim = run_sim(tmpdir, seed, run=False, consumables_available='default')
+        item_codes = sim.modules['Contraception'].get_item_code_for_each_contraceptive()
+        cons = sim.modules['HealthSystem'].consumables._prob_item_codes_available
 
-    def find_average_availability_at_1a(items):
-        """Find the probability that all the items are available at level 1a."""
-        facilities_at_1a = set([x.id for x in sim.modules['HealthSystem']._facilities_for_each_district['1a'].values()])
-        return np.prod(
-           [cons.loc[(slice(None), facilities_at_1a, _item)].mean() for _item in items]
-        )
+        def find_average_availability(items: List, level: str):
+            """Find the probability that all the items are available at level 1a."""
+            facilities_at_1a = set([x.id for x in sim.modules['HealthSystem']._facilities_for_each_district[level].values()])
+            return np.prod(
+               [cons.loc[(slice(None), facilities_at_1a, _item)].mean() for _item in items]
+            )
 
-    def find_average_availability_at_1b(items):
-        """Find the probability that all the items are available at level 1b."""
-        facilities_at_1b = set([x.id for x in sim.modules['HealthSystem']._facilities_for_each_district['1b'].values()])
-        return np.prod(
-           [cons.loc[(slice(None), facilities_at_1b, _item)].mean() for _item in items]
-        )
+        for fac_level in ('1a', '1b'):
+            av_availability = {
+                k: find_average_availability(items=set(v.keys()) if isinstance(v, dict) else set(v), level='1a')
+                for k, v in item_codes.items()
+            }
+            print(f'Probability of all items being available at {fac_level}: {av_availability}')
 
-    av_availability_at_1a = {
-        k: find_average_availability_at_1a(set(v.keys()) if isinstance(v, dict) else set(v))
-        for k, v in item_codes.items()
-    }
-
-    av_availability_at_1b = {
-        k: find_average_availability_at_1b(set(v.keys()) if isinstance(v, dict) else set(v))
-        for k, v in item_codes.items()
-    }
+    report_availability_of_consumables()
 
     def summarize_contraception_use(sim):
         """Summarize the pattern of contraception currently in the population."""
@@ -712,5 +704,4 @@ def test_contraception_coverage_with_use_healthsystem(tmpdir, seed):
     print(f"{contraception_use_healthsystem_true=}")
     print(f"{contraception_use_healthsystem_false=}")
     assert compare_dictionaries(contraception_use_healthsystem_true, contraception_use_healthsystem_false, tol=0.01)
-
 
