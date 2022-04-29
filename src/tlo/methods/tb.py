@@ -1459,7 +1459,7 @@ class Tb(Module):
         )
 
         # Check that if person is infected, the dates of active TB is NOT missing
-        assert not df_alive.loc[(df_alive.tb_inf == "active"), "tb_date_active"].isna().all()
+        assert not df.loc[(df.tb_inf == "active"), "tb_date_active"].isna().all()
 
 
 # # ---------------------------------------------------------------------------

@@ -419,6 +419,10 @@ def test_children_referrals(seed):
     # make clinical diagnosis perfect
     sim.modules['Tb'].parameters["sens_clinical"] = 1.0
     sim.modules['Tb'].parameters["spec_clinical"] = 1.0
+    sim.modules['Tb'].parameters["sens_xray_smear_negative"] = 1.0
+    sim.modules['Tb'].parameters["sens_xray_smear_positive"] = 1.0
+    sim.modules['Tb'].parameters["spec_xray_smear_negative"] = 1.0
+    sim.modules['Tb'].parameters["spec_xray_smear_positive"] = 1.0
     sim.modules['Tb'].parameters["probability_access_to_xray"] = 1.0
 
     # simulate for 0 days, just get everything set up (dxtests etc)
