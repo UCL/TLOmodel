@@ -506,8 +506,8 @@ class Tb(Module):
         # intercept=1
         self.lm["latent_tb_2010"] = LinearModel.multiplicative(
             Predictor("age_years")
-                .when("<15", p["prob_latent_tb_0_14"])
-                .otherwise(p["prob_latent_tb_15plus"]),
+            .when("<15", p["prob_latent_tb_0_14"])
+            .otherwise(p["prob_latent_tb_15plus"]),
             Predictor("hv_inf").when(True, p["rr_tb_hiv"]),
         )
 
@@ -562,11 +562,11 @@ class Tb(Module):
             LinearModelType.MULTIPLICATIVE,
             1,
             Predictor("age_years")
-                .when("<1", p["prog_1yr"])
-                .when("<2", p["prog_1_2yr"])
-                .when("<5", p["prog_2_5yr"])
-                .when("<10", p["prog_5_10yr"])
-                .when("<15", p["prog_10yr"]),
+            .when("<1", p["prog_1yr"])
+            .when("<2", p["prog_1_2yr"])
+            .when("<5", p["prog_2_5yr"])
+            .when("<10", p["prog_5_10yr"])
+            .when("<15", p["prog_10yr"]),
             Predictor().when(
                 "va_bcg_all_doses & (hv_inf == False) & (age_years <10)", p["rr_tb_bcg"]
             ),
@@ -691,8 +691,8 @@ class Tb(Module):
         # allocate some latent infections as mdr-tb
         idx_new_latent_mdr = (
             df[df.is_alive & (df.tb_inf == "latent")]
-                .sample(frac=p["prop_mdr2010"], random_state=self.rng)
-                .index
+            .sample(frac=p["prop_mdr2010"], random_state=self.rng)
+            .index
         )
 
         df.loc[idx_new_latent_mdr, "tb_strain"] = "mdr"
@@ -848,7 +848,8 @@ class Tb(Module):
         active_testing_rates = p["rate_testing_active_tb"]
         current_active_testing_rate = active_testing_rates.loc[
                                           (
-                                              active_testing_rates.year == self.sim.date.year), "testing_rate_active_cases"].values[
+                                              active_testing_rates.year == self.sim.date.year),
+                                          "testing_rate_active_cases"].values[
                                           0] / 100
         current_active_testing_rate = current_active_testing_rate / 3  # adjusted for monthly poll
         random_draw = rng.random_sample(size=len(df))
@@ -2370,7 +2371,8 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             & (person["age_years"] <= 16) \
             & ~(person["tb_smear"]) \
             & ~person["tb_ever_treated"] \
-            & ~person["tb_diagnosed_mdr"]:
+                & ~person["tb_diagnosed_mdr"]:
+
             # shorter treatment for child with minimal tb
             treatment_regimen = "tb_tx_child_shorter"
 
@@ -2427,7 +2429,7 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
 
         # if previously treated:
         if ((person["tb_treatment_regimen"] == "tb_retx_adult") or
-            (person["tb_treatment_regimen"] == "tb_retx_child")):
+                (person["tb_treatment_regimen"] == "tb_retx_child")):
 
             # if strain is ds and person previously treated:
             sputum_fup = follow_up_times["ds_retreatment_sputum"].dropna()
@@ -2604,11 +2606,8 @@ class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):
         # decide whether PLHIV will continue
         if (
             person["hv_diagnosed"]
-            and
-            (not person["tb_diagnosed"])
-            and (
-            person["tb_date_ipt"] < (self.sim.date - pd.DateOffset(days=36 * 30.5))
-        )
+            and (not person["tb_diagnosed"])
+            and (person["tb_date_ipt"] < (self.sim.date - pd.DateOffset(days=36 * 30.5)))
             and (m.rng.random_sample() < m.parameters["prob_retained_ipt_6_months"])
         ):
             self.sim.modules["HealthSystem"].schedule_hsi_event(
