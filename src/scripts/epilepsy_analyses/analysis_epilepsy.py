@@ -59,8 +59,6 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
 
-sim.modules['Epilepsy'].parameters['base_3m_prob_epilepsy'] *= 0.718263652349331
-sim.modules['Epilepsy'].parameters['base_prob_3m_epi_death'] *= 0.6
 sim.simulate(end_date=end_date)
 
 
