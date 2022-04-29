@@ -81,7 +81,6 @@ def test_scenario_parameters(seed):
     assert sim.modules["Tb"].parameters["ipt_coverage"]["coverage_paediatric"].all() >= 0.8
 
 
-
 @pytest.mark.slow
 def test_scenario_ipt_expansion(seed):
     """ test scenario IPT expansion is set up correctly
