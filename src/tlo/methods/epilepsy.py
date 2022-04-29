@@ -569,33 +569,19 @@ class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
-        # Create a shorthand reference to the function used to request consumables
-        get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
-        # Get item code for first choice treatment, Phenobarbitone
-        self.module.item_codes_for_consumables_required['anti_epileptic_first_choice'] = {
-            get_item_code("Phenobarbitone  30mg_1000_CMST"): 1,
-        }
-        # Get item code for second choice treatment Carbamazepine
-        self.module.item_codes_for_consumables_required['anti_epileptic_second_choice'] = {
-            get_item_code("Carbamazepine 200mg_1000_CMST"): 1,
-        }
-        # Get item code for third choice treatment Phenytoin sodium
-        self.module.item_codes_for_consumables_required['anti_epileptic_third_choice'] = {
-            get_item_code("Phenytoin sodium 100mg_1000_CMST"): 1,
-        }
         # Check what drugs are available, to_log is set to false in order to not actually request the consumables from
         # the health system before we know what is available
         available_treatments = {
-            'anti_epileptic_first_choice': self.get_consumables(
-                self.module.item_codes_for_consumables_required['anti_epileptic_first_choice'],
+            'phenobarbitone': self.get_consumables(
+                self.module.item_codes['phenobarbitone'],
                 to_log=False
             ),
-            'anti_epileptic_second_choice': self.get_consumables(
-                self.module.item_codes_for_consumables_required['anti_epileptic_second_choice'],
+            'carbamazepine': self.get_consumables(
+                self.module.item_codes['carbamazepine'],
                 to_log=False
             ),
-            'anti_epileptic_third_choice': self.get_consumables(
-                self.module.item_codes_for_consumables_required['anti_epileptic_third_choice'],
+            'phenytoin': self.get_consumables(
+                self.module.item_codes['phenytoin'],
                 to_log=False
             ),
         }
@@ -609,7 +595,7 @@ class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
             # Request the medicine from the health system, with to_log set to True to actually consume the medicine
             # from the health system
             self.get_consumables(
-                self.module.item_codes_for_consumables_required[best_available_medicine],
+                self.module.item_codes[best_available_medicine],
                 to_log=True
             )
             # Update this person's properties to show that they are currently on medication
