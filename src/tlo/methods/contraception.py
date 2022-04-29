@@ -927,7 +927,7 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
     def __init__(self, module, person_id, new_contraceptive):
         super().__init__(module, person_id=person_id)
 
-        _facility_level = '1b' if new_contraceptive in ('implant', 'female_sterilization') else '1a'
+        _facility_level = '2' if new_contraceptive in ('implant', 'female_sterilization') else '1a'
 
         self.new_contraceptive = new_contraceptive
         self._number_of_times_run = 0
