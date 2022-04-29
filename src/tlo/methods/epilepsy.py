@@ -22,7 +22,7 @@ class Epilepsy(Module):
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
-        self.item_codes_for_consumables_required = dict()
+        self.item_codes = dict()
 
     INIT_DEPENDENCIES = {'Demography', 'HealthBurden', 'HealthSystem', 'SymptomManager'}
 
@@ -208,6 +208,13 @@ class Epilepsy(Module):
 
         event = EpilepsyLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=0))
+
+        # Get item_codes for the consumables used in the HSI
+        hs = self.sim.modules['HealthSystem']
+        self.item_codes = dict()
+        self.item_codes['phenobarbitone'] = hs.get_item_code_from_item_name("Phenobarbital, 100 mg")
+        self.item_codes['carbamazepine'] = hs.get_item_code_from_item_name('Carbamazepine 200mg_1000_CMST')
+        self.item_codes['phenytoin'] = hs.get_item_code_from_item_name('Phenytoin sodium 100mg_1000_CMST')
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.

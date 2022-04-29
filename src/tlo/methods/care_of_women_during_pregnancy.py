@@ -218,15 +218,14 @@ class CareOfWomenDuringPregnancy(Module):
 
         # ---------------------------------- BLOOD TEST EQUIPMENT ---------------------------------------------------
         self.item_codes_preg_consumables['blood_test_equipment'] = \
-            get_list_of_items(self, ['Blood collecting tube, 5 ml',
-                                     'Syringe, needle + swab',
-                                     'Gloves, exam, latex, disposable, pair'])
+            get_list_of_items(self, ['Disposables gloves, powder free, 100 pieces per box'])
+        # todo: remove entirely?
 
         # ---------------------------------- IV DRUG ADMIN EQUIPMENT  -------------------------------------------------
         self.item_codes_preg_consumables['iv_drug_equipment'] = \
-            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 20_each_CMST',
-                                     'IV giving/infusion set, with needle',
-                                     'Gloves, exam, latex, disposable, pair'])
+            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 18_each_CMST',
+                                     'Giving set iv administration + needle 15 drops/ml_each_CMST',
+                                     'Disposables gloves, powder free, 100 pieces per box'])
 
         # -------------------------------------------- ECTOPIC PREGNANCY ---------------------------------------------
         self.item_codes_preg_consumables['ectopic_pregnancy_core'] = \
@@ -238,10 +237,9 @@ class CareOfWomenDuringPregnancy(Module):
             get_list_of_items(self, ['Sodium chloride, injectable solution, 0,9 %, 500 ml',
                                      'Paracetamol, tablet, 500 mg',
                                      'Pethidine, 50 mg/ml, 2 ml ampoule',
-                                     'Syringe, needle + swab',
                                      'Suture pack',
-                                     'Gauze pad, 10 x 10 cm, sterile',
-                                     'Cannula iv  (winged with injection pot) 20_each_CMST'])
+                                     'Gauze, absorbent 90cm x 40m_each_CMST',
+                                     'Cannula iv  (winged with injection pot) 18_each_CMST'])
 
         # ------------------------------------------- POST ABORTION CARE - GENERAL  -----------------------------------
         self.item_codes_preg_consumables['post_abortion_care_core'] = \
@@ -251,8 +249,7 @@ class CareOfWomenDuringPregnancy(Module):
         self.item_codes_preg_consumables['post_abortion_care_optional'] = \
             get_list_of_items(self, ['Complete blood count',
                                      'Blood collecting tube, 5 ml',
-                                     'Syringe, needle + swab',
-                                     'Gloves, exam, latex, disposable, pair',
+                                     'Disposables gloves, powder free, 100 pieces per box',
                                      'Paracetamol, tablet, 500 mg',
                                      'Pethidine, 50 mg/ml, 2 ml ampoule'])
 
@@ -264,21 +261,21 @@ class CareOfWomenDuringPregnancy(Module):
 
         self.item_codes_preg_consumables['post_abortion_care_sepsis_optional'] = \
             get_list_of_items(self, ['Sodium chloride, injectable solution, 0,9 %, 500 ml',
-                                     'Cannula iv  (winged with injection pot) 20_each_CMST',
-                                     'Gloves, exam, latex, disposable, pair',
-                                     'IV giving/infusion set, with needle',
+                                     'Cannula iv  (winged with injection pot) 18_each_CMST',
+                                     'Disposables gloves, powder free, 100 pieces per box',
+                                     'Giving set iv administration + needle 15 drops/ml_each_CMST',
                                      'Oxygen, 1000 liters, primarily with oxygen cylinders'])
 
         # ------------------------------------------- POST ABORTION CARE - SHOCK -------------------------------------
         self.item_codes_preg_consumables['post_abortion_care_shock'] = \
             get_list_of_items(self, ['Sodium chloride, injectable solution, 0,9 %, 500 ml',
-                                     'Cannula iv  (winged with injection pot) 20_each_CMST',
-                                     'Gloves, exam, latex, disposable, pair',
-                                     'IV giving/infusion set, with needle',
+                                     'Cannula iv  (winged with injection pot) 18_each_CMST',
+                                     'Disposables gloves, powder free, 100 pieces per box',
+                                     'Giving set iv administration + needle 15 drops/ml_each_CMST',
                                      'Oxygen, 1000 liters, primarily with oxygen cylinders'])
 
         # ---------------------------------- URINE DIPSTICK ----------------------------------------------------------
-        self.item_codes_preg_consumables['urine_dipstick'] = get_list_of_items(self, ['Test strips, urine analysis'])
+        self.item_codes_preg_consumables['urine_dipstick'] = get_list_of_items(self, ['Urine analysis'])
 
         # ---------------------------------- IRON AND FOLIC ACID ------------------------------------------------------
         self.item_codes_preg_consumables['iron_folic_acid'] = get_list_of_items(
@@ -342,13 +339,12 @@ class CareOfWomenDuringPregnancy(Module):
             self, ['Misoprostol, tablet, 200 mcg',
                    'Oxytocin, injection, 10 IU in 1 ml ampoule',
                    'Sodium chloride, injectable solution, 0,9 %, 500 ml',
-                   'Cannula iv  (winged with injection pot) 20_each_CMST',
-                   'IV giving/infusion set, with needle',
-                   'Gloves, exam, latex, disposable, pair',
+                   'Cannula iv  (winged with injection pot) 18_each_CMST',
+                   'Giving set iv administration + needle 15 drops/ml_each_CMST',
+                   'Disposables gloves, powder free, 100 pieces per box',
                    'Oxygen, 1000 liters, primarily with oxygen cylinders',
                    'Complete blood count',
                    'Blood collecting tube, 5 ml',
-                   'Syringe, needle + swab',
                    'Foley catheter',
                    'Bag, urine, collecting, 2000 ml'])
 

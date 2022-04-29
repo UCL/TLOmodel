@@ -1,9 +1,10 @@
 from pathlib import Path
 
+import numpy as np
 from matplotlib import pyplot as plt
 
 from tlo import Date, Simulation, logging
-from tlo.analysis.utils import parse_log_file
+from tlo.analysis.utils import compare_number_of_deaths, parse_log_file
 from tlo.methods import (
     demography,
     enhanced_lifestyle,
@@ -28,12 +29,13 @@ log_config = {
         "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
         "tlo.methods.rti": logging.INFO,
         "tlo.methods.healthsystem": logging.INFO,
+        "tlo.methods.demography": logging.INFO
     }
 }
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 12, 31)
-pop_size = 500
+end_date = Date(2020, 1, 1)
+pop_size = 5000
 
 # This creates the Simulation instance for this run. Because we've passed the `seed` and
 # `log_config` arguments, these will override the default behaviour.
@@ -60,7 +62,6 @@ sim.register(
 # create and run the simulation
 sim.make_initial_population(n=pop_size)
 sim.simulate(end_date=end_date)
-
 # parse the simulation logfile to get the output dataframes
 log_df = parse_log_file(sim.log_filepath)
 
@@ -69,7 +70,19 @@ log_df = parse_log_file(sim.log_filepath)
 model_rti = log_df["tlo.methods.rti"]["summary_1m"]["incidence of rti per 100,000"]
 model_date = log_df["tlo.methods.rti"]["summary_1m"]["date"]
 # ------------------------------------- PLOTS  ------------------------------------- #
-
+comparison = compare_number_of_deaths(logfile=sim.log_filepath, resourcefilepath=resourcefilepath)
+gbd_deaths_2010_2014 = comparison.loc[('2010-2014')]['GBD_mean'].sum()
+gbd_deaths_2015_2019 = comparison.loc[('2015-2019')]['GBD_mean'].sum()
+gbd_deaths = gbd_deaths_2010_2014 + gbd_deaths_2015_2019
+model_deaths_2010_2014 = comparison.loc[('2010-2014')]['model'].sum()
+model_deaths_2015_2019 = comparison.loc[('2015-2019')]['model'].sum()
+model_deaths = model_deaths_2010_2014 + model_deaths_2015_2019
+plt.bar(np.arange(2), [gbd_deaths, model_deaths], color=['lightsalmon', 'lightsteelblue'])
+plt.ylabel('Number of Deaths')
+plt.xticks(np.arange(2), ['GBD', 'TLO'])
+plt.title('RTI deaths estimated by the GBD and TLO model, 2010-2019')
+plt.show()
+plt.clf()
 plt.style.use("ggplot")
 
 # Measles incidence
