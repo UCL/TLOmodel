@@ -927,12 +927,14 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
 
     def __init__(self, module, person_id, old_contraceptive, new_contraceptive):
         super().__init__(module, person_id=person_id)
-        self.old_contraceptive = old_contraceptive
+
+        _facility_level = '1b' if new_contraceptive in ('implant', 'female_sterilization') else '1a'
+
         self.new_contraceptive = new_contraceptive
 
         self.TREATMENT_ID = "Contraception_FamilyPlanningAppt"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'FamPlan': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.ACCEPTED_FACILITY_LEVEL = _facility_level
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
