@@ -726,7 +726,7 @@ class MalariaDeathEvent(Event, IndividualScopeEventMixin):
     def apply(self, individual_id):
         df = self.sim.population.props
 
-        if not df.at[individual_id, "is_alive"]:
+        if not df.at[individual_id, "is_alive"] or (df.at[individual_id, "ma_inf_type"] == "none"):
             return
 
         # death should only occur if severe malaria case
