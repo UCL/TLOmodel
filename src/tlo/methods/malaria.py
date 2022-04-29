@@ -485,7 +485,8 @@ class Malaria(Module):
         df.at[child_id, "ma_iptp"] = False
 
         # reset mother's IPTp status to False
-        df.at[mother_id, "ma_iptp"] = False
+        if mother_id != -1:
+            df.at[mother_id, "ma_iptp"] = False
 
     def on_hsi_alert(self, person_id, treatment_id):
         """This is called whenever there is an HSI event commissioned by one of the other disease modules.
