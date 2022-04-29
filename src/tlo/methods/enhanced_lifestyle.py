@@ -294,6 +294,7 @@ class Lifestyle(Module):
     PROPERTIES = {
         'li_urban': Property(Types.BOOL, 'Currently urban'),
         'li_wealth': Property(Types.CATEGORICAL, 'wealth level: 1 (high) to 5 (low)', categories=[1, 2, 3, 4, 5]),
+        # todo make BMI property categorical
         'li_bmi': Property(
             Types.INT, 'bmi: 1 (<18) 2 (18-24.9)  3 (25-29.9) 4 (30-34.9) 5 (35+)' 'bmi is 0 until age 15'
         ),
@@ -1624,6 +1625,55 @@ def compute_tobacco_use_by_age(pop) -> Dict[str, Any]:
     return tob_age_dict
 
 
+def compute_currently_in_education_individuals_by_age(pop) -> Dict[str, Any]:
+    """get a summary of individuals who are currently in education by age groups. the age groups are as follows;
+            1.  less than 13 years old
+            2.  13 - 20 years
+            3.  20 - 30 years
+            4.  30 - 39 years
+            5.  40 - 49 years
+            6.  49 - 59 years
+            7.  60+ years
+    """
+
+    # a dictionary to store all individuals currently in education
+    cur_in_ed_dict: Dict[str, Any] = dict()
+
+    # get individuals currently in education aged 15-19
+    cur_ed_l13 = pop.loc[pop.is_alive & pop.age_years < 13, 'li_in_ed']
+
+    # get individuals currently in education and aged between 13 - 20
+    cur_ed1320 = pop.loc[pop.is_alive & pop.age_years.between(13, 20), 'li_in_ed']
+
+    # get individuals currently in education and aged between 20 - 29
+    cur_ed2029 = pop.loc[pop.is_alive & pop.age_years.between(20, 29), 'li_in_ed']
+
+    # get individuals currently in education and aged between 30 - 39
+    cur_ed3039 = pop.loc[pop.is_alive & pop.age_years.between(30, 39), 'li_in_ed']
+
+    # get individuals currently in education and aged between 40 - 49
+    cur_ed4049 = pop.loc[pop.is_alive & pop.age_years.between(40, 49), 'li_in_ed']
+
+    # get individuals currently in education and aged between 13 - 20
+    cur_ed15059 = pop.loc[pop.is_alive & pop.age_years.between(50, 59), 'li_in_ed']
+
+    # get individuals currently in education and aged 60+
+    cur_ed60 = pop.loc[pop.is_alive & pop.age_years >= 60, 'li_in_ed']
+
+    # todo: update dictionary with only rows that sum up to a value > 0
+    cur_in_ed_dict.update({
+        'cur_ed_l13': cur_ed_l13.sum(),
+        'cur_ed1320': cur_ed1320.sum(),
+        'cur_ed2029': cur_ed2029.sum(),
+        'cur_ed3039': cur_ed3039.sum(),
+        'cur_ed4049': cur_ed4049.sum(),
+        'cur_ed5059': cur_ed15059.sum(),
+        'cur_ed60': cur_ed60.sum(),
+    })
+
+    return cur_in_ed_dict
+
+
 class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """Handles lifestyle logging"""
 
@@ -1689,6 +1739,21 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             description='tobacco use by age range'
         )
 
+        # log summary of males and females currently in education
+        logger.info(
+            key='cur_in_ed',
+            data=df.loc[df.is_alive & df.li_in_ed, 'sex'].value_counts().sort_index().to_dict(),
+            description='male and female individuals current in education'
+        )
+
+        # log summary of individuals by age group currently in education
+        logger.info(
+            key='age_group_cur_in_ed',
+            data=compute_currently_in_education_individuals_by_age(df),
+            description='age group of individuals currently in education'
+        )
+
+        # log summary of males circumcised
         logger.info(
             key='prop_adult_men_circumcised',
             data=[df.loc[df.is_alive & (df.sex == 'M') & (df.age_years >= 15)].li_is_circ.mean()]

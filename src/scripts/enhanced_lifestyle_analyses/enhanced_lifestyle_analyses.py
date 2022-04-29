@@ -38,7 +38,7 @@ def run():
 
     # Basic arguments required for the simulation
     start_date = Date(2010, 1, 1)
-    end_date = Date(2040, 1, 1)
+    end_date = Date(2030, 1, 1)
     pop_size = 20000
 
     # This creates the Simulation instance for this run. Because we"ve passed the `seed` and
@@ -158,6 +158,75 @@ def tobacco_use_by_age(log_output):
     plt.show()
 
 
+def males_females_currently_in_education(log_output):
+    """Examine the number of individuals male and female who are currently in education """
+    male_female_in_ed = log_output['tlo.methods.enhanced_lifestyle']['cur_in_ed'].set_index('date')
+    ed_model_years = pd.to_datetime(male_female_in_ed.index)
+    # total number of males and females currently in education
+    total_cur_in_ed = male_female_in_ed.sum(axis=1)
+    # males currently in ed
+    male_cur_ed = male_female_in_ed.M
+    # females currently in education
+    female_cur_ed = male_female_in_ed.F
+
+    # add education data to plot
+    fig, ax = plt.subplots()
+    ax.plot(np.asarray(ed_model_years), total_cur_in_ed)
+    ax.plot(np.asarray(ed_model_years), male_cur_ed)
+    ax.plot(np.asarray(ed_model_years), female_cur_ed)
+
+    # display and save plot in outputs folder
+    plt.title('Males and Females currently in education')
+    plt.xlabel('Years')
+    plt.ylabel('Number of individuals')
+    plt.legend(['Total currently in education', 'Males', 'Females'])
+    plt.savefig(outputpath / ('individuals currently in education' + datestamp + '.png'), format='png')
+    plt.show()
+
+
+def individuals_currently_in_education_by_age_group(log_output):
+    """Examine the number of individuals that are currently in education per each age group"""
+    # get age group summary of individuals currently in education
+    ed_age_group = log_output['tlo.methods.enhanced_lifestyle']['age_group_cur_in_ed'].set_index('date')
+    cur_ed_model_years = pd.to_datetime(ed_age_group.index)
+    # get individuals currently in education less than 13 years
+    cur_ed_l13 = ed_age_group.cur_ed_l13
+    # get individuals currently in education 13 - 20 years
+    cur_ed1320 = ed_age_group.cur_ed1320
+    # todo: the below lines mostly have a sum of 0. refactor them once the todo on line #1663 in enhanced_lifestyle
+    #  module has been done
+    # get individuals currently in education 20 - 29 years
+    cur_ed2029 = ed_age_group.cur_ed2029
+    # get individuals currently in education 30 - 39 years
+    cur_ed3039 = ed_age_group.cur_ed3039
+    # get individuals currently in education 40 - 49 years
+    cur_ed4049 = ed_age_group.cur_ed4049
+    # get individuals currently in education 50 - 59 years
+    cur_ed5059 = ed_age_group.cur_ed5059
+    # get individuals currently in education 60+ years
+    cur_ed60 = ed_age_group.cur_ed60
+
+    # add data to plot
+    fig, ax = plt.subplots()
+    ax.plot(np.asarray(cur_ed_model_years), cur_ed_l13)
+    ax.plot(np.asarray(cur_ed_model_years), cur_ed1320)
+    ax.plot(np.asarray(cur_ed_model_years), cur_ed2029)
+    ax.plot(np.asarray(cur_ed_model_years), cur_ed3039)
+    ax.plot(np.asarray(cur_ed_model_years), cur_ed4049)
+    ax.plot(np.asarray(cur_ed_model_years), cur_ed5059)
+    ax.plot(np.asarray(cur_ed_model_years), cur_ed60)
+
+    # display and save plot in outputs folder
+    plt.title('age group summary of individuals currently in education')
+    plt.xlabel('Years')
+    plt.ylabel('Number of individuals')
+    plt.legend(['individuals <13 years', 'individuals 13 - 20 years', 'individuals 20 - 29 years', 'individuals 30 - '
+                                                                                                   '39 years',
+                'individuals 40 - 49 years', 'individuals 50 - 59 years', 'individuals 60+ years'])
+    plt.savefig(outputpath / ('individuals currently in education by age groups' + datestamp + '.png'), format='png')
+    plt.show()
+
+
 def proportion_of_men_circumcised():
     """Examine the proportion of men circumcised. """
     # get proportion of men circumcised from log files
@@ -181,6 +250,7 @@ def proportion_of_women_sex_worker():
 
 
 # ----------------------------DISPLAY PLOTS-------------------------------------------------------------------
+
 # display population distribution plot
 examine_urban_population(output)
 
@@ -189,6 +259,12 @@ tobacco_use_male_female(output)
 
 # display tobacco use by age plot
 tobacco_use_by_age(output)
+
+# display individuals currently in education plot
+males_females_currently_in_education(output)
+
+# group individuals currently in education by age
+individuals_currently_in_education_by_age_group(output)
 
 # display proportion of men circumcised plot
 proportion_of_men_circumcised()
