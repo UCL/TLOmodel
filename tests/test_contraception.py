@@ -40,7 +40,13 @@ def run_sim(tmpdir,
         orig = simulation.population.new_row
         assert (df.dtypes == orig.dtypes).all()
 
-    _cons_available = 'all' if consumables_available else 'none'
+    # Determine availability of consumables (True --> all available; False --> none available; other --> custom arg.)
+    if consumables_available is True:
+        _cons_available = 'all'
+    elif consumables_available is False:
+        _cons_available = 'none'
+    else:
+        _cons_available = consumables_available
 
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
@@ -627,3 +633,46 @@ def test_initial_distribution_of_contraception(tmpdir, seed):
         lambda row: row / row.sum(), axis=1
     ).loc[adult_age_groups]
     assert (abs(actual - expected_by_age_range) < 0.03).all().all()
+
+
+def test_contraception_coverage_with_use_healthsystem(tmpdir, seed):
+    """Check that (approximately) the same patterns of usage of contraception is achieved when `use_healthsystem=True`
+    as when `use_healthsystem=False` (despite the possibility of consumables not being always available when using the
+    healthsystem)."""
+
+    def summarize_contraception_use(sim):
+        """Summarize the pattern of contraception currently in the population."""
+        df = sim.population.props
+        return df.loc[df.is_alive, 'co_contraception'].value_counts().to_dict()
+
+    contraception_use_healthsystem_true = summarize_contraception_use(
+        run_sim(tmpdir,
+                seed,
+                use_healthsystem=True,
+                consumables_available='default',
+                popsize=5000,
+                end_date=Date(2011, 12, 31)
+                )
+    )
+
+    contraception_use_healthsystem_false = summarize_contraception_use(
+        run_sim(tmpdir,
+                seed,
+                use_healthsystem=False,
+                consumables_available='default',
+                popsize=5000,
+                end_date=Date(2011, 12, 31)
+                )
+    )
+
+    def compare_dictionaries(A: dict, B: dict, tol: int=0):
+        """True if the elements of A and B are equal within some tolerance. """
+
+        def equals(a: int, b: int, tol: int):
+            """True if the difference between a and b is less than tol."""
+            return abs(a - b) < tol
+
+        return all([equals(A[k], B[k], tol=tol) for k in set(A.keys() & B.keys())])
+
+
+    assert compare_dictionaries(contraception_use_healthsystem_true, contraception_use_healthsystem_false, tol=5)
