@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from tlo import Date, Simulation
 from tlo.methods import (
@@ -826,3 +827,44 @@ def test_cause_of_death(seed):
     assert False is bool(df.at[person_id1, "is_alive"])
     assert sim.date == df.at[person_id1, "date_of_death"]
     assert "AIDS_TB" == df.at[person_id1, "cause_of_death"]
+
+
+@pytest.mark.slow
+def test_basic_run_with_default_parameters(seed):
+    """Run the TB module with check and check dtypes consistency"""
+    end_date = Date(2015, 12, 31)
+
+    sim = get_sim(seed=seed)
+    sim.make_initial_population(n=1000)
+
+    check_dtypes(sim)
+    sim.simulate(end_date=end_date)
+    check_dtypes(sim)
+    # confirm configuration of properties at the end of the simulation:
+    sim.modules['Tb'].check_config_of_properties()
+
+
+@pytest.mark.slow
+def test_use_dummy_version(seed):
+    """check that the dummy version of the TB module works with the dummy HIV version
+    """
+    start_date = Date(2010, 1, 1)
+    popsize = 1000
+    sim = Simulation(start_date=start_date, seed=seed)
+
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+                 epi.Epi(resourcefilepath=resourcefilepath),
+                 hiv.DummyHivModule(hiv_prev=1.0),
+                 tb.DummyTbModule(active_tb_prev=0.01),
+                 )
+
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=Date(2014, 12, 31))
+
+    check_dtypes(sim)

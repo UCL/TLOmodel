@@ -848,7 +848,7 @@ class Tb(Module):
         active_testing_rates = p["rate_testing_active_tb"]
         current_active_testing_rate = active_testing_rates.loc[
                                           (
-                                                  active_testing_rates.year == self.sim.date.year), "testing_rate_active_cases"].values[
+                                              active_testing_rates.year == self.sim.date.year), "testing_rate_active_cases"].values[
                                           0] / 100
         current_active_testing_rate = current_active_testing_rate / 3  # adjusted for monthly poll
         random_draw = rng.random_sample(size=len(df))
@@ -1238,7 +1238,7 @@ class Tb(Module):
         # risk of relapse if <2 years post treatment start, includes risk if HIV+
         risk_of_relapse_early = self.lm["risk_relapse_2yrs"].predict(
             df.loc[df.tb_ever_treated
-            & (now < (df.tb_date_treated + pd.DateOffset(years=2)))]
+                   & (now < (df.tb_date_treated + pd.DateOffset(years=2)))]
         )
 
         will_relapse = (
@@ -1249,7 +1249,7 @@ class Tb(Module):
         # risk of relapse if >=2 years post treatment start, includes risk if HIV+
         risk_of_relapse_later = self.lm["risk_relapse_late"].predict(
             df.loc[df.tb_ever_treated
-            & (now >= (df.tb_date_treated + pd.DateOffset(years=2)))]
+                   & (now >= (df.tb_date_treated + pd.DateOffset(years=2)))]
         )
 
         will_relapse_later = (
@@ -1636,7 +1636,6 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                   p["transmission_rate"]
                   * (tmp["smear_pos"] + (tmp["smear_neg"] * p["rel_inf_smear_ng"]))
               ) / tmp["is_alive"]
-        # foi = pd.Series(foi, index=districts)
 
         foi = foi.fillna(0)  # fill any missing values with 0
 
@@ -1979,8 +1978,9 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
             if test == "sputum":
                 ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
-                    {**{self.EXPECTED_APPT_FOOTPRINT}, **{"LabTBMicro": 1}}
+                    {"Over5OPD": 1, "LabTBMicro": 1}
                 )
+
                 # relevant test depends on smear status (changes parameters on sensitivity/specificity
                 if smear_status:
                     test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
@@ -2855,6 +2855,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             },
         )
 
+
 # ---------------------------------------------------------------------------
 #   Debugging / Checking Events
 # ---------------------------------------------------------------------------
@@ -2866,3 +2867,51 @@ class TbCheckPropertiesEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         self.module.check_config_of_properties()
+
+
+# ---------------------------------------------------------------------------
+#   Dummy Version of the Module
+# ---------------------------------------------------------------------------
+
+
+class DummyTbModule(Module):
+    """Dummy TB Module - it's only job is to create and maintain the 'tb_inf' property.
+    This can be used in test files."""
+
+    INIT_DEPENDENCIES = {"Demography"}
+    ALTERNATIVE_TO = {"Tb"}
+
+    PROPERTIES = {
+        "tb_inf": Property(
+            Types.CATEGORICAL,
+            categories=[
+                "uninfected",
+                "latent",
+                "active",
+            ],
+            description="tb status",
+        ),
+    }
+
+    def __init__(self, name=None, active_tb_prev=0.001):
+        super().__init__(name)
+        self.active_tb_prev = active_tb_prev
+
+    def read_parameters(self, data_folder):
+        pass
+
+    def initialise_population(self, population):
+        df = population.props
+
+        tb_idx = df.index[
+            df.is_alive & (self.rng.random_sample(len(df.is_alive)) < self.active_tb_prev)
+            ]
+        df.loc[tb_idx, "tb_inf"] = "active"
+
+    def initialise_simulation(self, sim):
+        pass
+
+    def on_birth(self, mother, child):
+        child_infected = (self.rng.random_sample() < self.active_tb_prev)
+        if child_infected:
+            self.sim.population.props.at[child, "tb_inf"] = "active"
