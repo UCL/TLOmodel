@@ -549,7 +549,6 @@ class Contraception(Module):
                     hsi_event=HSI_Contraception_FamilyPlanningAppt(
                         person_id=_woman_id,
                         module=self,
-                        old_contraceptive=_old,
                         new_contraceptive=_new
                     ),
                     topen=random_date(
@@ -925,22 +924,28 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
     """HSI event for the starting a contraceptive method, maintaining use of a method of a contraceptive, or switching
      between contraceptives."""
 
-    def __init__(self, module, person_id, old_contraceptive, new_contraceptive):
+    def __init__(self, module, person_id, new_contraceptive):
         super().__init__(module, person_id=person_id)
 
         _facility_level = '1b' if new_contraceptive in ('implant', 'female_sterilization') else '1a'
 
         self.new_contraceptive = new_contraceptive
+        self._number_of_times_run = 0
 
         self.TREATMENT_ID = "Contraception_FamilyPlanningAppt"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'FamPlan': 1})
         self.ACCEPTED_FACILITY_LEVEL = _facility_level
         self.ALERT_OTHER_DISEASES = []
 
+        self.MAX_NUMBER_OF_RUNS = 10  # Maximum number of runs (repeats when consumables not available)
+
     def apply(self, person_id, squeeze_factor):
         """If the relevant consumable is available, do change in contraception and log it"""
 
+        self._number_of_times_run += 1
+
         person = self.sim.population.props.loc[person_id]
+        current_method = person.co_contraception
 
         if not (person.is_alive and not person.is_pregnant):
             return
@@ -952,25 +957,36 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         cons_available = self.get_consumables(self.module.cons_codes[self.new_contraceptive])
         _new_contraceptive = self.new_contraceptive if cons_available else "not_using"
 
-        # If the old method is the same as the new method, do nothing else (not even logging)
-        if self.old_contraceptive == _new_contraceptive:
-            return
+        if current_method != _new_contraceptive:
+            # Do the change:
+            self.module.do_and_log_individual_contraception_change(
+                woman_id=self.target,
+                old=current_method,
+                new=_new_contraceptive
+            )
+            # (N.B. If the current method is the same as the new method, do nothing else (not even logging))
 
-        # Do the change:
-        self.module.do_and_log_individual_contraception_change(
-            woman_id=self.target,
-            old=self.old_contraceptive,
-            new=_new_contraceptive
-        )
+        # If the intended change was not possible due to non-available consumable, reschedule the appointment
+        if not cons_available and (self._number_of_times_run < self.MAX_NUMBER_OF_RUNS):
+            self.reschedule()
+
+    def reschedule(self):
+        """Schedule for this same HSI_Event to occur tomorrow."""
+        self.module.sim.modules['HealthSystem'].schedule_hsi_event(hsi_event=self,
+                                                                   topen=self.sim.date + pd.DateOffset(days=1),
+                                                                   tclose=None,
+                                                                   priority=2)
 
     def never_ran(self):
         """If this HSI never ran, the person defaults to "not_using" a contraceptive."""
-        if not self.sim.population.props.at[self.target, 'is_alive']:
+        person = self.sim.population.props.loc[self.target]
+
+        if not person.is_alive:
             return
 
         self.module.do_and_log_individual_contraception_change(
             woman_id=self.target,
-            old=self.old_contraceptive,
+            old=person.co_contraception,  # Current Method
             new="not_using"
         )
 
