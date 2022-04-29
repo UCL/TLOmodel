@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from typing import Dict
 
 import numpy as np
 import pandas as pd
@@ -636,14 +637,44 @@ def test_initial_distribution_of_contraception(tmpdir, seed):
 
 
 def test_contraception_coverage_with_use_healthsystem(tmpdir, seed):
-    """Check that (approximately) the same patterns of usage of contraception is achieved when `use_healthsystem=True`
+    """Check that the same patterns (approximately) of usage of contraception is achieved when `use_healthsystem=True`
     as when `use_healthsystem=False` (despite the possibility of consumables not being always available when using the
     healthsystem)."""
+
+    # Find availability of consumables
+    sim = run_sim(tmpdir, seed, run=False, consumables_available='default')
+    contraception = sim.modules['Contraception']
+    item_codes = contraception.get_item_code_for_each_contraceptive()
+    cons = sim.modules['HealthSystem'].consumables._prob_item_codes_available
+
+    def find_average_availability_at_1a(items):
+        """Find the probability that all the items are available at level 1a."""
+        facilities_at_1a = set([x.id for x in sim.modules['HealthSystem']._facilities_for_each_district['1a'].values()])
+        return np.prod(
+           [cons.loc[(slice(None), facilities_at_1a, _item)].mean() for _item in items]
+        )
+
+    def find_average_availability_at_1b(items):
+        """Find the probability that all the items are available at level 1b."""
+        facilities_at_1b = set([x.id for x in sim.modules['HealthSystem']._facilities_for_each_district['1b'].values()])
+        return np.prod(
+           [cons.loc[(slice(None), facilities_at_1b, _item)].mean() for _item in items]
+        )
+
+    av_availability_at_1a = {
+        k: find_average_availability_at_1a(set(v.keys()) if isinstance(v, dict) else set(v))
+        for k, v in item_codes.items()
+    }
+
+    av_availability_at_1b = {
+        k: find_average_availability_at_1b(set(v.keys()) if isinstance(v, dict) else set(v))
+        for k, v in item_codes.items()
+    }
 
     def summarize_contraception_use(sim):
         """Summarize the pattern of contraception currently in the population."""
         df = sim.population.props
-        return df.loc[df.is_alive, 'co_contraception'].value_counts().to_dict()
+        return df.loc[df.is_alive, 'co_contraception'].value_counts().sort_index().to_dict()
 
     contraception_use_healthsystem_true = summarize_contraception_use(
         run_sim(tmpdir,
@@ -651,7 +682,8 @@ def test_contraception_coverage_with_use_healthsystem(tmpdir, seed):
                 use_healthsystem=True,
                 consumables_available='default',
                 popsize=5000,
-                end_date=Date(2011, 12, 31)
+                end_date=Date(2011, 12, 31),
+                equalised_risk_of_preg=0.0
                 )
     )
 
@@ -661,18 +693,24 @@ def test_contraception_coverage_with_use_healthsystem(tmpdir, seed):
                 use_healthsystem=False,
                 consumables_available='default',
                 popsize=5000,
-                end_date=Date(2011, 12, 31)
+                end_date=Date(2011, 12, 31),
+                equalised_risk_of_preg=0.0
                 )
     )
 
-    def compare_dictionaries(A: dict, B: dict, tol: int=0):
+    def compare_dictionaries(A: Dict, B: Dict, tol: float = 0.05):
         """True if the elements of A and B are equal within some tolerance. """
 
-        def equals(a: int, b: int, tol: int):
+        def equals(a: int, b: int, tol: float):
             """True if the difference between a and b is less than tol."""
             return abs(a - b) < tol
 
-        return all([equals(A[k], B[k], tol=tol) for k in set(A.keys() & B.keys())])
+        _tol = int(tol * np.mean([sum(_x.values()) for _x in (A, B)]))
+
+        return all([equals(A[k], B[k], tol=_tol) for k in set(A.keys() & B.keys())])
+
+    print(f"{contraception_use_healthsystem_true=}")
+    print(f"{contraception_use_healthsystem_false=}")
+    assert compare_dictionaries(contraception_use_healthsystem_true, contraception_use_healthsystem_false, tol=0.01)
 
 
-    assert compare_dictionaries(contraception_use_healthsystem_true, contraception_use_healthsystem_false, tol=5)
