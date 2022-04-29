@@ -76,7 +76,6 @@ def fullmodel(
     if use_simplified_births:
         all_modules.extend([
             simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-            # newborn_outcomes.DummyNewbornOutcomesModule(),
         ])
     else:
         all_modules.extend([
