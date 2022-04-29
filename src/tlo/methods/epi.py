@@ -363,7 +363,7 @@ class Epi(Module):
 
     def get_item_codes(self):
         """Look-up the item-codes for each vaccine and update `self.cons_item_codes`"""
-        get_item_codes_from_package_name = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
+        # get_item_codes_from_package_name = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
         get_item_code_from_item_name = self.sim.modules['HealthSystem'].get_item_code_from_item_name
 
         self.cons_item_codes['bcg'] = [
@@ -379,10 +379,18 @@ class Epi(Module):
                 get_item_code_from_item_name("Pneumococcal vaccine"),
                 get_item_code_from_item_name("Syringe, Autodisable SoloShot IX "),
                 get_item_code_from_item_name("Safety box for used syringes/needles, 5 liter")]
-        self.cons_item_codes['measles_and_rubella'] = get_item_codes_from_package_name("Measles rubella vaccine")
-        self.cons_item_codes['hpv'] = get_item_codes_from_package_name("HPV vaccine")
-        self.cons_item_codes['td'] = get_item_codes_from_package_name("Tetanus toxoid (pregnant women)")
-
+        self.cons_item_codes["measles_and_rubella"] = [
+            get_item_code_from_item_name("Measles vaccine"),
+            get_item_code_from_item_name("Syringe, Autodisable SoloShot IX "),
+            get_item_code_from_item_name("Safety box for used syringes/needles, 5 liter")]
+        self.cons_item_codes["hpv"] = [
+            get_item_code_from_item_name("HPV vaccine"),
+            get_item_code_from_item_name("Syringe, Autodisable SoloShot IX "),
+            get_item_code_from_item_name("Safety box for used syringes/needles, 5 liter")]
+        self.cons_item_codes['td'] = [
+            get_item_code_from_item_name("Tetanus toxoid, injection"),
+            get_item_code_from_item_name("Syringe, Autodisable SoloShot IX "),
+            get_item_code_from_item_name("Safety box for used syringes/needles, 5 liter")]
 
 # ---------------------------------------------------------------------------------
 # Individually Scheduled Vaccine Events

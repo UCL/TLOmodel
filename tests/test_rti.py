@@ -73,11 +73,11 @@ def test_all_injuries_run(seed):
     constraints
     """
     # create sim object
-    sim = create_basic_rti_sim(popsize, seed)
+    sim = create_basic_rti_sim(97, seed)
     # create a list of injuries to assign the individuals in the population
     injuries_to_assign = sim.modules['RTI'].INJURY_CODES
     # assign injuries to the population at random
-    sim.population.props['rt_injury_1'] = sim.rng.choice(injuries_to_assign, popsize)
+    sim.population.props['rt_injury_1'] = injuries_to_assign
     # change the datatype back to a category
     sim.population.props['rt_injury_1'] = sim.population.props['rt_injury_1'].astype("category")
     # Check that each injury appears at least once in the population, ensuring that as the simulation runs no new
@@ -142,12 +142,11 @@ def test_all_injuries_run_no_healthsystem(seed):
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath)
                  )
-    sim.make_initial_population(n=popsize)
-
+    sim.make_initial_population(n=97)
     # create a list of injuries to assign the individuals in the population
     injuries_to_assign = sim.modules['RTI'].INJURY_CODES
     # assign injuries to the population at random
-    sim.population.props['rt_injury_1'] = sim.rng.choice(injuries_to_assign, popsize)
+    sim.population.props['rt_injury_1'] = injuries_to_assign
     # change the datatype back to a category
     sim.population.props['rt_injury_1'] = sim.population.props['rt_injury_1'].astype("category")
     # Check that each injury appears at least once in the population, ensuring that as the simulation runs no new
