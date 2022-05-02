@@ -95,9 +95,6 @@ def summarise_treatment_counts(df_list, treatment_id):
     return out
 
 
-writer = pd.ExcelWriter(outputspath / ("treatment_counts" + ".xlsx"))
-
-
 def write_to_excel(results_folder, module, key, column, sheet_name):
     info = get_scenario_info(results_folder)
 
@@ -124,12 +121,19 @@ def write_to_excel(results_folder, module, key, column, sheet_name):
     writer.save()
 
 
+writer = pd.ExcelWriter(outputspath / ("treatment_counts" + ".xlsx"))
+
 write_to_excel(results_folder=results_folder1,
                module="tlo.methods.healthsystem.summary",
                key="health_system_annual_logs",
                column="treatment_counts",
                sheet_name="tx_counts_scenario1")
 
+write_to_excel(results_folder=results_folder3,
+               module="tlo.methods.healthsystem.summary",
+               key="health_system_annual_logs",
+               column="treatment_counts",
+               sheet_name="tx_counts_scenario3")
 
 
 

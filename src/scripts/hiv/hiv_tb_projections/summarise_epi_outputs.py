@@ -134,50 +134,203 @@ draw = 0
 
 # %% extract results
 # Load and format model results (with year as integer):
-
-
-def get_outputs(results_folder, key, column_name, scaling=False):
-    out = summarize(
-        extract_results(
-            results_folder,
-            module="tlo.methods.hiv",
-            key=key,
-            column=column_name,
-            index="date",
-            do_scaling=scaling,
-        ),
-        # collapse_columns=True,
-        only_mean=False,
-    )
-    out.index = out.index.year
-
-
 # ---------------------------------- HIV ---------------------------------- #
-model_hiv_adult_prev = summarize(
-    extract_results(
-        results_folder,
+hiv_adult_prev1 = extract_results(
+        results_folder1,
         module="tlo.methods.hiv",
         key="summary_inc_and_prev_for_adults_and_children_and_fsw",
         column="hiv_prev_adult_15plus",
         index="date",
-        do_scaling=False,
-    ),
-    collapse_columns=True,
+        do_scaling=False
 )
-model_hiv_adult_prev.index = model_hiv_adult_prev.index.year
+# flatten multi-index
+hiv_adult_prev1.columns = hiv_adult_prev1.columns.get_level_values(0)
+hiv_adult_prev1["median"] = hiv_adult_prev1.median(axis=1)
+hiv_adult_prev1["lower"] = hiv_adult_prev1.quantile(q=0.025, axis=1)
+hiv_adult_prev1["upper"] = hiv_adult_prev1.quantile(q=0.975, axis=1)
 
-model_hiv_adult_inc = summarize(
-    extract_results(
-        results_folder,
+hiv_adult_prev3 = extract_results(
+        results_folder3,
+        module="tlo.methods.hiv",
+        key="summary_inc_and_prev_for_adults_and_children_and_fsw",
+        column="hiv_prev_adult_15plus",
+        index="date",
+        do_scaling=False
+)
+# flatten multi-index
+hiv_adult_prev3.columns = hiv_adult_prev3.columns.get_level_values(0)
+hiv_adult_prev3["median"] = hiv_adult_prev3.median(axis=1)
+hiv_adult_prev3["lower"] = hiv_adult_prev3.quantile(q=0.025, axis=1)
+hiv_adult_prev3["upper"] = hiv_adult_prev3.quantile(q=0.975, axis=1)
+
+# Make plot
+fig, ax = plt.subplots()
+ax.plot(hiv_adult_prev1.index, hiv_adult_prev1["median"], "-", color="C3")
+ax.fill_between(hiv_adult_prev1.index, hiv_adult_prev1["lower"], hiv_adult_prev1["upper"], color="C3", alpha=0.2)
+
+ax.plot(hiv_adult_prev3.index, hiv_adult_prev3["median"], "-", color="C2")
+ax.fill_between(hiv_adult_prev3.index, hiv_adult_prev3["lower"], hiv_adult_prev3["upper"], color="C2", alpha=0.2)
+
+fig.subplots_adjust(left=0.15)
+plt.title("HIV prevalence in adults")
+plt.ylabel("HIV prevalence")
+plt.legend(["Scenario 1", "Scenario 3"])
+
+plt.show()
+
+
+
+
+########## HIV incidence ############################
+hiv_adult_inc1 = extract_results(
+        results_folder1,
         module="tlo.methods.hiv",
         key="summary_inc_and_prev_for_adults_and_children_and_fsw",
         column="hiv_adult_inc_1549",
         index="date",
-        do_scaling=False,
-    ),
-    collapse_columns=True,
+        do_scaling=False
 )
-model_hiv_adult_inc.index = model_hiv_adult_inc.index.year
+# flatten multi-index
+hiv_adult_inc1.columns = hiv_adult_inc1.columns.get_level_values(0)
+hiv_adult_inc1["median"] = hiv_adult_inc1.median(axis=1)
+hiv_adult_inc1["lower"] = hiv_adult_inc1.quantile(q=0.025, axis=1)
+hiv_adult_inc1["upper"] = hiv_adult_inc1.quantile(q=0.975, axis=1)
+
+hiv_adult_inc3 = extract_results(
+        results_folder3,
+        module="tlo.methods.hiv",
+        key="summary_inc_and_prev_for_adults_and_children_and_fsw",
+        column="hiv_adult_inc_1549",
+        index="date",
+        do_scaling=False
+)
+# flatten multi-index
+hiv_adult_inc3.columns = hiv_adult_inc3.columns.get_level_values(0)
+hiv_adult_inc3["median"] = hiv_adult_inc3.median(axis=1)
+hiv_adult_inc3["lower"] = hiv_adult_inc3.quantile(q=0.025, axis=1)
+hiv_adult_inc3["upper"] = hiv_adult_inc3.quantile(q=0.975, axis=1)
+
+# Make plot
+fig, ax = plt.subplots()
+ax.plot(hiv_adult_inc1.index, hiv_adult_inc1["median"], "-", color="C3")
+ax.fill_between(hiv_adult_inc1.index, hiv_adult_inc1["lower"], hiv_adult_inc1["upper"], color="C3", alpha=0.2)
+
+ax.plot(hiv_adult_inc3.index, hiv_adult_inc3["median"], "-", color="C2")
+ax.fill_between(hiv_adult_inc3.index, hiv_adult_inc3["lower"], hiv_adult_inc3["upper"], color="C2", alpha=0.2)
+
+fig.subplots_adjust(left=0.15)
+plt.title("HIV incidence in adults 15-49")
+plt.ylabel("HIV incidence")
+plt.legend(["Scenario 1", "Scenario 3"])
+
+plt.show()
+
+# ---------------------------------- PERSON-YEARS ---------------------------------- #
+
+# function to extract person-years by year
+# call this for each run and then take the mean to use as denominator for mortality / incidence etc.
+def get_person_years(draw, run):
+    log = load_pickled_dataframes(results_folder1, draw, run)
+
+    py_ = log["tlo.methods.demography"]["person_years"]
+    years = pd.to_datetime(py_["date"]).dt.year
+    py = pd.Series(dtype="int64", index=years)
+    for year in years:
+        tot_py = (
+            (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["M"]).apply(pd.Series) +
+            (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["F"]).apply(pd.Series)
+        ).transpose()
+        py[year] = tot_py.sum().values[0]
+
+    py.index = pd.to_datetime(years, format="%Y")
+
+    return py
+
+
+# for draw 0, get py for all runs
+number_runs = info["runs_per_draw"]
+py_summary = pd.DataFrame(data=None, columns=range(0, number_runs))
+
+# draw number (default = 0) is specified above
+for run in range(0, number_runs):
+    py_summary.iloc[:, run] = get_person_years(draw, run)
+
+py_summary["mean"] = py_summary.mean(axis=1)
+
+# ---------------------------------- TB ---------------------------------- #
+
+tb_inc1 = extract_results(
+        results_folder1,
+        module="tlo.methods.tb",
+        key="tb_incidence",
+        column="num_new_active_tb",
+        index="date",
+        do_scaling=False,
+)
+
+tb_inc1.columns = tb_inc1.columns.get_level_values(0)
+tb_inc1["median"] = tb_inc1.median(axis=1)
+tb_inc1["lower"] = tb_inc1.quantile(q=0.025, axis=1)
+tb_inc1["upper"] = tb_inc1.quantile(q=0.975, axis=1)
+
+activeTB_inc_rate1 = pd.Series(
+    (tb_inc1["median"].values / py_summary["mean"].values[1:41]) * 100000
+)
+activeTB_inc_rate1.index = tb_inc1.index
+activeTB_inc_rate_low1 = pd.Series(
+    (tb_inc1["lower"].values / py_summary["mean"].values[1:41]) * 100000
+)
+activeTB_inc_rate_low1.index = tb_inc1.index
+activeTB_inc_rate_high1 = pd.Series(
+    (tb_inc1["upper"].values / py_summary["mean"].values[1:41]) * 100000
+)
+activeTB_inc_rate_high1.index = tb_inc1.index
+
+
+tb_inc3 = extract_results(
+        results_folder3,
+        module="tlo.methods.tb",
+        key="tb_incidence",
+        column="num_new_active_tb",
+        index="date",
+        do_scaling=False,
+)
+
+tb_inc3.columns = tb_inc3.columns.get_level_values(0)
+tb_inc3["median"] = tb_inc3.median(axis=1)
+tb_inc3["lower"] = tb_inc3.quantile(q=0.025, axis=1)
+tb_inc3["upper"] = tb_inc3.quantile(q=0.975, axis=1)
+
+activeTB_inc_rate3 = pd.Series(
+    (tb_inc3["median"].values / py_summary["mean"].values[1:41]) * 100000
+)
+activeTB_inc_rate3.index = tb_inc3.index
+activeTB_inc_rate_low3 = pd.Series(
+    (tb_inc3["lower"].values / py_summary["mean"].values[1:41]) * 100000
+)
+activeTB_inc_rate_low3.index = tb_inc3.index
+activeTB_inc_rate_high3 = pd.Series(
+    (tb_inc3["upper"].values / py_summary["mean"].values[1:41]) * 100000
+)
+activeTB_inc_rate_high3.index = tb_inc3.index
+
+
+fig, ax = plt.subplots()
+ax.plot(activeTB_inc_rate1.index, activeTB_inc_rate1, "-", color="C1")
+ax.fill_between(activeTB_inc_rate1.index, activeTB_inc_rate_low1, activeTB_inc_rate_high1, color="C2", alpha=0.2)
+
+ax.plot(activeTB_inc_rate3.index, activeTB_inc_rate3, "-", color="C2")
+ax.fill_between(activeTB_inc_rate3.index, activeTB_inc_rate_low3, activeTB_inc_rate_high3, color="C2", alpha=0.2)
+
+fig.subplots_adjust(left=0.15)
+plt.title("TB incidence per 100,000 population")
+plt.ylabel("TB incidence")
+plt.legend(["Scenario 1", "Scenario 3"])
+
+plt.show()
+
+
+
 
 model_hiv_child_prev = summarize(
     extract_results(
