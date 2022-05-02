@@ -72,7 +72,11 @@ plt.show()
 
 # ---------------------------------- Total HSIs -------------------------------------
 
+
 def summarise_treatment_counts(df_list, treatment_id):
+    """ summarise the treatment counts across all draws/runs for one results folder
+        requires a list of dataframes with all treatments listed with associated counts
+    """
     number_runs = len(df_list)
     number_HSI_by_run = pd.DataFrame(index=np.arange(40), columns=np.arange(number_runs))
     column_names = [
@@ -91,10 +95,10 @@ def summarise_treatment_counts(df_list, treatment_id):
     return out
 
 
-writer = pd.ExcelWriter(outputspath / ("test" + ".xlsx"))
+writer = pd.ExcelWriter(outputspath / ("treatment_counts" + ".xlsx"))
 
 
-def write_to_excel(results_folder, module, key, column):
+def write_to_excel(results_folder, module, key, column, sheet_name):
     info = get_scenario_info(results_folder)
 
     df_list = list()
@@ -116,15 +120,23 @@ def write_to_excel(results_folder, module, key, column):
         # append output to dataframe
         results = results.join(tmp)
 
+    results.to_excel(writer, sheet_name=sheet_name)
+    writer.save()
+
+
+write_to_excel(results_folder=results_folder1,
+               module="tlo.methods.healthsystem.summary",
+               key="health_system_annual_logs",
+               column="treatment_counts",
+               sheet_name="tx_counts_scenario1")
 
 
 
-log1 = load_pickled_dataframes(results_folder1, draw=0, run=0)
-tmp = log1["tlo.methods.healthsystem.summary"]["health_system_annual_logs"]
-new = tmp[['date', 'treatment_counts']].copy()
-new2 = pd.DataFrame(new['treatment_counts'].to_list())
 
-write_log_to_excel()
+
+
+
+
 
 # output total numbers of HSI for years 2022-2035 with uncertainty
 total_hsi_sc1 = extract_results(
