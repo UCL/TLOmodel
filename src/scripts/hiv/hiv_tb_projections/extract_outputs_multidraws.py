@@ -9,17 +9,16 @@ from tlo.analysis.utils import (
     extract_results,
     get_scenario_outputs,
     load_pickled_dataframes,
-    summarize,
+    summarize, get_scenario_info,
 )
 
 outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
 
 # download all files (and get most recent [-1])
 results_folder1 = get_scenario_outputs("scenario1.py", outputspath)[-1]
-# results_folder2 = get_scenario_outputs("scenario2.py", outputspath)[-1]
 results_folder3 = get_scenario_outputs("scenario3.py", outputspath)[-1]
 
-# look at one log (so can decide what to extract)
+# look at one log (default draw=0 and run=0)
 log = load_pickled_dataframes(results_folder1)
 
 # ---------------------------------- Fraction HCW time-------------------------------------
@@ -41,20 +40,6 @@ hcw1["lower"] = capacity1.quantile(q=0.025, axis=1)
 hcw1["upper"] = capacity1.quantile(q=0.975, axis=1)
 
 
-# capacity2 = extract_results(
-#     results_folder2,
-#     module="tlo.methods.healthsystem.summary",
-#     key="health_system_annual_logs",
-#     custom_generate_series=(
-#         lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['capacity'].mean()
-#     ),
-# )
-# capacity2.columns = capacity2.columns.get_level_values(0)
-# hcw2 = pd.DataFrame(index=capacity2.index, columns=["median", "lower", "upper"])
-# hcw2["median"] = capacity2.median(axis=1)
-# hcw2["lower"] = capacity2.quantile(q=0.025, axis=1)
-# hcw2["upper"] = capacity2.quantile(q=0.975, axis=1)
-
 capacity3 = extract_results(
     results_folder3,
     module="tlo.methods.healthsystem.summary",
@@ -75,30 +60,72 @@ fig, ax = plt.subplots()
 ax.plot(hcw1.index, hcw1["median"], "-", color="C3")
 ax.fill_between(hcw1.index, hcw1["lower"], hcw1["upper"], color="C3", alpha=0.2)
 
-# ax.plot(hcw2.index, hcw2["median"], "-", color="C0")
-# ax.fill_between(hcw2.index, hcw2["lower"], hcw2["upper"], color="C0", alpha=0.2)
-
 ax.plot(hcw3.index, hcw3["median"], "-", color="C2")
 ax.fill_between(hcw3.index, hcw3["lower"], hcw3["upper"], color="C2", alpha=0.2)
 
 fig.subplots_adjust(left=0.15)
 plt.title("Fraction of overall healthcare worker time")
 plt.ylabel("Fraction of overall healthcare worker time")
-# plt.legend(["Scenario 1", "Scenario 2", "Scenario 3"])
 plt.legend(["Scenario 1", "Scenario 3"])
 
 plt.show()
 
 # ---------------------------------- Total HSIs -------------------------------------
 
-log = load_pickled_dataframes(results_folder2)
+def summarise_treatment_counts(df_list, treatment_id):
+    number_runs = len(df_list)
+    number_HSI_by_run = pd.DataFrame(index=np.arange(40), columns=np.arange(number_runs))
+    column_names = [
+        treatment_id + "_median",
+        treatment_id + "_lower",
+        treatment_id + "_upper"]
+    out = pd.DataFrame(columns=column_names)
+
+    for i in range(number_runs):
+        number_HSI_by_run.iloc[:,i] = pd.Series(df_list[i].loc[:, treatment_id])
+
+    out.iloc[:,0] = number_HSI_by_run.median(axis=1)
+    out.iloc[:,1] = number_HSI_by_run.quantile(q=0.025, axis=1)
+    out.iloc[:,2] = number_HSI_by_run.quantile(q=0.975, axis=1)
+
+    return out
 
 
-tmp = log["tlo.methods.healthsystem.summary"]["health_system_annual_logs"]
+writer = pd.ExcelWriter(outputspath / ("test" + ".xlsx"))
+
+
+def write_to_excel(results_folder, module, key, column):
+    info = get_scenario_info(results_folder)
+
+    df_list = list()
+    for draw in range(info['number_of_draws']):
+        for run in range(info['runs_per_draw']):
+            df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
+
+            new = df[['date', column]].copy()
+            df_list.append(pd.DataFrame(new[column].to_list()))
+
+    # for column in each df, get median
+    # list of treatment IDs
+    list_tx_id = list(df_list[0].columns)
+    results = pd.DataFrame(index=np.arange(40))
+
+    for treatment_id in list_tx_id:
+        tmp = summarise_treatment_counts(df_list, treatment_id)
+
+        # append output to dataframe
+        results = results.join(tmp)
+
+
+
+
+log1 = load_pickled_dataframes(results_folder1, draw=0, run=0)
+tmp = log1["tlo.methods.healthsystem.summary"]["health_system_annual_logs"]
 new = tmp[['date', 'treatment_counts']].copy()
 new2 = pd.DataFrame(new['treatment_counts'].to_list())
 
-# numbers of HSIs
+write_log_to_excel()
+
 # output total numbers of HSI for years 2022-2035 with uncertainty
 total_hsi_sc1 = extract_results(
     results_folder1,
@@ -110,18 +137,7 @@ total_hsi_sc1 = extract_results(
     do_scaling=True,
 )
 
-total_hsi_sc2 = summarize(extract_results(
-    results_folder2,
-    module="tlo.methods.healthsystem",
-    key="HSI_Event",
-    custom_generate_series=(
-        lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['TREATMENT_ID'].count()
-    ),
-    do_scaling=True,
-),
-    only_mean=False,
-    collapse_columns=True
-)
+
 
 total_hsi_sc3 = summarize(extract_results(
     results_folder3,
@@ -142,15 +158,12 @@ fig, ax = plt.subplots()
 ax.plot(total_hsi_sc1.index, total_hsi_sc1["mean"], "-", color="C3")
 ax.fill_between(total_hsi_sc1.index, total_hsi_sc1["lower"], total_hsi_sc1["upper"], color="C3", alpha=0.2)
 
-ax.plot(total_hsi_sc2.index, total_hsi_sc2["mean"], "-", color="C0")
-ax.fill_between(total_hsi_sc2.index, total_hsi_sc2["lower"], total_hsi_sc2["upper"], color="C0", alpha=0.2)
-
 ax.plot(total_hsi_sc3.index, total_hsi_sc3["mean"], "-", color="C2")
 ax.fill_between(total_hsi_sc3.index, total_hsi_sc3["lower"], total_hsi_sc3["upper"], color="C2", alpha=0.2)
 fig.subplots_adjust(left=0.15)
 plt.title("Total numbers of appointments required")
 plt.ylabel("Total numbers of appointments")
-plt.legend(["Scenario 1", "Scenario 2", "Scenario 3"])
+plt.legend(["Scenario 1", "Scenario 3"])
 
 plt.show()
 
