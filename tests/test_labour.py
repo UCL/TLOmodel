@@ -294,8 +294,8 @@ def test_event_scheduling_for_admissions_from_antenatal_inpatient_ward_for_caesa
 
     # set key parameters
     params = sim.modules['Labour'].current_parameters
-    params['mean_hcw_competence_hc'] = 1.0
-    params['mean_hcw_competence_hp'] = 1.0
+    params['mean_hcw_competence_hc'] = [1.0, 1.0]
+    params['mean_hcw_competence_hp'] = [1.0, 1.0]
     params['prob_hcw_avail_surg'] = 1.0
 
     # Run the labour onset, check she will correctly deliver at a hospital level facility
@@ -511,8 +511,8 @@ def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_const
 
     # set key parameters
     params = sim.modules['Labour'].current_parameters
-    params['mean_hcw_competence_hc'] = 1.0
-    params['mean_hcw_competence_hp'] = 1.0
+    params['mean_hcw_competence_hc'] = [1.0, 1.0]
+    params['mean_hcw_competence_hp'] = [1.0, 1.0]
     params['prob_hcw_avail_iv_abx'] = 1.0
     params['prob_hcw_avail_uterotonic'] = 1.0
     params['prob_hcw_avail_anticonvulsant'] = 1.0
@@ -656,8 +656,8 @@ def test_cemonc_event_and_treatments_are_delivered_correct_with_no_cons_or_quali
 
     # set key parameters
     params = sim.modules['Labour'].current_parameters
-    params['mean_hcw_competence_hc'] = 1.0
-    params['mean_hcw_competence_hp'] = 1.0
+    params['mean_hcw_competence_hc'] = [1.0, 1.0]
+    params['mean_hcw_competence_hp'] = [1.0, 1.0]
     params['prob_hcw_avail_surg'] = 1.0
     params['prob_hcw_avail_blood_tran'] = 1.0
 
