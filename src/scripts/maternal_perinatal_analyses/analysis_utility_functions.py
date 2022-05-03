@@ -4,6 +4,7 @@ from tlo.analysis.utils import extract_results
 from matplotlib import pyplot as plt
 plt.style.use('seaborn')
 
+
 # ==================================================== UTILITY CODE ===================================================
 def get_mean_and_quants_from_str_df(df, complication, sim_years):
     yearly_mean_number = list()
@@ -209,7 +210,6 @@ def return_median_and_mean_squeeze_factor_for_hsi(folder, hsi_string, sim_years,
             lambda df: df.loc[df['TREATMENT_ID'].str.contains(hsi_string) & df['did_run']].assign(
                 year=df['date'].dt.year).groupby(['year'])['Squeeze_Factor'].mean()))
 
-
     median = [hsi_med.loc[year].median() for year in sim_years]
     lq = [hsi_med.loc[year].quantile(0.025) for year in sim_years]
     uq = [hsi_med.loc[year].quantile(0.925) for year in sim_years]
@@ -225,9 +225,6 @@ def return_median_and_mean_squeeze_factor_for_hsi(folder, hsi_string, sim_years,
 
     simple_line_chart_with_ci(sim_years, data, 'Mean Squeeze Factor', f'Mean Yearly Squeeze for HSI {hsi_string}',
                               f'mean_sf_{hsi_string}', graph_location)
-
-
-
 
 
 def return_squeeze_plots_for_hsi(folder, hsi_string, sim_years, graph_location):

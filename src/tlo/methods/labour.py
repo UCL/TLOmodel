@@ -775,7 +775,7 @@ class Labour(Module):
         self.item_codes_lab_consumables['maternal_sepsis_core'] =\
             get_list_of_items(self, ['Benzylpenicillin 3g (5MU), PFR_each_CMST',
                                      'Gentamycin, injection, 40 mg/ml in 2 ml vial'])
-                                     # 'Metronidazole, injection, 500 mg in 100 ml vial'])
+        # 'Metronidazole, injection, 500 mg in 100 ml vial'])
 
         self.item_codes_lab_consumables['maternal_sepsis_optional'] = \
             get_list_of_items(self, ['Cannula iv  (winged with injection pot) 18_each_CMST',

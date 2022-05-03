@@ -70,7 +70,8 @@ class NewbornOutcomes(Module):
         'preterm_other': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
         'respiratory_distress_syndrome': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
         'congenital_heart_anomaly': Cause(gbd_causes='Congenital birth defects', label='Congenital birth defects'),
-        'limb_or_musculoskeletal_anomaly': Cause(gbd_causes='Congenital birth defects', label='Congenital birth defects'),
+        'limb_or_musculoskeletal_anomaly': Cause(gbd_causes='Congenital birth defects', label='Congenital birth '
+                                                                                              'defects'),
         'urogenital_anomaly': Cause(gbd_causes='Congenital birth defects', label='Congenital birth defects'),
         'digestive_anomaly': Cause(gbd_causes='Congenital birth defects', label='Congenital birth defects'),
         'other_anomaly': Cause(gbd_causes='Congenital birth defects', label='Congenital birth defects'),

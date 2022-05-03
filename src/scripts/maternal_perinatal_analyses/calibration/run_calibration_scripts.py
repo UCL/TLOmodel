@@ -16,4 +16,3 @@ for file in ['standard_mph_calibration']:
                                           pop_size='50k',
                                           sim_years=list(range(2010, 2021)),
                                           daly_years=list(range(2010, 2020)))
-

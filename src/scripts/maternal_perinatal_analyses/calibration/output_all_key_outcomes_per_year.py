@@ -1,15 +1,15 @@
-from pathlib import Path
 import os
 import pandas as pd
 from matplotlib import pyplot as plt
 
 from tlo.analysis.utils import (
     extract_results,
-    get_scenario_outputs,create_pickles_locally
+    get_scenario_outputs,  # create_pickles_locally
 )
 
 from src.scripts.maternal_perinatal_analyses import analysis_utility_functions
 plt.style.use('seaborn')
+
 
 def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputspath, sim_years, show_and_store_graphs):
     """
@@ -578,7 +578,7 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
         sim_years, spotaneous_abortion_data[0], spotaneous_abortion_data[1], spotaneous_abortion_data[2],
         target_sa_dict, 'Rate per 1000 completed pregnancies', 'Yearly rate of Miscarriage', graph_location,
-        'miscarriage_rate' )
+        'miscarriage_rate')
 
     # Complicated SA / Total SA
     mean_complicated_sa = analysis_utility_functions.get_mean_and_quants_from_str_df(
@@ -635,7 +635,7 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
                        'first': {'year': 2019, 'value': 16, 'label': 'Phiri et al.', 'ci': 0}}
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, gdm_data[0], gdm_data[1], gdm_data[2], target_gdm_dict,'Rate per 1000 completed pregnancies',
+        sim_years, gdm_data[0], gdm_data[1], gdm_data[2], target_gdm_dict, 'Rate per 1000 completed pregnancies',
         'Yearly rate of Gestational Diabetes', graph_location, 'gest_diab_rate', )
 
     # ------------------------------------------------ PROM... --------------------------------------------------------
@@ -957,7 +957,7 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
                       'second': {'year': 2015, 'value': 31, 'label': 'BEmONC 2015', 'ci': 0}}
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, ol_data[0], ol_data[1], ol_data[2], target_ol_dict,'Rate per 1000 births',
+        sim_years, ol_data[0], ol_data[1], ol_data[2], target_ol_dict, 'Rate per 1000 births',
         'Obstructed Labour Rate per Year', graph_location, 'ol_rate')
 
     # --------------------------------------------- Uterine rupture... -----------------------------------------------
@@ -1032,7 +1032,7 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
         total_cs_this_year = sum(yearly_mean_number)
         total_cs_per_year.append(total_cs_this_year)
 
-        for indication in ['twins','an_aph_pa', 'an_aph_pp', 'la_aph', 'ol', 'ol_failed_avd', 'ur', 'spe_ec', 'other',
+        for indication in ['twins', 'an_aph_pa', 'an_aph_pp', 'la_aph', 'ol', 'ol_failed_avd', 'ur', 'spe_ec', 'other',
                            'none']:
             if indication in cs_results.loc[year].index:
                 causes[indication] = (causes[indication] / total_cs_this_year) * 100
@@ -1226,7 +1226,7 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
                   'first': {'year': 2010, 'value': 0, 'label': 'UNK.', 'ci': 0}}
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, rd_data[0], rd_data[1], rd_data[2], dummy_dict,'Rate per 1000 births',
+        sim_years, rd_data[0], rd_data[1], rd_data[2], dummy_dict, 'Rate per 1000 births',
         'Rate of Neonatal Respiratory Depression per year', graph_location, 'neo_resp_depression_rate')
 
     # ----------------------------------------- Respiratory Distress Syndrome ------------------------------------------

@@ -13,6 +13,7 @@ from tlo.analysis.utils import (
 from src.scripts.maternal_perinatal_analyses import analysis_utility_functions
 plt.style.use('seaborn')
 
+
 def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_size, sim_years, daly_years):
     results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
 
@@ -89,7 +90,7 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
             df.loc[(df['mother'] != -1)].assign(year=df['date'].dt.year).groupby(['year'])['year'].count()))
 
     birth_data = analysis_utility_functions.get_mean_and_quants(births_results, sim_years)
-    total_births_per_year = birth_data[0]
+    # total_births_per_year = birth_data[0]
     total_births_per_year_ex2010_data = analysis_utility_functions.get_mean_and_quants(births_results_exc_2010,
                                                                                        sim_years)
     total_births_per_year_ex2010 = total_births_per_year_ex2010_data[0]
@@ -134,8 +135,10 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
                       [x + y for x, y in zip(id_mmr_data[1], mm[1])],
                       [x + y for x, y in zip(id_mmr_data[2], mm[2])]]
 
-    for data, title, l_colour, f_colour in zip([mm, id_mmr_data, total_mmr_data], ['Direct', 'Indirect', 'Total'],
-                                   ['deepskyblue', 'mediumpurple', 'coral'], ['b', 'mediumslateblue', 'lightcoral']):
+    for data, title, l_colour, f_colour in zip(
+        [mm, id_mmr_data, total_mmr_data],
+        ['Direct', 'Indirect', 'Total'],
+        ['deepskyblue', 'mediumpurple', 'coral'], ['b', 'mediumslateblue', 'lightcoral']):
 
         if title == 'Direct':
             mp = 0.7
@@ -161,7 +164,8 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
                 label="GBD (2019)", color='black')
         ax.fill_between([2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019],
                         [168*mp, 165*mp, 158*mp, 151*mp, 150*mp, 146*mp, 141*mp, 141*mp, 134*mp],
-                        [324*mp, 313*mp, 310*mp, 307*mp, 304*mp, 307*mp, 304*mp, 300*mp, 294*mp], color='grey', alpha=.1)
+                        [324*mp, 313*mp, 310*mp, 307*mp, 304*mp, 307*mp, 304*mp, 300*mp, 294*mp], color='grey',
+                        alpha=.1)
         if title == 'Direct':
             ax.set(ylim=(0, 750))
         else:
@@ -229,7 +233,7 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
            bottom=[a + b + c + d + e + f + g + h for a, b, c, d, e, f, g, h in zip(
                indirect_deaths_means['AIDS'],  indirect_deaths_means['Malaria'], indirect_deaths_means['TB'],
                indirect_deaths_means['Suicide'],  indirect_deaths_means['ever_stroke'],
-               indirect_deaths_means['diabetes'],indirect_deaths_means['chronic_ischemic_hd'],
+               indirect_deaths_means['diabetes'], indirect_deaths_means['chronic_ischemic_hd'],
                indirect_deaths_means['ever_heart_attack'], )],
            color='pink')
 
@@ -244,7 +248,7 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
            color='darkred')
 
     ax.bar(labels, indirect_deaths_means['chronic_ischemic_hd'], width, label='Chronic HD',
-           bottom=[a+b+c+d+e+f for a, b, c, d, e,f in zip(indirect_deaths_means['AIDS'],
+           bottom=[a+b+c+d+e+f for a, b, c, d, e, f in zip(indirect_deaths_means['AIDS'],
                                                           indirect_deaths_means['Malaria'],
                                                           indirect_deaths_means['TB'],
                                                           indirect_deaths_means['Suicide'],
@@ -570,7 +574,8 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
 
     # todo: issue with incidenec and logging of sepsis
     total_sepsis_cases = [x + y for x, y in zip(total_an_cases, mean_psep)]
-    p_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(death_results, 'postpartum_sepsis', sim_years)[0]
+    p_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(death_results, 'postpartum_sepsis',
+                                                                          sim_years)[0]
     total_sepsis_deaths = [x + y for x, y in zip(p_deaths, total_an_sepsis_deaths)]
     sep_cfr = [(x/y) * 100 for x, y in zip(total_sepsis_deaths, total_sepsis_cases)]
     analysis_utility_functions.simple_line_chart_with_target(
@@ -653,9 +658,9 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
         ax.fill_between(sim_years, data[1], data[2], color=colours[1], alpha=.1)
 
         if save_name != 'neonatal_disorders_nmr':
-            data = {'dhs': {'mean': [31, 27], 'lq':[26, 22], 'uq': [34, 34]},
+            data = {'dhs': {'mean': [31, 27], 'lq': [26, 22], 'uq': [34, 34]},
                     'hug': {'mean': 22.7, 'lq': 15.6, 'uq': 28.8},
-                    'gbd':{'mean':25, 'lq':21.4, 'uq':26.6},
+                    'gbd': {'mean': 25, 'lq': 21.4, 'uq': 26.6},
                     'un': {'mean': [28, 27, 26, 25, 24, 23, 22, 22, 20, 20],
                            'lq': [25, 24, 23, 22, 20, 18, 16, 15, 14, 13],
                            'uq': [31, 31, 30, 29, 29, 28, 28, 29, 29, 30]}}
@@ -956,7 +961,6 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
 
         return [gbd_dalys, gbd_dalys_lq, gbd_dalys_uq]
 
-
     maternal_gbd_dalys = extract_dalys_gbd_data('Maternal')
     neonatal_gbd_dalys = extract_dalys_gbd_data('Neonatal')
 
@@ -982,10 +986,8 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
 
         return [stacked_dalys, stacked_dalys_lq, stacked_dalys_uq]
 
-
     maternal_dalys = extract_dalys_tlo_model('Maternal')
     neonatal_dalys = extract_dalys_tlo_model('Neonatal')
-
 
     def get_daly_graphs(group, dalys, gbd_estimate):
         fig, ax = plt.subplots()
@@ -1004,7 +1006,5 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
     get_daly_graphs('Maternal', maternal_dalys, maternal_gbd_dalys)
     get_daly_graphs('Neonatal', neonatal_dalys, neonatal_gbd_dalys)
 
-
     # todo: move to scenrio files
     # 1.) define HSIs of interest
-
