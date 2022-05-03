@@ -608,8 +608,8 @@ def test_all_appt_types_can_run(seed):
 
 @pytest.mark.slow
 def test_two_loggers_in_healthsystem(seed, tmpdir):
-    """Check that two different loggers are used by the HealthSystem for more/less detailed logged information and that
-     these are consistent with one another."""
+    """Check that two different loggers used by the HealthSystem for more/less detailed logged information are
+    consistent with one another."""
 
     # Create a dummy disease module (to be the parent of the dummy HSI)
     class DummyModule(Module):
@@ -640,9 +640,9 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
             # Request a consumable (either 0 or 1)
             self.get_consumables(item_codes=self.module.rng.choice((0, 1), p=(0.5, 0.5)))
 
-            # Schedule another occurrence of itself tomorrow.
+            # Schedule another occurrence of itself in three days.
             sim.modules['HealthSystem'].schedule_hsi_event(self,
-                                                           topen=self.sim.date + pd.DateOffset(days=1),
+                                                           topen=self.sim.date + pd.DateOffset(days=3),
                                                            tclose=None,
                                                            priority=0)
 
@@ -725,13 +725,13 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
            detailed_consumables['Item_NotAvailable'].apply(
                lambda x: {f'{k}': v for k, v in eval(x).items()}).apply(pd.Series).sum().to_dict()
 
-    #  - Bed-Days (year by year and bed-type by bed-type)
+    #  - Bed-Days (bed-type by bed-type and year by year)
     for _bed_type in bed_types:
         # Detailed:
         tracker = detailed_beddays[_bed_type]\
-            .assign(year=pd.to_datetime(detailed_beddays[_bed_type].date_of_bed_occupancy).dt.year)\
+            .assign(year=pd.to_datetime(detailed_beddays[_bed_type].date).dt.year)\
             .set_index('year')\
-            .drop(columns=['date', 'date_of_bed_occupancy'])\
+            .drop(columns=['date'])\
             .T
         tracker.index = tracker.index.astype(int)
         capacity = sim.modules['HealthSystem'].bed_days._scaled_capacity[_bed_type]
@@ -739,12 +739,8 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
 
         # Summary: total bed-days used by year
         summary_beddays_used = summary_beddays\
-            .set_index('year_of_bed_occupancy')[_bed_type]\
+            .assign(year=pd.to_datetime(summary_beddays.date).dt.year)\
+            .set_index('year')[_bed_type]\
             .to_dict()
 
         assert detail_beddays_used == summary_beddays_used
-
-        # todo - problems with this
-        #  1) in the year 2010, seemingly one day is missing from the summary log
-        #  2) the result for the year 2011 is absent, as it's logged on 2012/1/1, which is after the simulation ends.
-        #  -- solution to both is to let the logging of "yesterday" be moved to the "end of the day" -- i.e. in the healthcare system logger.
