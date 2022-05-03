@@ -1,7 +1,7 @@
 from pathlib import Path
 import pandas as pd
 import time
-from tlo.analysis.utils import load_pickled_dataframes, get_scenario_outputs, extract_results
+from tlo.analysis.utils import load_pickled_dataframes, get_scenario_outputs
 
 start_time = time.time()
 
