@@ -1016,7 +1016,7 @@ class Tb(Module):
 
         # ipt
         self.item_codes_for_consumables_required['tb_ipt'] = {
-            hs.get_item_code_from_item_name("Isoniazid Preventive Therapy"): 1}
+            hs.get_item_code_from_item_name("Isoniazid/Pyridoxine, tablet 300 mg"): 1}
 
     def initialise_population(self, population):
 
