@@ -407,7 +407,10 @@ class Malaria(Module):
         sim.schedule_event(MalariaPollingEventDistrict(self), sim.date + DateOffset(months=1))
 
         sim.schedule_event(MalariaScheduleTesting(self), sim.date + DateOffset(days=1))
-        sim.schedule_event(MalariaIPTp(self), sim.date + DateOffset(days=30.5))
+
+        if 'CareOfWomenDuringPregnancy' not in self.sim.modules:
+            sim.schedule_event(MalariaIPTp(self), sim.date + DateOffset(days=30.5))
+
         sim.schedule_event(MalariaCureEvent(self), sim.date + DateOffset(days=5))
         sim.schedule_event(MalariaParasiteClearanceEvent(self), sim.date + DateOffset(days=30.5))
 
@@ -458,8 +461,8 @@ class Malaria(Module):
         self.item_codes_for_consumables_required['malaria_complicated'] = {
             get_item_code("Injectable artesunate"): 1,
             get_item_code("Cannula iv  (winged with injection pot) 18_each_CMST"): 3,
-            get_item_code("Glove disposable latex medium_100_CMST"): 3,
-            get_item_code("Gauze, swabs 8-ply 10cm x 10cm_100_CMST"): 3,
+            get_item_code("Disposables gloves, powder free, 100 pieces per box"): 1,
+            get_item_code("Gauze, absorbent 90cm x 40m_each_CMST"): 3,
             get_item_code("Water for injection, 10ml_Each_CMST"): 3,
         }
 
@@ -1122,7 +1125,7 @@ class HSI_MalariaIPTp(HSI_Event, IndividualScopeEventMixin):
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["AntenatalFirst"] = 0.25  # This requires part of an ANC appt
+        the_appt_footprint["ANCSubsequent"] = 0.25  # This requires part of an ANC appt
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "Malaria_IPTp"

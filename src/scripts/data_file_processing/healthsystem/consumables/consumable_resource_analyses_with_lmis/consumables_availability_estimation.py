@@ -32,7 +32,7 @@ from tlo.methods.consumables import check_format_of_consumables_file
 # Set local Dropbox source
 path_to_dropbox = Path(  # <-- point to the TLO dropbox locally
     # 'C:/Users/sm2511/Dropbox/Thanzi la Onse'
-    '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE'
+    '/Users/sejjj49/Dropbox/Thanzi la Onse'
 )
 
 path_to_files_in_the_tlo_dropbox = path_to_dropbox / "05 - Resources/Module-healthsystem/consumables raw files/"

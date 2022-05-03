@@ -4,7 +4,7 @@ This is the Bed days class.
 It maintains a current record of the availability and usage of beds in the healthcare system.
 
 """
-
+import numpy as np
 import pandas as pd
 
 from tlo import Property, Types, logging
@@ -15,25 +15,38 @@ from tlo import Property, Types, logging
 
 logger = logging.getLogger('tlo.methods.healthsystem')
 
+# Define the appointment types that should be associated with the use of bed-days (of any type), for a given number of
+# patients.
+IN_PATIENT_ADMISSION = {'IPAdmission': 1}
+IN_PATIENT_DAY = {'InpatientDays': 1}
+
 
 class BedDays:
     """
     The BedDays class. This is expected to be registered in the HealthSystem module.
     """
 
-    def __init__(self, hs_module):
+    def __init__(self, hs_module, availability: str = 'default'):
         self.hs_module = hs_module
+
         # Number of days to the last day of bed_tracker
         self.days_until_last_day_of_bed_tracker = 150
 
-        # a dictionary to create a footprint according to facility bed days capacity
+        # A dictionary to create a footprint according to facility bed days capacity
         self.available_footprint = {}
 
-        # a dictionary to track inpatient bed days
+        # A dictionary to track inpatient bed days
         self.bed_tracker = dict()
         self.list_of_cols_with_internal_dates = dict()
 
-        self.bed_types = list()  # List of bed-types
+        # List of bed-types
+        self.bed_types = list()
+
+        self.availability = availability
+
+        # Internal store of the number of beds by facility and bed_type that is scaled to the model population size (if
+        #  the HealthSystem is not running in mode `disable=True`).
+        self._scaled_capacity = None
 
     def get_bed_types(self):
         """Helper function to get the bed_types from the resource file imported to parameter 'BedCapacity' of the
@@ -74,29 +87,47 @@ class BedDays:
         """Put out to the log the information from the tracker of the last day of the simulation"""
         self.log_yesterday_info_from_all_bed_trackers()
 
-    def initialise_beddays_tracker(self):
+    def set_scaled_capacity(self, model_to_data_popsize_ratio):
+        """Set the internal `_scaled_capacity` variable to represent the number of beds available of each type in each
+         facility, after scaling according to the model population relative to the real population size. """
+
+        if self.availability == 'all':
+            _scaling_factor = 1.0
+        elif self.availability == 'none':
+            _scaling_factor = 0.0
+        else:
+            _scaling_factor = model_to_data_popsize_ratio
+
+        self._scaled_capacity = (
+            self.hs_module.parameters['BedCapacity'].set_index('Facility_ID') * _scaling_factor
+        ).apply(np.ceil).astype(int)
+
+    def initialise_beddays_tracker(self, model_to_data_popsize_ratio=1.0):
         """Initialise the bed days tracker:
         Create a dataframe for each type of beds that give the total number of beds currently available in each facility
          (rows) by the date during the simulation (columns).
 
         The current implementation assumes that bed capacity is held constant throughout the simulation; but it could be
          changed through modifications here.
+
+         :param: `capabilities_coefficient` is the scaler needed to reduce the number of beds available according to the
+         size of the model population relative to the real population size.
         """
 
-        capacity = self.hs_module.parameters['BedCapacity'].set_index('Facility_ID')
+        # Set the internal `_scaled_capacity` variable to reflect the model population size.
+        self.set_scaled_capacity(model_to_data_popsize_ratio)
+
         max_number_of_bed_days = self.days_until_last_day_of_bed_tracker
-
         end_date = self.hs_module.sim.start_date + pd.DateOffset(days=max_number_of_bed_days)
-
         date_range = pd.date_range(self.hs_module.sim.start_date, end_date, freq='D')
 
         for bed_type in self.bed_types:
             df = pd.DataFrame(
                 index=date_range,  # <- Days in the simulation
-                columns=capacity.index,  # <- Facility_ID
+                columns=self._scaled_capacity.index,  # <- Facility_ID
                 data=1
             )
-            df = df.mul(capacity[bed_type], axis=1)
+            df = df.mul(self._scaled_capacity[bed_type], axis=1)
             assert not df.isna().any().any()
             self.bed_tracker[bed_type] = df
 
@@ -105,34 +136,35 @@ class BedDays:
         * Refresh inpatient status
         * Log yesterday's usage of beds
         * Move the tracker by one day
+        * Schedule an HSI for today that represents the care of in-patients
         """
         # Refresh the hs_in_patient status
         self.refresh_in_patient_status()
 
+        # Move tracker by one day
         # NB. This is skipped on the first day of the simulation as there is nothing to log from yesterday and the
         # tracker is already set.
-
         if self.hs_module.sim.date != self.hs_module.sim.start_date:
             self.log_yesterday_info_from_all_bed_trackers()
             self.move_each_tracker_by_one_day()
 
     def move_each_tracker_by_one_day(self):
-        bed_capacity = self.hs_module.parameters['BedCapacity']
 
         for bed_type, tracker in self.bed_tracker.items():
             start_date = min(tracker.index)
 
-            # reset all the columns for the earliest entry - it's going to become the new day
-            tracker.loc[start_date] = bed_capacity.loc[bed_capacity.index[0], bed_type]
+            # reset all the columns for the start_date with the values of `bed_capacity` - this row is going to become
+            # the new day (at the end of the tracker)
+            tracker.loc[start_date] = self._scaled_capacity[bed_type]
 
             # make new index
             end_date = max(tracker.index)  # get the latest day in the dataframe
-            new_day = end_date + pd.DateOffset(days=1)  # the new day is the next day
+            new_day = end_date + pd.DateOffset(days=1)  # the new day is the next day after the last in the tracker
             new_index = list(tracker.index)
             new_index[0] = new_day  # the earliest day is replaced with the next day
             new_index = pd.DatetimeIndex(new_index)
 
-            # update the index
+            # update the index and sort the index (will put the 'new_day' at the end of the index).
             tracker = tracker.set_index(new_index).sort_index()
 
             # save the updated tracker
@@ -389,3 +421,31 @@ class BedDays:
         df.loc[df.is_alive, "hs_is_inpatient"] = \
             (df.loc[df.is_alive, exit_cols].notnull() & (
                 df.loc[df.is_alive, exit_cols] >= self.hs_module.sim.date)).any(axis=1)
+
+    @staticmethod
+    def add_first_day_inpatient_appts_to_footprint(appt_footprint):
+        """Return an APPT_FOOTPRINT with the addition (if not already present) of the in-patient admission appointment
+        and the in-patient day appointment type (for the first day of the in-patient stay)."""
+        return {**appt_footprint, **IN_PATIENT_ADMISSION, **IN_PATIENT_DAY}
+
+    def get_inpatient_appts(self) -> dict:
+        """Return a dict of the form {<facility_id>: APPT_FOOTPRINT} giving the total APPT_FOOTPRINT required for the
+        servicing of the in-patients (in beds of any types) for each Facility_ID."""
+
+        total_inpatients = pd.DataFrame([
+            (self._scaled_capacity[_bed_type] - self.bed_tracker[_bed_type].loc[self.hs_module.sim.date]).to_dict()
+            for _bed_type in self.bed_types
+        ]).sum()
+
+        def multiply_footprint(_footprint, _num):
+            """Multiply the number of appointments of each type in a footprint by a number"""
+            return {appt_type: num_needed * _num for appt_type, num_needed in _footprint.items()}
+
+        return {
+            fac_id: multiply_footprint(IN_PATIENT_DAY, num_inpatients)
+            for fac_id, num_inpatients in total_inpatients[total_inpatients > 0].to_dict().items()
+        }
+        # NB. As we haven't got a record of which person is in which bed, we cannot associate a person with a particular
+        # set of appointments associated for in-patient bed-days (after the first). This could be accomplished by
+        # changing the way BedDays stores internally the information about in-patients and creating HSI for the
+        # in-patients.
