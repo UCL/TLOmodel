@@ -72,14 +72,14 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
     pn_comps = get_modules_maternal_complication_dataframes('postnatal_supervisor')
 
     # ============================================  Total births... ===================================================
-    births_results = extract_results(
-        results_folder,
-        module="tlo.methods.demography",
-        key="on_birth",
-        custom_generate_series=(
-            lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()
-        ),
-    )
+    # births_results = extract_results(
+    #     results_folder,
+    #    module="tlo.methods.demography",
+    #    key="on_birth",
+    #    custom_generate_series=(
+    #        lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()
+    #    ),
+    # )
 
     births_results_exc_2010 = extract_results(
         results_folder,
@@ -89,7 +89,7 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
             lambda df:
             df.loc[(df['mother'] != -1)].assign(year=df['date'].dt.year).groupby(['year'])['year'].count()))
 
-    birth_data = analysis_utility_functions.get_mean_and_quants(births_results, sim_years)
+    # birth_data = analysis_utility_functions.get_mean_and_quants(births_results, sim_years)
     # total_births_per_year = birth_data[0]
     total_births_per_year_ex2010_data = analysis_utility_functions.get_mean_and_quants(births_results_exc_2010,
                                                                                        sim_years)
@@ -135,10 +135,10 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
                       [x + y for x, y in zip(id_mmr_data[1], mm[1])],
                       [x + y for x, y in zip(id_mmr_data[2], mm[2])]]
 
-    for data, title, l_colour, f_colour in zip(
-        [mm, id_mmr_data, total_mmr_data],
-        ['Direct', 'Indirect', 'Total'],
-        ['deepskyblue', 'mediumpurple', 'coral'], ['b', 'mediumslateblue', 'lightcoral']):
+    for data, title, l_colour, f_colour in zip([mm, id_mmr_data, total_mmr_data],
+                                               ['Direct', 'Indirect', 'Total'],
+                                               ['deepskyblue', 'mediumpurple', 'coral'],
+                                               ['b', 'mediumslateblue', 'lightcoral']):
 
         if title == 'Direct':
             mp = 0.7
@@ -249,11 +249,11 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
 
     ax.bar(labels, indirect_deaths_means['chronic_ischemic_hd'], width, label='Chronic HD',
            bottom=[a+b+c+d+e+f for a, b, c, d, e, f in zip(indirect_deaths_means['AIDS'],
-                                                          indirect_deaths_means['Malaria'],
-                                                          indirect_deaths_means['TB'],
-                                                          indirect_deaths_means['Suicide'],
-                                                          indirect_deaths_means['ever_stroke'],
-                                                          indirect_deaths_means['diabetes'])], color='grey')
+                                                           indirect_deaths_means['Malaria'],
+                                                           indirect_deaths_means['TB'],
+                                                           indirect_deaths_means['Suicide'],
+                                                           indirect_deaths_means['ever_stroke'],
+                                                           indirect_deaths_means['diabetes'])], color='grey')
 
     ax.bar(labels, indirect_deaths_means['diabetes'], width, label='Diabetes',
            bottom=[a+b+c+d+e for a, b, c, d, e in zip(indirect_deaths_means['AIDS'], indirect_deaths_means['Malaria'],
@@ -682,12 +682,12 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
                      ecolor='grey',
                      elinewidth=3, capsize=0)
 
-        plt.errorbar(2017, data['hug']['mean'], label='Hug 2017'
-                     , yerr=(data['hug']['uq'] - data['hug']['lq']) / 2,
+        plt.errorbar(2017, data['hug']['mean'], label='Hug 2017',
+                     yerr=(data['hug']['uq'] - data['hug']['lq']) / 2,
                      fmt='o', color='purple', ecolor='pink', elinewidth=3, capsize=0)
 
-        plt.errorbar(2019, data['gbd']['mean'], label='Paulson (GBD) 2019'
-                     , yerr=(data['gbd']['uq'] - data['gbd']['lq']) / 2,
+        plt.errorbar(2019, data['gbd']['mean'], label='Paulson (GBD) 2019',
+                     yerr=(data['gbd']['uq'] - data['gbd']['lq']) / 2,
                      fmt='o', color='purple', ecolor='pink', elinewidth=3, capsize=0)
 
         ax.plot([2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019],

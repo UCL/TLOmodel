@@ -1290,7 +1290,7 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
     # todo
 
     # GET MEAN/MEDIAN SQUEEZE
-    #for hsi in ['SkilledBirthAttendance', 'AntenatalWardInpatientCare', 'CareOfTheNewbornBySkilledAttendantAtBirth',
+    # for hsi in ['SkilledBirthAttendance', 'AntenatalWardInpatientCare', 'CareOfTheNewbornBySkilledAttendantAtBirth',
     #            'Labour_ReceivesPostnatalCheck', 'NewbornOutcomes_ReceivesPostnatalCheck',
     #            'ReceivesComprehensiveEmergencyObstetricCare']:
     #    analysis_utility_functions.return_median_and_mean_squeeze_factor_for_hsi(results_folder, hsi, sim_years,
