@@ -46,6 +46,7 @@ from tlo.methods import (
     pregnancy_supervisor,
     stunting,
     symptommanager,
+    tb,
     wasting,
 )
 
@@ -243,6 +244,7 @@ sim.register(
     epi.Epi(resourcefilepath=resourcefilepath),
     epilepsy.Epilepsy(resourcefilepath=resourcefilepath),
     hiv.Hiv(resourcefilepath=resourcefilepath),
+    tb.Tb(resourcefilepath=resourcefilepath),
     malaria.Malaria(resourcefilepath=resourcefilepath),
     oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
     other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath),

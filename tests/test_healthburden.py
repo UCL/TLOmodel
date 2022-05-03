@@ -33,6 +33,7 @@ from tlo.methods import (
     prostate_cancer,
     schisto,
     symptommanager,
+    tb,
 )
 from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
@@ -119,6 +120,7 @@ def test_cause_of_disability_being_registered(seed):
         depression.Depression(resourcefilepath=rfp),
         diarrhoea.Diarrhoea(resourcefilepath=rfp),
         hiv.Hiv(resourcefilepath=rfp),
+        tb.Tb(resourcefilepath=rfp),
         malaria.Malaria(resourcefilepath=rfp),
         cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=rfp),
         oesophagealcancer.OesophagealCancer(resourcefilepath=rfp),

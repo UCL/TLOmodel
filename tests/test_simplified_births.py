@@ -273,6 +273,7 @@ def test_other_modules_running_with_simplified_births_module():
                  oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
                  bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
                  epilepsy.Epilepsy(resourcefilepath=resourcefilepath),
+                 epi.Epi(resourcefilepath=resourcefilepath),
                  hiv.Hiv(resourcefilepath=resourcefilepath),
                  malaria.Malaria(resourcefilepath=resourcefilepath),
                  epi.Epi(resourcefilepath=resourcefilepath),

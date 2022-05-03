@@ -20,7 +20,7 @@ from tlo.dependencies import (
     get_module_class_map,
     is_valid_tlo_module_subclass,
 )
-from tlo.methods import alri, contraception, diarrhoea, healthseekingbehaviour, hiv, stunting
+from tlo.methods import alri, contraception, diarrhoea, healthseekingbehaviour, hiv, tb, stunting
 from tlo.methods.healthsystem import HSI_Event, HSIEventDetails
 
 
@@ -451,6 +451,7 @@ if __name__ == '__main__':
         # module for modules with multiple Module subclasses defined
         multiple_module_class_map = {
             'hiv': hiv.Hiv,
+            'tb': tb.Tb,
             'alri': alri.Alri,
             'diarrhoea': diarrhoea.Diarrhoea,
             'contraception': contraception.Contraception,
