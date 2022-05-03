@@ -19,6 +19,7 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
+from tlo.methods.consumables import Consumables, create_dummy_data_for_cons_availability
 from tlo.methods.healthsystem import HSI_Event
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -603,3 +604,117 @@ def test_all_appt_types_can_run(seed):
             print(_line)
 
     assert 0 == len(error_msg)
+
+
+@pytest.mark.slow
+def test_two_loggers_in_healthsystem(seed, tmpdir):
+    """Check that two different loggers are used by the HealthSystem for more/less detailed logged information and that
+     these are consistent with one another."""
+
+    # Create a dummy disease module (to be the parent of the dummy HSI)
+    class DummyModule(Module):
+        METADATA = {Metadata.DISEASE_MODULE}
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            sim.modules['HealthSystem'].schedule_hsi_event(HSI_Dummy(self, person_id=0),
+                                                           topen=self.sim.date,
+                                                           tclose=None,
+                                                           priority=0)
+
+    # Create a dummy HSI event:
+    class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = 'Dummy'
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'Under5OPD': 1})
+            self.ACCEPTED_FACILITY_LEVEL = '1a'
+
+        def apply(self, person_id, squeeze_factor):
+            # Request a consumable (either 0 or 1)
+            self.get_consumables(item_codes=self.module.rng.choice((0, 1), p=(0.5, 0.5)))
+
+            # Schedule another occurrence of itself tomorrow.
+            sim.modules['HealthSystem'].schedule_hsi_event(self,
+                                                           topen=self.sim.date + pd.DateOffset(days=1),
+                                                           tclose=None,
+                                                           priority=0)
+
+    # Set up simulation:
+    sim = Simulation(start_date=start_date, seed=seed, log_config={
+        'filename': 'tmpfile',
+        'directory': tmpdir,
+        'custom_levels': {
+            "tlo.methods.healthsystem": logging.INFO,
+            "tlo.methods.healthsystem.summary": logging.INFO
+        }
+    })
+
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        DummyModule(),
+        sort_modules=False,
+        check_all_dependencies=False
+    )
+    sim.make_initial_population(n=1000)
+
+    # Replace consumables class with version that declares only one consumable, available with probability 0.5
+    mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "ResourceFile_Master_Facilities_List.csv")
+    all_fac_ids = set(mfl.loc[mfl.Facility_Level != '5'].Facility_ID)
+
+    sim.modules['HealthSystem'].consumables = Consumables(
+        data=create_dummy_data_for_cons_availability(
+            intrinsic_availability={0: 0.5, 1: 0.5},
+            months=list(range(1, 13)),
+            facility_ids=list(all_fac_ids)),
+        rng=sim.modules['HealthSystem'].rng,
+        availability='default'
+    )
+
+    sim.simulate(end_date=start_date + pd.DateOffset(years=2))
+    log = parse_log_file(sim.log_filepath)
+
+    # Standard log:
+    detailed_hsi_event = log["tlo.methods.healthsystem"]['HSI_Event']
+    detailed_capacity = log["tlo.methods.healthsystem"]['Capacity']
+    detailed_consumables = log["tlo.methods.healthsystem"]['Consumables']
+    assert {'date', 'TREATMENT_ID', 'did_run', 'Squeeze_Factor', 'Number_By_Appt_Type_Code', 'Person_ID'
+            } == set(detailed_hsi_event.columns)
+    assert {'date', 'Frac_Time_Used_Overall', 'Frac_Time_Used_By_Facility_ID'
+            } == set(detailed_capacity.columns)
+    assert {'date', 'TREATMENT_ID', 'Item_Available', 'Item_NotAvailable'
+            } == set(detailed_consumables.columns)
+
+    # Summary log:
+    summary_hsi_event = log["tlo.methods.healthsystem.summary"]["HSI_Event"]
+    summary_capacity = log["tlo.methods.healthsystem.summary"]["Capacity"]
+    summary_consumables = log["tlo.methods.healthsystem.summary"]["Consumables"]
+
+    # Check correspondence between the two logs
+    #  - Counts of TREATMENT_ID (total over entire period of log)
+    assert summary_hsi_event['TREATMENT_ID'].apply(pd.Series)['Dummy'].sum() == \
+           detailed_hsi_event.groupby('TREATMENT_ID').size()['Dummy']
+
+    #  - Appointments (total over entire period of the log)
+    assert summary_hsi_event['Number_By_Appt_Type_Code'].apply(pd.Series).sum().to_dict() == \
+        detailed_hsi_event['Number_By_Appt_Type_Code'].apply(pd.Series).sum().to_dict()
+
+    #  - Average fraction of HCW time used (year by year)
+    assert summary_capacity.set_index(pd.to_datetime(summary_capacity.date).dt.year
+                                      )['average_Frac_Time_Used_Overall'].round(4).to_dict() == \
+        detailed_capacity.set_index(pd.to_datetime(detailed_capacity.date).dt.year
+                                    )['Frac_Time_Used_Overall'].groupby(level=0).mean().round(4).to_dict()
+
+    #  - Consumables (total over entire period of log that are available / not available)  # add _Item_
+    assert summary_consumables['Item_Available'].apply(pd.Series).sum().to_dict() == \
+           detailed_consumables['Item_Available'].apply(
+               lambda x: {f'{k}': v for k, v in eval(x).items()}).apply(pd.Series).sum().to_dict()
+    assert summary_consumables['Item_NotAvailable'].apply(pd.Series).sum().to_dict() == \
+           detailed_consumables['Item_NotAvailable'].apply(
+               lambda x: {f'{k}': v for k, v in eval(x).items()}).apply(pd.Series).sum().to_dict()
