@@ -1936,9 +1936,7 @@ class Tb(Module):
         assert not df.loc[(df.tb_inf == "active"), "tb_date_active"].isna().all()
 
 
-# # ---------------------------------------------------------------------------
-# #   TB infection event
-# # ---------------------------------------------------------------------------
+
 class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
     """ This event exists to change parameters or functions
     depending on the scenario for projections which has been set
@@ -2049,7 +2047,9 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             p["ipt_coverage"]["coverage_plhiv"] = 0.75
             p["ipt_coverage"]["coverage_paediatric"] = 0.8  # this will apply to contacts of all ages
 
-
+# # ---------------------------------------------------------------------------
+# #   TB infection event
+# # ---------------------------------------------------------------------------
 class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """The Tb Regular Polling Events
     * Schedules persons becoming newly infected with latent tb
@@ -2263,7 +2263,7 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
                     now,
                 )
 
-        else:
+                else:
             # if Hiv not registered, give HIV+ person same time to death as HIV-
             for person_id in active_and_hiv:
                 date_of_tb_death = self.sim.date + pd.DateOffset(
@@ -2735,6 +2735,7 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
             return self.make_appt_footprint({})
         else:
             return ACTUAL_APPT_FOOTPRINT
+
 
 class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
     """ This event exists to change parameters or functions
