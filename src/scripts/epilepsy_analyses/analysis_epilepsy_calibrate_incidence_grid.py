@@ -51,8 +51,8 @@ class TestScenario(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         # Create parameters to vary
         grid = self.make_grid(
-            {'base_3m_prob_epilepsy': np.linspace(0.000220526608713936 - 0.000015, 0.000220526608713936 + 0.000015, 5),
-             'base_prob_3m_epi_death': np.linspace(0.000737401772217838 - 0.000015, 0.000737401772217838 + 0.000015, 5)}
+            {'base_3m_prob_epilepsy': np.linspace(0.0001767 - 0.000015, 00.0001767 + 0.000015, 5),
+             'base_prob_3m_epi_death': np.linspace(0.000737 - 0.000015, 0.000737 + 0.000015, 5)}
         )
         return {
             'Epilepsy': {
