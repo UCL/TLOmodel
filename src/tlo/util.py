@@ -393,7 +393,7 @@ class BitsetHandler:
 
 def random_date(start, end, rng):
     """Generate a randomly-chosen day between `start` (inclusive) `end` (exclusive)"""
-    if start > end:
+    if end > start:
         return start + DateOffset(days=rng.randint(0, (end - start).days))
     else:
         return start
