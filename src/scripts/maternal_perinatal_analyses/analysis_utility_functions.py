@@ -1,7 +1,9 @@
 
 import numpy as np
-from tlo.analysis.utils import extract_results
 from matplotlib import pyplot as plt
+
+from tlo.analysis.utils import extract_results
+
 plt.style.use('seaborn')
 
 

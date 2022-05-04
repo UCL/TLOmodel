@@ -1463,18 +1463,9 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
         super().__init__(module, person_id=person_id)
         assert isinstance(module, NewbornOutcomes)
 
-        nci = self.module.newborn_care_info
-
         self.TREATMENT_ID = 'NewbornOutcomes_ReceivesEarlyPostnatalCheck'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Under5OPD': 1})
-
-        # PNC is provided in hospital for newborns delivered in hospital
-        if nci[person_id]['delivery_setting'] == 'hospital':
-            fl = self.module.rng.choice(['1b', '2'])
-        else:
-            fl = '1a'
-
-        self.ACCEPTED_FACILITY_LEVEL = fl
+        self.ACCEPTED_FACILITY_LEVEL = self._get_facility_level_for_pnc(person_id)
         self.ALERT_OTHER_DISEASES = []
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})
 
@@ -1545,6 +1536,14 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
 
     def not_available(self):
         self.module.run_if_care_of_the_receives_postnatal_check_cant_run(self)
+
+    def _get_facility_level_for_pnc(self, person_id):
+        nci = self.module.newborn_care_info
+
+        if (person_id in nci) and (nci[person_id]['delivery_setting'] == 'hospital'):
+            return self.module.rng.choice(['1b', '2'])
+        else:
+            return '1a'
 
 
 class HSI_NewbornOutcomes_NeonatalWardInpatientCare(HSI_Event, IndividualScopeEventMixin):
