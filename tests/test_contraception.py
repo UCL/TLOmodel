@@ -555,8 +555,8 @@ def test_defaulting_off_method_if_no_consumables_at_population_level(tmpdir, see
 
 @pytest.mark.slow
 def test_outcomes_same_if_using_or_not_using_healthsystem(tmpdir, seed):
-    """Test that the contraception module functions and that exactly the same patterns of usage, switching, etc occur
-    when action do not use the HealthsSystem as when they do (and the HealthSystem allow every change to occur)."""
+    """Test that the contraception module has the same effects when either using `use_healthsystem=False` or
+     `use_healthsystem=True` and all consumables available."""
 
     # Run basic check, for the case when the model is using the healthsystem and when not and check the logs
     sim_does_not_use_healthsystem = run_sim(run=True, tmpdir=tmpdir, seed=seed, use_healthsystem=False, disable=True,
