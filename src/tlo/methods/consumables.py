@@ -10,6 +10,7 @@ import pandas as pd
 from tlo import logging
 
 logger = logging.getLogger('tlo.methods.healthsystem')
+logger_summary = logging.getLogger('tlo.methods.healthsystem.summary')
 
 
 class Consumables:
@@ -43,6 +44,9 @@ class Consumables:
         self._not_recognised_item_codes = set()  # The item codes requested but which are not recognised.
 
         self._process_consumables_df(data)
+
+        # Create pointer to the `HealthSystemSummaryCounter` helper class
+        self._summary_counter = ConsumablesSummaryCounter()
 
     def processing_at_start_of_new_day(self, date: datetime.datetime) -> None:
         """Do the jobs at the start of each new day.
@@ -141,15 +145,20 @@ class Consumables:
 
         # Log the request and the outcome:
         if to_log:
+            items_available = {k: v for k, v in item_codes.items() if available[k]}
+            items_not_available = {k: v for k, v in item_codes.items() if not available[k]}
             logger.info(key='Consumables',
                         data={
                             'TREATMENT_ID': (treatment_id if treatment_id is not None else ""),
-                            'Item_Available': str({k: v for k, v in item_codes.items() if available[k]}),
-                            'Item_NotAvailable': str({k: v for k, v in item_codes.items() if not available[k]}),
+                            'Item_Available': str(items_available),
+                            'Item_NotAvailable': str(items_not_available),
                         },
                         # NB. Casting the data to strings because logger complains with dict of varying sizes/keys
                         description="Record of each consumable item that is requested."
                         )
+
+            self._summary_counter.record_availability(items_available=items_available,
+                                                      items_not_available=items_not_available)
 
         # Return the result of the check on availability
         return available
@@ -188,6 +197,9 @@ class Consumables:
                     key="item_codes_not_recognised",
                     data={_treatment_id if _treatment_id is not None else "": list(_item_codes)}
                 )
+
+    def write_to_log_and_reset_counters(self):
+        return self._summary_counter.write_to_log_and_reset_counters()
 
 
 def get_item_codes_from_package_name(lookup_df: pd.DataFrame, package: str) -> dict:
@@ -251,3 +263,44 @@ def check_format_of_consumables_file(df, fac_ids):
     # Check that every entry for a probability is a float on [0,1]
     assert (df.available_prop <= 1.0).all() and (df.available_prop >= 0.0).all()
     assert not pd.isnull(df.available_prop).any()
+
+
+class ConsumablesSummaryCounter:
+    """Helper class to keep running counts of consumable."""
+
+    def __init__(self):
+        self._reset_internal_stores()
+
+    def _reset_internal_stores(self) -> None:
+        """Create empty versions of the data structures used to store a running records."""
+
+        self._items = {
+            'Available': defaultdict(int),
+            'NotAvailable': defaultdict(int)
+        }
+
+    def record_availability(self, items_available: dict, items_not_available: dict) -> None:
+        """Add information about the availability of requested items to the running summaries."""
+
+        # Record items that were available
+        for _item, _num in items_available.items():
+            self._items['Available'][_item] += _num
+
+        # Record items that were not available
+        for _item, _num in items_not_available.items():
+            self._items['NotAvailable'][_item] += _num
+
+    def write_to_log_and_reset_counters(self):
+        """Log summary statistics reset the data structures."""
+
+        logger_summary.info(
+            key="Consumables",
+            description="Counts of the items that were requested in this calendar year, which were available and"
+                        "not available.",
+            data={
+                "Item_Available": self._items['Available'],
+                "Item_NotAvailable": self._items['NotAvailable'],
+            },
+        )
+
+        self._reset_internal_stores()
