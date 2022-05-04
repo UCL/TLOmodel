@@ -25,6 +25,7 @@ def run_sim(tmpdir,
             no_changes_in_contraception=False,
             no_initial_contraception_use=False,
             equalised_risk_of_preg=None,
+            max_days_delay_between_decision_to_change_method_and_hsi_scheduled=28
             ):
     """Run basic checks on function of contraception module"""
 
@@ -116,6 +117,9 @@ def run_sim(tmpdir,
         sim.modules['Contraception'].processed_params['p_pregnancy_with_contraception_per_month'].loc[:, :] = \
             equalised_risk_of_preg
 
+    sim.modules['Contraception'].parameters['max_days_delay_between_decision_to_change_method_and_hsi_scheduled'] = \
+        max_days_delay_between_decision_to_change_method_and_hsi_scheduled
+
     if not run:
         return sim
 
@@ -170,8 +174,8 @@ def __check_no_illegal_switches(sim):
         if 'contraception_change' in logs['tlo.methods.contraception']:
             con = logs['tlo.methods.contraception']['contraception_change']
             assert not (con.switch_from == 'female_sterilization').any()  # no switching from female_sterilization
-            assert not (con.loc[con['age_years'] <= 30, 'switch_to'] == 'female_sterilization').any()  # no switching to
-            # female_sterilization if age less than 30 (or equal to, in case they have aged since an HSI was scheduled)
+            assert not (con.loc[con['age_years'] < 30, 'switch_to'] == 'female_sterilization').any()  # no switching to
+            # female_sterilization if age less than 30
 
 
 @pytest.mark.slow
@@ -553,26 +557,25 @@ def test_outcomes_same_if_using_or_not_using_healthsystem(tmpdir, seed):
     when action do not use the HealthsSystem as when they do (and the HealthSystem allow every change to occur)."""
 
     # Run basic check, for the case when the model is using the healthsystem and when not and check the logs
-    sim_does_not_use_healthsystem = run_sim(run=True, tmpdir=tmpdir, seed=seed, use_healthsystem=False, disable=True)
+    sim_does_not_use_healthsystem = run_sim(run=True, tmpdir=tmpdir, seed=seed, use_healthsystem=False, disable=True,
+                                            max_days_delay_between_decision_to_change_method_and_hsi_scheduled=0)
     __check_no_illegal_switches(sim_does_not_use_healthsystem)
     __check_some_starting_switching_and_stopping(sim_does_not_use_healthsystem)
 
-    sim_uses_healthsystem = run_sim(run=True, tmpdir=tmpdir, seed=seed, use_healthsystem=True, disable=True)
+    sim_uses_healthsystem = run_sim(run=True, tmpdir=tmpdir, seed=seed, use_healthsystem=True, disable=True,
+                                    max_days_delay_between_decision_to_change_method_and_hsi_scheduled=0)
     __check_no_illegal_switches(sim_uses_healthsystem)
     __check_some_starting_switching_and_stopping(sim_uses_healthsystem)
 
-    # Check that the output of these two simulations are the same (apart from day of the month, which may change as
-    # HSI dates are intentionally scattered over the month.)
-
-    def format_log(_log):
-        """Format the log so that date is replaced with only the month and year"""
-        _log["year_month"] = pd.to_datetime(_log['date']).dt.to_period('M')
-        return _log.drop(columns=['date', 'age_years']).sort_values(['year_month', 'woman_id']).reset_index(drop=True)
+    # Check that the output of these two simulations are the same
+    def sort_log(_log):
+        """Do some sorting on the logs to enable comparisons."""
+        return _log.sort_values(['date', 'woman_id']).reset_index(drop=True)
 
     for key in {'pregnancy', 'contraception_change'}:
         pd.testing.assert_frame_equal(
-            format_log(parse_log_file(sim_uses_healthsystem.log_filepath)['tlo.methods.contraception'][key]),
-            format_log(parse_log_file(sim_does_not_use_healthsystem.log_filepath)['tlo.methods.contraception'][key])
+            sort_log(parse_log_file(sim_uses_healthsystem.log_filepath)['tlo.methods.contraception'][key]),
+            sort_log(parse_log_file(sim_does_not_use_healthsystem.log_filepath)['tlo.methods.contraception'][key])
         )
 
 

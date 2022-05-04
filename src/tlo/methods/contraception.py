@@ -79,7 +79,11 @@ class Contraception(Module):
             Types.LIST, "Scaling factor (by age-group: 15-19, 20-24, ..., 45-49) on the monthly risk of pregnancy and "
                         "contraceptive failure rate. This value is found through calibration so that, at the beginning "
                         "of the simulation, the age-specific monthly probability of a woman having a live birth matches"
-                        " the WPP age-specific fertility rate value for the same year.")
+                        " the WPP age-specific fertility rate value for the same year."),
+
+        'max_days_delay_between_decision_to_change_method_and_hsi_scheduled': Parameter(
+            Types.INT, "The maximum delay (in days) between the decision for a contraceptive to change and the `topen`"
+                       "date of the HSI that is scheduled to effect the change (when using the healthsystem),")
     }
 
     all_contraception_states = {
@@ -550,11 +554,12 @@ class Contraception(Module):
                         person_id=_woman_id,
                         module=self,
                         old_contraceptive=_old,
-                        new_contraceptive=_new
-                    ),
+                        new_contraceptive=_new),
                     topen=random_date(
-                        # scatter dates over the month
-                        self.sim.date, self.sim.date + pd.DateOffset(days=28), self.rng2),
+                        self.sim.date,
+                        self.sim.date + pd.DateOffset(
+                            days=self.parameters['max_days_delay_between_decision_to_change_method_and_hsi_scheduled']),
+                        self.rng2),
                     tclose=None,
                     priority=1
                 )
