@@ -704,8 +704,8 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
 
     # Check correspondence between the two logs
     #  - Counts of TREATMENT_ID (total over entire period of log)
-    assert summary_hsi_event['TREATMENT_ID'].apply(pd.Series)['Dummy'].sum() == \
-           detailed_hsi_event.groupby('TREATMENT_ID').size()['Dummy']
+    assert summary_hsi_event['TREATMENT_ID'].apply(pd.Series).sum().to_dict() == \
+           detailed_hsi_event.groupby('TREATMENT_ID').size().to_dict()
 
     #  - Appointments (total over entire period of the log)
     assert summary_hsi_event['Number_By_Appt_Type_Code'].apply(pd.Series).sum().to_dict() == \
