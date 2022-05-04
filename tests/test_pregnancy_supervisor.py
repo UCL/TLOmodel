@@ -4,7 +4,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
-from pandas.tseries.offsets import DateOffset
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
