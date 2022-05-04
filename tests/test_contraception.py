@@ -283,17 +283,18 @@ def test_woman_starting_contraceptive_after_birth(tmpdir, seed):
     """Check that woman re-start the same contraceptive after birth."""
     sim = run_sim(tmpdir=tmpdir, seed=seed, run=False)
 
+    # Manipulate probabilities of starting contraception:
+    contraception = sim.modules['Contraception']
+    contraception.parameters['Initiation_AfterBirth'].loc[0] = 1.0 / len(contraception.parameters['Initiation_AfterBirth'].loc[0].values)
+    contraception.processed_params = contraception.process_params()
+
     # Select a woman to be a mother
     person_id = 0
-    sim.population.props.loc[person_id, [
-        "is_alive",
-        "sex",
-        "age_years"]
-    ] = (
-        True,
-        "F",
-        30
-    )
+    _props = {"is_alive": True,
+              "sex": "F",
+             "age_years": 30
+    }
+    sim.population.props.loc[person_id, _props.keys()] = _props.values()
 
     # Run `select_contraceptive_following_birth` for the woman many times
     co_after_birth = list()
