@@ -508,6 +508,11 @@ def test_abortion_complications(seed):
         params['prob_ectopic_pregnancy'] = 0.0
         params['treatment_effect_post_abortion_care'] = 0.0
 
+        lab_params = sim.modules['Labour'].current_parameters
+        lab_params['mean_hcw_competence_hc'] = [1, 1]
+        lab_params['mean_hcw_competence_hp'] = [1, 1]
+        lab_params['prob_hcw_avail_retained_prod'] = 1
+
         df = sim.population.props
         pregnant_women = df.loc[df.is_alive & df.is_pregnant]
         for woman in pregnant_women.index:
@@ -559,6 +564,8 @@ def test_abortion_complications(seed):
         pac = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(
             person_id=mother_id, module=sim.modules['CareOfWomenDuringPregnancy'])
         pac.apply(person_id=mother_id, squeeze_factor=0.0)
+
+        assert sim.population.props.at[mother_id, 'ac_received_post_abortion_care']
 
         # Define and run event, check woman has correctly died
         death_event = pregnancy_supervisor.EarlyPregnancyLossDeathEvent(module=sim.modules['PregnancySupervisor'],
