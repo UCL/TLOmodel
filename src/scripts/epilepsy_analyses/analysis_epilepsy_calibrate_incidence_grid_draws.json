@@ -1,5 +1,5 @@
 {
-  "scenario_script_path": "C:\\/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/epilepsy_analyses/analysis_epilepsy_calibrate_incidence_grid.py",
+  "scenario_script_path": "src/scripts/epilepsy_analyses/analysis_epilepsy_calibrate_incidence_grid.py",
   "scenario_seed": 12,
   "runs_per_draw": 2,
   "draws": [
@@ -253,5 +253,7 @@
         }
       }
     }
-  ]
+  ],
+  "commit": "b681cfcbe5af70f3f2b05eba827a50aab71dab23",
+  "github": "https://github.com/UCL/TLOmodel/blob/b681cfcbe5af70f3f2b05eba827a50aab71dab23/src/scripts/epilepsy_analyses/analysis_epilepsy_calibrate_incidence_grid.py"
 }
