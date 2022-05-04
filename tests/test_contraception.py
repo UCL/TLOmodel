@@ -289,14 +289,16 @@ def test_woman_starting_contraceptive_after_birth(tmpdir, seed):
 
     # Manipulate probabilities of starting contraception:
     contraception = sim.modules['Contraception']
-    contraception.parameters['Initiation_AfterBirth'].loc[0] = 1.0 / len(contraception.parameters['Initiation_AfterBirth'].loc[0].values)
+    contraception.parameters['Initiation_AfterBirth'].loc[0] = \
+        1.0 / len(contraception.parameters['Initiation_AfterBirth'].loc[0].values)
     contraception.processed_params = contraception.process_params()
 
     # Select a woman to be a mother
     person_id = 0
-    _props = {"is_alive": True,
-              "sex": "F",
-             "age_years": 30
+    _props = {
+        "is_alive": True,
+        "sex": "F",
+        "age_years": 30
     }
     sim.population.props.loc[person_id, _props.keys()] = _props.values()
 
@@ -626,6 +628,7 @@ def test_correct_number_of_live_births_created(tmpdir, seed):
         expected_births,
         atol=2.58 * np.sqrt(expected_births)  # ~99% confidence interval for poisson process
     )
+
 
 def test_initial_distribution_of_contraception(tmpdir, seed):
     """Check that the initial population distribution has the expected distribution of use of contraceptive methods."""
