@@ -380,65 +380,77 @@ def test_occurrence_of_HSI_for_maintaining_on_and_switching_to_methods(tmpdir, s
 
 @pytest.mark.slow
 def test_defaulting_off_method_if_no_healthsystem_or_consumable_at_individual_level(tmpdir, seed):
-    """Check that if someone is on a method that requires an HSI for maintenance, and if consumable is not available
-    and/or the health system cannot do the appointment, then that the person defaults to not using after they become
-    due for a maintenance appointment."""
+    """Check that if someone is on a method that requires an HSI and consumable for maintenance, but that HSI do not
+    occur or consumable are not available, then that the person defaults to "not_using" as they become due for a
+    maintenance appointment."""
 
     def check_that_persons_on_contraceptive_default(sim):
-        """Before simulaton starts, put women on a contraceptive, and make some due an appointment. Then run the
-        simulation. Check that those who are on a contraceptive that requires HSI and consumables default to "not_using"
-        by the end of the simulation."""
+        """Before simulation starts, put women on a contraceptive. Then run the simulation. Check that those who are on
+         a contraceptive that requires HSI and consumables and were due to have an appointment, default to "not_using"
+         by the end of the simulation. NB. All defaulters will move to "not_using" because no other kind of natural
+         switching is allowed in this simulation."""
 
         df = sim.population.props
         contraceptives = sorted(sim.modules['Contraception'].all_contraception_states)
+        n_contraceptives = len(contraceptives)
+        states_that_may_require_HSI_to_maintain_on = \
+            sim.modules['Contraception'].states_that_may_require_HSI_to_maintain_on
 
-        # Set that person_id=0-10 are woman on each of the contraceptive and are due an appointment next month (these
-        # women will default if on a contraceptive that requires a consumable).
-        person_ids_due_appt = list(range(len(contraceptives)))
-
-        # Set that person_id=12-25 are women each of the contraceptives and are not due an appointment during the
-        # simulation. These women will not default.
-        person_ids_not_due_appt = [i + len(contraceptives) for i in person_ids_due_appt]
-
-        for i, contraceptive in enumerate(contraceptives):
-            original_props = {
+        # Set that some woman two women are on each of the contraceptive, one of whom is due an appointment next month
+        initial_conditions = pd.DataFrame({
+            'method': contraceptives * 2,
+            'due_appt': [True] * n_contraceptives + [False] * n_contraceptives
+        })
+        for _person_id, _row in initial_conditions.iterrows():
+            _props = {
                 'sex': 'F',
                 'age_years': 30,
                 'date_of_birth': sim.date - pd.DateOffset(years=30),
-                'co_contraception': contraceptive,
+                'co_contraception': _row.method,
                 'is_pregnant': False,
                 'date_of_last_pregnancy': pd.NaT,
                 'co_unintended_preg': False,
-                'co_date_of_last_fp_appt': sim.date - pd.DateOffset(months=5)
-                # <-- due for an appointment in 1 mo
+                'co_date_of_last_fp_appt': sim.date - (
+                    pd.DateOffset(months=5) if _row.due_appt else pd.DateOffset(days=1)
+                )
             }
-            df.loc[person_ids_due_appt[i], original_props.keys()] = original_props.values()
-
-            original_props['co_date_of_last_fp_appt'] = sim.date - pd.DateOffset(days=1)
-            # <--not due an appointment
-            df.loc[person_ids_not_due_appt[i], original_props.keys()] = original_props.values()
-
-        # Check they are using the correct contraceptive
-        for i, _c in enumerate(contraceptives):
-            assert df.at[person_ids_due_appt[i], "co_contraception"] == _c
-            assert df.at[person_ids_not_due_appt[i], "co_contraception"] == _c
+            df.loc[_person_id, _props.keys()] = _props.values()
 
         # Run simulation
         sim.simulate(end_date=sim.start_date + pd.DateOffset(months=3))
         __check_no_illegal_switches(sim)
 
-        # Those on a contraceptive that requires HSI for maintenance should have defaulted to "not_using".
-        # NB. All defaulters will move to "not_using" because not other kind of natural switching is allowed in this
-        #  simulation.
-        for i, _c in enumerate(contraceptives):
+        # Check method that the women are now on.
+        method_after_sim = sim.population.props.loc[initial_conditions.index, "co_contraception"]
 
-            if _c in sim.modules['Contraception'].states_that_may_require_HSI_to_maintain_on:
-                assert df.at[person_ids_due_appt[i], "co_contraception"] == "not_using"
-            else:
-                assert df.at[person_ids_due_appt[i], "co_contraception"] == _c
+        # - Those originally on a method that did not require an appointment, are still on it
+        on_a_method_that_did_not_require_appointment = ~initial_conditions.method.isin(
+            states_that_may_require_HSI_to_maintain_on)
+        assert (
+            method_after_sim.loc[on_a_method_that_did_not_require_appointment] ==
+            initial_conditions.method.loc[on_a_method_that_did_not_require_appointment]
+        ).all()
 
-            # Those not due an appointment will not have defaulted (were not due an appointment)
-            assert df.at[person_ids_not_due_appt[i], "co_contraception"] == _c
+        # - Those originally on a method that did not require an appointment and were not due an appointment, are still
+        # on it
+        on_a_method_that_required_appointment_but_appointment_not_due = (
+            initial_conditions.method.isin(states_that_may_require_HSI_to_maintain_on)
+            & ~initial_conditions.due_appt
+        )
+        assert (
+            method_after_sim.loc[on_a_method_that_required_appointment_but_appointment_not_due] ==
+            initial_conditions.method.loc[on_a_method_that_required_appointment_but_appointment_not_due]
+        ).all()
+
+        # - Those originally on a method that did not require an appointment and were due an appointment, have defaulted
+        # to "not_using"
+        on_a_method_that_required_appointment_and_appointment_was_due = (
+            initial_conditions.method.isin(states_that_may_require_HSI_to_maintain_on)
+            & initial_conditions.due_appt
+        )
+        assert (
+            method_after_sim.loc[on_a_method_that_required_appointment_and_appointment_was_due] == "not_using"
+        ).all()
 
     # Check when no HSI occur
     sim = run_sim(tmpdir,
