@@ -626,7 +626,7 @@ def test_correct_number_of_live_births_created(tmpdir, seed):
     assert np.isclose(
         actual_num_births_in_Oct2010,
         expected_births,
-        atol=2.58 * np.sqrt(expected_births)  # ~99% confidence interval for poisson process
+        atol=3.0 * np.sqrt(expected_births)  # ~99% confidence interval for poisson process (a rough approximation!)
     )
 
 
