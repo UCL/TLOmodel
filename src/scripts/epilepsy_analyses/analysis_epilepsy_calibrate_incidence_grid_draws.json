@@ -8,8 +8,8 @@
       "draw_seed": 662124363,
       "parameters": {
         "Epilepsy": {
-          "base_3m_prob_epilepsy": 0.00020552660871393598,
-          "base_prob_3m_epi_death": 0.000722401772217838
+          "base_3m_prob_epilepsy": 0.0001617,
+          "base_prob_3m_epi_death": 0.000722
         }
       }
     },
@@ -18,8 +18,8 @@
       "draw_seed": 1916507803,
       "parameters": {
         "Epilepsy": {
-          "base_3m_prob_epilepsy": 0.00021302660871393598,
-          "base_prob_3m_epi_death": 0.000722401772217838
+          "base_3m_prob_epilepsy": 0.0001692,
+          "base_prob_3m_epi_death": 0.000722
         }
       }
     },
@@ -28,8 +28,8 @@
       "draw_seed": 1031005574,
       "parameters": {
         "Epilepsy": {
-          "base_3m_prob_epilepsy": 0.000220526608713936,
-          "base_prob_3m_epi_death": 0.000722401772217838
+          "base_3m_prob_epilepsy": 0.0001767,
+          "base_prob_3m_epi_death": 0.000722
         }
       }
     },
@@ -38,8 +38,8 @@
       "draw_seed": 1603685629,
       "parameters": {
         "Epilepsy": {
-          "base_3m_prob_epilepsy": 0.00022802660871393602,
-          "base_prob_3m_epi_death": 0.000722401772217838
+          "base_3m_prob_epilepsy": 0.00018420000000000003,
+          "base_prob_3m_epi_death": 0.000722
         }
       }
     },
@@ -48,8 +48,8 @@
       "draw_seed": 1130929393,
       "parameters": {
         "Epilepsy": {
-          "base_3m_prob_epilepsy": 0.000235526608713936,
-          "base_prob_3m_epi_death": 0.000722401772217838
+          "base_3m_prob_epilepsy": 0.00019170000000000002,
+          "base_prob_3m_epi_death": 0.000722
         }
       }
     },
@@ -58,8 +58,8 @@
       "draw_seed": 371232386,
       "parameters": {
         "Epilepsy": {
-          "base_3m_prob_epilepsy": 0.00020552660871393598,
-          "base_prob_3m_epi_death": 0.000729901772217838
+          "base_3m_prob_epilepsy": 0.0001617,
+          "base_prob_3m_epi_death": 0.0007295
         }
       }
     },
@@ -68,8 +68,8 @@
       "draw_seed": 144909571,
       "parameters": {
         "Epilepsy": {
-          "base_3m_prob_epilepsy": 0.00021302660871393598,
-          "base_prob_3m_epi_death": 0.000729901772217838
+          "base_3m_prob_epilepsy": 0.0001692,
+          "base_prob_3m_epi_death": 0.0007295
         }
       }
     },
@@ -78,8 +78,8 @@
       "draw_seed": 960362435,
       "parameters": {
         "Epilepsy": {
-          "base_3m_prob_epilepsy": 0.000220526608713936,
-          "base_prob_3m_epi_death": 0.000729901772217838
+          "base_3m_prob_epilepsy": 0.0001767,
+          "base_prob_3m_epi_death": 0.0007295
         }
       }
     },
@@ -88,8 +88,8 @@
       "draw_seed": 62598988,
       "parameters": {
         "Epilepsy": {
-          "base_3m_prob_epilepsy": 0.00022802660871393602,
-          "base_prob_3m_epi_death": 0.000729901772217838
+          "base_3m_prob_epilepsy": 0.00018420000000000003,
+          "base_prob_3m_epi_death": 0.0007295
         }
       }
     },
@@ -98,8 +98,8 @@
       "draw_seed": 1505292720,
       "parameters": {
         "Epilepsy": {
-          "base_3m_prob_epilepsy": 0.000235526608713936,
-          "base_prob_3m_epi_death": 0.000729901772217838
+          "base_3m_prob_epilepsy": 0.00019170000000000002,
+          "base_prob_3m_epi_death": 0.0007295
         }
       }
     },
@@ -108,8 +108,8 @@
       "draw_seed": 1798504726,
       "parameters": {
         "Epilepsy": {
-          "base_3m_prob_epilepsy": 0.00020552660871393598,
-          "base_prob_3m_epi_death": 0.000737401772217838
+          "base_3m_prob_epilepsy": 0.0001617,
+          "base_prob_3m_epi_death": 0.000737
         }
       }
     },
@@ -118,8 +118,8 @@
       "draw_seed": 145874993,
       "parameters": {
         "Epilepsy": {
-          "base_3m_prob_epilepsy": 0.00021302660871393598,
-          "base_prob_3m_epi_death": 0.000737401772217838
+          "base_3m_prob_epilepsy": 0.0001692,
+          "base_prob_3m_epi_death": 0.000737
         }
       }
     },
@@ -128,8 +128,8 @@
       "draw_seed": 1721057204,
       "parameters": {
         "Epilepsy": {
-          "base_3m_prob_epilepsy": 0.000220526608713936,
-          "base_prob_3m_epi_death": 0.000737401772217838
+          "base_3m_prob_epilepsy": 0.0001767,
+          "base_prob_3m_epi_death": 0.000737
         }
       }
     },
@@ -138,8 +138,8 @@
       "draw_seed": 1268891525,
       "parameters": {
         "Epilepsy": {
-          "base_3m_prob_epilepsy": 0.00022802660871393602,
-          "base_prob_3m_epi_death": 0.000737401772217838
+          "base_3m_prob_epilepsy": 0.00018420000000000003,
+          "base_prob_3m_epi_death": 0.000737
         }
       }
     },
@@ -148,8 +148,8 @@
       "draw_seed": 143543949,
       "parameters": {
         "Epilepsy": {
-          "base_3m_prob_epilepsy": 0.000235526608713936,
-          "base_prob_3m_epi_death": 0.000737401772217838
+          "base_3m_prob_epilepsy": 0.00019170000000000002,
+          "base_prob_3m_epi_death": 0.000737
         }
       }
     },
@@ -158,8 +158,8 @@
       "draw_seed": 354439641,
       "parameters": {
         "Epilepsy": {
-          "base_3m_prob_epilepsy": 0.00020552660871393598,
-          "base_prob_3m_epi_death": 0.000744901772217838
+          "base_3m_prob_epilepsy": 0.0001617,
+          "base_prob_3m_epi_death": 0.0007445
         }
       }
     },
@@ -168,8 +168,8 @@
       "draw_seed": 1962582434,
       "parameters": {
         "Epilepsy": {
-          "base_3m_prob_epilepsy": 0.00021302660871393598,
-          "base_prob_3m_epi_death": 0.000744901772217838
+          "base_3m_prob_epilepsy": 0.0001692,
+          "base_prob_3m_epi_death": 0.0007445
         }
       }
     },
@@ -178,8 +178,8 @@
       "draw_seed": 970465739,
       "parameters": {
         "Epilepsy": {
-          "base_3m_prob_epilepsy": 0.000220526608713936,
-          "base_prob_3m_epi_death": 0.000744901772217838
+          "base_3m_prob_epilepsy": 0.0001767,
+          "base_prob_3m_epi_death": 0.0007445
         }
       }
     },
@@ -188,8 +188,8 @@
       "draw_seed": 589309558,
       "parameters": {
         "Epilepsy": {
-          "base_3m_prob_epilepsy": 0.00022802660871393602,
-          "base_prob_3m_epi_death": 0.000744901772217838
+          "base_3m_prob_epilepsy": 0.00018420000000000003,
+          "base_prob_3m_epi_death": 0.0007445
         }
       }
     },
@@ -198,8 +198,8 @@
       "draw_seed": 1601311818,
       "parameters": {
         "Epilepsy": {
-          "base_3m_prob_epilepsy": 0.000235526608713936,
-          "base_prob_3m_epi_death": 0.000744901772217838
+          "base_3m_prob_epilepsy": 0.00019170000000000002,
+          "base_prob_3m_epi_death": 0.0007445
         }
       }
     },
@@ -208,8 +208,8 @@
       "draw_seed": 1219033472,
       "parameters": {
         "Epilepsy": {
-          "base_3m_prob_epilepsy": 0.00020552660871393598,
-          "base_prob_3m_epi_death": 0.000752401772217838
+          "base_3m_prob_epilepsy": 0.0001617,
+          "base_prob_3m_epi_death": 0.0007520000000000001
         }
       }
     },
@@ -218,8 +218,8 @@
       "draw_seed": 755903861,
       "parameters": {
         "Epilepsy": {
-          "base_3m_prob_epilepsy": 0.00021302660871393598,
-          "base_prob_3m_epi_death": 0.000752401772217838
+          "base_3m_prob_epilepsy": 0.0001692,
+          "base_prob_3m_epi_death": 0.0007520000000000001
         }
       }
     },
@@ -228,8 +228,8 @@
       "draw_seed": 455623784,
       "parameters": {
         "Epilepsy": {
-          "base_3m_prob_epilepsy": 0.000220526608713936,
-          "base_prob_3m_epi_death": 0.000752401772217838
+          "base_3m_prob_epilepsy": 0.0001767,
+          "base_prob_3m_epi_death": 0.0007520000000000001
         }
       }
     },
@@ -238,8 +238,8 @@
       "draw_seed": 2077248716,
       "parameters": {
         "Epilepsy": {
-          "base_3m_prob_epilepsy": 0.00022802660871393602,
-          "base_prob_3m_epi_death": 0.000752401772217838
+          "base_3m_prob_epilepsy": 0.00018420000000000003,
+          "base_prob_3m_epi_death": 0.0007520000000000001
         }
       }
     },
@@ -248,12 +248,12 @@
       "draw_seed": 1907932429,
       "parameters": {
         "Epilepsy": {
-          "base_3m_prob_epilepsy": 0.000235526608713936,
-          "base_prob_3m_epi_death": 0.000752401772217838
+          "base_3m_prob_epilepsy": 0.00019170000000000002,
+          "base_prob_3m_epi_death": 0.0007520000000000001
         }
       }
     }
   ],
-  "commit": "b681cfcbe5af70f3f2b05eba827a50aab71dab23",
-  "github": "https://github.com/UCL/TLOmodel/blob/b681cfcbe5af70f3f2b05eba827a50aab71dab23/src/scripts/epilepsy_analyses/analysis_epilepsy_calibrate_incidence_grid.py"
+  "commit": "17b165fd2167acae2e596cd0eb4471627e992153",
+  "github": "https://github.com/UCL/TLOmodel/blob/17b165fd2167acae2e596cd0eb4471627e992153/src/scripts/epilepsy_analyses/analysis_epilepsy_calibrate_incidence_grid.py"
 }
