@@ -592,19 +592,24 @@ def test_correct_number_of_live_births_created(tmpdir, seed):
         _df = _df.set_index(_df['year'], drop=True)
         return _df.loc[year, adult_age_groups]
 
-    # Compute the ASFR for the month of October 2010 (the first month when pregnancies could occur caused by
-    # the Contraception Module's parameters for pregnancy risk, at the beginning of which no woman is pregnant.)
+    # Actual number of births in simulation (in October 2010, the first month when pregnancies could occur under the
+    #  control of the Contraception Module).
+    actual_num_births_in_Oct2010 = get_births_in_a_month_by_age_range_of_mother_at_pregnancy(
+        log["tlo.methods.demography"]["on_birth"], year=2010, month=10).sum()
+
+    # Expected number of births:
     av_num_adult_women_in_2010 = get_num_adult_women_in_a_year_by_age_range(
         log["tlo.methods.demography"]["age_range_f"], year=2010)
 
-    num_births_in_Oct2010 = get_births_in_a_month_by_age_range_of_mother_at_pregnancy(
-        log["tlo.methods.demography"]["on_birth"], year=2010, month=10)
-    totfr_per_month_Oct2010 = num_births_in_Oct2010.sum() / av_num_adult_women_in_2010.sum()
-
     _prob_live_birth = sim.modules['Labour'].parameters['prob_live_birth']
 
-    assert np.isclose(totfr_per_month_Oct2010, _risk_of_pregnancy * _prob_live_birth, rtol=0.10)
+    expected_births = av_num_adult_women_in_2010.sum() * _risk_of_pregnancy * _prob_live_birth
 
+    assert np.isclose(
+        actual_num_births_in_Oct2010,
+        expected_births,
+        atol=2.58 * np.sqrt(expected_births)  # ~99% confidence interval for poisson process
+    )
 
 def test_initial_distribution_of_contraception(tmpdir, seed):
     """Check that the initial population distribution has the expected distribution of use of contraceptive methods."""
