@@ -2146,8 +2146,11 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                            p["transmission_rate"]
                            * (total_smear_pos + (total_smear_neg * p["rel_inf_smear_ng"]))
                        ) / total_pop
+        print(foi_national)
 
         # -------------- individual risk of acquisition -------------- #
+        if self.sim.date.year == 2037:
+            print("now check unsupported operand type(s) for *: 'float' and 'Categorical")
 
         # adjust individual risk by bcg status
         risk_tb = pd.Series(0, dtype=float, index=df.index)  # individual risk: district and national

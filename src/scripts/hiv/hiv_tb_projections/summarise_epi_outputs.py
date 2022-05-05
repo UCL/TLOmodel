@@ -331,6 +331,55 @@ plt.show()
 
 
 
+## latent TB ######################################
+
+tb_latent1 = extract_results(
+        results_folder1,
+        module="tlo.methods.tb",
+        key="tb_prevalence",
+        column="tbPrevLatent",
+        index="date",
+        do_scaling=False
+)
+# flatten multi-index
+tb_latent1.columns = tb_latent1.columns.get_level_values(0)
+tb_latent1["median"] = tb_latent1.median(axis=1)
+tb_latent1["lower"] = tb_latent1.quantile(q=0.025, axis=1)
+tb_latent1["upper"] = tb_latent1.quantile(q=0.975, axis=1)
+
+
+tb_latent3 = extract_results(
+        results_folder3,
+        module="tlo.methods.tb",
+        key="tb_prevalence",
+        column="tbPrevLatent",
+        index="date",
+        do_scaling=False
+)
+# flatten multi-index
+tb_latent3.columns = tb_latent3.columns.get_level_values(0)
+tb_latent3["median"] = tb_latent3.median(axis=1)
+tb_latent3["lower"] = tb_latent3.quantile(q=0.025, axis=1)
+tb_latent3["upper"] = tb_latent3.quantile(q=0.975, axis=1)
+
+# Make plot
+fig, ax = plt.subplots()
+ax.plot(tb_latent1.index, tb_latent1["median"], "-", color="C3")
+ax.fill_between(tb_latent1.index, tb_latent1["lower"], tb_latent1["upper"], color="C3", alpha=0.2)
+
+ax.plot(tb_latent3.index, tb_latent3["median"], "-", color="C2")
+ax.fill_between(tb_latent3.index, tb_latent3["lower"], tb_latent3["upper"], color="C2", alpha=0.2)
+
+fig.subplots_adjust(left=0.15)
+plt.title("Latent TB prevalence")
+plt.ylabel("Prevalence")
+plt.legend(["Scenario 1", "Scenario 3"])
+
+plt.show()
+
+
+
+
 
 model_hiv_child_prev = summarize(
     extract_results(
