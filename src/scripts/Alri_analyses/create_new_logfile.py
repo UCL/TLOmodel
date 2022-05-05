@@ -4,9 +4,8 @@ This is a utility script to create a new logfile to use for analysis
 # %% Import Statements and initial declarations
 import datetime
 import os
-from pathlib import Path
-import time
 import random
+from pathlib import Path
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
@@ -66,10 +65,10 @@ if not os.path.exists(log_filename):
         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                   service_availability=['*']),
-                                  # mode_appt_constraints=0,
-                                  # ignore_priority=True,
-                                  # capabilities_coefficient=1.0,
-                                  # disable=True),
+        # mode_appt_constraints=0,
+        # ignore_priority=True,
+        # capabilities_coefficient=1.0,
+        # disable=True),
         alri.Alri(resourcefilepath=resourcefilepath),
         alri.AlriPropertiesOfOtherModules()
     )

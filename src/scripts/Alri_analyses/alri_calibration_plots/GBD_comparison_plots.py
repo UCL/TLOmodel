@@ -4,12 +4,10 @@ This is the analysis script for the calibration of the ALRI model
 # %% Import Statements and initial declarations
 import datetime
 import os
-from pathlib import Path
-import time
 import random
+from pathlib import Path
 
 import pandas as pd
-import numpy as np
 from matplotlib import pyplot as plt
 
 from tlo import Date, Simulation, logging

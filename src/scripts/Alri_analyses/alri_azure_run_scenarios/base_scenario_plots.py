@@ -4,13 +4,9 @@ The results of the batchrun were put into the 'outputspath' results_folder
 
 import datetime
 from pathlib import Path
-import numpy as np
 
-from tlo.analysis.utils import compare_number_of_deaths, parse_log_file
-
-import matplotlib.lines as mlines
-import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
 from tlo.analysis.utils import (

@@ -23,23 +23,21 @@ Download result files for a completed job:
 tlo batch-download baseline_alri_scenario-2022-03-18T142355Z
 """
 
-import os
 import random
-
-import pandas as pd
 
 from tlo import Date, logging
 from tlo.methods import (
+    alri,
     demography,
     enhanced_lifestyle,
+    epi,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
     malaria,
     simplified_births,
     symptommanager,
-    alri,
-    epi, wasting
+    wasting,
 )
 from tlo.scenario import BaseScenario
 
@@ -78,11 +76,16 @@ class TestScenario(BaseScenario):
             healthburden.HealthBurden(resourcefilepath=self.resources),
             healthsystem.HealthSystem(resourcefilepath=self.resources,
                                       service_availability=["*"],  # all treatment allowed
-                                      mode_appt_constraints=0,  # mode of constraints to do with officer numbers and time
-                                      cons_availability="all",  # mode for consumable constraints (if ignored, all consumables available)
-                                      ignore_priority=True,  # do not use the priority information in HSI event to schedule
-                                      capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
-                                      disable=True,  # disables the healthsystem (no constraints and no logging) and every HSI runs
+                                      mode_appt_constraints=0,
+                                      # mode of constraints to do with officer numbers and time
+                                      cons_availability="all",
+                                      # mode for consumable constraints (if ignored, all consumables available)
+                                      ignore_priority=True,
+                                      # do not use the priority information in HSI event to schedule
+                                      capabilities_coefficient=1.0,
+                                      # multiplier for the capabilities of health officers
+                                      disable=True,
+                                      # disables the healthsystem (no constraints and no logging) and every HSI runs
                                       disable_and_reject_all=False,  # disable healthsystem and no HSI runs
                                       ),
             symptommanager.SymptomManager(resourcefilepath=self.resources),
@@ -102,4 +105,5 @@ class TestScenario(BaseScenario):
 
 if __name__ == '__main__':
     from tlo.cli import scenario_run
+
     scenario_run([__file__])

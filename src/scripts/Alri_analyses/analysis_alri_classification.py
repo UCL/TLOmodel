@@ -4,19 +4,15 @@ This is the analysis script for the calibration of the ALRI model
 # %% Import Statements and initial declarations
 import datetime
 import os
-from pathlib import Path
-import time
 import random
+from pathlib import Path
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 from matplotlib import pyplot as plt
-import matplotlib as mpl
-from matplotlib import cm
-from mpl_toolkits.mplot3d import axes3d
 
 from tlo import Date, Simulation, logging
-from tlo.analysis.utils import compare_number_of_deaths, parse_log_file
+from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     alri,
     demography,
@@ -116,7 +112,8 @@ classification_level2 = grouped.get_group('1')
 
 # total classifications at each facility level for the standard being oximeter-based classification
 total_symptom_classification = classification.groupby(['pulse_ox_classification']).symptom_classification.value_counts()
-total_pulse_ox_classification = classification.groupby(['pulse_ox_classification']).pulse_ox_classification.value_counts()
+total_pulse_ox_classification = classification.groupby(
+    ['pulse_ox_classification']).pulse_ox_classification.value_counts()
 total_hw_classification = classification.groupby(['pulse_ox_classification']).hw_classification.value_counts()
 total_final_classification = classification.groupby(['pulse_ox_classification']).final_classification.value_counts()
 
@@ -134,7 +131,6 @@ level0_pulse_ox_class = mean_pulse_ox_classification.loc['danger_signs_pneumonia
 level0_symptom_class = mean_symptom_classification.loc['danger_signs_pneumonia', slice(None)]
 level0_hw_class = mean_hw_classification.loc['danger_signs_pneumonia', slice(None)]
 level0_final_class = mean_final_classification.loc['danger_signs_pneumonia', slice(None)]
-
 
 # Pie chart, where the slices will be ordered and plotted counter-clockwise:
 labels = level0_symptom_class[:].index
@@ -181,7 +177,7 @@ def survey(results, category_names):
 
         r, g, b, _ = color
         text_color = 'white' if r * g * b < 0.5 else 'darkgrey'
-        # ax.bar_label(rects, label_type='center', color=text_color)
+        ax.bar_label(rects, label_type='center', color=text_color)
     ax.legend(ncol=len(category_names), bbox_to_anchor=(0, 1),
               loc='lower left', fontsize='small')
 
@@ -211,4 +207,3 @@ plt.show()
 # fig.tight_layout()
 #
 # plt.show()
-

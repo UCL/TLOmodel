@@ -5,20 +5,15 @@ The results of the batchrun were put into the 'outputspath' results_folder
 
 import datetime
 from pathlib import Path
-import numpy as np
 
-from tlo.analysis.utils import compare_number_of_deaths, parse_log_file, create_pickles_locally
-
-import matplotlib.lines as mlines
-import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
 from tlo.analysis.utils import (
     extract_params,
     extract_results,
     get_scenario_info,
-    get_scenario_outputs,
     load_pickled_dataframes,
     summarize,
 )
@@ -31,7 +26,7 @@ outputspath = Path("./outputs/sejjil0@ucl.ac.uk")
 # 0) Find results_folder associated with a given batch_file (and get most recent [-1])
 # results_folder = get_scenario_outputs("baseline_alri_scenario.py", outputspath)[-1]
 # or specify which folder to use
-results_folder = (outputspath/'baseline_alri_scenario-2022-03-23T102644Z')
+results_folder = (outputspath / 'baseline_alri_scenario-2022-03-23T102644Z')
 # results_folder = (outputspath/'baseline_alri_scenario-2022-03-22T113403Z')
 # folder9 = (outputspath/'baseline_alri_scenario-2022-03-23T102644Z/0/9')
 # # get the pickled files if not generated at the batch run
@@ -102,7 +97,6 @@ person_years = extract_results(
     custom_generate_series=get_under5_person_years,
     do_scaling=do_scaling)
 
-
 # ---------------------------------------------------------------------------------------------------
 # # # # # # # # # # INCIDENCE & MORTALITY RATE (CASES/ DENOMINATOR) # # # # # # # # # #
 # ---------- Incidence ----------
@@ -133,12 +127,12 @@ draw = 0
 GBD_data = pd.read_excel(
     Path(resourcefilepath) / "ResourceFile_Alri.xlsx",
     sheet_name="GBD_Malawi_estimates",
-    )
+)
 # import McAllister estimates for Malawi's ALRI incidence
 McAllister_data = pd.read_excel(
     Path(resourcefilepath) / "ResourceFile_Alri.xlsx",
     sheet_name="McAllister_2019",
-    )
+)
 
 plt.style.use("ggplot")
 # ------------------------------------
@@ -246,7 +240,8 @@ mortality_per_livebirths_summary = summarize(deaths_per_livebirth)
 fig2 = plt.figure()
 
 # McAllister et al. 2019 estimates
-plt.plot(McAllister_data.Year, McAllister_data.Death_per1000_livebirths, color='#348ABD', label='McAllister')  # no upper/lower
+plt.plot(McAllister_data.Year, McAllister_data.Death_per1000_livebirths, color='#348ABD',
+         label='McAllister')  # no upper/lower
 
 # model output
 plt.plot(mortality_per_livebirths_summary.index, mortality_per_livebirths_summary.loc[:, (draw, 'mean')].values,
@@ -267,6 +262,7 @@ plt.legend()
 plt.tight_layout()
 
 plt.show()
+
 
 # -------------------------------------------------------------------------------------------------------------
 # # # # # # # # # # ALRI DALYs # # # # # # # # # #

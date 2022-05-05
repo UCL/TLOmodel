@@ -4,13 +4,11 @@ This is a script analysis of ALRI with default parameters, set the baseline outp
 # %% Import Statements and initial declarations
 import datetime
 import os
-from pathlib import Path
-import time
 import random
-import pandas as pd
-import numpy as np
+from pathlib import Path
 
 import matplotlib.pyplot as plt
+import pandas as pd
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
@@ -107,4 +105,3 @@ plt.ylabel('Number of cases')
 fig.legend()
 fig.tight_layout()
 plt.show()
-
