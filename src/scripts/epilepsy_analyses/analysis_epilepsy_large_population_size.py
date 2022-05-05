@@ -18,10 +18,10 @@ class TestScenario(BaseScenario):
         self.seed = 12
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2020, 1, 1)
-        self.pop_size = 1000000
-        self.smaller_pop_size = 1000000
+        self.pop_size = 500000
+        self.smaller_pop_size = 500000
         self.number_of_draws = 1
-        self.runs_per_draw = 3
+        self.runs_per_draw = 2
 
     def log_configuration(self):
         return {
