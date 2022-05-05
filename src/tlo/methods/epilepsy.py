@@ -602,6 +602,12 @@ class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, 'ep_antiep'] = True
             # Log the successful treatment
             logger.debug(key='debug', data='@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
+        else:
+            self.module.sim.modules['HealthSystem'].schedule_hsi_event(hsi_event=self,
+                                                                       topen=self.sim.date + pd.DateOffset(days=1),
+                                                                       tclose=None,
+                                                                       priority=2)
+
         # Schedule a follow-up for 3 months:
         hs.schedule_hsi_event(
             hsi_event=HSI_Epilepsy_Follow_Up(
