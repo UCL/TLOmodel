@@ -1615,8 +1615,9 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # -------------- district-level transmission -------------- #
         # get population alive by district
-        pop = df.loc[df.is_alive].groupby(["district_of_residence"])["is_alive"].sum()
-        tmp = pd.DataFrame(pop, index=districts)
+        pop_alive = df.loc[df.is_alive].groupby(["district_of_residence"]).size()
+        tmp = pd.DataFrame(pop_alive, index=districts)
+        tmp.rename(columns={tmp.columns[0]: "population_alive"}, inplace=True)
 
         # smear-positive cases by district
         tmp["smear_pos"] = df[(df.tb_inf == "active")
@@ -1633,18 +1634,18 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         tmp = tmp.fillna(0)  # fill any missing values with 0
 
         # calculate foi by district
-        foi = (
+        tmp["foi"] = (
                   p["transmission_rate"]
                   * (tmp["smear_pos"] + (tmp["smear_neg"] * p["rel_inf_smear_ng"]))
-              ) / tmp["is_alive"]
+              ) / tmp["population_alive"]
 
-        foi = foi.fillna(0)  # fill any missing values with 0
+        tmp["foi"] = tmp["foi"].fillna(0)  # fill any missing values with 0
 
         # create a dict, uses district name as keys
-        foi_dict = foi.to_dict()
+        # foi_dict = foi.to_dict()
 
-        # look up value for each row in df
-        foi_for_individual = df["district_of_residence"].map(foi_dict)
+        # look up value for each row in df, mulitply by mixing parameter
+        foi_for_individual = p["mixing_parameter"] * df["district_of_residence"].map(tmp["foi"])
 
         # -------------- national-level transmission -------------- #
 
@@ -1660,20 +1661,20 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         total_smear_neg = tmp["smear_neg"].sum()
 
         # total population
-        total_pop = tmp["is_alive"].sum()
+        total_pop = tmp["population_alive"].sum()
 
-        foi_national = (
+        # national-level transmission multiplied by mixing parameter
+        foi_national = (1 - p["mixing_parameter"]) * (
                            p["transmission_rate"]
                            * (total_smear_pos + (total_smear_neg * p["rel_inf_smear_ng"]))
                        ) / total_pop
 
         # -------------- individual risk of acquisition -------------- #
 
-        # adjust individual risk by bcg status
-        risk_tb = pd.Series(0, dtype=float, index=df.index)  # individual risk: district and national
-        risk_tb += (p["mixing_parameter"] * foi_for_individual.values) + ((1 - p["mixing_parameter"]) * foi_national)
-        risk_tb.loc[df.va_bcg_all_doses & df.age_years < 10] *= p["rr_bcg_inf"]
-        risk_tb.loc[~df.is_alive] = 0
+        # add in national transmission and individual risk mitigation (BCG vaccine)
+        foi_for_individual += foi_national
+        foi_for_individual.loc[df.va_bcg_all_doses & df.age_years < 10] *= p["rr_bcg_inf"]
+        foi_for_individual.loc[~df.is_alive] = 0
 
         # get a list of random numbers between 0 and 1 for each infected individual
         random_draw = rng.random_sample(size=len(df))
@@ -1683,7 +1684,7 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # latent infected with this strain (reinfection)
         # latent infected with other strain - replace with latent infection with this strain
         tb_idx = df.index[
-            df.is_alive & (df.tb_inf != "active") & (random_draw < risk_tb)
+            df.is_alive & (df.tb_inf != "active") & (random_draw < foi_for_individual)
             ]
 
         logger.debug(
