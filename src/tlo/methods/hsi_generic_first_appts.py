@@ -79,22 +79,12 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
         super().__init__(module, person_id=person_id)
 
         assert module.name in ['HealthSeekingBehaviour', 'Labour', 'PregnancySupervisor', 'RTI']
-        symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
-        the_appt_footprint = self.make_appt_footprint({
-            'Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD': 1})
-        the_beddays_footprint = self.make_beddays_footprint({})
-
-        if 'danger_signs' in symptoms:
-            if 'Alri' in self.sim.modules:
-                # change the appointment footprint if severe pneumonia
-                the_appt_footprint = self.make_appt_footprint({'InpatientDays': 3, 'IPAdmission': 1})
-                the_beddays_footprint = self.make_beddays_footprint({'general_bed': 3})
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'GenericEmergencyFirstApptAtFacilityLevel1'
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.BEDDAYS_FOOTPRINT = the_beddays_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
+            'Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD': 1})
 
     def apply(self, person_id, squeeze_factor):
 
@@ -160,8 +150,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
 
         if ('cough' in symptoms) or ('difficult_breathing' in symptoms):
             if 'Alri' in sim.modules:
-                sim.modules['Alri'].sought_care_for_alri(person_id=person_id)
-                sim.modules['Alri'].assess_and_classify_cough_or_difficult_breathing_level(
+                sim.modules['Alri'].on_presentation(
                     person_id=person_id, hsi_event=hsi_event)
 
         if "Malaria" in sim.modules:
@@ -450,6 +439,4 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
 
     if (age < 5) and (('cough' in symptoms) or ('difficult_breathing' in symptoms)):
         if 'Alri' in sim.modules:
-            sim.modules['Alri'].sought_care_for_alri(person_id=person_id)
-            sim.modules['Alri'].assess_and_classify_cough_or_difficult_breathing_level(
-                person_id=person_id, hsi_event=hsi_event)
+            sim.modules['Alri'].on_presentation(person_id=person_id, hsi_event=hsi_event)

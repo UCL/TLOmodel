@@ -1872,6 +1872,12 @@ class Alri(Module):
 
             # TODO: schedule follow-ups here
 
+    def on_presentation(self, person_id, hsi_event):
+        """Action taken whe a child (under 5 years old) presents at a generic appointment (emergency or non-emergency) with symptoms of
+        `cough` or `difficult_breathing`."""
+
+        self.sought_care_for_alri(person_id=person_id)
+        self.assess_and_classify_cough_or_difficult_breathing_level(person_id=person_id, hsi_event=hsi_event)
 
 class Models:
     """Helper-class to store all the models that specify the natural history of the Alri disease"""
