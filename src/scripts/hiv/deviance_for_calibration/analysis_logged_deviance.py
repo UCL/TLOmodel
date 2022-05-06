@@ -44,17 +44,18 @@ log_config = {
     "custom_levels": {
         "*": logging.WARNING,
         "tlo.methods.deviance_measure": logging.INFO,
+        "tlo.methods.epi": logging.INFO,
         "tlo.methods.hiv": logging.INFO,
         "tlo.methods.tb": logging.INFO,
         "tlo.methods.demography": logging.INFO,
-        "tlo.methods.healthsystem.summary": logging.INFO,
+        # "tlo.methods.healthsystem.summary": logging.INFO,
     },
 }
 
 # Register the appropriate modules
 # need to call epi before tb to get bcg vax
 # seed = random.randint(0, 50000)
-seed = 4  # set seed for reproducibility
+seed = 34  # set seed for reproducibility
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
 sim.register(
     demography.Demography(resourcefilepath=resourcefilepath),

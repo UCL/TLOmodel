@@ -178,6 +178,26 @@ make_plot(
 plt.show()
 
 
+# ----------------------------- BCG -------------------------------------- #
+
+model_vax_coverage = output["tlo.methods.epi"]["ep_vaccine_coverage"]
+model_date = pd.to_datetime(model_vax_coverage.date)
+model_date = model_date.apply(lambda x: x.year)
+
+# BCG coverage
+plt.subplot(221)  # numrows, numcols, fignum
+plt.plot(model_date, model_vax_coverage.epBcgCoverage)
+plt.title("BCG vaccine coverage")
+plt.xlabel("Year")
+plt.ylabel("Coverage")
+plt.xticks(rotation=90)
+plt.gca().set_ylim(0, 110)
+
+
+
+
+###
+
 # ----------------------------- HIV -------------------------------------- #
 
 prev_and_inc_over_time = output["tlo.methods.hiv"][

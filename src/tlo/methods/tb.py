@@ -2156,6 +2156,10 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         foi_for_individual.loc[df.va_bcg_all_doses & df.age_years < 10] *= p["rr_bcg_inf"]
         foi_for_individual.loc[~df.is_alive] = 0
 
+        # todo remove
+        mean_foi = foi_for_individual.mean()
+        print(mean_foi)
+
         # get a list of random numbers between 0 and 1 for each infected individual
         random_draw = rng.random_sample(size=len(df))
 
