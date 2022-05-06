@@ -144,8 +144,6 @@ make_plot(
     model=Tb_tx_coverage["tbTreatmentCoverage"] * 100,
 )
 plt.ylim((0, 100))
-
-plt.legend(["TLO", "NTP"])
 plt.show()
 
 
@@ -185,13 +183,13 @@ model_date = pd.to_datetime(model_vax_coverage.date)
 model_date = model_date.apply(lambda x: x.year)
 
 # BCG coverage
-plt.subplot(221)  # numrows, numcols, fignum
-plt.plot(model_date, model_vax_coverage.epBcgCoverage)
-plt.title("BCG vaccine coverage")
-plt.xlabel("Year")
-plt.ylabel("Coverage")
-plt.xticks(rotation=90)
-plt.gca().set_ylim(0, 110)
+make_plot(
+    title_str="BCG coverage",
+    model=model_vax_coverage.epBcgCoverage* 100,
+)
+plt.ylim((0, 100))
+plt.show()
+
 
 
 
