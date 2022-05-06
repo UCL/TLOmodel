@@ -811,11 +811,11 @@ def test_do_effects_of_alri_treatment(sim_hs_all_consumables):
     df.at[person_id, 'ri_symptom_based_pneumonia_classification'] = 'danger_signs_pneumonia'
 
     # Run the 'do_alri_treatment' function (as if from the HSI_IMCI_Pneumonia_Treatment_Inpatient_level_2)
-    sim.modules['Alri'].do_effects_of_alri_treatment(person_id=person_id,
-                                                     hsi_event=HSI_IMCI_Pneumonia_Treatment_Inpatient_level_2(
+    sim.modules['Alri'].do_effects_of_treatment(person_id=person_id,
+                                                hsi_event=HSI_IMCI_Pneumonia_Treatment_Inpatient_level_2(
                                                          person_id=person_id, module=sim.modules['Alri']),
-                                                     antibiotic='1st_line_IV_antibiotics',
-                                                     oxygen=True)
+                                                antibiotic='1st_line_IV_antibiotics',
+                                                oxygen=True)
 
     # Run the death event that was originally scheduled) - this should have no effect and the person should not die
     sim.date = date_of_scheduled_death
