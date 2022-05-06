@@ -3231,6 +3231,10 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         )
         assert prev_active_child <= 1
 
+        # proportion of cases smear-positive
+        num_smear_pos = len(df[(df.tb_inf == "active") & df.tb_smear & df.is_alive])
+        prop_smear_pos = num_smear_pos / num_active_tb_cases
+
         # LATENT
         # proportion of population with latent TB - all pop
         num_latent = len(df[(df.tb_inf == "latent") & df.is_alive])
@@ -3262,6 +3266,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 "tbPrevActive": prev_active,
                 "tbPrevActiveAdult": prev_active_adult,
                 "tbPrevActiveChild": prev_active_child,
+                "tbPropSmearPositive": prop_smear_pos,
                 "tbPrevLatent": prev_latent,
                 "tbPrevLatentAdult": prev_latent_adult,
                 "tbPrevLatentChild": prev_latent_child,

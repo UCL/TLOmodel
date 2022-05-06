@@ -100,19 +100,34 @@ plt.ylabel("Prevalence")
 plt.show()
 
 
-# ---------------------------------------------------------------------- #
+# # ---------------------------------------------------------------------- #
 
-# proportion TB cases that are MDR
-mdr = output["tlo.methods.tb"]["tb_mdr"]
-mdr = mdr.set_index("date")
+# latent TB incidence
 
-title_str = "Proportion of active cases that are MDR"
+# remove baseline prevalence
+latentTB_inc = TB_inc["num_new_latent_tb"]
+latentTB_inc = latentTB_inc.iloc[1:]
+
+title_str = "Number new latent cases"
 make_plot(
     title_str=title_str,
-    model=mdr["tbPropActiveCasesMdr"],
+    model=latentTB_inc,
 )
+plt.ylabel("Number new latent cases")
 plt.show()
 
+# ---------------------------------------------------------------------- #
+
+# latent TB incidence per 100,000 person-years - annual outputs
+latentTB_inc = TB_inc["num_new_latent_tb"]
+latentTB_inc = latentTB_inc.iloc[1:]
+latentTB_inc_rate = (latentTB_inc / py) * 100000
+
+make_plot(
+    title_str="Latent TB Incidence (per 100k person-years)",
+    model=latentTB_inc_rate,
+)
+plt.show()
 
 # ---------------------------------------------------------------------- #
 
@@ -147,6 +162,21 @@ make_plot(
     model=tb_hiv["prop_active_tb_in_plhiv"],
 )
 plt.show()
+
+
+# ---------------------------------------------------------------------- #
+
+# proportion active TB cases that are smear-positive
+tb_smear = output["tlo.methods.tb"]["tb_prevalence"]
+tb_smear = tb_smear.set_index("date")
+
+title_str = "Proportion of active cases that are smear-positive"
+make_plot(
+    title_str=title_str,
+    model=tb_smear["tbPropSmearPositive"],
+)
+plt.show()
+
 
 # ----------------------------- HIV -------------------------------------- #
 
