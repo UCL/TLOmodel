@@ -1836,6 +1836,14 @@ class Labour(Module):
         person_id = hsi_event.target
         cons = self.item_codes_lab_consumables
 
+        def refer_for_cs_due_to_ol():
+            mni[person_id]['referred_for_cs'] = True
+            if for_spe:
+                mni[person_id]['cs_indication'] = 'spe_ec'
+            else:
+                mni[person_id]['cs_indication'] = 'ol'
+            logger.info(key='cs_ol', data={'person': person_id})
+
         if ('assessment_and_treatment_of_obstructed_labour' not in params['allowed_interventions']) or \
             (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'caesarean_now') or \
            (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'caesarean_future'):
@@ -1860,17 +1868,14 @@ class Labour(Module):
                     # risk of intrapartum still birth when applying risk in the death event
                     if params['prob_successful_assisted_vaginal_delivery'] > self.rng.random_sample():
                         mni[person_id]['mode_of_delivery'] = 'instrumental'
-
                     else:
                         # If unsuccessful, this woman will require a caesarean section
-                        mni[person_id]['referred_for_cs'] = True
-                        mni[person_id]['cs_indication'] = 'ol_failed_avd'  # todo: update?
-                        logger.info(key='cs_ol', data={'person': person_id})
-
+                        refer_for_cs_due_to_ol()
+                else:
+                    # If unsuccessful, this woman will require a caesarean section
+                    refer_for_cs_due_to_ol()
             else:
-                mni[person_id]['referred_for_cs'] = True
-                mni[person_id]['cs_indication'] = 'ol'
-                logger.info(key='cs_ol', data={'person': person_id})
+                refer_for_cs_due_to_ol()
 
     def assessment_and_treatment_of_maternal_sepsis(self, hsi_event, labour_stage):
         """
