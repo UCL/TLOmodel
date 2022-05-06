@@ -36,10 +36,10 @@ params = extract_params(results_folder)
 
 # 2) Extract a series for all runs:
 inc = extract_results(results_folder,
-                            module="tlo.methods.epilepsy",
-                            key="inc_epilepsy",  # <-- the key used for the logging entry
-                            column="incidence_epilepsy",  # <-- the column in the dataframe
-                            index="date")
+                      module="tlo.methods.epilepsy",
+                      key="inc_epilepsy",  # <-- the key used for the logging entry
+                      column="incidence_epilepsy",  # <-- the column in the dataframe
+                      index="date")
 inc_death = extract_results(results_folder,
                             module="tlo.methods.epilepsy",
                             key="epilepsy_logging",  # <-- the key used for the logging entry

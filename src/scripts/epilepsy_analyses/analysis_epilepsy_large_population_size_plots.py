@@ -3,14 +3,9 @@ The results of the bachrun were put into the 'outputs' results_folder
 """
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-
 from tlo.analysis.utils import (
     extract_params,
     extract_results,
-    get_grid,
     get_scenario_info,
     get_scenario_outputs,
     load_pickled_dataframes,
@@ -36,10 +31,10 @@ params = extract_params(results_folder)
 
 # 2) Extract a series for all runs:
 inc = extract_results(results_folder,
-                            module="tlo.methods.epilepsy",
-                            key="inc_epilepsy",  # <-- the key used for the logging entry
-                            column="incidence_epilepsy",  # <-- the column in the dataframe
-                            index="date")
+                      module="tlo.methods.epilepsy",
+                      key="inc_epilepsy",  # <-- the key used for the logging entry
+                      column="incidence_epilepsy",  # <-- the column in the dataframe
+                      index="date")
 inc_death = extract_results(results_folder,
                             module="tlo.methods.epilepsy",
                             key="epilepsy_logging",  # <-- the key used for the logging entry
@@ -48,4 +43,3 @@ inc_death = extract_results(results_folder,
 
 inc_summary = summarize(inc, only_mean=True).mean()
 inc_death_summary = summarize(inc_death, only_mean=True).mean()
-
