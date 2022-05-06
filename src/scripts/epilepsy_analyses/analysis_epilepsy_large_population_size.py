@@ -29,6 +29,10 @@ class TestScenario(BaseScenario):
             'directory': './outputs',
             'custom_levels': {
                 '*': logging.INFO,
+                'tlo.methods.epilepsy': logging.INFO,
+                'tlo.methods.healthsystem': logging.WARNING,
+                'tlo.methods.healthburden': logging.WARNING,
+                'tlo.methods.demography': logging.WARNING,
             }
         }
 
