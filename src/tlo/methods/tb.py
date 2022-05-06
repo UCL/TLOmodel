@@ -416,6 +416,10 @@ class Tb(Module):
         "probability_access_to_xray": Parameter(
             Types.REAL,
             "probability a person will have access to chest x-ray"
+        ),
+        "prob_tb_referral_in_generic_hsi": Parameter(
+            Types.REAL,
+            "probability of referral to TB screening HSI if presenting with TB-related symptoms"
         )
     }
 

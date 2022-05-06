@@ -15,6 +15,7 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
+    hsi_generic_first_appts,
     hiv,
     labour,
     newborn_outcomes,
@@ -872,3 +873,54 @@ def test_use_dummy_version(seed):
     sim.simulate(end_date=Date(2014, 12, 31))
 
     check_dtypes(sim)
+
+
+def test_generic_appointment_schedules_referral(seed):
+    """
+    give person TB-related symptoms - TB-negative
+    schedule generic HSI at level 1a
+    check whether TB screening and referral is scheduled
+    """
+    popsize = 10
+    sim = get_sim(seed=seed)
+
+    sim.modules['Tb'].parameters['prob_tb_referral_in_generic_hsi'] = 1.0
+
+    # Make the population
+    sim.make_initial_population(n=popsize)
+
+    # simulate for 0 days, just get everything set up (dxtests etc)
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+
+    df = sim.population.props
+    person_id = 0
+
+    # make sure person_id does not have TB
+    df.at[person_id, 'tb_inf'] = 'uninfected'
+    df.at[person_id, 'age_years'] = 20
+
+    # assign symptoms
+    symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
+    sim.modules["SymptomManager"].change_symptom(
+        person_id=person_id,
+        symptom_string=symptom_list,
+        add_or_remove="+",
+        disease_module=sim.modules['Tb'],
+        duration_in_days=None,
+    )
+
+    # check symptoms assigned to person 0
+    assert set(sim.modules['SymptomManager'].has_what(person_id)) == symptom_list
+
+    # run HSI generic appt and check referral
+    generic_appt = hsi_generic_first_appts.HSI_GenericEmergencyFirstApptAtFacilityLevel1(
+        person_id=person_id,
+        module=sim.modules['Tb'])
+    generic_appt.apply(person_id=person_id, squeeze_factor=0)
+
+    # Check person_id has a HSI_Tb_ScreeningAndRefer event scheduled
+    date_event, event = [
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+        isinstance(ev[1], tb.HSI_Tb_ScreeningAndRefer)
+    ][0]
+    assert date_event == sim.date

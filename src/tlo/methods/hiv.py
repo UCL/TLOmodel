@@ -1533,7 +1533,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
             rr_of_infection_in_agyw = self.module.lm["rr_of_infection"].predict(
                 df.loc[agyw_idx]
             )
-            # scale to equal 1 then multiply by prob of prep
+            # divide by the mean risk then multiply by prob of prep
             # highest risk AGYW will have highest probability of getting prep
             mean_risk = rr_of_infection_in_agyw.mean()
             scaled_risk = rr_of_infection_in_agyw / mean_risk

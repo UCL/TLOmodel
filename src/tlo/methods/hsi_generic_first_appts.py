@@ -24,6 +24,7 @@ from tlo.methods.care_of_women_during_pregnancy import (
 from tlo.methods.chronicsyndrome import HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
+from tlo.methods.tb import HSI_Tb_ScreeningAndRefer
 from tlo.methods.labour import HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour
 from tlo.methods.malaria import (
     HSI_Malaria_complicated_treatment_adult,
@@ -78,7 +79,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        assert module.name in ['HealthSeekingBehaviour', 'Labour', 'PregnancySupervisor', 'RTI']
+        assert module.name in ['HealthSeekingBehaviour', 'Labour', 'PregnancySupervisor', 'RTI', 'Tb']
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'GenericEmergencyFirstApptAtFacilityLevel1'
@@ -124,6 +125,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
     #  - suppress the footprint (as it done as part of another appointment)
     #  - do not do referrals if the person is HIV negative (assumed not time for counselling etc).
     if 'Hiv' in sim.modules:
+
         schedule_hsi(
             HSI_Hiv_TestAndRefer(
                 person_id=person_id,
@@ -140,6 +142,21 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
 
     if 'Schisto' in sim.modules:
         sim.modules['Schisto'].do_on_presentation_with_symptoms(person_id=person_id, symptoms=symptoms)
+
+    if 'Tb' in sim.modules:
+        tb_symptoms = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
+
+        if any(x in tb_symptoms for x in symptoms) and \
+                rng.random_sample() < sim.modules["Tb"].parameters["prob_tb_referral_in_generic_hsi"]:
+
+            schedule_hsi(
+                HSI_Tb_ScreeningAndRefer(
+                    person_id=person_id,
+                    module=hsi_event.sim.modules['Tb'],
+                    suppress_footprint=False),
+                topen=hsi_event.sim.date,
+                tclose=None,
+                priority=0)
 
     if age < 5:
         # ----------------------------------- CHILD < 5 -----------------------------------
@@ -370,6 +387,21 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
             tclose=None,
             priority=0
         )
+
+    if 'Tb' in sim.modules:
+        tb_symptoms = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
+
+        if any(x in tb_symptoms for x in symptoms) and \
+                rng.random_sample() < sim.modules["Tb"].parameters["prob_tb_referral_in_generic_hsi"]:
+
+            schedule_hsi(
+                HSI_Tb_ScreeningAndRefer(
+                    person_id=person_id,
+                    module=hsi_event.sim.modules['Tb'],
+                    suppress_footprint=False),
+                topen=hsi_event.sim.date,
+                tclose=None,
+                priority=0)
 
     if "Malaria" in sim.modules:
         # Quick diagnosis algorithm - just perfectly recognises the symptoms of severe malaria
