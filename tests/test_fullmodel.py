@@ -13,7 +13,7 @@ from tlo.util import hash_dataframe
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 start_date = Date(2010, 1, 1)
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(f'tlo.{__name__}')  # = tlo.tests.test_fullmodel
 
 
 def check_dtypes(simulation):
