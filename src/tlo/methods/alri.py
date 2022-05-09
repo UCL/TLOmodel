@@ -689,15 +689,17 @@ class Alri(Module):
                      categories=['cough_or_cold', 'fast_breathing_pneumonia',
                                  'chest_indrawing_pneumonia', 'danger_signs_pneumonia',
                                  'serious_bacterial_infection', 'not_handled_at_facility_0']),
-        'ri_tx_oxygen_therapy': Property(Types.BOOL,
-                     'is the person on treatment receiving oxygen therapy for the current illness'
-                     ),
-        'ri_tx_antibiotic_therapy': Property(Types.CATEGORICAL,
-                     'antibiotic therapy for the current illness',
-                     categories=['3day_oral_amoxicillin', '5day_oral_amoxicillin',
-                                 '1st_line_IV_antibiotics', '2nd_line_IV_antibiotics']),
-        'ri_care_seeking_for_current_alri': Property(Types.BOOL,
-                     'has the person sought care for the current illness'),
+
+        # todo - tbh - remove these properties and make into  trackers
+        # 'ri_tx_oxygen_therapy': Property(Types.BOOL,
+        #              'is the person on treatment receiving oxygen therapy for the current illness'
+        #              ),
+        # 'ri_tx_antibiotic_therapy': Property(Types.CATEGORICAL,
+        #              'antibiotic therapy for the current illness',
+        #              categories=['3day_oral_amoxicillin', '5day_oral_amoxicillin',
+        #                          '1st_line_IV_antibiotics', '2nd_line_IV_antibiotics']),
+        # 'ri_care_seeking_for_current_alri': Property(Types.BOOL,
+        #              'has the person sought care for the current illness'),
     }
 
     def __init__(self, name=None, resourcefilepath=None, log_indivdual=None, do_checks=False):
@@ -1331,7 +1333,7 @@ class Alri(Module):
             return hw_assigned_classification
 
 
-    def do_action_given_classification(self, person_id, classification, symptoms, oxygen_saturation, hsi_event):
+    def do_action_given_classification(self, person_id, classification, symptoms, hsi_event):
         """Do the actions that are required given a particular classification"""
         # todo -@ines - check correct usage of cons_all_needed and cons_any_needed
 
@@ -1402,7 +1404,7 @@ class Alri(Module):
                 if _level == seq_facility_levels[-1]:
                     return None
                 else:
-                    return seq_facility_levels[np.argwhere(seq_facility_levels == _level) + 1][0, 0]  # todo neaten?
+                    return seq_facility_levels[np.argwhere(seq_facility_levels == _level) + 1][0, 0]  # todo tbh - neaten?
 
             if get_cons(cons_all_needed) and get_any_cons(cons_any_needed):
                 do_treatment(_antibiotic_indicated=antibiotic_indicated, _oxygen_indicated=oxygen_indicated)
@@ -1453,8 +1455,7 @@ class Alri(Module):
                 antibiotic_indicated='5day_oral_amoxicillin',
                 cons_any_needed='Amoxicillin_tablet_or_suspension',
                 oxygen_indicated=False,
-                inpatient=False,
-            )
+                inpatient=False)
 
         def do_if_chest_indrawing_pneumonia(facility_level):
             """What to do if classification is `chest_indrawing_pneumonia`."""
@@ -1466,60 +1467,50 @@ class Alri(Module):
                     antibiotic_indicated='Amoxicillin_tablet_or_suspension',
                     cons_any_needed='5day_oral_amoxicillin',
                     oxygen_indicated=False,
-                    inpatient=False,
-                )
+                    inpatient=False)
 
         def do_if_danger_signs_pneumonia(facility_level):
             """What to do if classification is `danger_signs_pneumonia."""
-            # TODO: Note by @ines add on a script analysis giving oxygen at SpO2 <93%
 
-            # Provide bronchodilator:
-            if 'wheeze' in symptoms:
-                if facility_level == '1a':
-                    _ = get_cons('Inhaled_Brochodilator')
-                else:
-                    _ = get_cons('Brochodilator_and_Steroids')
+            # # Provide bronchodilator:
+            # if 'wheeze' in symptoms:
+            #     if facility_level == '1a':
+            #         _ = get_cons('Inhaled_Brochodilator')
+            #     else:
+            #         _ = get_cons('Brochodilator_and_Steroids')
+            #
+            # # Provide treatment
+            # if facility_level == '0':
+            #     provide_consumable_and_refer('First_dose_oral_amoxicillin_for_referral', facility_level='1b',
+            #                                  inpatient=True)
+            #
+            # elif facility_level == '1a':
+            #     provide_consumable_and_refer('First_dose_IM_antibiotics_for_referral', facility_level='2',  # todo @ ines - why refer straight from '1a' to '2' in this case, and why irrespective of the consumables availability?
+            #                                  inpatient=True)
+            # else:
 
-            # Provide treatment
-            if facility_level == '0':
-                provide_consumable_and_refer('First_dose_oral_amoxicillin_for_referral', facility_level='1b',
-                                             inpatient=True)
-
-            elif facility_level == '1a':
-                provide_consumable_and_refer('First_dose_IM_antibiotics_for_referral', facility_level='2',  # todo @ ines - why refer straight from '1a' to '2' in this case, and why irrespective of the consumables availability?
-                                             inpatient=True)
-            else:
-                if oxygen_saturation == '<90%':
-                    do_treatment_if_consumables_available_otherwise_schedule_hsi_at_next_level_up(
-                        antibiotic_indicated='1st_line_IV_antibiotics',
-                        cons_any_needed='Ampicillin_gentamicin_therapy_for_severe_pneumonia',
-                        cons_all_needed='Oxygen_Therapy',
-                        oxygen_indicated=True,
-                        inpatient=True,
-                    )
-                else:
-                    do_treatment_if_consumables_available_otherwise_schedule_hsi_at_next_level_up(
-                        antibiotic_indicated='1st_line_IV_antibiotics',
-                        cons_any_needed='Ampicillin_gentamicin_therapy_for_severe_pneumonia',
-                        oxygen_indicated=False,
-                        inpatient=True,
-                    )
+            # todo - tbh - put inside in-patient HSI
+            assert facility_level == '1b'
+            _ = get_cons('Brochodilator_and_Steroids')
+            do_treatment_if_consumables_available_otherwise_schedule_hsi_at_next_level_up(
+                antibiotic_indicated='1st_line_IV_antibiotics',
+                cons_any_needed='Ampicillin_gentamicin_therapy_for_severe_pneumonia',
+                cons_all_needed='Oxygen_Therapy' if (oxygen_saturation == '<90%') else '',
+                oxygen_indicated=(oxygen_saturation == '<90%'),
+                inpatient=True)
 
         def do_if_serious_bacterial_infection(facility_level):
             """What to do if `serious_bacterial_infection`."""
-            # todo - @ines nothing happens at level 0??
-            if facility_level == '1a':
-                provide_consumable_and_refer(cons=None, inpatient=True, facility_level="2") # todo @ines - why up to 2 from '1a' and not '2' ..??
 
-            elif facility_level in ('1b', '2'):
-                # todo @ines - why not depend on oxygen level?
+            if facility_level in ('0', '1a'):
+                provide_consumable_and_refer(cons=None, inpatient=False, facility_level=nextlevel(facility_level))
+            else:
                 do_treatment_if_consumables_available_otherwise_schedule_hsi_at_next_level_up(
                     antibiotic_indicated='1st_line_IV_antibiotics',
                     cons_any_needed='Ampicillin_gentamicin_therapy_for_severe_pneumonia',
-                    cons_all_needed='Oxygen_Therapy',
-                    oxygen_indicated=True,
-                    inpatient=True,
-                )
+                    cons_all_needed='Oxygen_Therapy' if (oxygen_saturation == '<90%') else '',
+                    oxygen_indicated=(oxygen_saturation == '<90%'),
+                    inpatient=True)
 
         def do_if_not_handled_at_facility_0(facility_level):
             """What to do if `not_handed_at_facility_0`."""
@@ -1543,6 +1534,7 @@ class Alri(Module):
     def record_sought_care_for_alri(self, person_id):
         """Register those that sought care for the current Alri illness"""
         # todo -- is this needed? Could we just have log entry?
+        # todo - remove; add to the tracker +1 "person is seeking care".
         df = self.sim.population.props
         df.at[person_id, 'ri_care_seeking_for_current_alri'] = True
 
@@ -1604,7 +1596,6 @@ class Alri(Module):
             person_id=person_id,
             classification=classification,
             symptoms=symptoms,
-            oxygen_saturation=person.ri_SpO2_level,  # todo - should this be based on the measuremnt (or not) of oxygen levels?!?!?!
             hsi_event=hsi_event)
 
         # log the classification for this person
@@ -1745,6 +1736,7 @@ class Alri(Module):
         self.record_sought_care_for_alri(person_id=person_id)
         self.assess_and_classify_cough_or_difficult_breathing_level(person_id=person_id, hsi_event=hsi_event)
 
+# todo - tbh - if never_ran - schedule to next level
 
 class Models:
     """Helper-class to store all the models that specify the natural history of the Alri disease"""
