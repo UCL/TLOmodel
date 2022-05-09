@@ -164,8 +164,6 @@ class Malaria(Module):
         "ma_iptp": Property(Types.BOOL, "if woman has IPTp in current pregnancy"),
     }
 
-    # TODO reset ma_iptp after delivery
-
     def read_parameters(self, data_folder):
         workbook = pd.read_excel(self.resourcefilepath / "ResourceFile_malaria.xlsx", sheet_name=None)
         self.load_parameters_from_dataframe(workbook["parameters"])
@@ -321,11 +319,11 @@ class Malaria(Module):
         df.loc[alive & df.age_exact_years.between(0.5, 1), "ma_age_edited"] = 0.5
         df.loc[alive_over_one, "ma_age_edited"] = df.loc[alive_over_one, "age_years"].astype(float)
 
-        # select new infections
-        alive_uninfected = alive & ~df.ma_is_infected
+        # select new infections, (persons on IPTp are not at risk of infection)
+        alive_uninfected = alive & ~df.ma_is_infected & ~df.ma_iptp
         now_infected = _draw_incidence_for("monthly_prob_inf", alive_uninfected)
         df.loc[now_infected, "ma_is_infected"] = True
-        df.loc[now_infected, "ma_date_infected"] = now  # TODO: scatter dates across month
+        df.loc[now_infected, "ma_date_infected"] = now
         df.loc[now_infected, "ma_inf_type"] = "asym"
 
         # select all currently infected
@@ -485,6 +483,10 @@ class Malaria(Module):
         df.at[child_id, "ma_clinical_preg_counter"] = 0
         df.at[child_id, "ma_tx_counter"] = 0
         df.at[child_id, "ma_iptp"] = False
+
+        # reset mother's IPTp status to False
+        if mother_id != -1:
+            df.at[mother_id, "ma_iptp"] = False
 
     def on_hsi_alert(self, person_id, treatment_id):
         """This is called whenever there is an HSI event commissioned by one of the other disease modules.
@@ -688,7 +690,6 @@ class MalariaScheduleTesting(RegularEvent, PopulationScopeEventMixin):
             )
 
 
-# TODO link this with ANC appts
 class MalariaIPTp(RegularEvent, PopulationScopeEventMixin):
     """ malaria prophylaxis for pregnant women
     """
@@ -725,7 +726,7 @@ class MalariaDeathEvent(Event, IndividualScopeEventMixin):
     def apply(self, individual_id):
         df = self.sim.population.props
 
-        if not df.at[individual_id, "is_alive"]:
+        if not df.at[individual_id, "is_alive"] or (df.at[individual_id, "ma_inf_type"] == "none"):
             return
 
         # death should only occur if severe malaria case
@@ -1151,6 +1152,15 @@ class HSI_MalariaIPTp(HSI_Event, IndividualScopeEventMixin):
                              data=f'HSI_MalariaIPTp: giving IPTp for person {person_id}')
 
                 df.at[person_id, "ma_iptp"] = True
+
+                # if currently infected, IPTp will clear the infection
+                df.at[person_id, "ma_is_infected"] = False
+                df.at[person_id, "ma_inf_type"] = "none"
+
+                # clear any symptoms
+                self.sim.modules["SymptomManager"].clear_symptoms(
+                    person_id=person_id, disease_module=self.module
+                )
 
     def did_not_run(self):
 
