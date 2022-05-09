@@ -1207,7 +1207,7 @@ class HealthSystem(Module):
             if self.store_hsi_events_that_have_run:
                 self.store_of_hsi_events_that_have_run.append(
                     {
-                        'HSI_Event': str(hsi_event.__class__).replace("<class '", "").replace("'>", ""),
+                        'HSI_Event': hsi_event.__class__.__name__,
                         'date': self.sim.date,
                         'TREATMENT_ID': hsi_event.TREATMENT_ID,
                         'did_run': did_run,
