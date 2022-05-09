@@ -139,6 +139,9 @@ class Tb(Module):
 
     PARAMETERS = {
         # ------------------ workbooks ------------------ #
+        "who_incidence_estimates": Parameter(
+            Types.REAL, "WHO estimated active TB incidence per 100,000 population"
+        ),
         "prop_active_2010": Parameter(
             Types.REAL, "Proportion of population with active tb in 2010"
         ),
@@ -441,6 +444,7 @@ class Tb(Module):
         # assume cases distributed equally across districts
         # todo this is not used for national-level model
         p["prop_active_2010"] = workbook["cases2010district"]
+        p["who_incidence_estimates"] = workbook["WHO_activeTB2020"]
 
         p["rate_testing_active_tb"] = workbook["testing_rates"]
         p["pulm_tb"] = workbook["pulm_tb"]
@@ -669,37 +673,37 @@ class Tb(Module):
             ),
         )
 
-    def baseline_latent(self, population):
-        """
-        sample from the baseline population to assign latent infections
-        using 2010 prevalence estimates
-        no differences in latent tb by sex
-        """
-
-        df = population.props
-        now = self.sim.date
-        p = self.parameters
-
-        # whole population susceptible to latent infection, risk determined by age
-        prob_latent = self.lm["latent_tb_2010"].predict(
-            df.loc[df.is_alive & ~(df.tb_inf == "active")]
-        )  # this will return pd.Series of probabilities of latent infection for each person alive
-
-        new_latent = self.rng.random_sample(len(prob_latent)) < prob_latent
-        idx_new_latent = new_latent[new_latent].index
-
-        df.loc[idx_new_latent, "tb_inf"] = "latent"
-        df.loc[idx_new_latent, "tb_strain"] = "ds"
-        df.loc[idx_new_latent, "tb_date_latent"] = now
-
-        # allocate some latent infections as mdr-tb
-        idx_new_latent_mdr = (
-            df[df.is_alive & (df.tb_inf == "latent")]
-            .sample(frac=p["prop_mdr2010"], random_state=self.rng)
-            .index
-        )
-
-        df.loc[idx_new_latent_mdr, "tb_strain"] = "mdr"
+    # def baseline_latent(self, population):
+    #     """
+    #     sample from the baseline population to assign latent infections
+    #     using 2010 prevalence estimates
+    #     no differences in latent tb by sex
+    #     """
+    #
+    #     df = population.props
+    #     now = self.sim.date
+    #     p = self.parameters
+    #
+    #     # whole population susceptible to latent infection, risk determined by age
+    #     prob_latent = self.lm["latent_tb_2010"].predict(
+    #         df.loc[df.is_alive & ~(df.tb_inf == "active")]
+    #     )  # this will return pd.Series of probabilities of latent infection for each person alive
+    #
+    #     new_latent = self.rng.random_sample(len(prob_latent)) < prob_latent
+    #     idx_new_latent = new_latent[new_latent].index
+    #
+    #     df.loc[idx_new_latent, "tb_inf"] = "latent"
+    #     df.loc[idx_new_latent, "tb_strain"] = "ds"
+    #     df.loc[idx_new_latent, "tb_date_latent"] = now
+    #
+    #     # allocate some latent infections as mdr-tb
+    #     idx_new_latent_mdr = (
+    #         df[df.is_alive & (df.tb_inf == "latent")]
+    #         .sample(frac=p["prop_mdr2010"], random_state=self.rng)
+    #         .index
+    #     )
+    #
+    #     df.loc[idx_new_latent_mdr, "tb_strain"] = "mdr"
 
     def baseline_active(self, population):
         """
@@ -758,7 +762,7 @@ class Tb(Module):
         df = population.props
         p = self.parameters
         rng = self.rng
-        now = self.sim.date
+        now = self.sim.dateg
 
         # ------------------ fast progressors ------------------ #
         eligible_for_fast_progression = df.loc[
@@ -1067,9 +1071,9 @@ class Tb(Module):
         self.baseline_active(
             population
         )  # allocate active infections from baseline population
-        self.baseline_latent(
-            population
-        )  # allocate baseline prevalence of latent infections
+        # self.baseline_latent(
+        #     population
+        # )  # allocate baseline prevalence of latent infections
         self.send_for_screening(
             population
         )  # send some baseline population for screening
@@ -1083,7 +1087,8 @@ class Tb(Module):
 
         # 1) Regular events
         sim.schedule_event(TbActiveEvent(self), sim.date + DateOffset(months=0))
-        sim.schedule_event(TbRegularPollingEvent(self), sim.date + DateOffset(years=1))
+        # sim.schedule_event(TbRegularPollingEvent(self), sim.date + DateOffset(years=1))
+        sim.schedule_event(TbActiveCasePoll(self), sim.date + DateOffset(years=1))
 
         sim.schedule_event(TbTreatmentAndRelapseEvents(self), sim.date + DateOffset(months=1))
         sim.schedule_event(TbSelfCureEvent(self), sim.date + DateOffset(months=1))
@@ -1578,10 +1583,9 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             p["ipt_coverage"]["coverage_paediatric"] = 0.8  # this will apply to contacts of all ages
 
 
-class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
-    """The Tb Regular Polling Events
-    * Schedules persons becoming newly infected with latent tb
-    * Schedules progression to active tb
+class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
+    """The Tb Regular Poll Event for assigning active infections
+    * selects people for latent infection and schedules onset of active tb
     * schedules tb screening / testing
     """
 
@@ -1589,117 +1593,203 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(years=1))
 
     def apply(self, population):
-        # transmission ds-tb
-        # the outcome of this will be an updated df with new tb cases
-        self.latent_transmission(strain="ds")
 
-        # transmission mdr-tb
-        self.latent_transmission(strain="mdr")
+        p = self.module.parameters
+        now = self.sim.date
+        year = now.year if now.year <= 2020 else 2020
+
+        # WHO estimates of active TB
+        inc_estimates = p["who_incidence_estimates"]
+        incidence_year = (inc_estimates.loc[
+            (inc_estimates.year == year), "incidence_per_100k"
+        ].values[0]) / 100000
+
+        # ds-tb cases
+        # the outcome of this will be an updated df with new tb cases
+        self.assign_active_tb(strain="ds", incidence_rate=incidence_year)
+
+        # transmission mdr-tb, around 1% of total tb incidence
+        self.assign_active_tb(strain="mdr", incidence_rate=(incidence_year * p["prop_mdr2010"]))
 
         # check who should progress from latent to active disease
-        self.module.progression_to_active(population)
+        # todo this is not needed as people scheduled directly to active disease
+        # self.module.progression_to_active(population)
 
         # # schedule some background rates of tb testing (non-symptom driven)
-        # self.module.send_for_screening(population)
+        self.module.send_for_screening(population)
 
-    def latent_transmission(self, strain):
+    def assign_active_tb(self, strain, incidence_rate):
         """
-        assume while on treatment, not infectious
-        consider relative infectivity of smear positive/negative and pulmonary / extrapulmonary
-
-        apply a force of infection to produce new latent cases
-        no age distribution for FOI but the relative risks would affect distribution of active infections
-        this comprises both new infections and reinfections
+        select individuals to be infected
+        assign scheduled date of active tb onset
+        update properties as needed
+        symptoms and smear status are assigned in the TbActiveEvent
         """
 
         df = self.sim.population.props
-        p = self.module.parameters
         rng = self.module.rng
         now = self.sim.date
-        districts = self.module.district_list
 
-        # -------------- district-level transmission -------------- #
-        # get population alive by district
-        pop_alive = df.loc[df.is_alive].groupby(["district_of_residence"]).size()
-        tmp = pd.DataFrame(pop_alive, index=districts)
-        tmp.rename(columns={tmp.columns[0]: "population_alive"}, inplace=True)
+        # identify eligible people, not currently with active tb infection
+        eligible = df.loc[
+            df.is_alive
+        & (df.tb_inf != "active")
+        ].index
 
-        # smear-positive cases by district
-        tmp["smear_pos"] = df[(df.tb_inf == "active")
-                              & (df.tb_strain == strain)
-                              & df.tb_smear
-                              & ~df.tb_on_treatment].groupby(['district_of_residence'])["is_alive"].size()
-
-        # smear-negative cases by district
-        tmp["smear_neg"] = df[(df.tb_inf == "active")
-                              & (df.tb_strain == strain)
-                              & ~df.tb_smear
-                              & ~df.tb_on_treatment].groupby(['district_of_residence'])["is_alive"].size()
-
-        tmp = tmp.fillna(0)  # fill any missing values with 0
-
-        # calculate foi by district
-        tmp["foi"] = (
-                  p["transmission_rate"]
-                  * (tmp["smear_pos"] + (tmp["smear_neg"] * p["rel_inf_smear_ng"]))
-              ) / tmp["population_alive"]
-
-        tmp["foi"] = tmp["foi"].fillna(0)  # fill any missing values with 0
-
-        # create a dict, uses district name as keys
-        # foi_dict = foi.to_dict()
-
-        # look up value for each row in df, mulitply by mixing parameter
-        foi_for_individual = p["mixing_parameter"] * df["district_of_residence"].map(tmp["foi"])
-
-        # -------------- national-level transmission -------------- #
-
-        # add additional background risk of infection to occur nationally
-        # accounts for population movement
-        # use mixing param to adjust transmission rate
-        # apply equally to all
-
-        # total number smear-positive
-        total_smear_pos = tmp["smear_pos"].sum()
-
-        # total number smear-negative
-        total_smear_neg = tmp["smear_neg"].sum()
-
-        # total population
-        total_pop = tmp["population_alive"].sum()
-
-        # national-level transmission multiplied by mixing parameter
-        foi_national = (1 - p["mixing_parameter"]) * (
-                           p["transmission_rate"]
-                           * (total_smear_pos + (total_smear_neg * p["rel_inf_smear_ng"]))
-                       ) / total_pop
-
-        # -------------- individual risk of acquisition -------------- #
-
-        # add in national transmission and individual risk mitigation (BCG vaccine)
-        foi_for_individual += foi_national
-        foi_for_individual.loc[df.va_bcg_all_doses & df.age_years < 10] *= p["rr_bcg_inf"]
-        foi_for_individual.loc[~df.is_alive] = 0
-
-        # get a list of random numbers between 0 and 1 for each infected individual
-        random_draw = rng.random_sample(size=len(df))
-
-        # new infections can occur in:
-        # uninfected
-        # latent infected with this strain (reinfection)
-        # latent infected with other strain - replace with latent infection with this strain
-        tb_idx = df.index[
-            df.is_alive & (df.tb_inf != "active") & (random_draw < foi_for_individual)
-            ]
-
-        logger.debug(
-            key="message",
-            data=f"TbRegularPollingEvent assigning new infections for persons {tb_idx}"
+        # weight risk by individual characteristics
+        # Compute chance that each susceptible person becomes infected:
+        rr_of_infection = self.module.lm["active_tb"].predict(
+            df.loc[eligible]
         )
 
-        df.loc[tb_idx, "tb_inf"] = "latent"
-        df.loc[tb_idx, "tb_date_latent"] = now
-        df.loc[tb_idx, "tb_strain"] = strain
+        # WHO estimates already take into account risk factors/interventions
+        if self.sim.date.year <= 2018:
+            mean_rr_infection = rr_of_infection.mean()
+            rr_of_infection = rr_of_infection / mean_rr_infection
+
+        #  probability of infection
+        p_infection = (rr_of_infection * incidence_rate)
+
+        # New infections:
+        will_be_infected = (
+            self.module.rng.random_sample(len(p_infection)) < p_infection
+        )
+        idx_new_infection = will_be_infected[will_be_infected].index
+
+        df.loc[idx_new_infection, "tb_strain"] = strain
+
+        # schedule onset of active tb, time now up to 1 year
+        for person_id in idx_new_infection:
+            date_progression = now + pd.DateOffset(
+                days=rng.randint(0, 365)
+            )
+
+            # set date of active tb - properties will be updated at TbActiveEvent every month
+            df.at[person_id, "tb_scheduled_date_active"] = date_progression
+
+
+# class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
+#     """The Tb Regular Polling Events
+#     * Schedules persons becoming newly infected with latent tb
+#     * Schedules progression to active tb
+#     * schedules tb screening / testing
+#     """
+#
+#     def __init__(self, module):
+#         super().__init__(module, frequency=DateOffset(years=1))
+#
+#     def apply(self, population):
+#         # transmission ds-tb
+#         # the outcome of this will be an updated df with new tb cases
+#         self.latent_transmission(strain="ds")
+#
+#         # transmission mdr-tb
+#         self.latent_transmission(strain="mdr")
+#
+#         # check who should progress from latent to active disease
+#         self.module.progression_to_active(population)
+#
+#         # # schedule some background rates of tb testing (non-symptom driven)
+#         # self.module.send_for_screening(population)
+#
+#     def latent_transmission(self, strain):
+#         """
+#         assume while on treatment, not infectious
+#         consider relative infectivity of smear positive/negative and pulmonary / extrapulmonary
+#
+#         apply a force of infection to produce new latent cases
+#         no age distribution for FOI but the relative risks would affect distribution of active infections
+#         this comprises both new infections and reinfections
+#         """
+#
+#         df = self.sim.population.props
+#         p = self.module.parameters
+#         rng = self.module.rng
+#         now = self.sim.date
+#         districts = self.module.district_list
+#
+#         # -------------- district-level transmission -------------- #
+#         # get population alive by district
+#         pop_alive = df.loc[df.is_alive].groupby(["district_of_residence"]).size()
+#         tmp = pd.DataFrame(pop_alive, index=districts)
+#         tmp.rename(columns={tmp.columns[0]: "population_alive"}, inplace=True)
+#
+#         # smear-positive cases by district
+#         tmp["smear_pos"] = df[(df.tb_inf == "active")
+#                               & (df.tb_strain == strain)
+#                               & df.tb_smear
+#                               & ~df.tb_on_treatment].groupby(['district_of_residence'])["is_alive"].size()
+#
+#         # smear-negative cases by district
+#         tmp["smear_neg"] = df[(df.tb_inf == "active")
+#                               & (df.tb_strain == strain)
+#                               & ~df.tb_smear
+#                               & ~df.tb_on_treatment].groupby(['district_of_residence'])["is_alive"].size()
+#
+#         tmp = tmp.fillna(0)  # fill any missing values with 0
+#
+#         # calculate foi by district
+#         tmp["foi"] = (
+#                   p["transmission_rate"]
+#                   * (tmp["smear_pos"] + (tmp["smear_neg"] * p["rel_inf_smear_ng"]))
+#               ) / tmp["population_alive"]
+#
+#         tmp["foi"] = tmp["foi"].fillna(0)  # fill any missing values with 0
+#
+#         # create a dict, uses district name as keys
+#         # foi_dict = foi.to_dict()
+#
+#         # look up value for each row in df, mulitply by mixing parameter
+#         foi_for_individual = p["mixing_parameter"] * df["district_of_residence"].map(tmp["foi"])
+#
+#         # -------------- national-level transmission -------------- #
+#
+#         # add additional background risk of infection to occur nationally
+#         # accounts for population movement
+#         # use mixing param to adjust transmission rate
+#         # apply equally to all
+#
+#         # total number smear-positive
+#         total_smear_pos = tmp["smear_pos"].sum()
+#
+#         # total number smear-negative
+#         total_smear_neg = tmp["smear_neg"].sum()
+#
+#         # total population
+#         total_pop = tmp["population_alive"].sum()
+#
+#         # national-level transmission multiplied by mixing parameter
+#         foi_national = (1 - p["mixing_parameter"]) * (
+#                            p["transmission_rate"]
+#                            * (total_smear_pos + (total_smear_neg * p["rel_inf_smear_ng"]))
+#                        ) / total_pop
+#
+#         # -------------- individual risk of acquisition -------------- #
+#
+#         # add in national transmission and individual risk mitigation (BCG vaccine)
+#         foi_for_individual += foi_national
+#         foi_for_individual.loc[df.va_bcg_all_doses & df.age_years < 10] *= p["rr_bcg_inf"]
+#         foi_for_individual.loc[~df.is_alive] = 0
+#
+#         # get a list of random numbers between 0 and 1 for each infected individual
+#         random_draw = rng.random_sample(size=len(df))
+#
+#         # new infections can occur in:
+#         # uninfected
+#         # latent infected with this strain (reinfection)
+#         # latent infected with other strain - replace with latent infection with this strain
+#         tb_idx = df.index[
+#             df.is_alive & (df.tb_inf != "active") & (random_draw < foi_for_individual)
+#             ]
+#
+#         logger.debug(
+#             key="message",
+#             data=f"TbRegularPollingEvent assigning new infections for persons {tb_idx}"
+#         )
+#
+#         df.loc[tb_idx, "tb_inf"] = "latent"
+#         df.loc[tb_idx, "tb_date_latent"] = now
+#         df.loc[tb_idx, "tb_strain"] = strain
 
 
 class TbTreatmentAndRelapseEvents(RegularEvent, PopulationScopeEventMixin):
