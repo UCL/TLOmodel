@@ -2109,6 +2109,9 @@ class RTI(Module):
         df.at[person_id, 'rt_debugging_DALY_wt'] += \
             sum([self.ASSIGN_INJURIES_AND_DALY_CHANGES[code][2] for code in relevant_codes])
         df.at[person_id, 'rt_debugging_DALY_wt'] = np.round(df.at[person_id, 'rt_debugging_DALY_wt'], 4)
+        # TODO: the injury '5113' seems to being treated multiple times for certain people, causing a repeated DALY
+        #  weight swap which ultimately results in a negative daly weight. I need to work out why this is happening, the
+        #  if statement below is a temporary fix
         # Check that the person's true disability burden is positive
         if df.at[person_id, 'rt_debugging_DALY_wt'] < 0:
             logger.debug(key='rti_general_message',
@@ -2116,7 +2119,7 @@ class RTI(Module):
             df.at[person_id, 'rt_debugging_DALY_wt'] = 0
         # catch rounding point errors where the disability weights should be zero but aren't
         if df.at[person_id, 'rt_disability'] < 0:
-            df.at[person_id, 'rt_disability'] = df.at[person_id, 'rt_debugging_DALY_wt']
+            df.at[person_id, 'rt_disability'] = 0
         # Catch cases where the disability burden is greater than one in reality but needs to be
         # capped at one, if not report the true disability burden
         if df.at[person_id, 'rt_debugging_DALY_wt'] > 1:
