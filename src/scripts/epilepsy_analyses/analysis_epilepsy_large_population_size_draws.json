@@ -1,5 +1,5 @@
 {
-  "scenario_script_path": "C:\\/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/epilepsy_analyses/analysis_epilepsy_large_population_size.py",
+  "scenario_script_path": "src/scripts/epilepsy_analyses/analysis_epilepsy_large_population_size.py",
   "scenario_seed": 12,
   "runs_per_draw": 2,
   "draws": [
@@ -13,5 +13,7 @@
         }
       }
     }
-  ]
+  ],
+  "commit": "1bc6ce62708d679d92b3e7cabc35bc30b6212115",
+  "github": "https://github.com/UCL/TLOmodel/blob/1bc6ce62708d679d92b3e7cabc35bc30b6212115/src/scripts/epilepsy_analyses/analysis_epilepsy_large_population_size.py"
 }
