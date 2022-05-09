@@ -146,7 +146,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
     if 'Tb' in sim.modules:
         tb_symptoms = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
 
-        if any(x in tb_symptoms for x in symptoms) and \
+        if tb_symptoms.intersection(symptoms) and \
                 rng.random_sample() < sim.modules["Tb"].parameters["prob_tb_referral_in_generic_hsi"]:
 
             schedule_hsi(
