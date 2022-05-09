@@ -34,7 +34,7 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2035, 1, 1)
+end_date = Date(2050, 1, 1)
 popsize = 15000
 
 # set up the log config
@@ -43,8 +43,8 @@ log_config = {
     "directory": outputpath,
     "custom_levels": {
         "*": logging.WARNING,
-        "tlo.methods.deviance_measure": logging.INFO,
-        "tlo.methods.epi": logging.INFO,
+        # "tlo.methods.deviance_measure": logging.INFO,
+        # "tlo.methods.epi": logging.INFO,
         "tlo.methods.hiv": logging.INFO,
         "tlo.methods.tb": logging.INFO,
         "tlo.methods.demography": logging.INFO,
@@ -78,13 +78,13 @@ sim.register(
     epi.Epi(resourcefilepath=resourcefilepath),
     hiv.Hiv(resourcefilepath=resourcefilepath),
     tb.Tb(resourcefilepath=resourcefilepath),
-    deviance_measure.Deviance(resourcefilepath=resourcefilepath),
+    # deviance_measure.Deviance(resourcefilepath=resourcefilepath),
 )
 
 # change parameters
 sim.modules["Tb"].parameters["scenario"] = 0
-sim.modules["Tb"].parameters["transmission_rate"] = 2.0  # 6.5 default
-sim.modules["Tb"].parameters["progr_active"] = 0.3  # default 0.05
+sim.modules["Tb"].parameters["transmission_rate"] = 1.0  # 6.5 default
+sim.modules["Tb"].parameters["progr_active"] = 0.8  # default 0.05
 
 
 # Run the simulation and flush the logger
