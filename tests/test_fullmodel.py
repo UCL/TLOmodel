@@ -6,12 +6,14 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from scripts.profiling import shared
-from tlo import Date, Simulation
+from tlo import Date, Simulation, logging
 from tlo.methods.fullmodel import fullmodel
+from tlo.util import hash_dataframe
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 start_date = Date(2010, 1, 1)
+
+logger = logging.getLogger(__name__)
 
 
 def check_dtypes(simulation):
@@ -30,4 +32,4 @@ def test_dtypes_and_checksum(seed):
         sim.make_initial_population(n=1000)
         sim.simulate(end_date=start_date + pd.DateOffset(months=1))
         check_dtypes(sim)
-        shared.print_checksum(sim)
+        logger.info(key="msg", data=f"Population checksum: {hash_dataframe(sim.population.props)}")
