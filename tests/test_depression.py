@@ -155,9 +155,9 @@ def test_hsi_functions(tmpdir, seed):
     assert df['de_ever_talk_ther'].sum()
 
     hsi = [_hsi_event['HSI_Event'] for _hsi_event in sim.modules['HealthSystem'].store_of_hsi_events_that_have_run]
-    assert 'tlo.methods.depression.HSI_Depression_TalkingTherapy' in hsi
-    assert 'tlo.methods.depression.HSI_Depression_Start_Antidepressant' in hsi
-    assert 'tlo.methods.depression.HSI_Depression_Refill_Antidepressant' in hsi
+    assert 'HSI_Depression_TalkingTherapy' in hsi
+    assert 'HSI_Depression_Start_Antidepressant' in hsi
+    assert 'HSI_Depression_Refill_Antidepressant' in hsi
 
 
 @pytest.mark.slow
@@ -215,9 +215,9 @@ def test_hsi_functions_no_medication_available(tmpdir, seed):
     assert 0 == df['de_on_antidepr'].sum()
 
     hsi = [_hsi_event['HSI_Event'] for _hsi_event in sim.modules['HealthSystem'].store_of_hsi_events_that_have_run]
-    assert 'tlo.methods.depression.HSI_Depression_TalkingTherapy' in hsi
-    assert 'tlo.methods.depression.HSI_Depression_Start_Antidepressant' in hsi
-    assert 'tlo.methods.depression.HSI_Depression_Refill_Antidepressant' not in hsi
+    assert 'HSI_Depression_TalkingTherapy' in hsi
+    assert 'HSI_Depression_Start_Antidepressant' in hsi
+    assert 'HSI_Depression_Refill_Antidepressant' not in hsi
 
 
 @pytest.mark.slow
