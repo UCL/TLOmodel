@@ -49,7 +49,14 @@ class TestScenario(BaseScenario):
         ]
 
     def draw_parameters(self, draw_number, rng):
-        return {}
+        # inc scale 0.8089748389329628 * 0.000220526608713936
+        # inc death scale 0.770005 * 0.000737401772217838
+        return {
+            'Epilepsy': {
+                'base_3m_prob_epilepsy': 0.000178,
+                'base_prob_3m_epi_death': 0.000568
+            }
+        }
 
 
 if __name__ == '__main__':

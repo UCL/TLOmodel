@@ -1,14 +1,17 @@
 {
-  "scenario_script_path": "src/scripts/epilepsy_analyses/analysis_epilepsy_large_population_size.py",
+  "scenario_script_path": "C:\\/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/epilepsy_analyses/analysis_epilepsy_large_population_size.py",
   "scenario_seed": 12,
   "runs_per_draw": 2,
   "draws": [
     {
       "draw_number": 0,
       "draw_seed": 662124363,
-      "parameters": {}
+      "parameters": {
+        "Epilepsy": {
+          "base_3m_prob_epilepsy": 0.000178,
+          "base_prob_3m_epi_death": 0.000568
+        }
+      }
     }
-  ],
-  "commit": "56b9077a4c175be40faca6e2429295f339782d88",
-  "github": "https://github.com/UCL/TLOmodel/blob/56b9077a4c175be40faca6e2429295f339782d88/src/scripts/epilepsy_analyses/analysis_epilepsy_large_population_size.py"
+  ]
 }
