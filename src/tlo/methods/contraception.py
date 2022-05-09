@@ -481,17 +481,38 @@ class Contraception(Module):
     def get_item_code_for_each_contraceptive(self):
         """Get the item_code for each contraceptive"""
 
-        get_items = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
+        get_items_from_pkg = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
+        get_items_from_name = self.sim.modules['HealthSystem'].get_item_code_from_item_name
 
         _cons_codes = dict()
-        _cons_codes['pill'] = get_items('Pill')
-        _cons_codes['IUD'] = get_items('IUD')
-        _cons_codes['injections'] = get_items('Injectable')
-        _cons_codes['implant'] = get_items('Implant')
-        _cons_codes['male_condom'] = get_items('Male condom')
-        _cons_codes['female_sterilization'] = get_items('Female sterilization')
-        _cons_codes['other_modern'] = get_items('Female Condom')  # NB. The consumable female condom is used for the
-        # contraceptive state of "other_modern method"
+        _cons_codes['pill'] = get_items_from_pkg('Pill')
+        _cons_codes['male_condom'] = get_items_from_pkg('Male condom')
+        _cons_codes['other_modern'] = get_items_from_pkg('Female Condom')  # NB. The consumable female condom is used
+        # for the contraceptive state of "other_modern method"
+
+        _cons_codes['IUD'] = [get_items_from_name('IUD, Copper T-380A')]
+        _cons_codes['injections'] = [get_items_from_name(item) for item in
+                                     ['Depot-Medroxyprogesterone Acetate 150 mg - 3 monthly',
+                                      'Povidone iodine, solution, 10 %, 5 ml per injection',
+                                      'Syringe, Autodisable SoloShot IX ']]
+
+        _cons_codes['implant'] = [get_items_from_name(item) for item in
+                                  ['Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml',
+                                   'Povidone iodine, solution, 10 %, 5 ml per injection',
+                                   'Jadelle (implant), box of 2_CMST',
+                                   'Implanon (Etonogestrel 68 mg)',
+                                   'Suture pack']]
+
+        _cons_codes['female_sterilization'] = [get_items_from_name(item) for item in
+                                               ['Atropine sulphate, injection, 1 mg in 1 ml ampoule',
+                                                'Diazepam, injection, 5 mg/ml, in 2 ml ampoule',
+                                                'Lidocaine, injection, 1 % in 20 ml vial',
+                                                'Lidocaine, spray, 10%, 500 ml bottle',
+                                                'Tape, adhesive, 2.5 cm wide, zinc oxide, 5 m roll',
+                                                'Paracetamol, tablet, 500 mg',
+                                                'Povidone iodine, solution, 10 %, 5 ml per injection',
+                                                'Suture pack',
+                                                'Gauze, absorbent 90cm x 40m_each_CMST']]
 
         assert set(_cons_codes.keys()) == set(self.states_that_may_require_HSI_to_switch_to)
         return _cons_codes

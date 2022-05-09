@@ -20,34 +20,7 @@ import shared
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import (
-    alri,
-    bladder_cancer,
-    cardio_metabolic_disorders,
-    care_of_women_during_pregnancy,
-    contraception,
-    demography,
-    depression,
-    diarrhoea,
-    enhanced_lifestyle,
-    epi,
-    epilepsy,
-    healthburden,
-    healthseekingbehaviour,
-    healthsystem,
-    hiv,
-    labour,
-    malaria,
-    measles,
-    newborn_outcomes,
-    oesophagealcancer,
-    other_adult_cancers,
-    postnatal_supervisor,
-    pregnancy_supervisor,
-    stunting,
-    symptommanager,
-    wasting,
-)
+from tlo.methods.fullmodel import fullmodel
 
 # Parse arguments defining run options
 parser = argparse.ArgumentParser(description="Run model at scale")
@@ -205,52 +178,17 @@ sim = Simulation(
     show_progress_bar=args.show_progress_bar
 )
 
-# Register the appropriate modules
+# Register the appropriate modules with the arguments passed through
 sim.register(
-    # Standard modules:
-    demography.Demography(resourcefilepath=resourcefilepath),
-    enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-    symptommanager.SymptomManager(
+    *fullmodel(
         resourcefilepath=resourcefilepath,
-        spurious_symptoms=not args.disable_spurious_symptoms,
-    ),
-    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-    healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-
-    # HealthSystem
-    healthsystem.HealthSystem(
-        resourcefilepath=resourcefilepath,
-        disable=args.disable_health_system,
-        mode_appt_constraints=args.mode_appt_constraints,
-        capabilities_coefficient=args.capabilities_coefficient,
-        record_hsi_event_details=args.record_hsi_event_details
-    ),
-
-    # Modules for birth/labour/newborns
-    contraception.Contraception(resourcefilepath=resourcefilepath),
-    pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-    care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(
-        resourcefilepath=resourcefilepath),
-    labour.Labour(resourcefilepath=resourcefilepath),
-    newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-    postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-
-    # Disease modules considered complete:
-    cardio_metabolic_disorders.CardioMetabolicDisorders(
-        resourcefilepath=resourcefilepath),
-    depression.Depression(resourcefilepath=resourcefilepath),
-    diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
-    epi.Epi(resourcefilepath=resourcefilepath),
-    epilepsy.Epilepsy(resourcefilepath=resourcefilepath),
-    hiv.Hiv(resourcefilepath=resourcefilepath),
-    malaria.Malaria(resourcefilepath=resourcefilepath),
-    oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
-    other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath),
-    bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
-    measles.Measles(resourcefilepath=resourcefilepath),
-    alri.Alri(resourcefilepath=resourcefilepath),
-    stunting.Stunting(resourcefilepath=resourcefilepath),
-    wasting.Wasting(resourcefilepath=resourcefilepath),
+        use_simplified_births=False,
+        symptommanager_spurious_symptoms=not args.disable_spurious_symptoms,
+        healthsystem_disable=args.disable_health_system,
+        healthsystem_mode_appt_constraints=args.mode_appt_constraints,
+        healthsystem_capabilities_coefficient=args.capabilities_coefficient,
+        healthsystem_record_hsi_event_details=args.record_hsi_event_details
+    )
 )
 
 # Run the simulation

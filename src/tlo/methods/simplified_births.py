@@ -43,39 +43,63 @@ class SimplifiedBirths(Module):
     }
 
     PROPERTIES = {
-        # (Core property, usually handled by Contraception module)
-        'is_pregnant': Property(Types.BOOL,
-                                'Whether this individual is currently pregnant'),
-
-        # (Core property, usually handled by Contraception module)
-        'date_of_last_pregnancy': Property(Types.DATE,
-                                           'Date of the onset of the last pregnancy of this individual (if has ever '
-                                           'been pregnant).'),
-
         # (Internal property)
         'si_date_of_last_delivery': Property(Types.DATE,
                                              'Date of delivery for the most recent pregnancy for this individual (if '
                                              'has ever been pregnant). Maybe in the future if is currently pregnant.'),
 
-        # (Property usually managed by Newborn_outcomes module)
-        'nb_breastfeeding_status': Property(Types.CATEGORICAL,
-                                            'How this neonate is being breastfed currently',
-                                            categories=['none', 'non_exclusive', 'exclusive']),
         # (Internal property)
         'si_breastfeeding_status_6mo_to_23mo': Property(Types.CATEGORICAL,
                                                         'How this neonate is breastfeed during ages 6mo to 23 months',
                                                         categories=['none', 'non_exclusive', 'exclusive']),
 
-        # (Property usually managed by Newborn_outcomes module)
-        'nb_early_init_breastfeeding': Property(Types.BOOL,
-                                                'whether this neonate initiated breastfeeding within 1 hour of birth'
-                                                'This is always FALSE in this module.')
+        # (Mocked property, usually handled by Contraception module)
+        'is_pregnant': Property(Types.BOOL,
+                                'Whether this individual is currently pregnant'),
+
+        # (Mocked property, usually handled by Contraception module)
+        'date_of_last_pregnancy': Property(Types.DATE,
+                                           'Date of the onset of the last pregnancy of this individual (if has ever '
+                                           'been pregnant).'),
+
+        # (Mocked property, usually managed by Newborn_outcomes module)
+        'nb_low_birth_weight_status': Property(Types.CATEGORICAL, 'temporary property',
+                                               categories=['extremely_low_birth_weight', 'very_low_birth_weight',
+                                                           'low_birth_weight', 'normal_birth_weight', 'macrosomia']),
+
+        # (Mocked property, managed by Newborn_outcomes module)
+        'nb_size_for_gestational_age': Property(Types.CATEGORICAL, 'temporary property',
+                                                categories=['small_for_gestational_age', 'average_for_gestational_age',
+                                                            'large_for_gestational_age']),
+
+        # (Mocked property, usually managed by Newborn_outcomes module)
+        'nb_late_preterm': Property(Types.BOOL, 'temporary property'),
+
+        # (Mocked property, usually managed by Newborn_outcomes module)
+        'nb_early_preterm': Property(Types.BOOL, 'temporary property'),
+
+        # (Mocked property, usually managed by Newborn_outcomes module)
+        'nb_breastfeeding_status': Property(Types.CATEGORICAL, 'temporary property',
+                                            categories=['none', 'non_exclusive', 'exclusive']),
     }
 
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
         self.asfr = dict()
+
+        # Define defaults for properties:
+        self.default_properties = {
+            'si_date_of_last_delivery': pd.NaT,
+            'si_breastfeeding_status_6mo_to_23mo': 'none',
+            'is_pregnant': False,
+            'date_of_last_pregnancy': pd.NaT,
+            'nb_low_birth_weight_status': 'normal_birth_weight',
+            'nb_size_for_gestational_age': 'average_for_gestational_age',
+            'nb_late_preterm': False,
+            'nb_early_preterm': False,
+            'nb_breastfeeding_status': 'none',
+        }
 
     def read_parameters(self, data_folder):
         """Load parameters for probability of pregnancy/birth and breastfeeding status for newborns"""
@@ -92,15 +116,9 @@ class SimplifiedBirths(Module):
         self.parameters['prob_breastfeeding_type'] = parameter
 
     def initialise_population(self, population):
-        """Set our property values for the initial population."""
+        """Set property values to their defaults for the initial population."""
         df = population.props
-
-        df.loc[df.is_alive, 'is_pregnant'] = False
-        df.loc[df.is_alive, 'date_of_last_pregnancy'] = pd.NaT
-        df.loc[df.is_alive, 'si_date_of_last_delivery'] = pd.NaT
-        df.loc[df.is_alive, 'nb_breastfeeding_status'] = 'none'
-        df.loc[df.is_alive, 'si_breastfeeding_status_6mo_to_23mo'] = 'none'
-        df.loc[df.is_alive, 'nb_early_init_breastfeeding'] = False
+        df.loc[df.is_alive, self.default_properties.keys()] = self.default_properties.values()
 
     def initialise_simulation(self, sim):
         """Schedule the SimplifiedBirthsPoll and the SimplifiedBirthEvent to occur every month."""
@@ -110,43 +128,30 @@ class SimplifiedBirths(Module):
         assert 1.0 == sum(self.parameters['prob_breastfeeding_type'])
 
     def on_birth(self, mother_id, child_id):
-        """Initialise our properties for a newborn individual."""
+        """Initialise properties for a newborn individual to their defaults."""
         df = self.sim.population.props
         params = self.parameters
 
-        # Determine breastfeeding characteristics
-        initial_breastfeeding_status = 'none'
+        # Mock 'nb_breastfeeding_status' by:
+        # (i) having an initial value sampled probabilistically
+        # (ii) storing the status for 6-23mo and updating this later in the `SimplifiedBirthPoll`. (Those who were
+        # initially breastfed at all, switch down to either non_exclusive or none (equal probability of each)).
 
-        # Assign breastfeeding status to newborns:
-
-        # 1) Newborn modules assigned initial status probablistically from ['prob_breastfeeding_type']
         initial_breastfeeding_status = self.rng.choice(
             ('none', 'non_exclusive', 'exclusive'), p=params['prob_breastfeeding_type']
         )
 
-        # 2) Breastfeeding for those aged 6-23months: those who were initially breastfed at all, switch down to
-        #  either non_exclusive or none (equal probability of each)
-        if initial_breastfeeding_status == 'none':
-            breastfeeding_status_6mo_to_23mo = 'none'
-        else:
-            breastfeeding_status_6mo_to_23mo = self.rng.choice(
-                ('none', 'non_exclusive'), p=[0.5, 0.5]
-            )
+        breastfeeding_status_6mo_to_23mo = 'none' if (initial_breastfeeding_status == 'none') \
+            else self.rng.choice(('none', 'non_exclusive'), p=[0.5, 0.5])
 
-        # Assign properties for the newborns
-        df.at[child_id, ['is_pregnant',
-                         'date_of_last_pregnancy',
-                         'si_date_of_last_delivery',
-                         'nb_breastfeeding_status',
-                         'si_breastfeeding_status_6mo_to_23mo',
-                         'nb_early_init_breastfeeding']] = (
-            False,
-            pd.NaT,
-            pd.NaT,
-            initial_breastfeeding_status,
-            breastfeeding_status_6mo_to_23mo,
-            False
-        )
+        # Other properties will be set to their defaults
+        properties = {**self.default_properties,
+                      **{
+                          'nb_breastfeeding_status': initial_breastfeeding_status,
+                          'si_breastfeeding_status_6mo_to_23mo': breastfeeding_status_6mo_to_23mo,
+                          }
+                      }
+        df.at[child_id, properties.keys()] = properties.values()
 
 
 class SimplifiedBirthsPoll(RegularEvent, PopulationScopeEventMixin):

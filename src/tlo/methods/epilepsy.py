@@ -204,7 +204,7 @@ class Epilepsy(Module):
         # Get item_codes for the consumables used in the HSI
         hs = self.sim.modules['HealthSystem']
         self.item_codes = dict()
-        self.item_codes['phenobarbitone'] = hs.get_item_code_from_item_name('Phenobarbitone  30mg_1000_CMST')
+        self.item_codes['phenobarbitone'] = hs.get_item_code_from_item_name("Phenobarbital, 100 mg")
         self.item_codes['carbamazepine'] = hs.get_item_code_from_item_name('Carbamazepine 200mg_1000_CMST')
         self.item_codes['phenytoin'] = hs.get_item_code_from_item_name('Phenytoin sodium 100mg_1000_CMST')
 
