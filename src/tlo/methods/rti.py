@@ -3082,11 +3082,10 @@ class HSI_RTI_Imaging_Event(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, RTI)
-        self.TREATMENT_ID = 'RTI_Imaging_Event'  # This must begin with the module name
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
-            'Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD': 1})
+
+        self.TREATMENT_ID = 'Rti_Imaging'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'DiagRadio': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         self.sim.population.props.at[person_id, 'rt_diagnosed'] = True
@@ -3140,6 +3139,12 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+
+        self.TREATMENT_ID = 'Rti_MedicalIntervention'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 8})
+
         p = module.parameters
         # Load the parameters used in this event
         self.prob_depressed_skull_fracture = p['prob_depressed_skull_fracture']  # proportion of depressed skull
@@ -3153,11 +3158,6 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         self.prob_perm_disability_with_treatment_severe_TBI = p['prob_perm_disability_with_treatment_severe_TBI']
         # Create an empty list for injuries that are potentially healed without further medical intervention
         self.heal_with_time_injuries = []
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'RTI_MedicalIntervention'  # This must begin with the module name
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         road_traffic_injuries = self.sim.modules['RTI']
@@ -3681,10 +3681,10 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, RTI)
-        self.TREATMENT_ID = 'RTI_Shock_Treatment'  # This must begin with the module name
+
+        self.TREATMENT_ID = 'Rti_ShockTreatment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -3771,10 +3771,10 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, RTI)
-        self.TREATMENT_ID = 'RTI_Fracture_Cast'  # This must begin with the module name
+
+        self.TREATMENT_ID = 'Rti_FractureCast'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         # Get the population and health system
@@ -3902,10 +3902,10 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, RTI)
-        self.TREATMENT_ID = 'RTI_Open_Fracture_Treatment'  # This must begin with the module name
+
+        self.TREATMENT_ID = 'Rti_OpenFractureTreatment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MinorSurg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -4008,11 +4008,11 @@ class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, RTI)
-        self.TREATMENT_ID = 'RTI_Suture'  # This must begin with the module name
+
+        self.TREATMENT_ID = 'Rti_Suture'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
-            'Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD': 1})
+            ('Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD'): 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
@@ -4096,10 +4096,12 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, RTI)
-        self.TREATMENT_ID = 'RTI_Burn_Management'  # This must begin with the module name
+
+        self.TREATMENT_ID = 'Rti_BurnManagement'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MinorSurg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.ALERT_OTHER_DISEASES = []
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 1})
+
         p = self.module.parameters
         self.prob_mild_burns = p['prob_mild_burns']
 
@@ -4194,11 +4196,10 @@ class HSI_RTI_Tetanus_Vaccine(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, RTI)
-        self.TREATMENT_ID = 'RTI_Tetanus_Vaccine'  # This must begin with the module name
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
-            'Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD': 1})
+
+        self.TREATMENT_ID = 'Rti_TetanusVaccine'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'EPI': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -4253,12 +4254,11 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, RTI)
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'RTI_Acute_Pain_Management'  # This must begin with the module name
+
+        self.TREATMENT_ID = 'Rti_AcutePainManagement'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
-            'Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD': 1})
+            ('Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD'): 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -4554,12 +4554,13 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, RTI)
-        self.TREATMENT_ID = 'RTI_Major_Surgeries'
-        p = self.module.parameters
-        # Define the necessary information for an HSI
+
+        self.TREATMENT_ID = 'Rti_MajorSurgeries'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MajorSurg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.ALERT_OTHER_DISEASES = []
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({})
+
+        p = self.module.parameters
         self.prob_perm_disability_with_treatment_severe_TBI = p['prob_perm_disability_with_treatment_severe_TBI']
         self.allowed_interventions = p['allowed_interventions']
         self.treated_code = 'none'
@@ -4884,11 +4885,10 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, RTI)
-        self.TREATMENT_ID = 'RTI_Minor_Surgeries'
-        # Define the necessary information for an HSI
+
+        self.TREATMENT_ID = 'Rti_MinorSurgeries'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MinorSurg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props

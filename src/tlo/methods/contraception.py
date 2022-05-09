@@ -927,13 +927,13 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
 
     def __init__(self, module, person_id, old_contraceptive, new_contraceptive):
         super().__init__(module, person_id=person_id)
-        self.old_contraceptive = old_contraceptive
-        self.new_contraceptive = new_contraceptive
 
-        self.TREATMENT_ID = "Contraception_FamilyPlanningAppt"
+        self.TREATMENT_ID = "Contraception_Routine"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'FamPlan': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.ALERT_OTHER_DISEASES = []
+
+        self.old_contraceptive = old_contraceptive
+        self.new_contraceptive = new_contraceptive
 
     def apply(self, person_id, squeeze_factor):
         """If the relevant consumable is available, do change in contraception and log it"""
