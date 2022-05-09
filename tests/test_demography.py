@@ -218,6 +218,10 @@ def test_calc_of_scaling_factor(tmpdir, seed):
     sf = output['tlo.methods.demography']['scaling_factor'].at[0, 'scaling_factor']
     assert sf == approx(14.5e6 / popsize, rel=0.10)
 
+    # Check that the scaling factor is also logged in `tlo.methods.population`
+    assert output['tlo.methods.demography']['scaling_factor'].at[0, 'scaling_factor'] == \
+           output['tlo.methods.population']['scaling_factor'].at[0, 'scaling_factor']
+
 
 def test_py_calc(simulation):
     # make population of one person:
