@@ -848,11 +848,12 @@ class Tb(Module):
         df = population.props
         p = self.parameters
         rng = self.rng
+        year = self.sim.date.year if self.sim.date.year < 2050 else 2050
 
         active_testing_rates = p["rate_testing_active_tb"]
         current_active_testing_rate = active_testing_rates.loc[
                                           (
-                                              active_testing_rates.year == self.sim.date.year),
+                                              active_testing_rates.year == year),
                                           "testing_rate_active_cases"].values[
                                           0] / 100
         current_active_testing_rate = current_active_testing_rate / 3  # adjusted for monthly poll
