@@ -8,22 +8,8 @@ from pandas._libs.tslibs.offsets import DateOffset
 
 from tlo import Date, Simulation, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
-from tlo.methods import (
-    bladder_cancer,
-    demography,
-    diarrhoea,
-    enhanced_lifestyle,
-    epilepsy,
-    healthburden,
-    healthseekingbehaviour,
-    healthsystem,
-    hiv,
-    malaria,
-    oesophagealcancer,
-    simplified_births,
-    symptommanager,
-    tb,
-)
+from tlo.methods import demography, simplified_births
+from tlo.methods.fullmodel import fullmodel
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
@@ -261,26 +247,7 @@ def test_other_modules_running_with_simplified_births_module():
         }
     )
 
-    # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable_and_reject_all=True),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
-                 bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
-                 epilepsy.Epilepsy(resourcefilepath=resourcefilepath),
-                 hiv.Hiv(resourcefilepath=resourcefilepath),
-                 malaria.Malaria(resourcefilepath=resourcefilepath),
-                 tb.Tb(resourcefilepath=resourcefilepath),
-                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
-
-                 # Supporting modules:
-                 diarrhoea.DiarrhoeaPropertiesOfOtherModules()
-                 )
-
+    sim.register(*fullmodel(resourcefilepath=resourcefilepath, use_simplified_births=True, healthsystem_disable=True))
     sim.make_initial_population(n=1_000)
     sim.simulate(end_date=Date(2011, 12, 31))
     check_property_integrity(sim)

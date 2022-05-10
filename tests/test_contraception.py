@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from typing import Dict, List
 
 import numpy as np
 import pandas as pd
@@ -25,6 +26,7 @@ def run_sim(tmpdir,
             no_changes_in_contraception=False,
             no_initial_contraception_use=False,
             equalised_risk_of_preg=None,
+            unlimited_runs_of_hsi=False,
             max_days_delay_between_decision_to_change_method_and_hsi_scheduled=28
             ):
     """Run basic checks on function of contraception module"""
@@ -41,7 +43,13 @@ def run_sim(tmpdir,
         orig = simulation.population.new_row
         assert (df.dtypes == orig.dtypes).all()
 
-    _cons_available = 'all' if consumables_available else 'none'
+    # Determine availability of consumables (True --> all available; False --> none available; other --> custom arg.)
+    if consumables_available is True:
+        _cons_available = 'all'
+    elif consumables_available is False:
+        _cons_available = 'none'
+    else:
+        _cons_available = consumables_available
 
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
@@ -117,6 +125,9 @@ def run_sim(tmpdir,
         sim.modules['Contraception'].processed_params['p_pregnancy_with_contraception_per_month'].loc[:, :] = \
             equalised_risk_of_preg
 
+    if unlimited_runs_of_hsi:
+        sim.modules['Contraception'].parameters['max_number_of_runs_of_hsi_if_consumable_not_available'] = 10_000
+
     sim.modules['Contraception'].parameters['max_days_delay_between_decision_to_change_method_and_hsi_scheduled'] = \
         max_days_delay_between_decision_to_change_method_and_hsi_scheduled
 
@@ -175,7 +186,7 @@ def __check_no_illegal_switches(sim):
             con = logs['tlo.methods.contraception']['contraception_change']
             assert not (con.switch_from == 'female_sterilization').any()  # no switching from female_sterilization
             assert not (con.loc[con['age_years'] < 30, 'switch_to'] == 'female_sterilization').any()  # no switching to
-            # female_sterilization if age less than 30
+            # No female_sterilization if age less than 30
 
 
 @pytest.mark.slow
@@ -651,3 +662,74 @@ def test_initial_distribution_of_contraception(tmpdir, seed):
         lambda row: row / row.sum(), axis=1
     ).loc[adult_age_groups]
     assert (abs(actual - expected_by_age_range) < 0.03).all().all()
+
+
+def test_contraception_coverage_with_use_healthsystem(tmpdir, seed):
+    """Check that the same patterns (approximately) of usage of contraception is achieved when `use_healthsystem=True`
+    as when `use_healthsystem=False` (despite the possibility of consumables not being always available when using the
+    healthsystem)."""
+
+    def report_availability_of_consumables():
+        """Helper function to find the availability of consumables used in the Contraception module."""
+        sim = run_sim(tmpdir, seed, run=False, consumables_available='default')
+        item_codes = sim.modules['Contraception'].get_item_code_for_each_contraceptive()
+        cons = sim.modules['HealthSystem'].consumables._prob_item_codes_available
+
+        def find_average_availability(items: List, level: str):
+            """Find the probability that all the items are available at level 1a."""
+            facilities = set([x.id for x in sim.modules['HealthSystem']._facilities_for_each_district[level].values()])
+            return np.prod(
+               [cons.loc[(slice(None), facilities, _item)].mean() for _item in items]
+            )
+
+        for fac_level in ('1a', '1b', '2'):
+            av_availability = {
+                k: find_average_availability(items=set(v.keys()) if isinstance(v, dict) else set(v), level=fac_level)
+                for k, v in item_codes.items()
+            }
+            print(f'Probability of all items being available at {fac_level}: {av_availability}')
+
+    report_availability_of_consumables()
+
+    def summarize_contraception_use(sim):
+        """Summarize the pattern of contraception currently in the population."""
+        df = sim.population.props
+        return df.loc[df.is_alive, 'co_contraception'].value_counts().sort_index().to_dict()
+
+    contraception_use_healthsystem_true = summarize_contraception_use(
+        run_sim(tmpdir,
+                seed,
+                use_healthsystem=True,
+                consumables_available='default',
+                popsize=5_000,
+                end_date=Date(2011, 12, 31),
+                equalised_risk_of_preg=0.0,
+                unlimited_runs_of_hsi=True
+                )
+    )
+
+    contraception_use_healthsystem_false = summarize_contraception_use(
+        run_sim(tmpdir,
+                seed,
+                use_healthsystem=False,
+                consumables_available='default',
+                popsize=5_000,
+                end_date=Date(2011, 12, 31),
+                equalised_risk_of_preg=0.0,
+                unlimited_runs_of_hsi=True
+                )
+    )
+
+    def compare_dictionaries(A: Dict, B: Dict, tol: float):
+        """True if the elements of A and B are equal within some tolerance (expressed as the fraction of the sum of the
+         values in the dict). """
+
+        def equals(a: int, b: int, tol: int):
+            """True if the difference between a and b is less than tol (expressed as the absolute difference)."""
+            return abs(a - b) < tol
+
+        _tol = int(tol * np.mean([sum(_x.values()) for _x in (A, B)]))
+
+        return all([equals(A[k], B[k], tol=_tol) for k in set(A.keys() & B.keys())])
+
+    assert compare_dictionaries(contraception_use_healthsystem_true, contraception_use_healthsystem_false, tol=0.01)
