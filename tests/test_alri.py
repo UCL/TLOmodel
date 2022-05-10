@@ -27,11 +27,7 @@ from tlo.methods.alri import (
     AlriNaturalRecoveryEvent,
     AlriPollingEvent,
     AlriPropertiesOfOtherModules,
-    HSI_IMCI_Pneumonia_Treatment_Inpatient_level_1b,
-    HSI_IMCI_Pneumonia_Treatment_Inpatient_level_2,
-    HSI_IMCI_Pneumonia_Treatment_Outpatient_level_1a,
-    HSI_IMCI_Pneumonia_Treatment_Outpatient_level_1b,
-    HSI_IMCI_Pneumonia_Treatment_Outpatient_level_2,
+    HSI_Alri_Treatment,
     Models,
 )
 from tlo.methods.healthseekingbehaviour import (
@@ -729,7 +725,7 @@ def test_classification_based_on_symptoms_and_imci(sim_hs_all_consumables):
         'not_handled_at_facility_0'
     }
 
-    final_classification_hw_and_oximeter = sim.modules['Alri'].final_classification
+    final_classification_hw_and_oximeter = sim.modules['Alri'].get_disease_classification
     symptom_based_classification = sim.modules['Alri'].imci_classification_based_on_symptoms
 
     for correct_classification_on_symptoms, chars in classification_on_symptoms:
