@@ -6,6 +6,7 @@ save outputs for plotting (file: output_plots_tb.py)
 import datetime
 import pickle
 from pathlib import Path
+import random
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
@@ -34,12 +35,12 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
-popsize = 15000
+end_date = Date(2040, 1, 1)
+popsize = 20000
 
 # set up the log config
 log_config = {
-    "filename": "deviance_calibrated",
+    "filename": "tb_transmission_runs",
     "directory": outputpath,
     "custom_levels": {
         "*": logging.WARNING,
@@ -54,8 +55,8 @@ log_config = {
 
 # Register the appropriate modules
 # need to call epi before tb to get bcg vax
-# seed = random.randint(0, 50000)
-seed = 34  # set seed for reproducibility
+seed = random.randint(0, 50000)
+# seed = 34  # set seed for reproducibility
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
 sim.register(
     demography.Demography(resourcefilepath=resourcefilepath),

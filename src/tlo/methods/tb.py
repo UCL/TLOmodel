@@ -733,8 +733,8 @@ class Tb(Module):
         )  # join indices (checked)
 
         # -------- change individual properties for active disease --------
-        df.loc[all_new_active, "tb_inf"] = "latent"
-        df.loc[all_new_active, "tb_date_latent"] = now
+        # df.loc[all_new_active, "tb_inf"] = "latent"
+        # df.loc[all_new_active, "tb_date_latent"] = now
 
         # schedule active onset for time now up to end of 2010
         # tb_scheduled_date_active is picked up by regular event TbActiveEvent
@@ -754,98 +754,98 @@ class Tb(Module):
                     priority=0,
                 )
 
-    def progression_to_active(self, population):
-        """
-        from the new latent infections, select and schedule progression to active disease
-        """
-
-        df = population.props
-        p = self.parameters
-        rng = self.rng
-        now = self.sim.dateg
-
-        # ------------------ fast progressors ------------------ #
-        eligible_for_fast_progression = df.loc[
-            (df.tb_date_latent == now) & df.is_alive & (df.age_years >= 15) & ~df.hv_inf
-            ].index
-
-        will_progress = (
-            rng.random_sample(len(eligible_for_fast_progression)) < p["prop_fast_progressor"]
-        )
-        fast = eligible_for_fast_progression[will_progress]
-
-        # hiv-positive
-        eligible_for_fast_progression_hiv = df.loc[
-            (df.tb_date_latent == now) & df.is_alive & (df.age_years >= 15) & df.hv_inf
-            ].index
-
-        will_progress = (
-            rng.random_sample(len(eligible_for_fast_progression_hiv)) < p["prop_fast_progressor_hiv"]
-        )
-        fast_hiv = eligible_for_fast_progression_hiv[will_progress]
-
-        fast = fast.union(fast_hiv)  # join indices (checked)
-
-        # set date of active tb - properties will be updated at TbActiveEvent every month
-        df.loc[fast, "tb_scheduled_date_active"] = now
-
-        # ------------------ slow progressors ------------------ #
-
-        # slow progressors, based on risk factors (via a linear model)
-        # select population eligible for progression to active disease
-        # includes all new latent infections
-        # excludes those just fast-tracked above (all_fast)
-
-        # adults
-        eligible_adults = df.loc[
-            (df.tb_date_latent == now) & df.is_alive & (df.age_years >= 15)
-            ].index
-
-        eligible_adults = eligible_adults[~eligible_adults.isin(fast)]
-
-        # check no fast progressors included in the slow progressors risk
-        assert not any(elem in fast for elem in eligible_adults)
-
-        risk_of_progression = self.lm["active_tb"].predict(df.loc[eligible_adults])
-
-        will_progress = (
-            self.rng.random_sample(len(risk_of_progression)) < risk_of_progression
-        )
-        idx_will_progress = will_progress[will_progress].index
-
-        # schedule for time now up to 1 year
-        for person_id in idx_will_progress:
-            date_progression = self.sim.date + pd.DateOffset(
-                days=self.rng.randint(0, 365)
-            )
-
-            # set date of active tb - properties will be updated at TbActiveEvent every month
-            df.at[person_id, "tb_scheduled_date_active"] = date_progression
-
-        # children - new latent cases only
-        # will progress within 1 year
-        eligible_children = df.loc[
-            (df.tb_date_latent == now) & df.is_alive & (df.age_years < 15)
-            ].index
-        eligible_children = eligible_children[~np.isin(eligible_children, fast)]
-        assert not any(elem in fast for elem in eligible_children)
-
-        risk_of_progression = self.lm["active_tb_child"].predict(
-            df.loc[eligible_children]
-        )
-        will_progress = (
-            self.rng.random_sample(len(risk_of_progression)) < risk_of_progression
-        )
-        idx_will_progress = will_progress[will_progress].index
-
-        # schedule for time now up to 1 year
-        for person_id in idx_will_progress:
-            date_progression = self.sim.date + pd.DateOffset(
-                days=self.rng.randint(0, 365)
-            )
-
-            # set date of active tb - properties will be updated at TbActiveEvent every month
-            df.at[person_id, "tb_scheduled_date_active"] = date_progression
+    # def progression_to_active(self, population):
+    #     """
+    #     from the new latent infections, select and schedule progression to active disease
+    #     """
+    #
+    #     df = population.props
+    #     p = self.parameters
+    #     rng = self.rng
+    #     now = self.sim.dateg
+    #
+    #     # ------------------ fast progressors ------------------ #
+    #     eligible_for_fast_progression = df.loc[
+    #         (df.tb_date_latent == now) & df.is_alive & (df.age_years >= 15) & ~df.hv_inf
+    #         ].index
+    #
+    #     will_progress = (
+    #         rng.random_sample(len(eligible_for_fast_progression)) < p["prop_fast_progressor"]
+    #     )
+    #     fast = eligible_for_fast_progression[will_progress]
+    #
+    #     # hiv-positive
+    #     eligible_for_fast_progression_hiv = df.loc[
+    #         (df.tb_date_latent == now) & df.is_alive & (df.age_years >= 15) & df.hv_inf
+    #         ].index
+    #
+    #     will_progress = (
+    #         rng.random_sample(len(eligible_for_fast_progression_hiv)) < p["prop_fast_progressor_hiv"]
+    #     )
+    #     fast_hiv = eligible_for_fast_progression_hiv[will_progress]
+    #
+    #     fast = fast.union(fast_hiv)  # join indices (checked)
+    #
+    #     # set date of active tb - properties will be updated at TbActiveEvent every month
+    #     df.loc[fast, "tb_scheduled_date_active"] = now
+    #
+    #     # ------------------ slow progressors ------------------ #
+    #
+    #     # slow progressors, based on risk factors (via a linear model)
+    #     # select population eligible for progression to active disease
+    #     # includes all new latent infections
+    #     # excludes those just fast-tracked above (all_fast)
+    #
+    #     # adults
+    #     eligible_adults = df.loc[
+    #         (df.tb_date_latent == now) & df.is_alive & (df.age_years >= 15)
+    #         ].index
+    #
+    #     eligible_adults = eligible_adults[~eligible_adults.isin(fast)]
+    #
+    #     # check no fast progressors included in the slow progressors risk
+    #     assert not any(elem in fast for elem in eligible_adults)
+    #
+    #     risk_of_progression = self.lm["active_tb"].predict(df.loc[eligible_adults])
+    #
+    #     will_progress = (
+    #         self.rng.random_sample(len(risk_of_progression)) < risk_of_progression
+    #     )
+    #     idx_will_progress = will_progress[will_progress].index
+    #
+    #     # schedule for time now up to 1 year
+    #     for person_id in idx_will_progress:
+    #         date_progression = self.sim.date + pd.DateOffset(
+    #             days=self.rng.randint(0, 365)
+    #         )
+    #
+    #         # set date of active tb - properties will be updated at TbActiveEvent every month
+    #         df.at[person_id, "tb_scheduled_date_active"] = date_progression
+    #
+    #     # children - new latent cases only
+    #     # will progress within 1 year
+    #     eligible_children = df.loc[
+    #         (df.tb_date_latent == now) & df.is_alive & (df.age_years < 15)
+    #         ].index
+    #     eligible_children = eligible_children[~np.isin(eligible_children, fast)]
+    #     assert not any(elem in fast for elem in eligible_children)
+    #
+    #     risk_of_progression = self.lm["active_tb_child"].predict(
+    #         df.loc[eligible_children]
+    #     )
+    #     will_progress = (
+    #         self.rng.random_sample(len(risk_of_progression)) < risk_of_progression
+    #     )
+    #     idx_will_progress = will_progress[will_progress].index
+    #
+    #     # schedule for time now up to 1 year
+    #     for person_id in idx_will_progress:
+    #         date_progression = self.sim.date + pd.DateOffset(
+    #             days=self.rng.randint(0, 365)
+    #         )
+    #
+    #         # set date of active tb - properties will be updated at TbActiveEvent every month
+    #         df.at[person_id, "tb_scheduled_date_active"] = date_progression
 
     def send_for_screening(self, population):
 
@@ -1604,6 +1604,9 @@ class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
             (inc_estimates.year == year), "incidence_per_100k"
         ].values[0]) / 100000
 
+        # multiply WHO estimates by 10 to incorporate impact of interventions
+        incidence_year = incidence_year * 4
+
         # ds-tb cases
         # the outcome of this will be an updated df with new tb cases
         self.assign_active_tb(strain="ds", incidence_rate=incidence_year)
@@ -1643,9 +1646,10 @@ class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
         )
 
         # WHO estimates already take into account risk factors/interventions
-        if self.sim.date.year <= 2018:
-            mean_rr_infection = rr_of_infection.mean()
-            rr_of_infection = rr_of_infection / mean_rr_infection
+        # scale so mean=1
+        # if self.sim.date.year <= 2018:
+        #     mean_rr_infection = rr_of_infection.mean()
+        #     rr_of_infection = rr_of_infection / mean_rr_infection
 
         #  probability of infection
         p_infection = (rr_of_infection * incidence_rate)

@@ -43,6 +43,43 @@ start_date = 2010
 end_date = 2020
 
 # ---------------------------------------------------------------------- #
+# %%: DATA
+# ---------------------------------------------------------------------- #
+start_date = 2010
+end_date = 2020
+
+# load all the data for calibration
+
+# TB WHO data
+xls_tb = pd.ExcelFile(resourcefilepath / "ResourceFile_TB.xlsx")
+
+data_tb_who = pd.read_excel(xls_tb, sheet_name="WHO_activeTB2020")
+data_tb_who = data_tb_who.loc[
+    (data_tb_who.year >= 2010)
+]  # include only years post-2010
+data_tb_who.index = pd.to_datetime(data_tb_who["year"], format="%Y")
+data_tb_who = data_tb_who.drop(columns=["year"])
+
+# TB latent data (Houben & Dodd 2016)
+data_tb_latent = pd.read_excel(xls_tb, sheet_name="latent_TB2014_summary")
+data_tb_latent_all_ages = data_tb_latent.loc[data_tb_latent.Age_group == "0_80"]
+data_tb_latent_estimate = data_tb_latent_all_ages.proportion_latent_TB.values[0]
+data_tb_latent_lower = abs(
+    data_tb_latent_all_ages.proportion_latent_TB_lower.values[0]
+    - data_tb_latent_estimate
+)
+data_tb_latent_upper = abs(
+    data_tb_latent_all_ages.proportion_latent_TB_upper.values[0]
+    - data_tb_latent_estimate
+)
+data_tb_latent_yerr = [data_tb_latent_lower, data_tb_latent_upper]
+
+# TB treatment coverage
+data_tb_ntp = pd.read_excel(xls_tb, sheet_name="NTP2019")
+data_tb_ntp.index = pd.to_datetime(data_tb_ntp["year"], format="%Y")
+data_tb_ntp = data_tb_ntp.drop(columns=["year"])
+
+# ---------------------------------------------------------------------- #
 # %%: OUTPUTS
 # ---------------------------------------------------------------------- #
 
@@ -80,6 +117,9 @@ activeTB_inc_rate = (TB_inc["num_new_active_tb"] / py) * 100000
 make_plot(
     title_str="Active TB Incidence (per 100k person-years)",
     model=activeTB_inc_rate,
+    data_mid=data_tb_who["incidence_per_100k"],
+    data_low=data_tb_who["incidence_per_100k_low"],
+    data_high=data_tb_who["incidence_per_100k_high"],
 )
 plt.show()
 
