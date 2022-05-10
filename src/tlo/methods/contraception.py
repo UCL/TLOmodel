@@ -83,6 +83,10 @@ class Contraception(Module):
 
         'max_number_of_runs_of_hsi_if_consumable_not_available': Parameter(
             Types.INT, "The maximum number of time an HSI can run (repeats occur if the consumables are not available"),
+
+        'max_days_delay_between_decision_to_change_method_and_hsi_scheduled': Parameter(
+            Types.INT, "The maximum delay (in days) between the decision for a contraceptive to change and the `topen`"
+                       "date of the HSI that is scheduled to effect the change (when using the healthsystem),")
     }
 
     all_contraception_states = {
@@ -555,8 +559,10 @@ class Contraception(Module):
                         new_contraceptive=_new
                     ),
                     topen=random_date(
-                        # scatter dates over the month
-                        self.sim.date, self.sim.date + pd.DateOffset(days=28), self.rng2),
+                        self.sim.date,
+                        self.sim.date + pd.DateOffset(
+                            days=self.parameters['max_days_delay_between_decision_to_change_method_and_hsi_scheduled']),
+                        self.rng2),
                     tclose=None,
                     priority=1
                 )
