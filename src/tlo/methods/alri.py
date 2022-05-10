@@ -1053,8 +1053,8 @@ class Models:
 
             # Compute scaling factors for each age-group:
             _age_effect = (pd.Series(_target) /
-                           unscaled_lm.predict(df.loc[df.is_alive]).groupby(by=df.age_years).mean()
-                           ).to_dict()
+                           unscaled_lm.predict(df.loc[df.is_alive & (df.age_years < 5)]).groupby(by=df.age_years).mean()
+                           ).fillna(1.0).to_dict()
 
             # Return the linear model with the appropriate scaling factor
             return make_linear_model(age_effects=_age_effect)
