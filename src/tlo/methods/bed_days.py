@@ -17,7 +17,11 @@ logger = logging.getLogger('tlo.methods.healthsystem')
 
 # Define the appointment types that should be associated with the use of bed-days (of any type), for a given number of
 # patients.
-IN_PATIENT_ADMISSION = {'IPAdmission': 1}
+IN_PATIENT_ADMISSION = {'IPAdmission': 2}
+# One of these appointments is for the admission and the other is for the discharge (even patients who die whilst an
+# in-patient require discharging). The limitation is that the discharge appointment occurs on the same day as the
+# admission. See: https://github.com/UCL/TLOmodel/issues/530
+
 IN_PATIENT_DAY = {'InpatientDays': 1}
 
 
