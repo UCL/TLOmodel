@@ -176,7 +176,7 @@ def test_natural_history(seed):
     df.at[person_id, 'hv_inf'] = False
 
     # run TB polling event to schedule progression to active stage
-    progression_event = tb.TbRegularPollingEvent(module=sim.modules['Tb'])
+    progression_event = tb.TbActiveCasePoll(module=sim.modules['Tb'])
     progression_event.apply(population=sim.population)
 
     # check if TbActiveEvent was scheduled
@@ -484,82 +484,82 @@ def test_children_referrals(seed):
     # should be diagnosed by x-ray
     assert df.at[person_id, 'tb_diagnosed']
 
-
-def test_latent_prevalence(seed):
-    """
-    test overall proportion of new latent cases which progress to active
-    should be 14% fast progressors, 67% hiv+ fast progressors
-    overall lifetime risk 5-10%
-    """
-
-    # set up population
-    popsize = 100
-
-    # allow HS to run and queue events
-    sim = get_sim(seed, use_simplified_birth=True, disable_HS=True, ignore_con_constraints=True)
-
-    # Make the population
-    sim.make_initial_population(n=popsize)
-
-    # simulate for 0 days, just get everything set up (dxtests etc)
-    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
-
-    df = sim.population.props
-
-    # assign latent status to all population
-    # all HIV- adults
-    df.loc[df.is_alive, 'tb_inf'] = 'latent'
-    df.loc[df.is_alive, 'tb_strain'] = 'ds'
-    df.loc[df.is_alive, 'tb_date_latent'] = sim.date
-    df.loc[df.is_alive, 'hv_inf'] = False
-    df.loc[df.is_alive, 'age_years'] = 25
-
-    # progression_to_active will add a scheduled date of active disease
-    sim.modules['Tb'].progression_to_active(sim.population)
-
-    # check how many have scheduled date of progression to active
-    count = len(df[~df.tb_scheduled_date_active.isnull()].index)
-
-    # check proportion HIV- adults who have active scheduled
-    assert (count / len(df.loc[df.is_alive])) < 0.25
-
-    # how many are progressing fast (~14% fast)
-    count2 = len(df.loc[(df.tb_scheduled_date_active == sim.date)].index)
-
-    prop_fast = count2 / len(df.loc[df.is_alive])
-    assert 0.05 <= prop_fast <= 0.3
-
-    # ------------------ HIV-positive progression risk ---------------- #
-    sim = get_sim(seed, use_simplified_birth=True, disable_HS=True, ignore_con_constraints=True)
-
-    # Make the population
-    sim.make_initial_population(n=popsize)
-
-    # simulate for 0 days, just get everything set up (dxtests etc)
-    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
-    df = sim.population.props
-
-    # assign latent status to all population
-    # all HIV+ adults
-    df.loc[df.is_alive, 'tb_inf'] = 'latent'
-    df.loc[df.is_alive, 'tb_strain'] = 'ds'
-    df.loc[df.is_alive, 'tb_date_latent'] = sim.date
-    df.loc[df.is_alive, 'hv_inf'] = True
-    df.loc[df.is_alive, 'age_years'] = 25
-
-    sim.modules['Tb'].progression_to_active(sim.population)
-
-    # count how many scheduled to progress to active disease
-    count = len(df[~df.tb_scheduled_date_active.isnull()].index)
-
-    # check proportion HIV+ adults who have active scheduled
-    assert (count / len(df.loc[df.is_alive])) > 0.5
-
-    # how many are progressing fast  (~67% fast)
-    count2 = len(df.loc[(df.tb_scheduled_date_active == sim.date)].index)
-
-    prop_fast = count2 / len(df.loc[df.is_alive])
-    assert 0.5 <= prop_fast <= 1.0
+# todo this test not relevant for fixed incidence model
+# def test_latent_prevalence(seed):
+#     """
+#     test overall proportion of new latent cases which progress to active
+#     should be 14% fast progressors, 67% hiv+ fast progressors
+#     overall lifetime risk 5-10%
+#     """
+#
+#     # set up population
+#     popsize = 100
+#
+#     # allow HS to run and queue events
+#     sim = get_sim(seed, use_simplified_birth=True, disable_HS=True, ignore_con_constraints=True)
+#
+#     # Make the population
+#     sim.make_initial_population(n=popsize)
+#
+#     # simulate for 0 days, just get everything set up (dxtests etc)
+#     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+#
+#     df = sim.population.props
+#
+#     # assign latent status to all population
+#     # all HIV- adults
+#     df.loc[df.is_alive, 'tb_inf'] = 'latent'
+#     df.loc[df.is_alive, 'tb_strain'] = 'ds'
+#     df.loc[df.is_alive, 'tb_date_latent'] = sim.date
+#     df.loc[df.is_alive, 'hv_inf'] = False
+#     df.loc[df.is_alive, 'age_years'] = 25
+#
+#     # progression_to_active will add a scheduled date of active disease
+#     sim.modules['Tb'].progression_to_active(sim.population)
+#
+#     # check how many have scheduled date of progression to active
+#     count = len(df[~df.tb_scheduled_date_active.isnull()].index)
+#
+#     # check proportion HIV- adults who have active scheduled
+#     assert (count / len(df.loc[df.is_alive])) < 0.25
+#
+#     # how many are progressing fast (~14% fast)
+#     count2 = len(df.loc[(df.tb_scheduled_date_active == sim.date)].index)
+#
+#     prop_fast = count2 / len(df.loc[df.is_alive])
+#     assert 0.05 <= prop_fast <= 0.3
+#
+#     # ------------------ HIV-positive progression risk ---------------- #
+#     sim = get_sim(seed, use_simplified_birth=True, disable_HS=True, ignore_con_constraints=True)
+#
+#     # Make the population
+#     sim.make_initial_population(n=popsize)
+#
+#     # simulate for 0 days, just get everything set up (dxtests etc)
+#     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+#     df = sim.population.props
+#
+#     # assign latent status to all population
+#     # all HIV+ adults
+#     df.loc[df.is_alive, 'tb_inf'] = 'latent'
+#     df.loc[df.is_alive, 'tb_strain'] = 'ds'
+#     df.loc[df.is_alive, 'tb_date_latent'] = sim.date
+#     df.loc[df.is_alive, 'hv_inf'] = True
+#     df.loc[df.is_alive, 'age_years'] = 25
+#
+#     sim.modules['Tb'].progression_to_active(sim.population)
+#
+#     # count how many scheduled to progress to active disease
+#     count = len(df[~df.tb_scheduled_date_active.isnull()].index)
+#
+#     # check proportion HIV+ adults who have active scheduled
+#     assert (count / len(df.loc[df.is_alive])) > 0.5
+#
+#     # how many are progressing fast  (~67% fast)
+#     count2 = len(df.loc[(df.tb_scheduled_date_active == sim.date)].index)
+#
+#     prop_fast = count2 / len(df.loc[df.is_alive])
+#     assert 0.5 <= prop_fast <= 1.0
 
 
 def test_relapse_risk(seed):

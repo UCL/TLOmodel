@@ -84,8 +84,8 @@ sim.register(
 
 # change parameters
 sim.modules["Tb"].parameters["scenario"] = 0
-sim.modules["Tb"].parameters["transmission_rate"] = 1.0  # 6.5 default
-sim.modules["Tb"].parameters["progr_active"] = 0.8  # default 0.05
+# sim.modules["Tb"].parameters["transmission_rate"] = 1.0  # 6.5 default
+sim.modules["Tb"].parameters["scaling_factor_WHO"] = 4
 
 
 # Run the simulation and flush the logger

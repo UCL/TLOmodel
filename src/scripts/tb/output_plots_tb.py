@@ -729,7 +729,7 @@ make_plot(
     data_high=data_hiv_unaids["ART_coverage_all_HIV_adults_upper"],
 )
 plt.legend(["TLO", "UNAIDS"])
-plt.savefig(outputpath / ("HIV_Proportion_on_ART" + datestamp + ".png"), format='png')
+# plt.savefig(outputpath / ("HIV_Proportion_on_ART" + datestamp + ".png"), format='png')
 
 plt.show()
 
