@@ -2810,11 +2810,10 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Labour)
 
-        self.TREATMENT_ID = 'Labour_ReceivesSkilledBirthAttendanceDuringLabour'
+        self.TREATMENT_ID = 'DeliveryCare_Basic'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'NormalDelivery': 1})
-        self.ALERT_OTHER_DISEASES = []
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 1})
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': 2})
 
     def apply(self, person_id, squeeze_factor):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
@@ -2972,11 +2971,9 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Labour)
 
-        self.TREATMENT_ID = 'Labour_ReceivesPostnatalCheck'
+        self.TREATMENT_ID = 'PostnatalCare_Maternal'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ALERT_OTHER_DISEASES = []
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})
 
     def apply(self, person_id, squeeze_factor):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
@@ -3033,11 +3030,28 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
         self.module.assessment_for_depression(self)
         self.module.interventions_delivered_pre_discharge(self)
 
+        mother = df.loc[person_id]
+
         # Schedule higher level care for women requiring comprehensive treatment
         if mni[person_id]['referred_for_surgery'] or mni[person_id]['referred_for_blood']:
             surgical_management = HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(
                 self.module, person_id=person_id, timing='postpartum')
             self.sim.modules['HealthSystem'].schedule_hsi_event(surgical_management,
+                                                                priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(days=1))
+
+        # Women who require treatment for postnatal complications are schedule to the inpatient HSI to capture inpatient
+        # days
+        elif (mother.la_sepsis_treatment or
+              mother.la_eclampsia_treatment or
+              mother.la_severe_pre_eclampsia_treatment or
+              mother.la_maternal_hypertension_treatment or
+              self.module.pph_treatment.has_all(person_id, 'manual_removal_placenta')):
+
+            postnatal_inpatient = HSI_Labour_PostnatalWardInpatientCare(
+                self.module, person_id=person_id)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(postnatal_inpatient,
                                                                 priority=0,
                                                                 topen=self.sim.date,
                                                                 tclose=self.sim.date + DateOffset(days=1))
@@ -3070,12 +3084,9 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Labour)
 
-        self.TREATMENT_ID = 'Labour_ReceivesComprehensiveEmergencyObstetricCare'
+        self.TREATMENT_ID = 'DeliveryCare_Comprehensive'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MajorSurg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.ALERT_OTHER_DISEASES = []
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})
-
         self.timing = timing
 
     def apply(self, person_id, squeeze_factor):
@@ -3167,12 +3178,21 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
 
         # Here we edit the appointment footprint so only women receiving surgery require the surgical footprint
-        if mni[person_id]['referred_for_surgery'] or mni[person_id]['referred_for_cs']:
-            actual_appt_footprint['MajorSurg'] = actual_appt_footprint['MajorSurg']
+        if mni[person_id]['referred_for_cs']:
+            actual_appt_footprint['MajorSurg'] = actual_appt_footprint['Csection']
 
         elif (not mni[person_id]['referred_for_surgery'] and not mni[person_id]['referred_for_cs']) and\
                 mni[person_id]['referred_for_blood']:
             actual_appt_footprint['MajorSurg'] = actual_appt_footprint['InpatientDays']
+
+        # Schedule HSI that captures inpatient days
+        if df.at[person_id, 'is_alive']:
+            postnatal_inpatient = HSI_Labour_PostnatalWardInpatientCare(
+                    self.module, person_id=person_id)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(postnatal_inpatient,
+                                                                priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(days=1))
 
     def never_ran(self):
         self.module.run_if_receives_comprehensive_emergency_obstetric_care_cant_run(self)
@@ -3183,6 +3203,35 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
 
     def not_available(self):
         self.module.run_if_receives_comprehensive_emergency_obstetric_care_cant_run(self)
+
+
+class HSI_Labour_PostnatalWardInpatientCare(HSI_Event, IndividualScopeEventMixin):
+    """
+    This is HSI_Labour_PostnatalWardInpatientCare. It is scheduled by HSI_Labour_ReceivesPostnatalCheck for all women
+    require treatment as inpatients after delivery. The primary function of this event is to capture inpatient bed
+    days
+    """
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, Labour)
+
+        self.TREATMENT_ID = 'PostnatalCare_Maternal_Inpatient'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': 5})
+
+    def apply(self, person_id, squeeze_factor):
+
+        logger.debug(key='message', data='HSI_Labour_PostnatalWardInpatientCare now running to capture '
+                                         'inpatient time for an unwell postnatal woman')
+
+    def did_not_run(self):
+        logger.debug(key='message', data='HSI_Labour_PostnatalWardInpatientCare: did not run')
+        return False
+
+    def not_available(self):
+        logger.debug(key='message', data='HSI_Labour_PostnatalWardInpatientCare: cannot not run with '
+                                         'this configuration')
 
 
 class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):

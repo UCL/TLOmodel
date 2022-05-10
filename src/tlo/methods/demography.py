@@ -256,13 +256,14 @@ class Demography(Module):
         self.other_death_poll = OtherDeathPoll(self)
         sim.schedule_event(self.other_death_poll, sim.date)
 
-        # Log the initial population scaling-factor
-        logger.info(
-            key='scaling_factor',
-            data={'scaling_factor': 1.0 / self.initial_model_to_data_popsize_ratio},
-            description='The data-to-model scaling factor (based on the initial population size, used to multiply-up'
-                        'results so that they correspond to the real population size'
-        )
+        # Log the initial population scaling-factor (to the logger of this module and that of `tlo.methods.population`)
+        for _logger in (logger,  logging.getLogger('tlo.methods.population')):
+            _logger.info(
+                key='scaling_factor',
+                data={'scaling_factor': 1.0 / self.initial_model_to_data_popsize_ratio},
+                description='The data-to-model scaling factor (based on the initial population size, used to '
+                            'multiply-up results so that they correspond to the real population size.'
+            )
 
         # Check that the simulation does not run too long
         if self.sim.end_date.year >= 2100:
