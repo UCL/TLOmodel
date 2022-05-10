@@ -61,7 +61,8 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
-
+sim.modules['Epilepsy'].parameters['init_epil_seiz_status'] = \
+    [0.976651527, 0.022556471144000043, 0.000496000928, 0.000296000928]
 sim.simulate(end_date=end_date)
 
 
@@ -79,8 +80,8 @@ plt.axhline(0.013, color='lightsalmon', label='Ba Diop et al. 2014')
 plt.title('Proportion of people with epilepsy but no current seizures')
 plt.ylim(0, 0.05)
 plt.legend()
-# plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Epilepsy/prop_seiz_stat_1.png",
-#             bbox_inches='tight')
+plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Epilepsy/prop_seiz_stat_1.png",
+            bbox_inches='tight')
 plt.show()
 plt.clf()
 
@@ -94,8 +95,8 @@ plt.axhline(0.013, color='lightsalmon', label='Ba Diop et al. 2014')
 plt.title('Proportion of people with infrequent epilepsy seizures')
 plt.ylim(0, 0.02)
 plt.legend()
-# plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Epilepsy/prop_seiz_stat_2.png",
-#             bbox_inches='tight')
+plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Epilepsy/prop_seiz_stat_2.png",
+            bbox_inches='tight')
 plt.show()
 plt.clf()
 
@@ -110,8 +111,8 @@ plt.axhline(0.013, color='lightsalmon', label='Ba Diop et al. 2014')
 plt.title('Proportion of people with frequent epilepsy seizures')
 plt.ylim(0, 0.015)
 plt.legend()
-# plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Epilepsy/prop_seiz_stat_3.png",
-#             bbox_inches='tight')
+plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Epilepsy/prop_seiz_stat_3.png",
+            bbox_inches='tight')
 plt.show()
 plt.clf()
 
@@ -122,8 +123,8 @@ plt.axhline(0.013, color='black', linestyle=':', label='Ba Diop et al. 2014')
 plt.legend()
 plt.title('Average proportion of each seizure status')
 plt.xticks(np.arange(len(mean_proportion_in_sim)), ['seizure\nstatus 1', 'seizure\nstatus 2', 'seizure\nstatus 3'])
-# plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Epilepsy/average_seizure_status.png",
-#             bbox_inches='tight')
+plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Epilepsy/average_seizure_status.png",
+            bbox_inches='tight')
 plt.show()
 plt.clf()
 
@@ -152,8 +153,8 @@ prop_antiepilep_seiz_stat_1 = pd.Series(
 prop_antiepilep_seiz_stat_1.plot()
 plt.title('Proportion on antiepileptics amongst people with epilepsy but no current seizures')
 plt.ylim(0, 1)
-# plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Epilepsy/prop_seiz_stat_1_anti_ep.png",
-#             bbox_inches='tight')
+plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Epilepsy/prop_seiz_stat_1_anti_ep.png",
+            bbox_inches='tight')
 plt.show()
 plt.clf()
 
@@ -164,8 +165,8 @@ prop_antiepilep_seiz_stat_2 = pd.Series(
 prop_antiepilep_seiz_stat_2.plot()
 plt.title('Proportion on antiepileptics amongst people with infrequent epilepsy seizures')
 plt.ylim(0, 1)
-# plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Epilepsy/prop_seiz_stat_2_anti_ep.png",
-#             bbox_inches='tight')
+plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Epilepsy/prop_seiz_stat_2_anti_ep.png",
+            bbox_inches='tight')
 plt.show()
 plt.clf()
 
@@ -176,8 +177,8 @@ prop_antiepilep_seiz_stat_3 = pd.Series(
 prop_antiepilep_seiz_stat_3.plot()
 plt.title('Proportion on antiepileptics amongst people with frequent epilepsy seizures')
 plt.ylim(0, 1)
-# plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Epilepsy/prop_seiz_stat_3_anti_ep.png",
-#             bbox_inches='tight')
+plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Epilepsy/prop_seiz_stat_3_anti_ep.png",
+            bbox_inches='tight')
 plt.show()
 plt.clf()
 
@@ -197,8 +198,8 @@ n_antiep = pd.Series(
 n_antiep.plot()
 plt.title('Number of people on antiepileptics')
 plt.ylim(0, 50000)
-# plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Epilepsy/n_anti_ep.png",
-#             bbox_inches='tight')
+plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Epilepsy/n_anti_ep.png",
+            bbox_inches='tight')
 plt.show()
 plt.clf()
 epi_death_rate = pd.Series(
@@ -212,8 +213,8 @@ plt.title('Rate of epilepsy death in people with seizures')
 plt.legend()
 plt.xticks(np.arange(len(epi_death_rate)), epi_death_rate.index, rotation=45)
 plt.ylim(0, 20)
-# plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Epilepsy/incidence_of_death.png",
-#             bbox_inches='tight')
+plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Epilepsy/incidence_of_death.png",
+            bbox_inches='tight')
 plt.show()
 plt.clf()
 
@@ -229,8 +230,8 @@ plt.title('Incidence of epilepsy')
 plt.legend()
 plt.xticks(np.arange(len(incidence_epilepsy)), incidence_epilepsy.index, rotation=45)
 plt.ylim(0, 100)
-# plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Epilepsy/incidence_of_epilepsy.png",
-#             bbox_inches='tight')
+plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Epilepsy/incidence_of_epilepsy.png",
+            bbox_inches='tight')
 plt.show()
 plt.clf()
 # Compare model outputs to GBD study
@@ -250,8 +251,8 @@ plt.legend()
 plt.xticks(np.arange(2) + 0.2, ['Incidence of epilepsy', 'Incidence of death'])
 plt.ylabel('Incidence per 100,000')
 plt.title("The epilepsy model's estimated incidence of epilepsy\nand epilepsy death compared to the GBD study")
-# plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Epilepsy/incidence_comparison_to_GBD.png",
-#             bbox_inches='tight')
+plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Epilepsy/incidence_comparison_to_GBD.png",
+            bbox_inches='tight')
 plt.show()
 plt.clf()
 plt.bar([1, 2], [mean_inc_death_gbd / mean_inc_gbd, np.mean(epi_death_rate) / np.mean(incidence_epilepsy)],
@@ -259,8 +260,8 @@ plt.bar([1, 2], [mean_inc_death_gbd / mean_inc_gbd, np.mean(epi_death_rate) / np
 plt.xticks([1, 2], ['GBD', 'Model'])
 plt.ylabel('CFR')
 plt.title("The epilepsy model's case fatality ratio compared to the GBD's estimate")
-# plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Epilepsy/CFR_compared_to_GBD.png",
-#             bbox_inches='tight')
+plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Epilepsy/CFR_compared_to_GBD.png",
+            bbox_inches='tight')
 plt.show()
 plt.clf()
 incidence_epilepsy_df = pd.DataFrame(incidence_epilepsy)
@@ -274,8 +275,8 @@ plt.legend()
 plt.xticks(np.arange(len(incidence_epilepsy_df.index)), incidence_epilepsy_df.index)
 plt.ylabel('Incidence of epilepsy')
 plt.title("Comparing the model's estimated incidence\nof epilepsy over time to the GBD estimates")
-# plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Epilepsy/incidence_comp_to_gbd_over_time.png",
-#             bbox_inches='tight')
+plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Epilepsy/incidence_comp_to_gbd_over_time.png",
+            bbox_inches='tight')
 plt.show()
 plt.clf()
 incidence_epilepsy_death_df = pd.DataFrame(epi_death_rate)
@@ -290,8 +291,8 @@ plt.legend()
 plt.xticks(np.arange(len(incidence_epilepsy_death_df.index)), incidence_epilepsy_df.index)
 plt.ylabel('Incidence of epilepsy death')
 plt.title("Comparing the model's estimated incidence\nof epilepsy death over time to the GBD estimates")
-# plt.savefig(
-#     "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Epilepsy/incidence_death_comp_to_gbd_over_time.png",
-#     bbox_inches='tight')
+plt.savefig(
+    "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Epilepsy/incidence_death_comp_to_gbd_over_time.png",
+    bbox_inches='tight')
 plt.show()
 plt.clf()
