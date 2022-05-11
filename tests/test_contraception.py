@@ -581,9 +581,9 @@ def test_outcomes_same_if_using_or_not_using_healthsystem(tmpdir, seed):
     __check_some_starting_switching_and_stopping(sim_uses_healthsystem)
 
     # Check that the output of these two simulations are the same.
-    # Note that this is a very demanding test, as it demand that the dates of each change are exactly the same. If this
-    #  causes problems in the future, then consider using an 'easier' version of this test would be to check that the
-    #  `set` of changes that occur is the same in each case, with no requirement on the dates being exactly the same.
+    # Note that this is a very demanding test, as it requires that the dates of each change are exactly the same. If
+    #  this causes problems in the future, then consider using an 'easier' version of this test whereby we only check
+    #  that the `set` of changes occurring is the same in each case, with no requirement on the dates matching.
     def sort_log(_log):
         """Do some sorting on the logs to enable comparisons."""
         return _log.sort_values(['date', 'woman_id']).reset_index(drop=True).drop(columns='age_years')
