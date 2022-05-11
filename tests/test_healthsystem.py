@@ -608,8 +608,8 @@ def test_all_appt_types_can_run(seed):
 
 @pytest.mark.slow
 def test_two_loggers_in_healthsystem(seed, tmpdir):
-    """Check that two different loggers are used by the HealthSystem for more/less detailed logged information and that
-     these are consistent with one another."""
+    """Check that two different loggers used by the HealthSystem for more/less detailed logged information are
+    consistent with one another."""
 
     # Create a dummy disease module (to be the parent of the dummy HSI)
     class DummyModule(Module):
@@ -633,15 +633,16 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
             super().__init__(module, person_id=person_id)
             self.TREATMENT_ID = 'Dummy'
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'Under5OPD': 1})
+            self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})
             self.ACCEPTED_FACILITY_LEVEL = '1a'
 
         def apply(self, person_id, squeeze_factor):
             # Request a consumable (either 0 or 1)
             self.get_consumables(item_codes=self.module.rng.choice((0, 1), p=(0.5, 0.5)))
 
-            # Schedule another occurrence of itself tomorrow.
+            # Schedule another occurrence of itself in three days.
             sim.modules['HealthSystem'].schedule_hsi_event(self,
-                                                           topen=self.sim.date + pd.DateOffset(days=1),
+                                                           topen=self.sim.date + pd.DateOffset(days=3),
                                                            tclose=None,
                                                            priority=0)
 
@@ -684,6 +685,7 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
     detailed_hsi_event = log["tlo.methods.healthsystem"]['HSI_Event']
     detailed_capacity = log["tlo.methods.healthsystem"]['Capacity']
     detailed_consumables = log["tlo.methods.healthsystem"]['Consumables']
+
     assert {'date', 'TREATMENT_ID', 'did_run', 'Squeeze_Factor', 'Number_By_Appt_Type_Code', 'Person_ID'
             } == set(detailed_hsi_event.columns)
     assert {'date', 'Frac_Time_Used_Overall', 'Frac_Time_Used_By_Facility_ID'
@@ -691,15 +693,19 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
     assert {'date', 'TREATMENT_ID', 'Item_Available', 'Item_NotAvailable'
             } == set(detailed_consumables.columns)
 
+    bed_types = sim.modules['HealthSystem'].bed_days.bed_types
+    detailed_beddays = {bed_type: log["tlo.methods.healthsystem"][f"bed_tracker_{bed_type}"] for bed_type in bed_types}
+
     # Summary log:
     summary_hsi_event = log["tlo.methods.healthsystem.summary"]["HSI_Event"]
     summary_capacity = log["tlo.methods.healthsystem.summary"]["Capacity"]
     summary_consumables = log["tlo.methods.healthsystem.summary"]["Consumables"]
+    summary_beddays = log["tlo.methods.healthsystem.summary"]["BedDays"]
 
     # Check correspondence between the two logs
     #  - Counts of TREATMENT_ID (total over entire period of log)
-    assert summary_hsi_event['TREATMENT_ID'].apply(pd.Series)['Dummy'].sum() == \
-           detailed_hsi_event.groupby('TREATMENT_ID').size()['Dummy']
+    assert summary_hsi_event['TREATMENT_ID'].apply(pd.Series).sum().to_dict() == \
+           detailed_hsi_event.groupby('TREATMENT_ID').size().to_dict()
 
     #  - Appointments (total over entire period of the log)
     assert summary_hsi_event['Number_By_Appt_Type_Code'].apply(pd.Series).sum().to_dict() == \
@@ -718,3 +724,23 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
     assert summary_consumables['Item_NotAvailable'].apply(pd.Series).sum().to_dict() == \
            detailed_consumables['Item_NotAvailable'].apply(
                lambda x: {f'{k}': v for k, v in eval(x).items()}).apply(pd.Series).sum().to_dict()
+
+    #  - Bed-Days (bed-type by bed-type and year by year)
+    for _bed_type in bed_types:
+        # Detailed:
+        tracker = detailed_beddays[_bed_type]\
+            .assign(year=pd.to_datetime(detailed_beddays[_bed_type].date).dt.year)\
+            .set_index('year')\
+            .drop(columns=['date'])\
+            .T
+        tracker.index = tracker.index.astype(int)
+        capacity = sim.modules['HealthSystem'].bed_days._scaled_capacity[_bed_type]
+        detail_beddays_used = tracker.sub(capacity, axis=0).mul(-1).sum().groupby(level=0).sum().to_dict()
+
+        # Summary: total bed-days used by year
+        summary_beddays_used = summary_beddays\
+            .assign(year=pd.to_datetime(summary_beddays.date).dt.year)\
+            .set_index('year')[_bed_type]\
+            .to_dict()
+
+        assert detail_beddays_used == summary_beddays_used

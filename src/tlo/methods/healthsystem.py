@@ -618,7 +618,7 @@ class HealthSystem(Module):
         )
 
         # Set the consumables modules in preparation for the simulation
-        self.consumables.processing_at_start_of_new_day(sim.date)
+        self.consumables.on_start_of_day(sim.date)
 
         # Capture list of disease modules:
         self.recognised_modules_names = [
@@ -1343,10 +1343,15 @@ class HealthSystem(Module):
         """
         self.consumables.override_availability(item_codes)
 
-    def log_end_of_year_summary_statistics(self) -> None:
+    def on_end_of_day(self) -> None:
+        """Do jobs to be done at the end of the day (after all HSI run)"""
+        self.bed_days.on_end_of_day()
+
+    def on_end_of_year(self) -> None:
         """Write to log the current states of the summary counters and reset them."""
         self._summary_counter.write_to_log_and_reset_counters()
-        self.consumables.write_to_log_and_reset_counters()
+        self.consumables.on_end_of_year()
+        self.bed_days.on_end_of_year()
 
 
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
@@ -1380,8 +1385,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
 
         # 0) Refresh information ready for new day:
-        self.module.bed_days.processing_at_start_of_new_day()
-        self.module.consumables.processing_at_start_of_new_day(self.sim.date)
+        self.module.bed_days.on_start_of_day()
+        self.module.consumables.on_start_of_day(self.sim.date)
 
         # 1) Compute footprint that arise from in-patient bed-days
         inpatient_appts = self.module.bed_days.get_inpatient_appts()
@@ -1600,15 +1605,20 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         while len(hold_over) > 0:
             hp.heappush(self.module.HSI_EVENT_QUEUE, hp.heappop(hold_over))
 
-        # 8) After completing routine for the day, log total usage of the facilities
+        # -- End of day activities --
+
+        # 8) Log total usage of the facilities
         self.module.log_current_capabilities(
             current_capabilities=current_capabilities,
             total_footprint=total_footprint
         )
 
-        # 9) Log the end-of-year summaries (if today is the last day of the year)
+        # 9) Trigger jobs to be done at the end of the day (after all HSI run)
+        self.module.on_end_of_day()
+
+        # 10) Do activities required at end of year (if today is the last day of the year)
         if self._is_today_last_day_of_the_year(self.sim.date):
-            self.module.log_end_of_year_summary_statistics()
+            self.module.on_end_of_year()
 
 # ---------------------------------------------------------------------------
 #   Logging

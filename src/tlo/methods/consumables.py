@@ -48,7 +48,7 @@ class Consumables:
         # Create pointer to the `HealthSystemSummaryCounter` helper class
         self._summary_counter = ConsumablesSummaryCounter()
 
-    def processing_at_start_of_new_day(self, date: datetime.datetime) -> None:
+    def on_start_of_day(self, date: datetime.datetime) -> None:
         """Do the jobs at the start of each new day.
         * Update the availability of the consumables
         """
@@ -198,8 +198,8 @@ class Consumables:
                     data={_treatment_id if _treatment_id is not None else "": list(_item_codes)}
                 )
 
-    def write_to_log_and_reset_counters(self):
-        return self._summary_counter.write_to_log_and_reset_counters()
+    def on_end_of_year(self):
+        self._summary_counter.write_to_log_and_reset_counters()
 
 
 def get_item_codes_from_package_name(lookup_df: pd.DataFrame, package: str) -> dict:
@@ -291,7 +291,7 @@ class ConsumablesSummaryCounter:
             self._items['NotAvailable'][_item] += _num
 
     def write_to_log_and_reset_counters(self):
-        """Log summary statistics reset the data structures."""
+        """Log summary statistics and reset the data structures."""
 
         logger_summary.info(
             key="Consumables",

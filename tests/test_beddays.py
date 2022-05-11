@@ -156,13 +156,13 @@ def test_bed_days_basics(tmpdir, seed):
 
     for bed_type in [f"bed_tracker_{bed}" for bed in hs.bed_days.bed_types]:
         # Check dates are as expected:
-        dates_in_log = pd.to_datetime(log[bed_type]['date_of_bed_occupancy'])
+        dates_in_log = pd.to_datetime(log[bed_type]['date'])
         date_range = pd.date_range(sim.start_date, sim.end_date, freq='D', closed='left')
         assert set(date_range) == set(dates_in_log)
 
         # Check columns (for each facility_ID) are as expected:
         assert ([str(x) for x in hs.parameters['BedCapacity']['Facility_ID'].values] ==
-                log[bed_type].columns.drop(['date', 'date_of_bed_occupancy']).values).all()
+                log[bed_type].columns.drop(['date', 'date']).values).all()
 
     # 1) Create instances of the HSIs for a person
     person_id = 0
@@ -342,7 +342,7 @@ def test_bed_days_property_is_inpatient(tmpdir, seed):
 
     # Load the logged tracker for general beds
     log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']
-    tracker = log[f'bed_tracker_{_bed_type}'].drop(columns={'date'}).set_index('date_of_bed_occupancy')
+    tracker = log[f'bed_tracker_{_bed_type}'].set_index('date')
     tracker.index = pd.to_datetime(tracker.index)
 
     # Load the in-patient status store:
@@ -466,7 +466,7 @@ def test_bed_days_released_on_death(tmpdir, seed):
 
     # Load the logged tracker for general beds
     log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']
-    tracker = log[f'bed_tracker_{_bed_type}'].drop(columns={'date'}).set_index('date_of_bed_occupancy')
+    tracker = log[f'bed_tracker_{_bed_type}'].set_index('date')
     tracker.index = pd.to_datetime(tracker.index)
 
     # compute beds occupied
