@@ -5,8 +5,8 @@ save outputs for plotting (file: output_plots_tb.py)
 
 import datetime
 import pickle
-from pathlib import Path
 import random
+from pathlib import Path
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
@@ -34,8 +34,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2018, 1, 1)
-popsize = 10000
+end_date = Date(2040, 1, 1)
+popsize = 25000
 
 # set up the log config
 log_config = {

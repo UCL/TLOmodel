@@ -5,8 +5,6 @@
 """
 
 import os
-
-import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
@@ -161,24 +159,8 @@ class Tb(Module):
             "Proportion of active tb cases with multidrug resistance in 2010",
         ),
         # ------------------ natural history ------------------ #
-        "prob_latent_tb_0_14": Parameter(
-            Types.REAL, "probability of latent infection in ages 0-14 years"
-        ),
-        "prob_latent_tb_15plus": Parameter(
-            Types.REAL, "probability of latent infection in ages 15+"
-        ),
         "incidence_active_tb_2010": Parameter(
             Types.REAL, "incidence of active tb in 2010 in all ages"
-        ),
-        "transmission_rate": Parameter(Types.REAL, "TB transmission rate, calibrated"),
-        "mixing_parameter": Parameter(
-            Types.REAL,
-            "mixing parameter adjusts transmission rate for force of infection "
-            "between districts, value 1=completely random mixing across districts, "
-            "value=0 no between-district transmission",
-        ),
-        "rel_inf_smear_ng": Parameter(
-            Types.REAL, "relative infectiousness of tb in hiv+ compared with hiv-"
         ),
         "rr_tb_child": Parameter(
             Types.REAL, "relative risk of tb infection if under 16 years of age"
@@ -199,41 +181,11 @@ class Tb(Module):
         "rr_relapse_hiv": Parameter(
             Types.REAL, "relative risk of relapse for HIV-positive people"
         ),
-        # ------------------ progression ------------------ #
-        "prop_fast_progressor": Parameter(
-            Types.REAL,
-            "Proportion of infections that progress directly to active stage",
-        ),
-        "prop_fast_progressor_hiv": Parameter(
-            Types.REAL,
-            "proportion of HIV+ people not on ART progressing directly to active TB disease after infection",
-        ),
+        # ------------------ active disease ------------------ #
         "scaling_factor_WHO": Parameter(
             Types.REAL,
             "scaling factor applied to WHO estimates to account for the impact of interventions in place",
         ),
-        # "prog_active": Parameter(
-        #     Types.REAL, "risk of progressing to active tb within two years"
-        # ),
-        # "prog_1yr": Parameter(
-        #     Types.REAL, "proportion children aged <1 year progressing to active disease"
-        # ),
-        # "prog_1_2yr": Parameter(
-        #     Types.REAL,
-        #     "proportion children aged 1-2 year2 progressing to active disease",
-        # ),
-        # "prog_2_5yr": Parameter(
-        #     Types.REAL,
-        #     "proportion children aged 2-5 years progressing to active disease",
-        # ),
-        # "prog_5_10yr": Parameter(
-        #     Types.REAL,
-        #     "proportion children aged 5-10 years progressing to active disease",
-        # ),
-        # "prog_10yr": Parameter(
-        #     Types.REAL,
-        #     "proportion children aged 10-15 years progressing to active disease",
-        # ),
         "duration_active_disease_years": Parameter(
             Types.REAL, "duration of active disease from onset to cure or death"
         ),
@@ -449,7 +401,6 @@ class Tb(Module):
         p = self.parameters
 
         # assume cases distributed equally across districts
-        # todo this is not used for national-level model
         p["prop_active_2010"] = workbook["cases2010district"]
         p["who_incidence_estimates"] = workbook["WHO_activeTB2020"]
 
@@ -516,19 +467,8 @@ class Tb(Module):
         """
         p = self.parameters
 
-        # linear model for risk of latent tb in baseline population 2010
-        # assume latent tb risk not affected by bcg
-        # intercept=1
-        # self.lm["latent_tb_2010"] = LinearModel.multiplicative(
-        #     Predictor("age_years")
-        #     .when("<15", p["prob_latent_tb_0_14"])
-        #     .otherwise(p["prob_latent_tb_15plus"]),
-        #     Predictor("hv_inf").when(True, p["rr_tb_hiv"]),
-        # )
-
         # adults progressing to active disease
         # the intercept is the scaling factor which multiplies the WHO estimates to account for interventions in place
-        # todo working on this...
         self.lm["active_tb"] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p["scaling_factor_WHO"],
@@ -599,104 +539,12 @@ class Tb(Module):
             ),
         )
 
-        # self.lm["active_tb"] = LinearModel(
-        #     LinearModelType.MULTIPLICATIVE,
-        #     p["scaling_factor_WHO"],
-        #     # hiv- and on ipt
-        #     Predictor().when(
-        #         "(tb_on_ipt == True) & (hv_inf == False)", p["rr_ipt_adult"]
-        #     ),
-        #     Predictor("li_bmi").when(">=4", p["rr_tb_obese"]),
-        #     # Predictor('diabetes').when(True, p['rr_tb_diabetes1']),
-        #     Predictor("li_ex_alc").when(True, p["rr_tb_alcohol"]),
-        #     Predictor("li_tob").when(True, p["rr_tb_smoking"]),
-        #     # -------------- PLHIV -------------- #
-        #     # hiv+ no AIDS, not on ART, not on IPT
-        #     Predictor().when(
-        #         '(hv_inf == True) & '
-        #         '(hv_art != "on_VL_suppressed") & '
-        #         '(tb_on_ipt == False) & '
-        #         '(sy_aids_symptoms > 0)',
-        #         p["rr_tb_hiv"],
-        #     ),
-        #     # hiv+, AIDS, not on ART, not on IPT
-        #     Predictor("sy_aids_symptoms").when(">0", p["rr_tb_aids"]),
-        #     # hiv+, no AIDS, on ART, no IPT
-        #     Predictor().when(
-        #         '(hv_inf == True) & '
-        #         '(hv_art == "on_VL_suppressed") & '
-        #         '(tb_on_ipt == False)',
-        #         (p["rr_tb_hiv"] * p["rr_tb_art_adult"])
-        #     ),
-        #     # hiv+, no AIDS, on ART, on IPT
-        #     Predictor().when(
-        #         '(tb_on_ipt == True) & '
-        #         '(hv_inf == True) & '
-        #         '(hv_art == "on_VL_suppressed")',
-        #         (p["rr_tb_hiv"] * p["rr_tb_art_adult"] * p["rr_ipt_art_adult"]),
-        #     ),
-        #     # hiv+, not on ART, on IPT
-        #     Predictor().when(
-        #         '(tb_on_ipt == True) & '
-        #         '(hv_inf == True) & '
-        #         '(hv_art != "on_VL_suppressed")',
-        #         (p["rr_tb_hiv"] * p["rr_ipt_adult_hiv"]),
-        #     ),
-        # )
-
-        # # children progressing to active disease
-        # self.lm["active_tb_child"] = LinearModel(
-        #     LinearModelType.MULTIPLICATIVE,
-        #     1,
-        #     Predictor("age_years")
-        #     .when("<1", p["prog_1yr"])
-        #     .when("<2", p["prog_1_2yr"])
-        #     .when("<5", p["prog_2_5yr"])
-        #     .when("<10", p["prog_5_10yr"])
-        #     .when("<15", p["prog_10yr"]),
-        #     Predictor().when(
-        #         "va_bcg_all_doses & (hv_inf == False) & (age_years <10)", p["rr_tb_bcg"]
-        #     ),
-        #     # -------------- PLHIV -------------- #
-        #     # hiv+ no AIDS, not on ART, not on IPT
-        #     Predictor().when(
-        #         '(hv_inf == True) & '
-        #         '(hv_art != "on_VL_suppressed") & '
-        #         '(tb_on_ipt == False) & '
-        #         '(sy_aids_symptoms > 0)',
-        #         p["rr_tb_hiv"],
-        #     ),
-        #     # hiv+, not on ART, AIDS symptoms
-        #     Predictor("sy_aids_symptoms").when(">0", p["rr_tb_aids"]),
-        #     # hiv+, on ART, no IPT
-        #     Predictor().when(
-        #         '(hv_inf == True) & '
-        #         '(hv_art == "on_VL_suppressed") & '
-        #         '(tb_on_ipt == False)',
-        #         (p["rr_tb_hiv"] * p["rr_tb_art_child"])
-        #     ),
-        #     # hiv+, on ART, on IPT
-        #     Predictor().when(
-        #         '(tb_on_ipt == True) & '
-        #         '(hv_inf == True) & '
-        #         '(hv_art == "on_VL_suppressed")',
-        #         (p["rr_tb_hiv"] * p["rr_tb_art_child"] * p["rr_ipt_art_child"]),
-        #     ),
-        #     # ipt, hiv+ not on ART (or on ART and not suppressed)
-        #     Predictor().when(
-        #         '(tb_on_ipt == True) & '
-        #         '(hv_inf == True) & '
-        #         '(hv_art != "on_VL_suppressed")',
-        #         (p["rr_tb_hiv"] * p["rr_ipt_child_hiv"]),
-        #     ),
-        # )
-
         self.lm["risk_relapse_2yrs"] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p["monthly_prob_relapse_tx_complete"],
             Predictor("hv_inf").when(True, p["rr_relapse_hiv"]),
             Predictor("tb_treatment_failure")
-                .when(True, (p["monthly_prob_relapse_tx_incomplete"] / p["monthly_prob_relapse_tx_complete"])),
+            .when(True, (p["monthly_prob_relapse_tx_incomplete"] / p["monthly_prob_relapse_tx_complete"])),
             Predictor().when(
                 'tb_on_ipt & '
                 'age_years <= 15',
@@ -706,41 +554,6 @@ class Tb(Module):
                 'age_years > 15',
                 p["rr_ipt_adult"]),
         )
-
-
-        # self.lm["risk_relapse_2yrs"] = LinearModel(
-        #     LinearModelType.MULTIPLICATIVE,
-        #     1,
-        #     Predictor().when(
-        #         '(tb_inf == "latent") & '
-        #         'tb_ever_treated & '
-        #         '~tb_treatment_failure & '
-        #         '(tb_on_ipt == False)',
-        #         p["monthly_prob_relapse_tx_complete"],
-        #     ),  # ever treated, no tx failure and <2 years post active disease, no IPT
-        #     Predictor().when(
-        #         '(tb_inf == "latent") & '
-        #         'tb_ever_treated & '
-        #         '~tb_treatment_failure & '
-        #         '(tb_on_ipt == True)',
-        #         p["monthly_prob_relapse_tx_complete"] * p["rr_ipt_adult"],
-        #     ),  # ever treated, no tx failure and <2 years post active disease, on IPT
-        #     Predictor().when(
-        #         '(tb_inf == "latent") & '
-        #         'tb_ever_treated & '
-        #         'tb_treatment_failure & '
-        #         '(tb_on_ipt == False)',
-        #         p["monthly_prob_relapse_tx_incomplete"],
-        #     ),  # ever treated, tx failure and <2 years post active disease, no IPT
-        #     Predictor().when(
-        #         '(tb_inf == "latent") & '
-        #         'tb_ever_treated & '
-        #         'tb_treatment_failure & '
-        #         '(tb_on_ipt == True)',
-        #         p["monthly_prob_relapse_tx_incomplete"] * p["rr_ipt_adult"],
-        #     ),  # ever treated, tx failure and <2 years post active disease, on IPT
-        #     Predictor("hv_inf").when(True, p["rr_relapse_hiv"]),
-        # )
 
         # risk of relapse if >=2 years post treatment
         self.lm["risk_relapse_late"] = LinearModel(
@@ -756,17 +569,6 @@ class Tb(Module):
                 'age_years > 15',
                 p["rr_ipt_adult"]),
         )
-
-        # self.lm["risk_relapse_late"] = LinearModel(
-        #     LinearModelType.MULTIPLICATIVE,
-        #     1,
-        #     Predictor().when(
-        #         '(tb_inf == "latent") & '
-        #         'tb_ever_treated',
-        #         p["monthly_prob_relapse_2yrs"],
-        #     ),  # ever treated,
-        #     Predictor("hv_inf").when(True, p["rr_relapse_hiv"]),
-        # )
 
         # probability of death
         self.lm["death_rate"] = LinearModel(
@@ -799,38 +601,6 @@ class Tb(Module):
             ),
         )
 
-    # def baseline_latent(self, population):
-    #     """
-    #     sample from the baseline population to assign latent infections
-    #     using 2010 prevalence estimates
-    #     no differences in latent tb by sex
-    #     """
-    #
-    #     df = population.props
-    #     now = self.sim.date
-    #     p = self.parameters
-    #
-    #     # whole population susceptible to latent infection, risk determined by age
-    #     prob_latent = self.lm["latent_tb_2010"].predict(
-    #         df.loc[df.is_alive & ~(df.tb_inf == "active")]
-    #     )  # this will return pd.Series of probabilities of latent infection for each person alive
-    #
-    #     new_latent = self.rng.random_sample(len(prob_latent)) < prob_latent
-    #     idx_new_latent = new_latent[new_latent].index
-    #
-    #     df.loc[idx_new_latent, "tb_inf"] = "latent"
-    #     df.loc[idx_new_latent, "tb_strain"] = "ds"
-    #     df.loc[idx_new_latent, "tb_date_latent"] = now
-    #
-    #     # allocate some latent infections as mdr-tb
-    #     idx_new_latent_mdr = (
-    #         df[df.is_alive & (df.tb_inf == "latent")]
-    #         .sample(frac=p["prop_mdr2010"], random_state=self.rng)
-    #         .index
-    #     )
-    #
-    #     df.loc[idx_new_latent_mdr, "tb_strain"] = "mdr"
-
     def baseline_active(self, population):
         """
         this is new incidence active tb cases which will occur through 2010
@@ -859,9 +629,6 @@ class Tb(Module):
         )  # join indices (checked)
 
         # -------- change individual properties for active disease --------
-        # df.loc[all_new_active, "tb_inf"] = "latent"
-        # df.loc[all_new_active, "tb_date_latent"] = now
-
         # schedule active onset for time now up to end of 2010
         # tb_scheduled_date_active is picked up by regular event TbActiveEvent
         # and properties updated at that point
@@ -879,99 +646,6 @@ class Tb(Module):
                     tclose=None,
                     priority=0,
                 )
-
-    # def progression_to_active(self, population):
-    #     """
-    #     from the new latent infections, select and schedule progression to active disease
-    #     """
-    #
-    #     df = population.props
-    #     p = self.parameters
-    #     rng = self.rng
-    #     now = self.sim.dateg
-    #
-    #     # ------------------ fast progressors ------------------ #
-    #     eligible_for_fast_progression = df.loc[
-    #         (df.tb_date_latent == now) & df.is_alive & (df.age_years >= 15) & ~df.hv_inf
-    #         ].index
-    #
-    #     will_progress = (
-    #         rng.random_sample(len(eligible_for_fast_progression)) < p["prop_fast_progressor"]
-    #     )
-    #     fast = eligible_for_fast_progression[will_progress]
-    #
-    #     # hiv-positive
-    #     eligible_for_fast_progression_hiv = df.loc[
-    #         (df.tb_date_latent == now) & df.is_alive & (df.age_years >= 15) & df.hv_inf
-    #         ].index
-    #
-    #     will_progress = (
-    #         rng.random_sample(len(eligible_for_fast_progression_hiv)) < p["prop_fast_progressor_hiv"]
-    #     )
-    #     fast_hiv = eligible_for_fast_progression_hiv[will_progress]
-    #
-    #     fast = fast.union(fast_hiv)  # join indices (checked)
-    #
-    #     # set date of active tb - properties will be updated at TbActiveEvent every month
-    #     df.loc[fast, "tb_scheduled_date_active"] = now
-    #
-    #     # ------------------ slow progressors ------------------ #
-    #
-    #     # slow progressors, based on risk factors (via a linear model)
-    #     # select population eligible for progression to active disease
-    #     # includes all new latent infections
-    #     # excludes those just fast-tracked above (all_fast)
-    #
-    #     # adults
-    #     eligible_adults = df.loc[
-    #         (df.tb_date_latent == now) & df.is_alive & (df.age_years >= 15)
-    #         ].index
-    #
-    #     eligible_adults = eligible_adults[~eligible_adults.isin(fast)]
-    #
-    #     # check no fast progressors included in the slow progressors risk
-    #     assert not any(elem in fast for elem in eligible_adults)
-    #
-    #     risk_of_progression = self.lm["active_tb"].predict(df.loc[eligible_adults])
-    #
-    #     will_progress = (
-    #         self.rng.random_sample(len(risk_of_progression)) < risk_of_progression
-    #     )
-    #     idx_will_progress = will_progress[will_progress].index
-    #
-    #     # schedule for time now up to 1 year
-    #     for person_id in idx_will_progress:
-    #         date_progression = self.sim.date + pd.DateOffset(
-    #             days=self.rng.randint(0, 365)
-    #         )
-    #
-    #         # set date of active tb - properties will be updated at TbActiveEvent every month
-    #         df.at[person_id, "tb_scheduled_date_active"] = date_progression
-    #
-    #     # children - new latent cases only
-    #     # will progress within 1 year
-    #     eligible_children = df.loc[
-    #         (df.tb_date_latent == now) & df.is_alive & (df.age_years < 15)
-    #         ].index
-    #     eligible_children = eligible_children[~np.isin(eligible_children, fast)]
-    #     assert not any(elem in fast for elem in eligible_children)
-    #
-    #     risk_of_progression = self.lm["active_tb_child"].predict(
-    #         df.loc[eligible_children]
-    #     )
-    #     will_progress = (
-    #         self.rng.random_sample(len(risk_of_progression)) < risk_of_progression
-    #     )
-    #     idx_will_progress = will_progress[will_progress].index
-    #
-    #     # schedule for time now up to 1 year
-    #     for person_id in idx_will_progress:
-    #         date_progression = self.sim.date + pd.DateOffset(
-    #             days=self.rng.randint(0, 365)
-    #         )
-    #
-    #         # set date of active tb - properties will be updated at TbActiveEvent every month
-    #         df.at[person_id, "tb_scheduled_date_active"] = date_progression
 
     def send_for_screening(self, population):
 
@@ -1197,9 +871,6 @@ class Tb(Module):
         self.baseline_active(
             population
         )  # allocate active infections from baseline population
-        # self.baseline_latent(
-        #     population
-        # )  # allocate baseline prevalence of latent infections
         self.send_for_screening(
             population
         )  # send some baseline population for screening
@@ -1213,7 +884,6 @@ class Tb(Module):
 
         # 1) Regular events
         sim.schedule_event(TbActiveEvent(self), sim.date + DateOffset(months=0))
-        # sim.schedule_event(TbRegularPollingEvent(self), sim.date + DateOffset(years=1))
         sim.schedule_event(TbActiveCasePoll(self), sim.date + DateOffset(years=1))
 
         sim.schedule_event(TbTreatmentAndRelapseEvents(self), sim.date + DateOffset(months=1))
@@ -1735,20 +1405,12 @@ class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
             (inc_estimates.year == year), "incidence_per_100k"
         ].values[0]) / 100000
 
-        # todo remove
-        # # multiply WHO estimates by 10 to incorporate impact of interventions
-        # incidence_year = incidence_year * 4
-
         # ds-tb cases
         # the outcome of this will be an updated df with new tb cases
         self.assign_active_tb(strain="ds", incidence_rate=incidence_year)
 
         # transmission mdr-tb, around 1% of total tb incidence
         self.assign_active_tb(strain="mdr", incidence_rate=(incidence_year * p["prop_mdr2010"]))
-
-        # check who should progress from latent to active disease
-        # todo this is not needed as people scheduled directly to active disease
-        # self.module.progression_to_active(population)
 
         # # schedule some background rates of tb testing (non-symptom driven)
         self.module.send_for_screening(population)
@@ -1777,12 +1439,6 @@ class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
             df.loc[eligible]
         )
 
-        # WHO estimates already take into account risk factors/interventions
-        # scale so mean=1
-        # if self.sim.date.year <= 2018:
-        #     mean_rr_infection = rr_of_infection.mean()
-        #     rr_of_infection = rr_of_infection / mean_rr_infection
-
         #  probability of infection
         p_infection = (rr_of_infection * incidence_rate)
 
@@ -1802,130 +1458,6 @@ class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
 
             # set date of active tb - properties will be updated at TbActiveEvent every month
             df.at[person_id, "tb_scheduled_date_active"] = date_progression
-
-
-# class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
-#     """The Tb Regular Polling Events
-#     * Schedules persons becoming newly infected with latent tb
-#     * Schedules progression to active tb
-#     * schedules tb screening / testing
-#     """
-#
-#     def __init__(self, module):
-#         super().__init__(module, frequency=DateOffset(years=1))
-#
-#     def apply(self, population):
-#         # transmission ds-tb
-#         # the outcome of this will be an updated df with new tb cases
-#         self.latent_transmission(strain="ds")
-#
-#         # transmission mdr-tb
-#         self.latent_transmission(strain="mdr")
-#
-#         # check who should progress from latent to active disease
-#         self.module.progression_to_active(population)
-#
-#         # # schedule some background rates of tb testing (non-symptom driven)
-#         # self.module.send_for_screening(population)
-#
-#     def latent_transmission(self, strain):
-#         """
-#         assume while on treatment, not infectious
-#         consider relative infectivity of smear positive/negative and pulmonary / extrapulmonary
-#
-#         apply a force of infection to produce new latent cases
-#         no age distribution for FOI but the relative risks would affect distribution of active infections
-#         this comprises both new infections and reinfections
-#         """
-#
-#         df = self.sim.population.props
-#         p = self.module.parameters
-#         rng = self.module.rng
-#         now = self.sim.date
-#         districts = self.module.district_list
-#
-#         # -------------- district-level transmission -------------- #
-#         # get population alive by district
-#         pop_alive = df.loc[df.is_alive].groupby(["district_of_residence"]).size()
-#         tmp = pd.DataFrame(pop_alive, index=districts)
-#         tmp.rename(columns={tmp.columns[0]: "population_alive"}, inplace=True)
-#
-#         # smear-positive cases by district
-#         tmp["smear_pos"] = df[(df.tb_inf == "active")
-#                               & (df.tb_strain == strain)
-#                               & df.tb_smear
-#                               & ~df.tb_on_treatment].groupby(['district_of_residence'])["is_alive"].size()
-#
-#         # smear-negative cases by district
-#         tmp["smear_neg"] = df[(df.tb_inf == "active")
-#                               & (df.tb_strain == strain)
-#                               & ~df.tb_smear
-#                               & ~df.tb_on_treatment].groupby(['district_of_residence'])["is_alive"].size()
-#
-#         tmp = tmp.fillna(0)  # fill any missing values with 0
-#
-#         # calculate foi by district
-#         tmp["foi"] = (
-#                   p["transmission_rate"]
-#                   * (tmp["smear_pos"] + (tmp["smear_neg"] * p["rel_inf_smear_ng"]))
-#               ) / tmp["population_alive"]
-#
-#         tmp["foi"] = tmp["foi"].fillna(0)  # fill any missing values with 0
-#
-#         # create a dict, uses district name as keys
-#         # foi_dict = foi.to_dict()
-#
-#         # look up value for each row in df, mulitply by mixing parameter
-#         foi_for_individual = p["mixing_parameter"] * df["district_of_residence"].map(tmp["foi"])
-#
-#         # -------------- national-level transmission -------------- #
-#
-#         # add additional background risk of infection to occur nationally
-#         # accounts for population movement
-#         # use mixing param to adjust transmission rate
-#         # apply equally to all
-#
-#         # total number smear-positive
-#         total_smear_pos = tmp["smear_pos"].sum()
-#
-#         # total number smear-negative
-#         total_smear_neg = tmp["smear_neg"].sum()
-#
-#         # total population
-#         total_pop = tmp["population_alive"].sum()
-#
-#         # national-level transmission multiplied by mixing parameter
-#         foi_national = (1 - p["mixing_parameter"]) * (
-#                            p["transmission_rate"]
-#                            * (total_smear_pos + (total_smear_neg * p["rel_inf_smear_ng"]))
-#                        ) / total_pop
-#
-#         # -------------- individual risk of acquisition -------------- #
-#
-#         # add in national transmission and individual risk mitigation (BCG vaccine)
-#         foi_for_individual += foi_national
-#         foi_for_individual.loc[df.va_bcg_all_doses & df.age_years < 10] *= p["rr_bcg_inf"]
-#         foi_for_individual.loc[~df.is_alive] = 0
-#
-#         # get a list of random numbers between 0 and 1 for each infected individual
-#         random_draw = rng.random_sample(size=len(df))
-#
-#         # new infections can occur in:
-#         # uninfected
-#         # latent infected with this strain (reinfection)
-#         # latent infected with other strain - replace with latent infection with this strain
-#         tb_idx = df.index[
-#             df.is_alive & (df.tb_inf != "active") & (random_draw < foi_for_individual)
-#             ]
-#
-#         logger.debug(
-#             key="message",
-#             data=f"TbRegularPollingEvent assigning new infections for persons {tb_idx}"
-#         )
-#
-#         df.loc[tb_idx, "tb_inf"] = "latent"
-#         df.loc[tb_idx, "tb_date_latent"] = now
-#         df.loc[tb_idx, "tb_strain"] = strain
 
 
 class TbTreatmentAndRelapseEvents(RegularEvent, PopulationScopeEventMixin):

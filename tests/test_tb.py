@@ -100,20 +100,15 @@ def test_basic_run(seed):
 
     sim = get_sim(seed, use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
 
-    # set high transmission rate and all are fast progressors
-    sim.modules['Tb'].parameters['transmission_rate'] = 0.5
-    sim.modules['Tb'].parameters['prop_fast_progressor'] = 1.0
-
     # Make the population
     sim.make_initial_population(n=popsize)
 
     df = sim.population.props
 
     # check properties assigned correctly for baseline population
-    # should be some latent infections, no active infections
+    # should be no latent infections, no active infections
     num_latent = len(df[(df.tb_inf == 'latent') & df.is_alive])
-    prev_latent = num_latent / len(df[df.is_alive])
-    assert prev_latent > 0
+    assert num_latent == 0
 
     assert not pd.isnull(df.loc[~df.date_of_birth.isna(), [
         'tb_inf',
@@ -154,9 +149,8 @@ def test_natural_history(seed):
 
     sim = get_sim(seed, use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
 
-    # set all to be fast progressors
-    sim.modules['Tb'].parameters['prop_fast_progressor'] = 1.0
-    sim.modules['Tb'].parameters['prop_smear_positive'] = 1.0
+    # set very high incidence rates for poll
+    sim.modules['Tb'].parameters['scaling_factor_WHO'] = 5000
 
     # Make the population
     sim.make_initial_population(n=popsize)
@@ -165,42 +159,37 @@ def test_natural_history(seed):
 
     df = sim.population.props
 
-    # select an adult who is alive with latent tb
-    person_id = df.loc[df.is_alive & (df.tb_inf == 'latent') &
-                       df.age_years.between(15, 80)].index[0]
-    assert person_id is not None  # check person_id has been identified
-
-    # set tb strain to ds
-    df.at[person_id, 'tb_strain'] = 'ds'
-    # set hiv status to uninfected
-    df.at[person_id, 'hv_inf'] = False
-
     # run TB polling event to schedule progression to active stage
     progression_event = tb.TbActiveCasePoll(module=sim.modules['Tb'])
     progression_event.apply(population=sim.population)
 
-    # check if TbActiveEvent was scheduled
-    date_active_event = df.at[person_id, 'tb_scheduled_date_active']
+    # some should have TbActiveEvent date scheduled
+    assert not pd.isnull(df.loc[~df.date_of_birth.isna() & df.is_alive, [
+        'tb_scheduled_date_active']]).all().all()
 
-    assert date_active_event >= sim.date
+    # select one person with scheduled active date
+    tb_case = df.loc[df.is_alive & ~pd.isnull(df.tb_scheduled_date_active)].index[0]
+
+    # change scheduled date active to now
+    df.loc[tb_case, "tb_scheduled_date_active"] = sim.date
 
     # run TbActiveEvent
     active_event_run = tb.TbActiveEvent(module=sim.modules['Tb'])
     active_event_run.apply(population=sim.population)
 
     # check properties set
-    assert df.at[person_id, 'tb_inf'] == 'active'
-    assert df.at[person_id, 'tb_date_active'] == sim.date
-    assert df.at[person_id, 'tb_smear']
+    assert df.at[tb_case, 'tb_inf'] == 'active'
+    assert df.at[tb_case, 'tb_date_active'] == sim.date
+    assert df.at[tb_case, 'tb_smear']
 
     # check symptoms
     symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
-    assert set(sim.modules['SymptomManager'].has_what(person_id)) == symptom_list
+    assert set(sim.modules['SymptomManager'].has_what(tb_case)) == symptom_list
 
     # run HSI_Tb_ScreeningAndRefer and check outcomes
     # this schedules the event
     sim.modules['HealthSystem'].schedule_hsi_event(
-        tb.HSI_Tb_ScreeningAndRefer(person_id=person_id, module=sim.modules['Tb']),
+        tb.HSI_Tb_ScreeningAndRefer(person_id=tb_case, module=sim.modules['Tb']),
         topen=sim.date,
         tclose=None,
         priority=0
@@ -208,7 +197,7 @@ def test_natural_history(seed):
 
     # Check person_id has a ScreeningAndRefer event scheduled
     date_event, event = [
-        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(tb_case) if
         isinstance(ev[1], tb.HSI_Tb_ScreeningAndRefer)
     ][0]
     assert date_event == sim.date
@@ -221,7 +210,7 @@ def test_natural_history(seed):
     for name_of_hsi in list_of_hsi:
         hsi_event = eval(name_of_hsi +
                          "(person_id=" +
-                         str(person_id) +
+                         str(tb_case) +
                          ", "
                          "module=sim.modules['Tb'],"
                          ""
@@ -229,8 +218,8 @@ def test_natural_history(seed):
                          )
         hsi_event.run(squeeze_factor=0)
 
-    assert df.at[person_id, 'tb_ever_tested']
-    assert df.at[person_id, 'tb_diagnosed']
+    assert df.at[tb_case, 'tb_ever_tested']
+    assert df.at[tb_case, 'tb_diagnosed']
 
 
 def test_treatment_schedule(seed):
@@ -484,83 +473,6 @@ def test_children_referrals(seed):
     # should be diagnosed by x-ray
     assert df.at[person_id, 'tb_diagnosed']
 
-# todo this test not relevant for fixed incidence model
-# def test_latent_prevalence(seed):
-#     """
-#     test overall proportion of new latent cases which progress to active
-#     should be 14% fast progressors, 67% hiv+ fast progressors
-#     overall lifetime risk 5-10%
-#     """
-#
-#     # set up population
-#     popsize = 100
-#
-#     # allow HS to run and queue events
-#     sim = get_sim(seed, use_simplified_birth=True, disable_HS=True, ignore_con_constraints=True)
-#
-#     # Make the population
-#     sim.make_initial_population(n=popsize)
-#
-#     # simulate for 0 days, just get everything set up (dxtests etc)
-#     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
-#
-#     df = sim.population.props
-#
-#     # assign latent status to all population
-#     # all HIV- adults
-#     df.loc[df.is_alive, 'tb_inf'] = 'latent'
-#     df.loc[df.is_alive, 'tb_strain'] = 'ds'
-#     df.loc[df.is_alive, 'tb_date_latent'] = sim.date
-#     df.loc[df.is_alive, 'hv_inf'] = False
-#     df.loc[df.is_alive, 'age_years'] = 25
-#
-#     # progression_to_active will add a scheduled date of active disease
-#     sim.modules['Tb'].progression_to_active(sim.population)
-#
-#     # check how many have scheduled date of progression to active
-#     count = len(df[~df.tb_scheduled_date_active.isnull()].index)
-#
-#     # check proportion HIV- adults who have active scheduled
-#     assert (count / len(df.loc[df.is_alive])) < 0.25
-#
-#     # how many are progressing fast (~14% fast)
-#     count2 = len(df.loc[(df.tb_scheduled_date_active == sim.date)].index)
-#
-#     prop_fast = count2 / len(df.loc[df.is_alive])
-#     assert 0.05 <= prop_fast <= 0.3
-#
-#     # ------------------ HIV-positive progression risk ---------------- #
-#     sim = get_sim(seed, use_simplified_birth=True, disable_HS=True, ignore_con_constraints=True)
-#
-#     # Make the population
-#     sim.make_initial_population(n=popsize)
-#
-#     # simulate for 0 days, just get everything set up (dxtests etc)
-#     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
-#     df = sim.population.props
-#
-#     # assign latent status to all population
-#     # all HIV+ adults
-#     df.loc[df.is_alive, 'tb_inf'] = 'latent'
-#     df.loc[df.is_alive, 'tb_strain'] = 'ds'
-#     df.loc[df.is_alive, 'tb_date_latent'] = sim.date
-#     df.loc[df.is_alive, 'hv_inf'] = True
-#     df.loc[df.is_alive, 'age_years'] = 25
-#
-#     sim.modules['Tb'].progression_to_active(sim.population)
-#
-#     # count how many scheduled to progress to active disease
-#     count = len(df[~df.tb_scheduled_date_active.isnull()].index)
-#
-#     # check proportion HIV+ adults who have active scheduled
-#     assert (count / len(df.loc[df.is_alive])) > 0.5
-#
-#     # how many are progressing fast  (~67% fast)
-#     count2 = len(df.loc[(df.tb_scheduled_date_active == sim.date)].index)
-#
-#     prop_fast = count2 / len(df.loc[df.is_alive])
-#     assert 0.5 <= prop_fast <= 1.0
-
 
 def test_relapse_risk(seed):
     """
@@ -652,7 +564,7 @@ def test_ipt_to_child_of_tb_mother(seed):
     df.at[child_id, 'tb_inf'] = 'latent'
     active_event_run = tb.TbActiveCasePoll(module=sim.modules['Tb'])
     active_event_run.apply(sim.population)
-    assert df.at[child_id, 'tb_scheduled_date_active'] == pd.NaT
+    assert not df.at[child_id, 'tb_scheduled_date_active'] == pd.NaT
 
     # child should have Tb_DecisionToContinueIPT scheduled
     date_event, event = [
