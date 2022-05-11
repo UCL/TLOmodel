@@ -208,28 +208,32 @@ class Tb(Module):
             Types.REAL,
             "proportion of HIV+ people not on ART progressing directly to active TB disease after infection",
         ),
-        "prog_active": Parameter(
-            Types.REAL, "risk of progressing to active tb within two years"
-        ),
-        "prog_1yr": Parameter(
-            Types.REAL, "proportion children aged <1 year progressing to active disease"
-        ),
-        "prog_1_2yr": Parameter(
+        "scaling_factor_WHO": Parameter(
             Types.REAL,
-            "proportion children aged 1-2 year2 progressing to active disease",
+            "scaling factor applied to WHO estimates to account for the impact of interventions in place",
         ),
-        "prog_2_5yr": Parameter(
-            Types.REAL,
-            "proportion children aged 2-5 years progressing to active disease",
-        ),
-        "prog_5_10yr": Parameter(
-            Types.REAL,
-            "proportion children aged 5-10 years progressing to active disease",
-        ),
-        "prog_10yr": Parameter(
-            Types.REAL,
-            "proportion children aged 10-15 years progressing to active disease",
-        ),
+        # "prog_active": Parameter(
+        #     Types.REAL, "risk of progressing to active tb within two years"
+        # ),
+        # "prog_1yr": Parameter(
+        #     Types.REAL, "proportion children aged <1 year progressing to active disease"
+        # ),
+        # "prog_1_2yr": Parameter(
+        #     Types.REAL,
+        #     "proportion children aged 1-2 year2 progressing to active disease",
+        # ),
+        # "prog_2_5yr": Parameter(
+        #     Types.REAL,
+        #     "proportion children aged 2-5 years progressing to active disease",
+        # ),
+        # "prog_5_10yr": Parameter(
+        #     Types.REAL,
+        #     "proportion children aged 5-10 years progressing to active disease",
+        # ),
+        # "prog_10yr": Parameter(
+        #     Types.REAL,
+        #     "proportion children aged 10-15 years progressing to active disease",
+        # ),
         "duration_active_disease_years": Parameter(
             Types.REAL, "duration of active disease from onset to cure or death"
         ),
@@ -1731,8 +1735,9 @@ class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
             (inc_estimates.year == year), "incidence_per_100k"
         ].values[0]) / 100000
 
-        # multiply WHO estimates by 10 to incorporate impact of interventions
-        incidence_year = incidence_year * 4
+        # todo remove
+        # # multiply WHO estimates by 10 to incorporate impact of interventions
+        # incidence_year = incidence_year * 4
 
         # ds-tb cases
         # the outcome of this will be an updated df with new tb cases
@@ -1763,7 +1768,7 @@ class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
         # identify eligible people, not currently with active tb infection
         eligible = df.loc[
             df.is_alive
-        & (df.tb_inf != "active")
+            & (df.tb_inf != "active")
         ].index
 
         # weight risk by individual characteristics

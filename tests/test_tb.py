@@ -600,7 +600,7 @@ def test_relapse_risk(seed):
     # check relapse to active tb is scheduled to occur
     assert not df.at[person_id, 'tb_scheduled_date_active'] == pd.NaT
 
-
+# todo
 def test_ipt_to_child_of_tb_mother(seed):
     """
     if child born to mother with diagnosed tb, check give ipt
@@ -650,7 +650,9 @@ def test_ipt_to_child_of_tb_mother(seed):
 
     # give child latent tb, ipt should prevent progression to active
     df.at[child_id, 'tb_inf'] = 'latent'
-    sim.modules['Tb'].progression_to_active(sim.population)
+    active_event_run = tb.TbActiveCasePoll(module=sim.modules['Tb'])
+    active_event_run.apply(sim.population)
+    assert df.at[child_id, 'tb_scheduled_date_active'] == pd.NaT
 
     # child should have Tb_DecisionToContinueIPT scheduled
     date_event, event = [
@@ -658,12 +660,6 @@ def test_ipt_to_child_of_tb_mother(seed):
         isinstance(ev[1], tb.Tb_DecisionToContinueIPT)
     ][0]
     assert date_event == sim.date + pd.DateOffset(months=6)
-
-    # child should not have progression scheduled
-    future_events = sim.find_events_for_person(child_id)
-    for tmp in range(len(future_events)):
-        if isinstance(future_events[tmp][1], tb.TbActiveEvent):
-            assert False
 
 
 def test_mdr(seed):
