@@ -571,12 +571,14 @@ def test_outcomes_same_if_using_or_not_using_healthsystem(tmpdir, seed):
 
     # Run basic check, for the case when the model is using the healthsystem and when not and check the logs
     sim_does_not_use_healthsystem = run_sim(run=True, tmpdir=tmpdir, seed=seed, use_healthsystem=False, disable=True,
-                                            max_days_delay_between_decision_to_change_method_and_hsi_scheduled=0)
+                                            max_days_delay_between_decision_to_change_method_and_hsi_scheduled=0,
+                                            consumables_available=True, end_date=Date(2010, 12, 31))
     __check_no_illegal_switches(sim_does_not_use_healthsystem)
     __check_some_starting_switching_and_stopping(sim_does_not_use_healthsystem)
 
     sim_uses_healthsystem = run_sim(run=True, tmpdir=tmpdir, seed=seed, use_healthsystem=True, disable=True,
-                                    max_days_delay_between_decision_to_change_method_and_hsi_scheduled=0)
+                                    max_days_delay_between_decision_to_change_method_and_hsi_scheduled=0,
+                                    consumables_available=True, end_date=Date(2010, 12, 31))
     __check_no_illegal_switches(sim_uses_healthsystem)
     __check_some_starting_switching_and_stopping(sim_uses_healthsystem)
 
