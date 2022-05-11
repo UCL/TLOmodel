@@ -725,7 +725,7 @@ def test_classification_based_on_symptoms_and_imci(sim_hs_all_consumables):
         'not_handled_at_facility_0'
     }
 
-    final_classification_hw_and_oximeter = sim.modules['Alri'].get_disease_classification
+    final_classification_hw_and_oximeter = sim.modules['Alri']._get_disease_classification
     symptom_based_classification = sim.modules['Alri'].imci_classification_based_on_symptoms
 
     for correct_classification_on_symptoms, chars in classification_on_symptoms:
