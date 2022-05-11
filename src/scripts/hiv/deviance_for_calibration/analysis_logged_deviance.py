@@ -6,6 +6,7 @@ save outputs for plotting (file: output_plots_tb.py)
 import datetime
 import pickle
 from pathlib import Path
+import random
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
@@ -33,26 +34,28 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2040, 1, 1)
+end_date = Date(2018, 1, 1)
 popsize = 10000
 
 # set up the log config
 log_config = {
-    "filename": "deviance_calibrated",
+    "filename": "tb_transmission_runs",
     "directory": outputpath,
     "custom_levels": {
         "*": logging.WARNING,
         # "tlo.methods.deviance_measure": logging.INFO,
+        # "tlo.methods.epi": logging.INFO,
         "tlo.methods.hiv": logging.INFO,
         "tlo.methods.tb": logging.INFO,
         "tlo.methods.demography": logging.INFO,
-        "tlo.methods.healthsystem": logging.INFO,
+        # "tlo.methods.healthsystem.summary": logging.INFO,
     },
 }
 
 # Register the appropriate modules
-# seed = random.randint(0, 50000)
-seed = 32  # set seed for reproducibility
+# need to call epi before tb to get bcg vax
+seed = random.randint(0, 50000)
+# seed = 34  # set seed for reproducibility
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
 sim.register(
     demography.Demography(resourcefilepath=resourcefilepath),
@@ -78,8 +81,10 @@ sim.register(
     # deviance_measure.Deviance(resourcefilepath=resourcefilepath),
 )
 
-sim.modules["Tb"].parameters["transmission_rate"] = 6.5
-# sim.modules["Hiv"].parameters["prob_prep_for_agyw"] = 0.2
+# change parameters
+sim.modules["Tb"].parameters["scenario"] = 0
+sim.modules["Tb"].parameters["scaling_factor_WHO"] = 1.2
+
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)

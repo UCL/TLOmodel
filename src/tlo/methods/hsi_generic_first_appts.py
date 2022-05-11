@@ -42,7 +42,6 @@ from tlo.methods.prostate_cancer import (
     HSI_ProstateCancer_Investigation_Following_Pelvic_Pain,
     HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms,
 )
-from tlo.methods.tb import HSI_Tb_ScreeningAndRefer
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -58,7 +57,7 @@ class HSI_GenericFirstApptAtFacilityLevel0(HSI_Event, IndividualScopeEventMixin)
 
         assert module is self.sim.modules['HealthSeekingBehaviour']
 
-        self.TREATMENT_ID = 'GenericFirstApptAtFacilityLevel0'
+        self.TREATMENT_ID = 'FirstAttendance_NonEmergency'
         self.ACCEPTED_FACILITY_LEVEL = '0'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ConWithDCSA': 1})
 
@@ -79,13 +78,11 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        assert module.name in ['HealthSeekingBehaviour', 'Labour', 'PregnancySupervisor', 'RTI', 'Tb']
+        assert module.name in ['HealthSeekingBehaviour', 'Labour', 'PregnancySupervisor', 'RTI']
 
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'GenericEmergencyFirstApptAtFacilityLevel1'
+        self.TREATMENT_ID = 'FirstAttendance_Emergency'
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
-            'Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD': 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
 
     def apply(self, person_id, squeeze_factor):
 
@@ -125,7 +122,6 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
     #  - suppress the footprint (as it done as part of another appointment)
     #  - do not do referrals if the person is HIV negative (assumed not time for counselling etc).
     if 'Hiv' in sim.modules:
-
         schedule_hsi(
             HSI_Hiv_TestAndRefer(
                 person_id=person_id,
@@ -142,21 +138,6 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
 
     if 'Schisto' in sim.modules:
         sim.modules['Schisto'].do_on_presentation_with_symptoms(person_id=person_id, symptoms=symptoms)
-
-    if 'Tb' in sim.modules:
-        tb_symptoms = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
-
-        if tb_symptoms.intersection(symptoms) and \
-                rng.random_sample() < sim.modules["Tb"].parameters["prob_tb_referral_in_generic_hsi"]:
-
-            schedule_hsi(
-                HSI_Tb_ScreeningAndRefer(
-                    person_id=person_id,
-                    module=hsi_event.sim.modules['Tb'],
-                    suppress_footprint=False),
-                topen=hsi_event.sim.date,
-                tclose=None,
-                priority=0)
 
     if age < 5:
         # ----------------------------------- CHILD < 5 -----------------------------------
@@ -387,21 +368,6 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
             tclose=None,
             priority=0
         )
-
-    if 'Tb' in sim.modules:
-        tb_symptoms = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
-
-        if any(x in tb_symptoms for x in symptoms) and \
-                rng.random_sample() < sim.modules["Tb"].parameters["prob_tb_referral_in_generic_hsi"]:
-
-            schedule_hsi(
-                HSI_Tb_ScreeningAndRefer(
-                    person_id=person_id,
-                    module=hsi_event.sim.modules['Tb'],
-                    suppress_footprint=False),
-                topen=hsi_event.sim.date,
-                tclose=None,
-                priority=0)
 
     if "Malaria" in sim.modules:
         # Quick diagnosis algorithm - just perfectly recognises the symptoms of severe malaria
