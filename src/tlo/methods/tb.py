@@ -642,7 +642,7 @@ class Tb(Module):
                 # need to ensure properties are updated before screening
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     HSI_Tb_StartTreatment(person_id=person_id, module=self),
-                    topen=date_active + pd.DateOffset(days=7),
+                    topen=date_active + pd.DateOffset(days=30),
                     tclose=None,
                     priority=0,
                 )

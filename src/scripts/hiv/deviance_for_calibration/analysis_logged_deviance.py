@@ -35,7 +35,7 @@ resourcefilepath = Path("./resources")
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2040, 1, 1)
-popsize = 25000
+popsize = 35000
 
 # set up the log config
 log_config = {
@@ -55,7 +55,7 @@ log_config = {
 # Register the appropriate modules
 # need to call epi before tb to get bcg vax
 seed = random.randint(0, 50000)
-# seed = 34  # set seed for reproducibility
+# seed = 18279  # set seed for reproducibility
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
 sim.register(
     demography.Demography(resourcefilepath=resourcefilepath),
@@ -83,8 +83,10 @@ sim.register(
 
 # change parameters
 sim.modules["Tb"].parameters["scenario"] = 0
-sim.modules["Tb"].parameters["scaling_factor_WHO"] = 1.2
-
+sim.modules["Tb"].parameters["scaling_factor_WHO"] = 2.8
+sim.modules["Tb"].parameters["rr_tb_hiv"] = 1.5
+sim.modules["Tb"].parameters["rr_tb_aids"] = 3
+sim.modules["Hiv"].parameters["aids_tb_treatment_adjustment"] = 0.5  # will reduce AIDS-TB deaths
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)

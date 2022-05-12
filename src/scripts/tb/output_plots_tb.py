@@ -389,9 +389,9 @@ make_plot(
     data_low=data_hiv_aidsinfo["incidence0_14_per100py_lower"],
     data_high=data_hiv_aidsinfo["incidence0_14_per100py_upper"],
 )
-plt.savefig(
-    outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
-)
+# plt.savefig(
+#     outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
+# )
 plt.show()
 
 
