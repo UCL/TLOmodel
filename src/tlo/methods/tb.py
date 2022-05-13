@@ -601,51 +601,51 @@ class Tb(Module):
             ),
         )
 
-    def baseline_active(self, population):
-        """
-        this is new incidence active tb cases which will occur through 2010
-        no differences in baseline active tb by age/sex
-        """
-
-        df = population.props
-        now = self.sim.date
-        p = self.parameters
-
-        active_tb_idx = df.index[
-            (self.rng.random_sample(size=len(df)) < p["incidence_active_tb_2010"]) & df.is_alive
-            ]
-
-        df.loc[active_tb_idx, "tb_strain"] = "ds"
-
-        # allocate some active infections as mdr-tb
-        # from active_tb_idx - sample prop_mdr2010 and allocate as mdr
-        sample_mdr = self.rng.random_sample(len(active_tb_idx)) < (p["prop_mdr2010"])
-        active_mdr_tb_idx = active_tb_idx[sample_mdr]
-
-        df.loc[active_mdr_tb_idx, "tb_strain"] = "mdr"
-
-        all_new_active = active_tb_idx.union(
-            active_mdr_tb_idx
-        )  # join indices (checked)
-
-        # -------- change individual properties for active disease --------
-        # schedule active onset for time now up to end of 2010
-        # tb_scheduled_date_active is picked up by regular event TbActiveEvent
-        # and properties updated at that point
-        for person_id in all_new_active:
-            date_active = now + pd.DateOffset(days=self.rng.randint(0, 365))
-            df.at[person_id, "tb_scheduled_date_active"] = date_active
-
-            # schedule treatment for proportion of baseline active cases
-            if self.rng.random_sample() < p["rate_treatment_baseline_active"]:
-                # set HSI for 30 days after active onset, as active poll occurs monthly
-                # need to ensure properties are updated before screening
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    HSI_Tb_StartTreatment(person_id=person_id, module=self),
-                    topen=date_active + pd.DateOffset(days=30),
-                    tclose=None,
-                    priority=0,
-                )
+    # def baseline_active(self, population):
+    #     """
+    #     this is new incidence active tb cases which will occur through 2010
+    #     no differences in baseline active tb by age/sex
+    #     """
+    #
+    #     df = population.props
+    #     now = self.sim.date
+    #     p = self.parameters
+    #
+    #     active_tb_idx = df.index[
+    #         (self.rng.random_sample(size=len(df)) < p["incidence_active_tb_2010"]) & df.is_alive
+    #         ]
+    #
+    #     df.loc[active_tb_idx, "tb_strain"] = "ds"
+    #
+    #     # allocate some active infections as mdr-tb
+    #     # from active_tb_idx - sample prop_mdr2010 and allocate as mdr
+    #     sample_mdr = self.rng.random_sample(len(active_tb_idx)) < (p["prop_mdr2010"])
+    #     active_mdr_tb_idx = active_tb_idx[sample_mdr]
+    #
+    #     df.loc[active_mdr_tb_idx, "tb_strain"] = "mdr"
+    #
+    #     all_new_active = active_tb_idx.union(
+    #         active_mdr_tb_idx
+    #     )  # join indices (checked)
+    #
+    #     # -------- change individual properties for active disease --------
+    #     # schedule active onset for time now up to end of 2010
+    #     # tb_scheduled_date_active is picked up by regular event TbActiveEvent
+    #     # and properties updated at that point
+    #     for person_id in all_new_active:
+    #         date_active = now + pd.DateOffset(days=self.rng.randint(0, 365))
+    #         df.at[person_id, "tb_scheduled_date_active"] = date_active
+    #
+    #         # schedule treatment for proportion of baseline active cases
+    #         if self.rng.random_sample() < p["rate_treatment_baseline_active"]:
+    #             # set HSI for 30 days after active onset, as active poll occurs monthly
+    #             # need to ensure properties are updated before screening
+    #             self.sim.modules["HealthSystem"].schedule_hsi_event(
+    #                 HSI_Tb_StartTreatment(person_id=person_id, module=self),
+    #                 topen=date_active + pd.DateOffset(days=30),
+    #                 tclose=None,
+    #                 priority=0,
+    #             )
 
     def send_for_screening(self, population):
 
@@ -830,6 +830,7 @@ class Tb(Module):
     def initialise_population(self, population):
 
         df = population.props
+        p = self.parameters
 
         # if HIV is not registered, create a dummy property
         if "Hiv" not in self.sim.modules:
@@ -868,9 +869,16 @@ class Tb(Module):
 
         # ------------------ infection status ------------------ #
 
-        self.baseline_active(
-            population
-        )  # allocate active infections from baseline population
+        self.assign_active_tb(
+            population,
+            strain="ds",
+            incidence_rate=p["incidence_active_tb_2010"])
+
+        self.assign_active_tb(
+            population,
+            strain="mdr",
+            incidence_rate=(p["incidence_active_tb_2010"]*p["prop_mdr2010"]))
+
         self.send_for_screening(
             population
         )  # send some baseline population for screening
@@ -995,6 +1003,50 @@ class Tb(Module):
             ] = self.daly_wts["daly_mdr_tb_hiv"]
 
         return health_values.loc[df.is_alive]
+
+    def assign_active_tb(self, population, strain, incidence_rate):
+        """
+        select individuals to be infected
+        assign scheduled date of active tb onset
+        update properties as needed
+        symptoms and smear status are assigned in the TbActiveEvent
+        """
+
+        df = population.props
+        rng = self.rng
+        now = self.sim.date
+
+        # identify eligible people, not currently with active tb infection
+        eligible = df.loc[
+            df.is_alive
+            & (df.tb_inf != "active")
+        ].index
+
+        # weight risk by individual characteristics
+        # Compute chance that each susceptible person becomes infected:
+        rr_of_infection = self.lm["active_tb"].predict(
+            df.loc[eligible]
+        )
+
+        #  probability of infection
+        p_infection = (rr_of_infection * incidence_rate)
+
+        # New infections:
+        will_be_infected = (
+            self.rng.random_sample(len(p_infection)) < p_infection
+        )
+        idx_new_infection = will_be_infected[will_be_infected].index
+
+        df.loc[idx_new_infection, "tb_strain"] = strain
+
+        # schedule onset of active tb, time now up to 1 year
+        for person_id in idx_new_infection:
+            date_progression = now + pd.DateOffset(
+                days=rng.randint(0, 365)
+            )
+
+            # set date of active tb - properties will be updated at TbActiveEvent every month
+            df.at[person_id, "tb_scheduled_date_active"] = date_progression
 
     def consider_ipt_for_those_initiating_art(self, person_id):
         """
@@ -1407,58 +1459,58 @@ class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
 
         # ds-tb cases
         # the outcome of this will be an updated df with new tb cases
-        self.assign_active_tb(strain="ds", incidence_rate=incidence_year)
+        self.module.assign_active_tb(population, strain="ds", incidence_rate=incidence_year)
 
         # transmission mdr-tb, around 1% of total tb incidence
-        self.assign_active_tb(strain="mdr", incidence_rate=(incidence_year * p["prop_mdr2010"]))
+        self.module.assign_active_tb(population, strain="mdr", incidence_rate=(incidence_year * p["prop_mdr2010"]))
 
         # # schedule some background rates of tb testing (non-symptom driven)
         self.module.send_for_screening(population)
 
-    def assign_active_tb(self, strain, incidence_rate):
-        """
-        select individuals to be infected
-        assign scheduled date of active tb onset
-        update properties as needed
-        symptoms and smear status are assigned in the TbActiveEvent
-        """
-
-        df = self.sim.population.props
-        rng = self.module.rng
-        now = self.sim.date
-
-        # identify eligible people, not currently with active tb infection
-        eligible = df.loc[
-            df.is_alive
-            & (df.tb_inf != "active")
-        ].index
-
-        # weight risk by individual characteristics
-        # Compute chance that each susceptible person becomes infected:
-        rr_of_infection = self.module.lm["active_tb"].predict(
-            df.loc[eligible]
-        )
-
-        #  probability of infection
-        p_infection = (rr_of_infection * incidence_rate)
-
-        # New infections:
-        will_be_infected = (
-            self.module.rng.random_sample(len(p_infection)) < p_infection
-        )
-        idx_new_infection = will_be_infected[will_be_infected].index
-
-        df.loc[idx_new_infection, "tb_strain"] = strain
-
-        # schedule onset of active tb, time now up to 1 year
-        for person_id in idx_new_infection:
-            date_progression = now + pd.DateOffset(
-                days=rng.randint(0, 365)
-            )
-
-            # set date of active tb - properties will be updated at TbActiveEvent every month
-            df.at[person_id, "tb_scheduled_date_active"] = date_progression
-
+    # def assign_active_tb(self, strain, incidence_rate):
+    #     """
+    #     select individuals to be infected
+    #     assign scheduled date of active tb onset
+    #     update properties as needed
+    #     symptoms and smear status are assigned in the TbActiveEvent
+    #     """
+    #
+    #     df = self.sim.population.props
+    #     rng = self.module.rng
+    #     now = self.sim.date
+    #
+    #     # identify eligible people, not currently with active tb infection
+    #     eligible = df.loc[
+    #         df.is_alive
+    #         & (df.tb_inf != "active")
+    #     ].index
+    #
+    #     # weight risk by individual characteristics
+    #     # Compute chance that each susceptible person becomes infected:
+    #     rr_of_infection = self.module.lm["active_tb"].predict(
+    #         df.loc[eligible]
+    #     )
+    #
+    #     #  probability of infection
+    #     p_infection = (rr_of_infection * incidence_rate)
+    #
+    #     # New infections:
+    #     will_be_infected = (
+    #         self.module.rng.random_sample(len(p_infection)) < p_infection
+    #     )
+    #     idx_new_infection = will_be_infected[will_be_infected].index
+    #
+    #     df.loc[idx_new_infection, "tb_strain"] = strain
+    #
+    #     # schedule onset of active tb, time now up to 1 year
+    #     for person_id in idx_new_infection:
+    #         date_progression = now + pd.DateOffset(
+    #             days=rng.randint(0, 365)
+    #         )
+    #
+    #         # set date of active tb - properties will be updated at TbActiveEvent every month
+    #         df.at[person_id, "tb_scheduled_date_active"] = date_progression
+    #
 
 class TbTreatmentAndRelapseEvents(RegularEvent, PopulationScopeEventMixin):
     """ This event runs each month and calls two functions:
