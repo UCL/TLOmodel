@@ -397,11 +397,40 @@ class Lifestyle(Module):
         df.loc[df.is_alive, 'li_is_circ'] = False
         # todo: express all rates per year and divide by 4 inside program
 
+        # initialise urban rural properties
+        self.initialise_rural_urban_property(df, alive_idx)
+
         # initialise some properties using linear models
         self.models.initialise_all_properties(df, self.rng)
 
+        # initialise excess alcohol property
+        self.initialise_excessive_alcohol_property(df)
+
+        # initialise marital status property
+        self.initialise_marital_status_property(df)
+
+        # initialise education property
+        self.initialise_education_properties(df)
+
+        # initialise sugar intake property
+        self.initialise_sugar_intake_property(df, alive_idx)
+
+        # initialise wealth level property
+        self.initialise_wealth_level_property(df)
+
         # initialise bmi properties in population
         self.initialise_bmi_property(df)
+
+        # -------------------- SEX WORKER ----------------------------------------------------------
+        # determine which women will be sex worker
+        self.determine_who_will_be_sexworker(months_since_last_poll=0)
+
+        # -------------------- MALE CIRCUMCISION ----------------------------------------------------------
+        # determine the proportion of men that are circumcised at initiation
+        # NB. this is determined with respect to any characteristics (eg. ethnicity or religion)
+        men = df.loc[df.is_alive & (df.sex == 'M')]
+        will_be_circ = self.rng.rand(len(men)) < self.parameters['proportion_of_men_circumcised_at_initiation']
+        df.loc[men[will_be_circ].index, 'li_is_circ'] = True
 
     def initialise_rural_urban_property(self, df, alive_idx):
         """ set rural urban properties in the population dataframe
@@ -495,6 +524,8 @@ class Lifestyle(Module):
 
         df.loc[age_gte5, 'li_ed_lev'] = dfx['li_ed_lev']
 
+        # df.loc[df.age_years.between(5, 12) & (df['li_ed_lev'] == 1) & df.is_alive, 'li_in_ed'] = False # (already
+        # false in df?)
         df.loc[df.age_years.between(5, 12) & (df['li_ed_lev'] == 2) & df.is_alive, 'li_in_ed'] = True
         df.loc[df.age_years.between(13, 19) & (df['li_ed_lev'] == 3) & df.is_alive, 'li_in_ed'] = True
 
@@ -535,124 +566,18 @@ class Lifestyle(Module):
         # only relevant if at least one individual with age >= 15 years present
         if len(age_ge15_idx) > 0:
             # this below is the approach to apply the effect of contributing determinants on bmi levels at baseline
-            # transform to odds, apply the odds ratio for the effect, transform back to probabilities and normalise
-            # to sum to 1
-            init_odds_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1 = [
-                i / (1 - i) for i in self.parameters['init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1']
-            ]
+            # create bmi probabilities dataframe using bmi linear model and normalise to sum to 1
+            df_lm = pd.DataFrame()
+            bmi_pow = [-2, -1, 0, 1, 2]
+            for index_ in range(0, 5):
+                df_lm[index_ + 1] = LifestyleModels(self).bmi_linear_model(index_, bmi_pow[index_]).predict(prop_df)
 
-            df_odds_probs_bmi_levels = pd.DataFrame(
-                data=[init_odds_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1],
-                columns=['1', '2', '3', '4', '5'],
-                index=age_ge15_idx,
-            )
-
-            # df_lm = pd.DataFrame()
-            # bmi_powers = [-2, -1, 0, 1, 2]
-            # for index_ in range(0, 5):
-            #     df_lm[index_ + 1] = LifestyleModels(self).bmi_linear_model(index_, bmi_powers[index_]).predict(prop_df)
-
-            self.update_df_odds_bmi(df, df_odds_probs_bmi_levels, '1', -2)
-            self.update_df_odds_bmi(df, df_odds_probs_bmi_levels, '2', -1)
-            self.update_df_odds_bmi(df, df_odds_probs_bmi_levels, '3', 0)
-            self.update_df_odds_bmi(df, df_odds_probs_bmi_levels, '4', 1)
-            self.update_df_odds_bmi(df, df_odds_probs_bmi_levels, '5', 2)
-
-            for bmi in range(1, 6):
-                bmi = str(bmi)
-                df_odds_probs_bmi_levels[f'prob {bmi}'] = df_odds_probs_bmi_levels.apply(
-                    lambda row: row[bmi] / (1 + row[bmi]), axis=1
-                )
-
-            # normalise probabilities
-            df_odds_probs_bmi_levels['sum_probs'] = df_odds_probs_bmi_levels.apply(
-                lambda row: row['prob 1'] + row['prob 2'] + row['prob 3'] + row['prob 4'] + row['prob 5'], axis=1
-            )
-
-            for bmi in range(1, 6):
-                df_odds_probs_bmi_levels[bmi] = df_odds_probs_bmi_levels.apply(
-                    lambda row: row[f'prob {bmi}'] / row['sum_probs'], axis=1
-                )
-
-            # df_lm_sum = df_lm.sum(axis=1)
-            # print(f'sum is {df_lm["sum_probs"].compare(df_odds_probs_bmi_levels["sum_probs"])}')
-            # for bmi in range(1, 6):
-            #     df_lm[bmi] = df_lm.apply(
-            #         lambda row: row[bmi] / row['sum_probs'], axis=1
-            #     )
-            # dfx = df_lm.div(df_lm.sum(axis=1), axis=0)
-            # print(f'divide is {dfx}')
-            # print(f"the df is {df_odds_probs_bmi_levels[[1, 2, 3, 4, 5]]}")
-
-            dfxx = df_odds_probs_bmi_levels[[1, 2, 3, 4, 5]]
-            # print(f"the compare df is {dfx.compare(dfxx)}")
+            dfxx = df_lm.div(df_lm.sum(axis=1), axis=0)
 
             # for each row, make a choice
             bmi_cat = dfxx.apply(lambda p_bmi: self.rng.choice(dfxx.columns, p=p_bmi), axis=1)
-            print(f'bmi cat {bmi_cat}')
 
-            # df.loc[age_ge15_idx, 'li_bmi'] = bmi_cat
-
-    def update_df_odds_bmi(self, df, df_odds_probs_bmi_levels, bmi: str, power: int):
-        """Update specified bmi column using pattern and the power given
-        :param df: population dataframe
-        :param df_odds_probs_bmi_levels: odds of different BMI levels
-        :param bmi: BMI level
-        :param power: a power to bmi parameters """
-
-        # get different age groups
-        agege15_w_idx = df.index[df.is_alive & (df.sex == 'F') & (df.age_years >= 15)]
-        agege15_rural_idx = df.index[df.is_alive & ~df.li_urban & (df.age_years >= 15)]
-        agege15_high_sugar_idx = df.index[df.is_alive & df.li_high_sugar & (df.age_years >= 15)]
-        agege3049_idx = df.index[df.is_alive & (df.age_years >= 30) & (df.age_years < 50)]
-        agege50_idx = df.index[df.is_alive & (df.age_years >= 50)]
-        agege15_tob_idx = df.index[df.is_alive & df.li_tob & (df.age_years >= 15)]
-        agege15_wealth2_idx = df.index[df.is_alive & (df.li_wealth == 2) & (df.age_years >= 15)]
-        agege15_wealth3_idx = df.index[df.is_alive & (df.li_wealth == 3) & (df.age_years >= 15)]
-        agege15_wealth4_idx = df.index[df.is_alive & (df.li_wealth == 4) & (df.age_years >= 15)]
-        agege15_wealth5_idx = df.index[df.is_alive & (df.li_wealth == 5) & (df.age_years >= 15)]
-
-        df_odds_probs_bmi_levels.loc[agege15_w_idx, bmi] *= (
-            self.parameters['init_or_higher_bmi_f'] ** power
-        )
-        df_odds_probs_bmi_levels.loc[agege15_rural_idx, bmi] *= (
-            self.parameters['init_or_higher_bmi_rural'] ** power
-        )
-        df_odds_probs_bmi_levels.loc[agege15_high_sugar_idx, bmi] *= (
-            self.parameters['init_or_higher_bmi_high_sugar'] ** power
-        )
-        df_odds_probs_bmi_levels.loc[agege3049_idx, bmi] *= (
-            self.parameters['init_or_higher_bmi_age3049'] ** power
-        )
-        df_odds_probs_bmi_levels.loc[agege50_idx, bmi] *= (
-            self.parameters['init_or_higher_bmi_agege50'] ** power
-        )
-        df_odds_probs_bmi_levels.loc[agege15_tob_idx, bmi] *= (
-            self.parameters['init_or_higher_bmi_tob'] ** power
-        )
-        df_odds_probs_bmi_levels.loc[agege15_wealth2_idx, bmi] *= (
-                                                                      self.parameters[
-                                                                          'init_or_higher_bmi_per_higher_wealth_level'] ** 2) ** power
-        df_odds_probs_bmi_levels.loc[agege15_wealth3_idx, bmi] *= (
-                                                                      self.parameters[
-                                                                          'init_or_higher_bmi_per_higher_wealth_level'] ** 3) ** power
-        df_odds_probs_bmi_levels.loc[agege15_wealth4_idx, bmi] *= (
-                                                                      self.parameters[
-                                                                          'init_or_higher_bmi_per_higher_wealth_level'] ** 4) ** power
-        df_odds_probs_bmi_levels.loc[agege15_wealth5_idx, bmi] *= (
-                                                                      self.parameters[
-                                                                          'init_or_higher_bmi_per_higher_wealth_level'] ** 5) ** power
-
-        # -------------------- SEX WORKER ----------------------------------------------------------
-        # determine which women will be sex worker
-        self.determine_who_will_be_sexworker(months_since_last_poll=0)
-
-        # -------------------- MALE CIRCUMCISION ----------------------------------------------------------
-        # determine the proportion of men that are circumcised at initiation
-        # NB. this is determined with respect to any characteristics (eg. ethnicity or religion)
-        men = df.loc[df.is_alive & (df.sex == 'M')]
-        will_be_circ = self.rng.rand(len(men)) < self.parameters['proportion_of_men_circumcised_at_initiation']
-        df.loc[men[will_be_circ].index, 'li_is_circ'] = True
+            df.loc[age_ge15_idx, 'li_bmi'] = bmi_cat
 
     def initialise_simulation(self, sim):
         """Add lifestyle events to the simulation
@@ -886,14 +811,11 @@ class LifestyleModels:
             # 'li_mar_stat': {
             #     'init': self.marital_status_linear_model()
             # },
-            'li_no_access_handwashing': {
-                'init': self.no_access_hand_washing()
+            'li_tob': {
+                'init': self.tobacco_use_linear_model()
             },
-            'li_high_salt': {
-                'init': self.salt_intake_linear_model()
-            },
-            'li_wood_burn_stove': {
-                'init': self.wood_burn_stove_linear_model()
+            'li_low_ex': {
+                'init': self.low_exercise_linear_model()
             },
             'li_unimproved_sanitation': {
                 'init': self.un_improved_sanitation_linear_model()
@@ -901,11 +823,14 @@ class LifestyleModels:
             'li_no_clean_drinking_water': {
                 'init': self.no_clean_drinking_water_linear_model()
             },
-            'li_low_ex': {
-                'init': self.low_exercise_linear_model()
+            'li_wood_burn_stove': {
+                'init': self.wood_burn_stove_linear_model()
             },
-            'li_tob': {
-                'init': self.tobacco_use_linear_model()
+            'li_no_access_handwashing': {
+                'init': self.no_access_hand_washing()
+            },
+            'li_high_salt': {
+                'init': self.salt_intake_linear_model()
             },
         }
 
