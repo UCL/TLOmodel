@@ -401,7 +401,7 @@ class Lifestyle(Module):
         self.initialise_rural_urban_property(df, alive_idx)
 
         # initialise some properties using linear models
-        self.models.initialise_all_properties(df, self.rng)
+        self.models.initialise_some_properties(df, self.rng)
 
         # initialise excess alcohol property
         self.initialise_excessive_alcohol_property(df)
@@ -834,7 +834,7 @@ class LifestyleModels:
             },
         }
 
-    def initialise_all_properties(self, df, rng):
+    def initialise_some_properties(self, df, rng):
         """initialise population properties using linear models defined in LifestyleModels class.
 
         :param df: The population dataframe
