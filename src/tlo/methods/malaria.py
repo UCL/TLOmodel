@@ -164,8 +164,6 @@ class Malaria(Module):
         "ma_iptp": Property(Types.BOOL, "if woman has IPTp in current pregnancy"),
     }
 
-    # TODO reset ma_iptp after delivery
-
     def read_parameters(self, data_folder):
         workbook = pd.read_excel(self.resourcefilepath / "ResourceFile_malaria.xlsx", sheet_name=None)
         self.load_parameters_from_dataframe(workbook["parameters"])
@@ -321,11 +319,11 @@ class Malaria(Module):
         df.loc[alive & df.age_exact_years.between(0.5, 1), "ma_age_edited"] = 0.5
         df.loc[alive_over_one, "ma_age_edited"] = df.loc[alive_over_one, "age_years"].astype(float)
 
-        # select new infections
-        alive_uninfected = alive & ~df.ma_is_infected
+        # select new infections, (persons on IPTp are not at risk of infection)
+        alive_uninfected = alive & ~df.ma_is_infected & ~df.ma_iptp
         now_infected = _draw_incidence_for("monthly_prob_inf", alive_uninfected)
         df.loc[now_infected, "ma_is_infected"] = True
-        df.loc[now_infected, "ma_date_infected"] = now  # TODO: scatter dates across month
+        df.loc[now_infected, "ma_date_infected"] = now
         df.loc[now_infected, "ma_inf_type"] = "asym"
 
         # select all currently infected
@@ -485,6 +483,10 @@ class Malaria(Module):
         df.at[child_id, "ma_clinical_preg_counter"] = 0
         df.at[child_id, "ma_tx_counter"] = 0
         df.at[child_id, "ma_iptp"] = False
+
+        # reset mother's IPTp status to False
+        if mother_id != -1:
+            df.at[mother_id, "ma_iptp"] = False
 
     def on_hsi_alert(self, person_id, treatment_id):
         """This is called whenever there is an HSI event commissioned by one of the other disease modules.
@@ -688,7 +690,6 @@ class MalariaScheduleTesting(RegularEvent, PopulationScopeEventMixin):
             )
 
 
-# TODO link this with ANC appts
 class MalariaIPTp(RegularEvent, PopulationScopeEventMixin):
     """ malaria prophylaxis for pregnant women
     """
@@ -725,7 +726,7 @@ class MalariaDeathEvent(Event, IndividualScopeEventMixin):
     def apply(self, individual_id):
         df = self.sim.population.props
 
-        if not df.at[individual_id, "is_alive"]:
+        if not df.at[individual_id, "is_alive"] or (df.at[individual_id, "ma_inf_type"] == "none"):
             return
 
         # death should only occur if severe malaria case
@@ -777,16 +778,9 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Malaria)
 
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["ConWithDCSA"] = 1
-        # print(the_appt_footprint)
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = "Malaria_RDT"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.TREATMENT_ID = "Malaria_Test"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"ConWithDCSA": 1})
         self.ACCEPTED_FACILITY_LEVEL = '0'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
 
@@ -906,15 +900,9 @@ class HSI_Malaria_non_complicated_treatment_age0_5(HSI_Event, IndividualScopeEve
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Malaria)
 
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["ConWithDCSA"] = 1  # This requires one out patient
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = "Malaria_treatment_child0_5"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = '0'
-        self.ALERT_OTHER_DISEASES = []
+        self.TREATMENT_ID = "Malaria_Treatment_NotComplicated_Child"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Under5OPD": 1})
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
 
     def apply(self, person_id, squeeze_factor):
 
@@ -951,15 +939,9 @@ class HSI_Malaria_non_complicated_treatment_age5_15(HSI_Event, IndividualScopeEv
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Malaria)
 
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["Under5OPD"] = 1  # This requires one out patient
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = "Malaria_treatment_child5_15"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.TREATMENT_ID = "Malaria_Treatment_NotComplicated_Child"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
 
@@ -996,15 +978,9 @@ class HSI_Malaria_non_complicated_treatment_adult(HSI_Event, IndividualScopeEven
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Malaria)
 
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["Over5OPD"] = 1  # This requires one out patient
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = "Malaria_treatment_adult"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.TREATMENT_ID = "Malaria_Treatment_NotComplicated_Adult"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
 
@@ -1037,15 +1013,10 @@ class HSI_Malaria_complicated_treatment_child(HSI_Event, IndividualScopeEventMix
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Malaria)
 
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["InpatientDays"] = 5
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = "Malaria_treatment_complicated_child"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.TREATMENT_ID = "Malaria_Treatment_Complicated_Child"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.ALERT_OTHER_DISEASES = []
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})
 
     def apply(self, person_id, squeeze_factor):
 
@@ -1080,15 +1051,10 @@ class HSI_Malaria_complicated_treatment_adult(HSI_Event, IndividualScopeEventMix
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Malaria)
 
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["InpatientDays"] = 5
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = "Malaria_treatment_complicated_adult"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.TREATMENT_ID = "Malaria_Treatment_Complicated_Adult"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.ALERT_OTHER_DISEASES = []
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})
 
     def apply(self, person_id, squeeze_factor):
 
@@ -1123,15 +1089,9 @@ class HSI_MalariaIPTp(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Malaria)
 
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["ANCSubsequent"] = 0.25  # This requires part of an ANC appt
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = "Malaria_IPTp"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.TREATMENT_ID = "Malaria_Prevention_Iptp"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
 
@@ -1151,6 +1111,15 @@ class HSI_MalariaIPTp(HSI_Event, IndividualScopeEventMixin):
                              data=f'HSI_MalariaIPTp: giving IPTp for person {person_id}')
 
                 df.at[person_id, "ma_iptp"] = True
+
+                # if currently infected, IPTp will clear the infection
+                df.at[person_id, "ma_is_infected"] = False
+                df.at[person_id, "ma_inf_type"] = "none"
+
+                # clear any symptoms
+                self.sim.modules["SymptomManager"].clear_symptoms(
+                    person_id=person_id, disease_module=self.module
+                )
 
     def did_not_run(self):
 
