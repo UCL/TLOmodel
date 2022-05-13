@@ -34,8 +34,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2014, 1, 1)
-popsize = 20000
+end_date = Date(2040, 1, 1)
+popsize = 35000
 
 # set up the log config
 log_config = {
@@ -82,11 +82,11 @@ sim.register(
 )
 
 # change parameters
-sim.modules["Tb"].parameters["scenario"] = 0
-sim.modules["Tb"].parameters["scaling_factor_WHO"] = 2.8
-sim.modules["Tb"].parameters["rr_tb_hiv"] = 3
-sim.modules["Tb"].parameters["rr_tb_aids"] = 10
-sim.modules["Hiv"].parameters["aids_tb_treatment_adjustment"] = 0.5  # will reduce AIDS-TB deaths
+# sim.modules["Tb"].parameters["scenario"] = 0
+# sim.modules["Tb"].parameters["scaling_factor_WHO"] = 2.8
+# sim.modules["Tb"].parameters["rr_tb_hiv"] = 3
+# sim.modules["Tb"].parameters["rr_tb_aids"] = 10
+# sim.modules["Hiv"].parameters["aids_tb_treatment_adjustment"] = 0.5  # will reduce AIDS-TB deaths
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)

@@ -512,7 +512,7 @@ def test_relapse_risk(seed):
     # check relapse to active tb is scheduled to occur
     assert not df.at[person_id, 'tb_scheduled_date_active'] == pd.NaT
 
-# todo
+
 def test_ipt_to_child_of_tb_mother(seed):
     """
     if child born to mother with diagnosed tb, check give ipt

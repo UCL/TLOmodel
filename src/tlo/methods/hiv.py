@@ -345,10 +345,6 @@ class Hiv(Module):
             Types.REAL,
             "probability of death if aids and tb, person on treatment for tb",
         ),
-        "discount_aids_due_to_tb": Parameter(
-            Types.REAL,
-            "discount the probability of aids through HIV infection only to compensate for aids caused by TB",
-        ),
     }
 
     def read_parameters(self, data_folder):
