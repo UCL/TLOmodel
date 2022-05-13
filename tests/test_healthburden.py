@@ -18,7 +18,6 @@ from tlo.methods import (
     mockitis,
     symptommanager,
 )
-
 from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.diarrhoea import increase_risk_of_death, make_treatment_perfect
