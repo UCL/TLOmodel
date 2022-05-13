@@ -362,8 +362,6 @@ class Lifestyle(Module):
         :param population: the population of individuals
         """
         df = population.props  # a shortcut to the data-frame storing data for individuals
-        m = self
-        rng = m.rng
         alive_idx = df.index[df.is_alive]
 
         # -------------------- DEFAULTS ------------------------------------------------------------
@@ -402,13 +400,18 @@ class Lifestyle(Module):
         # initialise some properties using linear models
         self.models.initialise_all_properties(df, self.rng)
 
-        # -------------------- URBAN-RURAL STATUS --------------------------------------------------
+        # initialise bmi properties in population
+        self.initialise_bmi_property(df)
 
+    def initialise_rural_urban_property(self, df, alive_idx):
+        """ set rural urban properties in the population dataframe
+        :param df: population dataframe
+        :param alive_idx: index of those individuals who are alive """
         # todo: urban rural depends on district of residence
-
+        # todo: make this function use linear models
         # randomly selected some individuals as urban
         df.loc[alive_idx, 'li_urban'] = (
-            rng.random_sample(size=len(alive_idx)) < m.parameters['init_p_urban']
+            self.rng.random_sample(size=len(alive_idx)) < self.parameters['init_p_urban']
         )
 
         # get the indices of all individuals who are urban or rural
@@ -416,50 +419,33 @@ class Lifestyle(Module):
         rural_index = df.index[df.is_alive & ~df.li_urban]
 
         # randomly sample wealth category according to urban/rural wealth probs
-        df.loc[urban_index, 'li_wealth'] = rng.choice(
-            [1, 2, 3, 4, 5], size=len(urban_index), p=m.parameters['init_p_wealth_urban']
+        df.loc[urban_index, 'li_wealth'] = self.rng.choice(
+            [1, 2, 3, 4, 5], size=len(urban_index), p=self.parameters['init_p_wealth_urban']
         )
-        df.loc[rural_index, 'li_wealth'] = rng.choice(
-            [1, 2, 3, 4, 5], size=len(rural_index), p=m.parameters['init_p_wealth_rural']
+        df.loc[rural_index, 'li_wealth'] = self.rng.choice(
+            [1, 2, 3, 4, 5], size=len(rural_index), p=self.parameters['init_p_wealth_rural']
         )
 
-        # # -------------------- LOW EXERCISE --------------------------------------------------------
-        # # get target population
-        # target_pop = df.loc[df.is_alive & (df.age_years >= 15)]
-        #
-        # # get indexes of population alive and 15+ years
-        # age_ge15_idx = df.index[df.is_alive & (df.age_years >= 15)]
-        #
-        # # predict probabilities of a given population
-        # low_ex_probs = self.models['low_exercise_linear_model']['init'].predict(target_pop)
-        #
-        # # assign low exercise to true of false based on the predicted probabilities
-        # df.loc[age_ge15_idx, 'li_low_ex'] = (rng.random_sample(size=len(age_ge15_idx)) < low_ex_probs)
-        #
-        # # -------------------- TOBACCO USE ---------------------------------------------------------
-        #
-        # # get individual's tobacco use probability
-        # tob_probs = self.models['tobacco_use_linear_model']['init'].predict(target_pop)
-        #
-        # # decide on tobacco use based on the individual probability is greater than random draw
-        # # this is a list of True/False. assign to li_tob
-        # df.loc[age_ge15_idx, 'li_tob'] = (rng.random_sample(size=len(age_ge15_idx)) < tob_probs)
-
-        # -------------------- EXCESSIVE ALCOHOL ---------------------------------------------------
+    def initialise_excessive_alcohol_property(self, df):
+        """ set excessive acolhol property in the population dataframe
+        :param df: population dataframe """
 
         # get indexes of male and female population alive and 15+ years
         agege15_m_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.sex == 'M')]
         agege15_f_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.sex == 'F')]
 
         df.loc[agege15_m_idx, 'li_ex_alc'] = (
-            rng.random_sample(size=len(agege15_m_idx)) < m.parameters['init_p_ex_alc_m']
+            self.rng.random_sample(size=len(agege15_m_idx)) < self.parameters['init_p_ex_alc_m']
         )
         df.loc[agege15_f_idx, 'li_ex_alc'] = (
-            rng.random_sample(size=len(agege15_f_idx)) < m.parameters['init_p_ex_alc_f']
+            self.rng.random_sample(size=len(agege15_f_idx)) < self.parameters['init_p_ex_alc_f']
         )
 
-        # -------------------- MARITAL STATUS ------------------------------------------------------
+    def initialise_marital_status_property(self, df):
+        """set marital status property in the population dataframe
+        :param df: population dataframe"""
 
+        # select different age groups
         age_15_19 = df.index[df.age_years.between(15, 19) & df.is_alive]
         age_20_29 = df.index[df.age_years.between(20, 29) & df.is_alive]
         age_30_39 = df.index[df.age_years.between(30, 39) & df.is_alive]
@@ -467,43 +453,41 @@ class Lifestyle(Module):
         age_50_59 = df.index[df.age_years.between(50, 59) & df.is_alive]
         age_gte60 = df.index[(df.age_years >= 60) & df.is_alive]
 
-        df.loc[age_15_19, 'li_mar_stat'] = rng.choice(
-            [1, 2, 3], size=len(age_15_19), p=m.parameters['init_dist_mar_stat_age1520']
+        df.loc[age_15_19, 'li_mar_stat'] = self.rng.choice(
+            [1, 2, 3], size=len(age_15_19), p=self.parameters['init_dist_mar_stat_age1520']
         )
-        df.loc[age_20_29, 'li_mar_stat'] = rng.choice(
-            [1, 2, 3], size=len(age_20_29), p=m.parameters['init_dist_mar_stat_age2030']
+        df.loc[age_20_29, 'li_mar_stat'] = self.rng.choice(
+            [1, 2, 3], size=len(age_20_29), p=self.parameters['init_dist_mar_stat_age2030']
         )
-        df.loc[age_30_39, 'li_mar_stat'] = rng.choice(
-            [1, 2, 3], size=len(age_30_39), p=m.parameters['init_dist_mar_stat_age3040']
+        df.loc[age_30_39, 'li_mar_stat'] = self.rng.choice(
+            [1, 2, 3], size=len(age_30_39), p=self.parameters['init_dist_mar_stat_age3040']
         )
-        df.loc[age_40_49, 'li_mar_stat'] = rng.choice(
-            [1, 2, 3], size=len(age_40_49), p=m.parameters['init_dist_mar_stat_age4050']
+        df.loc[age_40_49, 'li_mar_stat'] = self.rng.choice(
+            [1, 2, 3], size=len(age_40_49), p=self.parameters['init_dist_mar_stat_age4050']
         )
-        df.loc[age_50_59, 'li_mar_stat'] = rng.choice(
-            [1, 2, 3], size=len(age_50_59), p=m.parameters['init_dist_mar_stat_age5060']
+        df.loc[age_50_59, 'li_mar_stat'] = self.rng.choice(
+            [1, 2, 3], size=len(age_50_59), p=self.parameters['init_dist_mar_stat_age5060']
         )
-        df.loc[age_gte60, 'li_mar_stat'] = rng.choice(
-            [1, 2, 3], size=len(age_gte60), p=m.parameters['init_dist_mar_stat_agege60']
+        df.loc[age_gte60, 'li_mar_stat'] = self.rng.choice(
+            [1, 2, 3], size=len(age_gte60), p=self.parameters['init_dist_mar_stat_agege60']
         )
 
-        # -------------------- EDUCATION -----------------------------------------------------------
+    def initialise_education_properties(self, df):
+        """ use output from education linear models to set education levels and status
+        :param df: population dataframe """
 
         age_gte5 = df.index[(df.age_years >= 5) & df.is_alive]
 
         # store population eligible for education
         edu_pop = df.loc[(df.age_years >= 5) & df.is_alive]
 
-        rnd_draw = pd.Series(rng.random_sample(size=len(age_gte5)), index=age_gte5)
+        rnd_draw = pd.Series(self.rng.random_sample(size=len(age_gte5)), index=age_gte5)
 
         # make some predictions
         p_some_ed = self.models.education_linear_models()['some_edu_linear_model'].predict(edu_pop)
         p_ed_lev_3 = self.models.education_linear_models()['level_3_edu_linear_model'].predict(edu_pop)
-        dfx = pd.concat([p_ed_lev_3, p_some_ed, rnd_draw], axis=1)
-        dfx.columns = ['eff_prob_ed_lev_3', 'eff_prob_some_ed', 'random_draw_01']
-
-        dfx['p_ed_lev_1'] = 1 - dfx['eff_prob_some_ed']
-        dfx['p_ed_lev_3'] = dfx['eff_prob_ed_lev_3']
-        dfx['cut_off_ed_levl_3'] = 1 - dfx['eff_prob_ed_lev_3']
+        dfx = pd.concat([(1 - p_ed_lev_3), (1 - p_some_ed)], axis=1)
+        dfx.columns = ['cut_off_ed_levl_3', 'p_ed_lev_1']
 
         dfx['li_ed_lev'] = 2
         dfx.loc[dfx['cut_off_ed_levl_3'] < rnd_draw, 'li_ed_lev'] = 3
@@ -511,102 +495,50 @@ class Lifestyle(Module):
 
         df.loc[age_gte5, 'li_ed_lev'] = dfx['li_ed_lev']
 
-        df.loc[df.age_years.between(5, 12) & (df['li_ed_lev'] == 1) & df.is_alive, 'li_in_ed'] = False
         df.loc[df.age_years.between(5, 12) & (df['li_ed_lev'] == 2) & df.is_alive, 'li_in_ed'] = True
         df.loc[df.age_years.between(13, 19) & (df['li_ed_lev'] == 3) & df.is_alive, 'li_in_ed'] = True
 
-        # # -------------------- UNIMPROVED SANITATION ---------------------------------------------------
-        #
-        # # make prediction about population with unimproved sanitation
-        # prob_unimproved_sanitation = self.models['un_improved_sanitation_linear_model']['init'].predict(
-        #     df.loc[df.is_alive])
-        #
-        # # decide on unimproved sanitation based on the individual probability is greater than random draw
-        # random_draw = pd.Series(rng.random_sample(size=len(alive_idx)), index=alive_idx)
-        # df.loc[alive_idx, 'li_unimproved_sanitation'] = random_draw < prob_unimproved_sanitation
-        #
-        # # -------------------- NO CLEAN DRINKING WATER -------------------------------------------
-        #
-        # # make predictions about no clean drinking water
-        # prob_no_clean_drinking_water = self.models['no_clean_drinking_water_linear_model']['init'].predict(
-        #     df.loc[df.is_alive])
-        #
-        # # decide on no clean drinking water based on the individual probability is greater than random draw
-        # random_draw = pd.Series(rng.random_sample(size=len(alive_idx)), index=alive_idx)
-        # df.loc[alive_idx, 'li_no_clean_drinking_water'] = random_draw < prob_no_clean_drinking_water
-        #
-        # # -------------------- WOOD BURN STOVE ---------------------------------------------------
-        #
-        # # make predictions about population using wood burn stove
-        # prob_wood_burn_stove = self.models['wood_burn_stove_linear_model']['init'].predict(df.loc[df.is_alive])
-        #
-        # # decide on wood burn stove use based on the individual probability is greater than random draw
-        # random_draw = pd.Series(rng.random_sample(size=len(alive_idx)), index=alive_idx)
-        # df.loc[alive_idx, 'li_wood_burn_stove'] = random_draw < prob_wood_burn_stove
-        #
-        # # -------------------- NO ACCESS HANDWASHING ---------------------------------------------------
-        # # get no access hand washing probabilities
-        # prob_no_access_handwashing = self.models['no_access_hand_washing']['init'].predict(df.loc[df.is_alive])
-        #
-        # # decide on no access hand washing based on the individual probability is greater than random draw
-        # random_draw = pd.Series(rng.random_sample(size=len(alive_idx)), index=alive_idx)
-        # df.loc[alive_idx, 'li_no_access_handwashing'] = random_draw < prob_no_access_handwashing
-        #
-        # # -------------------- SALT INTAKE ----------------------------------------------------------
-        #
-        # # get individual salt intake probabilities
-        # prob_high_salt = self.models['salt_intake_linear_model']['init'].predict(df.loc[df.is_alive])
-        #
-        # # decide on salt intake based on the individual probability is greater than random draw
-        # random_draw = pd.Series(rng.random_sample(size=len(alive_idx)), index=alive_idx)
-        # df.loc[alive_idx, 'li_high_salt'] = random_draw < prob_high_salt
+    def initialise_sugar_intake_property(self, df, alive_idx):
+        """ set properties for sugar intake in population dataframe
+        :param df: population dataframe
+        :param alive_idx: index of those individuals who are alive """
 
-        # -------------------- SUGAR INTAKE ----------------------------------------------------------
+        # no determinants of sugar intake hence don't need to convert to odds to apply odds ratios
+        random_draw = pd.Series(self.rng.random_sample(size=len(alive_idx)), index=alive_idx)
+        df.loc[alive_idx, 'li_high_sugar'] = random_draw < self.parameters['init_p_high_sugar']
 
-        # no determinants of sugar intake hence dont need to convert to odds to apply odds ratios
-
-        random_draw = pd.Series(rng.random_sample(size=len(alive_idx)), index=alive_idx)
-
-        df.loc[alive_idx, 'li_high_sugar'] = random_draw < m.parameters['init_p_high_sugar']
-
-        # -------------------- WEALTH LEVEL ----------------------------------------------------------
+    def initialise_wealth_level_property(self, df):
+        """set property for wealth level in population dataframe
+        :param df: population dataframe"""
 
         urban_idx = df.index[df.is_alive & df.li_urban]
         rural_idx = df.index[df.is_alive & ~df.li_urban]
 
         # allocate wealth level for urban
-        df.loc[urban_idx, 'li_wealth'] = rng.choice(
-            [1, 2, 3, 4, 5], size=len(urban_idx), p=m.parameters['init_p_wealth_urban']
+        df.loc[urban_idx, 'li_wealth'] = self.rng.choice(
+            [1, 2, 3, 4, 5], size=len(urban_idx), p=self.parameters['init_p_wealth_urban']
         )
 
         # allocate wealth level for rural
-        df.loc[rural_idx, 'li_wealth'] = rng.choice(
-            [1, 2, 3, 4, 5], size=len(rural_idx), p=m.parameters['init_p_wealth_rural']
+        df.loc[rural_idx, 'li_wealth'] = self.rng.choice(
+            [1, 2, 3, 4, 5], size=len(rural_idx), p=self.parameters['init_p_wealth_rural']
         )
 
-        # -------------------- BMI CATEGORIES ----------------------------------------------------------
-        # # get indexes of population alive and 15+ years
+    def initialise_bmi_property(self, df):
+        """ set property for BMI in population dataframe
+        :param df: population dataframe """
+
+        # get indexes of population alive and 15+ years
         age_ge15_idx = df.index[df.is_alive & (df.age_years >= 15)]
+        prop_df = df.loc[df.is_alive & (df.age_years >= 15)]
 
         # only relevant if at least one individual with age >= 15 years present
         if len(age_ge15_idx) > 0:
-
-            agege15_w_idx = df.index[df.is_alive & (df.sex == 'F') & (df.age_years >= 15)]
-            agege15_rural_idx = df.index[df.is_alive & ~df.li_urban & (df.age_years >= 15)]
-            agege15_high_sugar_idx = df.index[df.is_alive & df.li_high_sugar & (df.age_years >= 15)]
-            agege3049_idx = df.index[df.is_alive & (df.age_years >= 30) & (df.age_years < 50)]
-            agege50_idx = df.index[df.is_alive & (df.age_years >= 50)]
-            agege15_tob_idx = df.index[df.is_alive & df.li_tob & (df.age_years >= 15)]
-            agege15_wealth2_idx = df.index[df.is_alive & (df.li_wealth == 2) & (df.age_years >= 15)]
-            agege15_wealth3_idx = df.index[df.is_alive & (df.li_wealth == 3) & (df.age_years >= 15)]
-            agege15_wealth4_idx = df.index[df.is_alive & (df.li_wealth == 4) & (df.age_years >= 15)]
-            agege15_wealth5_idx = df.index[df.is_alive & (df.li_wealth == 5) & (df.age_years >= 15)]
-
             # this below is the approach to apply the effect of contributing determinants on bmi levels at baseline
             # transform to odds, apply the odds ratio for the effect, transform back to probabilities and normalise
             # to sum to 1
             init_odds_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1 = [
-                i / (1 - i) for i in m.parameters['init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1']
+                i / (1 - i) for i in self.parameters['init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1']
             ]
 
             df_odds_probs_bmi_levels = pd.DataFrame(
@@ -615,65 +547,101 @@ class Lifestyle(Module):
                 index=age_ge15_idx,
             )
 
-            def update_df_odds_bmi(bmi: str, power: int):
-                """Update specified bmi column using pattern and the power given"""
-                df_odds_probs_bmi_levels.loc[agege15_w_idx, bmi] *= (
-                    m.parameters['init_or_higher_bmi_f'] ** power
-                )
-                df_odds_probs_bmi_levels.loc[agege15_rural_idx, bmi] *= (
-                    m.parameters['init_or_higher_bmi_rural'] ** power
-                )
-                df_odds_probs_bmi_levels.loc[agege15_high_sugar_idx, bmi] *= (
-                    m.parameters['init_or_higher_bmi_high_sugar'] ** power
-                )
-                df_odds_probs_bmi_levels.loc[agege3049_idx, bmi] *= (
-                    m.parameters['init_or_higher_bmi_age3049'] ** power
-                )
-                df_odds_probs_bmi_levels.loc[agege50_idx, bmi] *= (
-                    m.parameters['init_or_higher_bmi_agege50'] ** power
-                )
-                df_odds_probs_bmi_levels.loc[agege15_tob_idx, bmi] *= (
-                    m.parameters['init_or_higher_bmi_tob'] ** power
-                )
-                df_odds_probs_bmi_levels.loc[agege15_wealth2_idx, bmi] *= (
-                                                                              m.parameters[
-                                                                                  'init_or_higher_bmi_per_higher_wealth_level'] ** 2) ** power
-                df_odds_probs_bmi_levels.loc[agege15_wealth3_idx, bmi] *= (
-                                                                              m.parameters[
-                                                                                  'init_or_higher_bmi_per_higher_wealth_level'] ** 3) ** power
-                df_odds_probs_bmi_levels.loc[agege15_wealth4_idx, bmi] *= (
-                                                                              m.parameters[
-                                                                                  'init_or_higher_bmi_per_higher_wealth_level'] ** 4) ** power
-                df_odds_probs_bmi_levels.loc[agege15_wealth5_idx, bmi] *= (
-                                                                              m.parameters[
-                                                                                  'init_or_higher_bmi_per_higher_wealth_level'] ** 5) ** power
+            # df_lm = pd.DataFrame()
+            # bmi_powers = [-2, -1, 0, 1, 2]
+            # for index_ in range(0, 5):
+            #     df_lm[index_ + 1] = LifestyleModels(self).bmi_linear_model(index_, bmi_powers[index_]).predict(prop_df)
 
-            update_df_odds_bmi('1', -2)
-            update_df_odds_bmi('2', -1)
-            update_df_odds_bmi('3', 0)
-            update_df_odds_bmi('4', 1)
-            update_df_odds_bmi('5', 2)
+            self.update_df_odds_bmi(df, df_odds_probs_bmi_levels, '1', -2)
+            self.update_df_odds_bmi(df, df_odds_probs_bmi_levels, '2', -1)
+            self.update_df_odds_bmi(df, df_odds_probs_bmi_levels, '3', 0)
+            self.update_df_odds_bmi(df, df_odds_probs_bmi_levels, '4', 1)
+            self.update_df_odds_bmi(df, df_odds_probs_bmi_levels, '5', 2)
 
             for bmi in range(1, 6):
                 bmi = str(bmi)
                 df_odds_probs_bmi_levels[f'prob {bmi}'] = df_odds_probs_bmi_levels.apply(
                     lambda row: row[bmi] / (1 + row[bmi]), axis=1
                 )
+
             # normalise probabilities
             df_odds_probs_bmi_levels['sum_probs'] = df_odds_probs_bmi_levels.apply(
                 lambda row: row['prob 1'] + row['prob 2'] + row['prob 3'] + row['prob 4'] + row['prob 5'], axis=1
             )
+
             for bmi in range(1, 6):
                 df_odds_probs_bmi_levels[bmi] = df_odds_probs_bmi_levels.apply(
                     lambda row: row[f'prob {bmi}'] / row['sum_probs'], axis=1
                 )
 
+            # df_lm_sum = df_lm.sum(axis=1)
+            # print(f'sum is {df_lm["sum_probs"].compare(df_odds_probs_bmi_levels["sum_probs"])}')
+            # for bmi in range(1, 6):
+            #     df_lm[bmi] = df_lm.apply(
+            #         lambda row: row[bmi] / row['sum_probs'], axis=1
+            #     )
+            # dfx = df_lm.div(df_lm.sum(axis=1), axis=0)
+            # print(f'divide is {dfx}')
+            # print(f"the df is {df_odds_probs_bmi_levels[[1, 2, 3, 4, 5]]}")
+
             dfxx = df_odds_probs_bmi_levels[[1, 2, 3, 4, 5]]
+            # print(f"the compare df is {dfx.compare(dfxx)}")
 
             # for each row, make a choice
-            bmi_cat = dfxx.apply(lambda p_bmi: rng.choice(dfxx.columns, p=p_bmi), axis=1)
+            bmi_cat = dfxx.apply(lambda p_bmi: self.rng.choice(dfxx.columns, p=p_bmi), axis=1)
+            print(f'bmi cat {bmi_cat}')
 
-            df.loc[age_ge15_idx, 'li_bmi'] = bmi_cat
+            # df.loc[age_ge15_idx, 'li_bmi'] = bmi_cat
+
+    def update_df_odds_bmi(self, df, df_odds_probs_bmi_levels, bmi: str, power: int):
+        """Update specified bmi column using pattern and the power given
+        :param df: population dataframe
+        :param df_odds_probs_bmi_levels: odds of different BMI levels
+        :param bmi: BMI level
+        :param power: a power to bmi parameters """
+
+        # get different age groups
+        agege15_w_idx = df.index[df.is_alive & (df.sex == 'F') & (df.age_years >= 15)]
+        agege15_rural_idx = df.index[df.is_alive & ~df.li_urban & (df.age_years >= 15)]
+        agege15_high_sugar_idx = df.index[df.is_alive & df.li_high_sugar & (df.age_years >= 15)]
+        agege3049_idx = df.index[df.is_alive & (df.age_years >= 30) & (df.age_years < 50)]
+        agege50_idx = df.index[df.is_alive & (df.age_years >= 50)]
+        agege15_tob_idx = df.index[df.is_alive & df.li_tob & (df.age_years >= 15)]
+        agege15_wealth2_idx = df.index[df.is_alive & (df.li_wealth == 2) & (df.age_years >= 15)]
+        agege15_wealth3_idx = df.index[df.is_alive & (df.li_wealth == 3) & (df.age_years >= 15)]
+        agege15_wealth4_idx = df.index[df.is_alive & (df.li_wealth == 4) & (df.age_years >= 15)]
+        agege15_wealth5_idx = df.index[df.is_alive & (df.li_wealth == 5) & (df.age_years >= 15)]
+
+        df_odds_probs_bmi_levels.loc[agege15_w_idx, bmi] *= (
+            self.parameters['init_or_higher_bmi_f'] ** power
+        )
+        df_odds_probs_bmi_levels.loc[agege15_rural_idx, bmi] *= (
+            self.parameters['init_or_higher_bmi_rural'] ** power
+        )
+        df_odds_probs_bmi_levels.loc[agege15_high_sugar_idx, bmi] *= (
+            self.parameters['init_or_higher_bmi_high_sugar'] ** power
+        )
+        df_odds_probs_bmi_levels.loc[agege3049_idx, bmi] *= (
+            self.parameters['init_or_higher_bmi_age3049'] ** power
+        )
+        df_odds_probs_bmi_levels.loc[agege50_idx, bmi] *= (
+            self.parameters['init_or_higher_bmi_agege50'] ** power
+        )
+        df_odds_probs_bmi_levels.loc[agege15_tob_idx, bmi] *= (
+            self.parameters['init_or_higher_bmi_tob'] ** power
+        )
+        df_odds_probs_bmi_levels.loc[agege15_wealth2_idx, bmi] *= (
+                                                                      self.parameters[
+                                                                          'init_or_higher_bmi_per_higher_wealth_level'] ** 2) ** power
+        df_odds_probs_bmi_levels.loc[agege15_wealth3_idx, bmi] *= (
+                                                                      self.parameters[
+                                                                          'init_or_higher_bmi_per_higher_wealth_level'] ** 3) ** power
+        df_odds_probs_bmi_levels.loc[agege15_wealth4_idx, bmi] *= (
+                                                                      self.parameters[
+                                                                          'init_or_higher_bmi_per_higher_wealth_level'] ** 4) ** power
+        df_odds_probs_bmi_levels.loc[agege15_wealth5_idx, bmi] *= (
+                                                                      self.parameters[
+                                                                          'init_or_higher_bmi_per_higher_wealth_level'] ** 5) ** power
 
         # -------------------- SEX WORKER ----------------------------------------------------------
         # determine which women will be sex worker
@@ -963,6 +931,7 @@ class LifestyleModels:
         # get population properties and apply effects
         tobacco_use_linear_model = LinearModel(LinearModelType.LOGISTIC,
                                                tobacco_use_baseline_odds,
+                                               Predictor('age_years').when('<15', 0),
                                                Predictor('sex').when('F', self.params['init_or_tob_f']),
                                                Predictor().when(
                                                    '(sex == "M") & (age_years >= 20) & (age_years < 40)',
@@ -1068,6 +1037,7 @@ class LifestyleModels:
         # create low exercise linear model
         low_exercise_lm = LinearModel(LinearModelType.LOGISTIC,
                                       init_odds_low_ex_urban_m,
+                                      Predictor('age_years').when('<15', 0),
                                       Predictor('sex').when('F', self.params['init_or_low_ex_f']),
                                       Predictor('li_urban').when(False, self.params['init_or_low_ex_rural'])
                                       )
@@ -1089,19 +1059,19 @@ class LifestyleModels:
             Predictor('age_years').when('.between(15, 19)', self.rng.choice(
                 [1, 2, 3], p=self.params['init_dist_mar_stat_age1520']
             ))
-            .when('.between(20, 29)', self.rng.choice(
+                .when('.between(20, 29)', self.rng.choice(
                 [1, 2, 3], p=self.params['init_dist_mar_stat_age2030']
             ))
-            .when('.between(30, 39)', self.rng.choice(
+                .when('.between(30, 39)', self.rng.choice(
                 [1, 2, 3], p=self.params['init_dist_mar_stat_age3040']
             ))
-            .when('.between(40, 49)', self.rng.choice(
+                .when('.between(40, 49)', self.rng.choice(
                 [1, 2, 3], p=self.params['init_dist_mar_stat_age4050']
             ))
-            .when('.between(50, 59)', self.rng.choice(
+                .when('.between(50, 59)', self.rng.choice(
                 [1, 2, 3], p=self.params['init_dist_mar_stat_age5060']
             ))
-            .when('>= 60', self.rng.choice(
+                .when('>= 60', self.rng.choice(
                 [1, 2, 3], p=self.params['init_dist_mar_stat_agege60']
             ))
             ,
@@ -1210,6 +1180,41 @@ class LifestyleModels:
                                    )
         # return salt intake linear model
         return high_salt_lm
+
+    def bmi_linear_model(self, index, bmi_power):
+        """ a function to create linear model for bmi. here we are using Logistic model and are
+        looking at individual probabilities of a particular bmi level based on the following;
+                1.  sex
+                2.  age group
+                3.  sugar intake
+                3.  tobacco usage
+                4.  rural or urban
+                5.  wealth level    """
+
+        # get bmi baseline
+        init_odds_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1 = [
+            i / (1 - i) for i in self.params['init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1']
+        ]
+
+        # create bmi linear model
+        bmi_lm = LinearModel(LinearModelType.LOGISTIC,
+                             init_odds_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1[index],
+                             Predictor('sex').when('F', self.params['init_or_higher_bmi_f'] ** bmi_power),
+                             Predictor('li_urban').when(False, self.params['init_or_higher_bmi_rural'] ** bmi_power),
+                             Predictor('li_high_sugar').when(True,
+                                                             self.params['init_or_higher_bmi_high_sugar'] ** bmi_power),
+                             Predictor('age_years').when('.between(30, 50, inclusive="right")',
+                                                         self.params['init_or_higher_bmi_age3049'] ** bmi_power)
+                             .when('>= 50', self.params['init_or_higher_bmi_agege50'] ** bmi_power),
+                             Predictor('li_tob').when(True, self.params['init_or_higher_bmi_tob'] ** bmi_power),
+                             Predictor('li_wealth').when(2, (
+                                 self.params['init_or_higher_bmi_per_higher_wealth_level'] ** 2) ** bmi_power)
+                             .when(3, (self.params['init_or_higher_bmi_per_higher_wealth_level'] ** 3) ** bmi_power)
+                             .when(4, (self.params['init_or_higher_bmi_per_higher_wealth_level'] ** 4) ** bmi_power)
+                             .when(5, (self.params['init_or_higher_bmi_per_higher_wealth_level'] ** 5) ** bmi_power)
+                             )
+
+        return bmi_lm
 
 
 class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
