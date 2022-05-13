@@ -476,7 +476,7 @@ make_plot(
     data_low=data_tb_who["mortality_tb_excl_hiv_per_100k_low"],
     data_high=data_tb_who["mortality_tb_excl_hiv_per_100k_high"],
 )
-
+plt.ylim((0, 150))
 plt.show()
 
 

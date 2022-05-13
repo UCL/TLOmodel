@@ -863,8 +863,12 @@ class Hiv(Module):
             date_aids_death = (
                 self.sim.date + self.get_time_from_aids_to_death()
             )  # (assumes AIDS onset on this day)
+
+            # 30% AIDS deaths have TB co-infection
+            cause_of_death = self.rng.choice(a=["AIDS_non_TB", "AIDS_TB"], size=1, p=[0.7, 0.3])
+
             sim.schedule_event(
-                HivAidsDeathEvent(person_id=person_id, module=self, cause="AIDS_non_TB"),
+                HivAidsDeathEvent(person_id=person_id, module=self, cause=cause_of_death),
                 date=date_aids_death,
             )
 
