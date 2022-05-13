@@ -1237,7 +1237,26 @@ class Tb(Module):
         # if cured, move infection status back to latent
         # leave tb_strain property set in case of relapse
         df.loc[cure_idx, "tb_inf"] = "latent"
+        df.loc[cure_idx, "tb_date_latent"] = now
         df.loc[cure_idx, "tb_smear"] = False
+
+        # this will clear all tb symptoms
+        self.sim.modules["SymptomManager"].clear_symptoms(
+            person_id=cure_idx, disease_module=self
+        )
+
+        # if HIV+ and on ART (virally suppressed), remove AIDS symptoms if cured of TB
+        hiv_tb_infected = set(cure_idx).intersection(
+                df.loc[
+                    df.is_alive
+                    & df.hv_inf
+                    & (df.hv_art == "on_VL_suppressed")
+                    ].index
+        )
+
+        self.sim.modules["SymptomManager"].clear_symptoms(
+            person_id=hiv_tb_infected, disease_module=self.sim.modules["Hiv"]
+        )
 
     def check_config_of_properties(self):
         """check that the properties are currently configured correctly"""

@@ -1364,10 +1364,15 @@ class Hiv(Module):
         assert has_aids_symptoms.issubset(
             df_alive.loc[df_alive.is_alive & df_alive.hv_inf].index
         )
+
+        # a person can have AIDS onset if they're virally suppressed if had active TB
+        # if cured of TB and still virally suppressed, AIDS symptoms are removed
         assert 0 == len(
             has_aids_symptoms.intersection(
                 df_alive.loc[
-                    df_alive.is_alive & (df_alive.hv_art == "on_VL_suppressed")
+                    df_alive.is_alive
+                    & (df_alive.hv_art == "on_VL_suppressed")
+                    & (df_alive.tb_inf == "uninfected")
                     ].index
             )
         )
@@ -1727,14 +1732,21 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
                 originating_module=self.module,
             )
 
-        # on or off ART, active TB infection
+        # on or off ART, active TB infection, schedule AidsTbDeathEvent
         if df.at[person_id, "tb_inf"] == "active":
-            # cause is HIV_TB
-            self.sim.modules["Demography"].do_death(
-                individual_id=person_id,
-                cause="AIDS_TB",
-                originating_module=self.module,
+            # cause is active TB
+            self.sim.schedule_event(
+                event=HivAidsTbDeathEvent(
+                    person_id=person_id, module=self.module, cause="AIDS_TB"
+                ),
+                date=self.sim.date,
             )
+            # # cause is HIV_TB
+            # self.sim.modules["Demography"].do_death(
+            #     individual_id=person_id,
+            #     cause="AIDS_TB",
+            #     originating_module=self.module,
+            # )
 
 
 class HivAidsTbDeathEvent(Event, IndividualScopeEventMixin):

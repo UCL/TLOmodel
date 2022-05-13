@@ -34,8 +34,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2040, 1, 1)
-popsize = 35000
+end_date = Date(2015, 12, 31)
+popsize = 2000
 
 # set up the log config
 log_config = {
@@ -54,8 +54,8 @@ log_config = {
 
 # Register the appropriate modules
 # need to call epi before tb to get bcg vax
-seed = random.randint(0, 50000)
-# seed = 18279  # set seed for reproducibility
+# seed = random.randint(0, 50000)
+seed = 49400  # set seed for reproducibility
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
 sim.register(
     demography.Demography(resourcefilepath=resourcefilepath),
@@ -76,7 +76,7 @@ sim.register(
     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
     healthburden.HealthBurden(resourcefilepath=resourcefilepath),
     epi.Epi(resourcefilepath=resourcefilepath),
-    hiv.Hiv(resourcefilepath=resourcefilepath),
+    hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True),
     tb.Tb(resourcefilepath=resourcefilepath),
     # deviance_measure.Deviance(resourcefilepath=resourcefilepath),
 )
