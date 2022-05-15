@@ -515,8 +515,7 @@ class HealthSystem(Module):
         # (for debugging)
         assert isinstance(store_hsi_events_that_have_run, bool)
         self.store_hsi_events_that_have_run = store_hsi_events_that_have_run
-        if self.store_hsi_events_that_have_run:
-            self.store_of_hsi_events_that_have_run = list()
+        self.store_of_hsi_events_that_have_run = list()
 
         # If record_hsi_event_details == True, a set will be built during the simulation
         # containing HSIEventDetails tuples corresponding to all HSI_Event instances
@@ -1213,7 +1212,8 @@ class HealthSystem(Module):
                         'did_run': did_run,
                         'Appt_Footprint': actual_appt_footprint,
                         'Squeeze_Factor': _squeeze_factor,
-                        'Person_ID': hsi_event.target
+                        'Person_ID': hsi_event.target,
+                        'Facility_Level': hsi_event.ACCEPTED_FACILITY_LEVEL
                     }
                 )
 

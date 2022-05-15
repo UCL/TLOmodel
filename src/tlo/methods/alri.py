@@ -786,9 +786,6 @@ class Alri(Module):
         self.logging_event = AlriLoggingEvent(self)
         sim.schedule_event(self.logging_event, sim.date + DateOffset(days=364))
 
-        # self.logging_df_per_episode = AlriAllCasesLoggingEvent(self)
-        # sim.schedule_event(self.logging_df_per_episode, sim.date + DateOffset(years=1))
-
         if self.log_individual is not None:
             # Schedule the individual check logging event (to first occur immediately, and to occur every day)
             sim.schedule_event(AlriIndividualLoggingEvent(self), sim.date)
@@ -807,9 +804,8 @@ class Alri(Module):
 
         # Define the max episode duration
         self.max_duration_of_episode = DateOffset(
-            days=(p['max_alri_duration_in_days_without_treatment'] +
-                  p['days_between_treatment_and_cure']))
-        # 14 days max duration of an episode (natural history) + 14 days to allow treatment
+            days=p['max_alri_duration_in_days_without_treatment'] + p['days_between_treatment_and_cure']
+        )
 
         # Look-up and store the consumables that are required for each HSI
         self.look_up_consumables()
@@ -1887,7 +1883,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 3})
 
     def _refer_to_next_level_up(self):
-        """Schedule this event to occur again today at the next level-up (if there is a next level-up)."""
+        """Schedule a copy of this event to occur again today at the next level-up (if there is a next level-up)."""
 
         def _next_in_sequence(seq: tuple, x: str):
             """Return next value in a sequence of strings, or None if at end of sequence."""
@@ -1900,24 +1896,32 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
 
         levels = ("0", "1a", "1b", "2")  # Health facility levels at which care may be provided
         _next_level_up = _next_in_sequence(levels, self.ACCEPTED_FACILITY_LEVEL)
-        if _next_level_up is not None:
-            if self._is_as_in_patient:
-                self._as_in_patient(_next_level_up)
-            else:
-                self._as_out_patient(_next_level_up)
 
-            self.sim.modules['HealthSystem'].schedule_hsi_event(self,
-                                                                topen=self.sim.date,
-                                                                tclose=self.sim.date + pd.DateOffset(days=1),
-                                                                priority=0)
+        if _next_level_up is not None:
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                HSI_Alri_Treatment(
+                    module=self.module,
+                    person_id=self.target,
+                    inpatient=self._is_as_in_patient,
+                    facility_level=_next_level_up
+                ),
+                topen=self.sim.date,
+                tclose=self.sim.date + pd.DateOffset(days=1),
+                priority=0)
 
     def _refer_to_become_inpatient(self):
-        """Schedule this event to occur again today at this level as an in-patient appointment."""
-        self._as_in_patient(self.ACCEPTED_FACILITY_LEVEL)
-        self.sim.modules['HealthSystem'].schedule_hsi_event(self,
-                                                            topen=self.sim.date,
-                                                            tclose=self.sim.date + pd.DateOffset(days=1),
-                                                            priority=0)
+        """Schedule a copy of this event to occur today at this level as an in-patient appointment."""
+
+        self.sim.modules['HealthSystem'].schedule_hsi_event(
+            HSI_Alri_Treatment(
+                module=self.module,
+                person_id=self.target,
+                inpatient=True,
+                facility_level=self.ACCEPTED_FACILITY_LEVEL
+            ),
+            topen=self.sim.date,
+            tclose=self.sim.date + pd.DateOffset(days=1),
+            priority=0)
 
     @property
     def _is_as_in_patient(self):
