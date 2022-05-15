@@ -983,7 +983,7 @@ class HealthSystem(Module):
             ]
             assert facility_appt_types.issuperset(appt_type_to_check_list), (
                 f"An appointment type has been requested at a facility level for "
-                f"which it is not possible: TREATMENT_ID={hsi_event.TREATMENT_ID}"
+                f"which it is not possible: TREATMENT_ID={hsi_event.TREATMENT_ID}, {appt_type_to_check_list=}, {hsi_event.ACCEPTED_FACILITY_LEVEL}"
             )
 
     def is_treatment_id_allowed(self, treatment_id: str) -> bool:
