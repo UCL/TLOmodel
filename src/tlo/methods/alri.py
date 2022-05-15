@@ -1124,6 +1124,7 @@ class Alri(Module):
     def _treatment_fails(self, imci_symptom_based_classification: str, needs_oxygen: bool, antibiotic_provided: str,
                          oxygen_provided: bool) -> bool:
         """Returns True if the treatment specified will prevent death."""
+
         # todo @ ines - why does this no depend on whether or not oxygen is provided?!?!?!?
         # todo @ines -- does it really depend on the imci_symptom_based_classification or the classification for treatment?
         # todo @ines -- note that '3day_oral_amoxicillin' is not provided in any circumatance to anyone
@@ -2059,7 +2060,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                 if rand() < p['sensitivity_of_classification_of_severe_pneumonia_facility_level1']:
                     return imci_classification_based_on_symptoms
                 else:
-                    return rand_choice.choice(
+                    return rand_choice(
                         ['chest_indrawing_pneumonia', 'cough_or_cold'],
                         p=[
                             p['prob_IMCI_severe_pneumonia_treated_as_non_severe_pneumonia'],
@@ -2141,7 +2142,8 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
             """Try to provide a `treatment_indicated` and refer to next level if the consumables are not available."""
 
             antibiotic_consumables_available = self._get_any_cons('Amoxicillin_tablet_or_suspension') \
-                if antibiotic_indicated == '5day_oral_amoxicillin' else self._get_cons('1st_line_IV_antibiotics')
+                if antibiotic_indicated == '5day_oral_amoxicillin' \
+                else self._get_cons('Ampicillin_gentamicin_therapy_for_severe_pneumonia')
 
             oxygen_available = self._get_cons('Oxygen_Therapy')
             oxygen_indicated_and_available_or_oxygen_not_indicated = (oxygen_available and oxygen_indicated) or \
@@ -2369,10 +2371,13 @@ class Tracker:
         return self.tracker
 
     def report_current_total(self):
-        total = 0
-        for _a in self.tracker.keys():
-            total += sum(self.tracker[_a].values())
-        return total
+        if not isinstance(self.tracker, int):
+            total = 0
+            for _a in self.tracker.keys():
+                total += sum(self.tracker[_a].values())
+            return total
+        else:
+            return self.tracker
 
 
 # ---------------------------------------------------------------------------------------------------------

@@ -688,32 +688,59 @@ def test_no_immediate_onset_complications(sim_hs_all_consumables):
 
 
 def test_classification_based_on_symptoms_and_imci(sim_hs_all_consumables):
-    """Check that `symptom_based_classification` gives the expected classification."""
-    sim = sim_hs_all_consumables
+    """Check that `_get_disease_classification` gives the expected classification."""
 
-    # Construct scenario and the expected classification if using only symptoms:
-    classification_on_symptoms = (
-        (
-            'chest_indrawing_pneumonia',
-            {'symptoms': ['chest_indrawing'], 'facility_level': '1a', 'age_exact_years': 0.5}),
+    def make_hw_assesement_perfect(sim):
+        p = sim.modules['Alri'].parameters
+        p['sensitivity_of_classification_of_fast_breathing_pneumonia_facility_level0'] = 1.0
+        p['sensitivity_of_classification_of_danger_signs_pneumonia_facility_level0'] = 1.0
+        p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level1'] = 1.0
+        p['sensitivity_of_classification_of_severe_pneumonia_facility_level1'] = 1.0
+
+    sim = sim_hs_all_consumables
+    make_hw_assesement_perfect(sim)
+    sim.make_initial_population(n=1000)
+    hsi_alri_treatment = HSI_Alri_Treatment(sim.modules['Alri'], 0)
+
+    # Construct examples of the correct classification of disease, given a range of symptoms, age and facility level
+    # todo - TBH check that this is a good range
+    imci_classification_on_symptoms = (
+        # -- Children older than 2 months
         ('chest_indrawing_pneumonia',
-         {'symptoms': ['chest_indrawing', 'tachypnoea'], 'facility_level': '1a', 'age_exact_years': 0.5}),
-        ('fast_breathing_pneumonia', {'symptoms': ['tachypnoea'], 'facility_level': '1b', 'age_exact_years': 0.5}),
-        ('danger_signs_pneumonia', {'symptoms': ['danger_signs'], 'facility_level': '1b', 'age_exact_years': 0.5}),
+            {'symptoms': ['chest_indrawing'],
+             'child_is_younger_than_2_months': False}),
+        ('chest_indrawing_pneumonia',
+            {'symptoms': ['chest_indrawing', 'tachypnoea'],
+             'child_is_younger_than_2_months': False}),
+        ('fast_breathing_pneumonia',
+            {'symptoms': ['tachypnoea'],
+             'child_is_younger_than_2_months': False}),
         ('danger_signs_pneumonia',
-         {'symptoms': ['danger_signs', 'chest_indrawing'], 'facility_level': '1b', 'age_exact_years': 0.5}),
-        ('serious_bacterial_infection',
-         {'symptoms': ['chest_indrawing'], 'facility_level': '1b', 'age_exact_years': 0.1}),
-        ('serious_bacterial_infection', {'symptoms': ['danger_signs'], 'facility_level': '2', 'age_exact_years': 0.1}),
-        ('fast_breathing_pneumonia', {'symptoms': ['tachypnoea'], 'facility_level': '1b', 'age_exact_years': 0.1}),
-        ('not_handled_at_facility_0', {'symptoms': ['tachypnoea'], 'facility_level': '0', 'age_exact_years': 0.1}),
-        ('cough_or_cold', {'symptoms': ['cough'], 'facility_level': '1a', 'age_exact_years': 0.5}),
-        ('serious_bacterial_infection',
-         {'symptoms': ['cough', 'danger_signs', 'difficult_breathing', 'fever', 'chest_indrawing'],
-          'facility_level': '2', 'age_exact_years': 0.1}),
+            {'symptoms': ['danger_signs'],
+             'child_is_younger_than_2_months': False}),
         ('danger_signs_pneumonia',
-         {'symptoms': ['cough', 'danger_signs', 'difficult_breathing', 'fever', 'chest_indrawing'],
-          'facility_level': '2', 'age_exact_years': 1})
+            {'symptoms': ['danger_signs', 'chest_indrawing'],
+             'child_is_younger_than_2_months': False}),
+        ('chest_indrawing_pneumonia',   # <-- todo @ines -- this was originallly "serious_bacterial_infection" but I think that was wrong so I chnage it.
+            {'symptoms': ['chest_indrawing'],
+             'child_is_younger_than_2_months': False}),
+
+        # -- Children younger than 2 months
+        ('serious_bacterial_infection',
+            {'symptoms': ['danger_signs'],
+             'child_is_younger_than_2_months': True}),
+        ('fast_breathing_pneumonia',
+            {'symptoms': ['tachypnoea'],
+             'child_is_younger_than_2_months': True}),
+        ('cough_or_cold',
+            {'symptoms': ['cough'],
+             'child_is_younger_than_2_months': True}),
+        ('serious_bacterial_infection',
+            {'symptoms': ['cough', 'danger_signs', 'difficult_breathing', 'fever', 'chest_indrawing'],
+             'child_is_younger_than_2_months': True}),
+        ('serious_bacterial_infection',  # todo - @ines - I think you mean this to be 'serious_bacterial_infection', right? (it was "danger_sign_pneumonia")
+            {'symptoms': ['cough', 'danger_signs', 'difficult_breathing', 'fever', 'chest_indrawing'],
+             'child_is_younger_than_2_months': True}),
     )
 
     recognised_classifications = {
@@ -722,66 +749,68 @@ def test_classification_based_on_symptoms_and_imci(sim_hs_all_consumables):
         'danger_signs_pneumonia',
         'cough_or_cold',
         'serious_bacterial_infection',
-        'not_handled_at_facility_0'
     }
+    assert set([x[0] for x in imci_classification_on_symptoms]).issubset(recognised_classifications)
 
-    final_classification_hw_and_oximeter = sim.modules['Alri']._get_disease_classification
-    symptom_based_classification = sim.modules['Alri'].imci_classification_based_on_symptoms
+    _get_disease_classification = hsi_alri_treatment._get_disease_classification
 
-    for correct_classification_on_symptoms, chars in classification_on_symptoms:
-        # Check classification using only symptoms:
-        assert symptom_based_classification(**chars) in recognised_classifications
-        assert correct_classification_on_symptoms == symptom_based_classification(**chars)
+    for _correct_imci_classification_on_symptoms, chars in imci_classification_on_symptoms:
 
-        # Check IMCI classification if oximeter not available (should be same as symptoms)
-        assert correct_classification_on_symptoms == final_classification_hw_and_oximeter(
-            hw_assigned_classification=correct_classification_on_symptoms,
-            # Assumes perfect quality of care by the health workers
-            age_exact_years=0.5,
-            oximeter_available=False,
-            oxygen_saturation='<90%')
+        # If no oximeter available and does not need oxygen, and perfect HW assessment: classification should be the
+        # IMCI classification
+        assert _correct_imci_classification_on_symptoms == _get_disease_classification(
+            age_exact_years=0.05 if chars['child_is_younger_than_2_months'] else 1.0,
+            symptoms=chars['symptoms'],
+            oxygen_saturation='>=93%',
+            facility_level='1b',
+            use_oximeter=False
+        )
 
-        # Check that IMCI classification if oximter available but no low oxygen saturation (should be same as symptoms)
-        assert correct_classification_on_symptoms == final_classification_hw_and_oximeter(
-            hw_assigned_classification=correct_classification_on_symptoms,
-            age_exact_years=0.5,
-            oximeter_available=True,
-            oxygen_saturation='>=93%')
+        # If no oximeter available and does need oxygen, and perfect HW assessment: classification should be the
+        # IMCI classification
+        assert _correct_imci_classification_on_symptoms == _get_disease_classification(
+            age_exact_years=0.05 if chars['child_is_younger_than_2_months'] else 1.0,
+            symptoms=chars['symptoms'],
+            oxygen_saturation='<90%',
+            facility_level='1b',
+            use_oximeter=False
+        )
 
-        # Check that IMCI classification if oximter available and low oxygen saturation (should be'danger_signs_
-        # pneumonia' irrespective of symptoms)
-        assert 'danger_signs_pneumonia' == final_classification_hw_and_oximeter(
-            hw_assigned_classification=correct_classification_on_symptoms,
-            age_exact_years=0.5,
-            oximeter_available=True,
-            oxygen_saturation='<90%')
+        # If oximeter available and does oxygen, then classification should be the 'danger_signs_pneumonia'
+        _classificiation = 'serious_bacterial_infection' if chars['child_is_younger_than_2_months'] else 'danger_signs_pneumonia'
+        assert _classificiation == _get_disease_classification(
+            age_exact_years=0.05 if chars['child_is_younger_than_2_months'] else 1.0,
+            symptoms=chars['symptoms'],
+            oxygen_saturation='<90%',
+            facility_level='1b',
+            use_oximeter=True
+        ), f"{_correct_imci_classification_on_symptoms=}"
 
 
 def test_do_effects_of_alri_treatment(sim_hs_all_consumables):
-    """Check that running `do_alri_treatment` with the appropriate treatment code causes there to be a CureEvent
-    scheduled and prevents deaths."""
+    """Check that running `do_alri_treatment` can prevent a death from occurring."""
     sim = sim_hs_all_consumables
-
     popsize = 100
     sim.make_initial_population(n=popsize)
 
     # Set the treatment failure parameters to null
-    params = sim.modules['Alri'].parameters
-    params['5day_amoxicillin_treatment_failure_by_day6'] = 0.0
-    params['5day_amoxicillin_relapse_by_day14'] = 0.0
-    params['1st_line_antibiotic_for_severe_pneumonia_treatment_failure_by_day2'] = 0.0
+    p = sim.modules['Alri'].parameters
+    p['5day_amoxicillin_for_chest_indrawing_treatment_failure_or_relapse'] = 0.0
+    p['3day_amoxicillin_for_chest_indrawing_treatment_failure_or_relapse'] = 0.0
+    p['1st_line_antibiotic_for_severe_pneumonia_treatment_failure_by_day2'] = 0.0
+    p['rr_1st_line_treatment_failure_low_oxygen_saturation'] = 0.0
 
     # start simulation
     sim.simulate(end_date=start_date)
     sim.event_queue.queue = []  # clear the queue
 
-    # Get person to use:
+    # Get person to use (not currently infected):
     df = sim.population.props
     under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
     person_id = under5s.index[0]
     assert not df.loc[person_id, 'ri_current_infection_status']
 
-    # Make the incident case one that should cause treatment 'IMCI_Treatment_severe_pneumonia' to need to be provided
+    # Make the incident case one that should cause 'severe_pneumonia' to need to be provided
     pathogen = list(sim.modules['Alri'].all_pathogens)[0]
     incidentcase = AlriIncidentCase_Lethal_Severe_Pneumonia(person_id=person_id, pathogen=pathogen,
                                                             module=sim.modules['Alri'])
@@ -803,15 +832,10 @@ def test_do_effects_of_alri_treatment(sim_hs_all_consumables):
     death_event = death_event_tuple[1]
     assert date_of_scheduled_death > sim.date
 
-    # give a classification
-    df.at[person_id, 'ri_symptom_based_pneumonia_classification'] = 'danger_signs_pneumonia'
-
-    # Run the 'do_alri_treatment' function (as if from the HSI_IMCI_Pneumonia_Treatment_Inpatient_level_2)
+    # Run the 'do_alri_treatment' function (as if from the HSI)
     sim.modules['Alri'].do_effects_of_treatment(person_id=person_id,
-                                                hsi_event=HSI_IMCI_Pneumonia_Treatment_Inpatient_level_2(
-                                                         person_id=person_id, module=sim.modules['Alri']),
-                                                antibiotic='1st_line_IV_antibiotics',
-                                                oxygen=True)
+                                                antibiotic_provided='1st_line_IV_antibiotics',
+                                                oxygen_provided=True)
 
     # Run the death event that was originally scheduled) - this should have no effect and the person should not die
     sim.date = date_of_scheduled_death
@@ -869,28 +893,46 @@ def test_severe_pneumonia_referral_from_HSI_GenericFirstApptAtFacilityLevel0(sim
 
     # Check infected and not on treatment:
     assert not df.at[person_id, 'ri_on_treatment']
-    assert pd.isnull(df.at[person_id, 'ri_ALRI_tx_start_date'])
 
-    # Run the HSI event
-    hsi = HSI_GenericFirstApptAtFacilityLevel0(person_id=int(person_id), module=sim.modules['HealthSeekingBehaviour'])
-    hsi.run(squeeze_factor=0.0)
+    # Run the healthcare seeking behaviour poll
+    sim.modules['HealthSeekingBehaviour'].theHealthSeekingBehaviourPoll.run()
 
-    # Check that there is an `HSI_IMCI_Pneumonia_Treatment_Inpatient_level_1b` scheduled
-    event_in_que = [event_tuple[1] for event_tuple in sim.modules['HealthSystem'].find_events_for_person(person_id)
-                    if isinstance(event_tuple[1], HSI_IMCI_Pneumonia_Treatment_Inpatient_level_1b)]
-    assert len(event_in_que)
+    # Check that person 0 has an Emergency Generic HSI scheduled
+    generic_appt = [event_tuple[1] for event_tuple in sim.modules['HealthSystem'].find_events_for_person(person_id)
+                    if isinstance(event_tuple[1], HSI_GenericEmergencyFirstApptAtFacilityLevel1)][0]
+
+    generic_appt.run(squeeze_factor=0.0)
+
+    # Check that there is an `HSI_Alri_Treatment` scheduled
+    hsi1 = [event_tuple[1] for event_tuple in sim.modules['HealthSystem'].find_events_for_person(person_id)
+           if isinstance(event_tuple[1], HSI_Alri_Treatment)
+           ][0]
+    assert hsi1.TREATMENT_ID == 'Alri_Pneumonia_Treatment_Outpatient'
 
     # Check not on treatment before referral:
     assert not df.at[person_id, 'ri_on_treatment']
-    assert pd.isnull(df.at[person_id, 'ri_ALRI_tx_start_date'])
 
-    # run the HSI ...
-    referral_event = event_in_que[0]
-    referral_event.run(squeeze_factor=0.0)
+    # run the HSI ... which will lead to an in-patient HSI
+    hsi1.run(squeeze_factor=0.0)
+
+    hsi2 = [event_tuple[1] for event_tuple in sim.modules['HealthSystem'].find_events_for_person(person_id)
+           if isinstance(event_tuple[1], HSI_Alri_Treatment)
+           ][0]
+    assert hsi1.TREATMENT_ID == 'Alri_Pneumonia_Treatment_Inpatient'
+
+    # Run the second HSI (an in-patient)
+    hsi2.run(squeeze_factor=0.0)
 
     # Check that the person is now on treatment
     assert df.at[person_id, 'ri_on_treatment']
-    assert pd.notnull(df.at[person_id, 'ri_ALRI_tx_start_date'])
+
+
+
+
+
+
+
+
 
 
 def test_HSI_GenericFirstApptAtFacilityLevel0_and_referral_to_level1a(sim_hs_all_consumables, sim_hs_no_consumables):
@@ -898,8 +940,7 @@ def test_HSI_GenericFirstApptAtFacilityLevel0_and_referral_to_level1a(sim_hs_all
     or can be referred to a level 1a outpatient appointment.
     """
 
-    for simulation in [sim_hs_all_consumables, sim_hs_no_consumables]:
-        sim = simulation
+    for sim in [sim_hs_all_consumables, sim_hs_no_consumables]:
 
         popsize = 100
         sim.make_initial_population(n=popsize)
@@ -949,9 +990,8 @@ def test_HSI_GenericFirstApptAtFacilityLevel0_and_referral_to_level1a(sim_hs_all
 
         # Check infected and not on treatment:
         assert not df.at[person_id, 'ri_on_treatment']
-        assert pd.isnull(df.at[person_id, 'ri_ALRI_tx_start_date'])
 
-        # Run the HSI event
+        # Run the Generic HSI event for this person
         hsi = HSI_GenericFirstApptAtFacilityLevel0(person_id=int(person_id),
                                                    module=sim.modules['HealthSeekingBehaviour'])
         hsi.run(squeeze_factor=0.0)
@@ -959,13 +999,12 @@ def test_HSI_GenericFirstApptAtFacilityLevel0_and_referral_to_level1a(sim_hs_all
     if sim == sim_hs_all_consumables:
         # Check that the person is now on treatment (the HSI at level 0 gives the treatment directly)
         assert df.at[person_id, 'ri_on_treatment']
-        assert pd.notnull(df.at[person_id, 'ri_ALRI_tx_start_date'])
 
-    if sim == sim_hs_no_consumables:
+    elif sim == sim_hs_no_consumables:
         # No consumables, keep referring up
         # Check that there is an `HSI_IMCI_Pneumonia_Treatment_Outpatient_level_1a` scheduled
         assert len([event_tuple[1] for event_tuple in sim.modules['HealthSystem'].find_events_for_person(person_id)
-                    if isinstance(event_tuple[1], HSI_IMCI_Pneumonia_Treatment_Outpatient_level_1a)])
+                    if isinstance(event_tuple[1], HSI_Alri_Treatment)])
 
         # Run the HSI event
         hsi = HSI_IMCI_Pneumonia_Treatment_Outpatient_level_1a(person_id=int(person_id), module=sim.modules['Alri'])
@@ -973,7 +1012,6 @@ def test_HSI_GenericFirstApptAtFacilityLevel0_and_referral_to_level1a(sim_hs_all
 
         # Check not on treatment before referral:
         assert not df.at[person_id, 'ri_on_treatment']
-        assert pd.isnull(df.at[person_id, 'ri_ALRI_tx_start_date'])
 
         # Check that there is an `HSI_IMCI_Pneumonia_Treatment_Outpatient_level_1b` scheduled
         assert len([event_tuple[1] for event_tuple in sim.modules['HealthSystem'].find_events_for_person(person_id)
@@ -985,7 +1023,6 @@ def test_HSI_GenericFirstApptAtFacilityLevel0_and_referral_to_level1a(sim_hs_all
 
         # Check not on treatment before referral:
         assert not df.at[person_id, 'ri_on_treatment']
-        assert pd.isnull(df.at[person_id, 'ri_ALRI_tx_start_date'])
 
         print(sim.modules['HealthSystem'].find_events_for_person(person_id))
 
@@ -993,6 +1030,11 @@ def test_HSI_GenericFirstApptAtFacilityLevel0_and_referral_to_level1a(sim_hs_all
         # Check that there is an `HSI_IMCI_Pneumonia_Treatment_Outpatient_level_2` scheduled
         assert len([event_tuple[1] for event_tuple in sim.modules['HealthSystem'].find_events_for_person(person_id)
                     if isinstance(event_tuple[1], HSI_IMCI_Pneumonia_Treatment_Outpatient_level_2)])
+
+
+
+
+
 
 
 def test_HSI_GenericEmergencyFirstApptAtFacilityLevel1_and_referral_to_level2(sim_hs_all_consumables,
@@ -1039,7 +1081,6 @@ def test_HSI_GenericEmergencyFirstApptAtFacilityLevel1_and_referral_to_level2(si
 
         # Check infected and not on treatment:
         assert not df.at[person_id, 'ri_on_treatment']
-        assert pd.isnull(df.at[person_id, 'ri_ALRI_tx_start_date'])
 
         # Run the HSI event
         hsi = HSI_GenericEmergencyFirstApptAtFacilityLevel1(person_id=int(person_id),
@@ -1049,7 +1090,6 @@ def test_HSI_GenericEmergencyFirstApptAtFacilityLevel1_and_referral_to_level2(si
     if sim == sim_hs_all_consumables:
         # Check that the person is now on treatment (the HSI at level 1 gives the treatment directly)
         assert df.at[person_id, 'ri_on_treatment']
-        assert pd.notnull(df.at[person_id, 'ri_ALRI_tx_start_date'])
 
     if sim == sim_hs_no_consumables:
         # Check that there is an `HSI_IMCI_Pneumonia_Treatment_Inpatient_level_2` scheduled
@@ -1096,7 +1136,6 @@ def test_default(sim_hs_default_consumables):
 
     # Check infected and not on treatment:
     assert not df.at[person_id, 'ri_on_treatment']
-    assert pd.isnull(df.at[person_id, 'ri_ALRI_tx_start_date'])
 
     # Run the HSI event
     hsi = HSI_GenericEmergencyFirstApptAtFacilityLevel1(person_id=int(person_id),
@@ -1104,7 +1143,7 @@ def test_default(sim_hs_default_consumables):
     hsi.run(squeeze_factor=0.0)
 
     # if treatment not available, referral to level 2
-    if not df.at[person_id, 'ri_on_treatment'] and pd.isnull(df.at[person_id, 'ri_ALRI_tx_start_date']):
+    if not df.at[person_id, 'ri_on_treatment']:
 
         # Check that there is an `HSI_IMCI_Pneumonia_Treatment_Inpatient_level_2` scheduled
         assert len([event_tuple[1] for event_tuple in sim.modules['HealthSystem'].find_events_for_person(person_id)
