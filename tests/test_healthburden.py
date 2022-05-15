@@ -10,33 +10,18 @@ from tlo.analysis.utils import parse_log_file
 from tlo.events import Event, IndividualScopeEventMixin
 from tlo.methods import (
     Metadata,
-    bladder_cancer,
-    breast_cancer,
-    cardio_metabolic_disorders,
-    care_of_women_during_pregnancy,
     chronicsyndrome,
-    contraception,
     demography,
-    depression,
-    diarrhoea,
     enhanced_lifestyle,
     healthburden,
     healthsystem,
-    hiv,
-    labour,
-    malaria,
     mockitis,
-    newborn_outcomes,
-    oesophagealcancer,
-    postnatal_supervisor,
-    pregnancy_supervisor,
-    prostate_cancer,
-    schisto,
     symptommanager,
 )
 from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.diarrhoea import increase_risk_of_death, make_treatment_perfect
+from tlo.methods.fullmodel import fullmodel
 from tlo.methods.healthburden import Get_Current_DALYS
 
 try:
@@ -108,32 +93,8 @@ def test_cause_of_disability_being_registered(seed):
     rfp = Path(os.path.dirname(__file__)) / '../resources'
 
     sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
-    sim.register(
-        demography.Demography(resourcefilepath=rfp),
-        symptommanager.SymptomManager(resourcefilepath=rfp),
-        breast_cancer.BreastCancer(resourcefilepath=rfp),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=rfp),
-        healthsystem.HealthSystem(resourcefilepath=rfp, disable_and_reject_all=True),
-        bladder_cancer.BladderCancer(resourcefilepath=rfp),
-        prostate_cancer.ProstateCancer(resourcefilepath=rfp),
-        depression.Depression(resourcefilepath=rfp),
-        diarrhoea.Diarrhoea(resourcefilepath=rfp),
-        hiv.Hiv(resourcefilepath=rfp),
-        malaria.Malaria(resourcefilepath=rfp),
-        cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=rfp),
-        oesophagealcancer.OesophagealCancer(resourcefilepath=rfp),
-        contraception.Contraception(resourcefilepath=rfp),
-        labour.Labour(resourcefilepath=rfp),
-        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=rfp),
-        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=rfp),
-        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=rfp),
-        newborn_outcomes.NewbornOutcomes(resourcefilepath=rfp),
-        healthburden.HealthBurden(resourcefilepath=rfp),
-        schisto.Schisto(resourcefilepath=rfp),
+    sim.register(*fullmodel(resourcefilepath=rfp, healthsystem_disable=True))
 
-        # Supporting modules:
-        diarrhoea.DiarrhoeaPropertiesOfOtherModules()
-    )
     # Increase risk of death of Diarrhoea to ensure that are at least some deaths
     increase_risk_of_death(sim.modules['Diarrhoea'])
     make_treatment_perfect(sim.modules['Diarrhoea'])

@@ -8,32 +8,11 @@ from pytest import approx
 
 from tlo import Date, Module, Simulation, logging
 from tlo.analysis.utils import compare_number_of_deaths, parse_log_file
-from tlo.methods import (
-    Metadata,
-    bladder_cancer,
-    breast_cancer,
-    cardio_metabolic_disorders,
-    care_of_women_during_pregnancy,
-    contraception,
-    demography,
-    depression,
-    diarrhoea,
-    enhanced_lifestyle,
-    healthsystem,
-    hiv,
-    labour,
-    malaria,
-    newborn_outcomes,
-    oesophagealcancer,
-    postnatal_supervisor,
-    pregnancy_supervisor,
-    prostate_cancer,
-    schisto,
-    symptommanager,
-)
+from tlo.methods import Metadata, demography
 from tlo.methods.causes import Cause
 from tlo.methods.demography import AgeUpdateEvent
 from tlo.methods.diarrhoea import increase_risk_of_death, make_treatment_perfect
+from tlo.methods.fullmodel import fullmodel
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
@@ -125,31 +104,8 @@ def test_cause_of_death_being_registered(tmpdir, seed):
             'tlo.methods.demography': logging.INFO
         }
     })
-    sim.register(
-        demography.Demography(resourcefilepath=rfp),
-        symptommanager.SymptomManager(resourcefilepath=rfp),
-        breast_cancer.BreastCancer(resourcefilepath=rfp),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=rfp),
-        healthsystem.HealthSystem(resourcefilepath=rfp, disable_and_reject_all=True),
-        bladder_cancer.BladderCancer(resourcefilepath=rfp),
-        prostate_cancer.ProstateCancer(resourcefilepath=rfp),
-        depression.Depression(resourcefilepath=rfp),
-        diarrhoea.Diarrhoea(resourcefilepath=rfp),
-        hiv.Hiv(resourcefilepath=rfp),
-        malaria.Malaria(resourcefilepath=rfp),
-        cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=rfp),
-        oesophagealcancer.OesophagealCancer(resourcefilepath=rfp),
-        contraception.Contraception(resourcefilepath=rfp),
-        labour.Labour(resourcefilepath=rfp),
-        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=rfp),
-        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=rfp),
-        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=rfp),
-        newborn_outcomes.NewbornOutcomes(resourcefilepath=rfp),
-        schisto.Schisto(resourcefilepath=rfp),
+    sim.register(*fullmodel(resourcefilepath=rfp, healthsystem_disable=True))
 
-        # Supporting modules:
-        diarrhoea.DiarrhoeaPropertiesOfOtherModules()
-    )
     # Increase risk of death of Diarrhoea to ensure that are at least some deaths
     increase_risk_of_death(sim.modules['Diarrhoea'])
     make_treatment_perfect(sim.modules['Diarrhoea'])
@@ -217,6 +173,10 @@ def test_calc_of_scaling_factor(tmpdir, seed):
     output = parse_log_file(sim.log_filepath)
     sf = output['tlo.methods.demography']['scaling_factor'].at[0, 'scaling_factor']
     assert sf == approx(14.5e6 / popsize, rel=0.10)
+
+    # Check that the scaling factor is also logged in `tlo.methods.population`
+    assert output['tlo.methods.demography']['scaling_factor'].at[0, 'scaling_factor'] == \
+           output['tlo.methods.population']['scaling_factor'].at[0, 'scaling_factor']
 
 
 def test_py_calc(simulation):
