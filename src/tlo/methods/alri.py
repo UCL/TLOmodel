@@ -2211,14 +2211,15 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
             _ = self._get_cons('Ceftriaxone_therapy_for_severe_pneumonia')
 
             if facility_level not in ('1b', '2') and self._is_as_in_patient:
-                # todo refer to level 2 and an in-patient
+                # todo @Ines - I am confused about what you'd like to happen here!!?!? refer to level 2 and an
+                #  in-patient
                 pass
             else:
                 _try_treatment(antibiotic_indicated='1st_line_IV_antibiotics', oxygen_indicated=True)
 
         def do_if_cough_or_cold(facility_level):
             """What to do if `cough_or_cold`."""
-            pass
+            pass  # Do nothing
 
         # Do the appropriate action
         {
@@ -2542,6 +2543,7 @@ class AlriIncidentCase_Lethal_Severe_Pneumonia(AlriIncidentCase):
                self.module.get_imci_classification_based_on_symptoms(
                    child_is_younger_than_2_months=False, symptoms=self.sim.modules['SymptomManager'].has_what(person_id)
                )
+
 
 class AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia(AlriIncidentCase):
     """This Event can be used for testing and is a drop-in replacement of `AlriIncidentCase`. It always produces an
