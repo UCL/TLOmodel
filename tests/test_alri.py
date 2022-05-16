@@ -25,18 +25,16 @@ from tlo.methods.alri import (
     AlriDeathEvent,
     AlriIncidentCase,
     AlriIncidentCase_Lethal_Severe_Pneumonia,
+    AlriIncidentCase_NonLethal_Mild_Pneumonia,
+    AlriLoggingEvent,
     AlriNaturalRecoveryEvent,
     AlriPollingEvent,
     AlriPropertiesOfOtherModules,
     HSI_Alri_Treatment,
-    Models, AlriLoggingEvent, AlriIncidentCase_NonLethal_Mild_Pneumonia,
+    Models,
 )
-from tlo.methods.healthseekingbehaviour import (
-    HSI_GenericEmergencyFirstApptAtFacilityLevel1,
-    HSI_GenericFirstApptAtFacilityLevel0,
-)
-
 # Path to the resource files used by the disease and intervention methods
+from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
@@ -710,40 +708,44 @@ def test_classification_based_on_symptoms_and_imci(sim_hs_all_consumables):
     imci_classification_on_symptoms = (
         # -- Children older than 2 months
         ('chest_indrawing_pneumonia',
-            {'symptoms': ['chest_indrawing'],
-             'child_is_younger_than_2_months': False}),
+         {'symptoms': ['chest_indrawing'],
+          'child_is_younger_than_2_months': False}),
         ('chest_indrawing_pneumonia',
-            {'symptoms': ['chest_indrawing', 'tachypnoea'],
-             'child_is_younger_than_2_months': False}),
+         {'symptoms': ['chest_indrawing', 'tachypnoea'],
+          'child_is_younger_than_2_months': False}),
         ('fast_breathing_pneumonia',
-            {'symptoms': ['tachypnoea'],
-             'child_is_younger_than_2_months': False}),
+         {'symptoms': ['tachypnoea'],
+          'child_is_younger_than_2_months': False}),
         ('danger_signs_pneumonia',
-            {'symptoms': ['danger_signs'],
-             'child_is_younger_than_2_months': False}),
+         {'symptoms': ['danger_signs'],
+          'child_is_younger_than_2_months': False}),
         ('danger_signs_pneumonia',
-            {'symptoms': ['danger_signs', 'chest_indrawing'],
-             'child_is_younger_than_2_months': False}),
-        ('chest_indrawing_pneumonia',   # <-- todo @ines -- this was originallly "serious_bacterial_infection" but I think that was wrong so I chnage it.
-            {'symptoms': ['chest_indrawing'],
-             'child_is_younger_than_2_months': False}),
+         {'symptoms': ['danger_signs', 'chest_indrawing'],
+          'child_is_younger_than_2_months': False}),
+        ('chest_indrawing_pneumonia',
+         # <-- todo @ines -- this was originallly "serious_bacterial_infection" but I think that was wrong so I
+         #  chnaged it.
+         {'symptoms': ['chest_indrawing'],
+          'child_is_younger_than_2_months': False}),
 
         # -- Children younger than 2 months
         ('serious_bacterial_infection',
-            {'symptoms': ['danger_signs'],
-             'child_is_younger_than_2_months': True}),
+         {'symptoms': ['danger_signs'],
+          'child_is_younger_than_2_months': True}),
         ('fast_breathing_pneumonia',
-            {'symptoms': ['tachypnoea'],
-             'child_is_younger_than_2_months': True}),
+         {'symptoms': ['tachypnoea'],
+          'child_is_younger_than_2_months': True}),
         ('cough_or_cold',
-            {'symptoms': ['cough'],
-             'child_is_younger_than_2_months': True}),
+         {'symptoms': ['cough'],
+          'child_is_younger_than_2_months': True}),
         ('serious_bacterial_infection',
-            {'symptoms': ['cough', 'danger_signs', 'difficult_breathing', 'fever', 'chest_indrawing'],
-             'child_is_younger_than_2_months': True}),
-        ('serious_bacterial_infection',  # todo - @ines - I think you mean this to be 'serious_bacterial_infection', right? (it was "danger_sign_pneumonia")
-            {'symptoms': ['cough', 'danger_signs', 'difficult_breathing', 'fever', 'chest_indrawing'],
-             'child_is_younger_than_2_months': True}),
+         {'symptoms': ['cough', 'danger_signs', 'difficult_breathing', 'fever', 'chest_indrawing'],
+          'child_is_younger_than_2_months': True}),
+        ('serious_bacterial_infection',
+         # todo - @ines - I think you mean this to be 'serious_bacterial_infection', right?
+         #  (it was "danger_sign_pneumonia")
+         {'symptoms': ['cough', 'danger_signs', 'difficult_breathing', 'fever', 'chest_indrawing'],
+          'child_is_younger_than_2_months': True}),
     )
 
     recognised_classifications = {
@@ -758,7 +760,6 @@ def test_classification_based_on_symptoms_and_imci(sim_hs_all_consumables):
     _get_disease_classification = hsi_alri_treatment._get_disease_classification
 
     for _correct_imci_classification_on_symptoms, chars in imci_classification_on_symptoms:
-
         # If no oximeter available and does not need oxygen, and perfect HW assessment: classification should be the
         # IMCI classification
         assert _correct_imci_classification_on_symptoms == _get_disease_classification(
@@ -780,7 +781,8 @@ def test_classification_based_on_symptoms_and_imci(sim_hs_all_consumables):
         )
 
         # If oximeter available and does oxygen, then classification should be the 'danger_signs_pneumonia'
-        _classificiation = 'serious_bacterial_infection' if chars['child_is_younger_than_2_months'] else 'danger_signs_pneumonia'
+        _classificiation = 'serious_bacterial_infection' if chars[
+            'child_is_younger_than_2_months'] else 'danger_signs_pneumonia'
         assert _classificiation == _get_disease_classification(
             age_exact_years=0.05 if chars['child_is_younger_than_2_months'] else 1.0,
             symptoms=chars['symptoms'],
@@ -870,7 +872,7 @@ def test_do_effects_of_alri_treatment(sim_hs_all_consumables):
     assert 1 == sim.modules['Alri'].logging_event.trackers['cured_cases'].report_current_total()
 
 
-def test_severe_pneumonia_referral_from_HSI_GenericFirstApptAtFacilityLevel0(sim_hs_all_consumables):
+def test_severe_pneumonia_referral_from_hsi_first_appts(sim_hs_all_consumables):
     """Check that a person is scheduled a treatment HSI following a presentation at
     HSI_GenericFirstApptAtFacilityLevel0 with severe pneumonia."""
     sim = sim_hs_all_consumables
@@ -908,8 +910,8 @@ def test_severe_pneumonia_referral_from_HSI_GenericFirstApptAtFacilityLevel0(sim
 
     # Check that there is an `HSI_Alri_Treatment` scheduled
     hsi1 = [event_tuple[1] for event_tuple in sim.modules['HealthSystem'].find_events_for_person(person_id)
-           if isinstance(event_tuple[1], HSI_Alri_Treatment)
-           ][0]
+            if isinstance(event_tuple[1], HSI_Alri_Treatment)
+            ][0]
     assert hsi1.TREATMENT_ID == 'Alri_Pneumonia_Treatment_Outpatient'
 
     # Check not on treatment before referral:
@@ -919,8 +921,8 @@ def test_severe_pneumonia_referral_from_HSI_GenericFirstApptAtFacilityLevel0(sim
     hsi1.run(squeeze_factor=0.0)
 
     hsi2 = [event_tuple[1] for event_tuple in sim.modules['HealthSystem'].find_events_for_person(person_id)
-           if isinstance(event_tuple[1], HSI_Alri_Treatment)
-           ][0]
+            if isinstance(event_tuple[1], HSI_Alri_Treatment)
+            ][0]
     assert hsi1.TREATMENT_ID == 'Alri_Pneumonia_Treatment_Inpatient'
 
     # Run the second HSI (an in-patient)
@@ -943,8 +945,13 @@ def generate_hsi_sequence(sim, incident_case_event):
         params['sensitivity_of_classification_of_non_severe_pneumonia_facility_level2'] = 1.0
         params['sensitivity_of_classification_of_severe_pneumonia_facility_level2'] = 1.0
 
+    def make_non_emergency_hsi_happen_immediately(sim):
+        """Set the delay between symptoms onset and the generic HSI occurring to the least possible number of days."""
+        sim.modules['HealthSeekingBehaviour'].parameters['max_days_delay_to_generic_HSI_after_symptoms'] = 0
+
     sim.make_initial_population(n=100)
     make_hw_assesement_perfect(sim)
+    make_non_emergency_hsi_happen_immediately(sim)
 
     def _initialise_simulation_other_jobs(sim, **kwargs):
         """The other jobs that the usual `initialise_simulation` in `Alri` has to do in order for the module to work."""
@@ -989,10 +996,10 @@ def test_treatment_pathway_if_all_consumables_mild_case(sim_hs_all_consumables):
     """Examine the treatment pathway for a person with a particular category of disease if consumables are available."""
     # Mild case and available consumables --> treatment at level 0, following non-emergency appointment.
     assert [
-        ('FirstAttendance_NonEmergency', '0'),
-        ('Alri_Pneumonia_Treatment_Outpatient', '0'),
-    ] == generate_hsi_sequence(sim=sim_hs_all_consumables,
-                               incident_case_event=AlriIncidentCase_NonLethal_Mild_Pneumonia)
+               ('FirstAttendance_NonEmergency', '0'),
+               ('Alri_Pneumonia_Treatment_Outpatient', '0'),
+           ] == generate_hsi_sequence(sim=sim_hs_all_consumables,
+                                      incident_case_event=AlriIncidentCase_NonLethal_Mild_Pneumonia)
 
 
 def test_treatment_pathway_if_all_consumables_severe_case(sim_hs_all_consumables):
@@ -1000,11 +1007,11 @@ def test_treatment_pathway_if_all_consumables_severe_case(sim_hs_all_consumables
     # Severe case and available consumables --> treatment as in-patient at level 1b, following emergency appointment
     # and referral.
     assert [
-        ('FirstAttendance_Emergency', '1b'),
-        ('Alri_Pneumonia_Treatment_Outpatient', '1b'),
-        ('Alri_Pneumonia_Treatment_Inpatient', '1b')
-    ] == generate_hsi_sequence(sim=sim_hs_all_consumables,
-                               incident_case_event=AlriIncidentCase_Lethal_Severe_Pneumonia)
+               ('FirstAttendance_Emergency', '1b'),
+               ('Alri_Pneumonia_Treatment_Outpatient', '1b'),
+               ('Alri_Pneumonia_Treatment_Inpatient', '1b')
+           ] == generate_hsi_sequence(sim=sim_hs_all_consumables,
+                                      incident_case_event=AlriIncidentCase_Lethal_Severe_Pneumonia)
 
 
 def test_treatment_pathway_if_no_consumables_mild_case(sim_hs_no_consumables):
@@ -1013,10 +1020,10 @@ def test_treatment_pathway_if_no_consumables_mild_case(sim_hs_no_consumables):
     # appointment.
     # todo
     assert [
-        ('FirstAttendance_NonEmergency', '0'),
-        ('Alri_Pneumonia_Treatment_Outpatient', '0'),
-    ] == generate_hsi_sequence(sim=sim_hs_no_consumables,
-                               incident_case_event=AlriIncidentCase_NonLethal_Mild_Pneumonia)
+               ('FirstAttendance_NonEmergency', '0'),
+               ('Alri_Pneumonia_Treatment_Outpatient', '0'),
+           ] == generate_hsi_sequence(sim=sim_hs_no_consumables,
+                                      incident_case_event=AlriIncidentCase_NonLethal_Mild_Pneumonia)
 
 
 def test_treatment_pathway_if_no_consumables_severe_case(sim_hs_no_consumables):
@@ -1025,8 +1032,8 @@ def test_treatment_pathway_if_no_consumables_severe_case(sim_hs_no_consumables):
     # appointment.
     # todo
     assert [
-        ('FirstAttendance_Emergency', '1b'),
-        ('Alri_Pneumonia_Treatment_Outpatient', '1b'),
-        ('Alri_Pneumonia_Treatment_Inpatient', '1b')
-    ] == generate_hsi_sequence(sim=sim_hs_no_consumables,
-                               incident_case_event=AlriIncidentCase_Lethal_Severe_Pneumonia)
+               ('FirstAttendance_Emergency', '1b'),
+               ('Alri_Pneumonia_Treatment_Outpatient', '1b'),
+               ('Alri_Pneumonia_Treatment_Inpatient', '1b')
+           ] == generate_hsi_sequence(sim=sim_hs_no_consumables,
+                                      incident_case_event=AlriIncidentCase_Lethal_Severe_Pneumonia)

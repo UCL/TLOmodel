@@ -40,7 +40,6 @@ import types
 from collections import defaultdict
 from itertools import chain
 from pathlib import Path
-from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -675,9 +674,10 @@ class Alri(Module):
                                             '(scheduled) date of death caused by current Alri event (pd.NaT is not '
                                             'infected or episode will not cause death)'),
         'ri_end_of_current_episode': Property(Types.DATE,
-                                              'date on which the last episode of Alri is resolved, (including allowing for the possibility that '
-                                              'a cure is scheduled following onset). This is used to determine when a new episode can begin. '
-                                              'This stops successive episodes interfering with one another.'),
+                                              'date on which the last episode of Alri is resolved, (including allowing '
+                                              'for the possibility that a cure is scheduled following onset). This is '
+                                              'used to determine when a new episode can begin. This stops successive'
+                                              ' episodes interfering with one another.'),
     }
 
     def __init__(self, name=None, resourcefilepath=None, log_indivdual=None, do_checks=False):
@@ -985,7 +985,6 @@ class Alri(Module):
         # todo @Ines - the HSI asks for "Brochodilator_and_Steroids" -- but this is not defined.
         self.consumables_used_in_hsi["Brochodilator_and_Steroids"] = {}
 
-
     def end_episode(self, person_id):
         """End the episode infection for a person (i.e. reset all properties to show no current infection or
         complications).
@@ -1122,7 +1121,8 @@ class Alri(Module):
         """Returns True if the treatment specified will prevent death."""
 
         # todo @ ines - why does this no depend on whether or not oxygen is provided?!?!?!?
-        # todo @ines -- does it really depend on the imci_symptom_based_classification or the classification for treatment?
+        # todo @ines -- does it really depend on the imci_symptom_based_classification or the classification for
+        #  treatment?
         # todo @ines -- note that '3day_oral_amoxicillin' is not provided in any circumatance to anyone
 
         def _raise_error():
@@ -1160,6 +1160,9 @@ class Alri(Module):
                 else:
                     _raise_error()
 
+            elif imci_symptom_based_classification == "cough_or_cold":
+                return False  # Treatment cannot 'fail' for a cough_or_cold
+
             else:
                 _raise_error()
 
@@ -1178,6 +1181,9 @@ class Alri(Module):
                            ) > self.rng.rand()
                 else:
                     return True
+
+            elif imci_symptom_based_classification == "cough_or_cold":
+                return False  # Treatment cannot 'fail' for a cough_or_cold
 
             else:
                 _raise_error()
@@ -1312,11 +1318,11 @@ class Models:
                         'age_years',
                         conditions_are_mutually_exclusive=True,
                         conditions_are_exhaustive=True).when(0, age_effects[0])
-                        .when(1, age_effects[1])
-                        .when(2, age_effects[2])
-                        .when(3, age_effects[3])
-                        .when(4, age_effects[4])
-                        .when('>= 5', 0.0),
+                                                       .when(1, age_effects[1])
+                                                       .when(2, age_effects[2])
+                                                       .when(3, age_effects[3])
+                                                       .when(4, age_effects[4])
+                                                       .when('>= 5', 0.0),
                     Predictor('li_wood_burn_stove').when(False, p['rr_ALRI_indoor_air_pollution']),
                     Predictor().when('(va_measles_all_doses == False) & (age_years >= 1)',
                                      p['rr_ALRI_incomplete_measles_immunisation']),
@@ -1566,7 +1572,6 @@ class Models:
             return risk_death > self.rng.rand()
         else:
             return False
-
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -2099,7 +2104,6 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                 # (Perfect diagnosis accuracy for 'cough_or_cold' & 'serious_bacterial_infection')
                 return imci_classification_based_on_symptoms
 
-
     def _get_disease_classification(self, age_exact_years, symptoms, oxygen_saturation, facility_level, use_oximeter
                                     ) -> str:
         """Returns the classification of disease, which may be based on the results of the pulse oximetry (if available)
@@ -2205,7 +2209,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
 
             _ = self._get_cons('Ceftriaxone_therapy_for_severe_pneumonia')
 
-            if not facility_level in ('1b', '2') and self._is_as_in_patient:
+            if facility_level not in ('1b', '2') and self._is_as_in_patient:
                 # todo refer to level 2 and an in-patient
                 pass
             else:
@@ -2263,6 +2267,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
     def never_ran(self):
         """If this event never ran, refer to next level up."""
         self._refer_to_next_level_up()
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   LOGGING EVENTS

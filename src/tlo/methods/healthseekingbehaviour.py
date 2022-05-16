@@ -327,12 +327,13 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                 for care_seeking_ids in (
                     care_seeking_inpatients.index, care_seeking_non_inpatients.index
                 ):
-                    # Schedule generic non-emergency appointments after a random delay
+                    # Schedule generic non-emergency appointments after a delay
+                    _delay = module.rng.randint(0, max_delay, size=len(care_seeking_ids)) \
+                        if max_delay != 0 else np.array([0] * len(care_seeking_ids), dtype='int')
                     care_seeking_dates = (
                         # Create NumPy datetime with day unit to allow directly adding
-                        # array of generated integer delays in [0, max_delay]
-                        np.array(self.sim.date, dtype='datetime64[D]')
-                        + module.rng.randint(0, max_delay, size=len(care_seeking_ids))
+                        # array of generated integer delays
+                        np.array(self.sim.date, dtype='datetime64[D]') + _delay
                     )
                     health_system.schedule_batch_of_individual_hsi_events(
                         hsi_event_class=routine_hsi_event_class,
