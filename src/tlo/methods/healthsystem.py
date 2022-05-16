@@ -1199,7 +1199,8 @@ class HealthSystem(Module):
                 number_by_appt_type_code=actual_appt_footprint,
                 person_id=hsi_event.target,
                 squeeze_factor=_squeeze_factor,
-                did_run=did_run
+                did_run=did_run,
+                facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL
             )
 
             # Storage for the purpose of testing / documentation
@@ -1240,7 +1241,8 @@ class HealthSystem(Module):
                          number_by_appt_type_code,
                          person_id,
                          squeeze_factor,
-                         did_run
+                         did_run,
+                         facility_level
                          ):
         """Write the log `HSI_Event` and add to the summary counter."""
         logger.info(key="HSI_Event",
@@ -1249,7 +1251,8 @@ class HealthSystem(Module):
                         'Number_By_Appt_Type_Code': number_by_appt_type_code,
                         'Person_ID': person_id,
                         'Squeeze_Factor': squeeze_factor,
-                        'did_run': did_run
+                        'did_run': did_run,
+                        'Facility_Level': facility_level
                     },
                     description="record of each HSI event"
                     )
