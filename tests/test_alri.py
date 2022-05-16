@@ -977,7 +977,6 @@ def generate_hsi_sequence(sim):
                                                                     pathogen=list(sim.modules['Alri'].all_pathogens)[0]),
                            self.date)
 
-
     sim.modules['Alri'].initialise_simulation = one_person_to_have_severe_disease
     sim.simulate(end_date=Date(2010, 3, 1))
     list_of_hsi = sim.modules['HealthSystem'].store_of_hsi_events_that_have_run
@@ -991,30 +990,18 @@ def test_treatment_pathway_if_all_consumables(sim_hs_all_consumables):
     """Examine the treatment pathway for a person with a particular category of disease if consumables are available."""
 
     history = generate_hsi_sequence(sim_hs_all_consumables)
-    # todo for with/without consumables and serious/mild case - and generic case.
+    # todo for with/without consumables and serious/mild case
 
 
 def test_treatment_pathway_if_no_consumables(sim_hs_no_consumables):
     """Examine the treatment pathway for a person with a particular category of disease if consumables are not available."""
 
     history = generate_hsi_sequence(sim_hs_no_consumables)
-    # todo for with/without consumables and serious/mild case - and generic case.
+    # todo for with/without consumables and serious/mild case
 
     # todo - no escalation!!?!?!?!
 
 
-
-
-
-
-
-
-
-
-
-
-
-#
 # def test_HSI_GenericFirstApptAtFacilityLevel0_and_referral_to_level1a(sim_hs_all_consumables, sim_hs_no_consumables):
 #     """ Check that someone with uncomplicated pneumonia can be treated at level 0 if all consumables available,
 #     or can be referred to a level 1a outpatient appointment.
