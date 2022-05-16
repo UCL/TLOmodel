@@ -2479,8 +2479,8 @@ class AlriPropertiesOfOtherModules(Module):
 
 
 class AlriIncidentCase_Lethal_Severe_Pneumonia(AlriIncidentCase):
-    """This Event for testing that is a drop-in replacement of `AlriIncidentCase`. It always produces an infection
-    that will be lethal and should be classified as a severe pneumonia"""
+    """This Event can be used for testing and is a drop-in replacement of `AlriIncidentCase`. It always produces an
+    infection that will be lethal and should be classified as a severe pneumonia."""
 
     def __init__(self, module, person_id, pathogen):
         super().__init__(module, person_id=person_id, pathogen=pathogen)
@@ -2531,3 +2531,56 @@ class AlriIncidentCase_Lethal_Severe_Pneumonia(AlriIncidentCase):
             person_id=person_id, complication='hypoxaemia', oxygen_saturation="<90%", duration_in_days=5)
 
         self.sim.schedule_event(AlriDeathEvent(self.module, person_id), date_of_outcome)
+
+
+class AlriIncidentCase_NonLethal_Mild_Pneumonia(AlriIncidentCase):
+    """This Event can be used for testing and is a drop-in replacement of `AlriIncidentCase`. It always produces an
+    infection that will be non-lethal and should be classified as a non-severe pneumonia."""
+
+    def __init__(self, module, person_id, pathogen):
+        super().__init__(module, person_id=person_id, pathogen=pathogen)
+
+    def apply(self, person_id):
+        df = self.sim.population.props  # shortcut to the dataframe
+        m = self.module
+        p = m.parameters
+
+        self.module.logging_event.new_case(age=df.at[person_id, 'age_years'], pathogen=self.pathogen)
+
+        disease_type = 'pneumonia'
+        duration_in_days_of_alri = 5
+        date_of_outcome = self.module.sim.date + DateOffset(days=duration_in_days_of_alri)
+        episode_end = date_of_outcome + DateOffset(days=p['days_between_treatment_and_cure'])
+
+        _chars = {
+            'ri_current_infection_status': True,
+            'ri_primary_pathogen': self.pathogen,
+            'ri_secondary_bacterial_pathogen': np.nan,
+            'ri_disease_type': disease_type,
+            'ri_on_treatment': False,
+            'ri_start_of_current_episode': self.sim.date,
+            'ri_scheduled_recovery_date': date_of_outcome,
+            'ri_scheduled_death_date': pd.NaT,
+            'ri_end_of_current_episode': episode_end,
+            'ri_complication_hypoxaemia': False,
+            'ri_SpO2_level': ">=93%"
+        }
+        df.loc[person_id, _chars.keys()] = _chars.values()
+
+        # make probability of mild symptoms very high, and severe symptoms low
+        params = self.sim.modules['Alri'].parameters
+        mild_symptoms = {'cough', 'difficult_breathing', 'tachypoea'}
+        severe_symptoms = {'chest_indrawing', 'danger_signs'}
+        for p in params:
+            if any([p.startswith(f"prob_{symptom}") for symptom in mild_symptoms]):
+                if isinstance(params[p], float):
+                    params[p] = 1.0
+                else:
+                    params[p] = [1.0] * len(params[p])
+            if any([p.startswith(f"prob_{symptom}") for symptom in severe_symptoms]):
+                params[p] = 0.0
+
+        self.impose_symptoms_for_uncomplicated_disease(person_id=person_id, disease_type=disease_type,
+                                                       duration_in_days=duration_in_days_of_alri)
+
+        self.sim.schedule_event(AlriNaturalRecoveryEvent(self.module, person_id), date_of_outcome)
