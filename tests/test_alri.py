@@ -56,7 +56,9 @@ def sim_hs_all_consumables(tmpdir, seed):
             'directory': tmpdir,
             'custom_levels': {
                 "*": logging.WARNING,
-                "tlo.methods.alri": logging.INFO}
+                "tlo.methods.alri": logging.INFO,
+                "tlo.methods.healthsystem": logging.INFO
+            }
         }
     )
     sim.register(
@@ -979,10 +981,14 @@ def generate_hsi_sequence(sim):
 
     sim.modules['Alri'].initialise_simulation = one_person_to_have_severe_disease
     sim.simulate(end_date=Date(2010, 3, 1))
+
     list_of_hsi = sim.modules['HealthSystem'].store_of_hsi_events_that_have_run
+    list_of_hsi = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']['HSI_Event']
+
     return pd.DataFrame(list_of_hsi)
 
 
+# todo (0) - move to using the logger instead - (if think so?!)
 # todo (1) - finish this off for the generic case;
 # todo (2) - solve for the symptoms issue;
 
@@ -997,9 +1003,11 @@ def test_treatment_pathway_if_no_consumables(sim_hs_no_consumables):
     """Examine the treatment pathway for a person with a particular category of disease if consumables are not available."""
 
     history = generate_hsi_sequence(sim_hs_no_consumables)
-    # todo for with/without consumables and serious/mild case
 
+    # todo for with/without consumables and serious/mild case
     # todo - no escalation!!?!?!?!
+
+
 
 
 # def test_HSI_GenericFirstApptAtFacilityLevel0_and_referral_to_level1a(sim_hs_all_consumables, sim_hs_no_consumables):
