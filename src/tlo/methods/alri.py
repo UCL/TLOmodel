@@ -1865,6 +1865,8 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module: Module, person_id: int, facility_level: str = "0", inpatient: bool = False):
         super().__init__(module, person_id=person_id)
         self._treatment_id_stub = 'Alri_Pneumonia_Treatment'
+        self._facility_levels = ("0", "1a", "1b", "2")  # Health facility levels at which care may be provided
+        assert facility_level in self._facility_levels
 
         if not inpatient:
             self._as_out_patient(facility_level)
@@ -1899,8 +1901,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                 if _x == x:
                     return seq[i + 1]
 
-        levels = ("0", "1a", "1b", "2")  # Health facility levels at which care may be provided
-        _next_level_up = _next_in_sequence(levels, self.ACCEPTED_FACILITY_LEVEL)
+        _next_level_up = _next_in_sequence(self._facility_levels, self.ACCEPTED_FACILITY_LEVEL)
 
         if _next_level_up is not None:
             self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -2498,7 +2499,7 @@ class AlriIncidentCase_Lethal_Severe_Pneumonia(AlriIncidentCase):
         self.module.logging_event.new_case(age=df.at[person_id, 'age_years'], pathogen=self.pathogen)
 
         disease_type = 'pneumonia'
-        duration_in_days_of_alri = 5
+        duration_in_days_of_alri = 10
         date_of_outcome = self.module.sim.date + DateOffset(days=duration_in_days_of_alri)
         episode_end = date_of_outcome + DateOffset(days=p['days_between_treatment_and_cure'])
 
@@ -2538,9 +2539,9 @@ class AlriIncidentCase_Lethal_Severe_Pneumonia(AlriIncidentCase):
         self.sim.schedule_event(AlriDeathEvent(self.module, person_id), date_of_outcome)
 
 
-class AlriIncidentCase_NonLethal_Mild_Pneumonia(AlriIncidentCase):
+class AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia(AlriIncidentCase):
     """This Event can be used for testing and is a drop-in replacement of `AlriIncidentCase`. It always produces an
-    infection that will be non-lethal and should be classified as a non-severe pneumonia."""
+    infection that will be non-lethal and should be classified as a fast_breathing_pneumonia."""
 
     def __init__(self, module, person_id, pathogen):
         super().__init__(module, person_id=person_id, pathogen=pathogen)
@@ -2553,7 +2554,7 @@ class AlriIncidentCase_NonLethal_Mild_Pneumonia(AlriIncidentCase):
         self.module.logging_event.new_case(age=df.at[person_id, 'age_years'], pathogen=self.pathogen)
 
         disease_type = 'pneumonia'
-        duration_in_days_of_alri = 5
+        duration_in_days_of_alri = 10
         date_of_outcome = self.module.sim.date + DateOffset(days=duration_in_days_of_alri)
         episode_end = date_of_outcome + DateOffset(days=p['days_between_treatment_and_cure'])
 
@@ -2574,18 +2575,24 @@ class AlriIncidentCase_NonLethal_Mild_Pneumonia(AlriIncidentCase):
 
         # make probability of mild symptoms very high, and severe symptoms low
         params = self.sim.modules['Alri'].parameters
-        mild_symptoms = {'cough', 'difficult_breathing', 'tachypoea'}
-        severe_symptoms = {'chest_indrawing', 'danger_signs'}
+        fast_breathing_pneumonia_symptoms = {'cough', 'tachypnoea'}
+        other_symptoms = {'difficult_breathing', 'chest_indrawing', 'danger_signs'}
+
         for p in params:
-            if any([p.startswith(f"prob_{symptom}") for symptom in mild_symptoms]):
+            if any([p.startswith(f"prob_{symptom}") for symptom in fast_breathing_pneumonia_symptoms]):
                 if isinstance(params[p], float):
                     params[p] = 1.0
                 else:
                     params[p] = [1.0] * len(params[p])
-            if any([p.startswith(f"prob_{symptom}") for symptom in severe_symptoms]):
+            if any([p.startswith(f"prob_{symptom}") for symptom in other_symptoms]):
                 params[p] = 0.0
 
         self.impose_symptoms_for_uncomplicated_disease(person_id=person_id, disease_type=disease_type,
                                                        duration_in_days=duration_in_days_of_alri)
 
         self.sim.schedule_event(AlriNaturalRecoveryEvent(self.module, person_id), date_of_outcome)
+
+        assert 'fast_breathing_pneumonia' == \
+               self.module.get_imci_classification_based_on_symptoms(
+                   child_is_younger_than_2_months=False, symptoms=self.sim.modules['SymptomManager'].has_what(person_id)
+               )

@@ -25,7 +25,7 @@ from tlo.methods.alri import (
     AlriDeathEvent,
     AlriIncidentCase,
     AlriIncidentCase_Lethal_Severe_Pneumonia,
-    AlriIncidentCase_NonLethal_Mild_Pneumonia,
+    AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia,
     AlriLoggingEvent,
     AlriNaturalRecoveryEvent,
     AlriPollingEvent,
@@ -85,7 +85,9 @@ def sim_hs_no_consumables(tmpdir, seed):
             'directory': tmpdir,
             'custom_levels': {
                 "*": logging.WARNING,
-                "tlo.methods.alri": logging.INFO}
+                "tlo.methods.alri": logging.INFO,
+                "tlo.methods.healthsystem": logging.INFO
+            }
         }
     )
     sim.register(
@@ -989,17 +991,19 @@ def generate_hsi_sequence(sim, incident_case_event):
     df = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']['HSI_Event'].set_index('date')
 
     # Return list of tuples of TREATMENT_ID and Facility_Level
-    return [r for r in df[['TREATMENT_ID', 'Facility_Level']].itertuples(index=False, name=None)]
+    mask = df.TREATMENT_ID.str.startswith('Alri_') | df.TREATMENT_ID.str.startswith('FirstAttendance_')
+    return [r for r in df.loc[mask, ['TREATMENT_ID', 'Facility_Level']].itertuples(index=False, name=None)]
 
 
 def test_treatment_pathway_if_all_consumables_mild_case(sim_hs_all_consumables):
     """Examine the treatment pathway for a person with a particular category of disease if consumables are available."""
-    # Mild case and available consumables --> treatment at level 0, following non-emergency appointment.
+    # Mild case (fast_breathing_pneumonia) and available consumables --> treatment at level 0, following non-emergency
+    # appointment.
     assert [
                ('FirstAttendance_NonEmergency', '0'),
                ('Alri_Pneumonia_Treatment_Outpatient', '0'),
            ] == generate_hsi_sequence(sim=sim_hs_all_consumables,
-                                      incident_case_event=AlriIncidentCase_NonLethal_Mild_Pneumonia)
+                                      incident_case_event=AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia)
 
 
 def test_treatment_pathway_if_all_consumables_severe_case(sim_hs_all_consumables):
@@ -1016,24 +1020,26 @@ def test_treatment_pathway_if_all_consumables_severe_case(sim_hs_all_consumables
 
 def test_treatment_pathway_if_no_consumables_mild_case(sim_hs_no_consumables):
     """Examine the treatment pathway for a person with a particular category of disease if consumables are available."""
-    # Mild case and not available consumables --> successive referrals up to level 2, following non-emergency
-    # appointment.
-    # todo
+    # Mild case (fast_breathing_pneumonia) and not available consumables --> successive referrals up to level 2,
+    # following non-emergency appointment.
     assert [
                ('FirstAttendance_NonEmergency', '0'),
                ('Alri_Pneumonia_Treatment_Outpatient', '0'),
+               ('Alri_Pneumonia_Treatment_Outpatient', '1a'),  # <-- referral due to lack of consumables
+               ('Alri_Pneumonia_Treatment_Outpatient', '1b'),  # <-- referral due to lack of consumables
+               ('Alri_Pneumonia_Treatment_Outpatient', '2'),   # <-- referral due to lack of consumables
            ] == generate_hsi_sequence(sim=sim_hs_no_consumables,
-                                      incident_case_event=AlriIncidentCase_NonLethal_Mild_Pneumonia)
+                                      incident_case_event=AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia)
 
 
 def test_treatment_pathway_if_no_consumables_severe_case(sim_hs_no_consumables):
     """Examine the treatment pathway for a person with a particular category of disease if consumables are available."""
     # Severe case and not available consumables --> successive referrals up to level 2, following emergency
     # appointment.
-    # todo
     assert [
                ('FirstAttendance_Emergency', '1b'),
                ('Alri_Pneumonia_Treatment_Outpatient', '1b'),
-               ('Alri_Pneumonia_Treatment_Inpatient', '1b')
+               ('Alri_Pneumonia_Treatment_Inpatient', '1b'),
+               ('Alri_Pneumonia_Treatment_Inpatient', '2')  # <-- referral due to lack of consumables
            ] == generate_hsi_sequence(sim=sim_hs_no_consumables,
                                       incident_case_event=AlriIncidentCase_Lethal_Severe_Pneumonia)
