@@ -515,7 +515,8 @@ class HealthSystem(Module):
         # (for debugging)
         assert isinstance(store_hsi_events_that_have_run, bool)
         self.store_hsi_events_that_have_run = store_hsi_events_that_have_run
-        self.store_of_hsi_events_that_have_run = list()
+        if self.store_hsi_events_that_have_run:
+            self.store_of_hsi_events_that_have_run = list()
 
         # If record_hsi_event_details == True, a set will be built during the simulation
         # containing HSIEventDetails tuples corresponding to all HSI_Event instances
@@ -984,7 +985,7 @@ class HealthSystem(Module):
             ]
             assert facility_appt_types.issuperset(appt_type_to_check_list), (
                 f"An appointment type has been requested at a facility level for "
-                f"which it is not possible: TREATMENT_ID={hsi_event.TREATMENT_ID}, {appt_type_to_check_list=}, {hsi_event.ACCEPTED_FACILITY_LEVEL}"
+                f"which it is not possible: TREATMENT_ID={hsi_event.TREATMENT_ID}"
             )
 
     def is_treatment_id_allowed(self, treatment_id: str) -> bool:
@@ -1213,8 +1214,7 @@ class HealthSystem(Module):
                         'did_run': did_run,
                         'Appt_Footprint': actual_appt_footprint,
                         'Squeeze_Factor': _squeeze_factor,
-                        'Person_ID': hsi_event.target,
-                        'Facility_Level': hsi_event.ACCEPTED_FACILITY_LEVEL
+                        'Person_ID': hsi_event.target
                     }
                 )
 
