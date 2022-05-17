@@ -706,7 +706,6 @@ def test_classification_based_on_symptoms_and_imci(sim_hs_all_consumables):
     hsi_alri_treatment = HSI_Alri_Treatment(sim.modules['Alri'], 0)
 
     # Construct examples of the correct classification of disease, given a range of symptoms, age and facility level
-    # todo - TBH check that this is a good range
     imci_classification_on_symptoms = (
         # -- Children older than 2 months
         ('chest_indrawing_pneumonia',
