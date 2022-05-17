@@ -334,11 +334,11 @@ class Alri(Module):
         'rr_ALRI_crowding':
             Parameter(Types.REAL,
                       'relative rate of acquiring Alri for children living in crowed households (>7 pph)'
-                      ),  # TODO: change to wealth?
+                      ),  # TODO: @Ines change to wealth? -- remove
         'rr_ALRI_underweight':
             Parameter(Types.REAL,
                       'relative rate of acquiring Alri for underweight children'
-                      ),  # TODO: change to SAM/MAM?
+                      ),  # TODO: @Ines change to SAM/MAM? -- remove
 
         # Probability of bacterial co- / secondary infection -----
         'prob_viral_pneumonia_bacterial_coinfection':
@@ -867,8 +867,8 @@ class Alri(Module):
 
     def look_up_consumables(self):
         """Look up and store the consumables item codes used in each of the HSI."""
-        # todo @ ines - these doses by age pattern look weird -- 1 month old has highest dose!!?!
-        # todo @ines - no definition of `5day_oral_amoxicillin`, which is used in the HSI
+        # TODO @ Ines - these doses by age pattern look weird -- 1 month old has highest dose!!?!
+        # TODO @ Tim - todo foo(dose_for_under_2_months=0.01, dose_for_under_6_months=0.10, ...)
 
         get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
 
@@ -983,6 +983,7 @@ class Alri(Module):
         }
 
         # todo @Ines - the HSI asks for "Brochodilator_and_Steroids" -- but this is not defined.
+        # todo @Ines - to remove the below, and direct the request for consumables to be for 'Inhaled_Bronchio...'
         self.consumables_used_in_hsi["Brochodilator_and_Steroids"] = {}
 
     def end_episode(self, person_id):
@@ -1120,11 +1121,6 @@ class Alri(Module):
                          oxygen_provided: bool) -> bool:
         """Returns True if the treatment specified will prevent death."""
 
-        # todo @ ines - why does this no depend on whether or not oxygen is provided?!?!?!?
-        # todo @ines -- does it really depend on the imci_symptom_based_classification or the classification for
-        #  treatment?
-        # todo @ines -- note that '3day_oral_amoxicillin' is not provided in any circumatance to anyone
-
         def _raise_error():
             raise ValueError(f"No treatment effectiveness defined: {imci_symptom_based_classification=}, "
                              f"{needs_oxygen=}, {antibiotic_provided=}")
@@ -1167,9 +1163,12 @@ class Alri(Module):
                 _raise_error()
 
         else:
+            # todo - @Ines - this should depend on whether or not oxygen is actually provided!
             # For hypoxaemia (SpO2 < 90%) -----
             if imci_symptom_based_classification in ('fast_breathing_pneumonia', 'chest_indrawing_pneumonia'):
-                # todo @ines - treatment always fails, no matter what is provided!?!??!
+                # todo @Ines - treatment always fails, no matter what is provided! Ask consultant and make this depend
+                #  whether oxygen provided. ("Ask him if this classification gets oral antibiotics and oxygen- does it
+                #  have an effect").
                 return True
 
             # danger-signs pneumonia
@@ -1192,8 +1191,9 @@ class Alri(Module):
         """Helper function that enacts the effects of a treatment to Alri caused by a pathogen.
         It will only do something if the Alri is caused by a pathogen (this module).
         * Prevent any death event that may be scheduled from occurring
-        * Schedules a follow-up appointment if condition not improving (by day 6 or by day 14)  # todo: not yet added
+        * Schedules a follow-up appointment if condition not improving (by day 6 or by day 14)
         """
+        # todo - @Tim - everyone gets one f/u appt after when they receive final treatment, at same level. Do not attend if cured already.
         df = self.sim.population.props
         person = df.loc[person_id]
 
@@ -1248,9 +1248,6 @@ class Alri(Module):
              'chest_indrawing_pneumonia,
              'cough_or_cold'
         }."""
-
-        # TODO: get other danger signs in iCCM when issue 429 is resolved (!?!?!?!?!?!)
-        # todo iccm_danger_signs = symptoms.append() other symptoms child may have that is considered severe in iCCM
 
         if child_is_younger_than_2_months:
             if ('chest_indrawing' in symptoms) or ('danger_signs' in symptoms):
@@ -1455,7 +1452,10 @@ class Models:
             if prob_pulmonary_complications > self.rng.rand():
                 for c in ['pneumothorax', 'pleural_effusion', 'lung_abscess', 'empyema']:
                     probs[c] += p[f'prob_{c}_in_pulmonary_complicated_pneumonia']
-                    # TODO: lung abscess, empyema should only apply to (primary or secondary) bacteria ALRIs
+                    # TODO: @Ines - turn this into an issue - lung abscess, empyema should only apply to
+                    #  (primary or secondary) bacteria ALRIs. Requires two sets of parameters for the prob
+                    #  that a complication is one of possible types for those with and without bacterial infection
+                    #  (i.e. the vector of probabilities must sum to 1.0 in either case).
 
             # probabilities for systemic complications
             if primary_path_is_bacterial or has_secondary_bacterial_inf:
@@ -2175,6 +2175,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
 
         def do_if_fast_breathing_pneumonia(facility_level):
             """What to do if classification is `fast_breathing`."""
+            # todo - @Ines - this should *sometimes* provide '3day_oral_amoxicillin'
             _try_treatment(antibiotic_indicated='5day_oral_amoxicillin', oxygen_indicated=False)
 
         def do_if_chest_indrawing_pneumonia(facility_level):
@@ -2189,7 +2190,6 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
             _ = self._get_cons('Ceftriaxone_therapy_for_severe_pneumonia')
 
             if has_staph_aureus:
-                # @todo - ines - note that this is not having an effect
                 _ = self._get_cons('2nd_line_Antibiotic_therapy_for_severe_staph_pneumonia')
 
             if facility_level == '0':
@@ -2210,11 +2210,14 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
 
             _ = self._get_cons('Ceftriaxone_therapy_for_severe_pneumonia')
 
-            if facility_level not in ('1b', '2') and self._is_as_in_patient:
-                # todo @Ines - I am confused about what you'd like to happen here!!?!? refer to level 2 and an
-                #  in-patient
-                pass
+            if not self._is_as_in_patient:
+                _ = self._get_cons('First_dose_IM_antibiotics_for_referral')
+                self._refer_to_become_inpatient()  # todo - @Tim refer to become inpatient at 1b immediately.
+            if facility_level not in ('1b', '2'):
+                _ = self._get_cons('First_dose_IM_antibiotics_for_referral')
+                self._refer_to_next_level_up()
             else:
+                # child is an in-patient at level 1b or 2:
                 _try_treatment(antibiotic_indicated='1st_line_IV_antibiotics', oxygen_indicated=True)
 
         def do_if_cough_or_cold(facility_level):
