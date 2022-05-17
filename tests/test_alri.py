@@ -33,9 +33,9 @@ from tlo.methods.alri import (
     HSI_Alri_Treatment,
     Models,
 )
-# Path to the resource files used by the disease and intervention methods
 from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
 
+# Path to the resource files used by the disease and intervention methods
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
 # Default date for the start of simulations
@@ -725,14 +725,12 @@ def test_classification_based_on_symptoms_and_imci(sim_hs_all_consumables):
          {'symptoms': ['danger_signs', 'chest_indrawing'],
           'child_is_younger_than_2_months': False}),
         ('chest_indrawing_pneumonia',
-         # <-- todo @ines -- this was originallly "serious_bacterial_infection" but I think that was wrong so I
-         #  chnaged it.
          {'symptoms': ['chest_indrawing'],
           'child_is_younger_than_2_months': False}),
 
         # -- Children younger than 2 months
         ('serious_bacterial_infection',
-         {'symptoms': ['danger_signs'],
+         {'symptoms': ['danger_signs', 'chest_indrawing'],
           'child_is_younger_than_2_months': True}),
         ('fast_breathing_pneumonia',
          {'symptoms': ['tachypnoea'],
@@ -744,8 +742,6 @@ def test_classification_based_on_symptoms_and_imci(sim_hs_all_consumables):
          {'symptoms': ['cough', 'danger_signs', 'difficult_breathing', 'fever', 'chest_indrawing'],
           'child_is_younger_than_2_months': True}),
         ('serious_bacterial_infection',
-         # todo - @ines - I think you mean this to be 'serious_bacterial_infection', right?
-         #  (it was "danger_sign_pneumonia")
          {'symptoms': ['cough', 'danger_signs', 'difficult_breathing', 'fever', 'chest_indrawing'],
           'child_is_younger_than_2_months': True}),
     )
