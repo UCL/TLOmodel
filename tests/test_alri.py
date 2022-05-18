@@ -41,10 +41,13 @@ resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 # Default date for the start of simulations
 start_date = Date(2010, 1, 1)
 
+
 def _get_person_id(df, age_bounds: tuple = (0.0, np.inf)) -> int:
     """Return the person_id of one alive person, who is not infected aged is between the bounds specified
     (inclusively)."""
-    return df.loc[df.is_alive & ~df['ri_current_infection_status'] & df['age_exact_years'].between(*age_bounds)].index[0]
+    return df.loc[
+        df.is_alive & ~df['ri_current_infection_status'] & df['age_exact_years'].between(*age_bounds)
+        ].index[0]
 
 
 @pytest.fixture
@@ -1034,6 +1037,7 @@ def test_treatment_pathway_if_all_consumables_severe_case(sim_hs_all_consumables
            ] == generate_hsi_sequence(sim=sim_hs_all_consumables,
                                       incident_case_event=AlriIncidentCase_Lethal_Severe_Pneumonia,
                                       age_of_person_under_2_months=True)
+
 
 def test_treatment_pathway_if_no_consumables_mild_case(sim_hs_no_consumables):
     """Examine the treatment pathway for a person with a particular category of disease if consumables are available."""

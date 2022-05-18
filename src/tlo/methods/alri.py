@@ -943,8 +943,8 @@ class Alri(Module):
                                                           ),
             get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST'):
                 lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
-                                                                 {4: 2.81, 12: 4.69, 36: 7.03, np.inf: 9.37}
-                                                                 ),
+                                                          {4: 2.81, 12: 4.69, 36: 7.03, np.inf: 9.37}
+                                                          ),
             get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
             get_item_code(item='Syringe, needle + swab'): 1
         }
@@ -1168,25 +1168,30 @@ class Alri(Module):
 
             if imci_symptom_based_classification == 'chest_indrawing_pneumonia':
                 if antibiotic_provided == '5day_oral_amoxicillin':
-                    return p['5day_amoxicillin_for_chest_indrawing_treatment_failure_or_relapse'] > self.rng.random_sample()
+                    return p['5day_amoxicillin_for_chest_indrawing_treatment_failure_or_relapse'] > \
+                           self.rng.random_sample()
                 elif antibiotic_provided == '3day_oral_amoxicillin':
-                    return p['3day_amoxicillin_for_chest_indrawing_treatment_failure_or_relapse'] > self.rng.random_sample()
+                    return p['3day_amoxicillin_for_chest_indrawing_treatment_failure_or_relapse'] >\
+                           self.rng.random_sample()
                 else:
                     _raise_error()
 
             # fast-breathing pneumonia
             elif imci_symptom_based_classification == 'fast_breathing_pneumonia':
                 if antibiotic_provided == '3day_oral_amoxicillin':
-                    return p['3day_amoxicillin_for_fast_breathing_treatment_failure_or_relapse'] > self.rng.random_sample()
+                    return p['3day_amoxicillin_for_fast_breathing_treatment_failure_or_relapse'] > \
+                           self.rng.random_sample()
                 elif antibiotic_provided == '5day_oral_amoxicillin':
-                    return p['5day_amoxicillin_for_chest_indrawing_treatment_failure_or_relapse'] > self.rng.random_sample()
+                    return p['5day_amoxicillin_for_chest_indrawing_treatment_failure_or_relapse'] > \
+                           self.rng.random_sample()
                 else:
                     _raise_error()
 
             # danger-signs pneumonia
             elif imci_symptom_based_classification in ('danger_signs_pneumonia', 'serious_bacterial_infection'):
                 if antibiotic_provided == '1st_line_IV_antibiotics':
-                    return p['1st_line_antibiotic_for_severe_pneumonia_treatment_failure_by_day2'] > self.rng.random_sample()
+                    return p['1st_line_antibiotic_for_severe_pneumonia_treatment_failure_by_day2'] \
+                           > self.rng.random_sample()
                 elif antibiotic_provided == '5day_oral_amoxicillin':
                     return True
                 else:
@@ -2275,8 +2280,6 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
             else:
                 _ = self._get_cons('First_dose_IM_antibiotics_for_referral')
                 self._refer_to_become_inpatient()
-
-
 
         def do_if_cough_or_cold(facility_level):
             """What to do if `cough_or_cold`."""
