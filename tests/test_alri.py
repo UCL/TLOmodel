@@ -988,6 +988,11 @@ def generate_hsi_sequence(sim, incident_case_event):
     return [r for r in df.loc[mask, ['TREATMENT_ID', 'Facility_Level']].itertuples(index=False, name=None)]
 
 
+# todo @Ines - In the below, we check that the sequence of HSI's is correct under some different circumstances.
+#   We may wish to add more, if there are specific things you want to check. Maybe for `serious_bacterial_infection`
+#   for the "direct referral" thing.
+
+
 def test_treatment_pathway_if_all_consumables_mild_case(sim_hs_all_consumables):
     """Examine the treatment pathway for a person with a particular category of disease if consumables are available."""
     # Mild case (fast_breathing_pneumonia) and available consumables --> treatment at level 0, following non-emergency

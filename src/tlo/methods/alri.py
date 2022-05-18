@@ -40,6 +40,7 @@ import types
 from collections import defaultdict
 from itertools import chain
 from pathlib import Path
+from typing import Dict
 
 import numpy as np
 import pandas as pd
@@ -868,9 +869,17 @@ class Alri(Module):
     def look_up_consumables(self):
         """Look up and store the consumables item codes used in each of the HSI."""
         # TODO @ Ines - these doses by age pattern look weird -- 1 month old has highest dose!!?!
-        # TODO @ Tim - todo foo(dose_for_under_2_months=0.01, dose_for_under_6_months=0.10, ...)
 
         get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
+
+        def get_dosage_for_age_in_months(age_in_whole_months: float, doses_by_age_in_months: Dict[int, float]):
+            """Returns the dose corresponding to age, using the lookup provided in `doses`. The format of `doses` is:
+             {<higher_age_boundary_of_age_group_in_months>: <dose>}."""
+
+            for upper_age_bound_in_months, _dose in sorted(doses_by_age_in_months.items()):
+                if age_in_whole_months < upper_age_bound_in_months:
+                    return _dose
+            return _dose
 
         # # # # # # Dosages by age # # # # # #
 
@@ -878,46 +887,64 @@ class Alri(Module):
 
         # Antibiotics for non-severe pneumonia - oral amoxicillin for 5 days
         self.consumables_used_in_hsi['Amoxicillin_tablet_or_suspension'] = {
-            get_item_code(item='Amoxycillin 250mg_1000_CMST'): lambda _age:
-            0.01 if (1 / 6 <= _age < 1) else (0.02 if (1 <= _age < 3) else 0.03),
-            get_item_code(item='Amoxycillin 125mg/5ml suspension, PFR_0.025_CMST'): lambda _age:
-            1 if (1 / 6 <= _age < 1) else (2 if (1 <= _age < 3) else 3),
+            get_item_code(item='Amoxycillin 250mg_1000_CMST'):
+                lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
+                                                          {12: 0.01, 36: 0.02, np.inf: 0.03}
+                                                          ),
+            get_item_code(item='Amoxycillin 125mg/5ml suspension, PFR_0.025_CMST'):
+                lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
+                                                          {12: 1, 36: 2, np.inf: 3}
+                                                          ),
         }
 
         # Antibiotic therapy for severe pneumonia - ampicillin package
         self.consumables_used_in_hsi['Ampicillin_gentamicin_therapy_for_severe_pneumonia'] = {
-            get_item_code(item='Ampicillin injection 500mg, PFR_each_CMST'): lambda _age:
-            8 if (1 / 6 <= _age < 1 / 3) else (16 if (1 / 3 <= _age < 1) else (24 if (1 <= _age < 3) else 40)),
-            get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST'): lambda _age:
-            2.81 if (1 / 6 <= _age < 1 / 3) else (4.69 if (1 / 3 <= _age < 1) else (7.03 if (1 <= _age < 3) else 9.37)),
+            get_item_code(item='Ampicillin injection 500mg, PFR_each_CMST'):
+                lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
+                                                          {4: 8, 12: 16, 36: 24, np.inf: 40}
+                                                          ),
+            get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST'):
+                lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
+                                                          {4: 2.81, 12: 4.69, 36: 7.03, np.inf: 9.37}
+                                                          ),
             get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
             get_item_code(item='Syringe, needle + swab'): 1
         }
 
         # Antibiotic therapy for severe pneumonia - benzylpenicillin package when ampicillin is not available
         self.consumables_used_in_hsi['Benzylpenicillin_gentamicin_therapy_for_severe_pneumonia'] = {
-            get_item_code(item='Benzylpenicillin 3g (5MU), PFR_each_CMST'): lambda _age:
-            8 if (1 / 6 <= _age < 1 / 3) else (15 if (1 / 3 <= _age < 1) else (24 if (1 <= _age < 3) else 34)),
-            get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST'): lambda _age:
-            2.81 if (1 / 6 <= _age < 1 / 3) else (4.69 if (1 / 3 <= _age < 1) else (7.03 if (1 <= _age < 3) else 9.37)),
+            get_item_code(item='Benzylpenicillin 3g (5MU), PFR_each_CMST'):
+                lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
+                                                          {4: 8, 12: 15, 36: 24, np.inf: 34}
+                                                          ),
+            get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST'):
+                lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
+                                                          {4: 2.81, 12: 4.69, 36: 7.03, np.inf: 9.37}
+                                                          ),
             get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
             get_item_code(item='Syringe, needle + swab'): 1
         }
 
         # Second line of antibiotics for severe pneumonia
         self.consumables_used_in_hsi['Ceftriaxone_therapy_for_severe_pneumonia'] = {
-            get_item_code(item='Ceftriaxone 1g, PFR_each_CMST'): lambda _age:
-            1.5 if (1 / 6 <= _age < 1 / 3) else (3 if (1 / 3 <= _age < 1) else (5 if (1 <= _age < 3) else 7)),
+            get_item_code(item='Ceftriaxone 1g, PFR_each_CMST'):
+                lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
+                                                          {4: 1.5, 12: 3, 36: 5, np.inf: 7}
+                                                          ),
             get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
             get_item_code(item='Syringe, needle + swab'): 1
         }
 
         # Second line of antibiotics for severe pneumonia, if Staph is suspected
         self.consumables_used_in_hsi['2nd_line_Antibiotic_therapy_for_severe_staph_pneumonia'] = {
-            get_item_code(item='cloxacillin 500 mg, powder for injection_50_IDA'): lambda _age:
-            5.6 if (1 / 6 <= _age < 1 / 3) else (11.2 if (1 / 3 <= _age < 1) else (16.8 if (1 <= _age < 3) else 22.4)),
-            get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST'): lambda _age:
-            2.81 if (1 / 6 <= _age < 1 / 3) else (4.69 if (1 / 3 <= _age < 1) else (7.03 if (1 <= _age < 3) else 9.37)),
+            get_item_code(item='cloxacillin 500 mg, powder for injection_50_IDA'):
+                lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
+                                                          {4: 5.6, 12: 11.2, 36: 16.8, np.inf: 22.4}
+                                                          ),
+            get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST'):
+                lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
+                                                                 {4: 2.81, 12: 4.69, 36: 7.03, np.inf: 9.37}
+                                                                 ),
             get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
             get_item_code(item='Syringe, needle + swab'): 1
         }
@@ -926,15 +953,21 @@ class Alri(Module):
 
         # Referral process in iCCM for severe pneumonia, and at health centres for HIV exposed/infected
         self.consumables_used_in_hsi['First_dose_oral_amoxicillin_for_referral'] = {
-            get_item_code(item='Amoxycillin 250mg_1000_CMST'): lambda _age:
-            0.001 if (1 / 6 <= _age < 1) else (0.002 if (1 <= _age < 3) else 0.003)
+            get_item_code(item='Amoxycillin 250mg_1000_CMST'):
+                lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
+                                                          {12: 0.001, 36: 0.002, np.inf: 0.003}
+                                                          ),
         }
         # Referral process at health centres for severe cases
         self.consumables_used_in_hsi['First_dose_IM_antibiotics_for_referral'] = {
-            get_item_code(item='Ampicillin injection 500mg, PFR_each_CMST'): lambda _age:
-            0.4 if (1 / 6 <= _age < 1 / 3) else (0.8 if (1 / 3 <= _age < 1) else (1.4 if (1 <= _age < 3) else 2)),
-            get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST'): lambda _age:
-            0.56 if (1 / 6 <= _age < 1 / 3) else (0.94 if (1 / 3 <= _age < 1) else (1.41 if (1 <= _age < 3) else 1.87)),
+            get_item_code(item='Ampicillin injection 500mg, PFR_each_CMST'):
+                lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
+                                                          {4: 0.4, 12: 0.8, 36: 1.4, np.inf: 2}
+                                                          ),
+            get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST'):
+                lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
+                                                          {4: 0.56, 12: 0.94, 36: 1.41, np.inf: 1.87}
+                                                          ),
             get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
             get_item_code(item='Syringe, needle + swab'): 1
         }
@@ -962,7 +995,10 @@ class Alri(Module):
 
         # Paracetamol
         self.consumables_used_in_hsi['Paracetamol_tablet'] = {
-            get_item_code(item='Paracetamol, tablet, 100 mg'): lambda _age: 12 if (1 / 6 <= _age < 3) else 18
+            get_item_code(item='Paracetamol, tablet, 100 mg'):
+                lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
+                                                          {36: 12, np.inf: 18}
+                                                          ),
         }
 
         # Maintenance of fluids via nasograstric tube
