@@ -1000,6 +1000,7 @@ def test_treatment_pathway_if_all_consumables_mild_case(sim_hs_all_consumables):
     assert [
                ('FirstAttendance_NonEmergency', '0'),
                ('Alri_Pneumonia_Treatment_Outpatient', '0'),
+               ('Alri_Pneumonia_Treatment_Outpatient_Followup', '0'),
            ] == generate_hsi_sequence(sim=sim_hs_all_consumables,
                                       incident_case_event=AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia)
 
@@ -1011,7 +1012,8 @@ def test_treatment_pathway_if_all_consumables_severe_case(sim_hs_all_consumables
     assert [
                ('FirstAttendance_Emergency', '1b'),
                ('Alri_Pneumonia_Treatment_Outpatient', '1b'),
-               ('Alri_Pneumonia_Treatment_Inpatient', '1b')
+               ('Alri_Pneumonia_Treatment_Inpatient', '1b'),
+               ('Alri_Pneumonia_Treatment_Outpatient_Followup', '1b')
            ] == generate_hsi_sequence(sim=sim_hs_all_consumables,
                                       incident_case_event=AlriIncidentCase_Lethal_Severe_Pneumonia)
 
@@ -1026,6 +1028,7 @@ def test_treatment_pathway_if_no_consumables_mild_case(sim_hs_no_consumables):
                ('Alri_Pneumonia_Treatment_Outpatient', '1a'),  # <-- referral due to lack of consumables
                ('Alri_Pneumonia_Treatment_Outpatient', '1b'),  # <-- referral due to lack of consumables
                ('Alri_Pneumonia_Treatment_Outpatient', '2'),   # <-- referral due to lack of consumables
+               # (No follow-up appointment because treatment is never provided, due to lack of consumables).
            ] == generate_hsi_sequence(sim=sim_hs_no_consumables,
                                       incident_case_event=AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia)
 
@@ -1038,6 +1041,7 @@ def test_treatment_pathway_if_no_consumables_severe_case(sim_hs_no_consumables):
                ('FirstAttendance_Emergency', '1b'),
                ('Alri_Pneumonia_Treatment_Outpatient', '1b'),
                ('Alri_Pneumonia_Treatment_Inpatient', '1b'),
-               ('Alri_Pneumonia_Treatment_Inpatient', '2')  # <-- referral due to lack of consumables
+               ('Alri_Pneumonia_Treatment_Inpatient', '2'),  # <-- referral due to lack of consumables
+               # (No follow-up appointment because treatment is never provided, due to lack of consumables).
            ] == generate_hsi_sequence(sim=sim_hs_no_consumables,
                                       incident_case_event=AlriIncidentCase_Lethal_Severe_Pneumonia)

@@ -1168,25 +1168,25 @@ class Alri(Module):
 
             if imci_symptom_based_classification == 'chest_indrawing_pneumonia':
                 if antibiotic_provided == '5day_oral_amoxicillin':
-                    return p['5day_amoxicillin_for_chest_indrawing_treatment_failure_or_relapse'] > self.rng.rand()
+                    return p['5day_amoxicillin_for_chest_indrawing_treatment_failure_or_relapse'] > self.rng.random_sample()
                 elif antibiotic_provided == '3day_oral_amoxicillin':
-                    return p['3day_amoxicillin_for_chest_indrawing_treatment_failure_or_relapse'] > self.rng.rand()
+                    return p['3day_amoxicillin_for_chest_indrawing_treatment_failure_or_relapse'] > self.rng.random_sample()
                 else:
                     _raise_error()
 
             # fast-breathing pneumonia
             elif imci_symptom_based_classification == 'fast_breathing_pneumonia':
                 if antibiotic_provided == '3day_oral_amoxicillin':
-                    return p['3day_amoxicillin_for_fast_breathing_treatment_failure_or_relapse'] > self.rng.rand()
+                    return p['3day_amoxicillin_for_fast_breathing_treatment_failure_or_relapse'] > self.rng.random_sample()
                 elif antibiotic_provided == '5day_oral_amoxicillin':
-                    return p['5day_amoxicillin_for_chest_indrawing_treatment_failure_or_relapse'] > self.rng.rand()
+                    return p['5day_amoxicillin_for_chest_indrawing_treatment_failure_or_relapse'] > self.rng.random_sample()
                 else:
                     _raise_error()
 
             # danger-signs pneumonia
             elif imci_symptom_based_classification in ('danger_signs_pneumonia', 'serious_bacterial_infection'):
                 if antibiotic_provided == '1st_line_IV_antibiotics':
-                    return p['1st_line_antibiotic_for_severe_pneumonia_treatment_failure_by_day2'] > self.rng.rand()
+                    return p['1st_line_antibiotic_for_severe_pneumonia_treatment_failure_by_day2'] > self.rng.random_sample()
                 elif antibiotic_provided == '5day_oral_amoxicillin':
                     return True
                 else:
@@ -1213,7 +1213,7 @@ class Alri(Module):
                     return (
                                p['1st_line_antibiotic_for_severe_pneumonia_treatment_failure_by_day2']
                                * p['rr_1st_line_treatment_failure_low_oxygen_saturation']
-                           ) > self.rng.rand()
+                           ) > self.rng.random_sample()
                 else:
                     return True
 
@@ -1229,7 +1229,6 @@ class Alri(Module):
         * Prevent any death event that may be scheduled from occurring
         * Schedules a follow-up appointment if condition not improving (by day 6 or by day 14)
         """
-        # todo - @Tim - everyone gets one f/u appt after when they receive final treatment, at same level. Do not attend if cured already.
         df = self.sim.population.props
         person = df.loc[person_id]
 
@@ -1420,9 +1419,9 @@ class Models:
 
         # Determine the disease type - pneumonia or other_alri
         if (
-            (age < 1) and (p[f'proportion_pneumonia_in_{pathogen}_ALRI'][0] > self.rng.rand())
+            (age < 1) and (p[f'proportion_pneumonia_in_{pathogen}_ALRI'][0] > self.rng.random_sample())
         ) or (
-            (1 <= age < 5) and (p[f'proportion_pneumonia_in_{pathogen}_ALRI'][1] > self.rng.rand())
+            (1 <= age < 5) and (p[f'proportion_pneumonia_in_{pathogen}_ALRI'][1] > self.rng.random_sample())
         ):
             disease_type = 'pneumonia'
         else:
@@ -1431,7 +1430,7 @@ class Models:
         # Determine bacterial-coinfection
         if pathogen in self.module.pathogens['viral']:
             if disease_type == 'pneumonia':
-                if p['prob_viral_pneumonia_bacterial_coinfection'] > self.rng.rand():
+                if p['prob_viral_pneumonia_bacterial_coinfection'] > self.rng.random_sample():
                     bacterial_coinfection = self.secondary_bacterial_infection(va_hib_all_doses=va_hib_all_doses,
                                                                                va_pneumo_all_doses=va_pneumo_all_doses)
                 else:
@@ -1485,7 +1484,7 @@ class Models:
         # probabilities for local pulmonary complications
         prob_pulmonary_complications = p['prob_pulmonary_complications_in_pneumonia']
         if disease_type == 'pneumonia':
-            if prob_pulmonary_complications > self.rng.rand():
+            if prob_pulmonary_complications > self.rng.random_sample():
                 for c in ['pneumothorax', 'pleural_effusion', 'lung_abscess', 'empyema']:
                     probs[c] += p[f'prob_{c}_in_pulmonary_complicated_pneumonia']
                     # TODO: @Ines - turn this into an issue - lung abscess, empyema should only apply to
@@ -1503,7 +1502,7 @@ class Models:
             probs['hypoxaemia'] += p['prob_hypoxaemia_in_other_alri']
 
         # determine which complications are onset:
-        complications = {c for c, p in probs.items() if p > self.rng.rand()}
+        complications = {c for c, p in probs.items() if p > self.rng.random_sample()}
 
         return complications
 
@@ -1511,7 +1510,7 @@ class Models:
         """Set peripheral oxygen saturation"""
 
         if 'hypoxaemia' in complication_set:
-            if self.p['proportion_hypoxaemia_with_SpO2<90%'] > self.rng.rand():
+            if self.p['proportion_hypoxaemia_with_SpO2<90%'] > self.rng.random_sample():
                 return '<90%'
             else:
                 return '90-92%'
@@ -1531,7 +1530,7 @@ class Models:
         }
 
         # determine which symptoms are onset:
-        symptoms = {s for s, p in probs.items() if p > self.rng.rand()}
+        symptoms = {s for s, p in probs.items() if p > self.rng.random_sample()}
 
         return symptoms
 
@@ -1559,7 +1558,7 @@ class Models:
             }
 
         # determine which symptoms are onset:
-        symptoms = {s for s, p in probs.items() if p > self.rng.rand()}
+        symptoms = {s for s, p in probs.items() if p > self.rng.random_sample()}
 
         return symptoms
 
@@ -1605,7 +1604,7 @@ class Models:
         risk_death = odds_death / (1 + odds_death)
 
         if any_complications:
-            return risk_death > self.rng.rand()
+            return risk_death > self.rng.random_sample()
         else:
             return False
 
@@ -1898,11 +1897,14 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
     """HSI event for treating uncomplicated pneumonia. This event runs for every presentation and represents all the
     interactions with the healthcare system at all the levels."""
 
-    def __init__(self, module: Module, person_id: int, facility_level: str = "0", inpatient: bool = False):
+    def __init__(self, module: Module, person_id: int, facility_level: str = "0", inpatient: bool = False,
+                 is_followup: bool = False):
         super().__init__(module, person_id=person_id)
         self._treatment_id_stub = 'Alri_Pneumonia_Treatment'
         self._facility_levels = ("0", "1a", "1b", "2")  # Health facility levels at which care may be provided
         assert facility_level in self._facility_levels
+
+        self.is_followup = is_followup  # (if True, then HSI has no effect and is not rescheduled if never ran).
 
         if not inpatient:
             self._as_out_patient(facility_level)
@@ -1913,7 +1915,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
 
     def _as_out_patient(self, facility_level):
         """Cast this HSI as an out-patient appointment."""
-        self.TREATMENT_ID = f'{self._treatment_id_stub}_Outpatient'
+        self.TREATMENT_ID = f'{self._treatment_id_stub}_Outpatient{"_Followup" if self.is_followup else ""}'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
             ('ConWithDCSA' if facility_level == '0' else 'Under5OPD'): 1})
         self.ACCEPTED_FACILITY_LEVEL = facility_level
@@ -1924,6 +1926,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = facility_level
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 3})
+        assert not self.is_followup, 'A Follow-up appointment cannot be an in-patient appointment.'
 
     def _refer_to_next_level_up(self):
         """Schedule a copy of this event to occur again today at the next level-up (if there is a next level-up)."""
@@ -1963,6 +1966,23 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
             ),
             topen=self.sim.date,
             tclose=self.sim.date + pd.DateOffset(days=1),
+            priority=0)
+
+    def _schedule_follow_up_at_same_facility_as_outpatient(self):
+        """Schedule a copy of this event to occur in 5 days time as a 'follow-up' appointment at this level as an
+        out-patient."""
+        # todo - @Ines: please confirm that you want the follow-up appointment to be at the same level as that at which
+        #  treatment is provided.
+        self.sim.modules['HealthSystem'].schedule_hsi_event(
+            HSI_Alri_Treatment(
+                module=self.module,
+                person_id=self.target,
+                inpatient=False,
+                facility_level=self.ACCEPTED_FACILITY_LEVEL,
+                is_followup=True
+            ),
+            topen=self.sim.date + pd.DateOffset(days=5),
+            tclose=None,
             priority=0)
 
     @property
@@ -2200,6 +2220,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                     antibiotic_provided=antibiotic_indicated,
                     oxygen_provided=(oxygen_available and oxygen_indicated)
                 )
+                self._schedule_follow_up_at_same_facility_as_outpatient()
             else:
                 self._refer_to_next_level_up()
 
@@ -2248,7 +2269,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
 
             if not self._is_as_in_patient:
                 _ = self._get_cons('First_dose_IM_antibiotics_for_referral')
-                self._refer_to_become_inpatient()  # todo - @Tim refer to become inpatient at 1b immediately.
+                self._refer_to_become_inpatient()  # todo - ****** @Tim refer to become inpatient at 1b immediately.
             if facility_level not in ('1b', '2'):
                 _ = self._get_cons('First_dose_IM_antibiotics_for_referral')
                 self._refer_to_next_level_up()
@@ -2279,9 +2300,13 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
 
     def apply(self, person_id, squeeze_factor):
         """Assess and attempt to treat the person."""
-        person = self.sim.population.props.loc[person_id]
+
+        # Do nothing if this is a follow-up appointment:
+        if self.is_followup:
+            return
 
         # Do nothing if the person is not currently infected and currently experiencing an episode
+        person = self.sim.population.props.loc[person_id]
         if not person.ri_current_infection_status and (
             person.ri_start_of_current_episode <= self.sim.date <= person.ri_end_of_current_episode
         ):
@@ -2306,8 +2331,9 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                                oxygen_saturation=person.ri_SpO2_level)
 
     def never_ran(self):
-        """If this event never ran, refer to next level up."""
-        self._refer_to_next_level_up()
+        """If this event never ran (and is not a follow-up appointment), refer to next level up."""
+        if not self.is_followup:
+            self._refer_to_next_level_up()
 
 
 # ---------------------------------------------------------------------------------------------------------
