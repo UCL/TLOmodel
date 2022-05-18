@@ -1266,6 +1266,7 @@ class Alri(Module):
 
         self.record_sought_care_for_alri()
 
+        # We give all persons an out-patient appointment at the current facility level.
         self.sim.modules['HealthSystem'].schedule_hsi_event(
             hsi_event=HSI_Alri_Treatment(person_id=person_id, module=self,
                                          facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL),
@@ -2110,6 +2111,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                     return 'cough_or_cold'
 
             elif imci_classification_based_on_symptoms in ('chest_indrawing_pneumonia', 'danger_signs_pneumonia'):
+                # todo - @Ines - should the line above include 'serious_bacterial_infection'...?
                 if rand() < p['sensitivity_of_classification_of_danger_signs_pneumonia_facility_level0']:
                     return imci_classification_based_on_symptoms
                 else:
@@ -2154,6 +2156,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                     return 'cough_or_cold'
 
             elif imci_classification_based_on_symptoms == 'danger_signs_pneumonia':
+
                 if rand() < p['sensitivity_of_classification_of_severe_pneumonia_facility_level2']:
                     return imci_classification_based_on_symptoms
                 else:

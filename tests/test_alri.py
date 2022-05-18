@@ -952,9 +952,13 @@ def generate_hsi_sequence(sim, incident_case_event, age_of_person_under_2_months
         """Make the population be composed only of children."""
         sim.modules['Demography'].parameters['max_age_initial'] = 5
 
+    def force_any_symptom_to_lead_to_healthcareseeking(sim):
+        sim.modules['HealthSeekingBehaviour'].force_any_symptom_to_lead_to_healthcareseeking = True
+
     make_population_children_only(sim)
     make_hw_assesement_perfect(sim)
     make_non_emergency_hsi_happen_immediately(sim)
+    force_any_symptom_to_lead_to_healthcareseeking(sim)
     sim.make_initial_population(n=5000)
 
     def _initialise_simulation_other_jobs(sim, **kwargs):
