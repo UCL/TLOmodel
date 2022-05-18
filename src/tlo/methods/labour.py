@@ -1698,7 +1698,7 @@ class Labour(Module):
         mode = self.rng.choice(delivery_modes, p=params[f'prob_delivery_modes_{complication}'])
 
         if mode == 'avd':
-            self.assessment_for_assisted_vaginal_delivery(hsi_event)
+            self.assessment_for_assisted_vaginal_delivery(hsi_event, indication='spe_ec')
 
         elif mode == 'cs':
             mni[person_id]['referred_for_cs'] = True
@@ -1820,14 +1820,14 @@ class Labour(Module):
                 # Treatment with magnesium reduces a womans risk of death from eclampsia
                 df.at[person_id, 'la_eclampsia_treatment'] = True
 
-    def assessment_for_assisted_vaginal_delivery(self, hsi_event):
+    def assessment_for_assisted_vaginal_delivery(self, hsi_event, indication):
         """
         This function represents the diagnosis and management of obstructed labour during labour. This function
         defines the required consumables and administers the intervention if available. The intervention in this
         function is assisted vaginal delivery. It is called by either HSI_Labour_PresentsForSkilledBirthAttendanceIn
         Labour
         :param hsi_event: HSI event in which the function has been called:
-        :param for_spe: BOOL if this function is applied to woman with severe pre-eclampsia
+        :param indication: STR indication for assesment and delivery of AVD
         (STR) 'hc' == health centre, 'hp' == hospital
         """
         df = self.sim.population.props
@@ -1839,15 +1839,12 @@ class Labour(Module):
         def refer_for_cs():
             mni[person_id]['referred_for_cs'] = True
 
-            if (df.at[person_id, 'ps_htn_disorders'] in ('severe_pre_eclamp', 'eclampsia')) and \
-               (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'avd_now'):
-                mni[person_id]['cs_indication'] = 'spe_ec'
-
-            elif df.at[person_id, 'la_obstructed_labour']:
-                mni[person_id]['cs_indication'] = 'ol'
-
-            else:
-                mni[person_id]['cs_indication'] = 'other'
+            if indication == 'spe_ec':
+                mni[person_id]['cs_indication'] = indication
+            elif indication == 'ol':
+                mni[person_id]['cs_indication'] = indication
+            elif indication == 'other':
+                mni[person_id]['cs_indication'] = indication
 
         if ('assessment_and_treatment_of_obstructed_labour' not in params['allowed_interventions']) or \
             (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'caesarean_now') or \
@@ -1855,31 +1852,33 @@ class Labour(Module):
             return
 
         # Define the consumables...
-        hsi_event.get_consumables(item_codes=cons['obstructed_labour'])
-        avail_vacuum = hsi_event.get_consumables(item_codes=cons['vacuum'])
+        if df.at[person_id, 'la_obstructed_labour'] or (indication in ('spe_ec', 'other')):
+            # We assume women with CPD cannot be delivered via AVD and will require a caesarean
+            if not mni[person_id]['cpd']:
 
-        # run HCW check
-        sf_check = self.check_emonc_signal_function_will_run(sf='avd',
-                                                             f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
+                # If the general package is available AND the facility has the correct tools to carry out the
+                # delivery then it can occur
+                hsi_event.get_consumables(item_codes=cons['obstructed_labour'])
+                avail_vacuum = hsi_event.get_consumables(item_codes=cons['vacuum'])
 
-        # We assume women with CPD cannot be delivered via AVD and will require a caesarean
-        if not mni[person_id]['cpd']:
-            # If the general package is available AND the facility has the correct tools to carry out the
-            # delivery then it can occur
-            if avail_vacuum and sf_check:
+                # run HCW check
+                sf_check = self.check_emonc_signal_function_will_run(sf='avd',
+                                                                     f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
+                if avail_vacuum and sf_check:
 
-                # If AVD was successful then we record the mode of delivery. We use this variable to reduce
-                # risk of intrapartum still birth when applying risk in the death event
-                if params['prob_successful_assisted_vaginal_delivery'] > self.rng.random_sample():
-                    mni[person_id]['mode_of_delivery'] = 'instrumental'
+                    # If AVD was successful then we record the mode of delivery. We use this variable to reduce
+                    # risk of intrapartum still birth when applying risk in the death event
+                    if params['prob_successful_assisted_vaginal_delivery'] > self.rng.random_sample():
+                        mni[person_id]['mode_of_delivery'] = 'instrumental'
+                    else:
+                        # If unsuccessful, this woman will require a caesarean section
+                        refer_for_cs()
                 else:
-                    # If unsuccessful, this woman will require a caesarean section
+                    # If no consumables, this woman will require a caesarean section
                     refer_for_cs()
             else:
-                # If unsuccessful, this woman will require a caesarean section
+                # If AVD is not clinically indicated, this woman will require a caesarean section
                 refer_for_cs()
-        else:
-            refer_for_cs()
 
     def assessment_and_treatment_of_maternal_sepsis(self, hsi_event, labour_stage):
         """
@@ -2857,7 +2856,7 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
             mni[person_id]['referred_for_cs'] = True
 
         elif df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'avd_now':
-            self.module.assessment_for_assisted_vaginal_delivery(self)
+            self.module.assessment_for_assisted_vaginal_delivery(self, indication='spe_ec')
 
         # and then if the squeeze factor is too high we assume delay in receiving interventions occurs (increasing risk
         # of death if complications occur)
@@ -2910,7 +2909,7 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         # Next, women in labour are assessed for complications and treatment delivered if a need is identified and
         # consumables are available
 
-        self.module.assessment_for_assisted_vaginal_delivery(self)
+        self.module.assessment_for_assisted_vaginal_delivery(self, indication='ol')
         self.module.assessment_and_treatment_of_maternal_sepsis(self, 'ip')
         self.module.assessment_and_treatment_of_hypertension(self)
         self.module.assessment_and_plan_for_antepartum_haemorrhage(self)
@@ -2935,7 +2934,7 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
                 mni[person_id]['cs_indication'] = 'other'
 
             elif self.module.rng.random_sample() < params['residual_prob_avd']:
-                self.module.assessment_for_assisted_vaginal_delivery(self)
+                self.module.assessment_for_assisted_vaginal_delivery(self, indication='other')
 
         # ========================================== SCHEDULING CEMONC CARE =========================================
         # Finally women who require additional treatment have the appropriate HSI scheduled to deliver further care

@@ -33,7 +33,7 @@ class TestScenario(BaseScenario):
         self.end_date = Date(2021, 1, 1)
         self.pop_size = 30000
         self.number_of_draws = 1
-        self.runs_per_draw = 5
+        self.runs_per_draw = 20
 
     def log_configuration(self):
         return {
