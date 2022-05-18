@@ -1955,14 +1955,17 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                 priority=0)
 
     def _refer_to_become_inpatient(self):
-        """Schedule a copy of this event to occur today at this level as an in-patient appointment."""
+        """Schedule a copy of this event to occur today at this level as an in-patient appointment, at the higher level
+        of the current level and level '1b'."""
+
+        the_higher_level_between_this_level_and_1b = '1b' if self.ACCEPTED_FACILITY_LEVEL in ('0', '1a', '1b') else '2'
 
         self.sim.modules['HealthSystem'].schedule_hsi_event(
             HSI_Alri_Treatment(
                 module=self.module,
                 person_id=self.target,
                 inpatient=True,
-                facility_level=self.ACCEPTED_FACILITY_LEVEL
+                facility_level=the_higher_level_between_this_level_and_1b
             ),
             topen=self.sim.date,
             tclose=self.sim.date + pd.DateOffset(days=1),
@@ -2267,15 +2270,13 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
 
             _ = self._get_cons('Ceftriaxone_therapy_for_severe_pneumonia')
 
-            if not self._is_as_in_patient:
-                _ = self._get_cons('First_dose_IM_antibiotics_for_referral')
-                self._refer_to_become_inpatient()  # todo - ****** @Tim refer to become inpatient at 1b immediately.
-            if facility_level not in ('1b', '2'):
-                _ = self._get_cons('First_dose_IM_antibiotics_for_referral')
-                self._refer_to_next_level_up()
-            else:
-                # child is an in-patient at level 1b or 2:
+            if self._is_as_in_patient and facility_level in ('1b', '2'):
                 _try_treatment(antibiotic_indicated='1st_line_IV_antibiotics', oxygen_indicated=True)
+            else:
+                _ = self._get_cons('First_dose_IM_antibiotics_for_referral')
+                self._refer_to_become_inpatient()
+
+
 
         def do_if_cough_or_cold(facility_level):
             """What to do if `cough_or_cold`."""
@@ -2552,7 +2553,7 @@ class AlriPropertiesOfOtherModules(Module):
 
 class AlriIncidentCase_Lethal_Severe_Pneumonia(AlriIncidentCase):
     """This Event can be used for testing and is a drop-in replacement of `AlriIncidentCase`. It always produces an
-    infection that will be lethal and should be classified as a severe pneumonia."""
+    infection that will be lethal and should be classified as 'danger_signs_pneumonia'."""
 
     def __init__(self, module, person_id, pathogen):
         super().__init__(module, person_id=person_id, pathogen=pathogen)
