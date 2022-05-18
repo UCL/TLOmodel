@@ -41,6 +41,11 @@ resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 # Default date for the start of simulations
 start_date = Date(2010, 1, 1)
 
+def _get_person_id(df, age_bounds: tuple = (0.0, np.inf)) -> int:
+    """Return the person_id of one alive person, who is not infected aged is between the bounds specified
+    (inclusively)."""
+    return df.loc[df.is_alive & ~df['ri_current_infection_status'] & df['age_exact_years'].between(*age_bounds)].index[0]
+
 
 @pytest.fixture
 def sim_hs_all_consumables(tmpdir, seed):
@@ -805,11 +810,10 @@ def test_do_effects_of_alri_treatment(sim_hs_all_consumables):
     # start simulation
     sim.simulate(end_date=start_date)
     sim.event_queue.queue = []  # clear the queue
-
-    # Get person to use (not currently infected):
     df = sim.population.props
-    under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
-    person_id = under5s.index[0]
+
+    # Get person to use (not currently infected) aged between 2 months and 5 years and not infected:
+    person_id = _get_person_id(df, (2.0/12.0, 5.0))
     assert not df.loc[person_id, 'ri_current_infection_status']
 
     # Make the incident case one that should cause 'severe_pneumonia' to need to be provided
@@ -879,13 +883,10 @@ def test_severe_pneumonia_referral_from_hsi_first_appts(sim_hs_all_consumables):
     sim.simulate(end_date=start_date)
     sim.event_queue.queue = []  # clear the queue
     sim.modules['HealthSystem'].reset_queue()
-
-    # Get person to use (under 5 years old and not infected:
     df = sim.population.props
-    under5s = df.loc[df.is_alive
-                     & ~df['ri_current_infection_status']
-                     & (df['age_years'] < 5)]
-    person_id = under5s.index[0]
+
+    # Get person to use (not currently infected) aged between 2 months and 5 years and not infected:
+    person_id = _get_person_id(df, (2.0/12.0, 5.0))
 
     # Give this person severe pneumonia:
     pathogen = list(sim.modules['Alri'].all_pathogens)[0]
@@ -927,7 +928,7 @@ def test_severe_pneumonia_referral_from_hsi_first_appts(sim_hs_all_consumables):
     assert df.at[person_id, 'ri_on_treatment']
 
 
-def generate_hsi_sequence(sim, incident_case_event):
+def generate_hsi_sequence(sim, incident_case_event, age_of_person_under_2_months=False):
     """For a given simulation, let one person be affected by Alri, and record all the HSI that they have."""
 
     def make_hw_assesement_perfect(sim):
@@ -944,9 +945,14 @@ def generate_hsi_sequence(sim, incident_case_event):
         """Set the delay between symptoms onset and the generic HSI occurring to the least possible number of days."""
         sim.modules['HealthSeekingBehaviour'].parameters['max_days_delay_to_generic_HSI_after_symptoms'] = 0
 
-    sim.make_initial_population(n=100)
+    def make_population_children_only(sim):
+        """Make the population be composed only of children."""
+        sim.modules['Demography'].parameters['max_age_initial'] = 5
+
+    make_population_children_only(sim)
     make_hw_assesement_perfect(sim)
     make_non_emergency_hsi_happen_immediately(sim)
+    sim.make_initial_population(n=5000)
 
     def _initialise_simulation_other_jobs(sim, **kwargs):
         """The other jobs that the usual `initialise_simulation` in `Alri` has to do in order for the module to work."""
@@ -966,12 +972,12 @@ def generate_hsi_sequence(sim, incident_case_event):
         characteristic."""
         _initialise_simulation_other_jobs(sim)
 
-        # Get person to use (under 5 years old and not infected):
-        df = sim.population.props
-        under5s = df.loc[df.is_alive
-                         & ~df['ri_current_infection_status']
-                         & (df['age_years'] < 5)]
-        person_id = under5s.index[0]
+        if not age_of_person_under_2_months:
+            # Get person to use (not currently infected) aged between 2 months and 5 years and not infected:
+            person_id = _get_person_id(sim.population.props, (2.0 / 12.0, 5.0))
+        else:
+            person_id = _get_person_id(sim.population.props, (0.0, 1.99 / 12.0))
+
         sim.schedule_event(
             incident_case_event(
                 sim.modules['Alri'], person_id=person_id, pathogen=list(sim.modules['Alri'].all_pathogens)[0]),
@@ -1009,6 +1015,8 @@ def test_treatment_pathway_if_all_consumables_severe_case(sim_hs_all_consumables
     """Examine the treatment pathway for a person with a particular category of disease if consumables are available."""
     # Severe case and available consumables --> treatment as in-patient at level 1b, following emergency appointment
     # and referral.
+
+    # If the child is older than 2 months (classification will be `danger_signs_pneumonia`).
     assert [
                ('FirstAttendance_Emergency', '1b'),
                ('Alri_Pneumonia_Treatment_Outpatient', '1b'),
@@ -1017,6 +1025,15 @@ def test_treatment_pathway_if_all_consumables_severe_case(sim_hs_all_consumables
            ] == generate_hsi_sequence(sim=sim_hs_all_consumables,
                                       incident_case_event=AlriIncidentCase_Lethal_Severe_Pneumonia)
 
+    # If the child is younger than 2 months (classification will be `serious_bacterial_infection`)
+    assert [
+               ('FirstAttendance_Emergency', '1b'),
+               ('Alri_Pneumonia_Treatment_Outpatient', '1b'),
+               ('Alri_Pneumonia_Treatment_Inpatient', '1b'),
+               ('Alri_Pneumonia_Treatment_Outpatient_Followup', '1b')
+           ] == generate_hsi_sequence(sim=sim_hs_all_consumables,
+                                      incident_case_event=AlriIncidentCase_Lethal_Severe_Pneumonia,
+                                      age_of_person_under_2_months=True)
 
 def test_treatment_pathway_if_no_consumables_mild_case(sim_hs_no_consumables):
     """Examine the treatment pathway for a person with a particular category of disease if consumables are available."""

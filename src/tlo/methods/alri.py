@@ -2553,7 +2553,8 @@ class AlriPropertiesOfOtherModules(Module):
 
 class AlriIncidentCase_Lethal_Severe_Pneumonia(AlriIncidentCase):
     """This Event can be used for testing and is a drop-in replacement of `AlriIncidentCase`. It always produces an
-    infection that will be lethal and should be classified as 'danger_signs_pneumonia'."""
+    infection that will be lethal and should be classified as 'danger_signs_pneumonia' if the person is
+    older than 2 months, and `serious_bacterial_infection` otherwise."""
 
     def __init__(self, module, person_id, pathogen):
         super().__init__(module, person_id=person_id, pathogen=pathogen)
@@ -2605,10 +2606,12 @@ class AlriIncidentCase_Lethal_Severe_Pneumonia(AlriIncidentCase):
 
         self.sim.schedule_event(AlriDeathEvent(self.module, person_id), date_of_outcome)
 
-        assert 'danger_signs_pneumonia' == \
+        age_less_than_2_months = df.at[person_id, 'age_exact_years'] < (2.0 / 12.0)
+        correct_classification = 'serious_bacterial_infection' if age_less_than_2_months else 'danger_signs_pneumonia'
+        assert correct_classification == \
                self.module.get_imci_classification_based_on_symptoms(
-                   child_is_younger_than_2_months=False, symptoms=self.sim.modules['SymptomManager'].has_what(person_id)
-               )
+                   child_is_younger_than_2_months=age_less_than_2_months,
+                   symptoms=self.sim.modules['SymptomManager'].has_what(person_id))
 
 
 class AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia(AlriIncidentCase):
