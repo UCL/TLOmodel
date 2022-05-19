@@ -284,9 +284,9 @@ class Hiv(Module):
             Types.REAL,
             "probability of a women having hiv test at anc following delivery",
         ),
-        "prob_art_start": Parameter(
-            Types.DATA_FRAME, "annual rates of starting ART following positive HIV test"
-        ),
+        # "prob_art_start": Parameter(
+        #     Types.DATA_FRAME, "annual rates of starting ART following positive HIV test"
+        # ),
         "prob_start_art_after_hiv_test": Parameter(
             Types.REAL,
             "Probability that a person will start treatment, if HIV-positive, following testing",
@@ -327,9 +327,9 @@ class Hiv(Module):
             "Probability that a person who 'should' be on art will seek another appointment if the health-"
             "system has not been able to provide them with an appointment",
         ),
-        "prob_viral_suppression": Parameter(
-            Types.DATA_FRAME, "probability of viral suppression each year"
-        ),
+        # "prob_viral_suppression": Parameter(
+        #     Types.DATA_FRAME, "probability of viral suppression each year"
+        # ),
         "prep_start_year": Parameter(Types.REAL, "Year from which PrEP is available"),
         "ART_age_cutoff_young_child": Parameter(
             Types.INT, "Age cutoff for ART regimen for young children"
@@ -376,11 +376,11 @@ class Hiv(Module):
         # Load assumed ART coverage at baseline (year 2010)
         p["art_coverage"] = workbook["art_coverage"]
 
-        # Load probability of art start after positive HIV test
-        p["prob_start_art_after_hiv_test"] = workbook["prob_art_start_if_dx"]
+        # Load probability of art / viral suppression start after positive HIV test
+        p["prob_start_art_or_vs"] = workbook["spectrum_treatment_cascade"]
 
-        # Load probability art start after hiv test
-        p["prob_viral_suppression"] = workbook["spectrum_treatment_cascade"]
+        # # Load probability art start after hiv test
+        # p["prob_viral_suppression"] = workbook["spectrum_treatment_cascade"]
 
         # Load spectrum estimates of treatment cascade
         p["treatment_cascade"] = workbook["spectrum_treatment_cascade"]
@@ -1203,7 +1203,10 @@ class Hiv(Module):
             )
 
         # Consider if the person will be referred to start ART
-        starts_art = self.rng.random_sample() < self.prob_art_start_after_test(self.sim.date.year)
+        if df.loc[person_id, "age_years"] <= 15:
+            starts_art = 1
+        else:
+            starts_art = self.rng.random_sample() < self.prob_art_start_after_test(self.sim.date.year)
 
         if starts_art:
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -1225,11 +1228,14 @@ class Hiv(Module):
     def prob_art_start_after_test(self, year):
         """ returns the probability of starting ART after a positive HIV test
         """
-        prob_art = self.parameters["prob_start_art_after_hiv_test"]
+        prob_art = self.parameters["prob_start_art_or_vs"]
         current_year = year
 
         # use iloc to index by position as index will change by year
-        return_prob = prob_art.loc[(prob_art.year == current_year), "value"].iloc[0]
+        return_prob = prob_art.loc[
+                          (prob_art.year == current_year) &
+                          (prob_art.age == "adults"),
+                          "prob_art_if_dx"].values[0]
 
         return return_prob
 
@@ -1239,7 +1245,7 @@ class Hiv(Module):
         assume constant values 2010-2012 and 2020 on
         time-series ends at 2025
         """
-        prob_vs = self.parameters["prob_viral_suppression"]
+        prob_vs = self.parameters["prob_start_art_or_vs"]
         current_year = year if year <= 2025 else 2025
         age_of_person = age_of_person
         age_group = "adults" if age_of_person >= 15 else "children"

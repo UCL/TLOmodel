@@ -35,7 +35,7 @@ resourcefilepath = Path("./resources")
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2016, 12, 31)
-popsize = 20000
+popsize = 2000
 
 # set up the log config
 log_config = {
@@ -76,7 +76,7 @@ sim.register(
     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
     healthburden.HealthBurden(resourcefilepath=resourcefilepath),
     epi.Epi(resourcefilepath=resourcefilepath),
-    hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True),
+    hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False),
     tb.Tb(resourcefilepath=resourcefilepath),
     # deviance_measure.Deviance(resourcefilepath=resourcefilepath),
 )
