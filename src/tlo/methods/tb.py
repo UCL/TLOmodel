@@ -469,7 +469,7 @@ class Tb(Module):
                 'va_bcg_all_doses &'
                 '(hv_inf == False) &'
                 '(age_years <10)',
-                p["rr_tb_bcg"]
+                p["rr_tb_bcg"]  # child with bcg
             ),
             Predictor("li_bmi").when(">=4", p["rr_tb_obese"]),
             # Predictor('diabetes').when(True, p['rr_tb_diabetes1']),
@@ -480,53 +480,57 @@ class Tb(Module):
                 '~hv_inf &'
                 'tb_on_ipt & '
                 'age_years <= 15',
-                p["rr_ipt_child"]),
+                p["rr_ipt_child"]),  # hiv- child on ipt
             Predictor().when(
                 '~hv_inf &'
                 'tb_on_ipt & '
                 'age_years > 15',
-                p["rr_ipt_adult"]),
+                p["rr_ipt_adult"]),  # hiv- adult on ipt
             # -------------- PLHIV -------------- #
             Predictor("hv_inf").when(True, p["rr_tb_hiv"]),
             Predictor("sy_aids_symptoms").when(">0", p["rr_tb_aids"]),
-            # on ART
+            # on ART, no IPT
             Predictor().when(
-                '(hv_art != "on_VL_suppressed") &'
+                'hv_inf & '
+                '(hv_art == "on_VL_suppressed") &'
+                '~tb_on_ipt & '
                 'age_years <= 15',
-                p["rr_tb_art_child"]),
+                p["rr_tb_art_child"]),  # hiv+ child on ART
             Predictor().when(
-                '(hv_art != "on_VL_suppressed") &'
+                'hv_inf & '
+                '(hv_art == "on_VL_suppressed") &'
+                '~tb_on_ipt & '
                 'age_years > 15',
-                p["rr_tb_art_adult"]),
-            # hiv+, on ART, on IPT
+                p["rr_tb_art_adult"]),  # hiv+ adult on ART
+            # on ART, on IPT
             Predictor().when(
-                '(tb_on_ipt == True) & '
-                '(hv_inf == True) & '
+                'tb_on_ipt & '
+                'hv_inf & '
                 'age_years <= 15 &'
                 '(hv_art == "on_VL_suppressed")',
-                (p["rr_tb_art_child"] * p["rr_ipt_art_child"]),
+                (p["rr_tb_art_child"] * p["rr_ipt_art_child"]),  # hiv+ child on ART+IPT
             ),
             Predictor().when(
-                '(tb_on_ipt == True) & '
-                '(hv_inf == True) & '
+                'tb_on_ipt & '
+                'hv_inf & '
                 'age_years > 15 &'
                 '(hv_art == "on_VL_suppressed")',
-                (p["rr_tb_art_adult"] * p["rr_ipt_art_adult"]),
+                (p["rr_tb_art_adult"] * p["rr_ipt_art_adult"]),  # hiv+ adult on ART+IPT
             ),
-            # hiv+, not on ART, on IPT
+            # not on ART, on IPT
             Predictor().when(
-                '(tb_on_ipt == True) & '
-                '(hv_inf == True) & '
+                'tb_on_ipt & '
+                'hv_inf & '
                 'age_years <= 15 &'
                 '(hv_art != "on_VL_suppressed")',
-                p["rr_ipt_child_hiv"],
+                p["rr_ipt_child_hiv"],  # hiv+ child IPT only
             ),
             Predictor().when(
-                '(tb_on_ipt == True) & '
-                '(hv_inf == True) & '
+                'tb_on_ipt & '
+                'hv_inf & '
                 'age_years > 15 &'
                 '(hv_art != "on_VL_suppressed")',
-                p["rr_ipt_adult_hiv"],
+                p["rr_ipt_adult_hiv"],  # hiv+ adult IPT only
             ),
         )
 
