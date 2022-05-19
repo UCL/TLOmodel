@@ -284,6 +284,10 @@ class Hiv(Module):
             Types.REAL,
             "adjustment to current ART coverage levels to account for defaulters",
         ),
+        "vs_adjustment": Parameter(
+            Types.REAL,
+            "adjustment to current viral suppression levels to account for defaulters",
+        ),
         "prob_anc_test_at_delivery": Parameter(
             Types.REAL,
             "probability of a women having hiv test at anc following delivery",
@@ -1229,7 +1233,7 @@ class Hiv(Module):
         to account for defaulters
         """
         prob_art = self.parameters["prob_start_art_or_vs"]
-        current_year = year
+        current_year = year if year <= 2025 else 2025
 
         # use iloc to index by position as index will change by year
         return_prob = prob_art.loc[
@@ -1253,7 +1257,10 @@ class Hiv(Module):
         return_prob = prob_vs.loc[
                           (prob_vs.year == current_year) &
                           (prob_vs.age == age_group),
-                          "virally_suppressed_on_art"].values[0] / 100
+                          "virally_suppressed_on_art"].values[0]
+
+        # convert to probability and adjust for defaulters
+        return_prob = (return_prob / 100) * self.parameters["vs_adjustment"]
 
         assert return_prob is not None
 
