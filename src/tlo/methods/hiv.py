@@ -280,6 +280,10 @@ class Hiv(Module):
             Types.REAL,
             "relative likelihood of having HIV test for people with HIV",
         ),
+        "treatment_initiation_adjustment": Parameter(
+            Types.REAL,
+            "adjustment to current ART coverage levels to account for defaulters",
+        ),
         "prob_anc_test_at_delivery": Parameter(
             Types.REAL,
             "probability of a women having hiv test at anc following delivery",
@@ -1227,6 +1231,8 @@ class Hiv(Module):
 
     def prob_art_start_after_test(self, year):
         """ returns the probability of starting ART after a positive HIV test
+        this value for initiation will be higher than the current reported coverage levels
+        to account for defaulters
         """
         prob_art = self.parameters["prob_start_art_or_vs"]
         current_year = year
@@ -1235,7 +1241,7 @@ class Hiv(Module):
         return_prob = prob_art.loc[
                           (prob_art.year == current_year) &
                           (prob_art.age == "adults"),
-                          "prob_art_if_dx"].values[0]
+                          "prob_art_if_dx"].values[0] * self.parameters["treatment_initiation_adjustment"]
 
         return return_prob
 
