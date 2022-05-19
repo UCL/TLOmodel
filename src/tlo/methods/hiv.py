@@ -1260,7 +1260,7 @@ class Hiv(Module):
         df = self.sim.population.props
 
         # Schedule a new AIDS onset event if the person was on ART up until now
-        if df.at[person_id, "hv_art"] != "not":
+        if df.at[person_id, "hv_art"] == "on_VL_suppressed":
             months_to_aids = int(
                 np.floor(
                     self.rng.exponential(
