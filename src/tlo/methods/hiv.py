@@ -1280,7 +1280,7 @@ class Hiv(Module):
         # refer for another test and referral in 6 months
         self.sim.modules["HealthSystem"].schedule_hsi_event(
             HSI_Hiv_TestAndRefer(person_id=person_id, module=self),
-            topen=self.sim.date + pd.DateOffset(months=6),
+            topen=self.sim.date + pd.DateOffset(months=1),
             tclose=None,
             priority=0,
         )
@@ -1741,12 +1741,6 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
                 ),
                 date=self.sim.date,
             )
-            # # cause is HIV_TB
-            # self.sim.modules["Demography"].do_death(
-            #     individual_id=person_id,
-            #     cause="AIDS_TB",
-            #     originating_module=self.module,
-            # )
 
 
 class HivAidsTbDeathEvent(Event, IndividualScopeEventMixin):
