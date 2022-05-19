@@ -1837,13 +1837,12 @@ class Labour(Module):
         cons = self.item_codes_lab_consumables
 
         def refer_for_cs():
-            mni[person_id]['referred_for_cs'] = True
+            if not indication == 'other':
+                mni[person_id]['referred_for_cs'] = True
 
             if indication == 'spe_ec':
                 mni[person_id]['cs_indication'] = indication
             elif indication == 'ol':
-                mni[person_id]['cs_indication'] = indication
-            elif indication == 'other':
                 mni[person_id]['cs_indication'] = indication
 
         if ('assessment_and_treatment_of_obstructed_labour' not in params['allowed_interventions']) or \
