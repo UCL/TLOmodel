@@ -288,12 +288,9 @@ class Hiv(Module):
             Types.REAL,
             "probability of a women having hiv test at anc following delivery",
         ),
-        # "prob_art_start": Parameter(
-        #     Types.DATA_FRAME, "annual rates of starting ART following positive HIV test"
-        # ),
-        "prob_start_art_after_hiv_test": Parameter(
+        "prob_start_art_or_vs": Parameter(
             Types.REAL,
-            "Probability that a person will start treatment, if HIV-positive, following testing",
+            "Probability that a person will start treatment and be virally suppressed following testing",
         ),
         "prob_behav_chg_after_hiv_test": Parameter(
             Types.REAL,
@@ -331,9 +328,6 @@ class Hiv(Module):
             "Probability that a person who 'should' be on art will seek another appointment if the health-"
             "system has not been able to provide them with an appointment",
         ),
-        # "prob_viral_suppression": Parameter(
-        #     Types.DATA_FRAME, "probability of viral suppression each year"
-        # ),
         "prep_start_year": Parameter(Types.REAL, "Year from which PrEP is available"),
         "ART_age_cutoff_young_child": Parameter(
             Types.INT, "Age cutoff for ART regimen for young children"
