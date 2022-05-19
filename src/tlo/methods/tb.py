@@ -1610,6 +1610,11 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
             person_id=all_self_cure, disease_module=self.module
         )
 
+        # resolve AIDS symptoms if virally suppressed
+        self.sim.modules["SymptomManager"].clear_symptoms(
+            person_id=self_cure_art, disease_module=self.sim.modules["Hiv"]
+        )
+
 
 # ---------------------------------------------------------------------------
 #   Health System Interactions (HSI)
