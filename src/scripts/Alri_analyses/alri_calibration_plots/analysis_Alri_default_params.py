@@ -75,7 +75,7 @@ sim.simulate(end_date=end_date)
 # Read the output:
 output = parse_log_file(sim.log_filepath)
 
-# Save the output for a single individual to a csv (if needed)
+# # Save the output for a single individual to a csv (if needed)
 # one_person = output['tlo.methods.alri']['log_individual'].to_csv(r'./outputs/one_person2.csv', index=False)
 
 

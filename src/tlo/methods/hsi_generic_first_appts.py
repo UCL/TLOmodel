@@ -141,10 +141,14 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
 
     if age < 5:
         # ----------------------------------- CHILD < 5 -----------------------------------
-        if 'diarrhoea' in symptoms:
-            if 'Diarrhoea' in sim.modules:
+        if 'Diarrhoea' in sim.modules:
+            if 'diarrhoea' in symptoms:
                 sim.modules['Diarrhoea'].do_when_presentation_with_diarrhoea(
                     person_id=person_id, hsi_event=hsi_event)
+
+        if 'Alri' in sim.modules:
+            if ('cough' in symptoms) or ('difficult_breathing' in symptoms):
+                sim.modules['Alri'].on_presentation(person_id=person_id, hsi_event=hsi_event)
 
         if "Malaria" in sim.modules:
             if 'fever' in symptoms:
@@ -324,6 +328,7 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
     df = hsi_event.sim.population.props
     symptoms = hsi_event.sim.modules['SymptomManager'].has_what(person_id=person_id)
     schedule_hsi = hsi_event.sim.modules["HealthSystem"].schedule_hsi_event
+    age = df.at[person_id, 'age_years']
 
     if 'PregnancySupervisor' in sim.modules:
 
@@ -428,3 +433,7 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
     if 'severe_trauma' in symptoms:
         if 'RTI' in sim.modules:
             sim.modules['RTI'].do_rti_diagnosis_and_treatment(person_id=person_id)
+
+    if 'Alri' in sim.modules:
+        if (age < 5) and (('cough' in symptoms) or ('difficult_breathing' in symptoms)):
+            sim.modules['Alri'].on_presentation(person_id=person_id, hsi_event=hsi_event)
