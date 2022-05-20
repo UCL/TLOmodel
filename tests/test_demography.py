@@ -8,31 +8,11 @@ from pytest import approx
 
 from tlo import Date, Module, Simulation, logging
 from tlo.analysis.utils import compare_number_of_deaths, parse_log_file
-from tlo.methods import (
-    Metadata,
-    bladder_cancer,
-    breast_cancer,
-    cardio_metabolic_disorders,
-    care_of_women_during_pregnancy,
-    contraception,
-    demography,
-    depression,
-    diarrhoea,
-    enhanced_lifestyle,
-    healthsystem,
-    hiv,
-    labour,
-    malaria,
-    newborn_outcomes,
-    oesophagealcancer,
-    postnatal_supervisor,
-    pregnancy_supervisor,
-    prostate_cancer,
-    symptommanager,
-)
+from tlo.methods import Metadata, demography
 from tlo.methods.causes import Cause
 from tlo.methods.demography import AgeUpdateEvent
 from tlo.methods.diarrhoea import increase_risk_of_death, make_treatment_perfect
+from tlo.methods.fullmodel import fullmodel
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
@@ -124,30 +104,8 @@ def test_cause_of_death_being_registered(tmpdir, seed):
             'tlo.methods.demography': logging.INFO
         }
     })
-    sim.register(
-        demography.Demography(resourcefilepath=rfp),
-        symptommanager.SymptomManager(resourcefilepath=rfp),
-        breast_cancer.BreastCancer(resourcefilepath=rfp),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=rfp),
-        healthsystem.HealthSystem(resourcefilepath=rfp, disable_and_reject_all=True),
-        bladder_cancer.BladderCancer(resourcefilepath=rfp),
-        prostate_cancer.ProstateCancer(resourcefilepath=rfp),
-        depression.Depression(resourcefilepath=rfp),
-        diarrhoea.Diarrhoea(resourcefilepath=rfp),
-        hiv.Hiv(resourcefilepath=rfp),
-        malaria.Malaria(resourcefilepath=rfp),
-        cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=rfp),
-        oesophagealcancer.OesophagealCancer(resourcefilepath=rfp),
-        contraception.Contraception(resourcefilepath=rfp),
-        labour.Labour(resourcefilepath=rfp),
-        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=rfp),
-        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=rfp),
-        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=rfp),
-        newborn_outcomes.NewbornOutcomes(resourcefilepath=rfp),
+    sim.register(*fullmodel(resourcefilepath=rfp, healthsystem_disable=True))
 
-        # Supporting modules:
-        diarrhoea.DiarrhoeaPropertiesOfOtherModules()
-    )
     # Increase risk of death of Diarrhoea to ensure that are at least some deaths
     increase_risk_of_death(sim.modules['Diarrhoea'])
     make_treatment_perfect(sim.modules['Diarrhoea'])
@@ -215,6 +173,10 @@ def test_calc_of_scaling_factor(tmpdir, seed):
     output = parse_log_file(sim.log_filepath)
     sf = output['tlo.methods.demography']['scaling_factor'].at[0, 'scaling_factor']
     assert sf == approx(14.5e6 / popsize, rel=0.10)
+
+    # Check that the scaling factor is also logged in `tlo.methods.population`
+    assert output['tlo.methods.demography']['scaling_factor'].at[0, 'scaling_factor'] == \
+           output['tlo.methods.population']['scaling_factor'].at[0, 'scaling_factor']
 
 
 def test_py_calc(simulation):
@@ -352,3 +314,38 @@ def test_py_calc_w_mask(simulation):
     age_update.apply(simulation.population)
     df_py = calc_py_lived_in_last_year(delta=one_year, mask=mask)
     np.testing.assert_almost_equal(1.0, df_py['M'][19])
+
+
+def test_max_age_initial(seed):
+    """Check that the parameter in the `Demography` module, `max_age_initial`, works as expected
+     * `max_age_initial=X`: only persons up to and including age_years (age in whole years) up to X are included in the
+      initial population.
+     * `max_age_initial=0` or `>MAX_AGE`: results in an error being thrown.
+    """
+
+    from tlo.methods.demography import MAX_AGE
+
+    def max_age_in_sim_with_max_age_initial_argument(_max_age_initial):
+        """Return the greatest value of `age_years` in a population that is created."""
+        resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+        sim = Simulation(start_date=start_date, seed=seed)
+        sim.register(
+            demography.Demography(resourcefilepath=resourcefilepath)
+        )
+        sim.modules['Demography'].parameters['max_age_initial'] = _max_age_initial
+        sim.make_initial_population(n=50_000)
+        return sim.population.props.age_years.max()
+
+    # `max_age_initial=5` (using integer)
+    assert max_age_in_sim_with_max_age_initial_argument(5) <= 5
+
+    # `max_age_initial=5.5` (using float)
+    assert max_age_in_sim_with_max_age_initial_argument(5.5) <= int(5.5)
+
+    # `max_age_initial=0`
+    with pytest.raises(ValueError):
+        max_age_in_sim_with_max_age_initial_argument(0)
+
+    # `max_age_initial>MAX_AGE`
+    with pytest.raises(ValueError):
+        max_age_in_sim_with_max_age_initial_argument(MAX_AGE + 1)

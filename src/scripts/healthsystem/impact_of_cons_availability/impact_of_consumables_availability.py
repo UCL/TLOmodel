@@ -1,12 +1,12 @@
 """
 This file defines a batch run of a large population for a long time with all disease modules and full use of HSIs
-It's used for calibrations (demographic patterns, health burdens and healthsystem usage)
+It's used for calibrations (demographic patterns, health burdens and healthsytstem usage)
 
 Run on the batch system using:
-```tlo batch-submit src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py```
+```tlo batch-submit src/scripts/healthsystem/impact_of_cons_availability/impact_of_consumables_availability.py```
 
 or locally using:
-    ```tlo scenario-run src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py```
+    ```tlo scenario-run src/scripts/healthsystem/impact_of_cons_availability/impact_of_consumables_availability.py```
 
 """
 
@@ -15,26 +15,24 @@ from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
 
 
-class LongRun(BaseScenario):
+class ImpactOfConsumablesAvailability(BaseScenario):
     def __init__(self):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2029, 12, 31)
-        self.pop_size = 50_000  # <- recommended population size for the runs
-        self.number_of_draws = 1  # <- one scenario
-        self.runs_per_draw = 10  # <- repeated this many times
+        self.end_date = Date(2019, 12, 31)
+        self.pop_size = 20_000  # <- recommended population size for the runs
+        self.number_of_draws = 3  # <- one scenario
+        self.runs_per_draw = 3  # <- repeated this many times
 
     def log_configuration(self):
         return {
-            'filename': 'long_run',  # <- (specified only for local running)
+            'filename': 'impact_of_consumables_availability',
             'directory': './outputs',  # <- (specified only for local running)
             'custom_levels': {
                 '*': logging.WARNING,
                 'tlo.methods.demography': logging.INFO,
                 'tlo.methods.healthburden': logging.INFO,
-                'tlo.methods.healthsystem': logging.INFO,
-                'tlo.methods.healthsystem.summary': logging.INFO
             }
         }
 
@@ -42,7 +40,11 @@ class LongRun(BaseScenario):
         return fullmodel(resourcefilepath=self.resources)
 
     def draw_parameters(self, draw_number, rng):
-        return  # Using default parameters in all cases
+        return {
+            'HealthSystem': {
+                'cons_availability': ['default', 'none', 'all'][draw_number]
+                }
+        }
 
 
 if __name__ == '__main__':

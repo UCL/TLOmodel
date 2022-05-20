@@ -204,7 +204,7 @@ class Epilepsy(Module):
         # Get item_codes for the consumables used in the HSI
         hs = self.sim.modules['HealthSystem']
         self.item_codes = dict()
-        self.item_codes['phenobarbitone'] = hs.get_item_code_from_item_name('Phenobarbitone  30mg_1000_CMST')
+        self.item_codes['phenobarbitone'] = hs.get_item_code_from_item_name("Phenobarbital, 100 mg")
         self.item_codes['carbamazepine'] = hs.get_item_code_from_item_name('Carbamazepine 200mg_1000_CMST')
         self.item_codes['phenytoin'] = hs.get_item_code_from_item_name('Phenytoin sodium 100mg_1000_CMST')
 
@@ -486,11 +486,9 @@ class HSI_Epilepsy_Start_Anti_Epilpetic(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Epilepsy_Start_Anti-Epilpetics'
+        self.TREATMENT_ID = 'Epilepsy_Treatment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1a'  # This enforces that the apppointment must be run at that facility-level
-        self.ALERT_OTHER_DISEASES = []
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props

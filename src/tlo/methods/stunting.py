@@ -504,10 +504,9 @@ class HSI_Stunting_ComplementaryFeeding(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        self.TREATMENT_ID = 'Complementary_feeding_for_stunting'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Under5OPD': 1})
+        self.TREATMENT_ID = 'Undernutrition_Feeding'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'U5Malnutr': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
 

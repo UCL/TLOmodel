@@ -408,32 +408,30 @@ class NewbornOutcomes(Module):
         This function defines the required consumables for each intervention delivered during this module and stores
         them in a module level dictionary called within HSIs
         """
-        get_item_code_from_pkg = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
-
         get_list_of_items = pregnancy_helper_functions.get_list_of_items
 
         # ---------------------------------- IV DRUG ADMIN EQUIPMENT  -------------------------------------------------
         self.item_codes_nb_consumables['iv_drug_equipment'] = \
-            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 20_each_CMST',
-                                     'IV giving/infusion set, with needle',
-                                     'Gloves, exam, latex, disposable, pair'])
+            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 18_each_CMST',
+                                     'Giving set iv administration + needle 15 drops/ml_each_CMST',
+                                     'Disposables gloves, powder free, 100 pieces per box'])
 
         # ---------------------------------- BLOOD TEST EQUIPMENT ---------------------------------------------------
         self.item_codes_nb_consumables['blood_test_equipment'] = \
-            get_list_of_items(self, ['Blood collecting tube, 5 ml',
-                                     'Syringe, needle + swab',
-                                     'Gloves, exam, latex, disposable, pair'])
+            get_list_of_items(self, ['Disposables gloves, powder free, 100 pieces per box'])
+        # todo: remove entirely?
 
         # -------------------------------------------- VITAMIN K ------------------------------------------
         self.item_codes_nb_consumables['vitamin_k'] = \
             get_list_of_items(self, ['vitamin K1  (phytomenadione) 1 mg/ml, 1 ml, inj._100_IDA'])
 
         # -------------------------------------------- EYE CARE  ------------------------------------------
-        self.item_codes_nb_consumables['eye_care'] = get_list_of_items(self, ['Tetracycline eye ointment 1%_3.5_CMST'])
+        self.item_codes_nb_consumables['eye_care'] = get_list_of_items(
+            self, ['Tetracycline eye ointment, 1 %, tube 5 mg'])
 
         # -------------------------------------------- RESUSCITATION ------------------------------------------
         self.item_codes_nb_consumables['resuscitation'] = \
-            get_item_code_from_pkg('Neonatal resuscitation (institutional)')
+            get_list_of_items(self, ['Infant resuscitator, clear plastic + mask + bag_each_CMST'])
 
         # ------------------------------------- SEPSIS - FULL SUPPORTIVE CARE ---------------------------------------
         self.item_codes_nb_consumables['sepsis_supportive_care'] = \
@@ -1397,10 +1395,9 @@ class HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth(HSI_Event, I
         super().__init__(module, person_id=person_id)
         assert isinstance(module, NewbornOutcomes)
 
-        self.TREATMENT_ID = 'NewbornOutcomes_CareOfTheNewbornBySkilledAttendant'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 1})
+        self.TREATMENT_ID = 'DeliveryCare_Neonatal'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
-        self.ALERT_OTHER_DISEASES = []
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 1})
 
     def apply(self, person_id, squeeze_factor):
@@ -1451,11 +1448,9 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
         super().__init__(module, person_id=person_id)
         assert isinstance(module, NewbornOutcomes)
 
-        self.TREATMENT_ID = 'NewbornOutcomes_ReceivesEarlyPostnatalCheck'
+        self.TREATMENT_ID = 'PostnatalCare_Neonatal'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Under5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.ALERT_OTHER_DISEASES = []
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})
 
     def apply(self, person_id, squeeze_factor):
         nci = self.module.newborn_care_info
@@ -1540,10 +1535,9 @@ class HSI_NewbornOutcomes_NeonatalWardInpatientCare(HSI_Event, IndividualScopeEv
         super().__init__(module, person_id=person_id)
         assert isinstance(module, NewbornOutcomes)
 
-        self.TREATMENT_ID = 'NewbornOutcomes_NeonatalWardInpatientCare'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'IPAdmission': 1})
+        self.TREATMENT_ID = 'PostnatalCare_Neonatal_Inpatient'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.ALERT_OTHER_DISEASES = []
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})
 
     def apply(self, person_id, squeeze_factor):
