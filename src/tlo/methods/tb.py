@@ -1344,7 +1344,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             # viral suppression rates
             # adults already at 95% by 2020
             # change all column values
-            self.sim.modules["Hiv"].parameters["prob_viral_suppression"]["virally_suppressed_on_art"] = 95
+            self.sim.modules["Hiv"].parameters["prob_start_art_or_vs"]["virally_suppressed_on_art"] = 95
 
             # change first-line testing for TB to xpert
             p["first_line_test"] = "xpert"
@@ -1364,7 +1364,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_6_months"] = 0.75
 
             # drop viral suppression for all PLHIV
-            self.sim.modules["Hiv"].parameters["prob_viral_suppression"]["virally_suppressed_on_art"] = 80
+            self.sim.modules["Hiv"].parameters["prob_start_art_or_vs"]["virally_suppressed_on_art"] = 80
 
             # TB
             # rate testing
