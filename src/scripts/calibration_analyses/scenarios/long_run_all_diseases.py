@@ -20,10 +20,10 @@ class LongRun(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2029, 12, 31)
+        self.end_date = Date(2019, 12, 31)
         self.pop_size = 50_000  # <- recommended population size for the runs
         self.number_of_draws = 1  # <- one scenario
-        self.runs_per_draw = 10  # <- repeated this many times
+        self.runs_per_draw = 50  # <- repeated this many times
 
     def log_configuration(self):
         return {
@@ -33,7 +33,6 @@ class LongRun(BaseScenario):
                 '*': logging.WARNING,
                 'tlo.methods.demography': logging.INFO,
                 'tlo.methods.healthburden': logging.INFO,
-                'tlo.methods.healthsystem': logging.INFO,
                 'tlo.methods.healthsystem.summary': logging.INFO
             }
         }
