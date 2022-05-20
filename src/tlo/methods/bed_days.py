@@ -4,6 +4,9 @@ This is the Bed days class.
 It maintains a current record of the availability and usage of beds in the healthcare system.
 
 """
+from collections import defaultdict
+from typing import Dict
+
 import numpy as np
 import pandas as pd
 
@@ -14,10 +17,15 @@ from tlo import Property, Types, logging
 # ---------------------------------------------------------------------------------------------------------
 
 logger = logging.getLogger('tlo.methods.healthsystem')
+logger_summary = logging.getLogger('tlo.methods.healthsystem.summary')
 
 # Define the appointment types that should be associated with the use of bed-days (of any type), for a given number of
 # patients.
-IN_PATIENT_ADMISSION = {'IPAdmission': 1}
+IN_PATIENT_ADMISSION = {'IPAdmission': 2}
+# One of these appointments is for the admission and the other is for the discharge (even patients who die whilst an
+# in-patient require discharging). The limitation is that the discharge appointment occurs on the same day as the
+# admission. See: https://github.com/UCL/TLOmodel/issues/530
+
 IN_PATIENT_DAY = {'InpatientDays': 1}
 
 
@@ -47,6 +55,9 @@ class BedDays:
         # Internal store of the number of beds by facility and bed_type that is scaled to the model population size (if
         #  the HealthSystem is not running in mode `disable=True`).
         self._scaled_capacity = None
+
+        # Create pointer to the `BedDaysSummaryCounter` helper class
+        self._summary_counter = BedDaysSummaryCounter()
 
     def get_bed_types(self):
         """Helper function to get the bed_types from the resource file imported to parameter 'BedCapacity' of the
@@ -84,8 +95,7 @@ class BedDays:
         df.loc[child_id, self.list_of_cols_with_internal_dates['all']] = pd.NaT
 
     def on_simulation_end(self):
-        """Put out to the log the information from the tracker of the last day of the simulation"""
-        self.log_yesterday_info_from_all_bed_trackers()
+        pass
 
     def set_scaled_capacity(self, model_to_data_popsize_ratio):
         """Set the internal `_scaled_capacity` variable to represent the number of beds available of each type in each
@@ -131,7 +141,7 @@ class BedDays:
             assert not df.isna().any().any()
             self.bed_tracker[bed_type] = df
 
-    def processing_at_start_of_new_day(self):
+    def on_start_of_day(self):
         """Things to do at the start of each new day:
         * Refresh inpatient status
         * Log yesterday's usage of beds
@@ -145,7 +155,6 @@ class BedDays:
         # NB. This is skipped on the first day of the simulation as there is nothing to log from yesterday and the
         # tracker is already set.
         if self.hs_module.sim.date != self.hs_module.sim.start_date:
-            self.log_yesterday_info_from_all_bed_trackers()
             self.move_each_tracker_by_one_day()
 
     def move_each_tracker_by_one_day(self):
@@ -170,18 +179,29 @@ class BedDays:
             # save the updated tracker
             self.bed_tracker[bed_type] = tracker
 
-    def log_yesterday_info_from_all_bed_trackers(self):
-        """Dump yesterday's status of bed-day tracker to the log"""
+    def on_end_of_day(self):
+        """Do the actions required at the end of each day"""
+        self.log_todays_info_from_all_bed_trackers()
 
+    def log_todays_info_from_all_bed_trackers(self):
+        """Log the occupancy of beds for today."""
+        today = self.hs_module.sim.date
+
+        # 1) Dump today's status of bed-day tracker to the debugging log
         for bed_type, tracker in self.bed_tracker.items():
-            occupancy_info = tracker.iloc[0].to_dict()
-            occupancy_info.update({'date_of_bed_occupancy': tracker.index[0]})
+            occupancy_info = tracker.loc[today].to_dict()
 
             logger.info(
                 key=f'bed_tracker_{bed_type}',
                 data=occupancy_info,
                 description=f'Use of bed_type {bed_type}, by day and facility'
             )
+
+        # 2) Record the total usage of each bed type (across all facilities)
+        self._summary_counter.record_usage_of_beds(
+            {bed_type: (self._scaled_capacity[bed_type] - tracker.iloc[0]).sum()
+             for bed_type, tracker in self.bed_tracker.items()}
+        )
 
     def get_blank_beddays_footprint(self):
         """
@@ -449,3 +469,38 @@ class BedDays:
         # set of appointments associated for in-patient bed-days (after the first). This could be accomplished by
         # changing the way BedDays stores internally the information about in-patients and creating HSI for the
         # in-patients.
+
+    def on_end_of_year(self):
+        self._summary_counter.write_to_log_and_reset_counters()
+
+
+class BedDaysSummaryCounter:
+    """Helper class to keep running counts of bed-days used."""
+
+    def __init__(self):
+        self._reset_internal_stores()
+        self.dates = []
+
+    def _reset_internal_stores(self) -> None:
+        """Create empty versions of the data structures used to store a running records. The structure is
+        {<bed_type>: <number_of_beddays>}."""
+
+        self._bed_days_used = defaultdict(int)
+
+    def record_usage_of_beds(self, bed_days_used: Dict[str, int]) -> None:
+        """Add record of usage of beds. `bed_days_used` is a dict of the form
+        {<bed_type>: <total_number_used_in_one_day>}."""
+
+        for _bed_type, _num_used in bed_days_used.items():
+            self._bed_days_used[_bed_type] += _num_used
+
+    def write_to_log_and_reset_counters(self):
+        """Log summary statistics and reset the data structures."""
+
+        logger_summary.info(
+            key="BedDays",
+            description="Counts of the bed-days that have been used.",
+            data=self._bed_days_used,
+        )
+
+        self._reset_internal_stores()

@@ -1,4 +1,5 @@
 """This file contains helpful utility functions."""
+import hashlib
 from collections import defaultdict
 from typing import Dict, List, Optional, Set, Union
 
@@ -393,4 +394,16 @@ class BitsetHandler:
 
 def random_date(start, end, rng):
     """Generate a randomly-chosen day between `start` (inclusive) `end` (exclusive)"""
-    return start + DateOffset(days=rng.randint(0, (end - start).days))
+    if end > start:
+        return start + DateOffset(days=rng.randint(0, (end - start).days))
+    else:
+        return start
+
+
+def hash_dataframe(dataframe: pd.DataFrame):
+    def coerce_lists_to_tuples(df: pd.DataFrame) -> pd.DataFrame:
+        """Coerce columns in a pd.DataFrame that are lists to tuples. This step is needed before hashing a pd.DataFrame
+        as list are not hashable."""
+        return df.applymap(lambda x: tuple(x) if isinstance(x, list) else x)
+
+    return hashlib.sha1(pd.util.hash_pandas_object(coerce_lists_to_tuples(dataframe)).values).hexdigest()

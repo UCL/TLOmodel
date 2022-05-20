@@ -618,7 +618,7 @@ class HealthSystem(Module):
         )
 
         # Set the consumables modules in preparation for the simulation
-        self.consumables.processing_at_start_of_new_day(sim.date)
+        self.consumables.on_start_of_day(sim.date)
 
         # Capture list of disease modules:
         self.recognised_modules_names = [
@@ -977,10 +977,6 @@ class HealthSystem(Module):
             # Check that this can accept the squeeze argument
             assert _accepts_argument(hsi_event.run, 'squeeze_factor')
 
-            # Check that at least one type of appointment is required
-            assert len(hsi_event.EXPECTED_APPT_FOOTPRINT) > 0, (
-                'No appointment types required in the EXPECTED_APPT_FOOTPRINT'
-            )
             # Check that the event does not request an appointment at a facility
             # level which is not possible
             appt_type_to_check_list = hsi_event.EXPECTED_APPT_FOOTPRINT.keys()
@@ -1187,7 +1183,7 @@ class HealthSystem(Module):
         """
 
         if isinstance(hsi_event.target, tlo.population.Population):
-            # Population HSI-Event
+            # Population HSI-Event (N.B. This is not actually logged.)
             log_info = dict()
             log_info['TREATMENT_ID'] = hsi_event.TREATMENT_ID
             log_info['Number_By_Appt_Type_Code'] = 'Population'  # remove the appt-types with zeros
@@ -1197,7 +1193,6 @@ class HealthSystem(Module):
 
         else:
             # Individual HSI-Event
-
             _squeeze_factor = squeeze_factor if squeeze_factor != np.inf else 100.0
 
             self.write_to_hsi_log(
@@ -1212,7 +1207,7 @@ class HealthSystem(Module):
             if self.store_hsi_events_that_have_run:
                 self.store_of_hsi_events_that_have_run.append(
                     {
-                        'HSI_Event': str(hsi_event.__class__).replace("<class '", "").replace("'>", ""),
+                        'HSI_Event': hsi_event.__class__.__name__,
                         'date': self.sim.date,
                         'TREATMENT_ID': hsi_event.TREATMENT_ID,
                         'did_run': did_run,
@@ -1222,23 +1217,23 @@ class HealthSystem(Module):
                     }
                 )
 
-            if self.record_hsi_event_details:
-                self.hsi_event_details.add(
-                    HSIEventDetails(
-                        event_name=type(hsi_event).__name__,
-                        module_name=type(hsi_event.module).__name__,
-                        treatment_id=hsi_event.TREATMENT_ID,
-                        facility_level=getattr(
-                            hsi_event, 'ACCEPTED_FACILITY_LEVEL', None
-                        ),
-                        appt_footprint=(
-                            tuple(actual_appt_footprint)
-                            if actual_appt_footprint is not None
-                            else tuple(getattr(hsi_event, 'EXPECTED_APPT_FOOTPRINT', {}))
-                        ),
-                        beddays_footprint=tuple(sorted(hsi_event.BEDDAYS_FOOTPRINT.items()))
+                if self.record_hsi_event_details:
+                    self.hsi_event_details.add(
+                        HSIEventDetails(
+                            event_name=type(hsi_event).__name__,
+                            module_name=type(hsi_event.module).__name__,
+                            treatment_id=hsi_event.TREATMENT_ID,
+                            facility_level=getattr(
+                                hsi_event, 'ACCEPTED_FACILITY_LEVEL', None
+                            ),
+                            appt_footprint=(
+                                tuple(actual_appt_footprint)
+                                if actual_appt_footprint is not None
+                                else tuple(getattr(hsi_event, 'EXPECTED_APPT_FOOTPRINT', {}))
+                            ),
+                            beddays_footprint=tuple(sorted(hsi_event.BEDDAYS_FOOTPRINT.items()))
+                        )
                     )
-                )
 
     def write_to_hsi_log(self,
                          treatment_id,
@@ -1348,10 +1343,15 @@ class HealthSystem(Module):
         """
         self.consumables.override_availability(item_codes)
 
-    def log_end_of_year_summary_statistics(self) -> None:
+    def on_end_of_day(self) -> None:
+        """Do jobs to be done at the end of the day (after all HSI run)"""
+        self.bed_days.on_end_of_day()
+
+    def on_end_of_year(self) -> None:
         """Write to log the current states of the summary counters and reset them."""
         self._summary_counter.write_to_log_and_reset_counters()
-        self.consumables.write_to_log_and_reset_counters()
+        self.consumables.on_end_of_year()
+        self.bed_days.on_end_of_year()
 
 
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
@@ -1385,8 +1385,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
 
         # 0) Refresh information ready for new day:
-        self.module.bed_days.processing_at_start_of_new_day()
-        self.module.consumables.processing_at_start_of_new_day(self.sim.date)
+        self.module.bed_days.on_start_of_day()
+        self.module.consumables.on_start_of_day(self.sim.date)
 
         # 1) Compute footprint that arise from in-patient bed-days
         inpatient_appts = self.module.bed_days.get_inpatient_appts()
@@ -1605,15 +1605,20 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         while len(hold_over) > 0:
             hp.heappush(self.module.HSI_EVENT_QUEUE, hp.heappop(hold_over))
 
-        # 8) After completing routine for the day, log total usage of the facilities
+        # -- End of day activities --
+
+        # 8) Log total usage of the facilities
         self.module.log_current_capabilities(
             current_capabilities=current_capabilities,
             total_footprint=total_footprint
         )
 
-        # 9) Log the end-of-year summaries (if today is the last day of the year)
+        # 9) Trigger jobs to be done at the end of the day (after all HSI run)
+        self.module.on_end_of_day()
+
+        # 10) Do activities required at end of year (if today is the last day of the year)
         if self._is_today_last_day_of_the_year(self.sim.date):
-            self.module.log_end_of_year_summary_statistics()
+            self.module.on_end_of_year()
 
 # ---------------------------------------------------------------------------
 #   Logging

@@ -389,9 +389,9 @@ make_plot(
     data_low=data_hiv_aidsinfo["incidence0_14_per100py_lower"],
     data_high=data_hiv_aidsinfo["incidence0_14_per100py_upper"],
 )
-plt.savefig(
-    outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
-)
+# plt.savefig(
+#     outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
+# )
 plt.show()
 
 
@@ -476,7 +476,7 @@ make_plot(
     data_low=data_tb_who["mortality_tb_excl_hiv_per_100k_low"],
     data_high=data_tb_who["mortality_tb_excl_hiv_per_100k_high"],
 )
-
+plt.ylim((0, 150))
 plt.show()
 
 
@@ -558,7 +558,7 @@ plt.xticks(ticks=x_vals, labels=labels)
 plt.title("Deaths per year due to AIDS")
 plt.legend(handles=[blue_patch, green_patch])
 plt.tight_layout()
-plt.savefig(outputpath / ("HIV_TB_deaths_with_GBD" + datestamp + ".png"), format='png')
+# plt.savefig(outputpath / ("HIV_TB_deaths_with_GBD" + datestamp + ".png"), format='png')
 plt.show()
 
 
