@@ -351,9 +351,10 @@ class Deviance(Module):
         )
 
         hiv_beta = self.sim.modules["Hiv"].parameters["beta"]
-        tb_beta = self.sim.modules["Tb"].parameters["transmission_rate"]
+        # tb_beta = self.sim.modules["Tb"].parameters["transmission_rate"]
 
-        return_values = [calibration_score, hiv_beta, tb_beta]
+        # return_values = [calibration_score, hiv_beta, tb_beta]
+        return_values = [calibration_score, hiv_beta]
 
         return return_values
 
@@ -367,6 +368,6 @@ class Deviance(Module):
             description="Deviance measure for HIV and TB",
             data={"deviance_measure": deviance_measure[0],
                   "hiv_transmission_rate": deviance_measure[1],
-                  "tb_transmission_rate": deviance_measure[2]
+                  # "tb_transmission_rate": deviance_measure[2]
                   }
         )
