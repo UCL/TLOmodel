@@ -1,0 +1,187 @@
+{
+  "scenario_script_path": "src/scripts/hiv/deviance_for_calibration/calibration_hiv.py",
+  "scenario_seed": 7419,
+  "runs_per_draw": 3,
+  "draws": [
+    {
+      "draw_number": 0,
+      "draw_seed": 749583307,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.08
+        }
+      }
+    },
+    {
+      "draw_number": 1,
+      "draw_seed": 1584005918,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.085
+        }
+      }
+    },
+    {
+      "draw_number": 2,
+      "draw_seed": 1543704323,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.09
+        }
+      }
+    },
+    {
+      "draw_number": 3,
+      "draw_seed": 1647098399,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.095
+        }
+      }
+    },
+    {
+      "draw_number": 4,
+      "draw_seed": 1394254991,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1
+        }
+      }
+    },
+    {
+      "draw_number": 5,
+      "draw_seed": 1430506921,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.105
+        }
+      }
+    },
+    {
+      "draw_number": 6,
+      "draw_seed": 1637287896,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.11
+        }
+      }
+    },
+    {
+      "draw_number": 7,
+      "draw_seed": 1009332100,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.11499999999999999
+        }
+      }
+    },
+    {
+      "draw_number": 8,
+      "draw_seed": 2142776671,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.12
+        }
+      }
+    },
+    {
+      "draw_number": 9,
+      "draw_seed": 332056394,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.125
+        }
+      }
+    },
+    {
+      "draw_number": 10,
+      "draw_seed": 2036508063,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.13
+        }
+      }
+    },
+    {
+      "draw_number": 11,
+      "draw_seed": 256395468,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.135
+        }
+      }
+    },
+    {
+      "draw_number": 12,
+      "draw_seed": 509463140,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.13999999999999999
+        }
+      }
+    },
+    {
+      "draw_number": 13,
+      "draw_seed": 87864910,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.145
+        }
+      }
+    },
+    {
+      "draw_number": 14,
+      "draw_seed": 1243403428,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.15
+        }
+      }
+    },
+    {
+      "draw_number": 15,
+      "draw_seed": 434236658,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.15499999999999997
+        }
+      }
+    },
+    {
+      "draw_number": 16,
+      "draw_seed": 1785524583,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.15999999999999998
+        }
+      }
+    },
+    {
+      "draw_number": 17,
+      "draw_seed": 550842469,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.16499999999999998
+        }
+      }
+    },
+    {
+      "draw_number": 18,
+      "draw_seed": 1683588004,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.16999999999999998
+        }
+      }
+    },
+    {
+      "draw_number": 19,
+      "draw_seed": 923441607,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.175
+        }
+      }
+    }
+  ]
+}
