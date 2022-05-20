@@ -609,7 +609,7 @@ class Tb(Module):
                                               active_testing_rates.year == year),
                                           "testing_rate_active_cases"].values[
                                           0] / 100
-        current_active_testing_rate = current_active_testing_rate / 3  # adjusted for monthly poll
+        # current_active_testing_rate = current_active_testing_rate / 3  # adjusted for monthly poll
         random_draw = rng.random_sample(size=len(df))
 
         # randomly select some individuals for screening and testing
@@ -2388,6 +2388,9 @@ class TbDeathEvent(Event, IndividualScopeEventMixin):
         df = self.sim.population.props
 
         if not df.at[person_id, "is_alive"]:
+            return
+
+        if not df.at[person_id, "tb_inf"] == "active":
             return
 
         logger.debug(

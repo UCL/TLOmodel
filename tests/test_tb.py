@@ -741,6 +741,77 @@ def test_cause_of_death(seed):
     assert "AIDS_TB" == df.at[person_id1, "cause_of_death"]
 
 
+def test_active_tb_linear_model(seed):
+    """
+    check the weighting for active tb applied to sub-groups
+    using linear model
+    """
+
+    popsize = 10
+
+    sim = get_sim(seed, use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
+
+    tb_module = sim.modules['Tb']
+
+    # set parameters
+    tb_module.parameters['scaling_factor_WHO'] = 1.0
+
+    # Make the population
+    sim.make_initial_population(n=popsize)
+
+    # simulate for 0 days, just get everything set up (dxtests etc)
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+
+    df = sim.population.props
+
+    # set properties - no risk factors
+    df.at[df.is_alive, 'tb_inf'] = 'uninfected'
+    df.at[df.is_alive, 'age_years'] = 25
+    df.at[df.is_alive, 'va_bcg_all_doses'] = True
+
+    df.at[df.is_alive, 'li_bmi'] = 1  # 4=obese
+    df.at[df.is_alive, 'li_ex_alc'] = False
+    df.at[df.is_alive, 'li_tob'] = False
+
+    df.at[df.is_alive, 'tb_on_ipt'] = False
+
+    df.at[df.is_alive, 'hv_inf'] = False
+    df.at[df.is_alive, 'sy_aids_symptoms'] = 0
+    df.at[df.is_alive, 'hv_art'] = "not"
+
+    incidence_rate = 0.003  # per capita risk of active tb
+
+    # no risk factors
+    person_id0 = 0
+    rr_base = tb_module.lm["active_tb"].predict(df.loc[[person_id0]])
+    assert rr_base.values[0] == 1.0
+
+    # hiv+, no tx
+    person_id1 = 1
+    df.at[person_id1, 'hv_inf'] = True
+    df.at[person_id1, 'sy_aids_symptoms'] = 0
+    df.at[person_id1, 'hv_art'] = "not"
+    rr_hiv = tb_module.lm["active_tb"].predict(df.loc[[person_id1]])
+    assert rr_hiv.values[0] > rr_base.values[0]
+
+    # hiv+, ART and virally suppressed
+    person_id2 = 2
+    df.at[person_id2, 'hv_inf'] = True
+    df.at[person_id2, 'sy_aids_symptoms'] = 0
+    df.at[person_id2, 'hv_art'] = "on_VL_suppressed"
+    rr_hiv_art = tb_module.lm["active_tb"].predict(df.loc[[person_id2]])
+    assert rr_hiv_art.values[0] < rr_hiv.values[0]  # protective effect vs untreated hiv
+
+    # hiv+, ART and virally suppressed, on IPT
+    person_id3 = 3
+    df.at[person_id3, 'hv_inf'] = True
+    df.at[person_id3, 'sy_aids_symptoms'] = 0
+    df.at[person_id3, 'hv_art'] = "on_VL_suppressed"
+    df.at[person_id3, 'tb_on_ipt'] = True
+    rr_hiv_art_ipt = tb_module.lm["active_tb"].predict(df.loc[[person_id3]])
+    assert rr_hiv_art_ipt.values[0] < rr_hiv.values[0]  # protective effect vs untreated hiv
+
+
 @pytest.mark.slow
 def test_basic_run_with_default_parameters(seed):
     """Run the TB module with check and check dtypes consistency"""
