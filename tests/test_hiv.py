@@ -201,6 +201,8 @@ def test_generation_of_natural_history_process_no_art(seed):
     """
 
     sim = get_sim(seed=seed)
+    sim.modules['Hiv'].parameters["prop_delayed_aids_onset"] = 0.0
+
     df = sim.population.props
 
     # select an adult who is alive and not currently infected
@@ -282,6 +284,8 @@ def test_generation_of_natural_history_process_with_art_after_aids(seed):
     """
 
     sim = get_sim(seed=seed)
+    sim.modules['Hiv'].parameters["prop_delayed_aids_onset"] = 0.0
+
     df = sim.population.props
 
     # select an adult who is alive and not currently infected
@@ -544,7 +548,7 @@ def test_art_is_initiated_for_infants(seed):
     sim.modules['Hiv'].parameters["prob_mtct_incident_preg"] = 1.0
 
     # change prob ART start after diagnosis
-    sim.modules["Hiv"].parameters["prob_start_art_after_hiv_test"]["value"] = 1.0
+    sim.modules["Hiv"].parameters["prob_start_art_or_vs"]["prob_art_if_dx"] = 1.0
 
     # Manipulate CFR for deaths due to not breathing at birth
     sim.modules['NewbornOutcomes'].parameters['cfr_failed_to_transition'] = 0.0
@@ -748,7 +752,7 @@ def test_hsi_testandrefer_and_art(seed):
     sim.modules['Hiv'].lm['lm_art'] = LinearModel.multiplicative()
 
     # change prob ART start after diagnosis
-    sim.modules["Hiv"].parameters["prob_start_art_after_hiv_test"]["value"] = 1.0
+    sim.modules["Hiv"].parameters["prob_start_art_or_vs"]["prob_art_if_dx"] = 1.0
 
     # Make sure that the person will continue to seek care
     sim.modules['Hiv'].parameters["probability_of_seeking_further_art_appointment_if_drug_not_available"] = 1.0
