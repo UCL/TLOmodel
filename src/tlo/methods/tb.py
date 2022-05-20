@@ -322,7 +322,7 @@ class Tb(Module):
             "rate of screening / testing per month in general population",
         ),
         "rate_testing_active_tb": Parameter(
-            Types.REAL,
+            Types.DATA_FRAME,
             "rate of screening / testing per month in population with active tb",
         ),
         # ------------------ treatment regimens ------------------ #
