@@ -659,15 +659,14 @@ class Labour(Module):
 
         # ---------------------------------- IV DRUG ADMIN EQUIPMENT  -------------------------------------------------
         self.item_codes_lab_consumables['iv_drug_equipment'] = \
-            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 20_each_CMST',
-                                     'IV giving/infusion set, with needle',
-                                     'Gloves, exam, latex, disposable, pair'])
+            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 18_each_CMST',
+                                     'Giving set iv administration + needle 15 drops/ml_each_CMST',
+                                     'Disposables gloves, powder free, 100 pieces per box'])
 
         # ---------------------------------- BLOOD TEST EQUIPMENT ---------------------------------------------------
         self.item_codes_lab_consumables['blood_test_equipment'] =\
-            get_list_of_items(self, ['Blood collecting tube, 5 ml',
-                                     'Syringe, needle + swab',
-                                     'Gloves, exam, latex, disposable, pair'])
+            get_list_of_items(self, ['Disposables gloves, powder free, 100 pieces per box'])
+        # todo: remove entirely
 
         # -------------------------------------------- DELIVERY ------------------------------------------------------
         # assuming CDK has blade, soap, cord tie
@@ -676,13 +675,10 @@ class Labour(Module):
                                      'Chlorhexidine 1.5% solution_5_CMST'])
 
         self.item_codes_lab_consumables['delivery_optional'] = \
-            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 20_each_CMST',
-                                     'Apron, disposable, polythene_100_CMST',
-                                     'Gloves, exam, latex, disposable, pair',
-                                     'Gauze, swabs 8-ply 10cm x 10cm_100_CMST',
-                                     'Gauze pad, 10 x 10 cm, sterile',
-                                     'Cotton swab',
-                                     'Paracetamol 500mg_1000_CMST'])
+            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 18_each_CMST',
+                                     'Disposables gloves, powder free, 100 pieces per box',
+                                     'Gauze, absorbent 90cm x 40m_each_CMST',
+                                     'Paracetamol, tablet, 500 mg'])
 
         # -------------------------------------------- CAESAREAN DELIVERY ------------------------------------------
         # TODO: this package is incomplete?
@@ -693,13 +689,13 @@ class Labour(Module):
                                      'Metronidazole 200mg_1000_CMST'])
 
         self.item_codes_lab_consumables['caesarean_delivery_optional'] =\
-            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 20_each_CMST',
-                                     'Paracetamol 500mg _1000_CMST',
+            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 18_each_CMST',
+                                     'Paracetamol, tablet, 500 mg',
                                      'Declofenac injection_each_CMST',
                                      'Pethidine, 50 mg/ml, 2 ml ampoule',
                                      'Foley catheter',
                                      'Bag, urine, collecting, 2000 ml',
-                                     "Sodium lactate injection (Ringer's), 500 ml, with giving set",
+                                     "ringer's lactate (Hartmann's solution), 1000 ml_12_IDA",
                                      'Sodium chloride, injectable solution, 0,9 %, 500 ml',
                                      "Giving set iv administration + needle 15 drops/ml_each_CMST",
                                      "Chlorhexidine 1.5% solution_5_CMST"])
@@ -712,13 +708,13 @@ class Labour(Module):
                                      'Metronidazole 200mg_1000_CMST'])
 
         self.item_codes_lab_consumables['obstetric_surgery_optional'] = \
-            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 20_each_CMST',
-                                     'Paracetamol 500mg _1000_CMST',
+            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 18_each_CMST',
+                                     'Paracetamol, tablet, 500 mg',
                                      'Declofenac injection_each_CMST',
                                      'Pethidine, 50 mg/ml, 2 ml ampoule',
                                      'Foley catheter',
                                      'Bag, urine, collecting, 2000 ml',
-                                     "Sodium lactate injection (Ringer's), 500 ml, with giving set",
+                                     "ringer's lactate (Hartmann's solution), 1000 ml_12_IDA",
                                      'Sodium chloride, injectable solution, 0,9 %, 500 ml',
                                      "Giving set iv administration + needle 15 drops/ml_each_CMST"])
 
@@ -728,8 +724,7 @@ class Labour(Module):
 
         # -------------------------------------------- ANTENATAL STEROIDS ---------------------------------------------
         self.item_codes_lab_consumables['antenatal_steroids'] = \
-            get_list_of_items(self, ['Dexamethasone 5mg/ml, 5ml_each_CMST',
-                                     'Betamethasone, 12 mg injection'])
+            get_list_of_items(self, ['Dexamethasone 5mg/ml, 5ml_each_CMST'])
 
         # -------------------------------------  INTRAVENOUS ANTIHYPERTENSIVES ---------------------------------------
         self.item_codes_lab_consumables['iv_antihypertensives'] = \
@@ -747,13 +742,11 @@ class Labour(Module):
             get_list_of_items(self, ['Misoprostol, tablet, 200 mcg',
                                      'Oxytocin, injection, 10 IU in 1 ml ampoule',
                                      'Sodium chloride, injectable solution, 0,9 %, 500 ml',
-                                     'Cannula iv  (winged with injection pot) 20_each_CMST',
-                                     'IV giving/infusion set, with needle',
-                                     'Gloves, exam, latex, disposable, pair',
+                                     'Cannula iv  (winged with injection pot) 18_each_CMST',
+                                     'Giving set iv administration + needle 15 drops/ml_each_CMST',
+                                     'Disposables gloves, powder free, 100 pieces per box',
                                      'Oxygen, 1000 liters, primarily with oxygen cylinders',
                                      'Complete blood count',
-                                     'Blood collecting tube, 5 ml',
-                                     'Syringe, needle + swab',
                                      'Foley catheter',
                                      'Bag, urine, collecting, 2000 ml'])
 
@@ -763,21 +756,16 @@ class Labour(Module):
                                      'Ampicillin, powder for injection, 500 mg, vial',
                                      'Gentamycin, injection, 40 mg/ml in 2 ml vial',
                                      'Sodium chloride, injectable solution, 0,9 %, 500 ml',
-                                     'Cannula iv  (winged with injection pot) 20_each_CMST',
-                                     'IV giving/infusion set, with needle',
-                                     'Gloves, exam, latex, disposable, pair',
+                                     'Cannula iv  (winged with injection pot) 18_each_CMST',
+                                     'Giving set iv administration + needle 15 drops/ml_each_CMST',
+                                     'Disposables gloves, powder free, 100 pieces per box',
                                      'Complete blood count',
-                                     'Blood collecting tube, 5 ml',
-                                     'Syringe, needle + swab',
                                      'Foley catheter',
                                      'Bag, urine, collecting, 2000 ml',
-                                     'Paracetamol 500mg _1000_CMST',
+                                     'Paracetamol, tablet, 500 mg',
                                      'Pethidine, 50 mg/ml, 2 ml ampoule',
-                                     'Gauze, swabs 8-ply 10cm x 10cm_100_CMST',
+                                     'Gauze, absorbent 90cm x 40m_each_CMST',
                                      'Suture pack'])
-
-        # -------------------------------------  OBSTETRIC FORCEPS  ---------------------------------------------------
-        self.item_codes_lab_consumables['forceps'] = get_list_of_items(self, ['Forceps, obstetric'])
 
         # -------------------------------------  OBSTETRIC VACUUM   ---------------------------------------------------
         self.item_codes_lab_consumables['vacuum'] = get_list_of_items(self, ['Vacuum, obstetric'])
@@ -790,21 +778,18 @@ class Labour(Module):
                                      'Metronidazole, injection, 500 mg in 100 ml vial'])
 
         self.item_codes_lab_consumables['maternal_sepsis_optional'] = \
-            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 20_each_CMST',
+            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 18_each_CMST',
                                      'Oxygen, 1000 liters, primarily with oxygen cylinders',
                                      'Paracetamol, tablet, 500 mg',
                                      'Giving set iv administration + needle 15 drops/ml_each_CMST',
                                      'Foley catheter',
                                      'Bag, urine, collecting, 2000 ml',
-                                     'Syringe, needle + swab',
-                                     'Gloves, exam, latex, disposable, pair',
-                                     'Complete blood count',
-                                     'Blood collecting tube, 5 ml',
-                                     'Syringe, needle + swab'])
+                                     'Disposables gloves, powder free, 100 pieces per box',
+                                     'Complete blood count'])
 
         # -------------------------------------  ACTIVE MANAGEMENT THIRD STAGE  ---------------------------------------
         self.item_codes_lab_consumables['amtsl'] = \
-            get_item_code_from_pkg('Active management of the 3rd stage of labour')
+            get_list_of_items(self, ['Oxytocin, injection, 10 IU in 1 ml ampoule'])
 
         # -------------------------------------  POSTPARTUM HAEMORRHAGE  ---------------------------------------
         # TODO: helen allott recommended tranexamic acid - not availble
@@ -815,15 +800,12 @@ class Labour(Module):
         self.item_codes_lab_consumables['pph_optional'] = \
             get_list_of_items(self, ['Pethidine, 50 mg/ml, 2 ml ampoule',
                                      'Oxygen, 1000 liters, primarily with oxygen cylinders',
-                                     'Cannula iv  (winged with injection pot) 20_each_CMST',
+                                     'Cannula iv  (winged with injection pot) 18_each_CMST',
                                      'Bag, urine, collecting, 2000 ml',
                                      'Foley catheter',
                                      'Giving set iv administration + needle 15 drops/ml_each_CMST',
-                                     'Syringe, needle + swab',
-                                     'Gloves, exam, latex, disposable, pair',
-                                     'Complete blood count',
-                                     'Blood collecting tube, 5 ml',
-                                     'Syringe, needle + swab'])
+                                     'Disposables gloves, powder free, 100 pieces per box',
+                                     'Complete blood count'])
 
         # -------------------------------------  BLOOD TRANSFUSION  ---------------------------------------
         self.item_codes_lab_consumables['blood_transfusion'] = get_list_of_items(self, ['Blood, one unit'])
@@ -1857,7 +1839,6 @@ class Labour(Module):
         if df.at[person_id, 'la_obstructed_labour'] or for_spe:
             # Define the consumables...
             hsi_event.get_consumables(item_codes=cons['obstructed_labour'])
-            avail_forceps = hsi_event.get_consumables(item_codes=cons['forceps'])
             avail_vacuum = hsi_event.get_consumables(item_codes=cons['vacuum'])
 
             # run HCW check
@@ -1868,7 +1849,7 @@ class Labour(Module):
             if not mni[person_id]['cpd']:
                 # If the general package is available AND the facility has the correct tools to carry out the
                 # delivery then it can occur
-                if (avail_forceps or avail_vacuum) and sf_check:
+                if avail_vacuum and sf_check:
 
                     # If AVD was successful then we record the mode of delivery. We use this variable to reduce
                     # risk of intrapartum still birth when applying risk in the death event
@@ -2829,11 +2810,10 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Labour)
 
-        self.TREATMENT_ID = 'Labour_ReceivesSkilledBirthAttendanceDuringLabour'
+        self.TREATMENT_ID = 'DeliveryCare_Basic'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'NormalDelivery': 1})
-        self.ALERT_OTHER_DISEASES = []
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 1})
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': 2})
 
     def apply(self, person_id, squeeze_factor):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
@@ -2932,9 +2912,14 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         # We apply a probability to women who have not already been allocated to undergo assisted/caesarean delivery
         # that they will require assisted/caesarean delivery to capture indications which are not explicitly modelled
         if not mni[person_id]['referred_for_cs'] and (not mni[person_id]['mode_of_delivery'] == 'instrumental'):
-            if self.module.rng.random_sample() < params['residual_prob_caesarean']:
+            if df.at[person_id, 'ps_multiple_pregnancy']:
+                mni[person_id]['referred_for_cs'] = True
+                mni[person_id]['cs_indication'] = 'twins'
+
+            elif self.module.rng.random_sample() < params['residual_prob_caesarean']:
                 mni[person_id]['referred_for_cs'] = True
                 mni[person_id]['cs_indication'] = 'other'
+
             elif self.module.rng.random_sample() < params['residual_prob_avd']:
                 self.module.assessment_for_assisted_vaginal_delivery(self, for_spe=True)
 
@@ -2986,11 +2971,9 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Labour)
 
-        self.TREATMENT_ID = 'Labour_ReceivesPostnatalCheck'
+        self.TREATMENT_ID = 'PostnatalCare_Maternal'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ALERT_OTHER_DISEASES = []
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})
 
     def apply(self, person_id, squeeze_factor):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
@@ -3047,11 +3030,28 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
         self.module.assessment_for_depression(self)
         self.module.interventions_delivered_pre_discharge(self)
 
+        mother = df.loc[person_id]
+
         # Schedule higher level care for women requiring comprehensive treatment
         if mni[person_id]['referred_for_surgery'] or mni[person_id]['referred_for_blood']:
             surgical_management = HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(
                 self.module, person_id=person_id, timing='postpartum')
             self.sim.modules['HealthSystem'].schedule_hsi_event(surgical_management,
+                                                                priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(days=1))
+
+        # Women who require treatment for postnatal complications are schedule to the inpatient HSI to capture inpatient
+        # days
+        elif (mother.la_sepsis_treatment or
+              mother.la_eclampsia_treatment or
+              mother.la_severe_pre_eclampsia_treatment or
+              mother.la_maternal_hypertension_treatment or
+              self.module.pph_treatment.has_all(person_id, 'manual_removal_placenta')):
+
+            postnatal_inpatient = HSI_Labour_PostnatalWardInpatientCare(
+                self.module, person_id=person_id)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(postnatal_inpatient,
                                                                 priority=0,
                                                                 topen=self.sim.date,
                                                                 tclose=self.sim.date + DateOffset(days=1))
@@ -3084,12 +3084,9 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Labour)
 
-        self.TREATMENT_ID = 'Labour_ReceivesComprehensiveEmergencyObstetricCare'
+        self.TREATMENT_ID = 'DeliveryCare_Comprehensive'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MajorSurg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.ALERT_OTHER_DISEASES = []
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})
-
         self.timing = timing
 
     def apply(self, person_id, squeeze_factor):
@@ -3181,12 +3178,21 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
 
         # Here we edit the appointment footprint so only women receiving surgery require the surgical footprint
-        if mni[person_id]['referred_for_surgery'] or mni[person_id]['referred_for_cs']:
-            actual_appt_footprint['MajorSurg'] = actual_appt_footprint['MajorSurg']
+        if mni[person_id]['referred_for_cs']:
+            actual_appt_footprint['MajorSurg'] = actual_appt_footprint['Csection']
 
         elif (not mni[person_id]['referred_for_surgery'] and not mni[person_id]['referred_for_cs']) and\
                 mni[person_id]['referred_for_blood']:
             actual_appt_footprint['MajorSurg'] = actual_appt_footprint['InpatientDays']
+
+        # Schedule HSI that captures inpatient days
+        if df.at[person_id, 'is_alive']:
+            postnatal_inpatient = HSI_Labour_PostnatalWardInpatientCare(
+                    self.module, person_id=person_id)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(postnatal_inpatient,
+                                                                priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(days=1))
 
     def never_ran(self):
         self.module.run_if_receives_comprehensive_emergency_obstetric_care_cant_run(self)
@@ -3197,6 +3203,35 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
 
     def not_available(self):
         self.module.run_if_receives_comprehensive_emergency_obstetric_care_cant_run(self)
+
+
+class HSI_Labour_PostnatalWardInpatientCare(HSI_Event, IndividualScopeEventMixin):
+    """
+    This is HSI_Labour_PostnatalWardInpatientCare. It is scheduled by HSI_Labour_ReceivesPostnatalCheck for all women
+    require treatment as inpatients after delivery. The primary function of this event is to capture inpatient bed
+    days
+    """
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, Labour)
+
+        self.TREATMENT_ID = 'PostnatalCare_Maternal_Inpatient'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': 5})
+
+    def apply(self, person_id, squeeze_factor):
+
+        logger.debug(key='message', data='HSI_Labour_PostnatalWardInpatientCare now running to capture '
+                                         'inpatient time for an unwell postnatal woman')
+
+    def did_not_run(self):
+        logger.debug(key='message', data='HSI_Labour_PostnatalWardInpatientCare: did not run')
+        return False
+
+    def not_available(self):
+        logger.debug(key='message', data='HSI_Labour_PostnatalWardInpatientCare: cannot not run with '
+                                         'this configuration')
 
 
 class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):

@@ -1368,11 +1368,10 @@ class HSI_CardioMetabolicDisorders_CommunityTestingForHypertension(HSI_Event, In
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = "CardioMetabolicDisorders_CommunityTestingForHypertension"
+
+        self.TREATMENT_ID = "CardioMetabolicDisorders_Prevention_CommunityTestingForHypertension"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -1416,11 +1415,11 @@ class HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(HSI_Event, 
 
     def __init__(self, module, person_id, condition):
         super().__init__(module, person_id=person_id)
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = "CardioMetabolicDisorders_InvestigationNotFollowingSymptoms"
+
+        self.TREATMENT_ID = "CardioMetabolicDisorders_Investigation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.ALERT_OTHER_DISEASES = []
+
         self.condition = condition
 
     def apply(self, person_id, squeeze_factor):
@@ -1476,11 +1475,11 @@ class HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(HSI_Event, Ind
 
     def __init__(self, module, person_id, condition):
         super().__init__(module, person_id=person_id)
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = "CardioMetabolicDisorders_Investigation_Following_Symptoms"
+
+        self.TREATMENT_ID = "CardioMetabolicDisorders_Investigation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.ALERT_OTHER_DISEASES = []
+
         self.condition = condition
 
     def apply(self, person_id, squeeze_factor):
@@ -1557,11 +1556,11 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
 
     def __init__(self, module, person_id, condition):
         super().__init__(module, person_id=person_id)
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'CardioMetabolicDisorders_StartWeightLossAndMedication'
+
+        self.TREATMENT_ID = 'CardioMetabolicDisorders_Prevention_WeightLoss'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.ALERT_OTHER_DISEASES = []
+
         self.condition = condition
 
     def apply(self, person_id, squeeze_factor):
@@ -1625,11 +1624,11 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
 
     def __init__(self, module, person_id, condition):
         super().__init__(module, person_id=person_id)
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'CardioMetabolicDisorders_Refill_Medication'
+
+        self.TREATMENT_ID = 'CardioMetabolicDisorders_Treatment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.ALERT_OTHER_DISEASES = []
+
         self.condition = condition
 
     def apply(self, person_id, squeeze_factor):
@@ -1695,11 +1694,11 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
     def __init__(self, module, person_id, ev):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CardioMetabolicDisorders)
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '2'  # Can occur at this facility level
-        self.ALERT_OTHER_DISEASES = []
+
+        self.TREATMENT_ID = 'CardioMetabolicDisorders_Treatment'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1, 'Over5OPD': 1})
+        self.ACCEPTED_FACILITY_LEVEL = '2'
+
         self.event = ev
 
     def apply(self, person_id, squeeze_factor):

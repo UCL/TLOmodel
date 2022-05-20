@@ -57,7 +57,7 @@ class HSI_GenericFirstApptAtFacilityLevel0(HSI_Event, IndividualScopeEventMixin)
 
         assert module is self.sim.modules['HealthSeekingBehaviour']
 
-        self.TREATMENT_ID = 'GenericFirstApptAtFacilityLevel0'
+        self.TREATMENT_ID = 'FirstAttendance_NonEmergency'
         self.ACCEPTED_FACILITY_LEVEL = '0'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ConWithDCSA': 1})
 
@@ -80,11 +80,9 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
 
         assert module.name in ['HealthSeekingBehaviour', 'Labour', 'PregnancySupervisor', 'RTI']
 
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'GenericEmergencyFirstApptAtFacilityLevel1'
+        self.TREATMENT_ID = 'FirstAttendance_Emergency'
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
-            'Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD': 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
 
     def apply(self, person_id, squeeze_factor):
 
@@ -138,6 +136,9 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
         if 'RTI' in sim.modules:
             sim.modules['RTI'].do_rti_diagnosis_and_treatment(person_id)
 
+    if 'Schisto' in sim.modules:
+        sim.modules['Schisto'].do_on_presentation_with_symptoms(person_id=person_id, symptoms=symptoms)
+
     if age < 5:
         # ----------------------------------- CHILD < 5 -----------------------------------
         if 'diarrhoea' in symptoms:
@@ -168,6 +169,10 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                         priority=1,
                         topen=sim.date,
                         tclose=None)
+
+        # Routine assessments
+        if 'Stunting' in sim.modules:
+            sim.modules['Stunting'].do_routine_assessment_for_chronic_undernutrition(person_id=person_id)
 
     elif age < 15:
         # ----------------------------------- CHILD 5-14 -----------------------------------

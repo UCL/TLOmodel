@@ -67,8 +67,20 @@ class CareOfWomenDuringPregnancy(Module):
         # n.b. Parameters are stored as LIST variables due to containing values to match both 2010 and 2015 data.
 
         # CARE SEEKING...
-        'prob_anc_continues': Parameter(
-            Types.LIST, 'probability a woman will return for a subsequent ANC appointment'),
+        'prob_seek_anc2': Parameter(
+            Types.LIST, 'Probability a women who is not predicted to attended four or more ANC visits will attend '
+                        'ANC2'),
+        'prob_seek_anc3': Parameter(
+            Types.LIST, 'Probability a women who is not predicted to attended four or more ANC visits will attend '
+                        'ANC3'),
+        'prob_seek_anc5': Parameter(
+            Types.LIST, 'Probability a women who is predicted to attend four or more ANC visits will attend ANC5'),
+        'prob_seek_anc6': Parameter(
+            Types.LIST, 'Probability a women who is predicted to attend four or more ANC visits will attend ANC6'),
+        'prob_seek_anc7': Parameter(
+            Types.LIST, 'Probability a women who is predicted to attend four or more ANC visits will attend ANC7'),
+        'prob_seek_anc8': Parameter(
+            Types.LIST, 'Probability a women who is predicted to attend four or more ANC visits will attend ANC8'),
 
         # TREATMENT EFFECTS...
         'effect_of_ifa_for_resolving_anaemia': Parameter(
@@ -206,15 +218,14 @@ class CareOfWomenDuringPregnancy(Module):
 
         # ---------------------------------- BLOOD TEST EQUIPMENT ---------------------------------------------------
         self.item_codes_preg_consumables['blood_test_equipment'] = \
-            get_list_of_items(self, ['Blood collecting tube, 5 ml',
-                                     'Syringe, needle + swab',
-                                     'Gloves, exam, latex, disposable, pair'])
+            get_list_of_items(self, ['Disposables gloves, powder free, 100 pieces per box'])
+        # todo: remove entirely?
 
         # ---------------------------------- IV DRUG ADMIN EQUIPMENT  -------------------------------------------------
         self.item_codes_preg_consumables['iv_drug_equipment'] = \
-            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 20_each_CMST',
-                                     'IV giving/infusion set, with needle',
-                                     'Gloves, exam, latex, disposable, pair'])
+            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 18_each_CMST',
+                                     'Giving set iv administration + needle 15 drops/ml_each_CMST',
+                                     'Disposables gloves, powder free, 100 pieces per box'])
 
         # -------------------------------------------- ECTOPIC PREGNANCY ---------------------------------------------
         self.item_codes_preg_consumables['ectopic_pregnancy_core'] = \
@@ -226,10 +237,9 @@ class CareOfWomenDuringPregnancy(Module):
             get_list_of_items(self, ['Sodium chloride, injectable solution, 0,9 %, 500 ml',
                                      'Paracetamol, tablet, 500 mg',
                                      'Pethidine, 50 mg/ml, 2 ml ampoule',
-                                     'Syringe, needle + swab',
                                      'Suture pack',
-                                     'Gauze pad, 10 x 10 cm, sterile',
-                                     'Cannula iv  (winged with injection pot) 20_each_CMST'])
+                                     'Gauze, absorbent 90cm x 40m_each_CMST',
+                                     'Cannula iv  (winged with injection pot) 18_each_CMST'])
 
         # ------------------------------------------- POST ABORTION CARE - GENERAL  -----------------------------------
         self.item_codes_preg_consumables['post_abortion_care_core'] = \
@@ -239,8 +249,7 @@ class CareOfWomenDuringPregnancy(Module):
         self.item_codes_preg_consumables['post_abortion_care_optional'] = \
             get_list_of_items(self, ['Complete blood count',
                                      'Blood collecting tube, 5 ml',
-                                     'Syringe, needle + swab',
-                                     'Gloves, exam, latex, disposable, pair',
+                                     'Disposables gloves, powder free, 100 pieces per box',
                                      'Paracetamol, tablet, 500 mg',
                                      'Pethidine, 50 mg/ml, 2 ml ampoule'])
 
@@ -252,21 +261,21 @@ class CareOfWomenDuringPregnancy(Module):
 
         self.item_codes_preg_consumables['post_abortion_care_sepsis_optional'] = \
             get_list_of_items(self, ['Sodium chloride, injectable solution, 0,9 %, 500 ml',
-                                     'Cannula iv  (winged with injection pot) 20_each_CMST',
-                                     'Gloves, exam, latex, disposable, pair',
-                                     'IV giving/infusion set, with needle',
+                                     'Cannula iv  (winged with injection pot) 18_each_CMST',
+                                     'Disposables gloves, powder free, 100 pieces per box',
+                                     'Giving set iv administration + needle 15 drops/ml_each_CMST',
                                      'Oxygen, 1000 liters, primarily with oxygen cylinders'])
 
         # ------------------------------------------- POST ABORTION CARE - SHOCK -------------------------------------
         self.item_codes_preg_consumables['post_abortion_care_shock'] = \
             get_list_of_items(self, ['Sodium chloride, injectable solution, 0,9 %, 500 ml',
-                                     'Cannula iv  (winged with injection pot) 20_each_CMST',
-                                     'Gloves, exam, latex, disposable, pair',
-                                     'IV giving/infusion set, with needle',
+                                     'Cannula iv  (winged with injection pot) 18_each_CMST',
+                                     'Disposables gloves, powder free, 100 pieces per box',
+                                     'Giving set iv administration + needle 15 drops/ml_each_CMST',
                                      'Oxygen, 1000 liters, primarily with oxygen cylinders'])
 
         # ---------------------------------- URINE DIPSTICK ----------------------------------------------------------
-        self.item_codes_preg_consumables['urine_dipstick'] = get_list_of_items(self, ['Test strips, urine analysis'])
+        self.item_codes_preg_consumables['urine_dipstick'] = get_list_of_items(self, ['Urine analysis'])
 
         # ---------------------------------- IRON AND FOLIC ACID ------------------------------------------------------
         self.item_codes_preg_consumables['iron_folic_acid'] = get_list_of_items(
@@ -330,13 +339,12 @@ class CareOfWomenDuringPregnancy(Module):
             self, ['Misoprostol, tablet, 200 mcg',
                    'Oxytocin, injection, 10 IU in 1 ml ampoule',
                    'Sodium chloride, injectable solution, 0,9 %, 500 ml',
-                   'Cannula iv  (winged with injection pot) 20_each_CMST',
-                   'IV giving/infusion set, with needle',
-                   'Gloves, exam, latex, disposable, pair',
+                   'Cannula iv  (winged with injection pot) 18_each_CMST',
+                   'Giving set iv administration + needle 15 drops/ml_each_CMST',
+                   'Disposables gloves, powder free, 100 pieces per box',
                    'Oxygen, 1000 liters, primarily with oxygen cylinders',
                    'Complete blood count',
                    'Blood collecting tube, 5 ml',
-                   'Syringe, needle + swab',
                    'Foley catheter',
                    'Bag, urine, collecting, 2000 ml'])
 
@@ -596,7 +604,11 @@ class CareOfWomenDuringPregnancy(Module):
                       7: HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(self, person_id=individual_id),
                       8: HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(self, person_id=individual_id)}
 
-        visit = visit_dict[visit_to_be_scheduled]
+        if self.sim.modules['PregnancySupervisor'].current_parameters['anc_service_structure'] == 8:
+            visit = visit_dict[visit_to_be_scheduled]
+        else:
+            visit = HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(self, person_id=individual_id,
+                                                                   visit_number=visit_to_be_scheduled)
 
         def calculate_visit_date_and_schedule_visit(visit):
             # We subtract this womans current gestational age from the recommended gestational age for the next
@@ -617,20 +629,11 @@ class CareOfWomenDuringPregnancy(Module):
         # If this woman has attended less than 4 visits, and is predicted to attend > 4 (as determined via the
         # PregnancySupervisor module when ANC1 is scheduled) her subsequent ANC appointment is automatically
         # scheduled
-        if visit_to_be_scheduled <= 4:
-            if df.at[individual_id, 'ps_anc4']:
-                calculate_visit_date_and_schedule_visit(visit)
-            else:
-                # If she is not predicted to attend 4 or more visits, we use a probability to determine if she will
-                # seek care for her next contact
-                # If so, the HSI is scheduled in the same way
-                if self.rng.random_sample() < params['prob_anc_continues']:
-                    calculate_visit_date_and_schedule_visit(visit)
+        if (visit_to_be_scheduled <= 4) and df.at[individual_id, 'ps_anc4']:
+            calculate_visit_date_and_schedule_visit(visit)
 
-        elif visit_to_be_scheduled > 4:
-            # After 4 or more visits we use this probability to determine if the woman will seek care for
-            # her next contact
-            if self.rng.random_sample() < params['prob_anc_continues']:
+        elif ((visit_to_be_scheduled < 4) and not df.at[individual_id, 'ps_anc4']) or (visit_to_be_scheduled > 4):
+            if self.rng.random_sample() < params[f'prob_seek_anc{visit_to_be_scheduled}']:
                 calculate_visit_date_and_schedule_visit(visit)
 
     def schedule_admission(self, individual_id):
@@ -1452,10 +1455,9 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
-        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_FirstAntenatalCareContact'
+        self.TREATMENT_ID = 'AntenatalCare_Outpatient'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AntenatalFirst': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -1539,10 +1541,9 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
-        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_SecondAntenatalCareContact'
+        self.TREATMENT_ID = 'AntenatalCare_Outpatient'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -1626,10 +1627,9 @@ class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, Indivi
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
-        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_ThirdAntenatalCareContact'
+        self.TREATMENT_ID = 'AntenatalCare_Outpatient'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -1699,10 +1699,9 @@ class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(HSI_Event, Indiv
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
-        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_FourthAntenatalCareContact'
+        self.TREATMENT_ID = 'AntenatalCare_Outpatient'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -1768,10 +1767,9 @@ class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(HSI_Event, Indivi
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
-        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_FifthAntenatalCareContact'
+        self.TREATMENT_ID = 'AntenatalCare_Outpatient'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -1834,10 +1832,9 @@ class HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(HSI_Event, Indivi
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
-        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_SixthAntenatalCareContact'
+        self.TREATMENT_ID = 'AntenatalCare_Outpatient'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -1896,10 +1893,9 @@ class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(HSI_Event, Indi
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
-        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_SeventhAntenatalCareContact'
+        self.TREATMENT_ID = 'AntenatalCare_Outpatient'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -1952,10 +1948,9 @@ class HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(HSI_Event, Indiv
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
-        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_EighthAntenatalCareContact'
+        self.TREATMENT_ID = 'AntenatalCare_Outpatient'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -2001,11 +1996,10 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
 
         self.visit_number = visit_number
 
-        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_FocusedANCVisit'
+        self.TREATMENT_ID = 'AntenatalCare_Outpatient'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({('AntenatalFirst' if (self.visit_number == 1)
                                                                   else 'ANCSubsequent'): 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -2097,30 +2091,10 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
             # update the visit number for the event scheduling
             self.visit_number = self.visit_number + 1
 
-            if df.at[person_id, 'ps_anc4']:
-                weeks_due_next_visit = int(recommended_gestation_next_anc - df.at[person_id, 'ps_gestational_age_'
-                                                                                             'in_weeks'])
-
-                visit_date = self.sim.date + DateOffset(weeks=weeks_due_next_visit)
-                self.sim.modules['HealthSystem'].schedule_hsi_event(self,
-                                                                    priority=0,
-                                                                    topen=visit_date,
-                                                                    tclose=visit_date + DateOffset(days=7))
-
-                df.at[person_id, 'ac_date_next_contact'] = visit_date
-
-            else:
-                if self. module.rng.random_sample() < params['prob_anc_continues']:
-                    weeks_due_next_visit = int(
-                        recommended_gestation_next_anc - df.at[person_id, 'ps_gestational_age_in_weeks'])
-
-                    visit_date = self.sim.date + DateOffset(weeks=weeks_due_next_visit)
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(self,
-                                                                        priority=0,
-                                                                        topen=visit_date,
-                                                                        tclose=visit_date + DateOffset(days=7))
-
-                    df.at[person_id, 'ac_date_next_contact'] = visit_date
+            # schedule the next event
+            self.module.antenatal_care_scheduler(individual_id=person_id,
+                                                 visit_to_be_scheduled=self.visit_number,
+                                                 recommended_gestation_next_anc=recommended_gestation_next_anc)
 
         # If the woman has had any complications detected during ANC she is admitted for treatment to be initiated
         if df.at[person_id, 'ac_to_be_admitted']:
@@ -2137,10 +2111,10 @@ class HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour(HSI_Event, Ind
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
-        self.TREATMENT_ID = 'HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+        self.TREATMENT_ID = 'AntenatalCare_Inpatient'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -2171,10 +2145,10 @@ class HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(HSI_Event, Indi
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
-        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_MaternalEmergencyAssessment'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+        self.TREATMENT_ID = 'AntenatalCare_Inpatient'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -2217,13 +2191,12 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
 
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
-        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_AntenatalWardInpatientCare'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 1})
+        self.TREATMENT_ID = 'AntenatalCare_Inpatient'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.ALERT_OTHER_DISEASES = []
 
         beddays = self.module.calculate_beddays(person_id)
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': beddays})
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': beddays})
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -2473,8 +2446,8 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia(HSI_
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
-        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
+        self.TREATMENT_ID = 'AntenatalCare_FollowUp'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
@@ -2522,8 +2495,8 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalD
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
-        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_AntenatalOutpatientFollowUp'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
+        self.TREATMENT_ID = 'AntenatalCare_FollowUp'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
@@ -2608,11 +2581,10 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
-        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_PostAbortionCaseManagement'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 1})
+        self.TREATMENT_ID = 'AntenatalCare_PostAbortion'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '1b'  # any hospital?
-        self.ALERT_OTHER_DISEASES = []
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 3})
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': 3})  # todo: check with TC
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -2694,11 +2666,10 @@ class HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(HSI_Event, Ind
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
-        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy'
+        self.TREATMENT_ID = 'AntenatalCare_PostEctopicPregnancy'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MajorSurg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.ALERT_OTHER_DISEASES = []
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': 5})  # todo: check with TC
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
