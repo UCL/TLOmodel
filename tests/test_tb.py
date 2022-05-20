@@ -779,8 +779,6 @@ def test_active_tb_linear_model(seed):
     df.at[df.is_alive, 'sy_aids_symptoms'] = 0
     df.at[df.is_alive, 'hv_art'] = "not"
 
-    incidence_rate = 0.003  # per capita risk of active tb
-
     # no risk factors
     person_id0 = 0
     rr_base = tb_module.lm["active_tb"].predict(df.loc[[person_id0]])

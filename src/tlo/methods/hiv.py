@@ -259,6 +259,10 @@ class Hiv(Module):
             "Mean years between when a person (any change) stops being on treatment to when AIDS is onset (if the "
             "absence of resuming treatment).",
         ),
+        "prop_delayed_aids_onset": Parameter(
+            Types.REAL,
+            "Proportion of PLHIV that will have delayed AIDS onset to compensate for AIDS-TB",
+        ),
         # Natural history - survival (children)
         "mean_survival_for_infants_infected_prior_to_birth": Parameter(
             Types.REAL,
@@ -1668,44 +1672,72 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
 
         df = self.sim.population.props
 
-        # Check person is_alive
-        if not df.at[person_id, "is_alive"]:
+        # Return if person is dead or no HIV+
+        if not df.at[person_id, "is_alive"] or not df.at[person_id, "hv_inf"]:
             return
+
+        # eligible for AIDS onset:
+        # not VL suppressed no active tb
+        # not VL suppressed active tb
+        # VL suppressed active tb
 
         # Do nothing if person is now on ART and VL suppressed (non-VL suppressed has no effect)
         # if cause is TB, allow AIDS onset
         if (df.at[person_id, "hv_art"] == "on_VL_suppressed") and (self.cause != 'AIDS_TB'):
             return
 
-        # if eligible for aids onset (not treated with ART or currently has active TB):
-        # Update Symptoms
-        self.sim.modules["SymptomManager"].change_symptom(
-            person_id=person_id,
-            symptom_string="aids_symptoms",
-            add_or_remove="+",
-            disease_module=self.module,
-        )
+        # need to delay onset of AIDS (non-tb) to compensate for AIDS-TB
+        if (self.cause == "AIDS_non_TB") and (
+                self.sim.modules["Hiv"].rng.rand() < self.sim.modules["Hiv"].parameters["prop_delayed_aids_onset"]):
 
-        date_of_aids_death = self.sim.date + self.module.get_time_from_aids_to_death()
-
-        # Schedule AidsDeath
-        if self.cause == "AIDS_non_TB":
-
-            self.sim.schedule_event(
-                event=HivAidsDeathEvent(
-                    person_id=person_id, module=self.module, cause=self.cause
-                ),
-                date=date_of_aids_death,
+            # redraw time to aids and reschedule
+            months_to_aids = int(
+                np.floor(
+                    self.sim.modules["Hiv"].rng.exponential(
+                        scale=self.sim.modules["Hiv"].parameters["art_default_to_aids_mean_years"]
+                    )
+                    * 12.0
+                )
             )
 
+            self.sim.schedule_event(
+                event=HivAidsOnsetEvent(person_id=person_id, module=self, cause='AIDS_non_TB'),
+                date=self.sim.date + pd.DateOffset(months=months_to_aids),
+            )
+
+        # else assign aids onset and schedule aids death
         else:
-            # cause is active TB
-            self.sim.schedule_event(
-                event=HivAidsTbDeathEvent(
-                    person_id=person_id, module=self.module, cause=self.cause
-                ),
-                date=date_of_aids_death,
+
+            # if eligible for aids onset (not treated with ART or currently has active TB):
+            # Update Symptoms
+            self.sim.modules["SymptomManager"].change_symptom(
+                person_id=person_id,
+                symptom_string="aids_symptoms",
+                add_or_remove="+",
+                disease_module=self.sim.modules["Hiv"],
             )
+
+            # Schedule AidsDeath
+            date_of_aids_death = self.sim.date + self.sim.modules["Hiv"].get_time_from_aids_to_death()
+
+            if self.cause == "AIDS_non_TB":
+
+                # cause is HIV
+                self.sim.schedule_event(
+                    event=HivAidsDeathEvent(
+                        person_id=person_id, module=self.sim.modules["Hiv"], cause=self.cause
+                    ),
+                    date=date_of_aids_death,
+                )
+
+            else:
+                # cause is active TB
+                self.sim.schedule_event(
+                    event=HivAidsTbDeathEvent(
+                        person_id=person_id, module=self.sim.modules["Hiv"], cause=self.cause
+                    ),
+                    date=date_of_aids_death,
+                )
 
 
 class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
