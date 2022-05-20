@@ -1713,7 +1713,7 @@ class RTI(Module):
                 hsi_event=HSI_RTI_Acute_Pain_Management(module=self,
                                                         person_id=person_id),
                 priority=0,
-                topen=self.sim.date,
+                topen=self.sim.date + DateOffset(days=1),
                 tclose=self.sim.date + DateOffset(days=15))
 
     def rti_ask_for_suture_kit(self, person_id):
@@ -1743,7 +1743,7 @@ class RTI(Module):
                 hsi_event=HSI_RTI_Suture(module=self,
                                          person_id=person_id),
                 priority=0,
-                topen=self.sim.date,
+                topen=self.sim.date + DateOffset(days=1),
                 tclose=self.sim.date + DateOffset(days=15)
             )
 
@@ -1761,7 +1761,7 @@ class RTI(Module):
                 hsi_event=HSI_RTI_Shock_Treatment(module=self,
                                                   person_id=person_id),
                 priority=0,
-                topen=self.sim.date,
+                topen=self.sim.date + DateOffset(days=1),
                 tclose=self.sim.date + DateOffset(days=15)
             )
 
@@ -1776,7 +1776,7 @@ class RTI(Module):
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_RTI_Imaging_Event(module=self, person_id=person_id),
                 priority=0,
-                topen=self.sim.date,
+                topen=self.sim.date + DateOffset(days=1),
                 tclose=self.sim.date + DateOffset(days=15)
             )
 
@@ -1808,7 +1808,7 @@ class RTI(Module):
                 hsi_event=HSI_RTI_Burn_Management(module=self,
                                                   person_id=person_id),
                 priority=0,
-                topen=self.sim.date,
+                topen=self.sim.date + DateOffset(days=1),
                 tclose=self.sim.date + DateOffset(days=15)
             )
 
@@ -1845,7 +1845,7 @@ class RTI(Module):
                     hsi_event=HSI_RTI_Fracture_Cast(module=self,
                                                     person_id=person_id),
                     priority=0,
-                    topen=self.sim.date,
+                    topen=self.sim.date + DateOffset(days=1),
                     tclose=self.sim.date + DateOffset(days=15)
                 )
             else:
@@ -1917,7 +1917,7 @@ class RTI(Module):
                 hsi_event=HSI_RTI_Tetanus_Vaccine(module=self,
                                                   person_id=person_id),
                 priority=0,
-                topen=self.sim.date,
+                topen=self.sim.date + DateOffset(days=1),
                 tclose=self.sim.date + DateOffset(days=15)
             )
 
