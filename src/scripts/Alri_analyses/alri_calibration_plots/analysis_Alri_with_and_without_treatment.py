@@ -38,8 +38,8 @@ output_files = dict()
 
 # %% Run the Simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2019, 12, 31)
-popsize = 5000
+end_date = Date(2015, 12, 31)
+popsize = 10000
 
 for label, service_avail in scenarios.items():
 
@@ -56,9 +56,11 @@ for label, service_avail in scenarios.items():
     if service_avail == []:
         _disable = False
         _disable_and_reject_all = True
+        _cons_availability = 'none'
     else:
         _disable = True
         _disable_and_reject_all = False
+        _cons_availability = 'all'
 
     # add file handler for the purpose of logging
     sim = Simulation(start_date=start_date, log_config=log_config, show_progress_bar=True)
@@ -68,21 +70,36 @@ for label, service_avail in scenarios.items():
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath,
+                                                      force_any_symptom_to_lead_to_healthcareseeking=True),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                   disable=_disable,
-                                  disable_and_reject_all=_disable_and_reject_all),
+                                  disable_and_reject_all=_disable_and_reject_all,
+                                  cons_availability=_cons_availability),
 
         alri.Alri(resourcefilepath=resourcefilepath),
         alri.AlriPropertiesOfOtherModules()
     )
 
     sim.make_initial_population(n=popsize)
+
+    # Assume perfect sensitivity in hw classification
+    p = sim.modules['Alri'].parameters
+    p['sensitivity_of_classification_of_fast_breathing_pneumonia_facility_level0'] = 1.0
+    p['sensitivity_of_classification_of_danger_signs_pneumonia_facility_level0'] = 1.0
+    p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level1'] = 1.0
+    p['sensitivity_of_classification_of_severe_pneumonia_facility_level1'] = 1.0
+    p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level2'] = 1.0
+    p['sensitivity_of_classification_of_severe_pneumonia_facility_level2'] = 1.0
+
     sim.simulate(end_date=end_date)
 
     # Save the full set of results:
     output_files[label] = sim.log_filepath
+
+# output_files['No_Treatment'] = outputpath / 'alri_with_treatment_and_without_treatment__2022-06-22T142842.log'
+# output_files['Treatment'] = outputpath / 'alri_with_treatment__2022-06-30T100457.log'
 
 
 # %% Extract the relevant outputs and make a graph:
@@ -99,12 +116,12 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
         drop=True,
         inplace=True
     )
-    counts = counts.drop(columns='5+').rename(columns={'0': '0y', '1': '1y', '1-4': '1-4y'})  # for consistency
+    counts = counts.drop(columns='5+').rename(columns={'0': '0y', '1': '1y', '2-4': '2-4y'})  # for consistency
 
-    # get person-years of 0 year-old, 1 year-olds and 1-4 year-old
+    # get person-years of 0 year-old, 1 year-olds and 2-4 year-old
     py_ = output['tlo.methods.demography']['person_years']
     years = pd.to_datetime(py_['date']).dt.year
-    py = pd.DataFrame(index=years, columns=['0y', '1y', '1-4y'])
+    py = pd.DataFrame(index=years, columns=['0y', '1y', '2-4y'])
     for year in years:
         tot_py = (
             (py_.loc[pd.to_datetime(py_['date']).dt.year == year]['M']).apply(pd.Series) +
@@ -113,18 +130,18 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
         tot_py.index = tot_py.index.astype(int)
         py.loc[year, '0y'] = tot_py.loc[0].values[0]
         py.loc[year, '1y'] = tot_py.loc[1].values[0]
-        py.loc[year, '1-4y'] = tot_py.loc[2:4].sum().values[0]
+        py.loc[year, '2-4y'] = tot_py.loc[2:4].sum().values[0]
 
-    # Incidence rate among 0, 1, 1-4 year-olds
+    # Incidence rate among 0, 1, 2-4 year-olds
     inc_rate = dict()
-    for age_grp in ['0y', '1y', '1-4y']:
+    for age_grp in ['0y', '1y', '2-4y']:
         inc_rate[age_grp] = counts[age_grp].apply(pd.Series).div(py[age_grp], axis=0).dropna()
 
     # Produce mean inicence rates of incidence rate during the simulation:
     inc_mean = pd.DataFrame()
     inc_mean['0y_model_output'] = inc_rate['0y'].mean()
     inc_mean['1y_model_output'] = inc_rate['1y'].mean()
-    inc_mean['1-4y_model_output'] = inc_rate['1-4y'].mean()
+    inc_mean['2-4y_model_output'] = inc_rate['2-4y'].mean()
 
     # calculate death rate
     deaths_df = output['tlo.methods.demography']['death']
@@ -149,7 +166,7 @@ def plot_for_column_of_interest(results, column_of_interest):
     data.plot.bar()
     plt.title(f'Incidence rate (/100 py): {column_of_interest}')
     plt.tight_layout()
-    plt.savefig(outputpath / ("ALRI_inc_rate_by_scenario" + datestamp + ".pdf"), format='pdf')
+    # plt.savefig(outputpath / ("ALRI_inc_rate_by_scenario" + datestamp + ".pdf"), format='pdf')
     plt.show()
 
 
@@ -160,8 +177,8 @@ for column_of_interest in inc_by_pathogen[list(inc_by_pathogen.keys())[0]].colum
 # Plot death rates by year: across the scenarios
 data = {}
 for label in deaths.keys():
-    data.update({label: deaths[label]})
-pd.concat(data, axis=1).plot.bar()
-plt.title('Number of Deaths Due to ALRI')
-plt.savefig(outputpath / ("ALRI_deaths_by_scenario" + datestamp + ".pdf"), format='pdf')
+    data.update({label: deaths[label].mean()})
+
+plt.bar(data.keys(), data.values(), align='center')
+plt.title(f'Mean number of deaths from {start_date.year} to {end_date.year}')
 plt.show()
