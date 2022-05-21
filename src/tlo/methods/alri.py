@@ -3,14 +3,15 @@ Childhood Acute Lower Respiratory Infection Module
 
 Overview
 --------
-Individuals are exposed to the risk of infection by a pathogen (and potentially also with a potential bacterial
-co-infection infection) that can cause one of two types of acute lower respiratory infection (Alri) modelled in TLO.
-The disease is manifested as either pneumonia or other alri including bronchiolitis.
+Individuals are exposed to the risk of infection by a pathogen (and potentially also with a bacterial
+co-infection / secondary infection) that can cause one of two types of acute lower respiratory infection (Alri)
+modelled in TLO.
+The disease is manifested as either pneumonia or other alri (including bronchiolitis).
 
-During an episode (prior to recovery - either naturally or cured with treatment), symptom are manifest and there may be
-complications (e.g. local pulmonary complication: pleural effusion, empyema, lung abscess, pneumothorax; and/or
-systemic complications: sepsis; and/or complications regarding oxygen exchange: hypoxaemia.
-The complications onset at the time of disease onset
+During an episode (prior to recovery - either naturally or cured with treatment), symptoms are manifested
+and there may be complications (e.g. local pulmonary complication: pleural effusion, empyema, lung abscess,
+pneumothorax; and/or systemic complications: sepsis; and/or complications regarding oxygen exchange: hypoxaemia.
+The complications onset at the time of disease onset.
 
 The individual may recover naturally or die. The risk of death depends on the type of disease and the presence of some
 of the complications.
@@ -30,7 +31,7 @@ Following PRs:
 PR3: Achieve a basic calibration of the model for incidence and deaths,
 adjusting healthcare seeking behaviour and efficacy of treatment accordingly.
 
-PR4: Elaborate the HSI system to the extent needed.
+PR4: Achieve a basic calibration of the HSI outputs
 
 Issue #438
 
@@ -332,15 +333,6 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'relative rate of acquiring Alri for indoor air pollution'
                       ),
-        'rr_ALRI_crowding':
-            Parameter(Types.REAL,
-                      'relative rate of acquiring Alri for children living in crowed households (>7 pph)'
-                      ),  # TODO: @Ines change to wealth? -- remove
-        'rr_ALRI_underweight':
-            Parameter(Types.REAL,
-                      'relative rate of acquiring Alri for underweight children'
-                      ),  # TODO: @Ines change to SAM/MAM? -- remove
-
         # Probability of bacterial co- / secondary infection -----
         'prob_viral_pneumonia_bacterial_coinfection':
             Parameter(Types.REAL,
@@ -886,7 +878,18 @@ class Alri(Module):
         # Antibiotic therapy -------------------
 
         # Antibiotics for non-severe pneumonia - oral amoxicillin for 5 days
-        self.consumables_used_in_hsi['Amoxicillin_tablet_or_suspension'] = {
+        self.consumables_used_in_hsi['Amoxicillin_tablet_or_suspension_5days'] = {
+            get_item_code(item='Amoxycillin 250mg_1000_CMST'):
+                lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
+                                                          {12: 0.006, 36: 0.012, np.inf: 0.018}
+                                                          ),
+            get_item_code(item='Amoxycillin 125mg/5ml suspension, PFR_0.025_CMST'):
+                lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
+                                                          {12: 1, 36: 2, np.inf: 3}
+                                                          ),
+        }
+
+        self.consumables_used_in_hsi['Amoxicillin_tablet_or_suspension_3days'] = {
             get_item_code(item='Amoxycillin 250mg_1000_CMST'):
                 lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
                                                           {12: 0.01, 36: 0.02, np.inf: 0.03}
@@ -1017,10 +1020,6 @@ class Alri(Module):
             get_item_code(item='Salbutamol, syrup, 2 mg/5 ml'): 1,
             get_item_code(item='Salbutamol, tablet, 4 mg'): 1
         }
-
-        # todo @Ines - the HSI asks for "Brochodilator_and_Steroids" -- but this is not defined.
-        # todo @Ines - to remove the below, and direct the request for consumables to be for 'Inhaled_Bronchio...'
-        self.consumables_used_in_hsi["Brochodilator_and_Steroids"] = {}
 
     def end_episode(self, person_id):
         """End the episode infection for a person (i.e. reset all properties to show no current infection or
@@ -1245,7 +1244,7 @@ class Alri(Module):
         self.logging_event.new_treated()
 
         # Gather underlying properties that will affect success of treatment
-        needs_oxyegn = person.ri_SpO2_level == '<90%'
+        needs_oxygen = person.ri_SpO2_level == '<90%'
         imci_symptom_based_classification = self.get_imci_classification_based_on_symptoms(
             child_is_younger_than_2_months=person.age_exact_years < (2.0 / 12.0),
             symptoms=self.sim.modules['SymptomManager'].has_what(person_id)
@@ -1254,7 +1253,7 @@ class Alri(Module):
         # Will the treatment fail (depends on the treatment given as well as underlying properties)
         treatment_fails = self._treatment_fails(
             antibiotic_provided=antibiotic_provided, oxygen_provided=oxygen_provided,
-            imci_symptom_based_classification=imci_symptom_based_classification, needs_oxygen=needs_oxyegn)
+            imci_symptom_based_classification=imci_symptom_based_classification, needs_oxygen=needs_oxygen)
 
         # Cancel death if the treatment is successful:
         if not treatment_fails:
@@ -1493,10 +1492,6 @@ class Models:
             if prob_pulmonary_complications > self.rng.random_sample():
                 for c in ['pneumothorax', 'pleural_effusion', 'lung_abscess', 'empyema']:
                     probs[c] += p[f'prob_{c}_in_pulmonary_complicated_pneumonia']
-                    # TODO: @Ines - turn this into an issue - lung abscess, empyema should only apply to
-                    #  (primary or secondary) bacteria ALRIs. Requires two sets of parameters for the prob
-                    #  that a complication is one of possible types for those with and without bacterial infection
-                    #  (i.e. the vector of probabilities must sum to 1.0 in either case).
 
             # probabilities for systemic complications
             if primary_path_is_bacterial or has_secondary_bacterial_inf:
@@ -1927,7 +1922,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = facility_level
 
     def _as_in_patient(self, facility_level):
-        """Cast this HSI as an out-patient appointment."""
+        """Cast this HSI as an in-patient appointment."""
         self.TREATMENT_ID = f'{self._treatment_id_stub}_Inpatient'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = facility_level
@@ -1980,8 +1975,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
     def _schedule_follow_up_at_same_facility_as_outpatient(self):
         """Schedule a copy of this event to occur in 5 days time as a 'follow-up' appointment at this level as an
         out-patient."""
-        # todo - @Ines: please confirm that you want the follow-up appointment to be at the same level as that at which
-        #  treatment is provided.
+
         self.sim.modules['HealthSystem'].schedule_hsi_event(
             HSI_Alri_Treatment(
                 module=self.module,
@@ -2217,9 +2211,13 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
         def _try_treatment(antibiotic_indicated: str, oxygen_indicated: bool) -> None:
             """Try to provide a `treatment_indicated` and refer to next level if the consumables are not available."""
 
-            antibiotic_consumables_available = self._get_any_cons('Amoxicillin_tablet_or_suspension') \
+            antibiotic_consumables_available = self._get_any_cons('Amoxicillin_tablet_or_suspension_5days') \
                 if antibiotic_indicated == '5day_oral_amoxicillin' \
-                else self._get_cons('Ampicillin_gentamicin_therapy_for_severe_pneumonia')
+                else (self._get_any_cons('Amoxicillin_tablet_or_suspension_3days') if
+                      antibiotic_indicated == '3day_oral_amoxicillin'
+                      else (any([self._get_cons('Ampicillin_gentamicin_therapy_for_severe_pneumonia'),
+                                 self._get_cons('Benzylpenicillin_gentamicin_therapy_for_severe_pneumonia')]))
+                      )
 
             oxygen_available = self._get_cons('Oxygen_Therapy')
             oxygen_indicated_and_available_or_oxygen_not_indicated = (oxygen_available and oxygen_indicated) or \
@@ -2243,8 +2241,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
 
         def do_if_fast_breathing_pneumonia(facility_level):
             """What to do if classification is `fast_breathing`."""
-            # todo - @Ines - this should *sometimes* provide '3day_oral_amoxicillin'
-            _try_treatment(antibiotic_indicated='5day_oral_amoxicillin', oxygen_indicated=False)
+            _try_treatment(antibiotic_indicated='3day_oral_amoxicillin', oxygen_indicated=False)
 
         def do_if_chest_indrawing_pneumonia(facility_level):
             """What to do if classification is `chest_indrawing_pneumonia`."""
@@ -2254,8 +2251,8 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                 _try_treatment(antibiotic_indicated='5day_oral_amoxicillin', oxygen_indicated=False)
 
         def do_if_danger_signs_pneumonia(facility_level):
-            """What to do if classification is `danger_signs_pneumonia."""
-            _ = self._get_cons('Ceftriaxone_therapy_for_severe_pneumonia')
+            """What to do if classification is `danger_signs_pneumonia"""
+            # _ = self._get_cons('Ceftriaxone_therapy_for_severe_pneumonia')  # this is second line antibiotic
 
             if has_staph_aureus:
                 _ = self._get_cons('2nd_line_Antibiotic_therapy_for_severe_staph_pneumonia')
@@ -2264,7 +2261,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                 _provide_consumable_and_refer('First_dose_oral_amoxicillin_for_referral')
 
             else:
-                _ = self._get_cons('Brochodilator_and_Steroids')
+                _ = self._get_cons('Inhaled_Brochodilator')
 
                 if not self._is_as_in_patient:
                     _ = self._get_cons('First_dose_IM_antibiotics_for_referral')
