@@ -1039,8 +1039,11 @@ class SimplifiedPregnancyAndLabour(Module):
         super().__init__(name='Labour')
 
     def read_parameters(self, *args):
-        self.parameters['prob_live_birth'] = 0.67
-        # This is a reasonable estimate for the current versions of the Labour and other modules
+
+        parameter_dataframe = pd.read_excel(self.sim.modules['Contraception'].resourcefilepath /
+                                            'ResourceFile_Contraception.xlsx',
+                                            sheet_name='simplified_labour_parameters')
+        self.load_parameters_from_dataframe(parameter_dataframe)
 
     def initialise_population(self, population):
         df = population.props

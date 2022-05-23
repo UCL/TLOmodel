@@ -230,8 +230,7 @@ class CareOfWomenDuringPregnancy(Module):
         # -------------------------------------------- ECTOPIC PREGNANCY ---------------------------------------------
         self.item_codes_preg_consumables['ectopic_pregnancy_core'] = \
             get_list_of_items(self, ['Halothane (fluothane)_250ml_CMST',
-                                     'Scalpel blade size 22 (individually wrapped)_100_CMST',
-                                     'Chlorhexidine 1.5% solution_5_CMST'])
+                                     'Scalpel blade size 22 (individually wrapped)_100_CMST'])
 
         self.item_codes_preg_consumables['ectopic_pregnancy_optional'] = \
             get_list_of_items(self, ['Sodium chloride, injectable solution, 0,9 %, 500 ml',
@@ -255,9 +254,9 @@ class CareOfWomenDuringPregnancy(Module):
 
         # ------------------------------------------- POST ABORTION CARE - SEPSIS -------------------------------------
         self.item_codes_preg_consumables['post_abortion_care_sepsis_core'] = \
-            get_list_of_items(self, ['Ampicillin, powder for injection, 500 mg, vial',
-                                     'Gentamycin, injection, 40 mg/ml in 2 ml vial',
-                                     'Metronidazole, injection, 500 mg in 100 ml vial'])
+            get_list_of_items(self, ['Benzylpenicillin 3g (5MU), PFR_each_CMST',
+                                     'Gentamycin, injection, 40 mg/ml in 2 ml vial'])
+        #  'Metronidazole, injection, 500 mg in 100 ml vial'])
 
         self.item_codes_preg_consumables['post_abortion_care_sepsis_optional'] = \
             get_list_of_items(self, ['Sodium chloride, injectable solution, 0,9 %, 500 ml',
@@ -269,10 +268,12 @@ class CareOfWomenDuringPregnancy(Module):
         # ------------------------------------------- POST ABORTION CARE - SHOCK -------------------------------------
         self.item_codes_preg_consumables['post_abortion_care_shock'] = \
             get_list_of_items(self, ['Sodium chloride, injectable solution, 0,9 %, 500 ml',
-                                     'Cannula iv  (winged with injection pot) 18_each_CMST',
-                                     'Disposables gloves, powder free, 100 pieces per box',
-                                     'Giving set iv administration + needle 15 drops/ml_each_CMST',
                                      'Oxygen, 1000 liters, primarily with oxygen cylinders'])
+
+        self.item_codes_preg_consumables['post_abortion_care_shock_optional'] = \
+            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 18_each_CMST',
+                                     'Disposables gloves, powder free, 100 pieces per box',
+                                     'Giving set iv administration + needle 15 drops/ml_each_CMST'])
 
         # ---------------------------------- URINE DIPSTICK ----------------------------------------------------------
         self.item_codes_preg_consumables['urine_dipstick'] = get_list_of_items(self, ['Urine analysis'])
@@ -2328,6 +2329,10 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                 df.at[person_id, 'ac_admitted_for_immediate_delivery'] = self.module.rng.choice(
                     delivery_mode, p=params['prob_delivery_modes_spe'])
 
+            # Log the indication for any caesarean deliveries
+            if df.at[person_id, 'ac_admitted_for_immediate_delivery'] in ('caesarean_now', 'caesarean_future'):
+                mni[person_id]['cs_indication'] = 'spe_ec'
+
         # ========================= INITIATE TREATMENT FOR ANTEPARTUM HAEMORRHAGE =================================
         # Treatment delivered to mothers due to haemorrhage in the antepartum period is dependent on the underlying
         # etiology of the bleeding (in this model, whether a woman is experiencing a placental abruption or
@@ -2631,14 +2636,16 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
             )
 
             cons_for_shock = self.get_consumables(
-                item_codes=cons['post_abortion_care_shock'])
+                item_codes=cons['post_abortion_care_shock'],
+                optional_item_codes=cons['post_abortion_care_shock_optional'])
 
             if cons_for_haemorrhage and cons_for_shock and baseline_cons and sf_check:
                 df.at[person_id, 'ac_received_post_abortion_care'] = True
 
         elif abortion_complications.has_any([person_id], 'injury', first=True):
             cons_for_shock = self.get_consumables(
-                item_codes=cons['post_abortion_care_shock'])
+                item_codes=cons['post_abortion_care_shock'],
+                optional_item_codes=cons['post_abortion_care_shock_optional'])
 
             if cons_for_shock and baseline_cons and sf_check:
                 df.at[person_id, 'ac_received_post_abortion_care'] = True
