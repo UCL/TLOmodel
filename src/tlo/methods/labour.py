@@ -542,7 +542,7 @@ class Labour(Module):
         'la_intrapartum_still_birth': Property(Types.BOOL, 'whether this womans most recent pregnancy has ended '
                                                            'in a stillbirth'),
         'la_parity': Property(Types.REAL, 'total number of previous deliveries'),
-        'la_previous_cs_delivery': Property(Types.REAL, 'total number of previous deliveries'),
+        'la_previous_cs_delivery': Property(Types.INT, 'total number of previous deliveries'),
         'la_has_previously_delivered_preterm': Property(Types.BOOL, 'whether the woman has had a previous preterm '
                                                                     'delivery for any of her previous deliveries'),
         'la_obstructed_labour': Property(Types.BOOL, 'Whether this woman is experiencing obstructed labour'),
