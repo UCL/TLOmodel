@@ -1,5 +1,5 @@
-from .output_all_key_outcomes_per_year import output_key_outcomes_from_scenario_file
 from .output_all_death_calibration_per_year import output_all_death_calibration_per_year
+from .output_all_key_outcomes_per_year import output_key_outcomes_from_scenario_file
 
 for file in ['standard_mph_calibration']:
     output_key_outcomes_from_scenario_file(scenario_filename=f'{file}.py',
