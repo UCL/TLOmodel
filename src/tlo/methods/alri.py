@@ -552,6 +552,11 @@ class Alri(Module):
                       'probability of treatment failure by day 6 or relapse by day 14 '
                       'of 3-day course amoxicillin for treating fast-breathing pneumonia'
                       ),
+        '5day_amoxicillin_for_fast_breathing_treatment_failure_or_relapse':
+            Parameter(Types.REAL,
+                      'probability of treatment failure by day 6 or relapse by day 14 '
+                      'of 3-day course amoxicillin for treating fast-breathing pneumonia'
+                      ),
         '3day_amoxicillin_for_chest_indrawing_treatment_failure_or_relapse':
             Parameter(Types.REAL,
                       'probability of treatment failure by day 6 or relapse by day 14 '
@@ -1364,7 +1369,6 @@ class Models:
                     Predictor().when('(va_measles_all_doses == False) & (age_years >= 1)',
                                      p['rr_ALRI_incomplete_measles_immunisation']),
                     Predictor().when('(hv_inf == True) & (hv_art!= "on_VL_suppressed")', p['rr_ALRI_HIV/AIDS']),
-                    Predictor('un_clinical_acute_malnutrition').when('SAM', p['rr_ALRI_underweight']),
                     Predictor().when('(nb_breastfeeding_status != "exclusive") & (age_exact_years < 1/6)',
                                      p['rr_ALRI_non_exclusive_breastfeeding'])
                 )
