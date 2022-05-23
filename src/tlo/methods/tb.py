@@ -1401,6 +1401,13 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             # increase probability of VMMC after hiv test
             self.sim.modules["Hiv"].parameters["prob_circ_after_hiv_test"] = 0.25
 
+            # increase tb treatment success rates - increase by 20%
+            self.sim.modules["Tb"].parameters["prob_tx_success_ds"] = 1.0
+            self.sim.modules["Tb"].parameters["prob_tx_success_mdr"] = 0.72
+            self.sim.modules["Tb"].parameters["prob_tx_success_0_4"] = 1.0
+            self.sim.modules["Tb"].parameters["prob_tx_success_5_14"] = 1.0
+            self.sim.modules["Tb"].parameters["prob_tx_success_shorter"] = 1.0
+
             # change IPT eligibility for TB contacts to all years
             p["age_eligibility_for_ipt"] = 100
 
