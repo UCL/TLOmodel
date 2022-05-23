@@ -539,7 +539,7 @@ class LogsDict(Mapping):
             return self._results_cache[key]  # return the added results
 
         else:
-            return KeyError
+            raise KeyError
 
     def __contains__(self, k):
         # if key k is a valid logfile entry
