@@ -287,6 +287,15 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
             possibly_care_seeking_subgroup = self._select_persons_with_any_symptoms(
                 subgroup, care_seeking_symptoms
             )
+
+            # If a person has had an emergency appointment scheduled this day already due
+            # to emergency symptoms, then do not allow a non-emergency appointment to be
+            # scheduled in addition.
+            if len(emergency_symptoms) > 0:
+                possibly_care_seeking_subgroup.drop(
+                    index=set(possibly_care_seeking_subgroup.index).intersection(emergency_care_seeking_subgroup.index),
+                    inplace=True)
+
             if module.force_any_symptom_to_lead_to_healthcareseeking:
                 # This HSB module flag causes a generic non-emergency appointment to be
                 # scheduled for any symptom immediately
