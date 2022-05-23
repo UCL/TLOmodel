@@ -3,9 +3,9 @@ import os
 import pandas as pd
 from matplotlib import pyplot as plt
 
-from src.scripts.maternal_perinatal_analyses import analysis_utility_functions
-from tlo.analysis.utils import get_scenario_outputs  # create_pickles_locally
-from tlo.analysis.utils import extract_results
+from tlo.analysis.utils import extract_results, get_scenario_outputs
+
+from .. import analysis_utility_functions
 
 plt.style.use('seaborn')
 
