@@ -1,0 +1,252 @@
+tlo.methods.schisto module
+==========================
+
+.. automodule:: tlo.methods.schisto
+
+
+.. autoclass:: Schisto
+
+     Bases: :class:`tlo.core.Module`
+
+
+     **PARAMETERS:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - prob_sent_to_lab_test_children
+          - REAL
+          - Probability that infected child gets sent to lab test
+        * - prob_sent_to_lab_test_adults
+          - REAL
+          - Probability that an infected adults gets sent to lab test
+        * - delay_till_hsi_a_repeated
+          - REAL
+          - Time till seeking healthcare again after not being sent to schisto test: start
+        * - delay_till_hsi_b_repeated
+          - REAL
+          - Time till seeking healthcare again after not being sent to schisto test: end
+        * - PZQ_efficacy
+          - REAL
+          - The efficacy of Praziquantel in clearing burden of any Schistosomiasis worm species
+        * - MDA_coverage_historical
+          - DATA_FRAME
+          - Probability of getting PZQ in the MDA for PSAC, SAC and Adults in historic rounds
+        * - MDA_coverage_prognosed
+          - DATA_FRAME
+          - Probability of getting PZQ in the MDA for PSAC, SAC and Adults in future rounds, with the frequency given in months
+
+
+     **PROPERTIES:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - ss_last_PZQ_date
+          - DATE
+          - Day of the most recent treatment with PZQ
+
+
+
+     **Class attributes:**
+
+     CAUSES_OF_DEATH : {}
+
+     CAUSES_OF_DISABILITY : {'Schistosomiasis': <tlo.methods.causes.Cause object at 0x7ff868f2c1c0>}
+
+     INIT_DEPENDENCIES : {'Demography', 'SymptomManager'}
+
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>}
+
+     OPTIONAL_INIT_DEPENDENCIES : {'HealthSystem', 'HealthBurden'}
+
+     module_prefix : ss
+
+     **Functions (defined or overridden in class Schisto):**
+
+     .. automethod:: __init__
+
+     .. automethod:: read_parameters
+
+     .. automethod:: pre_initialise_population
+
+     .. automethod:: initialise_population
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: on_birth
+
+     .. automethod:: report_daly_values
+
+     .. automethod:: do_on_presentation_with_symptoms
+
+     .. automethod:: do_effect_of_treatment
+
+     .. automethod:: _load_parameters_from_workbook
+
+     .. automethod:: _register_symptoms
+
+     .. automethod:: _get_disability_weight
+
+     .. automethod:: _get_item_code_for_praziquantel
+
+     .. automethod:: _schedule_mda_events
+
+
+
+
+
+
+
+
+.. autoclass:: SchistoInfectionWormBurdenEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class SchistoInfectionWormBurdenEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: SchistoMatureWorms
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class SchistoMatureWorms):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: SchistoWormsNatDeath
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class SchistoWormsNatDeath):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: SchistoMDAEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class SchistoMDAEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: _select_recipients
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Schisto_TestingFollowingSymptoms
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Schisto_TestingFollowingSymptoms):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Schisto_TreatmentFollowingDiagnosis
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Schisto_TreatmentFollowingDiagnosis):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Schisto_MDA
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Schisto_MDA):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: SchistoLoggingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class SchistoLoggingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+

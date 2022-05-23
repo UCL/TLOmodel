@@ -422,8 +422,8 @@
             <span class="k">return</span> <span class="mf">1.0</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">load_pickled_dataframes</span><span class="p">(</span><span class="n">results_folder</span><span class="p">,</span> <span class="n">_draw</span><span class="p">,</span> <span class="n">_run</span><span class="p">,</span> <span class="s1">&#39;tlo.methods.demography&#39;</span>
-                                               <span class="p">)[</span><span class="s1">&#39;tlo.methods.demography&#39;</span><span class="p">][</span><span class="s1">&#39;scaling_factor&#39;</span><span class="p">][</span><span class="s1">&#39;scaling_factor&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">return</span> <span class="n">load_pickled_dataframes</span><span class="p">(</span><span class="n">results_folder</span><span class="p">,</span> <span class="n">_draw</span><span class="p">,</span> <span class="n">_run</span><span class="p">,</span> <span class="s1">&#39;tlo.methods.population&#39;</span>
+                                               <span class="p">)[</span><span class="s1">&#39;tlo.methods.population&#39;</span><span class="p">][</span><span class="s1">&#39;scaling_factor&#39;</span><span class="p">][</span><span class="s1">&#39;scaling_factor&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
             <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
                 <span class="k">return</span> <span class="mf">1.0</span>
 
@@ -579,9 +579,9 @@
     <span class="n">output</span> <span class="o">=</span> <span class="n">parse_log_file</span><span class="p">(</span><span class="n">logfile</span><span class="p">)</span>
 
     <span class="c1"># 1) Get model outputs:</span>
-    <span class="c1"># - get scaling factor if it has been computed:</span>
-    <span class="k">if</span> <span class="s1">&#39;scaling_factor&#39;</span> <span class="ow">in</span> <span class="n">output</span><span class="p">[</span><span class="s1">&#39;tlo.methods.demography&#39;</span><span class="p">]:</span>
-        <span class="n">sf</span> <span class="o">=</span> <span class="n">output</span><span class="p">[</span><span class="s1">&#39;tlo.methods.demography&#39;</span><span class="p">][</span><span class="s1">&#39;scaling_factor&#39;</span><span class="p">][</span><span class="s1">&#39;scaling_factor&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="c1"># - get scaling factor:</span>
+    <span class="k">if</span> <span class="s1">&#39;scaling_factor&#39;</span> <span class="ow">in</span> <span class="n">output</span><span class="p">[</span><span class="s1">&#39;tlo.methods.population&#39;</span><span class="p">]:</span>
+        <span class="n">sf</span> <span class="o">=</span> <span class="n">output</span><span class="p">[</span><span class="s1">&#39;tlo.methods.population&#39;</span><span class="p">][</span><span class="s1">&#39;scaling_factor&#39;</span><span class="p">][</span><span class="s1">&#39;scaling_factor&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">sf</span> <span class="o">=</span> <span class="mf">1.0</span>
 
@@ -708,11 +708,11 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_results_cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>  <span class="c1"># return the added results</span>
 
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="ne">KeyError</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span>
 
     <span class="k">def</span> <span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
-        <span class="c1"># return true if key is found in module specific log files dictionary else return KeyError</span>
-        <span class="k">return</span> <span class="kc">True</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logfile_names_and_paths</span> <span class="k">else</span> <span class="ne">KeyError</span>
+        <span class="c1"># if key k is a valid logfile entry</span>
+        <span class="k">return</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logfile_names_and_paths</span>
 
 <div class="viewcode-block" id="LogsDict.items"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.LogsDict.items">[docs]</a>    <span class="k">def</span> <span class="nf">items</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># parse module-specific log file and return results as a generator</span>
@@ -756,7 +756,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Mar 30, 2022.
+        Last updated on May 23, 2022.
       </span>
 
     </p>

@@ -1,0 +1,4 @@
+tlo.methods.fullmodel module
+============================
+
+.. automodule:: tlo.methods.fullmodel

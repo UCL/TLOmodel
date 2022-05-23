@@ -458,6 +458,15 @@
             <span class="n">possibly_care_seeking_subgroup</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_select_persons_with_any_symptoms</span><span class="p">(</span>
                 <span class="n">subgroup</span><span class="p">,</span> <span class="n">care_seeking_symptoms</span>
             <span class="p">)</span>
+
+            <span class="c1"># If a person has had an emergency appointment scheduled this day already due</span>
+            <span class="c1"># to emergency symptoms, then do not allow a non-emergency appointment to be</span>
+            <span class="c1"># scheduled in addition.</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">emergency_symptoms</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">possibly_care_seeking_subgroup</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span>
+                    <span class="n">index</span><span class="o">=</span><span class="nb">set</span><span class="p">(</span><span class="n">possibly_care_seeking_subgroup</span><span class="o">.</span><span class="n">index</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">emergency_care_seeking_subgroup</span><span class="o">.</span><span class="n">index</span><span class="p">),</span>
+                    <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
             <span class="k">if</span> <span class="n">module</span><span class="o">.</span><span class="n">force_any_symptom_to_lead_to_healthcareseeking</span><span class="p">:</span>
                 <span class="c1"># This HSB module flag causes a generic non-emergency appointment to be</span>
                 <span class="c1"># scheduled for any symptom immediately</span>
@@ -516,7 +525,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Mar 30, 2022.
+        Last updated on May 23, 2022.
       </span>
 
     </p>

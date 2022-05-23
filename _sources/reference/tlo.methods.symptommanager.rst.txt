@@ -64,6 +64,8 @@ tlo.methods.symptommanager module
 
      .. automethod:: clear_symptoms
 
+     .. automethod:: caused_by
+
      .. automethod:: get_persons_with_newly_onset_symptoms
 
      .. automethod:: reset_persons_with_newly_onset_symptoms

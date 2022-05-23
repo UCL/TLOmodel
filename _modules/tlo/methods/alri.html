@@ -1224,8 +1224,8 @@
 
             <span class="c1"># Compute scaling factors for each age-group:</span>
             <span class="n">_age_effect</span> <span class="o">=</span> <span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">_target</span><span class="p">)</span> <span class="o">/</span>
-                           <span class="n">unscaled_lm</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">])</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">age_years</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
-                           <span class="p">)</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+                           <span class="n">unscaled_lm</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">age_years</span> <span class="o">&lt;</span> <span class="mi">5</span><span class="p">)])</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">age_years</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+                           <span class="p">)</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
 
             <span class="c1"># Return the linear model with the appropriate scaling factor</span>
             <span class="k">return</span> <span class="n">make_linear_model</span><span class="p">(</span><span class="n">age_effects</span><span class="o">=</span><span class="n">_age_effect</span><span class="p">)</span>
@@ -1978,7 +1978,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Mar 30, 2022.
+        Last updated on May 23, 2022.
       </span>
 
     </p>

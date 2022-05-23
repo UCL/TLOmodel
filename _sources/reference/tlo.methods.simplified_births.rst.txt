@@ -38,30 +38,39 @@ tlo.methods.simplified_births module
         * - Item
           - Type
           - Description
+        * - si_date_of_last_delivery
+          - DATE
+          - Date of delivery for the most recent pregnancy for this individual (if has ever been pregnant). Maybe in the future if is currently pregnant.
+        * - si_breastfeeding_status_6mo_to_23mo
+          - CATEGORICAL
+          - How this neonate is breastfeed during ages 6mo to 23 months.  Possible values are: [none, non_exclusive, exclusive, ]
         * - is_pregnant
           - BOOL
           - Whether this individual is currently pregnant
         * - date_of_last_pregnancy
           - DATE
           - Date of the onset of the last pregnancy of this individual (if has ever been pregnant).
-        * - si_date_of_last_delivery
-          - DATE
-          - Date of delivery for the most recent pregnancy for this individual (if has ever been pregnant). Maybe in the future if is currently pregnant.
+        * - nb_low_birth_weight_status
+          - CATEGORICAL
+          - temporary property.  Possible values are: [extremely_low_birth_weight, very_low_birth_weight, low_birth_weight, normal_birth_weight, macrosomia, ]
+        * - nb_size_for_gestational_age
+          - CATEGORICAL
+          - temporary property.  Possible values are: [small_for_gestational_age, average_for_gestational_age, large_for_gestational_age, ]
+        * - nb_late_preterm
+          - BOOL
+          - temporary property
+        * - nb_early_preterm
+          - BOOL
+          - temporary property
         * - nb_breastfeeding_status
           - CATEGORICAL
-          - How this neonate is being breastfed currently.  Possible values are: [none, non_exclusive, exclusive, ]
-        * - si_breastfeeding_status_6mo_to_23mo
-          - CATEGORICAL
-          - How this neonate is breastfeed during ages 6mo to 23 months.  Possible values are: [none, non_exclusive, exclusive, ]
-        * - nb_early_init_breastfeeding
-          - BOOL
-          - whether this neonate initiated breastfeeding within 1 hour of birthThis is always FALSE in this module.
+          - temporary property.  Possible values are: [none, non_exclusive, exclusive, ]
 
 
 
      **Class attributes:**
 
-     ALTERNATIVE_TO : {'PostnatalSupervisor', 'NewbornOutcomes', 'PregnancySupervisor', 'Labour', 'Contraception'}
+     ALTERNATIVE_TO : {'NewbornOutcomes', 'Contraception', 'PostnatalSupervisor', 'PregnancySupervisor', 'Labour'}
 
      INIT_DEPENDENCIES : {'Demography'}
 

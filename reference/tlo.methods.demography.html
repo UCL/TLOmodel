@@ -201,31 +201,35 @@
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>pop_2010</p></td>
+<tr class="row-even"><td><p>max_age_initial</p></td>
+<td><p>INT</p></td>
+<td><p>The oldest age (in whole years) in the initial population</p></td>
+</tr>
+<tr class="row-odd"><td><p>pop_2010</p></td>
 <td><p>DATA_FRAME</p></td>
 <td><p>Population in 2010 for initialising population</p></td>
 </tr>
-<tr class="row-odd"><td><p>district_num_to_district_name</p></td>
+<tr class="row-even"><td><p>district_num_to_district_name</p></td>
 <td><p>DICT</p></td>
 <td><p>Mapping from district_num to district name</p></td>
 </tr>
-<tr class="row-even"><td><p>district_num_to_region_name</p></td>
+<tr class="row-odd"><td><p>district_num_to_region_name</p></td>
 <td><p>DICT</p></td>
 <td><p>Mapping from district_num to region name</p></td>
 </tr>
-<tr class="row-odd"><td><p>districts_in_region</p></td>
+<tr class="row-even"><td><p>districts_in_region</p></td>
 <td><p>DICT</p></td>
 <td><p>Set of districts (by name) that are within a region (by name)</p></td>
 </tr>
-<tr class="row-even"><td><p>all_cause_mortality_schedule</p></td>
+<tr class="row-odd"><td><p>all_cause_mortality_schedule</p></td>
 <td><p>DATA_FRAME</p></td>
 <td><p>All-cause age-specific mortality rates from WPP</p></td>
 </tr>
-<tr class="row-odd"><td><p>fraction_of_births_male</p></td>
+<tr class="row-even"><td><p>fraction_of_births_male</p></td>
 <td><p>REAL</p></td>
 <td><p>Birth Sex Ratio</p></td>
 </tr>
-<tr class="row-even"><td><p>gbd_causes_of_death_data</p></td>
+<tr class="row-odd"><td><p>gbd_causes_of_death_data</p></td>
 <td><p>DATA_FRAME</p></td>
 <td><p>Proportion of deaths in each age/sex group attributable to each possible cause of death in the GBD dataset.</p></td>
 </tr>
@@ -301,7 +305,7 @@
 </table>
 <p><strong>Class attributes:</strong></p>
 <p>AGE_RANGE_CATEGORIES : [‘0-4’, ‘5-9’, ‘10-14’, ‘15-19’, ‘20-24’, ‘25-29’, ‘30-34’, ‘35-39’, ‘40-44’, ‘45-49’, ‘50-54’, ‘55-59’, ‘60-64’, ‘65-69’, ‘70-74’, ‘75-79’, ‘80-84’, ‘85-89’, ‘90-94’, ‘95-99’, ‘100+’]</p>
-<p>AGE_RANGE_LOOKUP : defaultdict(&lt;function create_age_range_lookup.&lt;locals&gt;.&lt;lambda&gt; at 0x7fe46d7b24c0&gt;, {0: ‘0-4’, 1: ‘0-4’, 2: ‘0-4’, 3: ‘0-4’, 4: ‘0-4’, 5: ‘5-9’, 6: ‘5-9’, 7: ‘5-9’, 8: ‘5-9’, 9: ‘5-9’, 10: ‘10-14’, 11: ‘10-14’, 12: ‘10-14’, 13: ‘10-14’, 14: ‘10-14’, 15: ‘15-19’, 16: ‘15-19’, 17: ‘15-19’, 18: ‘15-19’, 19: ‘15-19’, 20: ‘20-24’, 21: ‘20-24’, 22: ‘20-24’, 23: ‘20-24’, 24: ‘20-24’, 25: ‘25-29’, 26: ‘25-29’, 27: ‘25-29’, 28: ‘25-29’, 29: ‘25-29’, 30: ‘30-34’, 31: ‘30-34’, 32: ‘30-34’, 33: ‘30-34’, 34: ‘30-34’, 35: ‘35-39’, 36: ‘35-39’, 37: ‘35-39’, 38: ‘35-39’, 39: ‘35-39’, 40: ‘40-44’, 41: ‘40-44’, 42: ‘40-44’, 43: ‘40-44’, 44: ‘40-44’, 45: ‘45-49’, 46: ‘45-49’, 47: ‘45-49’, 48: ‘45-49’, 49: ‘45-49’, 50: ‘50-54’, 51: ‘50-54’, 52: ‘50-54’, 53: ‘50-54’, 54: ‘50-54’, 55: ‘55-59’, 56: ‘55-59’, 57: ‘55-59’, 58: ‘55-59’, 59: ‘55-59’, 60: ‘60-64’, 61: ‘60-64’, 62: ‘60-64’, 63: ‘60-64’, 64: ‘60-64’, 65: ‘65-69’, 66: ‘65-69’, 67: ‘65-69’, 68: ‘65-69’, 69: ‘65-69’, 70: ‘70-74’, 71: ‘70-74’, 72: ‘70-74’, 73: ‘70-74’, 74: ‘70-74’, 75: ‘75-79’, 76: ‘75-79’, 77: ‘75-79’, 78: ‘75-79’, 79: ‘75-79’, 80: ‘80-84’, 81: ‘80-84’, 82: ‘80-84’, 83: ‘80-84’, 84: ‘80-84’, 85: ‘85-89’, 86: ‘85-89’, 87: ‘85-89’, 88: ‘85-89’, 89: ‘85-89’, 90: ‘90-94’, 91: ‘90-94’, 92: ‘90-94’, 93: ‘90-94’, 94: ‘90-94’, 95: ‘95-99’, 96: ‘95-99’, 97: ‘95-99’, 98: ‘95-99’, 99: ‘95-99’})</p>
+<p>AGE_RANGE_LOOKUP : defaultdict(&lt;function create_age_range_lookup.&lt;locals&gt;.&lt;lambda&gt; at 0x7ff868ee2430&gt;, {0: ‘0-4’, 1: ‘0-4’, 2: ‘0-4’, 3: ‘0-4’, 4: ‘0-4’, 5: ‘5-9’, 6: ‘5-9’, 7: ‘5-9’, 8: ‘5-9’, 9: ‘5-9’, 10: ‘10-14’, 11: ‘10-14’, 12: ‘10-14’, 13: ‘10-14’, 14: ‘10-14’, 15: ‘15-19’, 16: ‘15-19’, 17: ‘15-19’, 18: ‘15-19’, 19: ‘15-19’, 20: ‘20-24’, 21: ‘20-24’, 22: ‘20-24’, 23: ‘20-24’, 24: ‘20-24’, 25: ‘25-29’, 26: ‘25-29’, 27: ‘25-29’, 28: ‘25-29’, 29: ‘25-29’, 30: ‘30-34’, 31: ‘30-34’, 32: ‘30-34’, 33: ‘30-34’, 34: ‘30-34’, 35: ‘35-39’, 36: ‘35-39’, 37: ‘35-39’, 38: ‘35-39’, 39: ‘35-39’, 40: ‘40-44’, 41: ‘40-44’, 42: ‘40-44’, 43: ‘40-44’, 44: ‘40-44’, 45: ‘45-49’, 46: ‘45-49’, 47: ‘45-49’, 48: ‘45-49’, 49: ‘45-49’, 50: ‘50-54’, 51: ‘50-54’, 52: ‘50-54’, 53: ‘50-54’, 54: ‘50-54’, 55: ‘55-59’, 56: ‘55-59’, 57: ‘55-59’, 58: ‘55-59’, 59: ‘55-59’, 60: ‘60-64’, 61: ‘60-64’, 62: ‘60-64’, 63: ‘60-64’, 64: ‘60-64’, 65: ‘65-69’, 66: ‘65-69’, 67: ‘65-69’, 68: ‘65-69’, 69: ‘65-69’, 70: ‘70-74’, 71: ‘70-74’, 72: ‘70-74’, 73: ‘70-74’, 74: ‘70-74’, 75: ‘75-79’, 76: ‘75-79’, 77: ‘75-79’, 78: ‘75-79’, 79: ‘75-79’, 80: ‘80-84’, 81: ‘80-84’, 82: ‘80-84’, 83: ‘80-84’, 84: ‘80-84’, 85: ‘85-89’, 86: ‘85-89’, 87: ‘85-89’, 88: ‘85-89’, 89: ‘85-89’, 90: ‘90-94’, 91: ‘90-94’, 92: ‘90-94’, 93: ‘90-94’, 94: ‘90-94’, 95: ‘95-99’, 96: ‘95-99’, 97: ‘95-99’, 98: ‘95-99’, 99: ‘95-99’})</p>
 <p><strong>Functions (defined or overridden in class Demography):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.demography.Demography.__init__">
@@ -319,12 +323,7 @@ generator.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.demography.Demography.read_parameters">
 <span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#Demography.read_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.Demography.read_parameters" title="Permalink to this definition">¶</a></dt>
-<dd><p>Read parameter values from file, if required.
-Loads the ‘Interpolated Pop Structure’ worksheet from the Demography Excel workbook.
-:param data_folder: path of a folder supplied to the Simulation containing data files.</p>
-<blockquote>
-<div><p>Typically modules would read a particular file within here.</p>
-</div></blockquote>
+<dd><p>Load the parameters from <cite>ResourceFile_Demography_parameters.csv</cite> and data from other <cite>ResourceFiles</cite>.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -359,6 +358,14 @@ Loads the ‘Interpolated Pop Structure’ worksheet from the Demography Excel w
 This is called by the simulation whenever a new person is born.
 :param mother_id: the mother for this child
 :param child_id: the new child</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.demography.Demography._edit_init_pop_to_prevent_persons_greater_than_max_age">
+<span class="sig-name descname"><span class="pre">_edit_init_pop_to_prevent_persons_greater_than_max_age</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_age</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#Demography._edit_init_pop_to_prevent_persons_greater_than_max_age"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.Demography._edit_init_pop_to_prevent_persons_greater_than_max_age" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an edited version of the <cite>pd.DataFrame</cite> describing the probability of persons in the population being
+created with certain characteristics to reflect the constraint the persons aged greater than <cite>max_age_initial</cite>
+should not be created.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -599,7 +606,7 @@ constructor, but may also take further keyword arguments.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Mar 30, 2022.
+        Last updated on May 23, 2022.
       </span>
 
     </p>

@@ -185,7 +185,7 @@
 <p>Concrete subclasses should also inherit from one of the EventMixin classes
 defined below, and implement at least an <cite>apply</cite> and <cite>did_not_run</cite> method.</p>
 <p><strong>Class attributes:</strong></p>
-<p>bed_days_allocated_to_this_event : &lt;property object at 0x7fe46d7031d0&gt;</p>
+<p>bed_days_allocated_to_this_event : &lt;property object at 0x7ff868e2bb80&gt;</p>
 <p><strong>Functions (defined or overridden in class HSI_Event):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HSI_Event.__init__">
@@ -745,16 +745,16 @@ each health officer in each health facility (using the standard index)</p></li>
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.record_hsi_event">
 <span class="sig-name descname"><span class="pre">record_hsi_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">actual_appt_footprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">did_run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.record_hsi_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.record_hsi_event" title="Permalink to this definition">¶</a></dt>
 <dd><p>Record the processing of an HSI event.
-If this is an individual-level HSI event, it will also record the actual appointment footprint
-:param hsi_event: The hsi event (containing the initial expectations of footprints)
-:param actual_appt_footprint: The actual appt footprint to log (if individual event)
-:param squeeze_factor: The squueze factor (if individual event)</p>
+If this is an individual-level HSI_Event, it will also record the actual appointment footprint
+:param hsi_event: The HSI_Event (containing the initial expectations of footprints)
+:param actual_appt_footprint: The actual Appointment Footprint (if individual event)
+:param squeeze_factor: The squeeze factor (if individual event)</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.write_to_hsi_log">
-<span class="sig-name descname"><span class="pre">write_to_hsi_log</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">treatment_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number_by_appt_type_code</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">did_run</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.write_to_hsi_log"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.write_to_hsi_log" title="Permalink to this definition">¶</a></dt>
-<dd><p>Write the log <cite>HSI_Event</cite> with one entry per HSI event.</p>
+<span class="sig-name descname"><span class="pre">write_to_hsi_log</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">treatment_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number_by_appt_type_code</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">did_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.write_to_hsi_log"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.write_to_hsi_log" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write the log <cite>HSI_Event</cite> and add to the summary counter.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -807,6 +807,18 @@ a given package name.</p>
 :return: None</p>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.on_end_of_day">
+<span class="sig-name descname"><span class="pre">on_end_of_day</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.on_end_of_day"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.on_end_of_day" title="Permalink to this definition">¶</a></dt>
+<dd><p>Do jobs to be done at the end of the day (after all HSI run)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.on_end_of_year">
+<span class="sig-name descname"><span class="pre">on_end_of_year</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.on_end_of_year"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.on_end_of_year" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write to log the current states of the summary counters and reset them.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -853,6 +865,11 @@ The overall Prioritization algorithm is:</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystemScheduler._is_today_last_day_of_the_year">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">_is_today_last_day_of_the_year</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">date</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystemScheduler._is_today_last_day_of_the_year"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystemScheduler._is_today_last_day_of_the_year" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystemScheduler.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystemScheduler.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystemScheduler.apply" title="Permalink to this definition">¶</a></dt>
 <dd><p>Apply this event to the population.</p>
@@ -883,7 +900,7 @@ The overall Prioritization algorithm is:</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Mar 30, 2022.
+        Last updated on May 23, 2022.
       </span>
 
     </p>

@@ -400,10 +400,10 @@
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>CAUSES_OF_DEATH : {‘Suicide’: &lt;tlo.methods.causes.Cause object at 0x7fe46e895940&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘SevereDepression’: &lt;tlo.methods.causes.Cause object at 0x7fe46e8959d0&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘Demography’, ‘SymptomManager’, ‘HealthSystem’, ‘Lifestyle’, ‘Contraception’}</p>
-<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;}</p>
+<p>CAUSES_OF_DEATH : {‘Suicide’: &lt;tlo.methods.causes.Cause object at 0x7ff86ba22820&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘SevereDepression’: &lt;tlo.methods.causes.Cause object at 0x7ff86ba228b0&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘Contraception’, ‘Demography’, ‘SymptomManager’, ‘Lifestyle’, ‘HealthSystem’}</p>
+<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’}</p>
 <p><strong>Functions (defined or overridden in class Depression):</strong></p>
 <dl class="py method">
@@ -643,9 +643,10 @@ constructor, but may also take further keyword arguments.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.depression.HSI_Depression_TalkingTherapy">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Depression_TalkingTherapy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#HSI_Depression_TalkingTherapy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.HSI_Depression_TalkingTherapy" title="Permalink to this definition">¶</a></dt>
-<dd><p>This is a Health System Interaction Event in which a person receives a short period of talking therapy.
-This only happens if the squeeze-factor is sufficiently low.
-The facility_level is modified as a input parameter.</p>
+<dd><p>This is a Health System Interaction Event in which a person receives a session of talking therapy. It is one
+of a course of 5 sessions (at months 0, 6, 12, 18, 24). If one of these HSI does not happen
+then no further sessions occur. Sessions after the first have no direct effect, as the only property affected is
+reflects ever having had one session of talking therapy.</p>
 <p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Functions (defined or overridden in class HSI_Depression_TalkingTherapy):</strong></p>
 <dl class="py method">
@@ -666,8 +667,8 @@ constructor, but may also take further keyword arguments.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.depression.HSI_Depression_TalkingTherapy.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#HSI_Depression_TalkingTherapy.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.HSI_Depression_TalkingTherapy.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the population.</p>
-<p>Must be implemented by subclasses.</p>
+<dd><p>Set the property <cite>de_ever_talk_ther</cite> to be True and schedule the next session in the course if the person
+has not yet had 5 sessions.</p>
 </dd></dl>
 
 </dd></dl>
@@ -760,7 +761,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Mar 30, 2022.
+        Last updated on May 23, 2022.
       </span>
 
     </p>

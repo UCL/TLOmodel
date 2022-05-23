@@ -228,7 +228,7 @@
 
         <span class="k">assert</span> <span class="n">module</span> <span class="ow">is</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSeekingBehaviour&#39;</span><span class="p">]</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s1">&#39;GenericFirstApptAtFacilityLevel0&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s1">&#39;FirstAttendance_NonEmergency&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;0&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;ConWithDCSA&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span></div>
 
@@ -251,11 +251,9 @@
 
         <span class="k">assert</span> <span class="n">module</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;HealthSeekingBehaviour&#39;</span><span class="p">,</span> <span class="s1">&#39;Labour&#39;</span><span class="p">,</span> <span class="s1">&#39;PregnancySupervisor&#39;</span><span class="p">,</span> <span class="s1">&#39;RTI&#39;</span><span class="p">]</span>
 
-        <span class="c1"># Define the necessary information for an HSI</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s1">&#39;GenericEmergencyFirstApptAtFacilityLevel1&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s1">&#39;FirstAttendance_Emergency&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1b&#39;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span>
-            <span class="s1">&#39;Under5OPD&#39;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;age_years&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">5</span> <span class="k">else</span> <span class="s1">&#39;Over5OPD&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;AccidentsandEmerg&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span></div>
 
 <div class="viewcode-block" id="HSI_GenericEmergencyFirstApptAtFacilityLevel1.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.hsi_generic_first_appts.html#tlo.methods.hsi_generic_first_appts.HSI_GenericEmergencyFirstApptAtFacilityLevel1.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
 
@@ -309,6 +307,9 @@
         <span class="k">if</span> <span class="s1">&#39;RTI&#39;</span> <span class="ow">in</span> <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
             <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;RTI&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">do_rti_diagnosis_and_treatment</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span>
 
+    <span class="k">if</span> <span class="s1">&#39;Schisto&#39;</span> <span class="ow">in</span> <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Schisto&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">do_on_presentation_with_symptoms</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">symptoms</span><span class="o">=</span><span class="n">symptoms</span><span class="p">)</span>
+
     <span class="k">if</span> <span class="n">age</span> <span class="o">&lt;</span> <span class="mi">5</span><span class="p">:</span>
         <span class="c1"># ----------------------------------- CHILD &lt; 5 -----------------------------------</span>
         <span class="k">if</span> <span class="s1">&#39;diarrhoea&#39;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">:</span>
@@ -339,6 +340,10 @@
                         <span class="n">priority</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
                         <span class="n">topen</span><span class="o">=</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
                         <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+
+        <span class="c1"># Routine assessments</span>
+        <span class="k">if</span> <span class="s1">&#39;Stunting&#39;</span> <span class="ow">in</span> <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
+            <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Stunting&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">do_routine_assessment_for_chronic_undernutrition</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
 
     <span class="k">elif</span> <span class="n">age</span> <span class="o">&lt;</span> <span class="mi">15</span><span class="p">:</span>
         <span class="c1"># ----------------------------------- CHILD 5-14 -----------------------------------</span>
@@ -606,7 +611,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Mar 30, 2022.
+        Last updated on May 23, 2022.
       </span>
 
     </p>

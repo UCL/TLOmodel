@@ -265,6 +265,14 @@ Calibration is done in two stages:
 <td><p>LIST</p></td>
 <td><p>Scaling factor (by age-group: 15-19, 20-24, …, 45-49) on the monthly risk of pregnancy and contraceptive failure rate. This value is found through calibration so that, at the beginning of the simulation, the age-specific monthly probability of a woman having a live birth matches the WPP age-specific fertility rate value for the same year.</p></td>
 </tr>
+<tr class="row-odd"><td><p>max_number_of_runs_of_hsi_if_consumable_not_available</p></td>
+<td><p>INT</p></td>
+<td><p>The maximum number of time an HSI can run (repeats occur if the consumables are not available</p></td>
+</tr>
+<tr class="row-even"><td><p>max_days_delay_between_decision_to_change_method_and_hsi_scheduled</p></td>
+<td><p>INT</p></td>
+<td><p>The maximum delay (in days) between the decision for a contraceptive to change and the <a href="#id1"><span class="problematic" id="id2">`</span></a>topen`date of the HSI that is scheduled to effect the change (when using the healthsystem),</p></td>
+</tr>
 </tbody>
 </table>
 <p><strong>PROPERTIES:</strong></p>
@@ -308,7 +316,7 @@ Calibration is done in two stages:
 <p>INIT_DEPENDENCIES : {‘Demography’}</p>
 <p>METADATA : {}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthSystem’}</p>
-<p>all_contraception_states : {‘periodic_abstinence’, ‘withdrawal’, ‘IUD’, ‘injections’, ‘male_condom’, ‘other_modern’, ‘not_using’, ‘other_traditional’, ‘female_sterilization’, ‘implant’, ‘pill’}</p>
+<p>all_contraception_states : {‘IUD’, ‘male_condom’, ‘female_sterilization’, ‘other_traditional’, ‘withdrawal’, ‘implant’, ‘injections’, ‘pill’, ‘other_modern’, ‘not_using’, ‘periodic_abstinence’}</p>
 <p><strong>Functions (defined or overridden in class Contraception):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.contraception.Contraception.__init__">
@@ -563,14 +571,14 @@ method fails).</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.contraception.HSI_Contraception_FamilyPlanningAppt">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Contraception_FamilyPlanningAppt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">old_contraceptive</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_contraceptive</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/contraception.html#HSI_Contraception_FamilyPlanningAppt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.contraception.HSI_Contraception_FamilyPlanningAppt" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Contraception_FamilyPlanningAppt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_contraceptive</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/contraception.html#HSI_Contraception_FamilyPlanningAppt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.contraception.HSI_Contraception_FamilyPlanningAppt" title="Permalink to this definition">¶</a></dt>
 <dd><p>HSI event for the starting a contraceptive method, maintaining use of a method of a contraceptive, or switching
 between contraceptives.</p>
 <p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Functions (defined or overridden in class HSI_Contraception_FamilyPlanningAppt):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.contraception.HSI_Contraception_FamilyPlanningAppt.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">old_contraceptive</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_contraceptive</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/contraception.html#HSI_Contraception_FamilyPlanningAppt.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.contraception.HSI_Contraception_FamilyPlanningAppt.__init__" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_contraceptive</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/contraception.html#HSI_Contraception_FamilyPlanningAppt.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.contraception.HSI_Contraception_FamilyPlanningAppt.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
@@ -587,6 +595,12 @@ constructor, but may also take further keyword arguments.</p>
 <dt class="sig sig-object py" id="tlo.methods.contraception.HSI_Contraception_FamilyPlanningAppt.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/contraception.html#HSI_Contraception_FamilyPlanningAppt.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.contraception.HSI_Contraception_FamilyPlanningAppt.apply" title="Permalink to this definition">¶</a></dt>
 <dd><p>If the relevant consumable is available, do change in contraception and log it</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.contraception.HSI_Contraception_FamilyPlanningAppt.reschedule">
+<span class="sig-name descname"><span class="pre">reschedule</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/contraception.html#HSI_Contraception_FamilyPlanningAppt.reschedule"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.contraception.HSI_Contraception_FamilyPlanningAppt.reschedule" title="Permalink to this definition">¶</a></dt>
+<dd><p>Schedule for this same HSI_Event to occur tomorrow.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -786,7 +800,7 @@ constructor, but may also take further keyword arguments.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Mar 30, 2022.
+        Last updated on May 23, 2022.
       </span>
 
     </p>

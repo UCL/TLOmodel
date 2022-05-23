@@ -373,10 +373,10 @@
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>CAUSES_OF_DEATH : {‘OesophagealCancer’: &lt;tlo.methods.causes.Cause object at 0x7fe46e4e5910&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘OesophagealCancer’: &lt;tlo.methods.causes.Cause object at 0x7fe46e4e59a0&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘SymptomManager’, ‘Lifestyle’, ‘HealthSystem’, ‘Demography’}</p>
-<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;}</p>
+<p>CAUSES_OF_DEATH : {‘OesophagealCancer’: &lt;tlo.methods.causes.Cause object at 0x7ff86b681d30&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘OesophagealCancer’: &lt;tlo.methods.causes.Cause object at 0x7ff86b681dc0&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘Demography’, ‘HealthSystem’, ‘SymptomManager’, ‘Lifestyle’}</p>
+<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’}</p>
 <p><strong>Functions (defined or overridden in class OesophagealCancer):</strong></p>
 <dl class="py method">
@@ -507,13 +507,6 @@ constructor, but may also take further keyword arguments.</p>
 <p>Must be implemented by subclasses.</p>
 </dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.oesophagealcancer.HSI_OesophagealCancer_Investigation_Following_Dysphagia.did_not_run">
-<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/oesophagealcancer.html#HSI_OesophagealCancer_Investigation_Following_Dysphagia.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.oesophagealcancer.HSI_OesophagealCancer_Investigation_Following_Dysphagia.did_not_run" title="Permalink to this definition">¶</a></dt>
-<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
-to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
-</dd></dl>
-
 </dd></dl>
 
 <dl class="py class">
@@ -544,13 +537,6 @@ constructor, but may also take further keyword arguments.</p>
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/oesophagealcancer.html#HSI_OesophagealCancer_StartTreatment.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.oesophagealcancer.HSI_OesophagealCancer_StartTreatment.apply" title="Permalink to this definition">¶</a></dt>
 <dd><p>Apply this event to the population.</p>
 <p>Must be implemented by subclasses.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.oesophagealcancer.HSI_OesophagealCancer_StartTreatment.did_not_run">
-<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/oesophagealcancer.html#HSI_OesophagealCancer_StartTreatment.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.oesophagealcancer.HSI_OesophagealCancer_StartTreatment.did_not_run" title="Permalink to this definition">¶</a></dt>
-<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
-to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
 </dd></dl>
 
 </dd></dl>
@@ -584,13 +570,6 @@ constructor, but may also take further keyword arguments.</p>
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/oesophagealcancer.html#HSI_OesophagealCancer_PostTreatmentCheck.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.oesophagealcancer.HSI_OesophagealCancer_PostTreatmentCheck.apply" title="Permalink to this definition">¶</a></dt>
 <dd><p>Apply this event to the population.</p>
 <p>Must be implemented by subclasses.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.oesophagealcancer.HSI_OesophagealCancer_PostTreatmentCheck.did_not_run">
-<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/oesophagealcancer.html#HSI_OesophagealCancer_PostTreatmentCheck.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.oesophagealcancer.HSI_OesophagealCancer_PostTreatmentCheck.did_not_run" title="Permalink to this definition">¶</a></dt>
-<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
-to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
 </dd></dl>
 
 </dd></dl>
@@ -629,13 +608,6 @@ constructor, but may also take further keyword arguments.</p>
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/oesophagealcancer.html#HSI_OesophagealCancer_PalliativeCare.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.oesophagealcancer.HSI_OesophagealCancer_PalliativeCare.apply" title="Permalink to this definition">¶</a></dt>
 <dd><p>Apply this event to the population.</p>
 <p>Must be implemented by subclasses.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.oesophagealcancer.HSI_OesophagealCancer_PalliativeCare.did_not_run">
-<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/oesophagealcancer.html#HSI_OesophagealCancer_PalliativeCare.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.oesophagealcancer.HSI_OesophagealCancer_PalliativeCare.did_not_run" title="Permalink to this definition">¶</a></dt>
-<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
-to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
 </dd></dl>
 
 </dd></dl>
@@ -677,7 +649,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Mar 30, 2022.
+        Last updated on May 23, 2022.
       </span>
 
     </p>

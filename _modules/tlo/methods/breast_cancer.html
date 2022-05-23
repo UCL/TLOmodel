@@ -814,11 +814,9 @@
 <div class="viewcode-block" id="HSI_BreastCancer_Investigation_Following_breast_lump_discernible.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.breast_cancer.html#tlo.methods.breast_cancer.HSI_BreastCancer_Investigation_Following_breast_lump_discernible.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
 
-        <span class="c1"># Define the necessary information for an HSI</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s2">&quot;BreastCancer_Investigation_Following_breast_lump_discernible&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s2">&quot;Over5OPD&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1b&#39;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ALERT_OTHER_DISEASES</span> <span class="o">=</span> <span class="p">[]</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s2">&quot;BreastCancer_Investigation&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s2">&quot;Over5OPD&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Mammography&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;3&#39;</span>  <span class="c1"># Mammography only available at level 3 and above.</span></div>
 
 <div class="viewcode-block" id="HSI_BreastCancer_Investigation_Following_breast_lump_discernible.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.breast_cancer.html#tlo.methods.breast_cancer.HSI_BreastCancer_Investigation_Following_breast_lump_discernible.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
@@ -875,14 +873,11 @@
                     <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                     <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
                     <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span>
-                <span class="p">)</span></div>
+                <span class="p">)</span></div></div>
 
 <span class="c1">#   todo: we would like to note that the symptom has been investigated in a diagnostic test and the diagnosis was</span>
 <span class="c1">#   todo: was missed, so the same test will not likely be repeated, at least not in the short term, so we even</span>
 <span class="c1">#   todo: though the symptom remains we don&#39;t want to keep repeating the HSI which triggers the diagnostic test</span>
-
-<div class="viewcode-block" id="HSI_BreastCancer_Investigation_Following_breast_lump_discernible.did_not_run"><a class="viewcode-back" href="../../../reference/tlo.methods.breast_cancer.html#tlo.methods.breast_cancer.HSI_BreastCancer_Investigation_Following_breast_lump_discernible.did_not_run">[docs]</a>    <span class="k">def</span> <span class="nf">did_not_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">pass</span></div></div>
 
 
 <div class="viewcode-block" id="HSI_BreastCancer_StartTreatment"><a class="viewcode-back" href="../../../reference/tlo.methods.breast_cancer.html#tlo.methods.breast_cancer.HSI_BreastCancer_StartTreatment">[docs]</a><span class="k">class</span> <span class="nc">HSI_BreastCancer_StartTreatment</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
@@ -895,14 +890,10 @@
 <div class="viewcode-block" id="HSI_BreastCancer_StartTreatment.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.breast_cancer.html#tlo.methods.breast_cancer.HSI_BreastCancer_StartTreatment.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
 
-        <span class="n">the_appt_footprint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get_blank_appt_footprint</span><span class="p">()</span>
-        <span class="n">the_appt_footprint</span><span class="p">[</span><span class="s2">&quot;MajorSurg&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-
-        <span class="c1"># Define the necessary information for an HSI</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s2">&quot;breastCancer_StartTreatment&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="n">the_appt_footprint</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s2">&quot;BreastCancer_Treatment&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s2">&quot;MajorSurg&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;3&#39;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ALERT_OTHER_DISEASES</span> <span class="o">=</span> <span class="p">[]</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">BEDDAYS_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_beddays_footprint</span><span class="p">({</span><span class="s2">&quot;general_bed&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">})</span></div>
 
 <div class="viewcode-block" id="HSI_BreastCancer_StartTreatment.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.breast_cancer.html#tlo.methods.breast_cancer.HSI_BreastCancer_StartTreatment.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
@@ -932,10 +923,7 @@
             <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">12</span><span class="p">),</span>
             <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">priority</span><span class="o">=</span><span class="mi">0</span>
-        <span class="p">)</span></div>
-
-<div class="viewcode-block" id="HSI_BreastCancer_StartTreatment.did_not_run"><a class="viewcode-back" href="../../../reference/tlo.methods.breast_cancer.html#tlo.methods.breast_cancer.HSI_BreastCancer_StartTreatment.did_not_run">[docs]</a>    <span class="k">def</span> <span class="nf">did_not_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">pass</span></div></div>
+        <span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="HSI_BreastCancer_PostTreatmentCheck"><a class="viewcode-back" href="../../../reference/tlo.methods.breast_cancer.html#tlo.methods.breast_cancer.HSI_BreastCancer_PostTreatmentCheck">[docs]</a><span class="k">class</span> <span class="nc">HSI_BreastCancer_PostTreatmentCheck</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
@@ -949,14 +937,9 @@
 <div class="viewcode-block" id="HSI_BreastCancer_PostTreatmentCheck.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.breast_cancer.html#tlo.methods.breast_cancer.HSI_BreastCancer_PostTreatmentCheck.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
 
-        <span class="n">the_appt_footprint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get_blank_appt_footprint</span><span class="p">()</span>
-        <span class="n">the_appt_footprint</span><span class="p">[</span><span class="s2">&quot;Over5OPD&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-
-        <span class="c1"># Define the necessary information for an HSI</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s2">&quot;BreastCancer_MonitorTreatment&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="n">the_appt_footprint</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;3&#39;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ALERT_OTHER_DISEASES</span> <span class="o">=</span> <span class="p">[]</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s2">&quot;BreastCancer_Treatment&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s2">&quot;Over5OPD&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;3&#39;</span></div>
 
 <div class="viewcode-block" id="HSI_BreastCancer_PostTreatmentCheck.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.breast_cancer.html#tlo.methods.breast_cancer.HSI_BreastCancer_PostTreatmentCheck.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
@@ -992,10 +975,7 @@
                 <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">3</span><span class="p">),</span>
                 <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                 <span class="n">priority</span><span class="o">=</span><span class="mi">0</span>
-            <span class="p">)</span></div>
-
-<div class="viewcode-block" id="HSI_BreastCancer_PostTreatmentCheck.did_not_run"><a class="viewcode-back" href="../../../reference/tlo.methods.breast_cancer.html#tlo.methods.breast_cancer.HSI_BreastCancer_PostTreatmentCheck.did_not_run">[docs]</a>    <span class="k">def</span> <span class="nf">did_not_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">pass</span></div></div>
+            <span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="HSI_BreastCancer_PalliativeCare"><a class="viewcode-back" href="../../../reference/tlo.methods.breast_cancer.html#tlo.methods.breast_cancer.HSI_BreastCancer_PalliativeCare">[docs]</a><span class="k">class</span> <span class="nc">HSI_BreastCancer_PalliativeCare</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
@@ -1012,14 +992,10 @@
 <div class="viewcode-block" id="HSI_BreastCancer_PalliativeCare.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.breast_cancer.html#tlo.methods.breast_cancer.HSI_BreastCancer_PalliativeCare.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
 
-        <span class="n">the_appt_footprint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get_blank_appt_footprint</span><span class="p">()</span>
-        <span class="n">the_appt_footprint</span><span class="p">[</span><span class="s2">&quot;Over5OPD&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-
-        <span class="c1"># Define the necessary information for an HSI</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s2">&quot;BreastCancer_PalliativeCare&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="n">the_appt_footprint</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;3&#39;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ALERT_OTHER_DISEASES</span> <span class="o">=</span> <span class="p">[]</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;2&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">BEDDAYS_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_beddays_footprint</span><span class="p">({</span><span class="s1">&#39;general_bed&#39;</span><span class="p">:</span> <span class="mi">15</span><span class="p">})</span></div>
 
 <div class="viewcode-block" id="HSI_BreastCancer_PalliativeCare.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.breast_cancer.html#tlo.methods.breast_cancer.HSI_BreastCancer_PalliativeCare.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
@@ -1046,10 +1022,7 @@
             <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">3</span><span class="p">),</span>
             <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">priority</span><span class="o">=</span><span class="mi">0</span>
-        <span class="p">)</span></div>
-
-<div class="viewcode-block" id="HSI_BreastCancer_PalliativeCare.did_not_run"><a class="viewcode-back" href="../../../reference/tlo.methods.breast_cancer.html#tlo.methods.breast_cancer.HSI_BreastCancer_PalliativeCare.did_not_run">[docs]</a>    <span class="k">def</span> <span class="nf">did_not_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">pass</span></div></div>
+        <span class="p">)</span></div></div>
 
 
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
@@ -1102,8 +1075,8 @@
 
         <span class="n">n_ge15_f</span> <span class="o">=</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">age_years</span> <span class="o">&gt;=</span> <span class="mi">15</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">sex</span> <span class="o">==</span> <span class="s1">&#39;F&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
 
-<span class="c1"># todo: the .between function I think includes the two dates so events on these dates counted twice</span>
-<span class="c1"># todo:_ I think we need to replace with date_lastlog &lt;= x &lt; date_now</span>
+        <span class="c1"># todo: the .between function I think includes the two dates so events on these dates counted twice</span>
+        <span class="c1"># todo:_ I think we need to replace with date_lastlog &lt;= x &lt; date_now</span>
         <span class="n">n_newly_diagnosed_stage1</span> <span class="o">=</span> \
             <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">brc_date_diagnosis</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="n">date_lastlog</span><span class="p">,</span> <span class="n">date_now</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">brc_status</span> <span class="o">==</span> <span class="s1">&#39;stage1&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
         <span class="n">n_newly_diagnosed_stage2</span> <span class="o">=</span> \
@@ -1140,10 +1113,6 @@
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;summary_stats&#39;</span><span class="p">,</span>
                     <span class="n">description</span><span class="o">=</span><span class="s1">&#39;summary statistics for breast cancer&#39;</span><span class="p">,</span>
                     <span class="n">data</span><span class="o">=</span><span class="n">out</span><span class="p">)</span></div></div>
-
-<span class="c1">#       logger.info(&#39;%s|person_one|%s&#39;,</span>
-<span class="c1">#                    self.sim.date,</span>
-<span class="c1">#                    df.loc[13].to_dict())</span>
 </pre></div>
 
            </div>
@@ -1156,7 +1125,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Mar 30, 2022.
+        Last updated on May 23, 2022.
       </span>
 
     </p>

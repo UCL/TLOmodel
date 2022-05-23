@@ -825,11 +825,9 @@
 <div class="viewcode-block" id="HSI_BladderCancer_Investigation_Following_Blood_Urine.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.bladder_cancer.html#tlo.methods.bladder_cancer.HSI_BladderCancer_Investigation_Following_Blood_Urine.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
 
-        <span class="c1"># Define the necessary information for an HSI</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s2">&quot;BladderCancer_Investigation_Following_blood_urine&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s2">&quot;BladderCancer_Investigation&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s2">&quot;Over5OPD&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1b&#39;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ALERT_OTHER_DISEASES</span> <span class="o">=</span> <span class="p">[]</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1b&#39;</span></div>
 
 <div class="viewcode-block" id="HSI_BladderCancer_Investigation_Following_Blood_Urine.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.bladder_cancer.html#tlo.methods.bladder_cancer.HSI_BladderCancer_Investigation_Following_Blood_Urine.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
@@ -882,10 +880,7 @@
                     <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                     <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
                     <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span>
-                <span class="p">)</span></div>
-
-<div class="viewcode-block" id="HSI_BladderCancer_Investigation_Following_Blood_Urine.did_not_run"><a class="viewcode-back" href="../../../reference/tlo.methods.bladder_cancer.html#tlo.methods.bladder_cancer.HSI_BladderCancer_Investigation_Following_Blood_Urine.did_not_run">[docs]</a>    <span class="k">def</span> <span class="nf">did_not_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">pass</span></div></div>
+                <span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="HSI_BladderCancer_Investigation_Following_pelvic_pain"><a class="viewcode-back" href="../../../reference/tlo.methods.bladder_cancer.html#tlo.methods.bladder_cancer.HSI_BladderCancer_Investigation_Following_pelvic_pain">[docs]</a><span class="k">class</span> <span class="nc">HSI_BladderCancer_Investigation_Following_pelvic_pain</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
@@ -893,11 +888,9 @@
 <div class="viewcode-block" id="HSI_BladderCancer_Investigation_Following_pelvic_pain.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.bladder_cancer.html#tlo.methods.bladder_cancer.HSI_BladderCancer_Investigation_Following_pelvic_pain.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
 
-        <span class="c1"># Define the necessary information for an HSI</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s2">&quot;BladderCancer_Investigation_Following_pelvic_pain&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s2">&quot;BladderCancer_Investigation&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s2">&quot;Over5OPD&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1b&#39;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ALERT_OTHER_DISEASES</span> <span class="o">=</span> <span class="p">[]</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1b&#39;</span></div>
 
 <div class="viewcode-block" id="HSI_BladderCancer_Investigation_Following_pelvic_pain.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.bladder_cancer.html#tlo.methods.bladder_cancer.HSI_BladderCancer_Investigation_Following_pelvic_pain.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
@@ -950,10 +943,7 @@
                     <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                     <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
                     <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span>
-                <span class="p">)</span></div>
-
-<div class="viewcode-block" id="HSI_BladderCancer_Investigation_Following_pelvic_pain.did_not_run"><a class="viewcode-back" href="../../../reference/tlo.methods.bladder_cancer.html#tlo.methods.bladder_cancer.HSI_BladderCancer_Investigation_Following_pelvic_pain.did_not_run">[docs]</a>    <span class="k">def</span> <span class="nf">did_not_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">pass</span></div></div>
+                <span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="HSI_BladderCancer_StartTreatment"><a class="viewcode-back" href="../../../reference/tlo.methods.bladder_cancer.html#tlo.methods.bladder_cancer.HSI_BladderCancer_StartTreatment">[docs]</a><span class="k">class</span> <span class="nc">HSI_BladderCancer_StartTreatment</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
@@ -965,15 +955,10 @@
 <div class="viewcode-block" id="HSI_BladderCancer_StartTreatment.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.bladder_cancer.html#tlo.methods.bladder_cancer.HSI_BladderCancer_StartTreatment.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
 
-        <span class="n">the_appt_footprint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get_blank_appt_footprint</span><span class="p">()</span>
-        <span class="n">the_appt_footprint</span><span class="p">[</span><span class="s2">&quot;Over5OPD&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-        <span class="n">the_appt_footprint</span><span class="p">[</span><span class="s1">&#39;MajorSurg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-
-        <span class="c1"># Define the necessary information for an HSI</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s2">&quot;BladderCancer_StartTreatment&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="n">the_appt_footprint</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s2">&quot;BladderCancer_Treatment&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;MajorSurg&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;3&#39;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ALERT_OTHER_DISEASES</span> <span class="o">=</span> <span class="p">[]</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">BEDDAYS_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_beddays_footprint</span><span class="p">({</span><span class="s1">&#39;general_bed&#39;</span><span class="p">:</span> <span class="mi">5</span><span class="p">})</span></div>
 
 <div class="viewcode-block" id="HSI_BladderCancer_StartTreatment.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.bladder_cancer.html#tlo.methods.bladder_cancer.HSI_BladderCancer_StartTreatment.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
@@ -1005,10 +990,7 @@
             <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">years</span><span class="o">=</span><span class="mi">12</span><span class="p">),</span>
             <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">priority</span><span class="o">=</span><span class="mi">0</span>
-        <span class="p">)</span></div>
-
-<div class="viewcode-block" id="HSI_BladderCancer_StartTreatment.did_not_run"><a class="viewcode-back" href="../../../reference/tlo.methods.bladder_cancer.html#tlo.methods.bladder_cancer.HSI_BladderCancer_StartTreatment.did_not_run">[docs]</a>    <span class="k">def</span> <span class="nf">did_not_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">pass</span></div></div>
+        <span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="HSI_BladderCancer_PostTreatmentCheck"><a class="viewcode-back" href="../../../reference/tlo.methods.bladder_cancer.html#tlo.methods.bladder_cancer.HSI_BladderCancer_PostTreatmentCheck">[docs]</a><span class="k">class</span> <span class="nc">HSI_BladderCancer_PostTreatmentCheck</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
@@ -1022,14 +1004,9 @@
 <div class="viewcode-block" id="HSI_BladderCancer_PostTreatmentCheck.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.bladder_cancer.html#tlo.methods.bladder_cancer.HSI_BladderCancer_PostTreatmentCheck.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
 
-        <span class="n">the_appt_footprint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get_blank_appt_footprint</span><span class="p">()</span>
-        <span class="n">the_appt_footprint</span><span class="p">[</span><span class="s2">&quot;Over5OPD&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-
-        <span class="c1"># Define the necessary information for an HSI</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s2">&quot;BladderCancer_MonitorTreatment&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="n">the_appt_footprint</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;3&#39;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ALERT_OTHER_DISEASES</span> <span class="o">=</span> <span class="p">[]</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s2">&quot;BladderCancer_Treatment&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s2">&quot;Over5OPD&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;3&#39;</span></div>
 
 <div class="viewcode-block" id="HSI_BladderCancer_PostTreatmentCheck.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.bladder_cancer.html#tlo.methods.bladder_cancer.HSI_BladderCancer_PostTreatmentCheck.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
@@ -1065,10 +1042,7 @@
                 <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">years</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
                 <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                 <span class="n">priority</span><span class="o">=</span><span class="mi">0</span>
-            <span class="p">)</span></div>
-
-<div class="viewcode-block" id="HSI_BladderCancer_PostTreatmentCheck.did_not_run"><a class="viewcode-back" href="../../../reference/tlo.methods.bladder_cancer.html#tlo.methods.bladder_cancer.HSI_BladderCancer_PostTreatmentCheck.did_not_run">[docs]</a>    <span class="k">def</span> <span class="nf">did_not_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">pass</span></div></div>
+            <span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="HSI_BladderCancer_PalliativeCare"><a class="viewcode-back" href="../../../reference/tlo.methods.bladder_cancer.html#tlo.methods.bladder_cancer.HSI_BladderCancer_PalliativeCare">[docs]</a><span class="k">class</span> <span class="nc">HSI_BladderCancer_PalliativeCare</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
@@ -1085,11 +1059,10 @@
 <div class="viewcode-block" id="HSI_BladderCancer_PalliativeCare.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.bladder_cancer.html#tlo.methods.bladder_cancer.HSI_BladderCancer_PalliativeCare.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
 
-        <span class="c1"># Define the necessary information for an HSI</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s2">&quot;BladderCancer_PalliativeCare&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s2">&quot;Over5OPD&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;3&#39;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ALERT_OTHER_DISEASES</span> <span class="o">=</span> <span class="p">[]</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;2&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">BEDDAYS_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_beddays_footprint</span><span class="p">({</span><span class="s1">&#39;general_bed&#39;</span><span class="p">:</span> <span class="mi">15</span><span class="p">})</span></div>
 
 <div class="viewcode-block" id="HSI_BladderCancer_PalliativeCare.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.bladder_cancer.html#tlo.methods.bladder_cancer.HSI_BladderCancer_PalliativeCare.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
@@ -1114,10 +1087,7 @@
             <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
             <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">priority</span><span class="o">=</span><span class="mi">0</span>
-        <span class="p">)</span></div>
-
-<div class="viewcode-block" id="HSI_BladderCancer_PalliativeCare.did_not_run"><a class="viewcode-back" href="../../../reference/tlo.methods.bladder_cancer.html#tlo.methods.bladder_cancer.HSI_BladderCancer_PalliativeCare.did_not_run">[docs]</a>    <span class="k">def</span> <span class="nf">did_not_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">pass</span></div></div>
+        <span class="p">)</span></div></div>
 
 
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
@@ -1183,7 +1153,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Mar 30, 2022.
+        Last updated on May 23, 2022.
       </span>
 
     </p>

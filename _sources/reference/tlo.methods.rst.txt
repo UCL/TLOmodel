@@ -24,6 +24,7 @@ Submodules
    tlo.methods.enhanced_lifestyle
    tlo.methods.epi
    tlo.methods.epilepsy
+   tlo.methods.fullmodel
    tlo.methods.healthburden
    tlo.methods.healthseekingbehaviour
    tlo.methods.healthsystem
@@ -45,6 +46,7 @@ Submodules
    tlo.methods.pregnancy_supervisor_lm
    tlo.methods.prostate_cancer
    tlo.methods.rti
+   tlo.methods.schisto
    tlo.methods.simplified_births
    tlo.methods.skeleton
    tlo.methods.stunting

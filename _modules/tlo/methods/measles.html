@@ -333,9 +333,10 @@
             <span class="s1">&#39;vit_A&#39;</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Vitamin A, caplet, 100,000 IU&quot;</span><span class="p">),</span>
             <span class="s1">&#39;severe_diarrhoea&#39;</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_item_codes_from_package_name</span><span class="p">(</span><span class="s2">&quot;Treatment of severe diarrhea&quot;</span><span class="p">),</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;ORS, sachet&quot;</span><span class="p">),</span>
             <span class="s1">&#39;severe_pneumonia&#39;</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_item_codes_from_package_name</span><span class="p">(</span><span class="s2">&quot;Treatment of severe pneumonia&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Oxygen, 1000 liters, primarily with &quot;</span>
+                                                                              <span class="s2">&quot;oxygen cylinders&quot;</span><span class="p">)</span>
         <span class="p">}</span></div>
 
 <div class="viewcode-block" id="Measles.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.Measles.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
@@ -570,15 +571,9 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">Measles</span><span class="p">)</span>
 
-        <span class="c1"># Get a blank footprint and then edit to define call on resources of this treatment event</span>
-        <span class="n">the_appt_footprint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get_blank_appt_footprint</span><span class="p">()</span>
-        <span class="n">the_appt_footprint</span><span class="p">[</span><span class="s2">&quot;Over5OPD&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># This requires one out patient appt</span>
-
-        <span class="c1"># Define the necessary information for an HSI</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s2">&quot;Measles_Treatment&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="n">the_appt_footprint</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1a&#39;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ALERT_OTHER_DISEASES</span> <span class="o">=</span> <span class="p">[]</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s2">&quot;Over5OPD&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1a&#39;</span></div>
 
 <div class="viewcode-block" id="HSI_Measles_Treatment.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.HSI_Measles_Treatment.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;HSI_Measles_Treatment&quot;</span><span class="p">,</span>
@@ -592,11 +587,11 @@
 
         <span class="c1"># for measles with severe diarrhoea</span>
         <span class="k">if</span> <span class="s2">&quot;diarrhoea&quot;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">:</span>
-            <span class="n">item_codes</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;severe_diarrhoea&#39;</span><span class="p">]</span>
+            <span class="n">item_codes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;severe_diarrhoea&#39;</span><span class="p">])</span>
 
         <span class="c1"># for measles with pneumonia</span>
         <span class="k">if</span> <span class="s2">&quot;respiratory_symptoms&quot;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">:</span>
-            <span class="n">item_codes</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;severe_pneumonia&#39;</span><span class="p">]</span>
+            <span class="n">item_codes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;severe_pneumonia&#39;</span><span class="p">])</span>
 
         <span class="c1"># request the treatment</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="p">):</span>
@@ -739,7 +734,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Mar 30, 2022.
+        Last updated on May 23, 2022.
       </span>
 
     </p>

@@ -63,6 +63,12 @@ tlo.methods.contraception module
         * - scaling_factor_on_monthly_risk_of_pregnancy
           - LIST
           - Scaling factor (by age-group: 15-19, 20-24, ..., 45-49) on the monthly risk of pregnancy and contraceptive failure rate. This value is found through calibration so that, at the beginning of the simulation, the age-specific monthly probability of a woman having a live birth matches the WPP age-specific fertility rate value for the same year.
+        * - max_number_of_runs_of_hsi_if_consumable_not_available
+          - INT
+          - The maximum number of time an HSI can run (repeats occur if the consumables are not available
+        * - max_days_delay_between_decision_to_change_method_and_hsi_scheduled
+          - INT
+          - The maximum delay (in days) between the decision for a contraceptive to change and the `topen`date of the HSI that is scheduled to effect the change (when using the healthsystem),
 
 
      **PROPERTIES:**
@@ -102,7 +108,7 @@ tlo.methods.contraception module
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthSystem'}
 
-     all_contraception_states : {'periodic_abstinence', 'withdrawal', 'IUD', 'injections', 'male_condom', 'other_modern', 'not_using', 'other_traditional', 'female_sterilization', 'implant', 'pill'}
+     all_contraception_states : {'IUD', 'male_condom', 'female_sterilization', 'other_traditional', 'withdrawal', 'implant', 'injections', 'pill', 'other_modern', 'not_using', 'periodic_abstinence'}
 
      **Functions (defined or overridden in class Contraception):**
 
@@ -217,6 +223,8 @@ tlo.methods.contraception module
      .. automethod:: __init__
 
      .. automethod:: apply
+
+     .. automethod:: reschedule
 
      .. automethod:: never_ran
 

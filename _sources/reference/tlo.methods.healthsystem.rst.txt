@@ -11,7 +11,7 @@ tlo.methods.healthsystem module
 
      **Class attributes:**
 
-     bed_days_allocated_to_this_event : <property object at 0x7fe46d7031d0>
+     bed_days_allocated_to_this_event : <property object at 0x7ff868e2bb80>
 
      **Functions (defined or overridden in class HSI_Event):**
 
@@ -205,6 +205,10 @@ tlo.methods.healthsystem module
 
      .. automethod:: override_availability_of_consumables
 
+     .. automethod:: on_end_of_day
+
+     .. automethod:: on_end_of_year
+
 
 
 
@@ -220,6 +224,8 @@ tlo.methods.healthsystem module
      **Functions (defined or overridden in class HealthSystemScheduler):**
 
      .. automethod:: __init__
+
+     .. automethod:: _is_today_last_day_of_the_year
 
      .. automethod:: apply
 
