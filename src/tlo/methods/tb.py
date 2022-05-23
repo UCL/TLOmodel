@@ -1358,25 +1358,25 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.modules["Hiv"].parameters["hiv_testing_rates"]["annual_testing_rate_adults"] = 0.15
 
             # prob ART start
-            self.sim.modules["Hiv"].parameters["prob_start_art_after_hiv_test"]["value"] = 0.8
+            self.sim.modules["Hiv"].parameters["prob_start_art_or_vs"]["prob_art_if_dx"] = 0.8
 
             # ART adherence
-            self.sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_6_months"] = 0.75
+            self.sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_6_months"] = 0.98
 
             # drop viral suppression for all PLHIV
             self.sim.modules["Hiv"].parameters["prob_start_art_or_vs"]["virally_suppressed_on_art"] = 80
 
             # TB
             # rate testing
-            self.sim.modules["Tb"].parameters["rate_testing_general_pop"] = 0.01
+            self.sim.modules["Tb"].parameters["rate_testing_general_pop"] = 0.0125
             self.sim.modules["Tb"].parameters["rate_testing_active_tb"]["testing_rate_active_cases"] = 50
 
-            # lower tb treatment success rates
-            self.sim.modules["Tb"].parameters["prob_tx_success_ds"] = 0.6
-            self.sim.modules["Tb"].parameters["prob_tx_success_mdr"] = 0.6
-            self.sim.modules["Tb"].parameters["prob_tx_success_0_4"] = 0.6
-            self.sim.modules["Tb"].parameters["prob_tx_success_5_14"] = 0.6
-            self.sim.modules["Tb"].parameters["prob_tx_success_shorter"] = 0.6
+            # lower tb treatment success rates - drop by 20%
+            self.sim.modules["Tb"].parameters["prob_tx_success_ds"] = 0.67
+            self.sim.modules["Tb"].parameters["prob_tx_success_mdr"] = 0.48
+            self.sim.modules["Tb"].parameters["prob_tx_success_0_4"] = 0.75
+            self.sim.modules["Tb"].parameters["prob_tx_success_5_14"] = 0.74
+            self.sim.modules["Tb"].parameters["prob_tx_success_shorter"] = 0.74
 
             # coverage of IPT
             self.sim.modules["Tb"].parameters["ipt_coverage"]["coverage_plhiv"] = 0.15

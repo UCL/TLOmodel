@@ -14,20 +14,13 @@ Run on the batch system using:
 tlo batch-submit src/scripts/hiv/deviance_for_calibration/calibration_hiv.py
 
 20th May 2022 runs:
-Job ID: calibration_script-2022-02-16T202042Z
-
-this ^^ is the large calibration run (100 jobs, pop=760k)
-
+Job ID: calibration_hiv-2022-05-20T201400Z
 
 Display information about a job:
-tlo batch-job tlo_q1_demo-123 --tasks
+tlo batch-job calibration_hiv-2022-05-20T201400Z --tasks
 
 Download result files for a completed job:
 tlo batch-download calibration_script-2022-04-12T190518Z
-
-12th Apr 2022
-Job ID: calibration_script-2022-04-12T190518Z
-
 
 """
 
