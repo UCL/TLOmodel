@@ -1,6 +1,4 @@
-from src.scripts.maternal_perinatal_analyses.calibration.output_all_death_calibration_per_year import (
-    output_all_death_calibration_per_year,
-)
+from .output_all_death_calibration_per_year import output_all_death_calibration_per_year
 from src.scripts.maternal_perinatal_analyses.calibration.output_all_key_outcomes_per_year import (
     output_key_outcomes_from_scenario_file,
 )
