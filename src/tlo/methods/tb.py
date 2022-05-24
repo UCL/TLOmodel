@@ -769,8 +769,8 @@ class Tb(Module):
             hs.get_item_codes_from_package_name("First line treatment for retreatment TB cases for children")
 
         # mdr treatment
-        self.item_codes_for_consumables_required['tb_mdrtx'] = \
-            hs.get_item_code_from_item_name("6Cm (or Km)-Lfx-Eto-Cs-Z/18Lfx-Eto-Cs")
+        self.item_codes_for_consumables_required['tb_mdrtx'] = {
+            hs.get_item_code_from_item_name("6Cm (or Km)-Lfx-Eto-Cs-Z/18Lfx-Eto-Cs"): 1}
 
         # ipt
         self.item_codes_for_consumables_required['tb_ipt'] = {
