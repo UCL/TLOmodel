@@ -239,13 +239,17 @@ def extract_results(results_folder: Path,
     (if available)
     """
 
-    # get number of draws and numbers of runs
-    info = get_scenario_info(results_folder)
-
-    cols = pd.MultiIndex.from_product(
-        [range(info['number_of_draws']), range(info['runs_per_draw'])],
-        names=["draw", "run"]
-    )
+    def df_from_dict_of_series(_d: Dict[str, pd.Series]) -> pd.DataFrame:
+        """Create a pd.DataFrame from the concatenation of a dict containing `pd.Series`, similar to `pd.concat` but
+        with the special behaviour that when `None` is found instead of a `pd.Series`, a column is created in the
+        resulting `pd.DataFrame` that is filled with `np.nan`."""
+        assert [True for v in _d.values() if v is not None], 'No results found'
+        # Concatenate non-None columns:
+        _df = pd.concat({col_name: ser for col_name, ser in _d.items() if ser is not None}, axis=1).fillna(0)
+        # Add in columns for which `None` found:
+        _df[[col_name for col_name, ser in _d.items() if ser is None]] = np.nan
+        # Return the df with the order of the columns matching the order the dict keys:
+        return _df[_d.keys()]
 
     def get_multiplier(_draw, _run):
         """Helper function to get the multiplier from the simulation, if it's specified and do_scaling=True"""
@@ -258,54 +262,64 @@ def extract_results(results_folder: Path,
             except KeyError:
                 return 1.0
 
+    # get number of draws and numbers of runs
+    info = get_scenario_info(results_folder)
+
+    cols = pd.MultiIndex.from_product(
+        [range(info['number_of_draws']), range(info['runs_per_draw'])],
+        names=["draw", "run"]
+    )
+
     if custom_generate_series is None:
 
         assert column is not None, "Must specify which column to extract"
 
         results_index = None
         if index is not None:
-            # extract the index from the first log, and use this ensure that all other are exactly the same.
+            # Extract the index from the first log, and use this to ensure that all others are exactly the same.
             filename = f"{module}.pickle"
             df: pd.DataFrame = load_pickled_dataframes(results_folder, draw=0, run=0, name=filename)[module][key]
             results_index = df[index]
 
-        results = pd.DataFrame(columns=cols)
-        for draw in range(info['number_of_draws']):
-            for run in range(info['runs_per_draw']):
+        res = dict()
+        for draw, run in cols:
+            try:
+                df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
+                res[f"{draw}_{run}"] = df[column] * get_multiplier(draw, run)
 
-                try:
-                    df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
-                    results[draw, run] = df[column] * get_multiplier(draw, run)
+                if index is not None:
+                    idx = df[index]
+                    assert idx.equals(results_index), "Indexes are not the same between runs"
 
-                    if index is not None:
-                        idx = df[index]
-                        assert idx.equals(results_index), "Indexes are not the same between runs"
+            except ValueError:  # Run didn't work so log file are not generated
+                res[f"{draw}_{run}"] = None
 
-                except ValueError:
-                    results[draw, run] = np.nan
+        results = df_from_dict_of_series(res)
 
-        # if 'index' is provided, set this to be the index of the results
+        # If 'index' is provided, set this to be the index of the results
         if index is not None:
             results.index = results_index
 
         return results
 
     else:
-        # A custom commaand to generate a series has been provided.
-        # No other arguements should be provided.
+        # A custom command to generate a series has been provided.
+        # No other arguments should be provided.
         assert index is None, "Cannot specify an index if using custom_generate_series"
         assert column is None, "Cannot specify a column if using custom_generate_series"
 
         # Collect results and then use pd.concat as indicies may be different betweeen runs
         res = dict()
-        for draw in range(info['number_of_draws']):
-            for run in range(info['runs_per_draw']):
+        for draw, run in cols:
+            try:
                 df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
                 output_from_eval = custom_generate_series(df)
                 assert pd.Series == type(output_from_eval), 'Custom command does not generate a pd.Series'
                 res[f"{draw}_{run}"] = output_from_eval * get_multiplier(draw, run)
-        results = pd.concat(res.values(), axis=1).fillna(0)
-        results.columns = cols
+            except KeyError:  # Run didn't work so log file are not generated
+                res[f"{draw}_{run}"] = None
+
+        results = df_from_dict_of_series(res)
 
         return results
 
