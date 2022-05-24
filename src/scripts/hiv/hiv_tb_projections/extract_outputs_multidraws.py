@@ -15,8 +15,7 @@ from tlo.analysis.utils import (
 outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
 
 # download all files (and get most recent [-1])
-results_folder1 = get_scenario_outputs("scenario1.py", outputspath)[-1]
-results_folder3 = get_scenario_outputs("scenario3.py", outputspath)[-1]
+results_folder1 = get_scenario_outputs("scenario_batch_runs.py", outputspath)[-1]
 
 # look at one log (default draw=0 and run=0)
 log = load_pickled_dataframes(results_folder1)
