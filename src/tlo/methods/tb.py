@@ -770,7 +770,7 @@ class Tb(Module):
 
         # mdr treatment
         self.item_codes_for_consumables_required['tb_mdrtx'] = \
-            hs.get_item_codes_from_package_name("Case management of MDR cases")
+            hs.get_item_code_from_item_name("6Cm (or Km)-Lfx-Eto-Cs-Z/18Lfx-Eto-Cs")
 
         # ipt
         self.item_codes_for_consumables_required['tb_ipt'] = {
