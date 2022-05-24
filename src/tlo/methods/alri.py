@@ -865,7 +865,7 @@ class Alri(Module):
 
     def look_up_consumables(self):
         """Look up and store the consumables item codes used in each of the HSI."""
-        # TODO @ Ines - these doses by age pattern look weird -- 1 month old has highest dose!!?!
+        # TODO: Tim H. - is the 1 month old now included in the 1 year olds?
 
         get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
 
@@ -894,6 +894,7 @@ class Alri(Module):
                                                           ),
         }
 
+        # Antibiotics for non-severe pneumonia - oral amoxicillin for 3 days
         self.consumables_used_in_hsi['Amoxicillin_tablet_or_suspension_3days'] = {
             get_item_code(item='Amoxycillin 250mg_1000_CMST'):
                 lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
@@ -916,7 +917,7 @@ class Alri(Module):
                                                           {4: 2.81, 12: 4.69, 36: 7.03, np.inf: 9.37}
                                                           ),
             get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
-            get_item_code(item='Syringe, needle + swab'): 1
+            get_item_code(item='Syringe, Autodisable SoloShot IX '): 1
         }
 
         # Antibiotic therapy for severe pneumonia - benzylpenicillin package when ampicillin is not available
@@ -930,7 +931,7 @@ class Alri(Module):
                                                           {4: 2.81, 12: 4.69, 36: 7.03, np.inf: 9.37}
                                                           ),
             get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
-            get_item_code(item='Syringe, needle + swab'): 1
+            get_item_code(item='Syringe, Autodisable SoloShot IX '): 1
         }
 
         # Second line of antibiotics for severe pneumonia
@@ -940,12 +941,12 @@ class Alri(Module):
                                                           {4: 1.5, 12: 3, 36: 5, np.inf: 7}
                                                           ),
             get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
-            get_item_code(item='Syringe, needle + swab'): 1
+            get_item_code(item='Syringe, Autodisable SoloShot IX '): 1
         }
 
         # Second line of antibiotics for severe pneumonia, if Staph is suspected
         self.consumables_used_in_hsi['2nd_line_Antibiotic_therapy_for_severe_staph_pneumonia'] = {
-            get_item_code(item='cloxacillin 500 mg, powder for injection_50_IDA'):
+            get_item_code(item='cloxacillin 500 mg, powder for injection_50_IDA'):  # todo: not in consumables list
                 lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
                                                           {4: 5.6, 12: 11.2, 36: 16.8, np.inf: 22.4}
                                                           ),
@@ -954,7 +955,7 @@ class Alri(Module):
                                                           {4: 2.81, 12: 4.69, 36: 7.03, np.inf: 9.37}
                                                           ),
             get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
-            get_item_code(item='Syringe, needle + swab'): 1
+            get_item_code(item='Syringe, Autodisable SoloShot IX '): 1
         }
 
         # First dose of antibiotic before referral -------------------
@@ -977,7 +978,7 @@ class Alri(Module):
                                                           {4: 0.56, 12: 0.94, 36: 1.41, np.inf: 1.87}
                                                           ),
             get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
-            get_item_code(item='Syringe, needle + swab'): 1
+            get_item_code(item='Syringe, Autodisable SoloShot IX '): 1
         }
 
         # Oxygen, pulse oximetry and x-ray -------------------
@@ -985,7 +986,7 @@ class Alri(Module):
         # Oxygen for hypoxaemia
         self.consumables_used_in_hsi['Oxygen_Therapy'] = {
             get_item_code(item='Oxygen, 1000 liters, primarily with oxygen cylinders'): 1,
-            get_item_code(item='Nasal prongs'): 1
+            # get_item_code(item='Nasal prongs'): 1
         }
 
         # Pulse oximetry
@@ -2098,8 +2099,6 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
         rand = self.module.rng.random_sample
         rand_choice = self.module.rng.choice
         p = self.module.parameters
-        # todo- @ines --- please check the below. I found a few things that seemed mislabelled, so have gone ahead to
-        #  correct them following the dominant pattern.
 
         if facility_level == '0':
             if imci_classification_based_on_symptoms == 'fast_breathing_pneumonia':
@@ -2109,7 +2108,6 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                     return 'cough_or_cold'
 
             elif imci_classification_based_on_symptoms in ('chest_indrawing_pneumonia', 'danger_signs_pneumonia'):
-                # todo - @Ines - should the line above include 'serious_bacterial_infection'...?
                 if rand() < p['sensitivity_of_classification_of_danger_signs_pneumonia_facility_level0']:
                     return imci_classification_based_on_symptoms
                 else:
@@ -2121,7 +2119,9 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                         ]
                     )
             else:
-                return 'cough_or_cold'
+                # (Perfect diagnosis accuracy for 'cough_or_cold' & 'serious_bacterial_infection')
+                # serious bacterial infections not determined at level 0 - need to refer to facility <2 months old
+                return imci_classification_based_on_symptoms
 
         elif facility_level in ('1a', '1b'):
             if imci_classification_based_on_symptoms in ('fast_breathing_pneumonia', 'chest_indrawing_pneumonia'):
@@ -2197,6 +2197,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
 
         _classification = imci_classification_by_SpO2_measure \
             if use_oximeter and (imci_classification_by_SpO2_measure != '') else hw_assigned_classification
+        # TODO: ASK TIM C. THIS ASSUMES PULSE OXIMETER READS AT 100% SENSITIVITY - DO WE WANT TO LOOK INTO READING SENSITIVITY?
 
         logger.info(
             key='classification',
