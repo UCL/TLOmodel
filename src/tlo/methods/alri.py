@@ -946,7 +946,7 @@ class Alri(Module):
 
         # Second line of antibiotics for severe pneumonia, if Staph is suspected
         self.consumables_used_in_hsi['2nd_line_Antibiotic_therapy_for_severe_staph_pneumonia'] = {
-            get_item_code(item='cloxacillin 500 mg, powder for injection_50_IDA'):  # todo: not in consumables list
+            get_item_code(item='cloxacillin 500 mg, powder for injection_50_IDA'):
                 lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
                                                           {4: 5.6, 12: 11.2, 36: 16.8, np.inf: 22.4}
                                                           ),
@@ -2197,7 +2197,8 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
 
         _classification = imci_classification_by_SpO2_measure \
             if use_oximeter and (imci_classification_by_SpO2_measure != '') else hw_assigned_classification
-        # TODO: ASK TIM C. THIS ASSUMES PULSE OXIMETER READS AT 100% SENSITIVITY - DO WE WANT TO LOOK INTO READING SENSITIVITY?
+        # TODO: ASK TIM C. THIS ASSUMES PULSE OXIMETER READS AT 100% SENSITIVITY -
+        #  DO WE WANT TO LOOK INTO READING SENSITIVITY?
 
         logger.info(
             key='classification',
