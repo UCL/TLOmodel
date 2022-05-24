@@ -645,7 +645,7 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
 
         self.TREATMENT_ID = "BreastCancer_Investigation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1, "Mammography": 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.ACCEPTED_FACILITY_LEVEL = '3'  # Mammography only available at level 3 and above.
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
