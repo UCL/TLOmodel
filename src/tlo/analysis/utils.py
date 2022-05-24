@@ -14,6 +14,7 @@ import pandas as pd
 from tlo import logging, util
 from tlo.logging.reader import LogData
 from tlo.util import create_age_range_lookup
+from itertools import product
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -251,6 +252,17 @@ def extract_results(results_folder: Path,
         # Return the df with the order of the columns matching the order the dict keys:
         return _df[_d.keys()]
 
+
+    def make_columns_into_multiindex(_df: pd.DataFrame) -> pd.DataFrame:
+        """Returns `pd.DataFrame` with columns reformatted from string of the form "{draw}_{run}" to multi-index
+        with levels of draw and run."""
+        _df.columns = pd.MultiIndex.from_tuples(
+            [tuple(int(_x) for _x in col.split('_')) for col in _df.columns],
+            names=["draw", "run"]
+        )
+        return _df
+
+
     def get_multiplier(_draw, _run):
         """Helper function to get the multiplier from the simulation, if it's specified and do_scaling=True"""
         if not do_scaling:
@@ -265,10 +277,7 @@ def extract_results(results_folder: Path,
     # get number of draws and numbers of runs
     info = get_scenario_info(results_folder)
 
-    cols = pd.MultiIndex.from_product(
-        [range(info['number_of_draws']), range(info['runs_per_draw'])],
-        names=["draw", "run"]
-    )
+    possible_results = list(product(range(info['number_of_draws']), range(info['runs_per_draw'])))
 
     if custom_generate_series is None:
 
@@ -282,7 +291,7 @@ def extract_results(results_folder: Path,
             results_index = df[index]
 
         res = dict()
-        for draw, run in cols:
+        for draw, run in possible_results:
             try:
                 df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
                 res[f"{draw}_{run}"] = df[column] * get_multiplier(draw, run)
@@ -291,8 +300,8 @@ def extract_results(results_folder: Path,
                     idx = df[index]
                     assert idx.equals(results_index), "Indexes are not the same between runs"
 
-            except ValueError:  # Run didn't work so log file are not generated
-                res[f"{draw}_{run}"] = None
+            except KeyError:  # Run didn't work so log file are not generated
+                pass
 
         results = df_from_dict_of_series(res)
 
@@ -300,7 +309,7 @@ def extract_results(results_folder: Path,
         if index is not None:
             results.index = results_index
 
-        return results
+        return make_columns_into_multiindex(results)
 
     else:
         # A custom command to generate a series has been provided.
@@ -310,18 +319,18 @@ def extract_results(results_folder: Path,
 
         # Collect results and then use pd.concat as indicies may be different betweeen runs
         res = dict()
-        for draw, run in cols:
+        for draw, run in possible_results:
             try:
                 df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
                 output_from_eval = custom_generate_series(df)
                 assert pd.Series == type(output_from_eval), 'Custom command does not generate a pd.Series'
                 res[f"{draw}_{run}"] = output_from_eval * get_multiplier(draw, run)
             except KeyError:  # Run didn't work so log file are not generated
-                res[f"{draw}_{run}"] = None
+                pass
 
         results = df_from_dict_of_series(res)
 
-        return results
+        return make_columns_into_multiindex(results)
 
 
 def summarize(results: pd.DataFrame, only_mean: bool = False, collapse_columns: bool = False) -> pd.DataFrame:
