@@ -241,17 +241,8 @@ def extract_results(results_folder: Path,
     """
 
     def df_from_dict_of_series(_d: Dict[str, pd.Series]) -> pd.DataFrame:
-        """Create a pd.DataFrame from the concatenation of a dict containing `pd.Series`, similar to `pd.concat` but
-        with the special behaviour that when `None` is found instead of a `pd.Series`, a column is created in the
-        resulting `pd.DataFrame` that is filled with `np.nan`."""
-        assert [True for v in _d.values() if v is not None], 'No results found'
-        # Concatenate non-None columns:
-        _df = pd.concat({col_name: ser for col_name, ser in _d.items() if ser is not None}, axis=1).fillna(0)
-        # Add in columns for which `None` found:
-        _df[[col_name for col_name, ser in _d.items() if ser is None]] = np.nan
-        # Return the df with the order of the columns matching the order the dict keys:
-        return _df[_d.keys()]
-
+        """Create a pd.DataFrame from the concatenation of a dict containing `pd.Series`, using `pd.concat`."""
+        return pd.concat(_d, axis=1).fillna(0)
 
     def make_columns_into_multiindex(_df: pd.DataFrame) -> pd.DataFrame:
         """Returns `pd.DataFrame` with columns reformatted from string of the form "{draw}_{run}" to multi-index
