@@ -1306,9 +1306,9 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
     depending on the scenario for projections which has been set
     * scenario 0 is the default which uses baseline parameters
     * scenario 1 optimistic, achieving all program targets
-    * scenario 2 realistic, program constraints, tx/dx test stockouts, high dropout
-    * scenario 3 additional measure to reduce incidence
-    * scenario 4 SHINE trial
+    * scenario 2 optimistic with program constraints
+    * scenario 3 optimistic with program constraints and additional measure to reduce incidence
+    * scenario 4 optimistic and additional measure to reduce incidence
 
     It only occurs once at param: scenario_start_date,
     called by initialise_simulation
@@ -1331,6 +1331,8 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             return
 
         if (scenario == 1) | (scenario == 3):
+
+            # HIV
             # increase testing/diagnosis rates, default 2020 0.03/0.25 -> 93% dx
             self.sim.modules["Hiv"].parameters["hiv_testing_rates"]["annual_testing_rate_children"] = 0.1
             self.sim.modules["Hiv"].parameters["hiv_testing_rates"]["annual_testing_rate_adults"] = 0.3
@@ -1346,47 +1348,34 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             # change all column values
             self.sim.modules["Hiv"].parameters["prob_start_art_or_vs"]["virally_suppressed_on_art"] = 95
 
+            # TB
+
+            # todo increase treatment coverage to 90%
+
+            # increase tb treatment success rates
+            self.sim.modules["Tb"].parameters["prob_tx_success_ds"] = 0.9
+            self.sim.modules["Tb"].parameters["prob_tx_success_mdr"] = 0.9
+            self.sim.modules["Tb"].parameters["prob_tx_success_0_4"] = 0.9
+            self.sim.modules["Tb"].parameters["prob_tx_success_5_14"] = 0.9
+            self.sim.modules["Tb"].parameters["prob_tx_success_shorter"] = 0.9
+
             # change first-line testing for TB to xpert
             p["first_line_test"] = "xpert"
             p["second_line_test"] = "sputum"
 
-        # reduce program coverage and health system constraints set to default
+        # introduce consumables constraints
         if scenario == 2:
+            pass
+            # todo adjust consumables availability
             # HIV
-            # testing rates
-            self.sim.modules["Hiv"].parameters["hiv_testing_rates"]["annual_testing_rate_children"] = 0.02
-            self.sim.modules["Hiv"].parameters["hiv_testing_rates"]["annual_testing_rate_adults"] = 0.15
-
-            # prob ART start
-            self.sim.modules["Hiv"].parameters["prob_start_art_or_vs"]["prob_art_if_dx"] = 0.8
-
-            # ART adherence
-            self.sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_6_months"] = 0.98
-
-            # drop viral suppression for all PLHIV
-            self.sim.modules["Hiv"].parameters["prob_start_art_or_vs"]["virally_suppressed_on_art"] = 80
 
             # TB
-            # rate testing
-            self.sim.modules["Tb"].parameters["rate_testing_general_pop"] = 0.0125
-            self.sim.modules["Tb"].parameters["rate_testing_active_tb"]["testing_rate_active_cases"] = 50
 
-            # lower tb treatment success rates - drop by 20%
-            self.sim.modules["Tb"].parameters["prob_tx_success_ds"] = 0.67
-            self.sim.modules["Tb"].parameters["prob_tx_success_mdr"] = 0.48
-            self.sim.modules["Tb"].parameters["prob_tx_success_0_4"] = 0.75
-            self.sim.modules["Tb"].parameters["prob_tx_success_5_14"] = 0.74
-            self.sim.modules["Tb"].parameters["prob_tx_success_shorter"] = 0.74
-
-            # coverage of IPT
-            self.sim.modules["Tb"].parameters["ipt_coverage"]["coverage_plhiv"] = 0.15
-            self.sim.modules["Tb"].parameters["ipt_coverage"]["coverage_paediatric"] = 0.4
-
-            # retention on IPT (PLHIV)
-            self.sim.modules["Tb"].parameters["prob_retained_ipt_6_months"] = 0.8
 
         # improve preventive measures
         if scenario == 3:
+
+            # HIV
             # reduce risk of HIV - applies to whole adult population
             self.sim.modules["Hiv"].parameters["beta"] = self.sim.modules["Hiv"].parameters["beta"] * 0.9
 
@@ -1401,12 +1390,9 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             # increase probability of VMMC after hiv test
             self.sim.modules["Hiv"].parameters["prob_circ_after_hiv_test"] = 0.25
 
-            # increase tb treatment success rates - increase by 20%
-            self.sim.modules["Tb"].parameters["prob_tx_success_ds"] = 1.0
-            self.sim.modules["Tb"].parameters["prob_tx_success_mdr"] = 0.72
-            self.sim.modules["Tb"].parameters["prob_tx_success_0_4"] = 1.0
-            self.sim.modules["Tb"].parameters["prob_tx_success_5_14"] = 1.0
-            self.sim.modules["Tb"].parameters["prob_tx_success_shorter"] = 1.0
+            # TB
+            # todo increase active case-finding
+            self.sim.modules["Tb"].parameters["rate_testing_active_tb"]["testing_rate_active_cases"] = 50
 
             # change IPT eligibility for TB contacts to all years
             p["age_eligibility_for_ipt"] = 100
@@ -1414,6 +1400,9 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             # increase coverage of IPT
             p["ipt_coverage"]["coverage_plhiv"] = 0.6
             p["ipt_coverage"]["coverage_paediatric"] = 0.8  # this will apply to contacts of all ages
+
+            # todo retention on IPT (PLHIV)
+            self.sim.modules["Tb"].parameters["prob_retained_ipt_6_months"] = 0.8
 
 
 class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
@@ -1836,11 +1825,14 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                     ].index
 
                 if ipt_eligible.any():
-                    # sample with replacement in case eligible population n<5
-                    ipt_sample = rng.choice(ipt_eligible, size=5, replace=True)
-                    # retain unique indices only
-                    # fine to have variability in number sampled (between 0-5)
-                    ipt_sample = list(set(ipt_sample))
+
+                    # select persons at highest risk of tb
+                    rr_of_tb = self.module.lm["active_tb"].predict(
+                        df.loc[ipt_eligible]
+                    )
+
+                    # choose top 5 highest risk contacts
+                    ipt_sample = rr_of_tb.sort_values(ascending=False).head(5).index
 
                     for person_id in ipt_sample:
                         logger.debug(

@@ -35,10 +35,10 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2013, 1, 1)
-popsize = 1000
+end_date = Date(2020, 1, 1)
+popsize = 10000
 
-scenario = 3
+scenario = 0
 
 # set up the log config
 log_config = {
@@ -68,9 +68,10 @@ sim.register(
         resourcefilepath=resourcefilepath,
         service_availability=["*"],  # all treatment allowed
         mode_appt_constraints=0,  # mode of constraints to do with officer numbers and time
-        cons_availability="all",  # mode for consumable constraints (if ignored, all consumables available)
-        ignore_priority=True,  # do not use the priority information in HSI event to schedule
+        cons_availability="default",  # mode for consumable constraints (if ignored, all consumables available)
+        ignore_priority=False,  # do not use the priority information in HSI event to schedule
         capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
+        use_funded_or_actual_staffing="actual",  # actual: use numbers/distribution of staff available currently
         disable=False,  # disables the healthsystem (no constraints and no logging) and every HSI runs
         disable_and_reject_all=False,  # disable healthsystem and no HSI runs
         store_hsi_events_that_have_run=False,  # convenience function for debugging

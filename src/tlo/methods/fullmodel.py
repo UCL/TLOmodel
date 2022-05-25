@@ -44,6 +44,9 @@ def fullmodel(
     symptommanager_spurious_symptoms: Optional[bool] = True,
     healthsystem_disable: Optional[bool] = False,
     healthsystem_mode_appt_constraints: Optional[int] = 1,
+    healthsystem_cons_availability: Optional[str] = "all",
+    healthsystem_ignore_priority: Optional[bool] = True,
+    healthsystem_use_funded_or_actual_staffing: Optional[str] = "funded_plus",
     healthsystem_capabilities_coefficient: Optional[float] = 1.0,
     healthsystem_record_hsi_event_details: Optional[bool] = False
 ) -> List[Module]:
@@ -69,6 +72,9 @@ def fullmodel(
             resourcefilepath=resourcefilepath,
             disable=healthsystem_disable,
             mode_appt_constraints=healthsystem_mode_appt_constraints,
+            cons_availability=healthsystem_cons_availability,
+            ignore_priority=healthsystem_ignore_priority,
+            use_funded_or_actual_staffing=healthsystem_use_funded_or_actual_staffing,
             capabilities_coefficient=healthsystem_capabilities_coefficient,
             record_hsi_event_details=healthsystem_record_hsi_event_details),
     ])
