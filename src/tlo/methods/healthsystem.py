@@ -1247,7 +1247,7 @@ class HealthSystem(Module):
                          facility_id,
                          ):
         """Write the log `HSI_Event` and add to the summary counter."""
-        assert facility_level is not None
+
         logger.info(key="HSI_Event",
                     data={
                         'TREATMENT_ID': treatment_id,
@@ -1256,7 +1256,7 @@ class HealthSystem(Module):
                         'Squeeze_Factor': squeeze_factor,
                         'did_run': did_run,
                         'Facility_Level': facility_level if facility_level is not None else -99,
-                        'Facility_ID': facility_id if facility_level is not None else -99,
+                        'Facility_ID': facility_id if facility_id is not None else -99,
                     },
                     description="record of each HSI event"
                     )
