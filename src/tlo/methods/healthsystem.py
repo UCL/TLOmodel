@@ -11,7 +11,7 @@ from collections import Counter, defaultdict
 from collections.abc import Iterable
 from itertools import repeat
 from pathlib import Path
-from typing import List, NamedTuple, Optional, Tuple, Union
+from typing import List, NamedTuple, Optional, Tuple, Union, Dict
 
 import numpy as np
 import pandas as pd
@@ -1683,3 +1683,37 @@ class HealthSystemSummaryCounter:
         )
 
         self._reset_internal_stores()
+
+
+class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
+    """Event that causes certain internal parameters of the HealthSystem to be changed; specifically:
+        * `mode_appt_constraints`
+        * `ignore_priority`
+        * `capabilities_coefficient`
+        * `cons_availability`
+        * `beds_availability`
+    Note that no checking is done here on the suitability of the parameters."""
+
+    def __init__(self, module: HealthSystem, parameters: Dict):
+        super().__init__(module)
+        self._parameters = parameters
+
+    def apply(self, population):
+
+        if 'mode_appt_constraints' in self._parameters:
+            self.module.mode_appt_constraints = self._parameters['mode_appt_constraints']
+
+        if 'ignore_priority' in self._parameters:
+            self.module.ignore_priority = self._parameters['ignore_priority']
+
+        if 'capabilities_coefficient' in self._parameters:
+            self.module.capabilities_coefficient = self._parameters['capabilities_coefficient']
+
+        if 'cons_availability' in self._parameters:
+            self.module.consumables = Consumables(data=self.module.parameters['availability_estimates'],
+                                                  rng=self.module.rng,
+                                                  availability=self._parameters['cons_availability'])
+            self.on_start_of_day(self.module.sim.date)
+
+        if 'beds_availability' in self._parameters:
+            self.module.bed_days.availability = self._parameters['beds_availability']
