@@ -322,7 +322,7 @@ class Tb(Module):
             "rate of screening / testing per month in general population",
         ),
         "rate_testing_active_tb": Parameter(
-            Types.REAL,
+            Types.DATA_FRAME,
             "rate of screening / testing per month in population with active tb",
         ),
         # ------------------ treatment regimens ------------------ #
@@ -469,7 +469,7 @@ class Tb(Module):
                 'va_bcg_all_doses &'
                 '(hv_inf == False) &'
                 '(age_years <10)',
-                p["rr_tb_bcg"]
+                p["rr_tb_bcg"]  # child with bcg
             ),
             Predictor("li_bmi").when(">=4", p["rr_tb_obese"]),
             # Predictor('diabetes').when(True, p['rr_tb_diabetes1']),
@@ -480,53 +480,57 @@ class Tb(Module):
                 '~hv_inf &'
                 'tb_on_ipt & '
                 'age_years <= 15',
-                p["rr_ipt_child"]),
+                p["rr_ipt_child"]),  # hiv- child on ipt
             Predictor().when(
                 '~hv_inf &'
                 'tb_on_ipt & '
                 'age_years > 15',
-                p["rr_ipt_adult"]),
+                p["rr_ipt_adult"]),  # hiv- adult on ipt
             # -------------- PLHIV -------------- #
             Predictor("hv_inf").when(True, p["rr_tb_hiv"]),
             Predictor("sy_aids_symptoms").when(">0", p["rr_tb_aids"]),
-            # on ART
+            # on ART, no IPT
             Predictor().when(
-                '(hv_art != "on_VL_suppressed") &'
+                'hv_inf & '
+                '(hv_art == "on_VL_suppressed") &'
+                '~tb_on_ipt & '
                 'age_years <= 15',
-                p["rr_tb_art_child"]),
+                p["rr_tb_art_child"]),  # hiv+ child on ART
             Predictor().when(
-                '(hv_art != "on_VL_suppressed") &'
+                'hv_inf & '
+                '(hv_art == "on_VL_suppressed") &'
+                '~tb_on_ipt & '
                 'age_years > 15',
-                p["rr_tb_art_adult"]),
-            # hiv+, on ART, on IPT
+                p["rr_tb_art_adult"]),  # hiv+ adult on ART
+            # on ART, on IPT
             Predictor().when(
-                '(tb_on_ipt == True) & '
-                '(hv_inf == True) & '
+                'tb_on_ipt & '
+                'hv_inf & '
                 'age_years <= 15 &'
                 '(hv_art == "on_VL_suppressed")',
-                (p["rr_tb_art_child"] * p["rr_ipt_art_child"]),
+                (p["rr_tb_art_child"] * p["rr_ipt_art_child"]),  # hiv+ child on ART+IPT
             ),
             Predictor().when(
-                '(tb_on_ipt == True) & '
-                '(hv_inf == True) & '
+                'tb_on_ipt & '
+                'hv_inf & '
                 'age_years > 15 &'
                 '(hv_art == "on_VL_suppressed")',
-                (p["rr_tb_art_adult"] * p["rr_ipt_art_adult"]),
+                (p["rr_tb_art_adult"] * p["rr_ipt_art_adult"]),  # hiv+ adult on ART+IPT
             ),
-            # hiv+, not on ART, on IPT
+            # not on ART, on IPT
             Predictor().when(
-                '(tb_on_ipt == True) & '
-                '(hv_inf == True) & '
+                'tb_on_ipt & '
+                'hv_inf & '
                 'age_years <= 15 &'
                 '(hv_art != "on_VL_suppressed")',
-                p["rr_ipt_child_hiv"],
+                p["rr_ipt_child_hiv"],  # hiv+ child IPT only
             ),
             Predictor().when(
-                '(tb_on_ipt == True) & '
-                '(hv_inf == True) & '
+                'tb_on_ipt & '
+                'hv_inf & '
                 'age_years > 15 &'
                 '(hv_art != "on_VL_suppressed")',
-                p["rr_ipt_adult_hiv"],
+                p["rr_ipt_adult_hiv"],  # hiv+ adult IPT only
             ),
         )
 
@@ -605,7 +609,7 @@ class Tb(Module):
                                               active_testing_rates.year == year),
                                           "testing_rate_active_cases"].values[
                                           0] / 100
-        current_active_testing_rate = current_active_testing_rate / 3  # adjusted for monthly poll
+        # current_active_testing_rate = current_active_testing_rate / 3  # adjusted for monthly poll
         random_draw = rng.random_sample(size=len(df))
 
         # randomly select some individuals for screening and testing
@@ -765,8 +769,8 @@ class Tb(Module):
             hs.get_item_codes_from_package_name("First line treatment for retreatment TB cases for children")
 
         # mdr treatment
-        self.item_codes_for_consumables_required['tb_mdrtx'] = \
-            hs.get_item_codes_from_package_name("Case management of MDR cases")
+        self.item_codes_for_consumables_required['tb_mdrtx'] = {
+            hs.get_item_code_from_item_name("Category IV"): 1}
 
         # ipt
         self.item_codes_for_consumables_required['tb_ipt'] = {
@@ -1340,7 +1344,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             # viral suppression rates
             # adults already at 95% by 2020
             # change all column values
-            self.sim.modules["Hiv"].parameters["prob_viral_suppression"]["virally_suppressed_on_art"] = 95
+            self.sim.modules["Hiv"].parameters["prob_start_art_or_vs"]["virally_suppressed_on_art"] = 95
 
             # change first-line testing for TB to xpert
             p["first_line_test"] = "xpert"
@@ -1360,7 +1364,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_6_months"] = 0.75
 
             # drop viral suppression for all PLHIV
-            self.sim.modules["Hiv"].parameters["prob_viral_suppression"]["virally_suppressed_on_art"] = 80
+            self.sim.modules["Hiv"].parameters["prob_start_art_or_vs"]["virally_suppressed_on_art"] = 80
 
             # TB
             # rate testing
@@ -1608,6 +1612,11 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
         # this will clear all tb symptoms
         self.sim.modules["SymptomManager"].clear_symptoms(
             person_id=all_self_cure, disease_module=self.module
+        )
+
+        # resolve AIDS symptoms if virally suppressed
+        self.sim.modules["SymptomManager"].clear_symptoms(
+            person_id=self_cure_art, disease_module=self.sim.modules["Hiv"]
         )
 
 
@@ -2379,6 +2388,9 @@ class TbDeathEvent(Event, IndividualScopeEventMixin):
         df = self.sim.population.props
 
         if not df.at[person_id, "is_alive"]:
+            return
+
+        if not df.at[person_id, "tb_inf"] == "active":
             return
 
         logger.debug(

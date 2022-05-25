@@ -259,6 +259,10 @@ class Hiv(Module):
             "Mean years between when a person (any change) stops being on treatment to when AIDS is onset (if the "
             "absence of resuming treatment).",
         ),
+        "prop_delayed_aids_onset": Parameter(
+            Types.REAL,
+            "Proportion of PLHIV that will have delayed AIDS onset to compensate for AIDS-TB",
+        ),
         # Natural history - survival (children)
         "mean_survival_for_infants_infected_prior_to_birth": Parameter(
             Types.REAL,
@@ -280,16 +284,21 @@ class Hiv(Module):
             Types.REAL,
             "relative likelihood of having HIV test for people with HIV",
         ),
+        "treatment_initiation_adjustment": Parameter(
+            Types.REAL,
+            "adjustment to current ART coverage levels to account for defaulters",
+        ),
+        "vs_adjustment": Parameter(
+            Types.REAL,
+            "adjustment to current viral suppression levels to account for defaulters",
+        ),
         "prob_anc_test_at_delivery": Parameter(
             Types.REAL,
             "probability of a women having hiv test at anc following delivery",
         ),
-        "prob_art_start": Parameter(
-            Types.DATA_FRAME, "annual rates of starting ART following positive HIV test"
-        ),
-        "prob_start_art_after_hiv_test": Parameter(
+        "prob_start_art_or_vs": Parameter(
             Types.REAL,
-            "Probability that a person will start treatment, if HIV-positive, following testing",
+            "Probability that a person will start treatment and be virally suppressed following testing",
         ),
         "prob_behav_chg_after_hiv_test": Parameter(
             Types.REAL,
@@ -326,9 +335,6 @@ class Hiv(Module):
             Types.REAL,
             "Probability that a person who 'should' be on art will seek another appointment if the health-"
             "system has not been able to provide them with an appointment",
-        ),
-        "prob_viral_suppression": Parameter(
-            Types.DATA_FRAME, "probability of viral suppression each year"
         ),
         "prep_start_year": Parameter(Types.REAL, "Year from which PrEP is available"),
         "ART_age_cutoff_young_child": Parameter(
@@ -376,11 +382,11 @@ class Hiv(Module):
         # Load assumed ART coverage at baseline (year 2010)
         p["art_coverage"] = workbook["art_coverage"]
 
-        # Load probability of art start after positive HIV test
-        p["prob_start_art_after_hiv_test"] = workbook["prob_art_start_if_dx"]
+        # Load probability of art / viral suppression start after positive HIV test
+        p["prob_start_art_or_vs"] = workbook["spectrum_treatment_cascade"]
 
-        # Load probability art start after hiv test
-        p["prob_viral_suppression"] = workbook["spectrum_treatment_cascade"]
+        # # Load probability art start after hiv test
+        # p["prob_viral_suppression"] = workbook["spectrum_treatment_cascade"]
 
         # Load spectrum estimates of treatment cascade
         p["treatment_cascade"] = workbook["spectrum_treatment_cascade"]
@@ -1203,7 +1209,10 @@ class Hiv(Module):
             )
 
         # Consider if the person will be referred to start ART
-        starts_art = self.rng.random_sample() < self.prob_art_start_after_test(self.sim.date.year)
+        if df.loc[person_id, "age_years"] <= 15:
+            starts_art = 1
+        else:
+            starts_art = self.rng.random_sample() < self.prob_art_start_after_test(self.sim.date.year)
 
         if starts_art:
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -1224,12 +1233,17 @@ class Hiv(Module):
 
     def prob_art_start_after_test(self, year):
         """ returns the probability of starting ART after a positive HIV test
+        this value for initiation will be higher than the current reported coverage levels
+        to account for defaulters
         """
-        prob_art = self.parameters["prob_start_art_after_hiv_test"]
-        current_year = year
+        prob_art = self.parameters["prob_start_art_or_vs"]
+        current_year = year if year <= 2025 else 2025
 
         # use iloc to index by position as index will change by year
-        return_prob = prob_art.loc[(prob_art.year == current_year), "value"].iloc[0]
+        return_prob = prob_art.loc[
+                          (prob_art.year == current_year) &
+                          (prob_art.age == "adults"),
+                          "prob_art_if_dx"].values[0] * self.parameters["treatment_initiation_adjustment"]
 
         return return_prob
 
@@ -1239,7 +1253,7 @@ class Hiv(Module):
         assume constant values 2010-2012 and 2020 on
         time-series ends at 2025
         """
-        prob_vs = self.parameters["prob_viral_suppression"]
+        prob_vs = self.parameters["prob_start_art_or_vs"]
         current_year = year if year <= 2025 else 2025
         age_of_person = age_of_person
         age_group = "adults" if age_of_person >= 15 else "children"
@@ -1247,7 +1261,10 @@ class Hiv(Module):
         return_prob = prob_vs.loc[
                           (prob_vs.year == current_year) &
                           (prob_vs.age == age_group),
-                          "virally_suppressed_on_art"].values[0] / 100
+                          "virally_suppressed_on_art"].values[0]
+
+        # convert to probability and adjust for defaulters
+        return_prob = (return_prob / 100) * self.parameters["vs_adjustment"]
 
         assert return_prob is not None
 
@@ -1260,7 +1277,7 @@ class Hiv(Module):
         df = self.sim.population.props
 
         # Schedule a new AIDS onset event if the person was on ART up until now
-        if df.at[person_id, "hv_art"] != "not":
+        if df.at[person_id, "hv_art"] == "on_VL_suppressed":
             months_to_aids = int(
                 np.floor(
                     self.rng.exponential(
@@ -1280,7 +1297,7 @@ class Hiv(Module):
         # refer for another test and referral in 6 months
         self.sim.modules["HealthSystem"].schedule_hsi_event(
             HSI_Hiv_TestAndRefer(person_id=person_id, module=self),
-            topen=self.sim.date + pd.DateOffset(months=6),
+            topen=self.sim.date + pd.DateOffset(months=1),
             tclose=None,
             priority=0,
         )
@@ -1655,44 +1672,72 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
 
         df = self.sim.population.props
 
-        # Check person is_alive
-        if not df.at[person_id, "is_alive"]:
+        # Return if person is dead or no HIV+
+        if not df.at[person_id, "is_alive"] or not df.at[person_id, "hv_inf"]:
             return
+
+        # eligible for AIDS onset:
+        # not VL suppressed no active tb
+        # not VL suppressed active tb
+        # VL suppressed active tb
 
         # Do nothing if person is now on ART and VL suppressed (non-VL suppressed has no effect)
         # if cause is TB, allow AIDS onset
         if (df.at[person_id, "hv_art"] == "on_VL_suppressed") and (self.cause != 'AIDS_TB'):
             return
 
-        # if eligible for aids onset (not treated with ART or currently has active TB):
-        # Update Symptoms
-        self.sim.modules["SymptomManager"].change_symptom(
-            person_id=person_id,
-            symptom_string="aids_symptoms",
-            add_or_remove="+",
-            disease_module=self.module,
-        )
+        # need to delay onset of AIDS (non-tb) to compensate for AIDS-TB
+        if (self.cause == "AIDS_non_TB") and (
+                self.sim.modules["Hiv"].rng.rand() < self.sim.modules["Hiv"].parameters["prop_delayed_aids_onset"]):
 
-        date_of_aids_death = self.sim.date + self.module.get_time_from_aids_to_death()
-
-        # Schedule AidsDeath
-        if self.cause == "AIDS_non_TB":
-
-            self.sim.schedule_event(
-                event=HivAidsDeathEvent(
-                    person_id=person_id, module=self.module, cause=self.cause
-                ),
-                date=date_of_aids_death,
+            # redraw time to aids and reschedule
+            months_to_aids = int(
+                np.floor(
+                    self.sim.modules["Hiv"].rng.exponential(
+                        scale=self.sim.modules["Hiv"].parameters["art_default_to_aids_mean_years"]
+                    )
+                    * 12.0
+                )
             )
 
+            self.sim.schedule_event(
+                event=HivAidsOnsetEvent(person_id=person_id, module=self, cause='AIDS_non_TB'),
+                date=self.sim.date + pd.DateOffset(months=months_to_aids),
+            )
+
+        # else assign aids onset and schedule aids death
         else:
-            # cause is active TB
-            self.sim.schedule_event(
-                event=HivAidsTbDeathEvent(
-                    person_id=person_id, module=self.module, cause=self.cause
-                ),
-                date=date_of_aids_death,
+
+            # if eligible for aids onset (not treated with ART or currently has active TB):
+            # Update Symptoms
+            self.sim.modules["SymptomManager"].change_symptom(
+                person_id=person_id,
+                symptom_string="aids_symptoms",
+                add_or_remove="+",
+                disease_module=self.sim.modules["Hiv"],
             )
+
+            # Schedule AidsDeath
+            date_of_aids_death = self.sim.date + self.sim.modules["Hiv"].get_time_from_aids_to_death()
+
+            if self.cause == "AIDS_non_TB":
+
+                # cause is HIV
+                self.sim.schedule_event(
+                    event=HivAidsDeathEvent(
+                        person_id=person_id, module=self.sim.modules["Hiv"], cause=self.cause
+                    ),
+                    date=date_of_aids_death,
+                )
+
+            else:
+                # cause is active TB
+                self.sim.schedule_event(
+                    event=HivAidsTbDeathEvent(
+                        person_id=person_id, module=self.sim.modules["Hiv"], cause=self.cause
+                    ),
+                    date=date_of_aids_death,
+                )
 
 
 class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
@@ -1741,12 +1786,6 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
                 ),
                 date=self.sim.date,
             )
-            # # cause is HIV_TB
-            # self.sim.modules["Demography"].do_death(
-            #     individual_id=person_id,
-            #     cause="AIDS_TB",
-            #     originating_module=self.module,
-            # )
 
 
 class HivAidsTbDeathEvent(Event, IndividualScopeEventMixin):

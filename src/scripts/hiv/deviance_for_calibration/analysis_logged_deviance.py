@@ -5,6 +5,7 @@ save outputs for plotting (file: output_plots_tb.py)
 
 import datetime
 import pickle
+# import random
 from pathlib import Path
 
 from tlo import Date, Simulation, logging
@@ -33,8 +34,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 12, 31)
-popsize = 2000
+end_date = Date(2040, 12, 31)
+popsize = 30000
 
 # set up the log config
 log_config = {
@@ -54,7 +55,7 @@ log_config = {
 # Register the appropriate modules
 # need to call epi before tb to get bcg vax
 # seed = random.randint(0, 50000)
-seed = 49400  # set seed for reproducibility
+seed = 26091  # set seed for reproducibility
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
 sim.register(
     demography.Demography(resourcefilepath=resourcefilepath),
@@ -75,17 +76,10 @@ sim.register(
     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
     healthburden.HealthBurden(resourcefilepath=resourcefilepath),
     epi.Epi(resourcefilepath=resourcefilepath),
-    hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True),
+    hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False),
     tb.Tb(resourcefilepath=resourcefilepath),
     # deviance_measure.Deviance(resourcefilepath=resourcefilepath),
 )
-
-# change parameters
-# sim.modules["Tb"].parameters["scenario"] = 0
-# sim.modules["Tb"].parameters["scaling_factor_WHO"] = 2.8
-# sim.modules["Tb"].parameters["rr_tb_hiv"] = 3
-# sim.modules["Tb"].parameters["rr_tb_aids"] = 10
-# sim.modules["Hiv"].parameters["aids_tb_treatment_adjustment"] = 0.5  # will reduce AIDS-TB deaths
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)

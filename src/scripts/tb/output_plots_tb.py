@@ -558,7 +558,7 @@ plt.xticks(ticks=x_vals, labels=labels)
 plt.title("Deaths per year due to AIDS")
 plt.legend(handles=[blue_patch, green_patch])
 plt.tight_layout()
-plt.savefig(outputpath / ("HIV_TB_deaths_with_GBD" + datestamp + ".png"), format='png')
+# plt.savefig(outputpath / ("HIV_TB_deaths_with_GBD" + datestamp + ".png"), format='png')
 plt.show()
 
 
@@ -729,7 +729,7 @@ make_plot(
     data_high=data_hiv_unaids["ART_coverage_all_HIV_adults_upper"],
 )
 plt.legend(["TLO", "UNAIDS"])
-plt.savefig(outputpath / ("HIV_Proportion_on_ART" + datestamp + ".png"), format='png')
+# plt.savefig(outputpath / ("HIV_Proportion_on_ART" + datestamp + ".png"), format='png')
 
 plt.show()
 
