@@ -11,7 +11,7 @@ from collections import Counter, defaultdict
 from collections.abc import Iterable
 from itertools import repeat
 from pathlib import Path
-from typing import List, NamedTuple, Optional, Tuple, Union, Dict
+from typing import Dict, List, NamedTuple, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -1697,6 +1697,7 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
     def __init__(self, module: HealthSystem, parameters: Dict):
         super().__init__(module)
         self._parameters = parameters
+        assert isinstance(module, HealthSystem)
 
     def apply(self, population):
 
@@ -1713,7 +1714,7 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
             self.module.consumables = Consumables(data=self.module.parameters['availability_estimates'],
                                                   rng=self.module.rng,
                                                   availability=self._parameters['cons_availability'])
-            self.on_start_of_day(self.module.sim.date)
+            self.module.consumables.on_start_of_day(self.module.sim.date)
 
         if 'beds_availability' in self._parameters:
             self.module.bed_days.availability = self._parameters['beds_availability']
