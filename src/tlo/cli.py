@@ -26,7 +26,7 @@ JOB_LABEL_PADDING = len("State transition time")
 
 
 @click.group()
-@click.option("--config-file", type=click.Path(exists=True), default="tlo.conf", hidden=True)
+@click.option("--config-file", type=click.Path(exists=False), default="tlo.conf", hidden=True)
 @click.option("--verbose", "-v", is_flag=True, default=False)
 @click.pass_context
 def cli(ctx, config_file, verbose):
@@ -46,7 +46,8 @@ def cli(ctx, config_file, verbose):
 @click.argument("scenario_file", type=click.Path(exists=True))
 @click.option("--draw-only", is_flag=True, help="Only generate draws; do not run the simulation")
 @click.option("--draw", "-d", nargs=2, type=int)
-def scenario_run(scenario_file, draw_only, draw: tuple):
+@click.option("--output-dir", type=str)
+def scenario_run(scenario_file, draw_only, draw: tuple, output_dir=None):
     """Run the specified scenario locally.
 
     SCENARIO_FILE is path to file containing a scenario class
@@ -60,7 +61,7 @@ def scenario_run(scenario_file, draw_only, draw: tuple):
 
     runner = SampleRunner(run_json)
     if draw:
-        runner.run_sample_by_number(output_directory=None, draw_number=draw[0], sample_number=draw[1])
+        runner.run_sample_by_number(output_directory=output_dir, draw_number=draw[0], sample_number=draw[1])
     else:
         runner.run()
 
