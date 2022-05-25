@@ -22,12 +22,11 @@ Setup
         python C:\Users\Public\miniconda3\envs\tlo\Scripts\pywin32_postinstall.py -install
 
     * There will be some output, ending with *"The pywin32 extensions were successfully installed."*
-9. Copy the file ``tlo.example.com`` to ``tlo.conf``, and fill in the fields as required.
+9. Copy the file ``tlo.example.com`` to ``tlo.conf``, and fill in the fields as required (you will need to ask the team for the details here).
 10. In Terminal/Anaconda Prompt check the following command runs: ``tlo``
 11. Login to Azure with ``az login --tenant 1faf88fe-a998-4c5b-93c9-210a11d9a5c2``
 12. In Terminal/Anaconda Prompt run: ``tlo batch-list``
 
-[NB. step 9: not clear what to fill in and how]
 
 
 Creating a Scenario

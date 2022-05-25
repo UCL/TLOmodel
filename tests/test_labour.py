@@ -294,8 +294,8 @@ def test_event_scheduling_for_admissions_from_antenatal_inpatient_ward_for_caesa
 
     # set key parameters
     params = sim.modules['Labour'].current_parameters
-    params['mean_hcw_competence_hc'] = 1.0
-    params['mean_hcw_competence_hp'] = 1.0
+    params['mean_hcw_competence_hc'] = [1.0, 1.0]
+    params['mean_hcw_competence_hp'] = [1.0, 1.0]
     params['prob_hcw_avail_surg'] = 1.0
 
     # Run the labour onset, check she will correctly deliver at a hospital level facility
@@ -511,8 +511,8 @@ def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_const
 
     # set key parameters
     params = sim.modules['Labour'].current_parameters
-    params['mean_hcw_competence_hc'] = 1.0
-    params['mean_hcw_competence_hp'] = 1.0
+    params['mean_hcw_competence_hc'] = [1.0, 1.0]
+    params['mean_hcw_competence_hp'] = [1.0, 1.0]
     params['prob_hcw_avail_iv_abx'] = 1.0
     params['prob_hcw_avail_uterotonic'] = 1.0
     params['prob_hcw_avail_anticonvulsant'] = 1.0
@@ -560,14 +560,14 @@ def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_const
     sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['cpd'] = True
 
     # Run the event and check she has correctly been referred for caesarean
-    sim.modules['Labour'].assessment_for_assisted_vaginal_delivery(hsi_event=hsi_event, for_spe=False)
+    sim.modules['Labour'].assessment_for_assisted_vaginal_delivery(hsi_event=hsi_event, indication='ol')
     assert mni[mother_id]['referred_for_cs']
 
     # Remove CPD as a cause and set probability of AVD being successful to 1, call the function and check she has
     # undergone instrumental delivery
     sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['cpd'] = False
     params['prob_successful_assisted_vaginal_delivery'] = 1.0
-    sim.modules['Labour'].assessment_for_assisted_vaginal_delivery(hsi_event=hsi_event, for_spe=False)
+    sim.modules['Labour'].assessment_for_assisted_vaginal_delivery(hsi_event=hsi_event, indication='ol')
     assert (mni[mother_id]['mode_of_delivery'] == 'instrumental')
 
     # Next set the women to have sepsis and check she is treated
@@ -656,8 +656,8 @@ def test_cemonc_event_and_treatments_are_delivered_correct_with_no_cons_or_quali
 
     # set key parameters
     params = sim.modules['Labour'].current_parameters
-    params['mean_hcw_competence_hc'] = 1.0
-    params['mean_hcw_competence_hp'] = 1.0
+    params['mean_hcw_competence_hc'] = [1.0, 1.0]
+    params['mean_hcw_competence_hp'] = [1.0, 1.0]
     params['prob_hcw_avail_surg'] = 1.0
     params['prob_hcw_avail_blood_tran'] = 1.0
 
