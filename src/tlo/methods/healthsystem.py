@@ -1692,7 +1692,7 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
         * `capabilities_coefficient`
         * `cons_availability`
         * `beds_availability`
-    Note that no checking is done here on the suitability of the parameters."""
+    Note that no checking is done here on the suitability of values of each parameter."""
 
     def __init__(self, module: HealthSystem, parameters: Dict):
         super().__init__(module)
@@ -1700,7 +1700,6 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
         assert isinstance(module, HealthSystem)
 
     def apply(self, population):
-
         if 'mode_appt_constraints' in self._parameters:
             self.module.mode_appt_constraints = self._parameters['mode_appt_constraints']
 

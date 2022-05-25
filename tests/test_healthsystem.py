@@ -793,7 +793,9 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
 
         def apply(self, person_id, squeeze_factor):
             logger = logging.getLogger('tlo.methods.healthsystem')
-            logger.info(key='HSI_Dummy_get_consumables', data={'cons_available': self.get_consumables(0)})
+            logger.info(key='HSI_Dummy_get_consumables',
+                        data=self.get_consumables(item_codes=list(range(100)), return_individual_results=True)
+                        )
             sim.modules['HealthSystem'].schedule_hsi_event(self,
                                                            topen=self.sim.date + pd.DateOffset(days=1),
                                                            tclose=None,
@@ -840,9 +842,7 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
     assert logged_params.loc[start_date + pd.DateOffset(days=4)].to_dict() == new_parameters
 
     logged_access_consumables = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem'][
-        'HSI_Dummy_get_consumables'].set_index('date')['cons_available']
-    assert logged_access_consumables[start_date]  # All consumables available at start
-    assert not logged_access_consumables[start_date + pd.DateOffset(days=4)]  # No consumables available after parameter
-    #                                                                           change
-
-    # todo - make check on consumables more robust!
+        'HSI_Dummy_get_consumables'].set_index('date')
+    assert logged_access_consumables.loc[start_date].all()  # All consumables available at start
+    assert not logged_access_consumables.loc[start_date + pd.DateOffset(days=4)].any()  # No consumables available after
+    #                                                                                 parameter change
