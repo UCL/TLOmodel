@@ -20,7 +20,7 @@ from tlo.analysis.utils import (
 # todo - Selective labelling of only the biggest blocks.
 
 # %% Declare the name of the file that specified the scenarios used in this run.
-scenario_filename = 'long_run_all_diseases.py'  # <-- update this to look at other results
+scenario_filename = 'long_run_all_diseases.py'
 
 # %% Declare usual paths.
 outputspath = Path('./outputs/tbh03@ic.ac.uk')
@@ -237,22 +237,86 @@ fig.show()
 
 #%% "Figure 4": The level of usage of the HealthSystem HR Resources
 
-log = load_pickled_dataframes(results_folder, 0, 0)['tlo.methods.healthsystem']['Capacity'].set_index('date')
+def get_share_of_time_for_hw_by_short_treatment_id(_df):
+    _df = _df.set_index('date')
+    _all = _df['Frac_Time_Used_Overall']
+    _df = _df['Frac_Time_Used_By_Facility_ID'].apply(pd.Series)
+    _df.columns = _df.columns.astype(int)
+    _df = _df.reindex(columns=sorted(_df.columns))
+    _df['All'] = _all
+    return _df.groupby(pd.Grouper(freq="M")).mean().stack()  # find monthly averages and stack into series
 
-df = log['Frac_Time_Used_By_Facility_ID'].apply(pd.Series)
-df.columns = df.columns.astype(int)
-df = df.reindex(columns=sorted(df.columns))
+
+capacity = summarize(
+    extract_results(
+            results_folder,
+            module='tlo.methods.healthsystem',
+            key='Capacity',
+            custom_generate_series=get_share_of_time_for_hw_by_short_treatment_id,
+            do_scaling=False
+    ),
+    only_mean=True,
+    collapse_columns=True
+)
+
+# Find the levels of each facility
+mfl = pd.read_csv(rfp / 'healthsystem' / 'organisation' / 'ResourceFile_Master_Facilities_List.csv'
+                  ).set_index('Facility_ID')
+
+def find_level_for_facility(id):
+    return mfl.loc[id].Facility_Level
+
+color_for_level = {'0': 'blue', '1a': 'yellow', '1b': 'green', '2': 'grey', '3': 'orange', '4': 'black', '5': 'white'}
 
 fig, ax = plt.subplots()
-df.plot(ax=ax)
+name_of_plot = 'Usage of Healthcare Worker Time By Month'
+capacity_unstacked = capacity.unstack()
+for i in capacity_unstacked.columns:
+    if i != 'All':
+        level = find_level_for_facility(i)
+        h1, = ax.plot(capacity_unstacked[i].index, capacity_unstacked[i].values,
+                      color=color_for_level[level], linewidth=0.5, label=f'Facility_Level {level}')
 
+h2, = ax.plot(capacity_unstacked['All'].index, capacity_unstacked['All'].values, color='red', linewidth=1.5)
+ax.set_title(name_of_plot)
+ax.set_xlabel('Month')
+ax.set_ylabel('Fraction of all time used\n(Average for the month)')
+ax.legend([h1, h2], ['Each Facility', 'All Facilities'])
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
 fig.tight_layout()
+fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
 fig.show()
 
 
+xpos_for_level = dict(zip((color_for_level.keys()), range(len(color_for_level))))
 
+fig, ax = plt.subplots()
+name_of_plot = 'Usage of Healthcare Worker Time (Average)'
+capacity_unstacked_average = capacity.unstack().mean()
+levels = [find_level_for_facility(i) if i != 'All' else 'All' for i in capacity_unstacked_average.index]
 
-
+for id, val in capacity_unstacked_average.iteritems():
+    if id != 'All':
+        _level = find_level_for_facility(id)
+        if _level != '5':
+            xpos = xpos_for_level[_level]
+            scatter = (np.random.rand() - 0.5) * 0.25
+            h1, = ax.plot(xpos + scatter, val * 100, color=color_for_level[_level],
+                          marker='.', markersize=15, label='Each Facility', linestyle='none')
+h2 = ax.axhline(y=capacity_unstacked_average['All'] * 100,
+                color='red', linestyle='--', label='Average')
+ax.set_title(name_of_plot)
+ax.set_xlabel('Facility_Level')
+ax.set_xticks(list(xpos_for_level.values()))
+ax.set_xticklabels(xpos_for_level.keys())
+ax.set_ylabel('Percent of Time Available That is Used\n')
+ax.legend(handles=[h1, h2])
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+fig.tight_layout()
+fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
+fig.show()
 
 
 #%% "Figure 5": The level of usage of the Beds in the HealthSystem
