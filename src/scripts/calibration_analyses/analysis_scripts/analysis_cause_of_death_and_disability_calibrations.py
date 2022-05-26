@@ -35,9 +35,6 @@ rfp = Path('./resources')
 # Find results folder (most recent run generated using that scenario_filename)
 results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
 
-# If needed -- in the case that pickles were not created remotely during batch
-# create_pickles_locally(results_folder)
-
 # Declare path for output graphs from this script
 make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
 
