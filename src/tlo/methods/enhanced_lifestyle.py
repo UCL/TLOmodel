@@ -4,7 +4,7 @@ Documentation: 04 - Methods Repository/Method_Lifestyle.xlsx
 """
 import datetime
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 import numpy as np
 import pandas as pd
@@ -400,6 +400,9 @@ class Lifestyle(Module):
         # initialise urban rural properties
         self.initialise_rural_urban_property(df, alive_idx)
 
+        # initialise wealth level property
+        self.initialise_wealth_level_property(df)
+
         # initialise some properties using linear models
         self.models.initialise_some_properties(df, self.rng)
 
@@ -415,9 +418,6 @@ class Lifestyle(Module):
         # initialise sugar intake property
         self.initialise_sugar_intake_property(df, alive_idx)
 
-        # initialise wealth level property
-        self.initialise_wealth_level_property(df)
-
         # initialise bmi properties in population
         self.initialise_bmi_property(df)
 
@@ -432,31 +432,8 @@ class Lifestyle(Module):
         will_be_circ = self.rng.rand(len(men)) < self.parameters['proportion_of_men_circumcised_at_initiation']
         df.loc[men[will_be_circ].index, 'li_is_circ'] = True
 
-    def initialise_rural_urban_property(self, df, alive_idx):
-        """ set rural urban properties in the population dataframe
-        :param df: population dataframe
-        :param alive_idx: index of those individuals who are alive """
-        # todo: urban rural depends on district of residence
-        # todo: make this function use linear models
-        # randomly selected some individuals as urban
-        df.loc[alive_idx, 'li_urban'] = (
-            self.rng.random_sample(size=len(alive_idx)) < self.parameters['init_p_urban']
-        )
-
-        # get the indices of all individuals who are urban or rural
-        urban_index = df.index[df.is_alive & df.li_urban]
-        rural_index = df.index[df.is_alive & ~df.li_urban]
-
-        # randomly sample wealth category according to urban/rural wealth probs
-        df.loc[urban_index, 'li_wealth'] = self.rng.choice(
-            [1, 2, 3, 4, 5], size=len(urban_index), p=self.parameters['init_p_wealth_urban']
-        )
-        df.loc[rural_index, 'li_wealth'] = self.rng.choice(
-            [1, 2, 3, 4, 5], size=len(rural_index), p=self.parameters['init_p_wealth_rural']
-        )
-
     def initialise_excessive_alcohol_property(self, df):
-        """ set excessive acolhol property in the population dataframe
+        """ set excessive alcohol property in the population dataframe
         :param df: population dataframe """
 
         # get indexes of male and female population alive and 15+ years
@@ -783,42 +760,68 @@ class Lifestyle(Module):
         return bmi_proportions
 
 
+def get_multinomial_probabilities(_df, *linear_models):
+    """returns a dataframe of probabilities for each outcome
+    columns are in the same order as function arguments
+    last column is base outcome
+    """
+    ratios = pd.concat([lm.predict(_df) for lm in linear_models], axis=1)
+    ratios.insert(len(ratios.columns), len(ratios.columns), 1.0)
+    denom = ratios.sum(axis=1)
+    return ratios.div(denom, axis=0)
+
+
 class LifestyleModels:
     """Helper class to store all linear models for the Lifestyle module. We have used two types of linear models
     namely logistic and multiplicative linear models. We currently have defined linear models for the following;
-            1.  tobacco use
-            2.  low exercise
-            3.  education
-            4.  marital status
-            5.  unimproved sanitation
-            6.  no clean drinking
-            7.  wood burn stove
-            8.  no access hand washing
-            9.  salt intake """
+            1.  urban rural status
+            2.  wealth level
+            3.  low exercise
+            4.  tobacco use
+            5.  excessive alcohol
+            6.  marital status
+            7.  education
+            8.  unimproved sanitation
+            9.  no clean drinking water
+            10.  wood burn stove
+            11.  no access hand washing
+            12.  salt intake
+            13  sugar intake
+            14. bmi """
 
     def __init__(self, module):
         # initialise variables
         self.module = module
         self.rng = self.module.rng
         self.params = module.parameters
+        # create all linear models dictionary for use in both initialisation and update of properties
         self.models = {
-            # 'li_in_ed': {
-            #     'init': self.education_linear_models()['some_edu_linear_model'],
-            # },
-            # 'li_ed_lev': {
-            #     'init': self.education_linear_models()['level_3_edu_linear_model'],
-            # },
-            # 'li_mar_stat': {
-            #     'init': self.marital_status_linear_model()
-            # },
-            'li_tob': {
-                'init': self.tobacco_use_linear_model()
+            'li_urban': {
+                'init': self.rural_urban_linear_model()
+            },
+            'li_wealth': {
+                'init': self.wealth_level_linear_model()
             },
             'li_low_ex': {
                 'init': self.low_exercise_linear_model()
             },
+            'li_tob': {
+                'init': self.tobacco_use_linear_model()
+            },
+            'li_ex_alc': {
+                'init': self.excessive_alcohol_linear_model()
+            },
+            'li_mar_stat': {
+                'init': self.marital_status_linear_model()
+            },
+            'li_in_ed': {
+                'init': self.education_linear_models()['some_edu_linear_model'],
+            },
+            'li_ed_lev': {
+                'init': self.education_linear_models()['level_3_edu_linear_model'],
+            },
             'li_unimproved_sanitation': {
-                'init': self.un_improved_sanitation_linear_model()
+                'init': self.unimproved_sanitation_linear_model()
             },
             'li_no_clean_drinking_water': {
                 'init': self.no_clean_drinking_water_linear_model()
@@ -832,15 +835,73 @@ class LifestyleModels:
             'li_high_salt': {
                 'init': self.salt_intake_linear_model()
             },
+            'li_high_sugar': {
+                'init': self.sugar_intake_linear_model()
+            },
+            # 'li_bmi': {
+            #     'init': self.bmi_linear_model()
+            # }
         }
 
-    def initialise_some_properties(self, df, rng):
+    def initialise_some_properties(self, df):
         """initialise population properties using linear models defined in LifestyleModels class.
 
-        :param df: The population dataframe
-        :param rng: A random number used in this to make linear models produce bool values"""
+        :param df: The population dataframe """
+        # loop through linear models dictionary and initialise each property in the population dataframe
         for _property_name, _model in self.models.items():
-            df.loc[df.is_alive, _property_name] = _model['init'].predict(df.loc[df.is_alive], rng)
+            df.loc[df.is_alive, _property_name] = _model['init'].predict(df.loc[df.is_alive])
+
+    def rural_urban_linear_model(self) -> LinearModel:
+        """ a function to create linear model for rural urban properties. Here we are using additive linear model and
+        have no predictors hence the base probability is used as the final value for all individuals """
+
+        # set baseline probability for all individuals
+        base_prob = self.params['init_p_urban']
+
+        # create linear model
+        rural_urban_lm = LinearModel(LinearModelType.MULTIPLICATIVE,
+                                     base_prob
+                                     )
+
+        # return rural urban linear model
+        return rural_urban_lm
+
+    def wealth_level_linear_model(self) -> LinearModel:
+        """ a function to create linear model for wealth level property. Here are using additive linear model and are
+        setting probabilities based on whether the individual is urban or rural """
+
+        # set base probability
+        base_prob: int = 0
+        wealth_level_lm = LinearModel(LinearModelType.ADDITIVE,
+                                      base_prob,
+                                      Predictor('li_urban').when(True, self.rng.choice(
+                                          [1, 2, 3, 4, 5], p=self.params['init_p_wealth_urban']
+                                      ))
+                                      .when(False, self.rng.choice(
+                                          [1, 2, 3, 4, 5], p=self.params['init_p_wealth_rural']))
+                                      )
+        # return wealth level linear model
+        return wealth_level_lm
+
+    def low_exercise_linear_model(self) -> LinearModel:
+        """A function to create a linear model for lower exercise property of Lifestyle module. Here we are using
+        Logistic linear model and we are looking at an individual's probability of being low exercise based on
+        gender and rural or urban based. Finally, we return a dictionary containing low exercise linear models """
+
+        # get baseline odds for exercise
+        init_odds_low_ex_urban_m: float = (self.params['init_p_low_ex_urban_m']
+                                           / (1 - self.params['init_p_low_ex_urban_m']))
+
+        # create low exercise linear model
+        low_exercise_lm = LinearModel(LinearModelType.LOGISTIC,
+                                      init_odds_low_ex_urban_m,
+                                      Predictor('age_years').when('<15', 0),
+                                      Predictor('sex').when('F', self.params['init_or_low_ex_f']),
+                                      Predictor('li_urban').when(False, self.params['init_or_low_ex_rural'])
+                                      )
+
+        # return low exercise dictionary
+        return low_exercise_lm
 
     def tobacco_use_linear_model(self) -> LinearModel:
         """A function to create a Linear Model for tobacco use. Here we are using Logistic Linear Model. it is
@@ -870,6 +931,53 @@ class LifestyleModels:
                                                )
         # return a Linear Model object
         return tobacco_use_linear_model
+
+    def excessive_alcohol_linear_model(self) -> LinearModel:
+        """ a function to create linear model for excessive alcohol property. Here we are using additive linear model
+        and are looking at individual probabilities of excessive alcohol based on their gender. In this model we are
+        considering gender of an individual as either Male or Female """
+
+        # set baseline probability for all gender male or female
+        base_prob = 0.0
+
+        # define excessive alcohol linear model
+        excessive_alc_lm = LinearModel(LinearModelType.ADDITIVE,
+                                       base_prob,
+                                       Predictor().when('(age_years >= 15) & (sex == "M")',
+                                                        self.params['init_p_ex_alc_m'])
+                                       .when('(age_years >= 15) & (sex == "F")',
+                                             self.params['init_p_ex_alc_f']),
+                                       )
+        # return excessive alcohol linear model
+        return excessive_alc_lm
+
+    def marital_status_linear_model(self) -> LinearModel:
+        """A function to create linear model for individual's marital status. Here, We are using a multiplicative
+        linear model and we are assigning individual's marital status based on their age group.In this module,
+        marital status is in three categories;
+                1.  Never Married
+                2.  Currently Married
+                3   Divorced or Widowed
+        """
+
+        # create marital status linear model
+        mar_status_lm = LinearModel.multiplicative(
+            Predictor('age_years').when('.between(15, 19)', self.rng.choice(
+                [1, 2, 3], p=self.params['init_dist_mar_stat_age1520']))
+                .when('.between(20, 29)', self.rng.choice(
+                [1, 2, 3], p=self.params['init_dist_mar_stat_age2030']))
+                .when('.between(30, 39)', self.rng.choice(
+                [1, 2, 3], p=self.params['init_dist_mar_stat_age3040']))
+                .when('.between(40, 49)', self.rng.choice(
+                [1, 2, 3], p=self.params['init_dist_mar_stat_age4050']))
+                .when('.between(50, 59)', self.rng.choice(
+                [1, 2, 3], p=self.params['init_dist_mar_stat_age5060']))
+                .when('>= 60', self.rng.choice(
+                [1, 2, 3], p=self.params['init_dist_mar_stat_agege60'])),
+        )
+
+        # return marital status dictionary
+        return mar_status_lm
 
     def education_linear_models(self) -> Dict[str, LinearModel]:
         """A function to create linear models for education properties of Lifestyle module. In this case we choose
@@ -950,62 +1058,7 @@ class LifestyleModels:
         # return a linear model dictionary
         return education_lm_dict
 
-    def low_exercise_linear_model(self) -> LinearModel:
-        """A function to create a linear model for lower exercise property of Lifestyle module. Here we are using
-        Logistic linear model and we are looking at an individual's probability of being low exercise based on
-        gender and rural or urban based. Finally, we return a dictionary containing low exercise linear models """
-
-        # get baseline odds for exercise
-        init_odds_low_ex_urban_m: float = (self.params['init_p_low_ex_urban_m']
-                                           / (1 - self.params['init_p_low_ex_urban_m']))
-
-        # create low exercise linear model
-        low_exercise_lm = LinearModel(LinearModelType.LOGISTIC,
-                                      init_odds_low_ex_urban_m,
-                                      Predictor('age_years').when('<15', 0),
-                                      Predictor('sex').when('F', self.params['init_or_low_ex_f']),
-                                      Predictor('li_urban').when(False, self.params['init_or_low_ex_rural'])
-                                      )
-
-        # return low exercise dictionary
-        return low_exercise_lm
-
-    def marital_status_linear_model(self) -> LinearModel:
-        """A function to create linear model for individual's marital status. Here, We are using a multiplicative
-        linear model and we are assigning individual's marital status based on their age group.In this module,
-        marital status is in three categories;
-                1.  Never Married
-                2.  Currently Married
-                3   Divorced or Widowed
-        """
-
-        # create marital status linear model
-        mar_status_lm = LinearModel.multiplicative(
-            Predictor('age_years').when('.between(15, 19)', self.rng.choice(
-                [1, 2, 3], p=self.params['init_dist_mar_stat_age1520']
-            ))
-                .when('.between(20, 29)', self.rng.choice(
-                [1, 2, 3], p=self.params['init_dist_mar_stat_age2030']
-            ))
-                .when('.between(30, 39)', self.rng.choice(
-                [1, 2, 3], p=self.params['init_dist_mar_stat_age3040']
-            ))
-                .when('.between(40, 49)', self.rng.choice(
-                [1, 2, 3], p=self.params['init_dist_mar_stat_age4050']
-            ))
-                .when('.between(50, 59)', self.rng.choice(
-                [1, 2, 3], p=self.params['init_dist_mar_stat_age5060']
-            ))
-                .when('>= 60', self.rng.choice(
-                [1, 2, 3], p=self.params['init_dist_mar_stat_agege60']
-            ))
-            ,
-        )
-
-        # return marital status dictionary
-        return mar_status_lm
-
-    def un_improved_sanitation_linear_model(self) -> LinearModel:
+    def unimproved_sanitation_linear_model(self) -> LinearModel:
         """A function to create linear model for unimproved sanitation. Here, We are using a Logistic linear model
         and we are looking at an individual's probability of unimproved sanitation based on whether they are rural or
         urban based. Finally we return a linear model """
@@ -1106,7 +1159,19 @@ class LifestyleModels:
         # return salt intake linear model
         return high_salt_lm
 
-    def bmi_linear_model(self, index, bmi_power):
+    def sugar_intake_linear_model(self) -> LinearModel:
+        """ a function to create linear model for sugar intake property. Here we are using additive linear model and
+        have no predictors hence the base probability is used as the final value for all individuals """
+
+        # set baseline probability
+        base_prob = self.params['init_p_high_sugar']
+        sugar_intake_lm = LinearModel(LinearModelType.ADDITIVE,
+                                      base_prob
+                                      )
+        # return sugar intake linear model
+        return sugar_intake_lm
+
+    def bmi_linear_model(self, index, bmi_power) -> LinearModel:
         """ a function to create linear model for bmi. here we are using Logistic model and are
         looking at individual probabilities of a particular bmi level based on the following;
                 1.  sex
@@ -1117,7 +1182,7 @@ class LifestyleModels:
                 5.  wealth level    """
 
         # get bmi baseline
-        init_odds_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1 = [
+        init_odds_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1: List[float] = [
             i / (1 - i) for i in self.params['init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1']
         ]
 
@@ -1140,6 +1205,135 @@ class LifestyleModels:
                              )
 
         return bmi_lm
+
+    # --------------------- LINEAR MODELS FOR UPDATING POPULATION PROPERTIES ------------------------------ #
+    def update_rural_urban_property_linear_model(self) -> LinearModel:
+        """A function to create linear model for updating the rural urban status of an individual. Here, we are using
+        multiplicative linear model """
+        # create rural urban linear model
+        update_urban_rural_status_lm = LinearModel.multiplicative(
+            Predictor('li_urban').when(True, self.params['r_urban'])
+            .otherwise(self.params['r_rural'])
+        )
+        # return linear model
+        return update_urban_rural_status_lm
+
+    def update_exercise_property_linear_model(self) -> Dict[str, LinearModel]:
+        """ A function to create linear model for updating the exercise property. Here we are using multiplicative
+        linear model and are looking at rate of transitions from low exercise to not low exercise and vice versa """
+
+        # get base probability
+        base_prob = self.params['r_low_ex']
+
+        # create exercise linear model
+        update_exercise_status_lm = LinearModel(LinearModelType.MULTIPLICATIVE,
+                                                base_prob,
+                                                Predictor('sex').when('F', self.params['rr_low_ex_f']),
+                                                Predictor('li_urban').when(True, self.params['rr_low_ex_urban'])
+                                                )
+
+        # handle transitions
+
+        # get transition baseline probability
+        trans_base_prob = self.params['r_not_low_ex']
+
+        trans_exercise_status_lm = LinearModel(LinearModelType.MULTIPLICATIVE,
+                                               trans_base_prob,
+                                               Predictor('li_low_ex').when(False, 0),
+                                               Predictor('li_exposed_to_campaign_exercise_increase')
+                                               .when(True, self.params['rr_not_low_ex_pop_advice_exercise']))
+
+        # return all update exercise linear models
+        exercise_dict = {
+            'update_lm': update_exercise_status_lm,
+            'trans_lm': trans_exercise_status_lm
+        }
+        return exercise_dict
+
+    def update_tobacco_use_property_linear_model(self) -> Dict[str, LinearModel]:
+        """A function to create linear model for tobacco use property. Here we are using multiplicative linear model
+        and are looking at transitions from not tobacco use to tobacco use and vice versa"""
+
+        # define start tobacco use baseline
+        base_prob = self.params['r_tob']
+
+        # start tobacco linear model
+        start_tob_lm = LinearModel(LinearModelType.MULTIPLICATIVE,
+                                   base_prob,
+                                   Predictor('age_years').when('.between(20, 40, inclusive="right")',
+                                                               self.params['rr_tob_age2039'])
+                                   .when('>40', self.params['rr_tob_agege40']),
+                                   Predictor('sex').when('F', self.params['rr_tob_f']),
+                                   Predictor('li_wealth').when(2, self.params['rr_tob_wealth'])
+                                   .when(3, self.params['rr_tob_wealth'] ** 2)
+                                   .when(4, self.params['rr_tob_wealth'] ** 3)
+                                   .when(5, self.params['rr_tob_wealth'] ** 4)
+                                   )
+
+        # handle tobacco use transitions
+        # define transition baseline
+        trans_base_prob = self.params['r_not_tob']
+
+        # create tobacco transition linear model
+        trans_tob_lm = LinearModel(LinearModelType.MULTIPLICATIVE,
+                                   trans_base_prob,
+                                   Predictor('li_exposed_to_campaign_quit_smoking')
+                                   .when(True, self.params['rr_not_tob_pop_advice_tobacco'])
+                                   )
+
+        # return a dictionary of all linear models
+        tob_update_lm_dict = {
+            'start_tob': start_tob_lm,
+            'trans_tob': trans_tob_lm
+        }
+        return tob_update_lm_dict
+
+    def update_excess_alcohol_property_linear_model(self) -> Dict[str, LinearModel]:
+        """ a function tp create linear model for excess alcohol property. Here we are using multiplicative linear
+        model and are looking at individuals transition from either excess alcohol to not excess alcohol or vice
+        versa """
+
+        # define excessive alcohol linear model
+        not_ex_alc_lm = LinearModel.multiplicative(
+            Predictor().when('(age_years >= 15) & (sex == "M") & (li_ex_alc == False)',
+                             self.params['r_ex_alc'])
+            .when('(age_years >= 15) & (sex == "F") & (li_ex_alc == False)',
+                  (self.params['r_ex_alc'] * self.params['rr_ex_alc_f']))
+            .otherwise(0),
+        )
+        now_ex_alc_lm = LinearModel.multiplicative(
+            Predictor().when('(age_years >= 15) & (li_ex_alc == True)',
+                             self.params['r_not_ex_alc'])
+        )
+
+        # handle transitions
+        trans_ex_alc_lm = LinearModel.multiplicative(
+            Predictor().when('li_ex_alc == True', self.params['r_not_ex_alc'])
+            .when('(li_ex_alc == True) & (li_exposed_to_campaign_alcohol_reduction == True)',
+                  self.params['rr_not_ex_alc_pop_advice_alcohol'])
+            .otherwise(0.0)
+        )
+
+        all_models_dict = {
+            'not_ex_alc': not_ex_alc_lm,
+            'now_ex_alc': now_ex_alc_lm,
+            'trans_ex_alc': trans_ex_alc_lm
+        }
+        # return all linear models
+        return all_models_dict
+
+    def update_marital_status_linear_model(self) -> LinearModel:
+        """A function to create linear models for marital status property. Here we are using multiplicative linear
+        model and are looking at individuals ability to transition into different marital status """
+
+        # create marital status linear model
+        mar_status_lm = LinearModel.multiplicative(
+            Predictor('li_mar_stat').when(2, self.params['r_mar'])
+            .when(3, self.params['r_div_wid'])
+            .otherwise(0.0),
+        )
+
+        return mar_status_lm
 
 
 class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
