@@ -14,7 +14,7 @@ from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, hiv
 from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
-from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.healthsystem import HealthSystemChangeParameters, HSI_Event
 from tlo.methods.symptommanager import Symptom
 
 logger = logging.getLogger(__name__)
@@ -1330,7 +1330,8 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         if scenario == 0:
             return
 
-        if (scenario == 1) | (scenario == 3):
+        # all scenarios 1-4 have scale-up of testing/treatment
+        if scenario > 0:
 
             # HIV
             # increase testing/diagnosis rates, default 2020 0.03/0.25 -> 93% dx
@@ -1364,16 +1365,23 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             p["second_line_test"] = "sputum"
 
         # introduce consumables constraints
-        if scenario == 2:
+        if (scenario == 2) or (scenario == 3):
             pass
             # todo adjust consumables availability
-            # HIV
-
-            # TB
-
+            # add in constraints on consumables and personnel
+            new_parameters = {
+                'mode_appt_constraints': 2,  # hard constraints
+                'ignore_priority': False,  #If True do not use priority info in HSI event to schedule
+                'capabilities_coefficient': 1.0,
+                'cons_availability': 'default',  # use cons availability from LMIS
+            }
+            self.sim.modules["HealthSystem"].schedule_event(
+                HealthSystemChangeParameters(
+                    self.sim.modules['HealthSystem'], parameters=new_parameters),
+                self.sim.date)
 
         # improve preventive measures
-        if scenario == 3:
+        if (scenario == 3) or (scenario == 4):
 
             # HIV
             # reduce risk of HIV - applies to whole adult population

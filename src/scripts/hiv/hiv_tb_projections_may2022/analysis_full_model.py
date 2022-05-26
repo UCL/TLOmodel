@@ -24,7 +24,7 @@ resourcefilepath = Path("./resources")
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2020, 1, 1)
-popsize = 1000
+popsize = 25000
 
 # todo
 scenario = 0
@@ -33,15 +33,13 @@ mode_appt_constraints = 0  # HR constraints, 0: no constraints,
             # events run with squeeze factor, 2: hard constraints, only HSI events with
             # no squeeze factor run.
 cons_availability = "all"  # consumable constraints, default=use cons listing, all=everything available
-ignore_priority = True  # if True, use the priority information in HSI event to schedule
-use_funded_or_actual_staffing = "funded_plus"  # actual=use numbers of staff available currently or funded_plus
+ignore_priority = True  # if True, do not use the priority information in HSI event to schedule
 
 
 # scenario = 2
 # mode_appt_constraints = 0  # HR constraints, 0=no constraints, 2=hard constraints
 # cons_availability = "default"  # consumable constraints, default=use cons listing, all=everything available
-# ignore_priority = False  # if True, use the priority information in HSI event to schedule
-# use_funded_or_actual_staffing = "actual"  # actual=use numbers of staff available currently or funded_plus
+# ignore_priority = True  # if True, use the priority information in HSI event to schedule
 
 
 # set up the log config
@@ -69,7 +67,6 @@ sim.register(*fullmodel(
     healthsystem_mode_appt_constraints=mode_appt_constraints,
     healthsystem_cons_availability=cons_availability,
     healthsystem_ignore_priority=ignore_priority,
-    healthsystem_use_funded_or_actual_staffing=use_funded_or_actual_staffing,
     healthsystem_capabilities_coefficient=1.0,
 ))
 
