@@ -398,13 +398,13 @@ class Lifestyle(Module):
         # todo: express all rates per year and divide by 4 inside program
 
         # initialise urban rural properties
-        self.initialise_rural_urban_property(df, alive_idx)
+        # self.initialise_rural_urban_property(df, alive_idx)
 
         # initialise wealth level property
         self.initialise_wealth_level_property(df)
 
         # initialise some properties using linear models
-        self.models.initialise_some_properties(df, self.rng)
+        # self.models.initialise_some_properties(df)
 
         # initialise excess alcohol property
         self.initialise_excessive_alcohol_property(df)
