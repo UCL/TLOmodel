@@ -1219,10 +1219,10 @@ class Alri(Module):
 
             # danger-signs pneumonia
             elif imci_symptom_based_classification in ('danger_signs_pneumonia', 'serious_bacterial_infection'):
-                if antibiotic_provided == '1st_line_IV_antibiotics':
+                if (antibiotic_provided == '1st_line_IV_antibiotics') and oxygen_provided:
                     return (
                                p['1st_line_antibiotic_for_severe_pneumonia_treatment_failure_by_day2']
-                               * p['rr_1st_line_treatment_failure_low_oxygen_saturation']
+                               # * p['rr_1st_line_treatment_failure_low_oxygen_saturation']
                            ) > self.rng.random_sample()
                 else:
                     return True
@@ -2197,8 +2197,6 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
 
         _classification = imci_classification_by_SpO2_measure \
             if use_oximeter and (imci_classification_by_SpO2_measure != '') else hw_assigned_classification
-        # TODO: ASK TIM C. THIS ASSUMES PULSE OXIMETER READS AT 100% SENSITIVITY -
-        #  DO WE WANT TO LOOK INTO READING SENSITIVITY?
 
         logger.info(
             key='classification',

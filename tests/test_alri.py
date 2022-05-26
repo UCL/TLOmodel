@@ -797,6 +797,8 @@ def test_classification_based_on_symptoms_and_imci(sim_hs_all_consumables):
         ), f"{_correct_imci_classification_on_symptoms=}"
 
 
+# todo: test that imci_classification_based_on_symptoms cough_or_cold cannot have hypoxaemia or other complications
+
 def test_do_effects_of_alri_treatment(sim_hs_all_consumables):
     """Check that running `do_alri_treatment` can prevent a death from occurring."""
     sim = sim_hs_all_consumables
