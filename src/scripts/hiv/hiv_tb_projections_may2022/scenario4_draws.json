@@ -1,0 +1,69 @@
+{
+  "scenario_script_path": "src/scripts/hiv/hiv_tb_projections_may2022/scenario4.py",
+  "scenario_seed": 5,
+  "runs_per_draw": 5,
+  "draws": [
+    {
+      "draw_number": 0,
+      "draw_seed": 953453411,
+      "parameters": {
+        "Tb": {
+          "scenario": 4
+        },
+        "Hiv": {
+          "beta": 0.115
+        }
+      }
+    },
+    {
+      "draw_number": 1,
+      "draw_seed": 236996814,
+      "parameters": {
+        "Tb": {
+          "scenario": 4
+        },
+        "Hiv": {
+          "beta": 0.125
+        }
+      }
+    },
+    {
+      "draw_number": 2,
+      "draw_seed": 1592283119,
+      "parameters": {
+        "Tb": {
+          "scenario": 4
+        },
+        "Hiv": {
+          "beta": 0.12
+        }
+      }
+    },
+    {
+      "draw_number": 3,
+      "draw_seed": 1423042237,
+      "parameters": {
+        "Tb": {
+          "scenario": 4
+        },
+        "Hiv": {
+          "beta": 0.105
+        }
+      }
+    },
+    {
+      "draw_number": 4,
+      "draw_seed": 887852006,
+      "parameters": {
+        "Tb": {
+          "scenario": 4
+        },
+        "Hiv": {
+          "beta": 0.13
+        }
+      }
+    }
+  ],
+  "commit": "0da684c066b9724d686b43fbc568e91d27313115",
+  "github": "https://github.com/UCL/TLOmodel/blob/0da684c066b9724d686b43fbc568e91d27313115/src/scripts/hiv/hiv_tb_projections_may2022/scenario4.py"
+}
