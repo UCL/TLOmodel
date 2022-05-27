@@ -65,7 +65,7 @@ class TestScenario(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         return {
             'Tb': {
-                'scenario': [3]
+                'scenario': 3
             },
             'Hiv': {
                 'beta': [0.115, 0.125, 0.12, 0.105, 0.13][draw_number]
