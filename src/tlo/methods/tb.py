@@ -609,7 +609,6 @@ class Tb(Module):
                                               active_testing_rates.year == year),
                                           "testing_rate_active_cases"].values[
                                           0] / 100
-        # current_active_testing_rate = current_active_testing_rate / 3  # adjusted for monthly poll
         random_draw = rng.random_sample(size=len(df))
 
         # randomly select some individuals for screening and testing
@@ -1307,8 +1306,8 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
     * scenario 0 is the default which uses baseline parameters
     * scenario 1 optimistic, achieving all program targets
     * scenario 2 optimistic with program constraints
-    * scenario 3 optimistic with program constraints and additional measure to reduce incidence
-    * scenario 4 optimistic and additional measure to reduce incidence
+    * scenario 3 optimistic with program constraints and additional measures to reduce incidence
+    * scenario 4 optimistic and additional measures to reduce incidence
 
     It only occurs once at param: scenario_start_date,
     called by initialise_simulation
@@ -1350,8 +1349,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.modules["Hiv"].parameters["prob_start_art_or_vs"]["virally_suppressed_on_art"] = 95
 
             # TB
-
-            # todo increase treatment coverage to 90%
+            self.sim.modules["Tb"].parameters["rate_testing_active_tb"]["testing_rate_active_cases"] = 90
 
             # increase tb treatment success rates
             self.sim.modules["Tb"].parameters["prob_tx_success_ds"] = 0.9
@@ -1364,18 +1362,17 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             p["first_line_test"] = "xpert"
             p["second_line_test"] = "sputum"
 
-        # introduce consumables constraints
+        # introduce consumables and HR constraints
         if (scenario == 2) or (scenario == 3):
-            pass
-            # todo adjust consumables availability
             # add in constraints on consumables and personnel
             new_parameters = {
                 'mode_appt_constraints': 2,  # hard constraints
-                'ignore_priority': False,  #If True do not use priority info in HSI event to schedule
+                'ignore_priority': False,  # If True do not use priority info in HSI event to schedule
                 'capabilities_coefficient': 1.0,
                 'cons_availability': 'default',  # use cons availability from LMIS
+                'use_funded_or_actual_staffing': 'actual',  # use actual staff distribution
             }
-            self.sim.modules["HealthSystem"].schedule_event(
+            self.sim.schedule_event(
                 HealthSystemChangeParameters(
                     self.sim.modules['HealthSystem'], parameters=new_parameters),
                 self.sim.date)
@@ -1399,9 +1396,6 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.modules["Hiv"].parameters["prob_circ_after_hiv_test"] = 0.25
 
             # TB
-            # todo increase active case-finding
-            self.sim.modules["Tb"].parameters["rate_testing_active_tb"]["testing_rate_active_cases"] = 50
-
             # change IPT eligibility for TB contacts to all years
             p["age_eligibility_for_ipt"] = 100
 
@@ -1409,8 +1403,8 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             p["ipt_coverage"]["coverage_plhiv"] = 0.6
             p["ipt_coverage"]["coverage_paediatric"] = 0.8  # this will apply to contacts of all ages
 
-            # todo retention on IPT (PLHIV)
-            self.sim.modules["Tb"].parameters["prob_retained_ipt_6_months"] = 0.8
+            # retention on IPT (PLHIV)
+            self.sim.modules["Tb"].parameters["prob_retained_ipt_6_months"] = 0.99
 
 
 class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):

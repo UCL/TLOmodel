@@ -23,11 +23,11 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
-popsize = 25000
+end_date = Date(2040, 1, 1)
+popsize = 15000
 
 # todo
-scenario = 0
+scenario = 2
 mode_appt_constraints = 0  # HR constraints, 0: no constraints,
             # all HSI events run with no squeeze factor, 1: elastic constraints, all HSI
             # events run with squeeze factor, 2: hard constraints, only HSI events with

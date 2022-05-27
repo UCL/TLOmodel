@@ -17,8 +17,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-# todo remove date
-from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
+from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -300,8 +299,7 @@ class CardioMetabolicDisorders(Module):
             p[f'{event}_hsi'] = get_values(events_hsi[event], 1)
 
         # Set the interval (in months) between the polls
-        # todo reset to 3
-        p['interval_between_polls'] = 1
+        p['interval_between_polls'] = 3
         # Set the probability of an individual losing weight in the CardioMetabolicDisordersWeightLossEvent (this value
         # doesn't vary by condition)
         p['pr_bmi_reduction'] = 0.1
@@ -928,10 +926,6 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
         # -------------------------------- COMMUNITY SCREENING FOR HYPERTENSION ---------------------------------------
         # A subset of individuals aged >= 50 will receive a blood pressure measurement without directly presenting to
         # the healthcare system
-        # todo remove
-        if self.sim.date > Date(2010, 1, 1):
-            print("error here???")
-
         eligible_population = df.is_alive & ~df['nc_hypertension_ever_diagnosed']
         will_test = self.module.lms_testing['hypertension'].predict(
             df.loc[eligible_population], rng, squeeze_single_row_output=False)

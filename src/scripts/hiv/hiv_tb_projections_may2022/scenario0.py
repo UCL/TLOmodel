@@ -33,7 +33,7 @@ class TestScenario(BaseScenario):
         self.seed = 5
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2050, 12, 31)
-        self.pop_size = 50000
+        self.pop_size = 250000
         self.number_of_draws = 5
         self.runs_per_draw = 5
 
@@ -55,9 +55,10 @@ class TestScenario(BaseScenario):
                 resourcefilepath=self.resources,
                 use_simplified_births=False,
                 healthsystem_disable=False,
-                healthsystem_mode_appt_constraints=0,
-                healthsystem_cons_availability="all",
-                healthsystem_ignore_priority=False,
+                healthsystem_mode_appt_constraints=0,  # no constraints
+                healthsystem_cons_availability="all",  # all cons available
+                healthsystem_ignore_priority=True,  # ignore priority in HSI scheduling
+                healthsystem_use_funded_or_actual_staffing="funded_plus",  # daily capabilities of staff
                 healthsystem_capabilities_coefficient=1.0,
             )
 
