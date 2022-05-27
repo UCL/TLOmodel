@@ -2,10 +2,10 @@
 This file defines a batch run through which the hiv and tb modules are run across a grid of parameter values
 
 check the batch configuration gets generated without error:
-tlo scenario-run --draw-only src/scripts/hiv/hiv_tb_projections_may2022/scenario0.py
+tlo scenario-run --draw-only src/scripts/hiv/hiv_tb_projections_may2022/scenario2.py
 
 Run on the batch system using:
-tlo batch-submit src/scripts/hiv/hiv_tb_projections_may2022/scenario0.py
+tlo batch-submit src/scripts/hiv/hiv_tb_projections_may2022/scenario2.py
 
 Display information about a job:
 tlo batch-job tlo_q1_demo-123 --tasks
@@ -55,9 +55,10 @@ class TestScenario(BaseScenario):
                 resourcefilepath=self.resources,
                 use_simplified_births=False,
                 healthsystem_disable=False,
-                healthsystem_mode_appt_constraints=0,
-                healthsystem_cons_availability="all",
-                healthsystem_ignore_priority=False,
+                healthsystem_mode_appt_constraints=0,  # no constraints
+                healthsystem_cons_availability="all",  # all cons available
+                healthsystem_ignore_priority=True,  # ignore priority in HSI scheduling
+                healthsystem_use_funded_or_actual_staffing="funded_plus",  # daily capabilities of staff
                 healthsystem_capabilities_coefficient=1.0,
             )
 
