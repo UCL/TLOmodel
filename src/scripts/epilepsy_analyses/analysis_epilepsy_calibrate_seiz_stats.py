@@ -1,3 +1,5 @@
+import numpy as np
+
 from tlo import Date, logging
 from tlo.methods import (
     demography,
@@ -17,10 +19,10 @@ class TestScenario(BaseScenario):
         super().__init__()
         self.seed = 12
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2020, 1, 1)
-        self.pop_size = 500000
-        self.smaller_pop_size = 500000
-        self.number_of_draws = 1
+        self.end_date = Date(2030, 1, 1)
+        self.pop_size = 20000
+        self.smaller_pop_size = 20000
+        self.number_of_draws = 5
         self.runs_per_draw = 2
 
     def log_configuration(self):
@@ -49,17 +51,12 @@ class TestScenario(BaseScenario):
         ]
 
     def draw_parameters(self, draw_number, rng):
-        # inc scale 0.8089748389329628 * 0.000220526608713936
-        # inc death scale 0.770005 * 0.000737401772217838
+        seiz_stat_min = 0.15
+        seiz_stat_max = 1.15
+        prob_seiz_stat_1_2 = np.linspace(seiz_stat_min, seiz_stat_max, self.number_of_draws)
         return {
             'Epilepsy': {
-                'base_3m_prob_epilepsy': 0.000178,
-                'base_prob_3m_epi_death': 0.000568,
-                'base_prob_3m_seiz_stat_infreq_freq': 0.05 * 3,
-                'base_prob_3m_seiz_stat_infreq_none': 0.05 * 3,
-                'base_prob_3m_seiz_stat_none_freq': 0.05 * 3,
-                'base_prob_3m_seiz_stat_none_infreq': 0.05 * 3,
-
+                'base_prob_3m_seiz_stat_infreq_freq': prob_seiz_stat_1_2[draw_number],
             }
         }
 
