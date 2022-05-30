@@ -18,6 +18,7 @@ import pandas as pd
 
 import tlo
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
+from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.bed_days import BedDays
@@ -1266,10 +1267,10 @@ class HealthSystem(Module):
     def log_current_capabilities(self, current_capabilities, total_footprint):
         """
         This will log the percentage of the current capabilities that is used at each Facility Type
-        NB. To get this per Officer_Type_Code, it would be possible to simply log the entire current_capabilities df.
         :param current_capabilities: the current_capabilities of the health system.
         :param total_footprint: Per-officer totals of footprints of all the HSI events that ran
         """
+        # todo - divide by inflationary factor
 
         # Combine the current_capabilities and total_footprint per-officer totals
         comparison = pd.DataFrame(index=current_capabilities.index)
@@ -1278,30 +1279,39 @@ class HealthSystem(Module):
         comparison['Minutes_Used'] = comparison['Minutes_Used'].fillna(0.0)
         assert len(comparison) == len(current_capabilities)
 
-        # Sum within each Facility_ID
-        facility_id = [_f.split('_')[1] for _f in comparison.index]
-        summary = comparison.groupby(by=facility_id)[['Total_Minutes_Per_Day', 'Minutes_Used']].sum()
-
-        # Compute Fraction of Time Used Across All Facilities
-        total_available = summary['Total_Minutes_Per_Day'].sum()
-        fraction_time_used_across_all_facilities = (
-            summary['Minutes_Used'].sum() / total_available if total_available > 0 else 0
+        # Compute Fraction of Time Used Overall
+        total_available = comparison['Total_Minutes_Per_Day'].sum()
+        fraction_time_used_overall = (
+            comparison['Minutes_Used'].sum() / total_available if total_available > 0 else 0
         )
 
         # Compute Fraction of Time Used In Each Facility
-        summary['Fraction_Time_Used'] = summary['Minutes_Used'] / summary['Total_Minutes_Per_Day']
-        summary['Fraction_Time_Used'].replace([np.inf, -np.inf, np.nan], 0.0, inplace=True)
+        facility_id = [_f.split('_')[1] for _f in comparison.index]
+        summary_by_fac_id = comparison.groupby(by=facility_id)[['Total_Minutes_Per_Day', 'Minutes_Used']].sum()
+        summary_by_fac_id['Fraction_Time_Used'] = (
+            summary_by_fac_id['Minutes_Used'] / summary_by_fac_id['Total_Minutes_Per_Day']
+        ).replace([np.inf, -np.inf, np.nan], 0.0)
 
-        log_capacity = dict()
-        log_capacity['Frac_Time_Used_Overall'] = fraction_time_used_across_all_facilities
-        log_capacity['Frac_Time_Used_By_Facility_ID'] = summary['Fraction_Time_Used'].to_dict()
+        # Compute Fraction of Time For Each Officer and level
+        officer = [_f.rsplit('Officer_')[1] for _f in comparison.index]
+        level = [self._facility_by_facility_id[int(_fac_id)].level for _fac_id in facility_id]
+        summary_by_officer = comparison.groupby(by=[officer, level])[['Total_Minutes_Per_Day', 'Minutes_Used']].sum()
+        summary_by_officer['Fraction_Time_Used'] = (
+            summary_by_officer['Minutes_Used'] / summary_by_officer['Total_Minutes_Per_Day']
+        ).replace([np.inf, -np.inf, np.nan], 0.0)
 
         logger.info(key='Capacity',
-                    data=log_capacity,
+                    data={
+                        'Frac_Time_Used_Overall': fraction_time_used_overall,
+                        'Frac_Time_Used_By_Facility_ID': summary_by_fac_id['Fraction_Time_Used'].to_dict(),
+                        'Frac_Time_Used_By_OfficerType':  flatten_multi_index_series_into_dict_for_logging(
+                            summary_by_officer['Fraction_Time_Used']
+                        ),
+                    },
                     description='daily summary of utilisation and capacity of health system resources')
 
         self._summary_counter.record_hs_status(
-            fraction_time_used_across_all_facilities=fraction_time_used_across_all_facilities)
+            fraction_time_used_across_all_facilities=fraction_time_used_overall)
 
     def remove_beddays_footprint(self, person_id):
         # removing bed_days from a particular individual if any
