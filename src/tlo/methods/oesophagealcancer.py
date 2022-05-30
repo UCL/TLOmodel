@@ -723,7 +723,7 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
         # If the status is already in `stage4`, start palliative care (instead of treatment)
         if df.at[person_id, "oc_status"] == 'stage4':
             logger.warning(key="warning", data="Cancer is in stage 4 - aborting HSI_OesophagaelCancer_StartTreatment,"
-                                                "scheduling HSI_OesophagaelCancer_PalliativeCare")
+                                               "scheduling HSI_OesophagaelCancer_PalliativeCare")
 
             hs.schedule_hsi_event(
                 hsi_event=HSI_OesophagealCancer_PalliativeCare(
