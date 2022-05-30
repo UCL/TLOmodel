@@ -3,7 +3,7 @@ N.B. This script uses the package `squarify`: so run, `pip install squarify` fir
 """
 from collections import defaultdict
 from pathlib import Path
-
+from tlo import Date
 import numpy as np
 import pandas as pd
 import squarify
@@ -13,18 +13,21 @@ from tlo.analysis.utils import (
     extract_results,
     get_scenario_outputs,
     load_pickled_dataframes,
-    summarize,
+    summarize, unflatten_flattened_multi_index_in_logging,
 )
 
 # todo - limit to a particular period
+# todo - finish plots (CADRE & BEDS)
 
 # todo - ** PLOTTING AESTHETICS **
 # todo - define a colormap for TREATMENT_ID short and use this in Figure 1 and 3
 # todo - Selective labelling of only the biggest blocks.
 # todo - helper function for these
 
+
 # %% Declare the name of the file that specified the scenarios used in this run.
 scenario_filename = 'long_run_all_diseases.py'
+
 
 # %% Declare usual paths.
 outputspath = Path('./outputs/tbh03@ic.ac.uk')
@@ -32,6 +35,9 @@ rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
 results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
+
+# Declare period for which the results will be generated (defined inclusively)
+TARGET_PERIOD = (Date(2010, 1, 1), Date(2010, 12, 31))
 
 # Declare path for output graphs from this script
 make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
@@ -46,15 +52,20 @@ colors = {
 
 
 # %% Declare helper functions
+
+def drop_outside_period(_df):
+    """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
+    return _df.drop(index=_df.index[~_df['date'].between(*TARGET_PERIOD)])
+
+
 def formatting_hsi_df(_df):
     """Standard formatting for the HSI_Event log."""
 
     # Remove entries for those HSI that did not run
-    _df = _df.drop(_df.index[~_df.did_run]) \
+    _df = drop_outside_period(_df)\
+        .drop(_df.index[~_df.did_run]) \
         .reset_index(drop=True) \
         .drop(columns=['Person_ID', 'Squeeze_Factor', 'Facility_ID', 'did_run'])
-
-    # todo: Limit the record to a particular date_range: currently no limitation on date-range
 
     # Unpack the dictionary in `Number_By_Appt_Type_Code`.
     _df = _df.join(_df['Number_By_Appt_Type_Code'].apply(pd.Series).fillna(0.0)).drop(
@@ -102,6 +113,7 @@ counts_of_hsi_by_treatment_id_short = summarize(
     ),
     only_mean=True
 )
+
 
 fig, ax = plt.subplots()
 name_of_plot = 'Proportion of HSI Events by TREATMENT_ID'
@@ -210,7 +222,7 @@ share_of_time_for_hw_by_short_treatment_id = summarize(
         module='tlo.methods.healthsystem',
         key='HSI_Event',
         custom_generate_series=get_share_of_time_for_hw_by_short_treatment_id,
-        do_scaling=True
+        do_scaling=False
     ),
     only_mean=True,
     collapse_columns=True
@@ -246,7 +258,8 @@ fig.show()
 
 # %% "Figure 4": The level of usage of the HealthSystem HR Resources
 
-def get_share_of_time_for_hw_by_short_treatment_id(_df):
+def get_share_of_time_for_hw_in_each_facility_by_short_treatment_id(_df):
+    _df = drop_outside_period(_df)
     _df = _df.set_index('date')
     _all = _df['Frac_Time_Used_Overall']
     _df = _df['Frac_Time_Used_By_Facility_ID'].apply(pd.Series)
@@ -256,17 +269,38 @@ def get_share_of_time_for_hw_by_short_treatment_id(_df):
     return _df.groupby(pd.Grouper(freq="M")).mean().stack()  # find monthly averages and stack into series
 
 
-capacity = summarize(
+def get_share_of_time_used_for_each_officer_at_each_level(_df):
+    _df = drop_outside_period(_df)
+    _df = _df.set_index('date')
+    _df = _df['Frac_Time_Used_By_OfficerType'].apply(pd.Series).mean()  # find mean over the period
+    _df.index = unflatten_flattened_multi_index_in_logging(_df.index)
+    return _df
+
+
+capacity_by_facility = summarize(
     extract_results(
         results_folder,
         module='tlo.methods.healthsystem',
         key='Capacity',
-        custom_generate_series=get_share_of_time_for_hw_by_short_treatment_id,
+        custom_generate_series=get_share_of_time_for_hw_in_each_facility_by_short_treatment_id,
         do_scaling=False
     ),
     only_mean=True,
     collapse_columns=True
 )
+
+capacity_by_officer = summarize(
+    extract_results(
+        results_folder,
+        module='tlo.methods.healthsystem',
+        key='Capacity',
+        custom_generate_series=get_share_of_time_used_for_each_officer_at_each_level,
+        do_scaling=False
+    ),
+    only_mean=True,
+    collapse_columns=True
+)
+
 
 # Find the levels of each facility
 mfl = pd.read_csv(rfp / 'healthsystem' / 'organisation' / 'ResourceFile_Master_Facilities_List.csv'
@@ -281,7 +315,7 @@ color_for_level = {'0': 'blue', '1a': 'yellow', '1b': 'green', '2': 'grey', '3':
 
 fig, ax = plt.subplots()
 name_of_plot = 'Usage of Healthcare Worker Time By Month'
-capacity_unstacked = capacity.unstack()
+capacity_unstacked = capacity_by_facility.unstack()
 for i in capacity_unstacked.columns:
     if i != 'All':
         level = find_level_for_facility(i)
@@ -299,12 +333,12 @@ fig.tight_layout()
 fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
 fig.show()
 
-xpos_for_level = dict(zip((color_for_level.keys()), range(len(color_for_level))))
 
 fig, ax = plt.subplots()
 name_of_plot = 'Usage of Healthcare Worker Time (Average)'
-capacity_unstacked_average = capacity.unstack().mean()
+capacity_unstacked_average = capacity_by_facility.unstack().mean()
 levels = [find_level_for_facility(i) if i != 'All' else 'All' for i in capacity_unstacked_average.index]
+xpos_for_level = dict(zip((color_for_level.keys()), range(len(color_for_level))))
 for id, val in capacity_unstacked_average.iteritems():
     if id != 'All':
         _level = find_level_for_facility(id)
@@ -327,21 +361,67 @@ fig.tight_layout()
 fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
 fig.show()
 
-# todo - loading on each CADRE
+
+fig, ax = plt.subplots()
+name_of_plot = 'Usage of Healthcare Worker Time by Cadre and Facility_Level'
+(100.0 * capacity_by_officer.unstack()).T.plot.bar(ax=ax)
+ax.legend()
+ax.set_xlabel('Facility_Level')
+ax.set_ylabel('Percent of time that is used')
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+ax.set_title(name_of_plot)
+fig.tight_layout()
+fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
+fig.show()
 
 
 # %% "Figure 5": The level of usage of the Beds in the HealthSystem
-# todo ... # NEED the SUMMARY LOGGER
-log = load_pickled_dataframes(results_folder, 0, 0)['tlo.methods.healthsystem']
+_df = load_pickled_dataframes(results_folder, 0, 0)['tlo.methods.healthsystem.summary']['FractionOfBedDaysUsed']
 
 
-# %% "Figure 6a": Usage of consumables in the HealthSystem
+def get_frac_of_beddays_used(_df):
+    _df = drop_outside_period(_df)
+    _df = _df.set_index('date')
+    return _df.mean()
+
+
+frac_of_beddays_used = summarize(
+    extract_results(
+        results_folder,
+        module='tlo.methods.healthsystem.summary',
+        key='FractionOfBedDaysUsed',
+        custom_generate_series=get_frac_of_beddays_used,
+        do_scaling=False
+    ),
+    only_mean=True,
+    collapse_columns=True
+)
+
+fig, ax = plt.subplots()
+name_of_plot = 'Usage of Bed-Days Used'
+(100.0 * frac_of_beddays_used).plot.bar(ax=ax)
+ax.legend()
+ax.set_xlabel('Type of Bed')
+ax.set_ylabel('Percent of time that is used')
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+ax.set_title(name_of_plot)
+ax.get_legend().remove()
+fig.tight_layout()
+fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
+fig.show()
+
+
+# %% "Figure 6": Usage of consumables in the HealthSystem
 
 def get_counts_of_items_requested(_df):
+    _df = drop_outside_period(_df)
+
     counts_of_available = defaultdict(int)
     counts_of_not_available = defaultdict(int)
 
-    for _, row in log.iterrows():
+    for _, row in _df.iterrows():
         for item, num in eval(row['Item_Available']).items():
             counts_of_available[item] += num
         for item, num in eval(row['Item_NotAvailable']).items():
@@ -400,10 +480,11 @@ fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
 fig.show()
 
 
-# %% "Figure 6b": HSI affected by missing consumables
+# HSI affected by missing consumables
 
 def get_treatment_id_affecting_by_missing_consumables(_df):
     """Return frequency that a TREATMENT_ID suffers from consumables not being available."""
+    _df = drop_outside_period(_df)
     _df = _df.loc[(_df['Item_NotAvailable'] != '{}'), ['TREATMENT_ID', 'Item_NotAvailable']]
     return _df['TREATMENT_ID'].value_counts()
 
