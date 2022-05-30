@@ -6,9 +6,9 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import squarify
 from matplotlib import pyplot as plt
 
-import squarify
 from tlo.analysis.utils import (
     extract_results,
     get_scenario_outputs,
@@ -16,6 +16,9 @@ from tlo.analysis.utils import (
     summarize,
 )
 
+# todo - limit to a particular period
+
+# todo - ** PLOTTING AESTHETICS **
 # todo - define a colormap for TREATMENT_ID short and use this in Figure 1 and 3
 # todo - Selective labelling of only the biggest blocks.
 # todo - helper function for these
@@ -41,31 +44,34 @@ colors = {
     'GBD': 'plum'
 }
 
+
 # %% Declare helper functions
 def formatting_hsi_df(_df):
     """Standard formatting for the HSI_Event log."""
 
     # Remove entries for those HSI that did not run
-    _df = _df.drop(_df.index[~_df.did_run])\
-             .reset_index(drop=True)\
-             .drop(columns=['Person_ID', 'Squeeze_Factor', 'Facility_ID', 'did_run'])
+    _df = _df.drop(_df.index[~_df.did_run]) \
+        .reset_index(drop=True) \
+        .drop(columns=['Person_ID', 'Squeeze_Factor', 'Facility_ID', 'did_run'])
 
     # todo: Limit the record to a particular date_range: currently no limitation on date-range
 
     # Unpack the dictionary in `Number_By_Appt_Type_Code`.
-    _df = _df.join(_df['Number_By_Appt_Type_Code'].apply(pd.Series).fillna(0.0)).drop(columns='Number_By_Appt_Type_Code')
+    _df = _df.join(_df['Number_By_Appt_Type_Code'].apply(pd.Series).fillna(0.0)).drop(
+        columns='Number_By_Appt_Type_Code')
 
     # Produce course version of TREATMENT_ID (just first level, which is the module)
     _df['TREATMENT_ID_SHORT'] = _df['TREATMENT_ID'].str.split('_').apply(lambda x: x[0])
 
     return _df
 
+
 def get_colors(x):
     cmap = plt.cm.get_cmap('jet')
     return [cmap(i) for i in np.arange(0, 1, 1.0 / len(x))]
 
 
-#%% "Figure 1": The Distribution of HSI_Events that occur by TREATMENT_ID
+# %% "Figure 1": The Distribution of HSI_Events that occur by TREATMENT_ID
 
 def get_counts_of_hsi_by_treatment_id(_df):
     return formatting_hsi_df(_df).groupby(by='TREATMENT_ID').size()
@@ -77,22 +83,22 @@ def get_counts_of_hsi_by_treatment_id_short(_df):
 
 counts_of_hsi_by_treatment_id = summarize(
     extract_results(
-            results_folder,
-            module='tlo.methods.healthsystem',
-            key='HSI_Event',
-            custom_generate_series=get_counts_of_hsi_by_treatment_id,
-            do_scaling=True
+        results_folder,
+        module='tlo.methods.healthsystem',
+        key='HSI_Event',
+        custom_generate_series=get_counts_of_hsi_by_treatment_id,
+        do_scaling=True
     ),
     only_mean=True
 )
 
 counts_of_hsi_by_treatment_id_short = summarize(
     extract_results(
-            results_folder,
-            module='tlo.methods.healthsystem',
-            key='HSI_Event',
-            custom_generate_series=get_counts_of_hsi_by_treatment_id_short,
-            do_scaling=True
+        results_folder,
+        module='tlo.methods.healthsystem',
+        key='HSI_Event',
+        custom_generate_series=get_counts_of_hsi_by_treatment_id_short,
+        do_scaling=True
     ),
     only_mean=True
 )
@@ -113,7 +119,6 @@ ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
 fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
 fig.show()
 
-
 fig, ax = plt.subplots()
 name_of_plot = 'HSI Events by TREATMENT_ID (Short)'
 squarify.plot(
@@ -131,21 +136,22 @@ fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
 fig.show()
 
 
-#%% "Figure 2": The Appointments Used
+# %% "Figure 2": The Appointments Used
 
 def get_counts_of_appt_type_by_treatment_id_short(_df):
-    return formatting_hsi_df(_df)\
-            .drop(columns=['date', 'TREATMENT_ID', 'Facility_Level'])\
-            .melt(id_vars=['TREATMENT_ID_SHORT'], var_name='Appt_Type', value_name='Num')\
-            .groupby(by=['TREATMENT_ID_SHORT', 'Appt_Type'])['Num'].sum()
+    return formatting_hsi_df(_df) \
+        .drop(columns=['date', 'TREATMENT_ID', 'Facility_Level']) \
+        .melt(id_vars=['TREATMENT_ID_SHORT'], var_name='Appt_Type', value_name='Num') \
+        .groupby(by=['TREATMENT_ID_SHORT', 'Appt_Type'])['Num'].sum()
+
 
 counts_of_appt_by_treatment_id_short = summarize(
     extract_results(
-            results_folder,
-            module='tlo.methods.healthsystem',
-            key='HSI_Event',
-            custom_generate_series=get_counts_of_appt_type_by_treatment_id_short,
-            do_scaling=True
+        results_folder,
+        module='tlo.methods.healthsystem',
+        key='HSI_Event',
+        custom_generate_series=get_counts_of_appt_type_by_treatment_id_short,
+        do_scaling=True
     ),
     only_mean=True,
     collapse_columns=True,
@@ -166,13 +172,13 @@ fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
 fig.show()
 
 
-#%% "Figure 3": The Fraction of the time of each HCW used by each TREATMENT_ID (Short)
+# %% "Figure 3": The Fraction of the time of each HCW used by each TREATMENT_ID (Short)
 
 def get_share_of_time_for_hw_by_short_treatment_id(_df):
-    appts = formatting_hsi_df(_df)\
-        .drop(columns=['date', 'TREATMENT_ID'])\
-        .melt(id_vars=['Facility_Level', 'TREATMENT_ID_SHORT'], var_name='Appt_Type', value_name='Num')\
-        .groupby(by=['TREATMENT_ID_SHORT', 'Facility_Level', 'Appt_Type'])['Num'].sum()\
+    appts = formatting_hsi_df(_df) \
+        .drop(columns=['date', 'TREATMENT_ID']) \
+        .melt(id_vars=['Facility_Level', 'TREATMENT_ID_SHORT'], var_name='Appt_Type', value_name='Num') \
+        .groupby(by=['TREATMENT_ID_SHORT', 'Facility_Level', 'Appt_Type'])['Num'].sum() \
         .reset_index()
 
     # Find the time of each HealthCareWorker (HCW) for each appointment at eahc level
@@ -187,31 +193,33 @@ def get_share_of_time_for_hw_by_short_treatment_id(_df):
     m = appts.merge(att,
                     left_on=['Appt_Type', 'Facility_Level'],
                     right_on=['Appt_Type_Code', 'Facility_Level'],
-                    how='left')\
-             .drop(columns=['Facility_Level', 'Appt_Type', 'Appt_Type_Code'])\
-             .set_index('TREATMENT_ID_SHORT')
+                    how='left') \
+        .drop(columns=['Facility_Level', 'Appt_Type', 'Appt_Type_Code']) \
+        .set_index('TREATMENT_ID_SHORT')
 
     return m.apply(lambda row: row * row['Num'], axis=1) \
-            .drop(columns='Num') \
-            .groupby(level=0).sum()\
-            .apply(lambda col: col / col.sum(), axis=0)\
-            .stack()
+        .drop(columns='Num') \
+        .groupby(level=0).sum() \
+        .apply(lambda col: col / col.sum(), axis=0) \
+        .stack()
 
 
 share_of_time_for_hw_by_short_treatment_id = summarize(
     extract_results(
-            results_folder,
-            module='tlo.methods.healthsystem',
-            key='HSI_Event',
-            custom_generate_series=get_share_of_time_for_hw_by_short_treatment_id,
-            do_scaling=True
+        results_folder,
+        module='tlo.methods.healthsystem',
+        key='HSI_Event',
+        custom_generate_series=get_share_of_time_for_hw_by_short_treatment_id,
+        do_scaling=True
     ),
     only_mean=True,
     collapse_columns=True
 )
 
+
 def drop_zero_rows(ser):
     return ser.drop(ser[ser == 0].index)
+
 
 all_cadres = share_of_time_for_hw_by_short_treatment_id.index.levels[1]
 cadres_to_plot = ['DCSA', 'Nursing_and_Midwifery', 'Clinical', 'Pharmacy']
@@ -236,7 +244,7 @@ fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
 fig.show()
 
 
-#%% "Figure 4": The level of usage of the HealthSystem HR Resources
+# %% "Figure 4": The level of usage of the HealthSystem HR Resources
 
 def get_share_of_time_for_hw_by_short_treatment_id(_df):
     _df = _df.set_index('date')
@@ -250,11 +258,11 @@ def get_share_of_time_for_hw_by_short_treatment_id(_df):
 
 capacity = summarize(
     extract_results(
-            results_folder,
-            module='tlo.methods.healthsystem',
-            key='Capacity',
-            custom_generate_series=get_share_of_time_for_hw_by_short_treatment_id,
-            do_scaling=False
+        results_folder,
+        module='tlo.methods.healthsystem',
+        key='Capacity',
+        custom_generate_series=get_share_of_time_for_hw_by_short_treatment_id,
+        do_scaling=False
     ),
     only_mean=True,
     collapse_columns=True
@@ -264,8 +272,10 @@ capacity = summarize(
 mfl = pd.read_csv(rfp / 'healthsystem' / 'organisation' / 'ResourceFile_Master_Facilities_List.csv'
                   ).set_index('Facility_ID')
 
+
 def find_level_for_facility(id):
     return mfl.loc[id].Facility_Level
+
 
 color_for_level = {'0': 'blue', '1a': 'yellow', '1b': 'green', '2': 'grey', '3': 'orange', '4': 'black', '5': 'white'}
 
@@ -288,7 +298,6 @@ ax.spines['right'].set_visible(False)
 fig.tight_layout()
 fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
 fig.show()
-
 
 xpos_for_level = dict(zip((color_for_level.keys()), range(len(color_for_level))))
 
@@ -321,12 +330,12 @@ fig.show()
 # todo - loading on each CADRE
 
 
-#%% "Figure 5": The level of usage of the Beds in the HealthSystem
+# %% "Figure 5": The level of usage of the Beds in the HealthSystem
 # todo ... # NEED the SUMMARY LOGGER
 log = load_pickled_dataframes(results_folder, 0, 0)['tlo.methods.healthsystem']
 
 
-#%% "Figure 6a": Usage of consumables in the HealthSystem
+# %% "Figure 6a": Usage of consumables in the HealthSystem
 
 def get_counts_of_items_requested(_df):
     counts_of_available = defaultdict(int)
@@ -346,11 +355,11 @@ def get_counts_of_items_requested(_df):
 
 cons_req = summarize(
     extract_results(
-            results_folder,
-            module='tlo.methods.healthsystem',
-            key='Consumables',
-            custom_generate_series=get_counts_of_items_requested,
-            do_scaling=True
+        results_folder,
+        module='tlo.methods.healthsystem',
+        key='Consumables',
+        custom_generate_series=get_counts_of_items_requested,
+        do_scaling=True
     ),
     only_mean=True,
     collapse_columns=True
@@ -391,8 +400,7 @@ fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
 fig.show()
 
 
-
-#%% "Figure 6b": HSI affected by missing consumables
+# %% "Figure 6b": HSI affected by missing consumables
 
 def get_treatment_id_affecting_by_missing_consumables(_df):
     """Return frequency that a TREATMENT_ID suffers from consumables not being available."""
@@ -402,16 +410,15 @@ def get_treatment_id_affecting_by_missing_consumables(_df):
 
 treatment_id_affecting_by_missing_consumables = summarize(
     extract_results(
-            results_folder,
-            module='tlo.methods.healthsystem',
-            key='Consumables',
-            custom_generate_series=get_treatment_id_affecting_by_missing_consumables,
-            do_scaling=True
+        results_folder,
+        module='tlo.methods.healthsystem',
+        key='Consumables',
+        custom_generate_series=get_treatment_id_affecting_by_missing_consumables,
+        do_scaling=True
     ),
     only_mean=True,
     collapse_columns=True
 )
-
 
 fig, ax = plt.subplots()
 name_of_plot = 'HSI Affected by Unavailable Consumables (by TREATMENT_ID)'
@@ -426,4 +433,3 @@ ax.set_axis_off()
 ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
 fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
 fig.show()
-
