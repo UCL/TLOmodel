@@ -1,0 +1,23 @@
+{
+  "scenario_script_path": "src/scripts/epilepsy_analyses/analysis_epilepsy_calibrate_seiz_stats.py",
+  "scenario_seed": 12,
+  "runs_per_draw": 2,
+  "draws": [
+    {
+      "draw_number": 0,
+      "draw_seed": 662124363,
+      "parameters": {
+        "Epilepsy": {
+          "base_3m_prob_epilepsy": 0.000178,
+          "base_prob_3m_epi_death": 0.000568,
+          "base_prob_3m_seiz_stat_infreq_freq": 0.15000000000000002,
+          "base_prob_3m_seiz_stat_infreq_none": 0.15000000000000002,
+          "base_prob_3m_seiz_stat_none_freq": 0.15000000000000002,
+          "base_prob_3m_seiz_stat_none_infreq": 0.15000000000000002
+        }
+      }
+    }
+  ],
+  "commit": "2fc1db178d990734e14c91c0bf30332ff38d6880",
+  "github": "https://github.com/UCL/TLOmodel/blob/2fc1db178d990734e14c91c0bf30332ff38d6880/src/scripts/epilepsy_analyses/analysis_epilepsy_calibrate_seiz_stats.py"
+}
