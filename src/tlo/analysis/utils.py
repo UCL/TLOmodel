@@ -275,18 +275,22 @@ def extract_results(results_folder: Path,
     for draw in range(info['number_of_draws']):
         for run in range(info['runs_per_draw']):
 
+            draw_run = (draw, run)
+
             try:
                 df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
                 output_from_eval: pd.Series = _gen_series(df)
                 assert pd.Series == type(output_from_eval), 'Custom command does not generate a pd.Series'
-                res[f"{draw}_{run}"] = output_from_eval * get_multiplier(draw, run)
+                res[draw_run] = output_from_eval * get_multiplier(draw, run)
 
             except KeyError:
                 # Some logs could not be found - probably because this run failed.
-                res[f"{draw}_{run}"] = None
+                res[draw_run] = None
 
     # Use pd.concat to compile results (skips dict items where the values in None)
-    return pd.concat(res, axis=1)
+    _concat = pd.concat(res, axis=1)
+    _concat.columns.names = ['draw', 'run']  # name the levels of the columns multi-index
+    return _concat
 
 
 def summarize(results: pd.DataFrame, only_mean: bool = False, collapse_columns: bool = False) -> pd.DataFrame:
