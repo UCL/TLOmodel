@@ -1299,6 +1299,7 @@ class HealthSystem(Module):
         summary_by_officer['Fraction_Time_Used'] = (
             summary_by_officer['Minutes_Used'] / summary_by_officer['Total_Minutes_Per_Day']
         ).replace([np.inf, -np.inf, np.nan], 0.0)
+        summary_by_officer.index.names = ['Officer_Type', 'Facility_Level']
 
         logger.info(key='Capacity',
                     data={
