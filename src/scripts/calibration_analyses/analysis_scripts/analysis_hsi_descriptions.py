@@ -3,26 +3,24 @@ N.B. This script uses the package `squarify`: so run, `pip install squarify` fir
 """
 from collections import defaultdict
 from pathlib import Path
-from tlo import Date
+
 import numpy as np
 import pandas as pd
 import squarify
 from matplotlib import pyplot as plt
 
+from tlo import Date
 from tlo.analysis.utils import (
     extract_results,
     get_scenario_outputs,
     load_pickled_dataframes,
-    summarize, unflatten_flattened_multi_index_in_logging,
+    summarize,
+    unflatten_flattened_multi_index_in_logging,
 )
 
-# todo - limit to a particular period
-# todo - finish plots (CADRE & BEDS)
-
 # todo - ** PLOTTING AESTHETICS **
-# todo - define a colormap for TREATMENT_ID short and use this in Figure 1 and 3
-# todo - Selective labelling of only the biggest blocks.
-# todo - helper function for these
+#  * define a colormap for TREATMENT_ID short and use this in Figure 1 and 3
+#  * selective labelling of only the biggest blocks.
 
 
 # %% Declare the name of the file that specified the scenarios used in this run.
