@@ -1273,7 +1273,6 @@ class HealthSystem(Module):
         :param current_capabilities: the current_capabilities of the health system.
         :param total_footprint: Per-officer totals of footprints of all the HSI events that ran
         """
-        # todo - ***** divide by inflationary factor******
 
         # Combine the current_capabilities and total_footprint per-officer totals
         comparison = pd.DataFrame(index=current_capabilities.index)
