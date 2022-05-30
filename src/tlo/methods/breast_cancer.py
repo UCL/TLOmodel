@@ -735,6 +735,9 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # If the status is already in `stage4`, start palliative care (instead of treatment)
         if df.at[person_id, "brc_status"] == 'stage4':
+            logger.warning(key="warning", data="Cancer is in stage 4 - aborting HSI_breastCancer_StartTreatment,"
+                                               "scheduling HSI_BreastCancer_PalliativeCare")
+
             hs.schedule_hsi_event(
                 hsi_event=HSI_BreastCancer_PalliativeCare(
                      module=self.module,
