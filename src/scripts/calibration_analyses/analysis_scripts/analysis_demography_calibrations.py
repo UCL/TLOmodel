@@ -42,7 +42,7 @@ outputspath = Path('./outputs/tbh03@ic.ac.uk')
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
-results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
+results_folder = get_scenario_outputs(scenario_filename, outputspath)[-2]
 print(f"Results folder is: {results_folder}")
 
 # If needed -- in the case that pickles were not created remotely during batch
