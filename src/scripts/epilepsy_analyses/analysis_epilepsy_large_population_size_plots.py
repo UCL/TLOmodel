@@ -112,9 +112,8 @@ plt.subplots_adjust(left=0.1,
                     top=0.9,
                     wspace=0.4,
                     hspace=0.4)
-plt.show()
-plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Epilepsy/large_pop_size_prop_seiz_stats.png",
-            bbox_inches='tight')
+plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Epilepsy/Large_run/"
+            "large_pop_size_prop_seiz_stats.png", bbox_inches='tight')
 
 anti_ep_over_time = pd.DataFrame(index=prop_anti_ep_seiz_0.index)
 anti_ep_over_time['seiz_stat_0'] = summarize(prop_anti_ep_seiz_0, only_mean=True).values
@@ -139,7 +138,7 @@ plt.subplots_adjust(left=0.1,
                     top=0.9,
                     wspace=0.4,
                     hspace=0.4)
-plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Epilepsy/large_pop_size_anti_ep.png",
+plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Epilepsy/Large_run/large_pop_size_anti_ep.png",
             bbox_inches='tight')
 inc_summary = summarize(inc, only_mean=True)
 inc_mean = summarize(inc, only_mean=True).mean()
@@ -162,5 +161,5 @@ plt.bar(np.arange(2) + 0.4, [gbd_inc, gbd_inc_death], color='royalblue', width=0
 plt.xticks(np.arange(2) + 0.2, ['Mean incidence', 'Mean incidence\nof death'])
 plt.legend()
 plt.ylabel('Incidence per 100,000 p.y.')
-plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Epilepsy/large_pop_size_inc_summary.png",
-            bbox_inches='tight')
+plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Epilepsy/Large_run/"
+            "large_pop_size_inc_summary.png", bbox_inches='tight')
