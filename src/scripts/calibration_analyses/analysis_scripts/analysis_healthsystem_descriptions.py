@@ -1,7 +1,7 @@
 """Description of the HSI that run.
 N.B. This script uses the package `squarify`: so run, `pip install squarify` first.
 """
-
+from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
@@ -18,6 +18,7 @@ from tlo.analysis.utils import (
 
 # todo - define a colormap for TREATMENT_ID short and use this in Figure 1 and 3
 # todo - Selective labelling of only the biggest blocks.
+# todo - helper function for these
 
 # %% Declare the name of the file that specified the scenarios used in this run.
 scenario_filename = 'long_run_all_diseases.py'
@@ -295,7 +296,6 @@ fig, ax = plt.subplots()
 name_of_plot = 'Usage of Healthcare Worker Time (Average)'
 capacity_unstacked_average = capacity.unstack().mean()
 levels = [find_level_for_facility(i) if i != 'All' else 'All' for i in capacity_unstacked_average.index]
-
 for id, val in capacity_unstacked_average.iteritems():
     if id != 'All':
         _level = find_level_for_facility(id)
@@ -318,12 +318,112 @@ fig.tight_layout()
 fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
 fig.show()
 
+# todo - loading on each CADRE
+
 
 #%% "Figure 5": The level of usage of the Beds in the HealthSystem
-# todo ...
+# todo ... # NEED the SUMMARY LOGGER
+log = load_pickled_dataframes(results_folder, 0, 0)['tlo.methods.healthsystem']
 
 
-#%% "Figure 6": Usage of consumables in the HealthSystem
-# todo ...
+#%% "Figure 6a": Usage of consumables in the HealthSystem
 
+def get_counts_of_items_requested(_df):
+    counts_of_available = defaultdict(int)
+    counts_of_not_available = defaultdict(int)
+
+    for _, row in log.iterrows():
+        for item, num in eval(row['Item_Available']).items():
+            counts_of_available[item] += num
+        for item, num in eval(row['Item_NotAvailable']).items():
+            counts_of_not_available[item] += num
+
+    return pd.concat(
+        {'Available': pd.Series(counts_of_available), 'Not_Available': pd.Series(counts_of_not_available)},
+        axis=1
+    ).fillna(0).astype(int).stack()
+
+
+cons_req = summarize(
+    extract_results(
+            results_folder,
+            module='tlo.methods.healthsystem',
+            key='Consumables',
+            custom_generate_series=get_counts_of_items_requested,
+            do_scaling=True
+    ),
+    only_mean=True,
+    collapse_columns=True
+)
+
+# Merge in item names and prepare to plot:
+cons = cons_req.unstack()
+cons_names = pd.read_csv(rfp / 'healthsystem' / 'consumables' / 'ResourceFile_Consumables_Items_and_Packages.csv'
+                         )[['Item_Code', 'Items']].set_index('Item_Code').drop_duplicates()
+cons = cons.merge(cons_names, left_index=True, right_index=True, how='left').set_index('Items').astype(int)
+cons = cons.assign(total=cons.sum(1)).sort_values('total', ascending=False).drop(columns='total')
+
+fig, ax = plt.subplots()
+name_of_plot = 'Demand For Consumables'
+(cons / 1e6).head(20).plot.barh(ax=ax, stacked=True)
+ax.set_title(name_of_plot)
+ax.set_ylabel('Item (20 most requested)')
+ax.set_xlabel('Number of requests (Millions)')
+ax.yaxis.set_tick_params(labelsize=7)
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+ax.legend()
+fig.tight_layout()
+fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
+fig.show()
+
+fig, ax = plt.subplots()
+name_of_plot = 'Consumables Not Available'
+(cons['Not_Available'] / 1e6).sort_values(ascending=False).head(20).plot.barh(ax=ax)
+ax.set_title(name_of_plot)
+ax.set_ylabel('Item (20 most frequently not available when requested)')
+ax.set_xlabel('Number of requests (Millions)')
+ax.yaxis.set_tick_params(labelsize=7)
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+fig.tight_layout()
+fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
+fig.show()
+
+
+
+#%% "Figure 6b": HSI affected by missing consumables
+
+def get_treatment_id_affecting_by_missing_consumables(_df):
+    """Return frequency that a TREATMENT_ID suffers from consumables not being available."""
+    _df = _df.loc[(_df['Item_NotAvailable'] != '{}'), ['TREATMENT_ID', 'Item_NotAvailable']]
+    return _df['TREATMENT_ID'].value_counts()
+
+
+treatment_id_affecting_by_missing_consumables = summarize(
+    extract_results(
+            results_folder,
+            module='tlo.methods.healthsystem',
+            key='Consumables',
+            custom_generate_series=get_treatment_id_affecting_by_missing_consumables,
+            do_scaling=True
+    ),
+    only_mean=True,
+    collapse_columns=True
+)
+
+
+fig, ax = plt.subplots()
+name_of_plot = 'HSI Affected by Unavailable Consumables (by TREATMENT_ID)'
+squarify.plot(
+    sizes=treatment_id_affecting_by_missing_consumables.values,
+    label=treatment_id_affecting_by_missing_consumables.index,
+    alpha=1,
+    ax=ax,
+    text_kwargs={'color': 'black', 'size': 4}
+)
+ax.set_axis_off()
+ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
+fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
+fig.show()
 
