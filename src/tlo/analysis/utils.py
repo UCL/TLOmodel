@@ -287,7 +287,7 @@ def extract_results(results_folder: Path,
                 # Some logs could not be found - probably because this run failed.
                 res[draw_run] = None
 
-    # Use pd.concat to compile results (skips dict items where the values in None)
+    # Use pd.concat to compile results (skips dict items where the values is None)
     _concat = pd.concat(res, axis=1)
     _concat.columns.names = ['draw', 'run']  # name the levels of the columns multi-index
     return _concat
