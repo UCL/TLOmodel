@@ -1200,7 +1200,8 @@ class HealthSystem(Module):
                 number_by_appt_type_code=actual_appt_footprint,
                 person_id=hsi_event.target,
                 squeeze_factor=_squeeze_factor,
-                did_run=did_run
+                did_run=did_run,
+                facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL
             )
 
             # Storage for the purpose of testing / documentation
@@ -1240,7 +1241,8 @@ class HealthSystem(Module):
                          number_by_appt_type_code,
                          person_id,
                          squeeze_factor,
-                         did_run
+                         did_run,
+                         facility_level
                          ):
         """Write the log `HSI_Event` and add to the summary counter."""
         logger.info(key="HSI_Event",
@@ -1249,7 +1251,8 @@ class HealthSystem(Module):
                         'Number_By_Appt_Type_Code': number_by_appt_type_code,
                         'Person_ID': person_id,
                         'Squeeze_Factor': squeeze_factor,
-                        'did_run': did_run
+                        'did_run': did_run,
+                        'Facility_Level': facility_level if facility_level is not None else -99
                     },
                     description="record of each HSI event"
                     )
@@ -1391,22 +1394,24 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         # 1) Compute footprint that arise from in-patient bed-days
         inpatient_appts = self.module.bed_days.get_inpatient_appts()
         inpatient_footprints = Counter()
-        inpatient_appt_total = Counter()
+        inpatient_appt_by_facility_level = defaultdict(Counter)
         for _fac_id, _footprint in inpatient_appts.items():
             inpatient_footprints.update(self.module.get_appt_footprint_as_time_request(
                 facility_info=self.module._facility_by_facility_id[_fac_id], appt_footprint=_footprint)
             )
-            inpatient_appt_total.update(_footprint)
+            inpatient_appt_by_facility_level[self.module._facility_by_facility_id[_fac_id].level] += _footprint
 
         # Write the log that these in-patient appointments were needed:
-        if inpatient_appt_total:
-            self.module.write_to_hsi_log(
-                treatment_id='Inpatient_Care',
-                number_by_appt_type_code=dict(inpatient_appt_total),
-                person_id=-1,
-                squeeze_factor=0.0,
-                did_run=True
-            )
+        if len(inpatient_appt_by_facility_level):
+            for _level, _inpatient_appts in inpatient_appt_by_facility_level.items():
+                self.module.write_to_hsi_log(
+                    treatment_id='Inpatient_Care',
+                    number_by_appt_type_code=dict(_inpatient_appts),
+                    person_id=-1,
+                    squeeze_factor=0.0,
+                    did_run=True,
+                    facility_level=_level
+                )
 
         # - Create hold-over list (will become a heapq). This will hold events that cannot occur today before they are
         #  added back to the heapq

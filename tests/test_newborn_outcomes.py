@@ -164,6 +164,7 @@ def test_care_seeking_for_babies_delivered_at_home_who_develop_complications(see
     params['prob_early_onset_neonatal_sepsis_day_0'] = 1.0
     params['prob_early_breastfeeding_hb'] = 0.0
     params['prob_care_seeking_for_complication'] = 1.0
+    params['prob_timings_pnc_newborns'] = [1, 0]
 
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
@@ -184,7 +185,8 @@ def test_care_seeking_for_babies_delivered_at_home_who_develop_complications(see
 
     # Run the on birth function and check the baby has developed the complication and care will be sought
     sim.modules['NewbornOutcomes'].on_birth(mother_id, child_id)
-    assert sim.population.props.at[child_id, 'nb_early_onset_neonatal_sepsis']
+    df = sim.population.props
+    assert df.at[child_id, 'nb_early_onset_neonatal_sepsis']
 
     # Check the event is scheduled
     hsi_events = find_and_return_hsi_events_list(sim, child_id)
@@ -225,8 +227,8 @@ def test_twin_and_single_twin_still_birth_logic_for_twins(seed):
 
     # Check that only one child was born, that child is of a twin pair, but has no matched sibling
     df = sim.population.props
-    child = df.loc[df.mother_id == mother_id]
-    assert len(child == 1)
+    child = df.loc[(df.mother_id == mother_id) & df.is_alive]
+    assert len(child) == 1
     for person in child.index:
         assert sim.population.props.at[person, 'nb_is_twin']
         assert sim.population.props.at[person, 'nb_twin_sibling_id'] == -1
