@@ -2,10 +2,10 @@
 This scenario runs the full model under a set of scenario in which each one TREATMENT_ID is excluded.
 
 Run on the batch system using:
-```tlo batch-submit src/scripts/healthsystem/impact_of_cons_availability/scenario_effect_of_each_treatment.py```
+```tlo batch-submit src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_effect_of_each_treatment.py```
 
 or locally using:
-    ```tlo scenario-run src/scripts/healthsystem/impact_of_cons_availability/scenario_effect_of_each_treatment.py```
+    ```tlo scenario-run src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_effect_of_each_treatment.py ```
 
 """
 import os
@@ -24,11 +24,11 @@ class EffectOfEachTreatment(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2010, 1, 31)
-        self.pop_size = 1_000
+        self.end_date = Date(2010, 3, 31)
+        self.pop_size = 5_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 3  # <- repeated this many times (per draw)
+        self.runs_per_draw = 1  # <- repeated this many times (per draw)
 
     def log_configuration(self):
         return {
@@ -64,16 +64,16 @@ class EffectOfEachTreatment(BaseScenario):
         defined_hsi = pd.read_csv(tempfile_output_location)
 
         # Generate list of TREATMENT_IDs
-        treatments = list(set(defined_hsi['Treatment']))
+        treatments = sorted(list(set(defined_hsi['Treatment'])))
+        treatments = ['Hiv', 'Tb', 'FirstAttendance_NonEmergency', 'Malaria']  # <--  todo ** WILD DEBUGING LINE **
 
-        # Filter list to find the TREATMENT_IDs defined up to the first '_' (and replacing with '*')
-        # todo...
+        # [OPTIONALLY] Filter/aggregate the TREATMENT_IDs to provide the resolution needed.
 
         # Add trailing '*'
         treatments = [t + '*' for t in treatments]
 
         # Return 'Service_Availability' values, in which one treatment is omitted, plus a scenario with everything
-        service_availability = dict({"Everything": ["*"]})
+        service_availability = dict({"Everything": ["<<<*>>>"]})
         service_availability.update(
             {f"No {t}": [x for x in treatments if x != t] for t in treatments}
         )
