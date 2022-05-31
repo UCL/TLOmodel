@@ -62,7 +62,7 @@ class EffectOfEachTreatment(BaseScenario):
 
         # Generate table of defined HSI
         tempfile_output_location = self.log_configuration()['directory'] / 'defined_hsi.csv'
-        os.system(f'python docs/tlo_hsi_events.py --output-file {tempfile_output_location} --output-format csv')
+        os.system(f'python docs/tlo_hsi_events.py --output-file {tempfile_output_location} --output-format csv')  # todo - find way to avoid writing to file
         defined_hsi = pd.read_csv(tempfile_output_location)
 
         # Generate list of TREATMENT_IDs
