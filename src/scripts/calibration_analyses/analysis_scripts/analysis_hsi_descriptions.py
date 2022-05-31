@@ -375,8 +375,6 @@ fig.show()
 
 
 # %% "Figure 5": The level of usage of the Beds in the HealthSystem
-_df = load_pickled_dataframes(results_folder, 0, 0)['tlo.methods.healthsystem.summary']['FractionOfBedDaysUsed']
-
 
 def get_frac_of_beddays_used(_df):
     _df = drop_outside_period(_df)
