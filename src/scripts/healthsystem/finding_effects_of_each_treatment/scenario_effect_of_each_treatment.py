@@ -26,7 +26,8 @@ class EffectOfEachTreatment(BaseScenario):
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2010, 1, 31)
         self.pop_size = 1_000
-        self.number_of_draws = len(self._scenarios())
+        self._scenarios = self._get_scenarios()
+        self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 3  # <- repeated this many times (per draw)
 
     def log_configuration(self):
@@ -44,7 +45,7 @@ class EffectOfEachTreatment(BaseScenario):
         return fullmodel(resourcefilepath=self.resources)
 
     def draw_parameters(self, draw_number, rng):
-        _, service_availability = list(self._scenarios(draw_number=draw_number))[draw_number]
+        service_availability = list(self._scenarios.values())[draw_number]
 
         return {
             'HealthSystem': {
@@ -52,14 +53,10 @@ class EffectOfEachTreatment(BaseScenario):
                 }
         }
 
-    @property
-    def _num_scenarios(self):
-        return len(self.__scenarios())
-
-    def _scenarios(self) -> Dict[str, List[str]]:
-        """Return the Dict with values for the parameter `Service_Availability` that define the scenarios, keyed
-        by a name for the scenario.
-        The sequences of scenarios systematically omits one of the TREATMENT_ID's that is defined in the model."""
+    def _get_scenarios(self) -> Dict[str, List[str]]:
+        """Return the Dict with values for the parameter `Service_Availability` keyed by a name for the scenario.
+        The sequences of scenarios systematically omits one of the TREATMENT_ID's that is defined in the model. The
+        complete list of TREATMENT_ID's is found by running `tlo_hsi_events.py`."""
 
         # Generate table of defined HSI
         tempfile_output_location = self.log_configuration()['directory'] / 'defined_hsi.csv'
