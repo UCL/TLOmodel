@@ -707,6 +707,8 @@ def test_classification_based_on_symptoms_and_imci(sim_hs_all_consumables):
         p['sensitivity_of_classification_of_danger_signs_pneumonia_facility_level0'] = 1.0
         p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level1'] = 1.0
         p['sensitivity_of_classification_of_severe_pneumonia_facility_level1'] = 1.0
+        p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level2'] = 1.0
+        p['sensitivity_of_classification_of_severe_pneumonia_facility_level2'] = 1.0
 
     sim = sim_hs_all_consumables
     make_hw_assesement_perfect(sim)
@@ -798,6 +800,77 @@ def test_classification_based_on_symptoms_and_imci(sim_hs_all_consumables):
 
 
 # todo: test that imci_classification_based_on_symptoms cough_or_cold cannot have hypoxaemia or other complications
+
+
+def test_imci_classification_for_complications(sim_hs_all_consumables):
+    """Check that IMCI classification match the underlying condition (complications)"""
+
+    sim = sim_hs_all_consumables
+
+    def make_hw_assesement_perfect(sim):
+        p = sim.modules['Alri'].parameters
+        p['sensitivity_of_classification_of_fast_breathing_pneumonia_facility_level0'] = 1.0
+        p['sensitivity_of_classification_of_danger_signs_pneumonia_facility_level0'] = 1.0
+        p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level1'] = 1.0
+        p['sensitivity_of_classification_of_severe_pneumonia_facility_level1'] = 1.0
+        p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level2'] = 1.0
+        p['sensitivity_of_classification_of_severe_pneumonia_facility_level2'] = 1.0
+
+    # make risk of immediate onset complications be 100% (so that person has all the complications)
+    params = sim.modules['Alri'].parameters
+    params['prob_pulmonary_complications_in_pneumonia'] = 1.0
+    params['prob_bacteraemia_in_pneumonia'] = 1.0
+    params['prob_progression_to_sepsis_with_bacteraemia'] = 1.0
+    for p in params:
+        if any([p.startswith(f'prob_{c}') for c in sim.modules['Alri'].complications]):
+            params[p] = 1.0
+
+        make_hw_assesement_perfect(sim)
+        sim.make_initial_population(n=1000)
+        hsi_alri_treatment = HSI_Alri_Treatment(sim.modules['Alri'], 0)
+
+        # start simulation
+        sim.simulate(end_date=start_date)
+        sim.event_queue.queue = []  # clear the queue
+
+        # Get person to use:
+        df = sim.population.props
+        under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
+        person_id = under5s.index[0]
+        assert not df.loc[person_id, 'ri_current_infection_status']
+
+        # Run incident case for a viral pathogen:
+        pathogen = 'RSV'
+        incidentcase = AlriIncidentCase(module=sim.modules['Alri'], person_id=person_id, pathogen=pathogen)
+        incidentcase.run()
+
+        # get the classification
+        _get_disease_classification = hsi_alri_treatment._get_disease_classification
+
+        # get the symptoms
+        symptoms = sim.modules['SymptomManager'].has_what(person_id)
+
+        classification = _get_disease_classification(
+            age_exact_years=1.0,
+            symptoms=symptoms,
+            oxygen_saturation=df.at[person_id, 'ri_SpO2_level'],
+            facility_level='1b',
+            use_oximeter=True
+        )
+
+        complications_cols = [
+            f"ri_complication_{complication}" for complication in
+            ['pneumothorax',
+             'pleural_effusion',
+             'empyema',
+             'lung_abscess',
+             'sepsis',
+             'hypoxaemia']]
+
+        for complication in complications_cols:
+            if df.loc[person_id, complication]:
+                assert classification != 'cough_or_cold'
+
 
 def test_do_effects_of_alri_treatment(sim_hs_all_consumables):
     """Check that running `do_alri_treatment` can prevent a death from occurring."""
