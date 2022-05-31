@@ -5,7 +5,8 @@ Run on the batch system using:
 ```tlo batch-submit src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_effect_of_each_treatment.py```
 
 or locally using:
-    ```tlo scenario-run src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_effect_of_each_treatment.py ```
+    ```tlo scenario-run src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_effect_of_each_treatment.py
+    ```
 
 """
 import os
@@ -39,7 +40,7 @@ class EffectOfEachTreatment(BaseScenario):
                 'tlo.methods.demography': logging.INFO,
                 'tlo.methods.healthburden': logging.INFO,
                 'tlo.methods.healthsystem.summary': logging.INFO,
-                'tlo.methods.healthsystem': logging.INFO,    # <-- todo: DELETE THIS WHEN USING FOR REALZ
+                'tlo.methods.healthsystem': logging.INFO,
             }
         }
 
@@ -67,7 +68,6 @@ class EffectOfEachTreatment(BaseScenario):
 
         # Generate list of TREATMENT_IDs
         treatments = sorted(list(set(defined_hsi['Treatment'])))
-        treatments = ['Hiv', 'Tb', 'FirstAttendance_NonEmergency', 'Malaria']  # <--  todo ** WILD DEBUGING LINE **
 
         # [OPTIONALLY] Filter/aggregate the TREATMENT_IDs to provide the resolution needed.
 
