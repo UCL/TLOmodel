@@ -3,23 +3,13 @@
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
-from matplotlib import pyplot as plt
 import squarify
-
+from matplotlib import pyplot as plt
 
 from tlo import Date
-
 from tlo.analysis.utils import (
     extract_results,
-    format_gbd,
     get_scenario_outputs,
-    load_pickled_dataframes,
-    make_age_grp_lookup,
-    make_age_grp_types,
-    make_calendar_period_lookup,
-    make_calendar_period_type,
-    summarize,
 )
 
 # %% Declare the name of the file that specified the scenarios used in this run.
@@ -35,11 +25,6 @@ results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
 # Declare path for output graphs from this script
 make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
 
-a = load_pickled_dataframes(results_folder, 0, 0)['tlo.methods.healthsystem']
-b = load_pickled_dataframes(results_folder, 1, 0)['tlo.methods.healthsystem']
-c = load_pickled_dataframes(results_folder, 2, 0)['tlo.methods.healthsystem']
-d = load_pickled_dataframes(results_folder, 3, 0)['tlo.methods.healthsystem']
-
 TARGET_PERIOD = (Date(2010, 1, 1), Date(2010, 12, 31))
 
 
@@ -49,6 +34,7 @@ def get_parameter_names_from_scenario_file() -> tuple:
         EffectOfEachTreatment
     e = EffectOfEachTreatment()
     return tuple(e._scenarios.keys())
+
 
 param_names = get_parameter_names_from_scenario_file()
 
@@ -62,6 +48,7 @@ def drop_outside_period(_df):
 
 def get_counts_of_hsi_by_treatment_id(_df):
     return _df.groupby(by='TREATMENT_ID').size()
+
 
 def get_colors(x):
     cmap = plt.cm.get_cmap('jet')
@@ -96,20 +83,7 @@ for i, scenario_name in enumerate(param_names):
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
 
-
 # %% Quantify the health difference between each scenario and the 'Everything' scenario.
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 #
