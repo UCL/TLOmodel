@@ -751,6 +751,7 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # Check that the person has been diagnosed and is not on treatment
         assert not df.at[person_id, "brc_status"] == 'none'
+        assert not df.at[person_id, "brc_status"] == 'stage4'
         assert not pd.isnull(df.at[person_id, "brc_date_diagnosis"])
         assert pd.isnull(df.at[person_id, "brc_date_treatment"])
 
