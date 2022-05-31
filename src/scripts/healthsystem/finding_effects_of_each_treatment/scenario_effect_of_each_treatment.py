@@ -75,7 +75,7 @@ class EffectOfEachTreatment(BaseScenario):
         treatments = [t + '*' for t in treatments]
 
         # Return 'Service_Availability' values, in which one treatment is omitted, plus a scenario with everything
-        service_availability = dict({"Everything": ["<<<*>>>"]})
+        service_availability = dict({"Everything": ["*"]})
         service_availability.update(
             {f"No {t}": [x for x in treatments if x != t] for t in treatments}
         )
