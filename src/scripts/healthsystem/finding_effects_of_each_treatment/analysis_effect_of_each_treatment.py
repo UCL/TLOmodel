@@ -7,10 +7,7 @@ import squarify
 from matplotlib import pyplot as plt
 
 from tlo import Date
-from tlo.analysis.utils import (
-    extract_results,
-    get_scenario_outputs,
-)
+from tlo.analysis.utils import extract_results, get_scenario_outputs
 
 # %% Declare the name of the file that specified the scenarios used in this run.
 scenario_filename = 'scenario_effect_of_each_treatment.py'
@@ -30,8 +27,9 @@ TARGET_PERIOD = (Date(2010, 1, 1), Date(2010, 12, 31))
 
 def get_parameter_names_from_scenario_file() -> tuple:
     """Get the tuple of names of the scenarios from `Scenario` class used to create the results."""
-    from scripts.healthsystem.finding_effects_of_each_treatment.scenario_effect_of_each_treatment import \
-        EffectOfEachTreatment
+    from scripts.healthsystem.finding_effects_of_each_treatment.scenario_effect_of_each_treatment import (
+        EffectOfEachTreatment,
+    )
     e = EffectOfEachTreatment()
     return tuple(e._scenarios.keys())
 
