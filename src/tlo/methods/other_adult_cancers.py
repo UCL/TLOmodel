@@ -712,11 +712,23 @@ class HSI_OtherAdultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
 
-        # Check that the person has cancer, not in metastatic, has been diagnosed and is not on treatment
+        # Check that the person has cancer, has been diagnosed and is not on treatment
         assert not df.at[person_id, "oac_status"] == 'none'
-        assert not df.at[person_id, "oac_status"] == 'metastatic'
         assert not pd.isnull(df.at[person_id, "oac_date_diagnosis"])
         assert pd.isnull(df.at[person_id, "oac_date_treatment"])
+
+        # If the status is already `metastatic`, start palliative care (instead of treatment)
+        if df.at[person_id, "oac_status"] == 'metastatic':
+            hs.schedule_hsi_event(
+                hsi_event=HSI_OtherAdultCancer_PalliativeCare(
+                    module=self.module,
+                    person_id=person_id,
+                ),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0
+            )
+            return self.make_appt_footprint({})
 
         # Record date and stage of starting treatment
         df.at[person_id, "oac_date_treatment"] = self.sim.date
