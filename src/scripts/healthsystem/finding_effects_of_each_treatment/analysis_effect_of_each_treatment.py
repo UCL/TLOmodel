@@ -55,7 +55,7 @@ def get_colors(x):
 
 counts_of_hsi_by_treatment_id = extract_results(
     results_folder,
-    module='tlo.methods.healthsystem',
+    module='tlo.methods.healthsystem',  # todo <-- change this to use the summary logger only (and update the scenario file)
     key='HSI_Event',
     custom_generate_series=get_counts_of_hsi_by_treatment_id,
     do_scaling=True
@@ -82,7 +82,7 @@ for i, scenario_name in enumerate(param_names):
     fig.show()
 
 # %% Quantify the health difference between each scenario and the 'Everything' scenario.
-
+# todo....
 
 #
 # import pickle
