@@ -104,6 +104,7 @@ def test_cause_of_death_being_registered(tmpdir, seed):
             'tlo.methods.demography': logging.INFO
         }
     })
+
     sim.register(*fullmodel(resourcefilepath=rfp, healthsystem_disable=True))
 
     # Increase risk of death of Diarrhoea to ensure that are at least some deaths

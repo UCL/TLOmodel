@@ -30,6 +30,7 @@ from tlo.methods import (
     pregnancy_supervisor,
     stunting,
     symptommanager,
+    tb,
     wasting,
 )
 
@@ -205,8 +206,9 @@ def test_run_with_all_referenced_modules_registered(seed, tmpdir):
                  stunting.Stunting(resourcefilepath=resourcefilepath),
                  wasting.Wasting(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
-                 epi.Epi(resourcefilepath=resourcefilepath)
-                 )  # todo: add TB once in master
+                 epi.Epi(resourcefilepath=resourcefilepath),
+                 tb.Tb(resourcefilepath=resourcefilepath),
+                 )
 
     sim.make_initial_population(n=5000)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)  # keep high volume of pregnancy to increase risk of error

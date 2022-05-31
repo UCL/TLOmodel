@@ -839,12 +839,21 @@ class HSI_ProstateCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # we don't treat if cancer is metastatic
         if df.at[person_id, "pc_status"] == 'metastatic':
-            logger.warning(key="warning", data="Cancer is metastatic - aborting HSI_ProstateCancer_StartTreatment")
-            return hs.get_blank_appt_footprint()
+            logger.warning(key="warning", data="Cancer is metastatic- aborting HSI_ProstateCancer_StartTreatment,"
+                                               "scheduling HSI_ProstateCancer_PalliativeCare")
+            hs.schedule_hsi_event(
+                hsi_event=HSI_ProstateCancer_PalliativeCare(
+                    module=self.module,
+                    person_id=person_id,
+                ),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0
+            )
+            return self.make_appt_footprint({})
 
         # Check that the person has cancer, not in metastatic, has been diagnosed and is not on treatment
         assert not df.at[person_id, "pc_status"] == 'none'
-        assert not df.at[person_id, "pc_status"] == 'metastatic'
         # todo: check this line below
         assert not pd.isnull(df.at[person_id, "pc_date_diagnosis"])
         assert pd.isnull(df.at[person_id, "pc_date_treatment"])

@@ -720,9 +720,23 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
 
+        # If the status is already in `stage4`, start palliative care (instead of treatment)
+        if df.at[person_id, "oc_status"] == 'stage4':
+            logger.warning(key="warning", data="Cancer is in stage 4 - aborting HSI_OesophagaelCancer_StartTreatment,"
+                                               "scheduling HSI_OesophagaelCancer_PalliativeCare")
+
+            hs.schedule_hsi_event(
+                hsi_event=HSI_OesophagealCancer_PalliativeCare(
+                    module=self.module,
+                    person_id=person_id,
+                ),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0
+            )
+            return self.make_appt_footprint({})
         # Check that the person has cancer, not in stage4, has been diagnosed and is not on treatment
         assert not df.at[person_id, "oc_status"] == 'none'
-        assert not df.at[person_id, "oc_status"] == 'stage4'
         assert not pd.isnull(df.at[person_id, "oc_date_diagnosis"])
         assert pd.isnull(df.at[person_id, "oc_date_treatment"])
 

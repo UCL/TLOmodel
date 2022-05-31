@@ -23,6 +23,7 @@ from tlo.methods import (
     pregnancy_helper_functions,
     pregnancy_supervisor,
     symptommanager,
+    tb,
 )
 
 # The resource files
@@ -137,6 +138,7 @@ def test_perfect_run_of_anc_contacts_no_constraints(seed):
                  depression.Depression(resourcefilepath=resourcefilepath),
                  malaria.Malaria(resourcefilepath=resourcefilepath),
                  epi.Epi(resourcefilepath=resourcefilepath),
+                 tb.Tb(resourcefilepath=resourcefilepath),
                  hiv.Hiv(resourcefilepath=resourcefilepath))
 
     sim.make_initial_population(n=100)
