@@ -30,7 +30,8 @@ resourcefilepath = Path("./resources")
 # Create name for log-file
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
-log_filename = outputpath / 'GBD_lri_comparison_50k_pop__2022-03-15T111444.log'
+# log_filename = 'none'
+log_filename = outputpath / 'GBD_lri_comparison_50k_pop__2022-05-30T153032.log'
 # <-- insert name of log file to avoid re-running the simulation
 
 if not os.path.exists(log_filename):
@@ -330,5 +331,35 @@ plt.xlabel("Year")
 plt.xticks(rotation=90)
 plt.ylabel("CRF (%)")
 plt.legend(["Model"])
+plt.tight_layout()
+plt.show()
+
+# -----------------------------------------------------------------------------------------------
+# check the care-seeking proportion
+
+# using the tracker to get the number of cases per year
+number_of_cases = counts.incident_cases
+
+# using the tracker to get the number of deaths per year
+number_of_sought_care = counts.seeking_care
+
+# calculate the proportion of those who sought care
+sought_care_proportion = (number_of_sought_care / number_of_cases)
+
+fig6, ax6 = plt.subplots()
+
+# DHS care-seeking estimates
+dhs_years = [2010, 2015]
+dhs_care_seeking = [0.7, 0.78]
+plt.plot(dhs_years, dhs_care_seeking)  # GBD data
+
+# model output
+plt.plot(sought_care_proportion, color="mediumseagreen")  # model
+plt.title("ALRI care-seeking")
+plt.xlabel("Year")
+plt.xticks(rotation=90)
+plt.ylabel("sought care (%)")
+plt.gca().set_ylim(0.0, 1.0)
+plt.legend(["DHS", "Model"])
 plt.tight_layout()
 plt.show()
