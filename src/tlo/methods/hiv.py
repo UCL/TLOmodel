@@ -2070,8 +2070,8 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
         # Return the footprint. If it should be suppressed, return a blank footprint.
         if self.suppress_footprint:
             return self.make_appt_footprint({})
-        else:
-            return ACTUAL_APPT_FOOTPRINT
+
+        return ACTUAL_APPT_FOOTPRINT
 
 
 class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
@@ -2090,7 +2090,7 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
         person = df.loc[person_id]
 
         # Do not run if the person is not alive or is already circumcised
-        if not (person["is_alive"] & ~person["li_is_circ"]):
+        if not person["is_alive"] or person["li_is_circ"]:
             return
 
         # Check/log use of consumables, and do circumcision if materials available
@@ -2373,8 +2373,8 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         if self.sim.population.props.at[person_id, 'hv_art'] == "not":
             return self.make_appt_footprint({"NewAdult": 1})  # Adult newly starting treatment
-        else:
-            return self.make_appt_footprint({"EstNonCom": 1})  # Adult already on treatment
+
+        return self.make_appt_footprint({"EstNonCom": 1})  # Adult already on treatment
 
 # ---------------------------------------------------------------------------
 #   Logging
