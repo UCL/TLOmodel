@@ -654,8 +654,8 @@ class Tb(Module):
         # previously diagnosed/treated or hiv+ -> xpert
         if person["tb_ever_treated"] or person["hv_diagnosed"] or (p["first_line_test"] == 'xpert'):
             return "xpert"
-        else:
-            return "sputum"
+
+        return "sputum"
 
     def get_consumables_for_dx_and_tx(self):
         p = self.parameters
@@ -1835,14 +1835,14 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                     # fine to have variability in number sampled (between 0-5)
                     ipt_sample = list(set(ipt_sample))
 
-                    for person_id in ipt_sample:
+                    for contact_id in ipt_sample:
                         logger.debug(
                             key="message",
-                            data=f"HSI_Tb_ScreeningAndRefer: scheduling IPT for person {person_id}",
+                            data=f"HSI_Tb_ScreeningAndRefer: scheduling IPT for person {contact_id}",
                         )
 
                         ipt_event = HSI_Tb_Start_or_Continue_Ipt(
-                            self.module, person_id=person_id
+                            self.module, person_id=contact_id
                         )
                         self.sim.modules["HealthSystem"].schedule_hsi_event(
                             ipt_event,
@@ -1854,8 +1854,8 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         # Return the footprint. If it should be suppressed, return a blank footprint.
         if self.suppress_footprint:
             return self.make_appt_footprint({})
-        else:
-            return ACTUAL_APPT_FOOTPRINT
+
+        return ACTUAL_APPT_FOOTPRINT
 
 
 class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
@@ -1934,8 +1934,8 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
         # Return the footprint. If it should be suppressed, return a blank footprint.
         if self.suppress_footprint:
             return self.make_appt_footprint({})
-        else:
-            return ACTUAL_APPT_FOOTPRINT
+
+        return ACTUAL_APPT_FOOTPRINT
 
 
 class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
@@ -2001,8 +2001,8 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
         # Return the footprint. If it should be suppressed, return a blank footprint.
         if self.suppress_footprint:
             return self.make_appt_footprint({})
-        else:
-            return ACTUAL_APPT_FOOTPRINT
+
+        return ACTUAL_APPT_FOOTPRINT
 
 
 # # ---------------------------------------------------------------------------

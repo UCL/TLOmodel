@@ -595,7 +595,7 @@ class Hiv(Module):
         df.loc[infec, "hv_inf"] = True
 
         # Assign date that persons were infected by drawing from assumed distribution (for adults)
-        # Clipped to prevent dates of infection before before the person was born.
+        # Clipped to prevent dates of infection before the person was born.
         time_inf = params["time_inf"]
         years_ago_inf = self.rng.choice(
             time_inf["year"],
