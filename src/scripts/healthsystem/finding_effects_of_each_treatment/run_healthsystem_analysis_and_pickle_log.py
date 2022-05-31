@@ -1,6 +1,6 @@
 """
 A run of the model with logging so as to allow for descriptions of overall Health Burden and usage of the Health System.
-TODO -- have turned off spurious_symptoms to make it go faster, but this should be on really!
+
 """
 
 import pickle
