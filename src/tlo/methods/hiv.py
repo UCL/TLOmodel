@@ -2810,23 +2810,23 @@ class HivCheckPropertiesEvent(RegularEvent, PopulationScopeEventMixin):
 
 
 def set_age_group(ser):
-    AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = create_age_range_lookup(
+    age_range_categories, age_range_lookup = create_age_range_lookup(
         min_age=demography.MIN_AGE_FOR_RANGE,
         max_age=demography.MAX_AGE_FOR_RANGE,
         range_size=demography.AGE_RANGE_SIZE,
     )
     ser = ser.astype("category")
-    AGE_RANGE_CATEGORIES_filtered = [a for a in AGE_RANGE_CATEGORIES if a in ser.values]
-    return ser.cat.reorder_categories(AGE_RANGE_CATEGORIES_filtered)
+    age_range_categories_filtered = [a for a in age_range_categories if a in ser.values]
+    return ser.cat.reorder_categories(age_range_categories_filtered)
 
 
 def map_to_age_group(ser):
-    AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = create_age_range_lookup(
+    age_range_categories, age_range_lookup = create_age_range_lookup(
         min_age=demography.MIN_AGE_FOR_RANGE,
         max_age=demography.MAX_AGE_FOR_RANGE,
         range_size=demography.AGE_RANGE_SIZE,
     )
-    ser = ser.map(AGE_RANGE_LOOKUP)
+    ser = ser.map(age_range_lookup)
     ser = set_age_group(ser)
     return ser
 
