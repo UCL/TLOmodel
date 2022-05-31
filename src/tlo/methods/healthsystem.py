@@ -1201,7 +1201,8 @@ class HealthSystem(Module):
                 person_id=hsi_event.target,
                 squeeze_factor=_squeeze_factor,
                 did_run=did_run,
-                facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL
+                facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL,
+                facility_id=hsi_event.facility_info.id,
             )
 
             # Storage for the purpose of testing / documentation
@@ -1242,9 +1243,11 @@ class HealthSystem(Module):
                          person_id,
                          squeeze_factor,
                          did_run,
-                         facility_level
+                         facility_level,
+                         facility_id,
                          ):
         """Write the log `HSI_Event` and add to the summary counter."""
+
         logger.info(key="HSI_Event",
                     data={
                         'TREATMENT_ID': treatment_id,
@@ -1252,7 +1255,8 @@ class HealthSystem(Module):
                         'Person_ID': person_id,
                         'Squeeze_Factor': squeeze_factor,
                         'did_run': did_run,
-                        'Facility_Level': facility_level if facility_level is not None else -99
+                        'Facility_Level': facility_level if facility_level is not None else -99,
+                        'Facility_ID': facility_id if facility_id is not None else -99,
                     },
                     description="record of each HSI event"
                     )
@@ -1410,7 +1414,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     person_id=-1,
                     squeeze_factor=0.0,
                     did_run=True,
-                    facility_level=_level
+                    facility_level=_level,
+                    facility_id=None,
                 )
 
         # - Create hold-over list (will become a heapq). This will hold events that cannot occur today before they are
