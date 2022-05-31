@@ -22,7 +22,7 @@ class TestScenario(BaseScenario):
         self.end_date = Date(2030, 1, 1)
         self.pop_size = 20000
         self.smaller_pop_size = 20000
-        self.number_of_draws = 5
+        self.number_of_draws = 25
         self.runs_per_draw = 2
 
     def log_configuration(self):
@@ -51,12 +51,21 @@ class TestScenario(BaseScenario):
         ]
 
     def draw_parameters(self, draw_number, rng):
-        seiz_stat_min = 0.15
-        seiz_stat_max = 1.15
-        prob_seiz_stat_1_2 = np.linspace(seiz_stat_min, seiz_stat_max, self.number_of_draws)
+        seiz_stat_0_1_min = 0.05
+        seiz_stat_0_1_max = 1.15
+        seiz_stat_1_2_min = 0.05
+        seiz_stat_1_2_max = 1.15
+        prob_seiz_stat_0_1 = np.linspace(seiz_stat_0_1_min, seiz_stat_0_1_max, int(np.sqrt(self.number_of_draws)))
+        prob_seiz_stat_1_2 = np.linspace(seiz_stat_1_2_min, seiz_stat_1_2_max, int(np.sqrt(self.number_of_draws)))
+
+        grid = self.make_grid(
+            {'base_prob_3m_seiz_stat_none_infreq': prob_seiz_stat_0_1, 'base_prob_3m_seiz_stat_infreq_freq':
+                [prob_seiz_stat_1_2]}
+        )
         return {
             'Epilepsy': {
-                'base_prob_3m_seiz_stat_infreq_freq': prob_seiz_stat_1_2[draw_number],
+                'base_prob_3m_seiz_stat_none_infreq': grid['base_prob_3m_seiz_stat_none_infreq'][draw_number],
+                'base_prob_3m_seiz_stat_infreq_freq': grid['base_prob_3m_seiz_stat_none_infreq'][draw_number],
             }
         }
 
