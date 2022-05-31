@@ -48,11 +48,9 @@ class EffectOfEachTreatment(BaseScenario):
         return fullmodel(resourcefilepath=self.resources)
 
     def draw_parameters(self, draw_number, rng):
-        service_availability = list(self._scenarios.values())[draw_number]
-
         return {
             'HealthSystem': {
-                'Service_Availability': service_availability
+                'Service_Availability': list(self._scenarios.values())[draw_number]
                 }
         }
 
