@@ -1,5 +1,5 @@
 {
-  "scenario_script_path": "C:\\/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/epilepsy_analyses/analysis_epilepsy_calibrate_seiz_stats.py",
+  "scenario_script_path": "src/scripts/epilepsy_analyses/analysis_epilepsy_calibrate_seiz_stats.py",
   "scenario_seed": 12,
   "runs_per_draw": 2,
   "draws": [
@@ -253,5 +253,7 @@
         }
       }
     }
-  ]
+  ],
+  "commit": "629671a008fdbd16a92b6606056e679756b6dc8d",
+  "github": "https://github.com/UCL/TLOmodel/blob/629671a008fdbd16a92b6606056e679756b6dc8d/src/scripts/epilepsy_analyses/analysis_epilepsy_calibrate_seiz_stats.py"
 }

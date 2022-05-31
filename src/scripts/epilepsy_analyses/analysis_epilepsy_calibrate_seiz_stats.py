@@ -59,8 +59,8 @@ class TestScenario(BaseScenario):
         prob_seiz_stat_1_2 = np.linspace(seiz_stat_1_2_min, seiz_stat_1_2_max, int(np.sqrt(self.number_of_draws)))
 
         grid = self.make_grid(
-            {'base_prob_3m_seiz_stat_none_infreq': prob_seiz_stat_0_1, 'base_prob_3m_seiz_stat_infreq_freq':
-                [prob_seiz_stat_1_2]}
+            {'base_prob_3m_seiz_stat_none_infreq': prob_seiz_stat_0_1,
+             'base_prob_3m_seiz_stat_infreq_freq': prob_seiz_stat_1_2}
         )
         return {
             'Epilepsy': {

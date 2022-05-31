@@ -9,6 +9,7 @@ import pandas as pd
 from tlo.analysis.utils import (
     extract_params,
     extract_results,
+    get_grid,
     get_scenario_info,
     get_scenario_outputs,
     load_pickled_dataframes,
@@ -55,10 +56,22 @@ prop_seiz_3 = extract_results(results_folder,
                               key="epilepsy_logging",  # <-- the key used for the logging entry
                               column="prop_seiz_stat_3",  # <-- the column in the dataframe
                               index="date")
-seiz_stat_0_over_time = summarize(prop_seiz_0, only_mean=True)
-seiz_stat_1_over_time = summarize(prop_seiz_1, only_mean=True)
-seiz_stat_2_over_time = summarize(prop_seiz_2, only_mean=True)
-seiz_stat_3_over_time = summarize(prop_seiz_3, only_mean=True)
+seiz_stat_0_over_time = summarize(prop_seiz_0, only_mean=True).iloc[- 1]
+seiz_stat_0_over_time.name = 'z'
+seiz_stat_1_over_time = summarize(prop_seiz_1, only_mean=True).iloc[- 1]
+seiz_stat_1_over_time.name = 'z'
+seiz_stat_2_over_time = summarize(prop_seiz_2, only_mean=True).iloc[- 1]
+seiz_stat_2_over_time.name = 'z'
+seiz_stat_3_over_time = summarize(prop_seiz_3, only_mean=True).iloc[- 1]
+seiz_stat_3_over_time.name = 'z'
+grid = get_grid(params, seiz_stat_0_over_time)
+fig, ax = plt.subplots()
+c = ax.pcolormesh(
+    grid['Mockitis:p_cure'],
+    grid['Mockitis:p_infection'],
+    grid['z'],
+    shading='nearest'
+)
 plt.tight_layout()
 for col in seiz_stat_0_over_time:
     plt.subplot(2, 2, 1)
