@@ -57,7 +57,7 @@ def test_using_recognised_item_codes(seed):
     cons = Consumables(data=data, rng=rng)
 
     # Start a new day (this trigger is usually called by the event `HealthSystemScheduler`).
-    cons.processing_at_start_of_new_day(date=date)
+    cons.on_start_of_day(date=date)
 
     # Make requests for consumables (which would normally come from an instance of `HSI_Event`).
     rtn = cons._request_consumables(
@@ -84,7 +84,7 @@ def test_unrecognised_item_code_is_recorded(seed):
     cons = Consumables(data=data, rng=rng)
 
     # Start a new day (this trigger usually called by the event `HealthSystemScheduler`).
-    cons.processing_at_start_of_new_day(date=date)
+    cons.on_start_of_day(date=date)
 
     # Make requests for consumables (which would normally come from an instance of `HSI_Event`).
     rtn = cons._request_consumables(
@@ -125,7 +125,7 @@ def test_consumables_availability_options(seed):
     # Check that for each option for `availability` the result is as expected.
     for _cons_availability_option, _expected_result in options_and_expected_results.items():
         cons = Consumables(data=data, rng=rng, availability=_cons_availability_option)
-        cons.processing_at_start_of_new_day(date=date)
+        cons.on_start_of_day(date=date)
 
         assert _expected_result == cons._request_consumables(
             item_codes={_item_code: 1 for _item_code in all_items_request}, to_log=False, facility_info=facility_info_0
@@ -166,7 +166,7 @@ def test_override_cons_availability(seed):
 
         # Check before overriding availability
         for _ in range(1000):
-            cons.processing_at_start_of_new_day(date=date)
+            cons.on_start_of_day(date=date)
 
             if _availability == 'default':
                 # Request item that is not available and not over-ridden
@@ -197,7 +197,7 @@ def test_override_cons_availability(seed):
 
         # Check after overriding availability
         for _ in range(1000):
-            cons.processing_at_start_of_new_day(date=date)
+            cons.on_start_of_day(date=date)
 
             if _availability == 'default':
                 # Request item that is not available and not over-ridden
@@ -248,7 +248,7 @@ def test_consumables_available_at_right_frequency(seed):
     counter = {_i: 0 for _i in requested_items}
 
     for _ in range(n_trials):
-        cons.processing_at_start_of_new_day(date=date)
+        cons.on_start_of_day(date=date)
         rtn = cons._request_consumables(
             item_codes=requested_items,
             facility_info=facility_info_0,

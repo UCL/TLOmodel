@@ -43,7 +43,7 @@ def fullmodel(
     symptommanager_spurious_symptoms: Optional[bool] = True,
     healthsystem_disable: Optional[bool] = False,
     healthsystem_mode_appt_constraints: Optional[int] = 1,
-    healthsystem_capabilities_coefficient: Optional[float] = 1.0,
+    healthsystem_capabilities_coefficient: Optional[float] = None,
     healthsystem_record_hsi_event_details: Optional[bool] = False
 ) -> List[Module]:
     """Return the modules that should be registered in a run of the `Full Model`."""

@@ -118,7 +118,7 @@ def check_if_delayed_careseeking(self, individual_id):
     """
     mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
-    if individual_id not in mni:
+    if individual_id not in mni or mni[individual_id]['delay_one_two']:
         return
 
     if self.rng.random_sample() < self.sim.modules['Labour'].current_parameters['prob_delay_one_two_fd']:
@@ -135,8 +135,10 @@ def check_if_delayed_care_delivery(self, squeeze_factor, individual_id, hsi_type
     :param hsi_type: STR (bemonc, cemonc, an, pn)
     :return:
     """
-
     mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+
+    if individual_id not in mni or mni[individual_id]['delay_three']:
+        return
 
     if squeeze_factor > self.current_parameters[f'squeeze_threshold_for_delay_three_{hsi_type}']:
         mni[individual_id]['delay_three'] = True

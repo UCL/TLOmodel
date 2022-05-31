@@ -38,7 +38,7 @@ def placenta_praevia(self, df, rng=None, **externals):
     params = self.parameters
     result = pd.Series(data=params['prob_placenta_praevia'], index=df.index)
 
-    result[df.la_previous_cs_delivery] *= params['rr_placenta_praevia_previous_cs']
+    result[df.la_previous_cs_delivery > 0] *= params['rr_placenta_praevia_previous_cs']
 
     return result
 
@@ -213,7 +213,7 @@ def placental_abruption(self, df, rng=None, **externals):
     params = self.parameters
     result = pd.Series(data=params['prob_placental_abruption_per_month'], index=df.index)
 
-    result[df.la_previous_cs_delivery] *= params['rr_placental_abruption_previous_cs']
+    result[df.la_previous_cs_delivery > 0] *= params['rr_placental_abruption_previous_cs']
     result[df.ps_htn_disorders != 'none'] *= params['rr_placental_abruption_hypertension']
 
     return result

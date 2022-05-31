@@ -7,7 +7,7 @@ import pytest
 
 from tlo import Date, Module, Simulation, logging
 from tlo.analysis.utils import parse_log_file
-from tlo.events import IndividualScopeEventMixin
+from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import (
     Metadata,
     chronicsyndrome,
@@ -20,7 +20,7 @@ from tlo.methods import (
     symptommanager,
 )
 from tlo.methods.consumables import Consumables, create_dummy_data_for_cons_availability
-from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.healthsystem import HealthSystemChangeParameters, HSI_Event
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
@@ -608,8 +608,8 @@ def test_all_appt_types_can_run(seed):
 
 @pytest.mark.slow
 def test_two_loggers_in_healthsystem(seed, tmpdir):
-    """Check that two different loggers are used by the HealthSystem for more/less detailed logged information and that
-     these are consistent with one another."""
+    """Check that two different loggers used by the HealthSystem for more/less detailed logged information are
+    consistent with one another."""
 
     # Create a dummy disease module (to be the parent of the dummy HSI)
     class DummyModule(Module):
@@ -633,15 +633,16 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
             super().__init__(module, person_id=person_id)
             self.TREATMENT_ID = 'Dummy'
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'Under5OPD': 1})
+            self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})
             self.ACCEPTED_FACILITY_LEVEL = '1a'
 
         def apply(self, person_id, squeeze_factor):
             # Request a consumable (either 0 or 1)
             self.get_consumables(item_codes=self.module.rng.choice((0, 1), p=(0.5, 0.5)))
 
-            # Schedule another occurrence of itself tomorrow.
+            # Schedule another occurrence of itself in three days.
             sim.modules['HealthSystem'].schedule_hsi_event(self,
-                                                           topen=self.sim.date + pd.DateOffset(days=1),
+                                                           topen=self.sim.date + pd.DateOffset(days=3),
                                                            tclose=None,
                                                            priority=0)
 
@@ -684,22 +685,28 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
     detailed_hsi_event = log["tlo.methods.healthsystem"]['HSI_Event']
     detailed_capacity = log["tlo.methods.healthsystem"]['Capacity']
     detailed_consumables = log["tlo.methods.healthsystem"]['Consumables']
-    assert {'date', 'TREATMENT_ID', 'did_run', 'Squeeze_Factor', 'Number_By_Appt_Type_Code', 'Person_ID'
+
+    assert {'date', 'TREATMENT_ID', 'did_run', 'Squeeze_Factor', 'Number_By_Appt_Type_Code', 'Person_ID',
+            'Facility_Level', 'Facility_ID',
             } == set(detailed_hsi_event.columns)
     assert {'date', 'Frac_Time_Used_Overall', 'Frac_Time_Used_By_Facility_ID'
             } == set(detailed_capacity.columns)
     assert {'date', 'TREATMENT_ID', 'Item_Available', 'Item_NotAvailable'
             } == set(detailed_consumables.columns)
 
+    bed_types = sim.modules['HealthSystem'].bed_days.bed_types
+    detailed_beddays = {bed_type: log["tlo.methods.healthsystem"][f"bed_tracker_{bed_type}"] for bed_type in bed_types}
+
     # Summary log:
     summary_hsi_event = log["tlo.methods.healthsystem.summary"]["HSI_Event"]
     summary_capacity = log["tlo.methods.healthsystem.summary"]["Capacity"]
     summary_consumables = log["tlo.methods.healthsystem.summary"]["Consumables"]
+    summary_beddays = log["tlo.methods.healthsystem.summary"]["BedDays"]
 
     # Check correspondence between the two logs
     #  - Counts of TREATMENT_ID (total over entire period of log)
-    assert summary_hsi_event['TREATMENT_ID'].apply(pd.Series)['Dummy'].sum() == \
-           detailed_hsi_event.groupby('TREATMENT_ID').size()['Dummy']
+    assert summary_hsi_event['TREATMENT_ID'].apply(pd.Series).sum().to_dict() == \
+           detailed_hsi_event.groupby('TREATMENT_ID').size().to_dict()
 
     #  - Appointments (total over entire period of the log)
     assert summary_hsi_event['Number_By_Appt_Type_Code'].apply(pd.Series).sum().to_dict() == \
@@ -718,3 +725,124 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
     assert summary_consumables['Item_NotAvailable'].apply(pd.Series).sum().to_dict() == \
            detailed_consumables['Item_NotAvailable'].apply(
                lambda x: {f'{k}': v for k, v in eval(x).items()}).apply(pd.Series).sum().to_dict()
+
+    #  - Bed-Days (bed-type by bed-type and year by year)
+    for _bed_type in bed_types:
+        # Detailed:
+        tracker = detailed_beddays[_bed_type]\
+            .assign(year=pd.to_datetime(detailed_beddays[_bed_type].date).dt.year)\
+            .set_index('year')\
+            .drop(columns=['date'])\
+            .T
+        tracker.index = tracker.index.astype(int)
+        capacity = sim.modules['HealthSystem'].bed_days._scaled_capacity[_bed_type]
+        detail_beddays_used = tracker.sub(capacity, axis=0).mul(-1).sum().groupby(level=0).sum().to_dict()
+
+        # Summary: total bed-days used by year
+        summary_beddays_used = summary_beddays\
+            .assign(year=pd.to_datetime(summary_beddays.date).dt.year)\
+            .set_index('year')[_bed_type]\
+            .to_dict()
+
+        assert detail_beddays_used == summary_beddays_used
+
+
+def test_HealthSystemChangeParameters(seed, tmpdir):
+    """Check that the event `HealthSystemChangeParameters` can change the internal parameters of the HealthSystem. And
+    check that this is effectual in the case of consumables."""
+
+    initial_parameters = {
+        'mode_appt_constraints': 0,
+        'ignore_priority': False,
+        'capabilities_coefficient': 0.5,
+        'cons_availability': 'all',
+        'beds_availability': 'default',
+    }
+    new_parameters = {
+        'mode_appt_constraints': 2,
+        'ignore_priority': True,
+        'capabilities_coefficient': 1.0,
+        'cons_availability': 'none',
+        'beds_availability': 'none',
+    }
+
+    class CheckHealthSystemParameters(RegularEvent, PopulationScopeEventMixin):
+
+        def __init__(self, module):
+            super().__init__(module, frequency=pd.DateOffset(days=1))
+
+        def apply(self, population):
+            hs = self.sim.modules['HealthSystem']
+            _params = dict()
+            _params['mode_appt_constraints'] = hs.mode_appt_constraints
+            _params['ignore_priority'] = hs.ignore_priority
+            _params['capabilities_coefficient'] = hs.capabilities_coefficient
+            _params['cons_availability'] = hs.consumables.cons_availability
+            _params['beds_availability'] = hs.bed_days.availability
+
+            logger = logging.getLogger('tlo.methods.healthsystem')
+            logger.info(key='CheckHealthSystemParameters', data=_params)
+
+    class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = 'Dummy'
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'Under5OPD': 1})
+            self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})
+            self.ACCEPTED_FACILITY_LEVEL = '1a'
+
+        def apply(self, person_id, squeeze_factor):
+            logger = logging.getLogger('tlo.methods.healthsystem')
+            logger.info(key='HSI_Dummy_get_consumables',
+                        data=self.get_consumables(item_codes=list(range(100)), return_individual_results=True)
+                        )
+            sim.modules['HealthSystem'].schedule_hsi_event(self,
+                                                           topen=self.sim.date + pd.DateOffset(days=1),
+                                                           tclose=None,
+                                                           priority=0)
+
+    class DummyModule(Module):
+        METADATA = {Metadata.DISEASE_MODULE}
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            hs = sim.modules['HealthSystem']
+            sim.schedule_event(CheckHealthSystemParameters(self), sim.date)
+            sim.schedule_event(HealthSystemChangeParameters(hs, parameters=new_parameters),
+                               sim.date + pd.DateOffset(days=2))
+            sim.modules['HealthSystem'].schedule_hsi_event(HSI_Dummy(self, 0), topen=sim.date, tclose=None, priority=0)
+
+    sim = Simulation(start_date=start_date, seed=seed, log_config={
+        'filename': 'tmpfile',
+        'directory': tmpdir,
+        'custom_levels': {
+            "tlo.methods.healthsystem": logging.INFO,
+        }
+    })
+
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, **initial_parameters),
+        DummyModule(),
+        sort_modules=False,
+        check_all_dependencies=False
+    )
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=start_date + pd.DateOffset(days=7))
+
+    # Check parameters are changed as expected:
+    logged_params = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem'][
+        'CheckHealthSystemParameters'].set_index('date')
+    assert logged_params.loc[start_date].to_dict() == initial_parameters
+    assert logged_params.loc[start_date + pd.DateOffset(days=4)].to_dict() == new_parameters
+
+    logged_access_consumables = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem'][
+        'HSI_Dummy_get_consumables'].set_index('date')
+    assert logged_access_consumables.loc[start_date].all()  # All consumables available at start
+    assert not logged_access_consumables.loc[start_date + pd.DateOffset(days=4)].any()  # No consumables available after
+    #                                                                                 parameter change
