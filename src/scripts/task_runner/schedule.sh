@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 output_dir=""
 
+cd ~/TLOmodel
 script_full_path=$(dirname "$0")
 
 # loop over commits and kick off those that haven't run
