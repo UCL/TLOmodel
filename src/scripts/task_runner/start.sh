@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
 set -u -e
 
-wd_root="/where/to/write/ephemeral/conda/envs/and/worktrees"
-output_root="/where/to/write/output/of/simulations"
+if [ -a .profile ]; then
+   . ./.profile
+fi
+
+username=$(whoami)
+wd_root="/mnt/autoload"
+output_root="/home/${username}/automated_runs/outputs"
 
 worktrees_root="${wd_root}/worktrees"
 conda_env_root="${wd_root}/envs"
@@ -34,7 +39,7 @@ git pull
 git worktree add "${worktree_dir}" "$1"
 
 # need a new conda environment for this worktree
-eval "$(conda shell.bash hook)"
+eval "$(/home/${username}/miniconda3/condabin/conda shell.bash hook)"
 conda create -p "${conda_env_root}/${commit_dir}" --clone tlo
 conda activate "${conda_env_root}/${commit_dir}"
 pip uninstall -y tlo  # remove the existing tlo installation (we cloned the virtual environment)
@@ -73,7 +78,7 @@ do
     if [ -z "$seq_command" ]
     then
         # run the task as normal - no looping
-        ts -E \
+        /usr/local/bin/ts -E \
         ./src/scripts/task_runner/task.sh "$fullpath" "${worktree_dir}" "${task_output_dir}" "${conda_env_root}/${commit_dir}";
     else
         # otherwise, we've got a seq command to execute for looping
@@ -81,7 +86,7 @@ do
         do
             echo "Calling task with index $index"
             mkdir "${task_output_dir}/${index}"
-            ts -E \
+            /usr/local/bin/ts -E \
             ./src/scripts/task_runner/task.sh "$fullpath" "${worktree_dir}" "${task_output_dir}/${index}" "${conda_env_root}/${commit_dir}" "$index";
         done
     fi

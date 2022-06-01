@@ -10,6 +10,8 @@ task_output_dir=$3
 conda_env=$4
 index="${5:-$default_index}"
 
+username=$(whoami)
+
 exec > >(tee -a "${task_output_dir}/task.txt") 2>&1
 
 echo "    Time: $(date)"
@@ -24,7 +26,7 @@ echo "    Index for this run: $index"
 
 cd "$worktree_dir"
 
-eval "$(conda shell.bash hook)"
+eval "$(/home/${username}/miniconda3/condabin/conda shell.bash hook)"
 conda activate "${conda_env}"
 
 echo "    Python interpreter: $(which python)"
@@ -38,9 +40,9 @@ echo "${exit_status}" > "${task_output_dir}"/exit_status.txt
 
 if [ "$exit_status" -eq 99 ]; then
     # resubmit task
-    echo "    Resubmit task: $(date -d 15mins)"
-    sleep 15m
-    ts -E \
+    echo "    Resubmit task: $(date -d 5mins)"
+    sleep 5m
+    /usr/local/bin/ts -E \
         ./src/scripts/task_runner/task.sh "${execute_path}" "${worktree_dir}" "${task_output_dir}" "${conda_env}";
 else
     echo "    Finished script ${execute_path}"

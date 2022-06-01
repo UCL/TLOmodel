@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
-username=""
-
-. /home/${username}/.profile
-
+username=$(whoami)
+path_to_tlomodel="/home/${username}/TLOmodel"
 output_dir="/home/${username}/automated_runs/outputs"
 
-cd ~/TLOmodel
+. /etc/profile
+
+if [ -a .profile ]; then
+   . ./.profile
+fi
+
+cd ${path_to_tlomodel}
 
 script_full_path=$(dirname "$0")
 
