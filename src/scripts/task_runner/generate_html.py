@@ -1,11 +1,10 @@
+import datetime
 import glob
 import os.path
 import re
-import datetime
-
 from pathlib import Path
 
-import psutil   # this package must be installed manually - not part of the tlomodel requirements
+import psutil  # this package must be installed manually - not part of the tlomodel requirements
 
 # This script must be run in the output directory
 output_directory = "."
@@ -41,7 +40,7 @@ def do_task_directory(task_dir):
 def do_commit_directory(commit_dir):
     if not os.path.isfile(f'{commit_dir}/stdout.txt'):
         print(f'<h2>{commit_dir}</h2>')
-        print(f'WARNING: stdout.txt not found; cannot continue')
+        print('WARNING: stdout.txt not found; cannot continue')
         if not os.path.isfile(f'{commit_dir}/task.txt'):
             print('<br />WARNING: task.txt file not found')
         return
