@@ -1,6 +1,7 @@
 import glob
 import os.path
 import re
+import datetime
 
 from pathlib import Path
 
@@ -76,6 +77,9 @@ def run():
     """
     print(f"""<html><head><title>TLOmodel runs</title><style>{style}</style></head><body>""")
     print("<h1>TLOmodel runs</h1>")
+    generated_time = datetime.datetime.now().strftime('[%Y-%b-%d %H:%M]')
+    next_time = datetime.datetime.now() + datetime.timedelta(minutes=15)
+    print(f"Generated {generated_time} (next {next_time})")
     # loop over all commits that have been run (all begin with 202*
     for commit in sorted(glob.glob(f'{output_directory}/202[0-9]*'), reverse=True):
         do_commit_directory(commit)
