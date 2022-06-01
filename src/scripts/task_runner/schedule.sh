@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
-output_dir=""
+username=""
+
+. /home/${username}/.profile
+
+output_dir="/home/${username}/automated_runs/outputs"
 
 cd ~/TLOmodel
+
 script_full_path=$(dirname "$0")
 
 # loop over commits and kick off those that haven't run
@@ -19,7 +24,7 @@ do
 done
 
 # create the HTML file for the output
-eval "$(conda shell.bash hook)"
+eval "$(/home/${username}/miniconda3/condabin/conda shell.bash hook)"
 conda activate tlo
 cd ${output_dir} || exit
 python "${script_full_path}"/generate_html.py > index.html
