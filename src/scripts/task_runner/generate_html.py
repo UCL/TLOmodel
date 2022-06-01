@@ -70,6 +70,9 @@ def do_commit_directory(commit_dir):
 
 def run():
     style = """
+    body {
+    font-family: Helvetica, Arial;
+    }
     a, u {
   text-decoration: none;
 }
