@@ -397,29 +397,8 @@ class Lifestyle(Module):
         df.loc[df.is_alive, 'li_is_circ'] = False
         # todo: express all rates per year and divide by 4 inside program
 
-        # initialise urban rural properties
-        # self.initialise_rural_urban_property(df, alive_idx)
-
-        # initialise wealth level property
-        self.initialise_wealth_level_property(df)
-
-        # initialise some properties using linear models
-        # self.models.initialise_some_properties(df)
-
-        # initialise excess alcohol property
-        self.initialise_excessive_alcohol_property(df)
-
-        # initialise marital status property
-        self.initialise_marital_status_property(df)
-
-        # initialise education property
-        self.initialise_education_properties(df)
-
-        # initialise sugar intake property
-        self.initialise_sugar_intake_property(df, alive_idx)
-
-        # initialise bmi properties in population
-        self.initialise_bmi_property(df)
+        # initialise all properties using linear models
+        self.models.initialise_all_properties(df)
 
         # -------------------- SEX WORKER ----------------------------------------------------------
         # determine which women will be sex worker
@@ -432,56 +411,18 @@ class Lifestyle(Module):
         will_be_circ = self.rng.rand(len(men)) < self.parameters['proportion_of_men_circumcised_at_initiation']
         df.loc[men[will_be_circ].index, 'li_is_circ'] = True
 
-    def initialise_excessive_alcohol_property(self, df):
-        """ set excessive alcohol property in the population dataframe
-        :param df: population dataframe """
+    def init_edu_bmi_properties(self, lifestyle_property):
+        """ a function to initialise education and bmi properties """
+        if lifestyle_property == 'li_in_ed':
+            self.init_education_properties()
+        else:
+            self.init_bmi_property()
 
-        # get indexes of male and female population alive and 15+ years
-        agege15_m_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.sex == 'M')]
-        agege15_f_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.sex == 'F')]
-
-        df.loc[agege15_m_idx, 'li_ex_alc'] = (
-            self.rng.random_sample(size=len(agege15_m_idx)) < self.parameters['init_p_ex_alc_m']
-        )
-        df.loc[agege15_f_idx, 'li_ex_alc'] = (
-            self.rng.random_sample(size=len(agege15_f_idx)) < self.parameters['init_p_ex_alc_f']
-        )
-
-    def initialise_marital_status_property(self, df):
-        """set marital status property in the population dataframe
-        :param df: population dataframe"""
-
-        # select different age groups
-        age_15_19 = df.index[df.age_years.between(15, 19) & df.is_alive]
-        age_20_29 = df.index[df.age_years.between(20, 29) & df.is_alive]
-        age_30_39 = df.index[df.age_years.between(30, 39) & df.is_alive]
-        age_40_49 = df.index[df.age_years.between(40, 49) & df.is_alive]
-        age_50_59 = df.index[df.age_years.between(50, 59) & df.is_alive]
-        age_gte60 = df.index[(df.age_years >= 60) & df.is_alive]
-
-        df.loc[age_15_19, 'li_mar_stat'] = self.rng.choice(
-            [1, 2, 3], size=len(age_15_19), p=self.parameters['init_dist_mar_stat_age1520']
-        )
-        df.loc[age_20_29, 'li_mar_stat'] = self.rng.choice(
-            [1, 2, 3], size=len(age_20_29), p=self.parameters['init_dist_mar_stat_age2030']
-        )
-        df.loc[age_30_39, 'li_mar_stat'] = self.rng.choice(
-            [1, 2, 3], size=len(age_30_39), p=self.parameters['init_dist_mar_stat_age3040']
-        )
-        df.loc[age_40_49, 'li_mar_stat'] = self.rng.choice(
-            [1, 2, 3], size=len(age_40_49), p=self.parameters['init_dist_mar_stat_age4050']
-        )
-        df.loc[age_50_59, 'li_mar_stat'] = self.rng.choice(
-            [1, 2, 3], size=len(age_50_59), p=self.parameters['init_dist_mar_stat_age5060']
-        )
-        df.loc[age_gte60, 'li_mar_stat'] = self.rng.choice(
-            [1, 2, 3], size=len(age_gte60), p=self.parameters['init_dist_mar_stat_agege60']
-        )
-
-    def initialise_education_properties(self, df):
+    def init_education_properties(self):
         """ use output from education linear models to set education levels and status
         :param df: population dataframe """
 
+        df = self.sim.population.props
         age_gte5 = df.index[(df.age_years >= 5) & df.is_alive]
 
         # store population eligible for education
@@ -492,6 +433,7 @@ class Lifestyle(Module):
         # make some predictions
         p_some_ed = self.models.education_linear_models()['some_edu_linear_model'].predict(edu_pop)
         p_ed_lev_3 = self.models.education_linear_models()['level_3_edu_linear_model'].predict(edu_pop)
+
         dfx = pd.concat([(1 - p_ed_lev_3), (1 - p_some_ed)], axis=1)
         dfx.columns = ['cut_off_ed_levl_3', 'p_ed_lev_1']
 
@@ -501,41 +443,14 @@ class Lifestyle(Module):
 
         df.loc[age_gte5, 'li_ed_lev'] = dfx['li_ed_lev']
 
-        # df.loc[df.age_years.between(5, 12) & (df['li_ed_lev'] == 1) & df.is_alive, 'li_in_ed'] = False # (already
-        # false in df?)
         df.loc[df.age_years.between(5, 12) & (df['li_ed_lev'] == 2) & df.is_alive, 'li_in_ed'] = True
         df.loc[df.age_years.between(13, 19) & (df['li_ed_lev'] == 3) & df.is_alive, 'li_in_ed'] = True
 
-    def initialise_sugar_intake_property(self, df, alive_idx):
-        """ set properties for sugar intake in population dataframe
-        :param df: population dataframe
-        :param alive_idx: index of those individuals who are alive """
-
-        # no determinants of sugar intake hence don't need to convert to odds to apply odds ratios
-        random_draw = pd.Series(self.rng.random_sample(size=len(alive_idx)), index=alive_idx)
-        df.loc[alive_idx, 'li_high_sugar'] = random_draw < self.parameters['init_p_high_sugar']
-
-    def initialise_wealth_level_property(self, df):
-        """set property for wealth level in population dataframe
-        :param df: population dataframe"""
-
-        urban_idx = df.index[df.is_alive & df.li_urban]
-        rural_idx = df.index[df.is_alive & ~df.li_urban]
-
-        # allocate wealth level for urban
-        df.loc[urban_idx, 'li_wealth'] = self.rng.choice(
-            [1, 2, 3, 4, 5], size=len(urban_idx), p=self.parameters['init_p_wealth_urban']
-        )
-
-        # allocate wealth level for rural
-        df.loc[rural_idx, 'li_wealth'] = self.rng.choice(
-            [1, 2, 3, 4, 5], size=len(rural_idx), p=self.parameters['init_p_wealth_rural']
-        )
-
-    def initialise_bmi_property(self, df):
+    def init_bmi_property(self):
         """ set property for BMI in population dataframe
         :param df: population dataframe """
 
+        df = self.sim.population.props
         # get indexes of population alive and 15+ years
         age_ge15_idx = df.index[df.is_alive & (df.age_years >= 15)]
         prop_df = df.loc[df.is_alive & (df.age_years >= 15)]
@@ -546,6 +461,7 @@ class Lifestyle(Module):
             # create bmi probabilities dataframe using bmi linear model and normalise to sum to 1
             df_lm = pd.DataFrame()
             bmi_pow = [-2, -1, 0, 1, 2]
+
             for index_ in range(0, 5):
                 df_lm[index_ + 1] = LifestyleModels(self).bmi_linear_model(index_, bmi_pow[index_]).predict(prop_df)
 
@@ -797,59 +713,76 @@ class LifestyleModels:
         # create all linear models dictionary for use in both initialisation and update of properties
         self.models = {
             'li_urban': {
-                'init': self.rural_urban_linear_model()
+                'init': self.rural_urban_linear_model(),
+                # 'update': self.update_rural_urban_property_linear_model()
             },
             'li_wealth': {
                 'init': self.wealth_level_linear_model()
             },
             'li_low_ex': {
-                'init': self.low_exercise_linear_model()
+                'init': self.low_exercise_linear_model(),
+                # 'update': self.update_exercise_property_linear_model()
             },
             'li_tob': {
-                'init': self.tobacco_use_linear_model()
+                'init': self.tobacco_use_linear_model(),
+                # 'update': self.update_tobacco_use_property_linear_model()
             },
             'li_ex_alc': {
-                'init': self.excessive_alcohol_linear_model()
+                'init': self.excessive_alcohol_linear_model(),
+                # 'update': self.update_excess_alcohol_property_linear_model()
             },
             'li_mar_stat': {
-                'init': self.marital_status_linear_model()
+                'init': self.marital_status_linear_model(),
+                # 'update': self.update_marital_status_linear_model()
             },
             'li_in_ed': {
-                'init': self.education_linear_models()['some_edu_linear_model'],
-            },
-            'li_ed_lev': {
-                'init': self.education_linear_models()['level_3_edu_linear_model'],
+                'init': 0,
+                # 'update': self.update_education_status_linear_model()
             },
             'li_unimproved_sanitation': {
-                'init': self.unimproved_sanitation_linear_model()
+                'init': self.unimproved_sanitation_linear_model(),
+                # 'update': self.update_unimproved_sanitation_status_linear_model()
             },
             'li_no_clean_drinking_water': {
-                'init': self.no_clean_drinking_water_linear_model()
+                'init': self.no_clean_drinking_water_linear_model(),
+                # 'update': self.update_no_clean_drinking_water_linear_model()
             },
             'li_wood_burn_stove': {
-                'init': self.wood_burn_stove_linear_model()
+                'init': self.wood_burn_stove_linear_model(),
+                # 'update': self.update_wood_burn_stove_linear_model()
             },
             'li_no_access_handwashing': {
-                'init': self.no_access_hand_washing()
+                'init': self.no_access_hand_washing(),
+                # 'update': self.update_no_access_hand_washing_status_linear_model()
             },
             'li_high_salt': {
-                'init': self.salt_intake_linear_model()
+                'init': self.salt_intake_linear_model(),
+                # 'update': self.update_high_salt_property_linear_model()
             },
             'li_high_sugar': {
-                'init': self.sugar_intake_linear_model()
+                'init': self.sugar_intake_linear_model(),
+                # 'update': self.update_high_sugar_property_linear_model()
             },
-            # 'li_bmi': {
-            #     'init': self.bmi_linear_model()
-            # }
+            'li_bmi': {
+                'init': 0,
+                # 'update': self.update_bmi_categories_linear_model()
+            }
         }
 
-    def initialise_some_properties(self, df):
+    def initialise_all_properties(self, df):
         """initialise population properties using linear models defined in LifestyleModels class.
 
         :param df: The population dataframe """
         # loop through linear models dictionary and initialise each property in the population dataframe
         for _property_name, _model in self.models.items():
-            df.loc[df.is_alive, _property_name] = _model['init'].predict(df.loc[df.is_alive])
+            if _property_name in ['li_wealth', 'li_mar_stat']:
+                df.loc[df.is_alive, _property_name] = _model['init'].predict(df.loc[df.is_alive])
+
+            elif _property_name in ['li_in_ed', 'li_bmi']:
+                self.module.init_edu_bmi_properties(_property_name)
+
+            else:
+                df.loc[df.is_alive, _property_name] = _model['init'].predict(df.loc[df.is_alive], self.rng)
 
     def rural_urban_linear_model(self) -> LinearModel:
         """ a function to create linear model for rural urban properties. Here we are using additive linear model and
@@ -867,19 +800,16 @@ class LifestyleModels:
         return rural_urban_lm
 
     def wealth_level_linear_model(self) -> LinearModel:
-        """ a function to create linear model for wealth level property. Here are using additive linear model and are
-        setting probabilities based on whether the individual is urban or rural """
+        """ a function to create linear model for wealth level property. Here are using multiplicative linear model
+        and are setting probabilities based on whether the individual is urban or rural """
 
-        # set base probability
-        base_prob: int = 0
-        wealth_level_lm = LinearModel(LinearModelType.ADDITIVE,
-                                      base_prob,
-                                      Predictor('li_urban').when(True, self.rng.choice(
-                                          [1, 2, 3, 4, 5], p=self.params['init_p_wealth_urban']
-                                      ))
-                                      .when(False, self.rng.choice(
-                                          [1, 2, 3, 4, 5], p=self.params['init_p_wealth_rural']))
-                                      )
+        wealth_level_lm = LinearModel.multiplicative(
+            Predictor('li_urban').when(True, self.rng.choice(
+                [1, 2, 3, 4, 5], p=self.params['init_p_wealth_urban']
+            ))
+                .otherwise(self.rng.choice(
+                [1, 2, 3, 4, 5], p=self.params['init_p_wealth_rural']))
+        )
         # return wealth level linear model
         return wealth_level_lm
 
@@ -917,7 +847,7 @@ class LifestyleModels:
         # get population properties and apply effects
         tobacco_use_linear_model = LinearModel(LinearModelType.LOGISTIC,
                                                tobacco_use_baseline_odds,
-                                               Predictor('age_years').when('<15', 0),
+                                               Predictor('age_years').when('<15', 0.0),
                                                Predictor('sex').when('F', self.params['init_or_tob_f']),
                                                Predictor().when(
                                                    '(sex == "M") & (age_years >= 20) & (age_years < 40)',
@@ -976,7 +906,7 @@ class LifestyleModels:
                 [1, 2, 3], p=self.params['init_dist_mar_stat_agege60'])),
         )
 
-        # return marital status dictionary
+        # return marital status linear model
         return mar_status_lm
 
     def education_linear_models(self) -> Dict[str, LinearModel]:
@@ -1025,7 +955,7 @@ class LifestyleModels:
                                                      p_ed_lev_3,
 
                                                      # adjust baseline of education level 3 for age
-                                                     Predictor('age_years').when('<13', 0)
+                                                     Predictor('age_years').when('<13', 0.0)
                                                      .when('.between(13, 19)',
                                                            self.params['init_rp_some_ed_sec_age1320'])
                                                      .when('.between(30, 39)',
@@ -1207,16 +1137,25 @@ class LifestyleModels:
         return bmi_lm
 
     # --------------------- LINEAR MODELS FOR UPDATING POPULATION PROPERTIES ------------------------------ #
-    def update_rural_urban_property_linear_model(self) -> LinearModel:
+    def update_rural_urban_property_linear_model(self) -> Dict[str, LinearModel]:
         """A function to create linear model for updating the rural urban status of an individual. Here, we are using
         multiplicative linear model """
+
         # create rural urban linear model
-        update_urban_rural_status_lm = LinearModel.multiplicative(
-            Predictor('li_urban').when(True, self.params['r_urban'])
-            .otherwise(self.params['r_rural'])
+        rural_urban_transition_lm = LinearModel.multiplicative(
+            Predictor('li_urban').when(False, self.params['r_urban'])
+            .otherwise(0.0)
         )
+        urban_rural_transition_lm = LinearModel.multiplicative(
+            Predictor('li_urban').when(True, self.params['r_urban'])
+            .otherwise(0.0)
+        )
+        urban_rural_models = {
+            'rural_urban_transition_lm': rural_urban_transition_lm,
+            'urban_rural_transition_lm': urban_rural_transition_lm
+        }
         # return linear model
-        return update_urban_rural_status_lm
+        return urban_rural_models
 
     def update_exercise_property_linear_model(self) -> Dict[str, LinearModel]:
         """ A function to create linear model for updating the exercise property. Here we are using multiplicative
@@ -1297,9 +1236,9 @@ class LifestyleModels:
         not_ex_alc_lm = LinearModel.multiplicative(
             Predictor().when('(age_years >= 15) & (sex == "M") & (li_ex_alc == False)',
                              self.params['r_ex_alc'])
-            .when('(age_years >= 15) & (sex == "F") & (li_ex_alc == False)',
-                  (self.params['r_ex_alc'] * self.params['rr_ex_alc_f']))
-            .otherwise(0),
+                .when('(age_years >= 15) & (sex == "F") & (li_ex_alc == False)',
+                      (self.params['r_ex_alc'] * self.params['rr_ex_alc_f']))
+                 .otherwise(0.0)
         )
         now_ex_alc_lm = LinearModel.multiplicative(
             Predictor().when('(age_years >= 15) & (li_ex_alc == True)',
@@ -1309,9 +1248,9 @@ class LifestyleModels:
         # handle transitions
         trans_ex_alc_lm = LinearModel.multiplicative(
             Predictor().when('li_ex_alc == True', self.params['r_not_ex_alc'])
-            .when('(li_ex_alc == True) & (li_exposed_to_campaign_alcohol_reduction == True)',
-                  self.params['rr_not_ex_alc_pop_advice_alcohol'])
-            .otherwise(0.0)
+                .when('(li_ex_alc == True) & (li_exposed_to_campaign_alcohol_reduction == True)',
+                      self.params['rr_not_ex_alc_pop_advice_alcohol'])
+                .otherwise(0.0)
         )
 
         all_models_dict = {
@@ -1329,11 +1268,227 @@ class LifestyleModels:
         # create marital status linear model
         mar_status_lm = LinearModel.multiplicative(
             Predictor('li_mar_stat').when(2, self.params['r_mar'])
-            .when(3, self.params['r_div_wid'])
-            .otherwise(0.0),
+                .when(3, self.params['r_div_wid'])
+                .otherwise(0.0),
         )
 
+        # return marital status linear model
         return mar_status_lm
+
+    def update_education_status_linear_model(self) -> Dict[str, LinearModel]:
+        """ a function to create linear models for for education prperty. here we are using multiplicative linear
+        model and are looking at individuals ability to transition from different education levels """
+        # create education linear model
+        update_primary_edu_lm = LinearModel.multiplicative(
+            Predictor().when('(age_exact_years == .between(5, 5.25, inclusive=right))', self.params['p_ed_primary'])
+                .when('(li_wealth == 4)', self.params['rp_ed_primary_higher_wealth'])
+                .when('(li_wealth == 3)', (self.params['rp_ed_primary_higher_wealth'] ** 2))
+                .when('(li_wealth == 2)', (self.params['rp_ed_primary_higher_wealth'] ** 3))
+                .when('(li_wealth == 1)', (self.params['rp_ed_primary_higher_wealth'] ** 4))
+                .otherwise(0.0)
+
+        )
+        # update secondary education linear model
+        update_sec_edu_lm = LinearModel.multiplicative(
+            Predictor().when('(age_years == 13) & (li_in_ed == True) & (li_ed_lev == 2)', self.params['p_ed_secondary'])
+                .when('(li_wealth == 4)', self.params['rp_ed_primary_higher_wealth'])
+                .when('(li_wealth == 3)', (self.params['rp_ed_primary_higher_wealth'] ** 2))
+                .when('(li_wealth == 2)', (self.params['rp_ed_primary_higher_wealth'] ** 3))
+                .when('(li_wealth == 1)', (self.params['rp_ed_primary_higher_wealth'] ** 4))
+                .otherwise(0.0)
+        )
+
+        # create education drop outs linear model
+        drop_edu_lm = LinearModel.multiplicative(
+            Predictor().when('li_in_ed == True', self.params['r_stop_ed'])
+                .when('(li_wealth == 5)', (self.params['rr_stop_ed_lower_wealth'] ** 4))
+                .when('(li_wealth == 4)', (self.params['rr_stop_ed_lower_wealth'] ** 3))
+                .when('(li_wealth == 3)', (self.params['rr_stop_ed_lower_wealth'] ** 2))
+                .when('(li_wealth == 2)', self.params['rr_stop_ed_lower_wealth'])
+                .otherwise(0.0)
+        )
+
+        # create a dictionary that will contain education linear models
+        edu_models = {
+            'update_primary_edu_lm': update_primary_edu_lm,
+            'update_sec_edu_lm': update_sec_edu_lm,
+            'drop_edu_lm': drop_edu_lm,
+
+        }
+
+        # return all linear models
+        return edu_models
+
+    def update_unimproved_sanitation_status_linear_model(self) -> Dict[str, LinearModel]:
+        """ A function to create linear models for updating unimproved sanitation property. here we are using
+        multinomial linear model and are looking at individual's ability to transition from unimproved sanitation to
+        improved sanitation or vice versa """
+        # create unimproved sanitation linear model
+        unimproved_san_lm = LinearModel.multiplicative(
+            Predictor('li_unimproved_sanitation').when(True, self.params['r_improved_sanitation'])
+                .otherwise(0.0)
+        )
+        # create a linear model that will contain probability of improved sanitation upon moving to urban from rural
+        unimproved_san_urban_lm = LinearModel.multiplicative(
+            Predictor().when('(li_unimproved_sanitation == True) & (li_date_trans_to_urban == self.sim.date)',
+                             self.params['init_p_unimproved_sanitation_urban'])
+                .otherwise(0.0)
+        )
+
+        # create a dictionary that will contain all linear models
+        unimproved_san_models = {
+            'unimproved_san_lm': unimproved_san_lm,
+            'unimproved_san_urban_lm': unimproved_san_urban_lm
+        }
+        # return the dictionary
+        return unimproved_san_models
+
+    def update_no_access_hand_washing_status_linear_model(self) -> LinearModel:
+        """ a function to create linear models for updating no access to hand washing property. Here we are using
+        multiplicative linear models and are looking at individual ability to transition from no access to hand
+        washing to having access to hand washing """
+        # create a linear model that will update individual's no access to handwashing property
+        update_no_acc_hand_washing_lm = LinearModel.multiplicative(
+            Predictor('li_no_access_handwashing').when(True, self.params['r_access_handwashing'])
+                .otherwise(0.0)
+        )
+
+        # return the linear model
+        return update_no_acc_hand_washing_lm
+
+    def update_no_clean_drinking_water_linear_model(self) -> Dict[str, LinearModel]:
+        """ a function to create linear models for updating no clean drinking water property. Here we are using
+        multiplicative linear model and are looking at individuals ability to transition from no access to clean
+        drinking water to having an access to drinking water """
+        # probability of moving to clean drinking water at all follow-up times
+        prob_clean_drinking_water_lm = LinearModel.multiplicative(
+            Predictor('li_no_clean_drinking_water').when(True, self.params['r_clean_drinking_water'])
+                .otherwise(0.0)
+        )
+
+        # probability of no clean drinking water upon moving to urban from rural
+        no_clean_drinking_water_trans_urban_lm = LinearModel.multiplicative(
+            Predictor().when('(li_no_clean_drinking_water == True) & (li_date_trans_to_urban == self.sim.date)',
+                             self.params['init_p_no_clean_drinking_water_urban'])
+                .otherwise(0.0)
+        )
+
+        # create a dictionary that will contain no clean drinking water linear models
+        no_clean_drinking_water_models = {
+            'prob_clean_drinking_water_lm': prob_clean_drinking_water_lm,
+            'no_clean_drinking_water_trans_urban_lm': no_clean_drinking_water_trans_urban_lm
+        }
+        # return the no clean drinking water linear models
+        return no_clean_drinking_water_models
+
+    def update_wood_burn_stove_linear_model(self) -> Dict[str, LinearModel]:
+        """ a function to create linear models for updating wood burn stove property. Here we are using
+        multiplicative linear model and are looking at individual's ability to transition from wood burn stove to non
+        wood burn stove """
+        # probability of moving to non wood burn stove at all follow-up times
+        non_wood_burn_stove_lm = LinearModel.multiplicative(
+            Predictor('li_wood_burn_stove').when(True, self.params['r_non_wood_burn_stove'])
+                .otherwise(0.0)
+        )
+        # probability of moving to wood burn stove upon moving to urban from rural
+        wood_burn_stove_urban_lm = LinearModel.multiplicative(
+            Predictor().when('(li_wood_burn_stove == True) & (li_date_trans_to_urban == self.sim.date)',
+                             self.params['init_p_wood_burn_stove_urban'])
+        )
+        # all wood burn stove linear_models dictionary
+        wood_burn_stove_models = {
+            'non_wood_burn_stove_lm': non_wood_burn_stove_lm,
+            'wood_burn_stove_urban_lm': wood_burn_stove_urban_lm
+        }
+        # return all linear models
+        return wood_burn_stove_models
+
+    def update_high_salt_property_linear_model(self) -> Dict[str, LinearModel]:
+        """ a function to create linear models for updating high salt property. here we are using multiplicative
+        linear model and are looking at individuals ability to transition from high salt to not high salt """
+        # create a linear model with not high salt probabilities
+        not_high_salt_lm = LinearModel.multiplicative(
+            Predictor().when('(li_high_salt == False)', self.params['r_high_salt_urban'])
+                .when('(li_urban == True)', self.params['rr_high_salt_rural'])
+                .otherwise(0.0)
+        )
+        # create a linear model that handles transitions from high salt to not high salt
+        trans_not_high_salt_lm = LinearModel.multiplicative(
+            Predictor().when('li_high_salt', self.params['r_not_high_salt'])
+                .when('li_exposed_to_campaign_salt_reduction', self.params['rr_not_high_salt_pop_advice_salt'])
+                .otherwise(0.0)
+        )
+
+        # a dictionary that contains all high salt linear models
+        high_salt_models = {
+            'not_high_salt_lm': not_high_salt_lm,
+            'trans_not_high_salt_lm': trans_not_high_salt_lm
+        }
+        # return all high salt linear models
+        return high_salt_models
+
+    def update_high_sugar_property_linear_model(self) -> Dict[str, LinearModel]:
+        """ a function to create linear model for updating high sugar property. Here we are using multiplicative
+        linear model and are looking at individuals ability to transition from high sugar to not high sugar """
+        # a linear model with probabilities of not high sugar
+        not_high_sugar_lm = LinearModel.multiplicative(
+            Predictor('li_high_sugar').when(True, self.params['r_high_sugar'])
+                .otherwise(0.0)
+        )
+
+        # handles transitions from high sugar to not high sugar
+        trans_not_high_sugar = LinearModel.multiplicative(
+            Predictor().when('(li_high_sugar == True)', self.params['r_not_high_sugar'])
+                .when('(li_exposed_to_campaign_sugar_reduction == True)',
+                      self.params['rr_not_high_sugar_pop_advice_sugar'])
+                .otherwise(0.0)
+        )
+
+        # create a dictionary that contains all high sugar property linear model
+        high_sugar_models = {
+            'not_high_sugar_lm': not_high_sugar_lm,
+            'trans_not_high_sugar': trans_not_high_sugar
+        }
+
+        # return all high sugar linear models
+        return high_sugar_models
+
+    def update_bmi_categories_linear_model(self) -> Dict[str, LinearModel]:
+        """ a function to create linear model for updating bmi categories. here we are using multiplicative linear
+        model and are looking at individual's ability to transition from different bmi categories """
+
+        # create a linear model for possible increase in category of bmi
+        bmi_cat_1_to_4_idx_lm = LinearModel.multiplicative(
+            Predictor().when('(age_years == >= 15) & (li_bmi == .between(1, 4))', self.params['r_higher_bmi'])
+                .when('(li_urban == True)', self.params['rr_higher_bmi_urban'])
+                .when('(sex == 'F')', self.params['rr_higher_bmi_f'])
+                .when('(age_years == .between(30, 49)', self.params['rr_higher_bmi_age3049'])
+                .when('(age_years >= 50)', self.params['rr_higher_bmi_agege50'])
+                .when('(li_tob == True)', self.params['rr_higher_bmi_tob'])
+                .when('(li_wealth == 2)', self.params['rr_higher_bmi_per_higher_wealth'] ** 2)
+                .when('(li_wealth == 3)', self.params['rr_higher_bmi_per_higher_wealth'] ** 3)
+                .when('(li_wealth == 4)', self.params['rr_higher_bmi_per_higher_wealth'] ** 4)
+                .when('(li_wealth == 5)', self.params['rr_higher_bmi_per_higher_wealth'] ** 5)
+                .when('(li_high_sugar == True)', self.params['rr_higher_bmi_high_sugar'])
+                .otherwise(0.0)
+        )
+
+        # create a linear model for possible decrease in category of bmi
+        dec_bmi_lm = LinearModel.multiplicative(
+            Predictor().when('li_bmi == .between(3, 5)) & (age_years >= 15)', self.params['r_lower_bmi'])
+                .when('(li_urban == True)', self.params['rr_lower_bmi_tob'])
+                .when('(li_exposed_to_campaign_weight_reduction == True)',
+                      self.params['rr_lower_bmi_pop_advice_weight'])
+                .otherwise(0.0)
+        )
+
+        # a dictionary that contains bmi_categories linear models
+        bmi_cat_models = {
+            'bmi_cat_1_to_4_idx_lm': bmi_cat_1_to_4_idx_lm,
+            'dec_bmi_lm': dec_bmi_lm
+        }
+        # return all bmi categories linear models
+        return bmi_cat_models
 
 
 class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
@@ -1354,36 +1509,83 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         """Apply this event to the population.
         :param population: the current population
         """
-
-        # call to a function that handles all lifestyle events
+        # call a function to handle all transitions
         self.handle_all_transitions()
 
     def handle_all_transitions(self):
         df = self.sim.population.props
         m = self.module
-        rng = m.rng
 
-        # -------------------- URBAN-RURAL STATUS --------------------------------------------------
+        # handle rural urban transitions
+        self.update_rural_urban_property(df, m)
 
+        # handle low exercise transitions
+        self.update_low_exercise_property(df, m)
+
+        # handle tobacco use transitions
+        self.update_tobacco_use_property(df, m)
+
+        # handle excessive alcohol transitions
+        self.update_excessive_alcohol_property(df, m)
+
+        # handle marital status transitions
+        self.update_marital_status_property(df)
+
+        # handle education transitions
+        self.update_education_property(df)
+
+        # handle unimproved sanitation transitions
+        self.unimproved_sanitation_property(df, m)
+
+        # handle no clean drinking water
+        self.update_no_access_handwashing(df, m)
+
+        # handle no clean drinking water
+        self.update_no_clean_drinking_water(df, m)
+
+        # handle wood burn stove transitions
+        self.update_wood_burn_stove(df, m)
+
+        # handle high salt transitions
+        self.update_high_salt_property(df, m)
+
+        # handle high sugar transitions
+        self.update_high_sugar(df, m)
+
+        # handle bmi transitions
+        self.update_bmi_categories(df, m)
+
+        # --- FSW ---
+        self.module.determine_who_will_be_sexworker(months_since_last_poll=self.repeat_months)
+
+    def update_rural_urban_property(self, df, m):
+        """ a function to handle individual transitions from rural to urban and vice versa
+        :param df: population dataframe
+        :param m: a pointer to Lifestyle module """
         # get index of current urban/rural status
         currently_rural = df.index[~df.li_urban & df.is_alive]
         currently_urban = df.index[df.li_urban & df.is_alive]
 
         # handle new transitions
-        rural_to_urban = currently_rural[m.rng.random_sample(size=len(currently_rural)) < m.parameters['r_urban']]
+        rural_to_urban = currently_rural[self.module.rng.random_sample(size=len(currently_rural)) < m.parameters[
+            'r_urban']]
         df.loc[rural_to_urban, 'li_urban'] = True
 
         # handle new transitions to rural
-        urban_to_rural = currently_urban[rng.random_sample(size=len(currently_urban)) < m.parameters['r_rural']]
+        urban_to_rural = currently_urban[
+            self.module.rng.random_sample(size=len(currently_urban)) < m.parameters['r_rural']]
         df.loc[urban_to_rural, 'li_urban'] = False
 
-        # -------------------- LOW EXERCISE --------------------------------------------------------
-
+    def update_low_exercise_property(self, df, m):
+        """ a function to handle transitions from rural to urban and vice versa
+        :param df: population dataframe
+        :param m: a pointer to Lifestyle module """
+        # get indexes of individuals 15+ years who are not low exercise
         adults_not_low_ex = df.index[~df.li_low_ex & df.is_alive & (df.age_years >= 15)]
         eff_p_low_ex = pd.Series(m.parameters['r_low_ex'], index=adults_not_low_ex)
         eff_p_low_ex.loc[df.sex == 'F'] *= m.parameters['rr_low_ex_f']
         eff_p_low_ex.loc[df.li_urban] *= m.parameters['rr_low_ex_urban']
-        df.loc[adults_not_low_ex, 'li_low_ex'] = rng.random_sample(len(adults_not_low_ex)) < eff_p_low_ex
+        df.loc[adults_not_low_ex, 'li_low_ex'] = m.rng.random_sample(len(adults_not_low_ex)) < eff_p_low_ex
 
         # transition from low exercise to not low exercise
         low_ex_idx = df.index[df.li_low_ex & df.is_alive]
@@ -1391,7 +1593,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         eff_rate_not_low_ex.loc[df.li_exposed_to_campaign_exercise_increase] *= (
             m.parameters['rr_not_low_ex_pop_advice_exercise']
         )
-        random_draw = rng.random_sample(len(low_ex_idx))
+        random_draw = m.rng.random_sample(len(low_ex_idx))
         newly_not_low_ex_idx = low_ex_idx[random_draw < eff_rate_not_low_ex]
         df.loc[newly_not_low_ex_idx, 'li_low_ex'] = False
 
@@ -1402,7 +1604,10 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
             ]
         df.loc[all_idx_campaign_exercise_increase, 'li_exposed_to_campaign_exercise_increase'] = True
 
-        # -------------------- TOBACCO USE ---------------------------------------------------------
+    def update_tobacco_use_property(self, df, m):
+        """a function to handle tobacco use transitions
+        :param df: population dataframe
+        :param m: a pointer to Lifestyle module """
 
         adults_not_tob = df.index[(df.age_years >= 15) & df.is_alive & ~df.li_tob]
 
@@ -1413,7 +1618,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         eff_p_tob.loc[df.sex == 'F'] *= m.parameters['rr_tob_f']
         eff_p_tob *= m.parameters['rr_tob_wealth'] ** (pd.to_numeric(df.loc[adults_not_tob, 'li_wealth']) - 1)
 
-        df.loc[adults_not_tob, 'li_tob'] = rng.random_sample(len(adults_not_tob)) < eff_p_tob
+        df.loc[adults_not_tob, 'li_tob'] = m.rng.random_sample(len(adults_not_tob)) < eff_p_tob
 
         # transition from tobacco to no tobacco
         tob_idx = df.index[df.li_tob & df.is_alive]
@@ -1421,7 +1626,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         eff_rate_not_tob.loc[df.li_exposed_to_campaign_quit_smoking] *= (
             m.parameters['rr_not_tob_pop_advice_tobacco']
         )
-        random_draw = rng.random_sample(len(tob_idx))
+        random_draw = m.rng.random_sample(len(tob_idx))
         newly_not_tob_idx = tob_idx[random_draw < eff_rate_not_tob]
         df.loc[newly_not_tob_idx, 'li_tob'] = False
         df.loc[newly_not_tob_idx, 'li_date_not_tob'] = self.sim.date
@@ -1431,18 +1636,21 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
             ]
         df.loc[all_idx_campaign_quit_smoking, 'li_exposed_to_campaign_quit_smoking'] = True
 
-        # -------------------- EXCESSIVE ALCOHOL ---------------------------------------------------
-
+    def update_excessive_alcohol_property(self, df, m):
+        """ a function to handle excessive alcohol transitions
+        :param df: population dataframe
+        :param m: a pointer to Lifestyle module """
+        # get indexes of individuals who are 15+ years old
         not_ex_alc_f = df.index[~df.li_ex_alc & df.is_alive & (df.sex == 'F') & (df.age_years >= 15)]
         not_ex_alc_m = df.index[~df.li_ex_alc & df.is_alive & (df.sex == 'M') & (df.age_years >= 15)]
         now_ex_alc = df.index[df.li_ex_alc & df.is_alive]
 
         df.loc[not_ex_alc_f, 'li_ex_alc'] = (
-            rng.random_sample(len(not_ex_alc_f))
+            m.rng.random_sample(len(not_ex_alc_f))
             < m.parameters['r_ex_alc'] * m.parameters['rr_ex_alc_f']
         )
-        df.loc[not_ex_alc_m, 'li_ex_alc'] = rng.random_sample(len(not_ex_alc_m)) < m.parameters['r_ex_alc']
-        df.loc[now_ex_alc, 'li_ex_alc'] = ~(rng.random_sample(len(now_ex_alc)) < m.parameters['r_not_ex_alc'])
+        df.loc[not_ex_alc_m, 'li_ex_alc'] = m.rng.random_sample(len(not_ex_alc_m)) < m.parameters['r_ex_alc']
+        df.loc[now_ex_alc, 'li_ex_alc'] = ~(m.rng.random_sample(len(now_ex_alc)) < m.parameters['r_not_ex_alc'])
 
         # transition from excess alcohol to not excess alcohol
         ex_alc_idx = df.index[df.li_ex_alc & df.is_alive]
@@ -1450,7 +1658,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         eff_rate_not_ex_alc.loc[
             df.li_exposed_to_campaign_alcohol_reduction
         ] *= m.parameters['rr_not_ex_alc_pop_advice_alcohol']
-        random_draw = rng.random_sample(len(ex_alc_idx))
+        random_draw = m.rng.random_sample(len(ex_alc_idx))
         newly_not_ex_alc_idx = ex_alc_idx[random_draw < eff_rate_not_ex_alc]
         df.loc[newly_not_ex_alc_idx, 'li_ex_alc'] = False
 
@@ -1459,20 +1667,26 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
             ]
         df.loc[all_idx_campaign_alcohol_reduction, 'li_exposed_to_campaign_alcohol_reduction'] = True
 
-        # -------------------- MARITAL STATUS ------------------------------------------------------
-
+    def update_marital_status_property(self, df):
+        """ a function to handle marital status transitions
+        :param df: population dataframe
+        :param m: a pointer to Lifestyle module """
+        # get index of individuals aged between 15 to 29 and whose marital status is 1
         curr_never_mar = df.index[df.is_alive & df.age_years.between(15, 29) & (df.li_mar_stat == 1)]
+        # get index of individuals who are currently married
         curr_mar = df.index[df.is_alive & (df.li_mar_stat == 2)]
 
         # update if now married
-        now_mar = rng.random_sample(len(curr_never_mar)) < m.parameters['r_mar']
+        now_mar = self.module.rng.random_sample(len(curr_never_mar)) < self.module.parameters['r_mar']
         df.loc[curr_never_mar[now_mar], 'li_mar_stat'] = 2
 
         # update if now divorced/widowed
-        now_div_wid = rng.random_sample(len(curr_mar)) < m.parameters['r_div_wid']
+        now_div_wid = self.module.rng.random_sample(len(curr_mar)) < self.module.parameters['r_div_wid']
         df.loc[curr_mar[now_div_wid], 'li_mar_stat'] = 3
 
-        # -------------------- EDUCATION -----------------------------------------------------------
+    def update_education_property(self, df):
+        """ a function to handle education transitions
+        :param df: population dataframe """
 
         # get all individuals currently in education
         in_ed = df.index[df.is_alive & df.li_in_ed]
@@ -1486,12 +1700,13 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[age5, 'li_ed_lev'] = 1
         df.loc[age5, 'li_in_ed'] = False
 
-        # create a series to hold the probablity of primary education for children at age 5
-        prob_primary = pd.Series(m.parameters['p_ed_primary'], index=age5)
-        prob_primary *= m.parameters['rp_ed_primary_higher_wealth'] ** (5 - pd.to_numeric(df.loc[age5, 'li_wealth']))
+        # create a series to hold the probability of primary education for children at age 5
+        prob_primary = pd.Series(self.module.parameters['p_ed_primary'], index=age5)
+        prob_primary *= self.module.parameters['rp_ed_primary_higher_wealth'] ** (
+            5 - pd.to_numeric(df.loc[age5, 'li_wealth']))
 
         # randomly select some to have primary education
-        age5_in_primary = rng.random_sample(len(age5)) < prob_primary
+        age5_in_primary = self.module.rng.random_sample(len(age5)) < prob_primary
         df.loc[age5[age5_in_primary], 'li_ed_lev'] = 2
         df.loc[age5[age5_in_primary], 'li_in_ed'] = True
 
@@ -1501,14 +1716,14 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         age13_in_primary = df.index[(df.age_years == 13) & df.is_alive & df.li_in_ed & (df.li_ed_lev == 2)]
 
         # they have a probability of gaining secondary education (level 3), based on wealth
-        prob_secondary = pd.Series(m.parameters['p_ed_secondary'], index=age13_in_primary)
+        prob_secondary = pd.Series(self.module.parameters['p_ed_secondary'], index=age13_in_primary)
         prob_secondary *= (
-            m.parameters['rp_ed_secondary_higher_wealth']
+            self.module.parameters['rp_ed_secondary_higher_wealth']
             ** (5 - pd.to_numeric(df.loc[age13_in_primary, 'li_wealth']))
         )
 
         # randomly select some to get secondary education
-        age13_to_secondary = rng.random_sample(len(age13_in_primary)) < prob_secondary
+        age13_to_secondary = self.module.rng.random_sample(len(age13_in_primary)) < prob_secondary
         df.loc[age13_in_primary[age13_to_secondary], 'li_ed_lev'] = 3
 
         # those who did not go on to secondary education are no longer in education
@@ -1517,32 +1732,34 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         # ---- DROP OUT OF EDUCATION
 
         # baseline rate of leaving education then adjust for wealth level
-        p_leave_ed = pd.Series(m.parameters['r_stop_ed'], index=in_ed)
+        p_leave_ed = pd.Series(self.module.parameters['r_stop_ed'], index=in_ed)
         p_leave_ed *= (
-            m.parameters['rr_stop_ed_lower_wealth']
+            self.module.parameters['rr_stop_ed_lower_wealth']
             ** (pd.to_numeric(df.loc[in_ed, 'li_wealth']) - 1)
         )
 
         # randomly select some individuals to leave education
-        now_not_in_ed = rng.random_sample(len(in_ed)) < p_leave_ed
+        now_not_in_ed = self.module.rng.random_sample(len(in_ed)) < p_leave_ed
 
         df.loc[in_ed[now_not_in_ed], 'li_in_ed'] = False
 
         # everyone leaves education at age 20
         df.loc[df.is_alive & df.li_in_ed & (df.age_years == 20), 'li_in_ed'] = False
 
-        # -------------------- UNIMPROVED SANITATION --------------------------------------------------------
-
+    def unimproved_sanitation_property(self, df, m):
+        """ a function to handle unimproved sanitation transitions
+        :param df: population dataframe
+        :param m: a pointer to Lifestyle module """
         # probability of improved sanitation at all follow-up times
-        unimproved_sanitaton_idx = df.index[df.li_unimproved_sanitation & df.is_alive]
+        unimproved_sanitation_idx = df.index[df.li_unimproved_sanitation & df.is_alive]
 
         eff_rate_improved_sanitation = pd.Series(
-            m.parameters['r_improved_sanitation'], index=unimproved_sanitaton_idx
+            m.parameters['r_improved_sanitation'], index=unimproved_sanitation_idx
         )
 
-        random_draw = rng.random_sample(len(unimproved_sanitaton_idx))
+        random_draw = m.rng.random_sample(len(unimproved_sanitation_idx))
 
-        newly_improved_sanitation_idx = unimproved_sanitaton_idx[random_draw < eff_rate_improved_sanitation]
+        newly_improved_sanitation_idx = unimproved_sanitation_idx[random_draw < eff_rate_improved_sanitation]
         df.loc[newly_improved_sanitation_idx, 'li_unimproved_sanitation'] = False
         df.loc[newly_improved_sanitation_idx, 'li_date_acquire_improved_sanitation'] = self.sim.date
 
@@ -1551,7 +1768,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
             df.li_unimproved_sanitation & df.is_alive & (df.li_date_trans_to_urban == self.sim.date)
             ]
 
-        random_draw = rng.random_sample(len(unimproved_sanitation_newly_urban_idx))
+        random_draw = m.rng.random_sample(len(unimproved_sanitation_newly_urban_idx))
 
         eff_prev_unimproved_sanitation_urban = pd.Series(
             m.parameters['init_p_unimproved_sanitation_urban'], index=unimproved_sanitation_newly_urban_idx
@@ -1561,21 +1778,25 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
             random_draw < eff_prev_unimproved_sanitation_urban
         )
 
-        # -------------------- NO ACCESS HANDWASHING --------------------------------------------------------
-
+    def update_no_access_handwashing(self, df, m):
+        """" a function to handle no access hand washing transitions
+        :param df: population dataframe
+        :param m: a pointer to Lifestyle module """
         # probability of moving to access to handwashing at all follow-up times
         no_access_handwashing_idx = df.index[df.li_no_access_handwashing & df.is_alive]
 
         eff_rate_access_handwashing = pd.Series(m.parameters['r_access_handwashing'], index=no_access_handwashing_idx)
 
-        random_draw = rng.random_sample(len(no_access_handwashing_idx))
+        random_draw = m.rng.random_sample(len(no_access_handwashing_idx))
 
         newly_access_handwashing_idx = no_access_handwashing_idx[random_draw < eff_rate_access_handwashing]
         df.loc[newly_access_handwashing_idx, 'li_no_access_handwashing'] = False
         df.loc[newly_access_handwashing_idx, 'li_date_acquire_access_handwashing'] = self.sim.date
 
-        # -------------------- NO CLEAN DRINKING WATER  --------------------------------------------------------
-
+    def update_no_clean_drinking_water(self, df, m):
+        """ a function to handle no clean drinking water transitions
+        :param df: population dataframe
+        :param m: a pointer to Lifestyle module """
         # probability of moving to clean drinking water at all follow-up times
         no_clean_drinking_water_idx = df.index[df.li_no_clean_drinking_water & df.is_alive]
 
@@ -1583,7 +1804,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
             m.parameters['r_clean_drinking_water'], index=no_clean_drinking_water_idx
         )
 
-        random_draw = rng.random_sample(len(no_clean_drinking_water_idx))
+        random_draw = m.rng.random_sample(len(no_clean_drinking_water_idx))
 
         newly_clean_drinking_water_idx = no_clean_drinking_water_idx[random_draw < eff_rate_clean_drinking_water]
         df.loc[newly_clean_drinking_water_idx, 'li_no_clean_drinking_water'] = False
@@ -1594,7 +1815,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
             df.li_no_clean_drinking_water & df.is_alive & (df.li_date_trans_to_urban == self.sim.date)
             ]
 
-        random_draw = rng.random_sample(len(no_clean_drinking_water_newly_urban_idx))
+        random_draw = m.rng.random_sample(len(no_clean_drinking_water_newly_urban_idx))
 
         eff_prev_no_clean_drinking_water_urban = pd.Series(
             m.parameters['init_p_no_clean_drinking_water_urban'], index=no_clean_drinking_water_newly_urban_idx
@@ -1604,14 +1825,16 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
             random_draw < eff_prev_no_clean_drinking_water_urban
         )
 
-        # -------------------- WOOD BURN STOVE -------------------------------------------------------------
-
+    def update_wood_burn_stove(self, df, m):
+        """ a function to handle wood burn stove transitions
+        :param df: population dataframe
+        :param m: a pointer to lifestyle module """
         # probability of moving to non wood burn stove at all follow-up times
         wood_burn_stove_idx = df.index[df.li_wood_burn_stove & df.is_alive]
 
         eff_rate_non_wood_burn_stove = pd.Series(m.parameters['r_non_wood_burn_stove'], index=wood_burn_stove_idx)
 
-        random_draw = rng.random_sample(len(wood_burn_stove_idx))
+        random_draw = m.rng.random_sample(len(wood_burn_stove_idx))
 
         newly_non_wood_burn_stove_idx = wood_burn_stove_idx[random_draw < eff_rate_non_wood_burn_stove]
         df.loc[newly_non_wood_burn_stove_idx, 'li_wood_burn_stove'] = False
@@ -1622,7 +1845,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
             df.li_wood_burn_stove & df.is_alive & (df.li_date_trans_to_urban == self.sim.date)
             ]
 
-        random_draw = rng.random_sample(len(wood_burn_stove_newly_urban_idx))
+        random_draw = m.rng.random_sample(len(wood_burn_stove_newly_urban_idx))
 
         eff_prev_wood_burn_stove_urban = pd.Series(
             m.parameters['init_p_wood_burn_stove_urban'], index=wood_burn_stove_newly_urban_idx
@@ -1630,12 +1853,15 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         df.loc[wood_burn_stove_newly_urban_idx, 'li_wood_burn_stove'] = random_draw < eff_prev_wood_burn_stove_urban
 
-        # -------------------- HIGH SALT ----------------------------------------------------------
+    def update_high_salt_property(self, df, m):
+        """ a function to handle high salt property
+         :param df: population dataframe
+        :param m: a pointer to lifestyle module """
 
         not_high_salt_idx = df.index[~df.li_high_salt & df.is_alive]
         eff_rate_high_salt = pd.Series(m.parameters['r_high_salt_urban'], index=not_high_salt_idx)
         eff_rate_high_salt[df.li_urban] *= m.parameters['rr_high_salt_rural']
-        random_draw = rng.random_sample(len(not_high_salt_idx))
+        random_draw = m.rng.random_sample(len(not_high_salt_idx))
         newly_high_salt = random_draw < eff_rate_high_salt
         newly_high_salt_idx = not_high_salt_idx[newly_high_salt]
         df.loc[newly_high_salt_idx, 'li_high_salt'] = True
@@ -1646,18 +1872,21 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         eff_rate_not_high_salt.loc[
             df.li_exposed_to_campaign_salt_reduction
         ] *= m.parameters['rr_not_high_salt_pop_advice_salt']
-        random_draw = rng.random_sample(len(high_salt_idx))
+        random_draw = m.rng.random_sample(len(high_salt_idx))
         newly_not_high_salt_idx = high_salt_idx[random_draw < eff_rate_not_high_salt]
         df.loc[newly_not_high_salt_idx, 'li_high_salt'] = False
 
         all_idx_campaign_salt_reduction = df.index[df.is_alive & (self.sim.date == datetime.date(2010, 7, 1))]
         df.loc[all_idx_campaign_salt_reduction, 'li_exposed_to_campaign_salt_reduction'] = True
 
-        # -------------------- HIGH SUGAR ----------------------------------------------------------
-
+    def update_high_sugar(self, df, m):
+        """ a function to handle high sugar transitions
+         :param df: population dataframe
+        :param m: a pointer to lifestyle module """
+        # get index of individuals who are high sugar
         not_high_sugar_idx = df.index[~df.li_high_sugar & df.is_alive]
         eff_p_high_sugar = pd.Series(m.parameters['r_high_sugar'], index=not_high_sugar_idx)
-        random_draw = rng.random_sample(len(not_high_sugar_idx))
+        random_draw = m.rng.random_sample(len(not_high_sugar_idx))
         newly_high_sugar_idx = not_high_sugar_idx[random_draw < eff_p_high_sugar]
         df.loc[newly_high_sugar_idx, 'li_high_sugar'] = True
 
@@ -1667,22 +1896,23 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         eff_rate_not_high_sugar.loc[
             df.li_exposed_to_campaign_sugar_reduction
         ] *= m.parameters['rr_not_high_sugar_pop_advice_sugar']
-        random_draw = rng.random_sample(len(high_sugar_idx))
+        random_draw = m.rng.random_sample(len(high_sugar_idx))
         newly_not_high_sugar_idx = high_sugar_idx[random_draw < eff_rate_not_high_sugar]
         df.loc[newly_not_high_sugar_idx, 'li_high_sugar'] = False
 
         all_idx_campaign_sugar_reduction = df.index[df.is_alive & (self.sim.date == datetime.date(2010, 7, 1))]
         df.loc[all_idx_campaign_sugar_reduction, 'li_exposed_to_campaign_sugar_reduction'] = True
 
-        # -------------------- BMI ----------------------------------------------------------
+    def update_bmi_categories(self, df, m):
+        """ a function to handle bmi transitions
+         :param df: population dataframe
+        :param m: a pointer to lifestyle module """
 
         # those reaching age 15 allocated bmi 3
-
         age15_idx = df.index[df.is_alive & (df.age_exact_years >= 15) & (df.age_exact_years < 15.25)]
         df.loc[age15_idx, 'li_bmi'] = 3
 
         # possible increase in category of bmi
-
         bmi_cat_1_to_4_idx = df.index[df.is_alive & (df.age_years >= 15) & df.li_bmi.between(1, 4)]
         eff_rate_higher_bmi = pd.Series(m.parameters['r_higher_bmi'], index=bmi_cat_1_to_4_idx)
         eff_rate_higher_bmi[df.li_urban] *= m.parameters['rr_higher_bmi_urban']
@@ -1696,7 +1926,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         eff_rate_higher_bmi[df.li_wealth == 5] *= m.parameters['rr_higher_bmi_per_higher_wealth'] ** 5
         eff_rate_higher_bmi[df.li_high_sugar] *= m.parameters['rr_higher_bmi_high_sugar']
 
-        random_draw = rng.random_sample(len(bmi_cat_1_to_4_idx))
+        random_draw = m.rng.random_sample(len(bmi_cat_1_to_4_idx))
         newly_increase_bmi_cat_idx = bmi_cat_1_to_4_idx[random_draw < eff_rate_higher_bmi]
         df.loc[newly_increase_bmi_cat_idx, 'li_bmi'] = df['li_bmi'] + 1
 
@@ -1708,15 +1938,12 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         eff_rate_lower_bmi.loc[
             df.li_exposed_to_campaign_weight_reduction
         ] *= m.parameters['rr_lower_bmi_pop_advice_weight']
-        random_draw = rng.random_sample(len(bmi_cat_3_to_5_idx))
+        random_draw = m.rng.random_sample(len(bmi_cat_3_to_5_idx))
         newly_decrease_bmi_cat_idx = bmi_cat_3_to_5_idx[random_draw < eff_rate_lower_bmi]
         df.loc[newly_decrease_bmi_cat_idx, 'li_bmi'] = df['li_bmi'] - 1
 
         all_idx_campaign_weight_reduction = df.index[df.is_alive & (self.sim.date == datetime.date(2010, 7, 1))]
         df.loc[all_idx_campaign_weight_reduction, 'li_exposed_to_campaign_weight_reduction'] = True
-
-        # --- FSW ---
-        self.module.determine_who_will_be_sexworker(months_since_last_poll=self.repeat_months)
 
 
 def compute_tobacco_use_by_age(pop) -> Dict[str, Any]:
@@ -1806,7 +2033,7 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
 
-        # TODO *** THIS HAS TROUBLE BE PARESED ON LONG RUNS BY PARSE_OUTPUT: CHANGING KEYS DUE TO GROUPBY? \
+        # TODO *** THIS HAS TROUBLE BE PARSED ON LONG RUNS BY PARSE_OUTPUT: CHANGING KEYS DUE TO GROUPBY? \
         #  NEED TO USE UNSTACK?!?!?
         """
         def flatten_tuples_in_keys(d1):
@@ -1832,6 +2059,12 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[df.is_alive].groupby(['sex', 'li_low_ex']).size().to_dict())
                     )
         """
+        # for _property in ['properties']:
+        #     logger.info(
+        #         key=_property,
+        #         data=flatten_multi_index_series_into_dict_for_logging(df.loc[df.is_alive, _property].groupby(
+        #             ['sex', 'age_group']).apply("find the proportion in each group"))
+        #     )
 
         # log summary of individuals living in both rural and urban
         logger.info(key='urban_rural_pop',
