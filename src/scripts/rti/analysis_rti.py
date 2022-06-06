@@ -28,14 +28,14 @@ log_config = {
     "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
         "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
         "tlo.methods.rti": logging.INFO,
-        "tlo.methods.healthsystem": logging.INFO,
-        "tlo.methods.demography": logging.INFO
+        "tlo.methods.healthsystem": logging.CRITICAL,
+        "tlo.methods.demography": logging.CRITICAL
     }
 }
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2020, 1, 1)
-pop_size = 5000
+pop_size = 20000
 
 # This creates the Simulation instance for this run. Because we've passed the `seed` and
 # `log_config` arguments, these will override the default behaviour.
