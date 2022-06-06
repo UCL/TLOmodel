@@ -295,10 +295,8 @@ def batch_job(ctx, job_id, raw, show_tasks):
 
 @cli.command()
 @click.option("--find", "-f", type=str, default=None, help="Show jobs where identifier contains supplied string")
-@click.option("--completed", "status", flag_value="completed", default=False, multiple=True,
-              help="Only display completed jobs")
-@click.option("--active", "status", flag_value="active", default=False, multiple=True,
-              help="Only display active jobs")
+@click.option("--completed", "status", flag_value="completed", default=False, help="Only display completed jobs")
+@click.option("--active", "status", flag_value="active", default=False, help="Only display active jobs")
 @click.option("-n", default=5, type=int, help="Maximum number of jobs to list (default is 5)")
 @click.pass_context
 def batch_list(ctx, status, n, find):
