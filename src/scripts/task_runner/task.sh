@@ -14,7 +14,7 @@ username=$(whoami)
 
 exec > >(tee -a "${task_output_dir}/task.txt") 2>&1
 
-echo "    Time: $(date)"
+echo "    Start time: $(date)"
 echo "    PWD: $(pwd)"
 echo "    PID: $$"
 echo "    Path to this script: $path_this_script"
@@ -40,13 +40,14 @@ echo "${exit_status}" > "${task_output_dir}"/exit_status.txt
 
 if [ "$exit_status" -eq 99 ]; then
     # resubmit task
-    echo "    Resubmit task: $(date -d 5mins)"
+    echo "    Resubmit time: $(date -d 5mins)"
     sleep 5m
     /usr/local/bin/ts -E \
         ./src/scripts/task_runner/task.sh "${execute_path}" "${worktree_dir}" "${task_output_dir}" "${conda_env}";
 else
     echo "    Finished script ${execute_path}"
     echo "    Exit status: ${exit_status}"
+    echo "    End time: $(date)"
     # ignore error if no log files found
     gzip "${task_output_dir}"/*.log || true
 fi
