@@ -4,12 +4,13 @@ Documentation: 04 - Methods Repository/Method_Lifestyle.xlsx
 """
 import datetime
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Dict, List
 
 import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 
@@ -411,18 +412,17 @@ class Lifestyle(Module):
         will_be_circ = self.rng.rand(len(men)) < self.parameters['proportion_of_men_circumcised_at_initiation']
         df.loc[men[will_be_circ].index, 'li_is_circ'] = True
 
-    def init_edu_bmi_properties(self, lifestyle_property):
+    def init_edu_bmi_properties(self, df, lifestyle_property):
         """ a function to initialise education and bmi properties """
         if lifestyle_property == 'li_in_ed':
-            self.init_education_properties()
+            self.init_education_properties(df)
         else:
-            self.init_bmi_property()
+            self.init_bmi_property(df)
 
-    def init_education_properties(self):
+    def init_education_properties(self, df):
         """ use output from education linear models to set education levels and status
         :param df: population dataframe """
 
-        df = self.sim.population.props
         age_gte5 = df.index[(df.age_years >= 5) & df.is_alive]
 
         # store population eligible for education
@@ -446,11 +446,9 @@ class Lifestyle(Module):
         df.loc[df.age_years.between(5, 12) & (df['li_ed_lev'] == 2) & df.is_alive, 'li_in_ed'] = True
         df.loc[df.age_years.between(13, 19) & (df['li_ed_lev'] == 3) & df.is_alive, 'li_in_ed'] = True
 
-    def init_bmi_property(self):
+    def init_bmi_property(self, df):
         """ set property for BMI in population dataframe
         :param df: population dataframe """
-
-        df = self.sim.population.props
         # get indexes of population alive and 15+ years
         age_ge15_idx = df.index[df.is_alive & (df.age_years >= 15)]
         prop_df = df.loc[df.is_alive & (df.age_years >= 15)]
@@ -779,7 +777,7 @@ class LifestyleModels:
                 df.loc[df.is_alive, _property_name] = _model['init'].predict(df.loc[df.is_alive])
 
             elif _property_name in ['li_in_ed', 'li_bmi']:
-                self.module.init_edu_bmi_properties(_property_name)
+                self.module.init_edu_bmi_properties(df, _property_name)
 
             else:
                 df.loc[df.is_alive, _property_name] = _model['init'].predict(df.loc[df.is_alive], self.rng)
@@ -1144,11 +1142,11 @@ class LifestyleModels:
         # create rural urban linear model
         rural_urban_transition_lm = LinearModel.multiplicative(
             Predictor('li_urban').when(False, self.params['r_urban'])
-            .otherwise(0.0)
+                .otherwise(0.0)
         )
         urban_rural_transition_lm = LinearModel.multiplicative(
             Predictor('li_urban').when(True, self.params['r_urban'])
-            .otherwise(0.0)
+                .otherwise(0.0)
         )
         urban_rural_models = {
             'rural_urban_transition_lm': rural_urban_transition_lm,
@@ -1238,7 +1236,7 @@ class LifestyleModels:
                              self.params['r_ex_alc'])
                 .when('(age_years >= 15) & (sex == "F") & (li_ex_alc == False)',
                       (self.params['r_ex_alc'] * self.params['rr_ex_alc_f']))
-                 .otherwise(0.0)
+                .otherwise(0.0)
         )
         now_ex_alc_lm = LinearModel.multiplicative(
             Predictor().when('(age_years >= 15) & (li_ex_alc == True)',
@@ -1946,76 +1944,6 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[all_idx_campaign_weight_reduction, 'li_exposed_to_campaign_weight_reduction'] = True
 
 
-def compute_tobacco_use_by_age(pop) -> Dict[str, Any]:
-    """called by the logger to computer tobacco use by age """
-    # a dictionary to stoke tobacco use statistics
-    tob_age_dict: Dict[str, Any] = dict()
-
-    # get tobacco use in individuals aged between 15 to 19
-    tob_age15_19 = pop.loc[pop.is_alive & pop.age_years.between(15, 19), 'li_tob']
-    # get tobacco use in individuals aged between 20 to 39
-    tob_age20_39 = pop.loc[pop.is_alive & pop.age_years.between(20, 39), 'li_tob']
-    # get tobacco use in individuals aged 40 and above
-    tob_age40 = pop.loc[pop.is_alive & (pop.age_years >= 40), 'li_tob']
-
-    tob_age_dict.update({
-        'tob1519': tob_age15_19.mean(),
-        'tob2039': tob_age20_39.mean(),
-        'tob40': tob_age40.mean(),
-    })
-
-    return tob_age_dict
-
-
-def compute_currently_in_education_individuals_by_age(pop) -> Dict[str, Any]:
-    """get a summary of individuals who are currently in education by age groups. the age groups are as follows;
-            1.  less than 13 years old
-            2.  13 - 20 years
-            3.  20 - 30 years
-            4.  30 - 39 years
-            5.  40 - 49 years
-            6.  49 - 59 years
-            7.  60+ years
-    """
-
-    # a dictionary to store all individuals currently in education
-    cur_in_ed_dict: Dict[str, Any] = dict()
-
-    # get individuals currently in education aged 15-19
-    cur_ed_l13 = pop.loc[pop.is_alive & pop.age_years < 13, 'li_in_ed']
-
-    # get individuals currently in education and aged between 13 - 20
-    cur_ed1320 = pop.loc[pop.is_alive & pop.age_years.between(13, 20), 'li_in_ed']
-
-    # get individuals currently in education and aged between 20 - 29
-    cur_ed2029 = pop.loc[pop.is_alive & pop.age_years.between(20, 29), 'li_in_ed']
-
-    # get individuals currently in education and aged between 30 - 39
-    cur_ed3039 = pop.loc[pop.is_alive & pop.age_years.between(30, 39), 'li_in_ed']
-
-    # get individuals currently in education and aged between 40 - 49
-    cur_ed4049 = pop.loc[pop.is_alive & pop.age_years.between(40, 49), 'li_in_ed']
-
-    # get individuals currently in education and aged between 13 - 20
-    cur_ed15059 = pop.loc[pop.is_alive & pop.age_years.between(50, 59), 'li_in_ed']
-
-    # get individuals currently in education and aged 60+
-    cur_ed60 = pop.loc[pop.is_alive & pop.age_years >= 60, 'li_in_ed']
-
-    # todo: update dictionary with only rows that sum up to a value > 0
-    cur_in_ed_dict.update({
-        'cur_ed_l13': cur_ed_l13.mean(),
-        'cur_ed1320': cur_ed1320.mean(),
-        'cur_ed2029': cur_ed2029.mean(),
-        'cur_ed3039': cur_ed3039.mean(),
-        'cur_ed4049': cur_ed4049.mean(),
-        'cur_ed5059': cur_ed15059.mean(),
-        'cur_ed60': cur_ed60.mean(),
-    })
-
-    return cur_in_ed_dict
-
-
 class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """Handles lifestyle logging"""
 
@@ -2032,74 +1960,19 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         """
         # get some summary statistics
         df = population.props
+        prop_dict = LifestyleModels(self.module).models
 
-        # TODO *** THIS HAS TROUBLE BE PARSED ON LONG RUNS BY PARSE_OUTPUT: CHANGING KEYS DUE TO GROUPBY? \
-        #  NEED TO USE UNSTACK?!?!?
-        """
-        def flatten_tuples_in_keys(d1):
-            d2 = dict()
-            for k in d1.keys():
-                d2['_'.join([str(y) for y in k])] = d1[k]
-            return d2
-
-        logger.info(key='li_urban', data=df[df.is_alive].groupby('li_urban').size().to_dict())
-        logger.info(key='li_wealth', data=df[df.is_alive].groupby('li_wealth').size().to_dict())
-        logger.info(key='li_tob', data=flatten_tuples_in_keys(
-            df[df.is_alive].groupby(['sex', 'li_tob']).size().to_dict())
-                    )
-        logger.info(key='li_ed_lev_by_age',
-                    data=flatten_tuples_in_keys(
-                        df[df.is_alive].groupby(['age_range', 'li_in_ed', 'li_ed_lev']).size().to_dict())
-                    )
-        logger.info(
-            key='bmi_proportions',
-            data=self.module.compute_bmi_proportions_of_interest()
-        )
-        logger.info(key='li_low_ex', data=flatten_tuples_in_keys(
-            df[df.is_alive].groupby(['sex', 'li_low_ex']).size().to_dict())
-                    )
-        """
-        # for _property in ['properties']:
-        #     logger.info(
-        #         key=_property,
-        #         data=flatten_multi_index_series_into_dict_for_logging(df.loc[df.is_alive, _property].groupby(
-        #             ['sex', 'age_group']).apply("find the proportion in each group"))
-        #     )
-
-        # log summary of individuals living in both rural and urban
-        logger.info(key='urban_rural_pop',
-                    data=df.loc[
-                        df.is_alive, 'li_urban'
-                    ].value_counts().sort_index().to_dict(),
-                    description='Urban and rural population')
-
-        # log summary of tobacco use by gender
-        logger.info(
-            key='tobacco_use',
-            data=df.loc[df.is_alive & df.li_tob, 'sex'].value_counts().sort_index().to_dict(),
-            description='tobacco use by gender'
-        )
-
-        # log summary of tobacco use by age
-        logger.info(
-            key='tobacco_use_age_range',
-            data=compute_tobacco_use_by_age(df),
-            description='tobacco use by age range'
-        )
-
-        # log summary of males and females currently in education
-        logger.info(
-            key='cur_in_ed',
-            data=df.loc[df.is_alive & df.li_in_ed, 'sex'].value_counts().sort_index().to_dict(),
-            description='male and female individuals current in education'
-        )
-
-        # log summary of individuals by age group currently in education
-        logger.info(
-            key='age_group_cur_in_ed',
-            data=compute_currently_in_education_individuals_by_age(df),
-            description='age group of individuals currently in education'
-        )
+        # log summary of each lifestyle property
+        for _property in prop_dict.keys():
+            if _property in ['li_wealth', 'li_mar_stat', 'li_bmi']:
+                print(f'ignoring property {_property} for now')
+                pass
+            else:
+                logger.info(
+                    key=_property,
+                    data=flatten_multi_index_series_into_dict_for_logging(df.loc[df.is_alive & df[_property]].groupby(
+                        ['sex', 'age_range']).size())
+                )
 
         # log summary of males circumcised
         logger.info(
