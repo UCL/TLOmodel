@@ -34,7 +34,7 @@ rfp = Path('./resources')
 # Find results folder (most recent run generated using that scenario_filename)
 results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
 
-create_pickles_locally(results_folder, compressed_file_name_prefix="long_run")  # <-- sometimes needed
+# create_pickles_locally(results_folder, compressed_file_name_prefix="long_run")  # <-- sometimes needed after download
 
 # Declare period for which the results will be generated (defined inclusively)
 TARGET_PERIOD = (Date(2010, 1, 1), Date(2010, 12, 31))
