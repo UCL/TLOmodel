@@ -23,11 +23,11 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2040, 1, 1)
-popsize = 15000
+end_date = Date(2015, 1, 1)
+popsize = 1000
 
 # todo
-scenario = 2
+scenario = 0
 mode_appt_constraints = 0  # HR constraints, 0: no constraints,
             # all HSI events run with no squeeze factor, 1: elastic constraints, all HSI
             # events run with squeeze factor, 2: hard constraints, only HSI events with
@@ -58,7 +58,7 @@ log_config = {
 # Register the appropriate modules
 # need to call epi before tb to get bcg vax
 # seed = random.randint(0, 50000)
-seed = 26091  # set seed for reproducibility
+seed = 5  # set seed for reproducibility
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
 sim.register(*fullmodel(
     resourcefilepath=resourcefilepath,
