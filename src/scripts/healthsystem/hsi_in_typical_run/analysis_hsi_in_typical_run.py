@@ -57,6 +57,7 @@ plt.show()
 hsi = log['HSI_Event']
 hsi["date"] = pd.to_datetime(hsi["date"])
 hsi["month"] = hsi["date"].dt.month
+hsi["year"] = hsi["date"].dt.year
 
 # Number of HSI that are taking place by originating module, by month
 year = 2016
