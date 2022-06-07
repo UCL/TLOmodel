@@ -1,7 +1,6 @@
 """
 General utility functions for TLO analysis
 """
-import gzip
 import json
 import os
 import pickle
@@ -170,7 +169,7 @@ def get_scenario_info(scenario_output_dir: Path) -> dict:
 
 
 def load_pickled_dataframes(results_folder: Path, draw=0, run=0, name=None) -> dict:
-    """Utility function to create a dict containing all the logs from the specified run within a batch set"""
+    """Utility function to create a dict contaning all the logs from the specified run within a batch set"""
     folder = results_folder / str(draw) / str(run)
     p: os.DirEntry
     pickles = [p for p in os.scandir(folder) if p.name.endswith('.pickle')]
@@ -381,7 +380,7 @@ def format_gbd(gbd_df: pd.DataFrame):
 
 def create_pickles_locally(scenario_output_dir):
     """For a run from the Batch system that has not resulted in the creation of the pickles, reconstruct the pickles
-     locally, from either .log files or .log.gz files."""
+     locally."""
 
     def turn_log_into_pickles(logfile):
         print(f"Opening {logfile}")
@@ -392,28 +391,13 @@ def create_pickles_locally(scenario_output_dir):
                 with open(logfile.parent / f"{key}.pickle", "wb") as f:
                     pickle.dump(output, f)
 
-    def uncompress_and_save_logfile(compressed_file) -> Path:
-        """Uncompress and save a log file and return its path."""
-        target = compressed_file.parent / str(compressed_file.name[0:-3])
-
-        with open(target, "wb") as t:
-            with gzip.open(compressed_file, 'rb') as s:
-                t.write(s.read())
-
-        return target
-
     f: os.DirEntry
     draw_folders = [f for f in os.scandir(scenario_output_dir) if f.is_dir()]
     for draw_folder in draw_folders:
         run_folders = [f for f in os.scandir(draw_folder) if f.is_dir()]
         for run_folder in run_folders:
-            for file in os.listdir(run_folder):
-                filepath = Path(run_folder) / file
-
-                if file.endswith('.log'):
-                    turn_log_into_pickles(filepath)
-                elif file.endswith('log.gz'):
-                    turn_log_into_pickles(uncompress_and_save_logfile(filepath))
+            logfile = [x for x in os.listdir(run_folder) if x.endswith('.log')][0]
+            turn_log_into_pickles(Path(run_folder) / logfile)
 
 
 def compare_number_of_deaths(logfile: Path, resourcefilepath: Path):
