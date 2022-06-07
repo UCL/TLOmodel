@@ -13,9 +13,9 @@ from tlo import Date
 from tlo.analysis.utils import (
     extract_results,
     get_scenario_outputs,
-    load_pickled_dataframes,
     summarize,
     unflatten_flattened_multi_index_in_logging,
+    create_pickles_locally,
 )
 
 # todo - ** PLOTTING AESTHETICS **
@@ -33,6 +33,8 @@ rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
 results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
+
+create_pickles_locally(results_folder, compressed_file_name_prefix="long_run")  # <-- sometimes needed
 
 # Declare period for which the results will be generated (defined inclusively)
 TARGET_PERIOD = (Date(2010, 1, 1), Date(2010, 12, 31))
