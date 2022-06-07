@@ -1,6 +1,7 @@
 """
 General utility functions for TLO analysis
 """
+import gzip
 import json
 import os
 import pickle
@@ -378,7 +379,7 @@ def format_gbd(gbd_df: pd.DataFrame):
     return gbd_df
 
 
-def create_pickles_locally(scenario_output_dir):
+def create_pickles_locally(scenario_output_dir, compressed_file_name_prefix=None):
     """For a run from the Batch system that has not resulted in the creation of the pickles, reconstruct the pickles
      locally."""
 
@@ -391,13 +392,31 @@ def create_pickles_locally(scenario_output_dir):
                 with open(logfile.parent / f"{key}.pickle", "wb") as f:
                     pickle.dump(output, f)
 
+
+    def uncompress_and_save_logfile(compressed_file) -> Path:
+        """Uncompress and save a log file and return its path."""
+        target = compressed_file.parent / str(compressed_file.name[0:-3])
+
+        with open(target, "wb") as t:
+            with gzip.open(compressed_file, 'rb') as s:
+                t.write(s.read())
+
+        return target
+
     f: os.DirEntry
     draw_folders = [f for f in os.scandir(scenario_output_dir) if f.is_dir()]
     for draw_folder in draw_folders:
         run_folders = [f for f in os.scandir(draw_folder) if f.is_dir()]
         for run_folder in run_folders:
-            logfile = [x for x in os.listdir(run_folder) if x.endswith('.log')][0]
-            turn_log_into_pickles(Path(run_folder) / logfile)
+            # Find the original log-file written by the simulation
+            if compressed_file_name_prefix is None:
+                logfile = [x for x in os.listdir(run_folder) if x.endswith('.log')][0]
+            else:
+                compressed_file_name = [x for x in os.listdir(run_folder) if x.startswith(compressed_file_name_prefix)][0]
+                logfile = uncompress_and_save_logfile(Path(run_folder) / compressed_file_name)
+
+            turn_log_into_pickles(logfile)
+
 
 
 def compare_number_of_deaths(logfile: Path, resourcefilepath: Path):
