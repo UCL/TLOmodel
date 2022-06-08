@@ -110,7 +110,7 @@ def start_sim_and_clear_event_queues(sim):
 @pytest.mark.slow
 def test_basic_run_with_default_parameters(seed):
     """Run the HIV module with check and check dtypes consistency"""
-    end_date = Date(2011, 12, 31)  # todo change to end 2015
+    end_date = Date(2015, 12, 31)
 
     sim = get_sim(seed=seed)
     check_dtypes(sim)
