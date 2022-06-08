@@ -33,6 +33,7 @@ from tlo.methods import (
     simplified_births,
     stunting,
     symptommanager,
+    tb,
     wasting,
 )
 
@@ -100,8 +101,8 @@ def fullmodel(
         hiv.Hiv(resourcefilepath=resourcefilepath),
         malaria.Malaria(resourcefilepath=resourcefilepath),
         measles.Measles(resourcefilepath=resourcefilepath),
-        schisto.Schisto(resourcefilepath=resourcefilepath)
-        # tb.TB(resourcefilepath=resourcefilepath)  <-- awaiting PR #541
+        schisto.Schisto(resourcefilepath=resourcefilepath),
+        tb.Tb(resourcefilepath=resourcefilepath)
     ])
 
     # Non-Communicable Conditions
