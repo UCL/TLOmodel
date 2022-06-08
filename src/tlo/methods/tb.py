@@ -463,7 +463,7 @@ class Tb(Module):
         self.lm["active_tb"] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p["scaling_factor_WHO"],
-            Predictor("age_years").when("<=15", p["rr_tb_child"]),
+            Predictor("age_years").when("<=15", p["rr_tb_child"]).otherwise(1.0),
             # -------------- LIFESTYLE -------------- #
             Predictor().when(
                 'va_bcg_all_doses &'
@@ -471,7 +471,7 @@ class Tb(Module):
                 '(age_years <10)',
                 p["rr_tb_bcg"]  # child with bcg
             ),
-            Predictor("li_bmi").when(">=4", p["rr_tb_obese"]),
+            Predictor("li_bmi").when(">=4", p["rr_tb_obese"]).otherwise(1.0),
             # Predictor('diabetes').when(True, p['rr_tb_diabetes1']),
             Predictor("li_ex_alc").when(True, p["rr_tb_alcohol"]),
             Predictor("li_tob").when(True, p["rr_tb_smoking"]),

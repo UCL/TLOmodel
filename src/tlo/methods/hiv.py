@@ -423,20 +423,28 @@ class Hiv(Module):
         # LinearModel for the relative risk of becoming infected during the simulation
         # N.B. age assumed not to have an effect on incidence
         self.lm["rr_of_infection"] = LinearModel.multiplicative(
-            Predictor("age_years").when("<15", 0.0).when("<49", 1.0).otherwise(0.0),
+            Predictor("age_years",
+                      conditions_are_mutually_exclusive=True,
+                      conditions_are_exhaustive=True,
+                      ) .when("<15", 0.0)
+                        .when("<49", 1.0)
+                        .otherwise(0.0),
             Predictor("sex").when("F", p["rr_sex_f"]),
             Predictor("li_is_circ").when(True, p["rr_circumcision"]),
             Predictor("hv_is_on_prep")
             .when(True, 1.0 - p["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"]),
             Predictor("li_urban").when(False, p["rr_rural"]),
-            Predictor("li_wealth", conditions_are_mutually_exclusive=True)
-            .when(2, p["rr_windex_poorer"])
-            .when(3, p["rr_windex_middle"])
-            .when(4, p["rr_windex_richer"])
-            .when(5, p["rr_windex_richest"]),
-            Predictor("li_ed_lev", conditions_are_mutually_exclusive=True)
-            .when(2, p["rr_edlevel_primary"])
-            .when(3, p["rr_edlevel_secondary"]),
+            Predictor("li_wealth",
+                      conditions_are_mutually_exclusive=True,
+                      conditions_are_exhaustive=True,
+                      ) .when(2, p["rr_windex_poorer"])
+                        .when(3, p["rr_windex_middle"])
+                        .when(4, p["rr_windex_richer"])
+                        .when(5, p["rr_windex_richest"]),
+            Predictor("li_ed_lev", conditions_are_mutually_exclusive=True,
+                      conditions_are_exhaustive=True,
+                      ) .when(2, p["rr_edlevel_primary"])
+                        .when(3, p["rr_edlevel_secondary"]),
             Predictor("hv_behaviour_change").when(True, p["rr_behaviour_change"]),
         )
 
