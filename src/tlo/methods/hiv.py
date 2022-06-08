@@ -603,7 +603,7 @@ class Hiv(Module):
         df.loc[infec, "hv_inf"] = True
 
         # Assign date that persons were infected by drawing from assumed distribution (for adults)
-        # Clipped to prevent dates of infection before before the person was born.
+        # Clipped to prevent dates of infection before the person was born.
         time_inf = params["time_inf"]
         years_ago_inf = self.rng.choice(
             time_inf["year"],
@@ -2078,8 +2078,8 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
         # Return the footprint. If it should be suppressed, return a blank footprint.
         if self.suppress_footprint:
             return self.make_appt_footprint({})
-        else:
-            return ACTUAL_APPT_FOOTPRINT
+
+        return ACTUAL_APPT_FOOTPRINT
 
 
 class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
@@ -2098,7 +2098,7 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
         person = df.loc[person_id]
 
         # Do not run if the person is not alive or is already circumcised
-        if not (person["is_alive"] & ~person["li_is_circ"]):
+        if not person["is_alive"] or person["li_is_circ"]:
             return
 
         # Check/log use of consumables, and do circumcision if materials available
@@ -2381,8 +2381,8 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         if self.sim.population.props.at[person_id, 'hv_art'] == "not":
             return self.make_appt_footprint({"NewAdult": 1})  # Adult newly starting treatment
-        else:
-            return self.make_appt_footprint({"EstNonCom": 1})  # Adult already on treatment
+
+        return self.make_appt_footprint({"EstNonCom": 1})  # Adult already on treatment
 
 # ---------------------------------------------------------------------------
 #   Logging
@@ -2818,23 +2818,23 @@ class HivCheckPropertiesEvent(RegularEvent, PopulationScopeEventMixin):
 
 
 def set_age_group(ser):
-    AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = create_age_range_lookup(
+    age_range_categories, age_range_lookup = create_age_range_lookup(
         min_age=demography.MIN_AGE_FOR_RANGE,
         max_age=demography.MAX_AGE_FOR_RANGE,
         range_size=demography.AGE_RANGE_SIZE,
     )
     ser = ser.astype("category")
-    AGE_RANGE_CATEGORIES_filtered = [a for a in AGE_RANGE_CATEGORIES if a in ser.values]
-    return ser.cat.reorder_categories(AGE_RANGE_CATEGORIES_filtered)
+    age_range_categories_filtered = [a for a in age_range_categories if a in ser.values]
+    return ser.cat.reorder_categories(age_range_categories_filtered)
 
 
 def map_to_age_group(ser):
-    AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = create_age_range_lookup(
+    age_range_categories, age_range_lookup = create_age_range_lookup(
         min_age=demography.MIN_AGE_FOR_RANGE,
         max_age=demography.MAX_AGE_FOR_RANGE,
         range_size=demography.AGE_RANGE_SIZE,
     )
-    ser = ser.map(AGE_RANGE_LOOKUP)
+    ser = ser.map(age_range_lookup)
     ser = set_age_group(ser)
     return ser
 
