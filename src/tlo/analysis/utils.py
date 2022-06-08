@@ -228,86 +228,69 @@ def extract_results(results_folder: Path,
                     custom_generate_series=None,
                     do_scaling: bool = False,
                     ) -> pd.DataFrame:
-    """Utility function to unpack results
+    """Utility function to unpack results.
 
-    Produces a dataframe that summaries one series from the log, with column multi-index for the draw/run. If an 'index'
-    component of the log_element is provided, the dataframe uses that index (but note that this will only work if the
-    index is the same in each run).
-    Optionally, instead of a series that exists in the dataframe already, a function can be provided that, when applied
-    to the dataframe indicated, yields a new pd.Series.
-    Optionally, with `do_scaling`, each element is multiplied by the the scaling_factor recorded in the simulation
-    (if available)
+    Produces a dataframe from extracting information from a log with the column multi-index for the draw/run.
+
+    If the column to be extracted exists in the log, the name of the `column` is provided as `column`. If the resulting
+     dataframe should be based on another column that exists in the log, this can be provided as 'index'.
+
+    If instead, some work must be done to generate a new column from log, then a function can be provided to do this as
+     `custom_generate_series`.
+
+    Optionally, with `do_scaling=True`, each element is multiplied by the scaling_factor recorded in the simulation.
+
+    Note that if runs in the batch have failed (such that logs have not been generated), these are dropped silently.
     """
+
+    def get_multiplier(_draw, _run):
+        """Helper function to get the multiplier from the simulation, if do_scaling=True.
+        Note that if the scaling factor cannot be found a `KeyError` is thrown."""
+        if not do_scaling:
+            return 1.0
+        else:
+            return load_pickled_dataframes(results_folder, _draw, _run, 'tlo.methods.population'
+                                           )['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
+
+    if custom_generate_series is None:
+        # If there is no `custom_generate_series` provided, it implies that function required selects a the specified
+        # column from the dataframe.
+        assert column is not None, "Must specify which column to extract"
+
+        if index is not None:
+            _gen_series = lambda _df: _df.set_index(index)[column]  # noqa: 731
+        else:
+            _gen_series = lambda _df: _df.reset_index(drop=True)[column]  # noqa: 731
+
+    else:
+        assert index is None, "Cannot specify an index if using custom_generate_series"
+        assert column is None, "Cannot specify a column if using custom_generate_series"
+        _gen_series = custom_generate_series
 
     # get number of draws and numbers of runs
     info = get_scenario_info(results_folder)
 
-    cols = pd.MultiIndex.from_product(
-        [range(info['number_of_draws']), range(info['runs_per_draw'])],
-        names=["draw", "run"]
-    )
+    # Collect results from each draw/run
+    res = dict()
+    for draw in range(info['number_of_draws']):
+        for run in range(info['runs_per_draw']):
 
-    def get_multiplier(_draw, _run):
-        """Helper function to get the multiplier from the simulation, if it's specified and do_scaling=True"""
-        if not do_scaling:
-            return 1.0
-        else:
+            draw_run = (draw, run)
+
             try:
-                return load_pickled_dataframes(results_folder, _draw, _run, 'tlo.methods.population'
-                                               )['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
-            except KeyError:
-                return 1.0
-
-    if custom_generate_series is None:
-
-        assert column is not None, "Must specify which column to extract"
-
-        results_index = None
-        if index is not None:
-            # extract the index from the first log, and use this ensure that all other are exactly the same.
-            filename = f"{module}.pickle"
-            df: pd.DataFrame = load_pickled_dataframes(results_folder, draw=0, run=0, name=filename)[module][key]
-            results_index = df[index]
-
-        results = pd.DataFrame(columns=cols)
-        for draw in range(info['number_of_draws']):
-            for run in range(info['runs_per_draw']):
-
-                try:
-                    df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
-                    results[draw, run] = df[column] * get_multiplier(draw, run)
-
-                    if index is not None:
-                        idx = df[index]
-                        assert idx.equals(results_index), "Indexes are not the same between runs"
-
-                except ValueError:
-                    results[draw, run] = np.nan
-
-        # if 'index' is provided, set this to be the index of the results
-        if index is not None:
-            results.index = results_index
-
-        return results
-
-    else:
-        # A custom commaand to generate a series has been provided.
-        # No other arguements should be provided.
-        assert index is None, "Cannot specify an index if using custom_generate_series"
-        assert column is None, "Cannot specify a column if using custom_generate_series"
-
-        # Collect results and then use pd.concat as indicies may be different betweeen runs
-        res = dict()
-        for draw in range(info['number_of_draws']):
-            for run in range(info['runs_per_draw']):
                 df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
-                output_from_eval = custom_generate_series(df)
+                output_from_eval: pd.Series = _gen_series(df)
                 assert pd.Series == type(output_from_eval), 'Custom command does not generate a pd.Series'
-                res[f"{draw}_{run}"] = output_from_eval * get_multiplier(draw, run)
-        results = pd.concat(res.values(), axis=1).fillna(0)
-        results.columns = cols
+                res[draw_run] = output_from_eval * get_multiplier(draw, run)
 
-        return results
+            except KeyError:
+                # Some logs could not be found - probably because this run failed.
+                res[draw_run] = None
+
+    # Use pd.concat to compile results (skips dict items where the values is None)
+    _concat = pd.concat(res, axis=1)
+    _concat.columns.names = ['draw', 'run']  # name the levels of the columns multi-index
+    return _concat
 
 
 def summarize(results: pd.DataFrame, only_mean: bool = False, collapse_columns: bool = False) -> pd.DataFrame:
