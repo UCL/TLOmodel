@@ -23,6 +23,8 @@ from tlo.analysis.utils import (
 )
 
 # %% Declare the name of the file that specified the scenarios used in this run.
+from tlo.analysis.utils import load_pickled_dataframes
+
 scenario_filename = 'long_run_all_diseases.py'
 
 # %% Declare usual paths.
@@ -36,9 +38,10 @@ rfp = Path('./resources')
 results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
 
 # create_pickles_locally(results_folder, compressed_file_name_prefix="long_run")  # <-- sometimes needed after download
+log = load_pickled_dataframes(results_folder)['tlo.methods.healthsystem.summary']
 
 # Declare period for which the results will be generated (defined inclusively)
-TARGET_PERIOD = (Date(2010, 1, 1), Date(2010, 12, 31))
+TARGET_PERIOD = (Date(2010, 1, 1), Date(2010, 12, 31))  # todo: 2012-01-01 to 2019-12-31
 
 # Declare path for output graphs from this script
 make_graph_file_name = lambda stub: results_folder / f"{stub}.png"
@@ -58,7 +61,7 @@ def formatting_hsi_df(_df):
     _df = drop_outside_period(_df) \
         .drop(_df.index[~_df.did_run]) \
         .reset_index(drop=True) \
-        .drop(columns=['Person_ID', 'Squeeze_Factor', 'Facility_ID', 'did_run'])
+        .drop(columns=['Person_ID', 'Squeeze_Factor', 'Facility_ID', 'did_run'])  # todo: keep Facility_ID
 
     # Unpack the dictionary in `Number_By_Appt_Type_Code`.
     _df = _df.join(_df['Number_By_Appt_Type_Code'].apply(pd.Series).fillna(0.0)).drop(
@@ -70,55 +73,24 @@ def formatting_hsi_df(_df):
     return _df
 
 
-def get_counts_of_hsi_by_treatment_id(_df):
-    return formatting_hsi_df(_df).groupby(by='TREATMENT_ID').size()
-
-
-def get_counts_of_hsi_by_treatment_id_short(_df):
-    return formatting_hsi_df(_df).groupby(by='TREATMENT_ID_SHORT').size()
-
-
 def get_counts_of_appt_type_by_treatment_id_short(_df):
     return formatting_hsi_df(_df) \
         .drop(columns=['date', 'TREATMENT_ID', 'Facility_Level']) \
         .melt(id_vars=['TREATMENT_ID_SHORT'], var_name='Appt_Type', value_name='Num') \
-        .groupby(by=['TREATMENT_ID_SHORT', 'Appt_Type'])['Num'].sum()
+        .groupby(by=['TREATMENT_ID_SHORT', 'Appt_Type'])['Num'].sum()  # todo: keep date and Facility_Level; Year Month
 
-
-# counts of hsi events
-counts_of_hsi_by_treatment_id = summarize(
-    extract_results(
-        results_folder,
-        module='tlo.methods.healthsystem',
-        key='HSI_Event',
-        custom_generate_series=get_counts_of_hsi_by_treatment_id,
-        do_scaling=True
-    ),
-    only_mean=True
-)
-
-counts_of_hsi_by_treatment_id_short = summarize(
-    extract_results(
-        results_folder,
-        module='tlo.methods.healthsystem',
-        key='HSI_Event',
-        custom_generate_series=get_counts_of_hsi_by_treatment_id_short,
-        do_scaling=True
-    ),
-    only_mean=True
-)
 
 # counts of appointments
 counts_of_appt_by_treatment_id_short = summarize(
     extract_results(
         results_folder,
-        module='tlo.methods.healthsystem',
+        module='tlo.methods.healthsystem',  # Q: .healthsystem or .healthsystem.summary?
         key='HSI_Event',
-        custom_generate_series=get_counts_of_appt_type_by_treatment_id_short,
+        custom_generate_series=get_counts_of_appt_type_by_treatment_id_short,  # todo: update this function
         do_scaling=True
     ),
-    only_mean=True,
-    collapse_columns=True,
+    only_mean=True,  # Q: the mean of different runs? how many runs to be considered? # Uncertainty
+    collapse_columns=True,  # Q: ?
 )
 
 
