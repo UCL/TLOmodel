@@ -26,7 +26,7 @@ from tlo.analysis.utils import (
 )
 
 # %% Declare the name of the file that specified the scenarios used in this run.
-scenario_filename = 'long_run.py'  # <-- update this to look at other results
+scenario_filename = 'long_run_all_diseases.py'  # <-- update this to look at other results
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/tbh03@ic.ac.uk')
@@ -282,4 +282,4 @@ def make_std_graphs(what='Deaths', period='2010-2014'):
 # %% Make graphs for each of Deaths and DALYS for a specific period
 period = '2010-2014'
 make_std_graphs(what='Deaths', period=period)
-make_std_graphs(what='DALYs', period=period)
+# make_std_graphs(what='DALYs', period=period)

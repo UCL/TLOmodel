@@ -15,7 +15,6 @@ from tlo.analysis.utils import (
     get_scenario_outputs,
     summarize,
     unflatten_flattened_multi_index_in_logging,
-    create_pickles_locally,
 )
 
 # todo - ** PLOTTING AESTHETICS **
@@ -34,6 +33,7 @@ rfp = Path('./resources')
 # Find results folder (most recent run generated using that scenario_filename)
 results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
 
+# from tlo.analysis.utils import create_pickles_locally
 # create_pickles_locally(results_folder, compressed_file_name_prefix="long_run")  # <-- sometimes needed after download
 
 # Declare period for which the results will be generated (defined inclusively)
