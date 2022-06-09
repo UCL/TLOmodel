@@ -378,11 +378,9 @@ def create_pickles_locally(scenario_output_dir, compressed_file_name_prefix=None
     def uncompress_and_save_logfile(compressed_file) -> Path:
         """Uncompress and save a log file and return its path."""
         target = compressed_file.parent / str(compressed_file.name[0:-3])
-
         with open(target, "wb") as t:
             with gzip.open(compressed_file, 'rb') as s:
                 t.write(s.read())
-
         return target
 
     f: os.DirEntry
