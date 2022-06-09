@@ -1800,6 +1800,14 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
                                                duration_in_days=duration_in_days
                                                )
 
+        # log the complications to the tracker
+        if any(['pneumothorax', 'pleural_effusion', 'empyema', 'lung_abscess']) in sorted(complications_that_onset):
+            self.module.logging_event.new_pulmonary_complication_case()
+        if 'sepsis' in sorted(complications_that_onset):
+            self.module.logging_event.new_systemic_complication_case()
+        if 'hypoxaemia' in sorted(complications_that_onset):
+            self.module.logging_event.new_hypoxaemic_case()
+
 
 class AlriNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
     """This is the Natural Recovery event. It is scheduled by the AlriIncidentCase Event for someone who will recover
@@ -2367,6 +2375,9 @@ class AlriLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.trackers['deaths'] = Tracker(age_grps=age_grps, pathogens=self.module.all_pathogens)
         self.trackers['seeking_care'] = Tracker()
         self.trackers['treated'] = Tracker()
+        self.trackers['pulmonary_complication_cases'] = Tracker()
+        self.trackers['systemic_complication_cases'] = Tracker()
+        self.trackers['hypoxaemic_cases'] = Tracker()
 
     def new_case(self, **kwargs):
         self.trackers['incident_cases'].add_one(**kwargs)
@@ -2385,6 +2396,15 @@ class AlriLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
     def new_treated(self, **kwargs):
         self.trackers['treated'].add_one(**kwargs)
+
+    def new_pulmonary_complication_case(self, **kwargs):
+        self.trackers['pulmonary_complication_cases'].add_one(**kwargs)
+
+    def new_systemic_complication_case(self, **kwargs):
+        self.trackers['systemic_complication_cases'].add_one(**kwargs)
+
+    def new_hypoxaemic_case(self, **kwargs):
+        self.trackers['hypoxaemic_cases'].add_one(**kwargs)
 
     def apply(self, population):
         """

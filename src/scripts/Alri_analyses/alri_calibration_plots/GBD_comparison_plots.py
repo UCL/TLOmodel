@@ -30,8 +30,8 @@ resourcefilepath = Path("./resources")
 # Create name for log-file
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
-# log_filename = 'none'
-log_filename = outputpath / 'GBD_lri_comparison_50k_pop__2022-05-30T153032.log'
+log_filename = 'none'
+# log_filename = outputpath / 'GBD_lri_comparison_10k_pop__2022-06-08T161454.log'
 # <-- insert name of log file to avoid re-running the simulation
 
 if not os.path.exists(log_filename):
@@ -39,11 +39,11 @@ if not os.path.exists(log_filename):
     # Do not run this cell if you already have a logfile from a simulation:
 
     start_date = Date(2010, 1, 1)
-    end_date = Date(2025, 12, 31)
-    popsize = 50000
+    end_date = Date(2020, 12, 31)
+    popsize = 10000
 
     log_config = {
-        "filename": "GBD_lri_comparison_50k_pop",
+        "filename": "GBD_lri_comparison_10k_pop",
         "directory": "./outputs",
         "custom_levels": {
             "*": logging.WARNING,
@@ -361,5 +361,41 @@ plt.xticks(rotation=90)
 plt.ylabel("sought care (%)")
 plt.gca().set_ylim(0.0, 1.0)
 plt.legend(["DHS", "Model"])
+plt.tight_layout()
+plt.show()
+
+# -----------------------------------------------------------------------------------------------
+# check the complicated cases proportion
+
+# using the tracker to get the number of cases per year
+number_of_cases = counts.incident_cases
+
+# using the tracker to get the number of hypoxaemic cases per year
+number_of_hypoxaemic_cases = counts.hypoxaemic_cases
+number_of_pulmonary_complications = counts.pulmonary_complication_cases
+number_of_systemic_complications = counts.systemic_complication_cases
+
+# calculate the proportion of those who are hypoxaemia SpO2<93%
+hypoxaemic_cases_proportion = (number_of_hypoxaemic_cases / number_of_cases)
+pulmonary_complications_proportion = (number_of_pulmonary_complications / number_of_cases)
+systemic_complications_proportion = (number_of_systemic_complications / number_of_cases)
+
+fig7, ax7 = plt.subplots()
+
+# DHS care-seeking estimates
+years = [2010, 2020]
+target_data = [0.31, 0.31]
+plt.plot(years, target_data)  # Rahman data
+
+# model output
+plt.plot(hypoxaemic_cases_proportion, color="mediumseagreen")  # model
+plt.plot(pulmonary_complications_proportion)  # model
+plt.plot(systemic_complications_proportion)  # model
+plt.title("% Complications - Target data vs model output")
+plt.xlabel("Year")
+plt.xticks(rotation=90)
+plt.ylabel("Proportion of hypoxaemic cases")
+plt.gca().set_ylim(0.0, 1.0)
+plt.legend(["Target hypoxaemia", "Model hypoxaemia", "Model pulmonary complications", "Model sepsis"])
 plt.tight_layout()
 plt.show()
