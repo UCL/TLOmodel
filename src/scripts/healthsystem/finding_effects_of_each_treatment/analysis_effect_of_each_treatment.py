@@ -81,8 +81,19 @@ for i, scenario_name in enumerate(param_names):
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
 
-# %% Quantify the health difference between each scenario and the 'Everything' scenario.
+# %% Quantify the health associated with each TREATMENT_ID (short) (The difference in deaths and DALYS between each
+# scenario and the 'Everything' scenario.)
+
 # todo....
+
+
+
+# %% Quantify the healthcare system resources used with each TREATMENT_ID (short) (The difference in the number of
+# appointments between each scenario and the 'Everything' scenario.)
+
+# todo ....
+
+
 
 #
 # import pickle
