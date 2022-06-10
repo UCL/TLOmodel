@@ -2145,7 +2145,7 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
                 tclose=None,
                 priority=0,
             )
-            df.at[person_id, "hv_vmmc_counter"] += 1
+            self.number_of_occurrences += 1
 
 
 class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
