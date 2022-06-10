@@ -2130,7 +2130,7 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
         # if counter =1, fup 3 days from procedure
         if counter == 1:
             self.sim.modules["HealthSystem"].schedule_hsi_event(
-                HSI_Hiv_Circ(person_id=person_id, module=self.module),
+                self,
                 topen=self.sim.date + DateOffset(days=3),
                 tclose=None,
                 priority=0,
