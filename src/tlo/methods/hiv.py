@@ -2111,7 +2111,7 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
 
 
         # if person is circumcised and has had 3 appts in total, do nothing
-        if (counter >= 3) and person["li_is_circ"]:
+        if (self.number_of_occurrences >= 3):
             return
 
         # if person not circumcised, perform the procedure
