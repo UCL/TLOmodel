@@ -2109,7 +2109,6 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
         if not person["is_alive"]:
             return
 
-        counter = df.at[person_id, "hv_vmmc_counter"]
 
         # if person is circumcised and has had 3 appts in total, do nothing
         if (counter >= 3) and person["li_is_circ"]:
