@@ -121,7 +121,6 @@ class Hiv(Module):
         # --- Dates on which things have happened:
         "hv_last_test_date": Property(Types.DATE, "Date of last HIV test"),
         "hv_date_inf": Property(Types.DATE, "Date infected with HIV"),
-        "hv_vmmc_counter": Property(Types.INT, "Number of VMMC appointments attended"),
     }
 
     PARAMETERS = {
@@ -530,9 +529,6 @@ class Hiv(Module):
         # --- Dates on which things have happened
         df.loc[df.is_alive, "hv_date_inf"] = pd.NaT
         df.loc[df.is_alive, "hv_last_test_date"] = pd.NaT
-
-        # --- VMMC counter
-        df.loc[df.is_alive, "hv_vmmc_counter"] = 0
 
         # Launch sub-routines for allocating the right number of people into each category
         self.initialise_baseline_prevalence(population)  # allocate baseline prevalence
@@ -973,9 +969,6 @@ class Hiv(Module):
         # --- Dates on which things have happened
         df.at[child_id, "hv_date_inf"] = pd.NaT
         df.at[child_id, "hv_last_test_date"] = pd.NaT
-
-        # --- VMMC counter
-        df.at[child_id, "hv_vmmc_counter"] = 0
 
         # ----------------------------------- MTCT - AT OR PRIOR TO BIRTH --------------------------
         #  DETERMINE IF THE CHILD IS INFECTED WITH HIV FROM THEIR MOTHER DURING PREGNANCY / DELIVERY
@@ -2097,6 +2090,7 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MaleCirc": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.number_of_occurrences = 0
+
     def apply(self, person_id, squeeze_factor):
         """ Do the circumcision for this man
         if already circumcised, this will be a follow-up appointment """
@@ -2109,9 +2103,8 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
         if not person["is_alive"]:
             return
 
-
         # if person is circumcised and has had 3 appts in total, do nothing
-        if (self.number_of_occurrences >= 3):
+        if self.number_of_occurrences >= 3:
             return
 
         # if person not circumcised, perform the procedure
@@ -2124,21 +2117,21 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
                 # Update circumcision state
                 df.at[person_id, "li_is_circ"] = True
                 # update counter
-                df.at[person_id, "hv_vmmc_counter"] = 1
+                self.number_of_occurrences = 1
 
         # schedule follow-up appts
-        # if counter =1, fup 3 days from procedure
-        if counter == 1:
+        # if counter=1, fup 3 days from procedure
+        if self.number_of_occurrences == 1:
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 self,
                 topen=self.sim.date + DateOffset(days=3),
                 tclose=None,
                 priority=0,
             )
-            df.at[person_id, "hv_vmmc_counter"] += 1
+            self.number_of_occurrences += 1
 
         # if counter=2 fup 7 days from first (4 days from second appt)
-        if counter == 2:
+        if self.number_of_occurrences == 2:
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 self,
                 topen=self.sim.date + DateOffset(days=4),
