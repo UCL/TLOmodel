@@ -2140,7 +2140,7 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
         # if counter=2 fup 7 days from first (4 days from second appt)
         if counter == 2:
             self.sim.modules["HealthSystem"].schedule_hsi_event(
-                HSI_Hiv_Circ(person_id=person_id, module=self.module),
+                self,
                 topen=self.sim.date + DateOffset(days=4),
                 tclose=None,
                 priority=0,
