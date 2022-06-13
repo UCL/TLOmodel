@@ -11,7 +11,7 @@ or locally using:
 """
 import os
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, Iterable, List
 
 import pandas as pd
 
@@ -59,22 +59,29 @@ class EffectOfEachTreatment(BaseScenario):
         The sequences of scenarios systematically omits one of the TREATMENT_ID's that is defined in the model. The
         complete list of TREATMENT_ID's is found by running `tlo_hsi_events.py`."""
 
+        def filter_treatments(_treatments: Iterable[str], depth: int = 1) -> List[str]:
+            """Reduce an iterable of `TREATMENT_IDs` by ignoring difference beyond a certain depth of specification.
+            The TREATMENT_ID is defined with each increasing level of specification separated by a `_`. """
+            return sorted(list(set(
+                [
+                    "".join(f"{x}_" for i, x in enumerate(t.split('_')) if i < depth).rstrip('_') + '*'
+                    for t in set(_treatments)
+                ]
+            )))
+
         # Generate table of defined HSI
         tempfile_output_location = self.log_configuration()['directory'] / 'defined_hsi.csv'
         os.system(f'python docs/tlo_hsi_events.py --output-file {tempfile_output_location} --output-format csv')
-        # todo - Could do some refactoring on `tlo_hsi_events.py` to enable this to be returned directly.
         defined_hsi = pd.read_csv(tempfile_output_location)
+        # todo - Could do some refactoring on `tlo_hsi_events.py` to enable this to be returned directly without saving
+        #  to a file.
 
-        # Generate list of TREATMENT_IDs
-        treatments = sorted(list(set(defined_hsi['Treatment'])))
+        # Generate list of TREATMENT_IDs and filter to the resolution needed
+        treatments = filter_treatments(defined_hsi['Treatment'], depth=1)
 
-        # [OPTIONALLY] Filter/aggregate the TREATMENT_IDs to provide the resolution needed.
-
-        # Add trailing '*'
-        treatments = [t + '*' for t in treatments]
-
-        # Return 'Service_Availability' values, in which one treatment is omitted, plus a scenario with everything
-        service_availability = dict({"Everything": ["*"]})
+        # Return 'Service_Availability' values, with scenarios for everything, nothing, and ones for which each
+        # treatment is omitted
+        service_availability = dict({"Everything": ["*"], "Nothing": []})
         service_availability.update(
             {f"No {t}": [x for x in treatments if x != t] for t in treatments}
         )
