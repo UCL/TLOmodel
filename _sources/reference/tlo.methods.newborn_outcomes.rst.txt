@@ -222,6 +222,9 @@ tlo.methods.newborn_outcomes module
         * - squeeze_threshold_for_delay_three_nb_care
           - LIST
           - squeeze factor value over which an individual within a newborn HSI is said to experience type 3 delay i.e. delay in receiving appropriate care
+        * - treatment_effect_modifier_one_delay
+          - LIST
+          - factor by which treatment effectiveness is reduced in the presences of one delays
 
 
      **PROPERTIES:**
@@ -313,15 +316,15 @@ tlo.methods.newborn_outcomes module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'PregnancySupervisor', 'Labour', 'PostnatalSupervisor', 'CareOfWomenDuringPregnancy'}
+     ADDITIONAL_DEPENDENCIES : {'Labour', 'CareOfWomenDuringPregnancy', 'PostnatalSupervisor', 'PregnancySupervisor'}
 
-     CAUSES_OF_DEATH : {'early_onset_sepsis': <tlo.methods.causes.Cause object at 0x7ff86b884d00>, 'late_onset_sepsis': <tlo.methods.causes.Cause object at 0x7ff86b884d90>, 'encephalopathy': <tlo.methods.causes.Cause object at 0x7ff86b884df0>, 'neonatal_respiratory_depression': <tlo.methods.causes.Cause object at 0x7ff86b884e50>, 'preterm_other': <tlo.methods.causes.Cause object at 0x7ff86b884eb0>, 'respiratory_distress_syndrome': <tlo.methods.causes.Cause object at 0x7ff86b884f10>, 'congenital_heart_anomaly': <tlo.methods.causes.Cause object at 0x7ff86b884f70>, 'limb_or_musculoskeletal_anomaly': <tlo.methods.causes.Cause object at 0x7ff86b884fd0>, 'urogenital_anomaly': <tlo.methods.causes.Cause object at 0x7ff86b8c7070>, 'digestive_anomaly': <tlo.methods.causes.Cause object at 0x7ff86b8c70d0>, 'other_anomaly': <tlo.methods.causes.Cause object at 0x7ff86b8c7130>}
+     CAUSES_OF_DEATH : {'early_onset_sepsis': <tlo.methods.causes.Cause object at 0x7fb99a7258e0>, 'late_onset_sepsis': <tlo.methods.causes.Cause object at 0x7fb99a725970>, 'encephalopathy': <tlo.methods.causes.Cause object at 0x7fb99a7259d0>, 'neonatal_respiratory_depression': <tlo.methods.causes.Cause object at 0x7fb99a725a30>, 'preterm_other': <tlo.methods.causes.Cause object at 0x7fb99a725a90>, 'respiratory_distress_syndrome': <tlo.methods.causes.Cause object at 0x7fb99a725af0>, 'congenital_heart_anomaly': <tlo.methods.causes.Cause object at 0x7fb99a725b50>, 'limb_or_musculoskeletal_anomaly': <tlo.methods.causes.Cause object at 0x7fb99a725bb0>, 'urogenital_anomaly': <tlo.methods.causes.Cause object at 0x7fb99a725c10>, 'digestive_anomaly': <tlo.methods.causes.Cause object at 0x7fb99a725c70>, 'other_anomaly': <tlo.methods.causes.Cause object at 0x7fb99a725cd0>}
 
-     CAUSES_OF_DISABILITY : {'Retinopathy of Prematurity': <tlo.methods.causes.Cause object at 0x7ff86b8c7190>, 'Neonatal Encephalopathy': <tlo.methods.causes.Cause object at 0x7ff86b8c71f0>, 'Neonatal Sepsis Long term Disability': <tlo.methods.causes.Cause object at 0x7ff86b8c7250>, 'Preterm Birth Disability': <tlo.methods.causes.Cause object at 0x7ff86b8c72b0>}
+     CAUSES_OF_DISABILITY : {'Retinopathy of Prematurity': <tlo.methods.causes.Cause object at 0x7fb99a725d30>, 'Neonatal Encephalopathy': <tlo.methods.causes.Cause object at 0x7fb99a725d90>, 'Neonatal Sepsis Long term Disability': <tlo.methods.causes.Cause object at 0x7fb99a725df0>, 'Preterm Birth Disability': <tlo.methods.causes.Cause object at 0x7fb99a725e50>}
 
      INIT_DEPENDENCIES : {'Demography', 'HealthSystem'}
 
-     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
@@ -428,6 +431,8 @@ tlo.methods.newborn_outcomes module
      .. automethod:: did_not_run
 
      .. automethod:: not_available
+
+     .. automethod:: _get_facility_level_for_pnc
 
 
 

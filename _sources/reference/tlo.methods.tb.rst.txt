@@ -9,7 +9,642 @@ tlo.methods.tb module
      Bases: :class:`tlo.core.Module`
 
 
+     **PARAMETERS:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - who_incidence_estimates
+          - REAL
+          - WHO estimated active TB incidence per 100,000 population
+        * - followup_times
+          - DATA_FRAME
+          - times(weeks) tb treatment monitoring required after tx start
+        * - tb_high_risk_distr
+          - LIST
+          - list of ten high-risk districts
+        * - ipt_coverage
+          - DATA_FRAME
+          - national estimates of coverage of IPT in PLHIV and paediatric contacts
+        * - prop_mdr2010
+          - REAL
+          - Proportion of active tb cases with multidrug resistance in 2010
+        * - incidence_active_tb_2010
+          - REAL
+          - incidence of active tb in 2010 in all ages
+        * - rr_tb_child
+          - REAL
+          - relative risk of tb infection if under 16 years of age
+        * - rr_bcg_inf
+          - REAL
+          - relative risk of tb infection with bcg vaccination
+        * - monthly_prob_relapse_tx_complete
+          - REAL
+          - monthly probability of relapse once treatment complete
+        * - monthly_prob_relapse_tx_incomplete
+          - REAL
+          - monthly probability of relapse if treatment incomplete
+        * - monthly_prob_relapse_2yrs
+          - REAL
+          - monthly probability of relapse 2 years after treatment complete
+        * - rr_relapse_hiv
+          - REAL
+          - relative risk of relapse for HIV-positive people
+        * - scaling_factor_WHO
+          - REAL
+          - scaling factor applied to WHO estimates to account for the impact of interventions in place
+        * - duration_active_disease_years
+          - REAL
+          - duration of active disease from onset to cure or death
+        * - prop_smear_positive
+          - REAL
+          - proportion of new active cases that will be smear-positive
+        * - prop_smear_positive_hiv
+          - REAL
+          - proportion of hiv+ active tb cases that will be smear-positive
+        * - death_rate_smear_pos_untreated
+          - REAL
+          - probability of death in smear-positive tb cases with untreated tb
+        * - death_rate_smear_neg_untreated
+          - REAL
+          - probability of death in smear-negative tb cases with untreated tb
+        * - death_rate_child0_4_treated
+          - REAL
+          - probability of death in child aged 0-4 years with treated tb
+        * - death_rate_child5_14_treated
+          - REAL
+          - probability of death in child aged 5-14 years with treated tb
+        * - death_rate_adult_treated
+          - REAL
+          - probability of death in adult aged >=15 years with treated tb
+        * - rr_tb_bcg
+          - REAL
+          - relative risk of progression to active disease for children with BCG vaccine
+        * - rr_tb_hiv
+          - REAL
+          - relative risk of progression to active disease for PLHIV
+        * - rr_tb_aids
+          - REAL
+          - relative risk of progression to active disease for PLHIV with AIDS
+        * - rr_tb_art_adult
+          - REAL
+          - relative risk of progression to active disease for adults with HIV on ART
+        * - rr_tb_art_child
+          - REAL
+          - relative risk of progression to active disease for adults with HIV on ART
+        * - rr_tb_obese
+          - REAL
+          - relative risk of progression to active disease if obese
+        * - rr_tb_diabetes1
+          - REAL
+          - relative risk of progression to active disease with type 1 diabetes
+        * - rr_tb_alcohol
+          - REAL
+          - relative risk of progression to active disease with heavy alcohol use
+        * - rr_tb_smoking
+          - REAL
+          - relative risk of progression to active disease with smoking
+        * - rr_ipt_adult
+          - REAL
+          - relative risk of active TB with IPT in adults
+        * - rr_ipt_child
+          - REAL
+          - relative risk of active TB with IPT in children
+        * - rr_ipt_adult_hiv
+          - REAL
+          - relative risk of active TB with IPT in adults with hiv
+        * - rr_ipt_child_hiv
+          - REAL
+          - relative risk of active TB with IPT in children with hiv
+        * - rr_ipt_art_adult
+          - REAL
+          - relative risk of active TB with IPT and ART in adults
+        * - rr_ipt_art_child
+          - REAL
+          - relative risk of active TB with IPT and ART in children
+        * - sens_xpert_smear_negative
+          - REAL
+          - sensitivity of Xpert test in smear negative TB cases
+        * - sens_xpert_smear_positive
+          - REAL
+          - sensitivity of Xpert test in smear positive TB cases
+        * - spec_xpert_smear_negative
+          - REAL
+          - specificity of Xpert test in smear negative TB cases
+        * - spec_xpert_smear_positive
+          - REAL
+          - specificity of Xpert test in smear positive TB cases
+        * - sens_sputum_smear_positive
+          - REAL
+          - sensitivity of sputum smear microscopy in sputum positive cases
+        * - spec_sputum_smear_positive
+          - REAL
+          - specificity of sputum smear microscopy in sputum positive cases
+        * - sens_clinical
+          - REAL
+          - sensitivity of clinical diagnosis in detecting active TB
+        * - spec_clinical
+          - REAL
+          - specificity of clinical diagnosis in detecting TB
+        * - sens_xray_smear_negative
+          - REAL
+          - sensitivity of x-ray diagnosis in smear negative TB cases
+        * - sens_xray_smear_positive
+          - REAL
+          - sensitivity of x-ray diagnosis in smear positive TB cases
+        * - spec_xray_smear_negative
+          - REAL
+          - specificity of x-ray diagnosis in smear negative TB cases
+        * - spec_xray_smear_positive
+          - REAL
+          - specificity of x-ray diagnosis in smear positive TB cases
+        * - prob_tx_success_ds
+          - REAL
+          - Probability of treatment success for new and relapse TB cases
+        * - prob_tx_success_mdr
+          - REAL
+          - Probability of treatment success for MDR-TB cases
+        * - prob_tx_success_0_4
+          - REAL
+          - Probability of treatment success for children aged 0-4 years
+        * - prob_tx_success_5_14
+          - REAL
+          - Probability of treatment success for children aged 5-14 years
+        * - prob_tx_success_shorter
+          - REAL
+          - Probability of treatment success for children aged <16 years on shorter regimen
+        * - rate_testing_general_pop
+          - REAL
+          - rate of screening / testing per month in general population
+        * - rate_testing_active_tb
+          - DATA_FRAME
+          - rate of screening / testing per month in population with active tb
+        * - ds_treatment_length
+          - REAL
+          - length of treatment for drug-susceptible tb (first case) in months
+        * - ds_retreatment_length
+          - REAL
+          - length of treatment for drug-susceptible tb (secondary case) in months
+        * - mdr_treatment_length
+          - REAL
+          - length of treatment for mdr-tb in months
+        * - child_shorter_treatment_length
+          - REAL
+          - length of treatment for shorter paediatric regimen in months
+        * - prob_retained_ipt_6_months
+          - REAL
+          - probability of being retained on IPT every 6 months if still eligible
+        * - age_eligibility_for_ipt
+          - REAL
+          - eligibility criteria (years of age) for IPT given to contacts of TB cases
+        * - ipt_start_date
+          - INT
+          - year from which IPT is available for paediatric contacts of diagnosed active TB cases
+        * - scenario
+          - INT
+          - integer value labelling the scenario to be run: default is 0
+        * - scenario_start_date
+          - DATE
+          - date from which different scenarios are run
+        * - first_line_test
+          - STRING
+          - name of first test to be used for TB diagnosis
+        * - second_line_test
+          - STRING
+          - name of second test to be used for TB diagnosis
+        * - probability_access_to_xray
+          - REAL
+          - probability a person will have access to chest x-ray
+        * - prob_tb_referral_in_generic_hsi
+          - REAL
+          - probability of referral to TB screening HSI if presenting with TB-related symptoms
+
+
+     **PROPERTIES:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - tb_inf
+          - CATEGORICAL
+          - tb status.  Possible values are: [uninfected, latent, active, ]
+        * - tb_strain
+          - CATEGORICAL
+          - tb strain: drug-susceptible (ds) or multi-drug resistant (mdr).  Possible values are: [none, ds, mdr, ]
+        * - tb_date_latent
+          - DATE
+          - Date acquired tb infection (latent stage)
+        * - tb_scheduled_date_active
+          - DATE
+          - Date active tb is scheduled to start
+        * - tb_date_active
+          - DATE
+          - Date active tb started
+        * - tb_smear
+          - BOOL
+          - smear positivity with active infection: False=negative, True=positive
+        * - tb_ever_tested
+          - BOOL
+          - ever had a tb test
+        * - tb_diagnosed
+          - BOOL
+          - person has current diagnosis of active tb
+        * - tb_date_diagnosed
+          - DATE
+          - date most recent tb diagnosis
+        * - tb_diagnosed_mdr
+          - BOOL
+          - person has current diagnosis of active mdr-tb
+        * - tb_on_treatment
+          - BOOL
+          - on tb treatment regimen
+        * - tb_date_treated
+          - DATE
+          - date most recent tb treatment started
+        * - tb_treatment_regimen
+          - CATEGORICAL
+          - current tb treatment regimen.  Possible values are: [none, tb_tx_adult, tb_tx_child, tb_tx_child_shorter, tb_retx_adult, tb_retx_child, tb_mdrtx, ]
+        * - tb_ever_treated
+          - BOOL
+          - if ever treated for active tb
+        * - tb_treatment_failure
+          - BOOL
+          - failed first line tb treatment
+        * - tb_treated_mdr
+          - BOOL
+          - on tb treatment MDR regimen
+        * - tb_date_treated_mdr
+          - DATE
+          - date tb MDR treatment started
+        * - tb_on_ipt
+          - BOOL
+          - if currently on ipt
+        * - tb_date_ipt
+          - DATE
+          - date ipt started
+
+
+
+     **Class attributes:**
+
+     CAUSES_OF_DEATH : {'TB': <tlo.methods.causes.Cause object at 0x7fb99999e070>, 'AIDS_TB': <tlo.methods.causes.Cause object at 0x7fb99999e100>}
+
+     CAUSES_OF_DISABILITY : {'TB': <tlo.methods.causes.Cause object at 0x7fb99999e160>}
+
+     INIT_DEPENDENCIES : {'Lifestyle', 'Epi', 'Demography', 'HealthSystem', 'SymptomManager'}
+
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>}
+
+     OPTIONAL_INIT_DEPENDENCIES : {'Hiv', 'HealthBurden'}
+
+     SYMPTOMS : {'night_sweats', 'fatigue'}
+
      **Functions (defined or overridden in class Tb):**
+
+     .. automethod:: __init__
+
+     .. automethod:: read_parameters
+
+     .. automethod:: pre_initialise_population
+
+     .. automethod:: send_for_screening
+
+     .. automethod:: select_tb_test
+
+     .. automethod:: get_consumables_for_dx_and_tx
+
+     .. automethod:: initialise_population
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: on_birth
+
+     .. automethod:: report_daly_values
+
+     .. automethod:: assign_active_tb
+
+     .. automethod:: consider_ipt_for_those_initiating_art
+
+     .. automethod:: relapse_event
+
+     .. automethod:: end_treatment
+
+     .. automethod:: check_config_of_properties
+
+
+
+
+
+
+
+
+.. autoclass:: ScenarioSetupEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class ScenarioSetupEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: TbActiveCasePoll
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class TbActiveCasePoll):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: TbTreatmentAndRelapseEvents
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class TbTreatmentAndRelapseEvents):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: TbActiveEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class TbActiveEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: TbSelfCureEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class TbSelfCureEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Tb_ScreeningAndRefer
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Tb_ScreeningAndRefer):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Tb_Xray_level1b
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Tb_Xray_level1b):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Tb_Xray_level2
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Tb_Xray_level2):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Tb_StartTreatment
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Tb_StartTreatment):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: select_treatment
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Tb_FollowUp
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Tb_FollowUp):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Tb_Start_or_Continue_Ipt
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Tb_Start_or_Continue_Ipt):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: Tb_DecisionToContinueIPT
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class Tb_DecisionToContinueIPT):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: TbDeathEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class TbDeathEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: TbLoggingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class TbLoggingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: TbCheckPropertiesEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class TbCheckPropertiesEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: DummyTbModule
+
+     Bases: :class:`tlo.core.Module`
+
+
+     **PROPERTIES:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - tb_inf
+          - CATEGORICAL
+          - tb status.  Possible values are: [uninfected, latent, active, ]
+
+
+
+     **Class attributes:**
+
+     ALTERNATIVE_TO : {'Tb'}
+
+     INIT_DEPENDENCIES : {'Demography'}
+
+     **Functions (defined or overridden in class DummyTbModule):**
 
      .. automethod:: __init__
 
@@ -17,15 +652,9 @@ tlo.methods.tb module
 
      .. automethod:: initialise_population
 
-     .. automethod:: bcg
-
      .. automethod:: initialise_simulation
 
      .. automethod:: on_birth
-
-     .. automethod:: on_hsi_alert
-
-     .. automethod:: report_daly_values
 
 
 

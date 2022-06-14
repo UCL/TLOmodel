@@ -401,8 +401,7 @@
         <span class="c1"># -------------------------------------------- ECTOPIC PREGNANCY ---------------------------------------------</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_preg_consumables</span><span class="p">[</span><span class="s1">&#39;ectopic_pregnancy_core&#39;</span><span class="p">]</span> <span class="o">=</span> \
             <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Halothane (fluothane)_250ml_CMST&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Scalpel blade size 22 (individually wrapped)_100_CMST&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Chlorhexidine 1.5</span><span class="si">% s</span><span class="s1">olution_5_CMST&#39;</span><span class="p">])</span>
+                                     <span class="s1">&#39;Scalpel blade size 22 (individually wrapped)_100_CMST&#39;</span><span class="p">])</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_preg_consumables</span><span class="p">[</span><span class="s1">&#39;ectopic_pregnancy_optional&#39;</span><span class="p">]</span> <span class="o">=</span> \
             <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Sodium chloride, injectable solution, 0,9 %, 500 ml&#39;</span><span class="p">,</span>
@@ -426,9 +425,9 @@
 
         <span class="c1"># ------------------------------------------- POST ABORTION CARE - SEPSIS -------------------------------------</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_preg_consumables</span><span class="p">[</span><span class="s1">&#39;post_abortion_care_sepsis_core&#39;</span><span class="p">]</span> <span class="o">=</span> \
-            <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Ampicillin, powder for injection, 500 mg, vial&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Gentamycin, injection, 40 mg/ml in 2 ml vial&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Metronidazole, injection, 500 mg in 100 ml vial&#39;</span><span class="p">])</span>
+            <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Benzylpenicillin 3g (5MU), PFR_each_CMST&#39;</span><span class="p">,</span>
+                                     <span class="s1">&#39;Gentamycin, injection, 40 mg/ml in 2 ml vial&#39;</span><span class="p">])</span>
+        <span class="c1">#  &#39;Metronidazole, injection, 500 mg in 100 ml vial&#39;])</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_preg_consumables</span><span class="p">[</span><span class="s1">&#39;post_abortion_care_sepsis_optional&#39;</span><span class="p">]</span> <span class="o">=</span> \
             <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Sodium chloride, injectable solution, 0,9 %, 500 ml&#39;</span><span class="p">,</span>
@@ -440,10 +439,12 @@
         <span class="c1"># ------------------------------------------- POST ABORTION CARE - SHOCK -------------------------------------</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_preg_consumables</span><span class="p">[</span><span class="s1">&#39;post_abortion_care_shock&#39;</span><span class="p">]</span> <span class="o">=</span> \
             <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Sodium chloride, injectable solution, 0,9 %, 500 ml&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Disposables gloves, powder free, 100 pieces per box&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Giving set iv administration + needle 15 drops/ml_each_CMST&#39;</span><span class="p">,</span>
                                      <span class="s1">&#39;Oxygen, 1000 liters, primarily with oxygen cylinders&#39;</span><span class="p">])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_preg_consumables</span><span class="p">[</span><span class="s1">&#39;post_abortion_care_shock_optional&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">,</span>
+                                     <span class="s1">&#39;Disposables gloves, powder free, 100 pieces per box&#39;</span><span class="p">,</span>
+                                     <span class="s1">&#39;Giving set iv administration + needle 15 drops/ml_each_CMST&#39;</span><span class="p">])</span>
 
         <span class="c1"># ---------------------------------- URINE DIPSTICK ----------------------------------------------------------</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_preg_consumables</span><span class="p">[</span><span class="s1">&#39;urine_dipstick&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Urine analysis&#39;</span><span class="p">])</span>
@@ -2499,6 +2500,10 @@
                 <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ac_admitted_for_immediate_delivery&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span>
                     <span class="n">delivery_mode</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_delivery_modes_spe&#39;</span><span class="p">])</span>
 
+            <span class="c1"># Log the indication for any caesarean deliveries</span>
+            <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ac_admitted_for_immediate_delivery&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;caesarean_now&#39;</span><span class="p">,</span> <span class="s1">&#39;caesarean_future&#39;</span><span class="p">):</span>
+                <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;cs_indication&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;spe_ec&#39;</span>
+
         <span class="c1"># ========================= INITIATE TREATMENT FOR ANTEPARTUM HAEMORRHAGE =================================</span>
         <span class="c1"># Treatment delivered to mothers due to haemorrhage in the antepartum period is dependent on the underlying</span>
         <span class="c1"># etiology of the bleeding (in this model, whether a woman is experiencing a placental abruption or</span>
@@ -2802,14 +2807,16 @@
             <span class="p">)</span>
 
             <span class="n">cons_for_shock</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
-                <span class="n">item_codes</span><span class="o">=</span><span class="n">cons</span><span class="p">[</span><span class="s1">&#39;post_abortion_care_shock&#39;</span><span class="p">])</span>
+                <span class="n">item_codes</span><span class="o">=</span><span class="n">cons</span><span class="p">[</span><span class="s1">&#39;post_abortion_care_shock&#39;</span><span class="p">],</span>
+                <span class="n">optional_item_codes</span><span class="o">=</span><span class="n">cons</span><span class="p">[</span><span class="s1">&#39;post_abortion_care_shock_optional&#39;</span><span class="p">])</span>
 
             <span class="k">if</span> <span class="n">cons_for_haemorrhage</span> <span class="ow">and</span> <span class="n">cons_for_shock</span> <span class="ow">and</span> <span class="n">baseline_cons</span> <span class="ow">and</span> <span class="n">sf_check</span><span class="p">:</span>
                 <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ac_received_post_abortion_care&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
         <span class="k">elif</span> <span class="n">abortion_complications</span><span class="o">.</span><span class="n">has_any</span><span class="p">([</span><span class="n">person_id</span><span class="p">],</span> <span class="s1">&#39;injury&#39;</span><span class="p">,</span> <span class="n">first</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
             <span class="n">cons_for_shock</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
-                <span class="n">item_codes</span><span class="o">=</span><span class="n">cons</span><span class="p">[</span><span class="s1">&#39;post_abortion_care_shock&#39;</span><span class="p">])</span>
+                <span class="n">item_codes</span><span class="o">=</span><span class="n">cons</span><span class="p">[</span><span class="s1">&#39;post_abortion_care_shock&#39;</span><span class="p">],</span>
+                <span class="n">optional_item_codes</span><span class="o">=</span><span class="n">cons</span><span class="p">[</span><span class="s1">&#39;post_abortion_care_shock_optional&#39;</span><span class="p">])</span>
 
             <span class="k">if</span> <span class="n">cons_for_shock</span> <span class="ow">and</span> <span class="n">baseline_cons</span> <span class="ow">and</span> <span class="n">sf_check</span><span class="p">:</span>
                 <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ac_received_post_abortion_care&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
@@ -2891,7 +2898,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on May 23, 2022.
+        Last updated on May 31, 2022.
       </span>
 
     </p>

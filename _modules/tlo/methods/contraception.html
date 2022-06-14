@@ -1210,8 +1210,11 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Labour&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="SimplifiedPregnancyAndLabour.read_parameters"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.SimplifiedPregnancyAndLabour.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;prob_live_birth&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.67</span></div>
-        <span class="c1"># This is a reasonable estimate for the current versions of the Labour and other modules</span>
+
+        <span class="n">parameter_dataframe</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Contraception&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">resourcefilepath</span> <span class="o">/</span>
+                                            <span class="s1">&#39;ResourceFile_Contraception.xlsx&#39;</span><span class="p">,</span>
+                                            <span class="n">sheet_name</span><span class="o">=</span><span class="s1">&#39;simplified_labour_parameters&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">load_parameters_from_dataframe</span><span class="p">(</span><span class="n">parameter_dataframe</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="SimplifiedPregnancyAndLabour.initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.SimplifiedPregnancyAndLabour.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
@@ -1312,7 +1315,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on May 23, 2022.
+        Last updated on May 31, 2022.
       </span>
 
     </p>

@@ -148,13 +148,13 @@ tlo.methods.bladder_cancer module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'BladderCancer': <tlo.methods.causes.Cause object at 0x7ff868f723d0>}
+     CAUSES_OF_DEATH : {'BladderCancer': <tlo.methods.causes.Cause object at 0x7fb9999313d0>}
 
-     CAUSES_OF_DISABILITY : {'BladderCancer': <tlo.methods.causes.Cause object at 0x7ff868f72460>}
+     CAUSES_OF_DISABILITY : {'BladderCancer': <tlo.methods.causes.Cause object at 0x7fb999931460>}
 
-     INIT_DEPENDENCIES : {'Demography', 'HealthSystem', 'SymptomManager', 'Lifestyle'}
+     INIT_DEPENDENCIES : {'HealthSystem', 'Demography', 'Lifestyle', 'SymptomManager'}
 
-     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 

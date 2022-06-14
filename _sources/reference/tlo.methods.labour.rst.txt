@@ -549,8 +549,8 @@ tlo.methods.labour module
           - REAL
           - total number of previous deliveries
         * - la_previous_cs_delivery
-          - BOOL
-          - whether this woman has ever delivered via caesarean section
+          - INT
+          - total number of previous deliveries
         * - la_has_previously_delivered_preterm
           - BOOL
           - whether the woman has had a previous preterm delivery for any of her previous deliveries
@@ -622,15 +622,15 @@ tlo.methods.labour module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'NewbornOutcomes', 'Contraception', 'PostnatalSupervisor', 'CareOfWomenDuringPregnancy', 'PregnancySupervisor', 'Lifestyle', 'HealthSystem'}
+     ADDITIONAL_DEPENDENCIES : {'Contraception', 'CareOfWomenDuringPregnancy', 'Lifestyle', 'NewbornOutcomes', 'HealthSystem', 'PregnancySupervisor', 'PostnatalSupervisor'}
 
-     CAUSES_OF_DEATH : {'uterine_rupture': <tlo.methods.causes.Cause object at 0x7ff86a10cd60>, 'intrapartum_sepsis': <tlo.methods.causes.Cause object at 0x7ff86b61ee50>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x7ff86b61ef10>, 'postpartum_sepsis': <tlo.methods.causes.Cause object at 0x7ff86b630040>, 'postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x7ff86b6300a0>, 'secondary_postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x7ff86b630100>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x7ff86b630160>, 'eclampsia': <tlo.methods.causes.Cause object at 0x7ff86b6301c0>}
+     CAUSES_OF_DEATH : {'uterine_rupture': <tlo.methods.causes.Cause object at 0x7fb9999b0e20>, 'intrapartum_sepsis': <tlo.methods.causes.Cause object at 0x7fb99a4def10>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x7fb99a4defd0>, 'postpartum_sepsis': <tlo.methods.causes.Cause object at 0x7fb99a500100>, 'postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x7fb99a500160>, 'secondary_postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x7fb99a5001c0>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x7fb99a500220>, 'eclampsia': <tlo.methods.causes.Cause object at 0x7fb99a500280>}
 
-     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x7ff86b630220>}
+     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x7fb99a5002e0>}
 
      INIT_DEPENDENCIES : {'Demography'}
 
-     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'Stunting'}
 
@@ -835,6 +835,8 @@ tlo.methods.labour module
      .. automethod:: did_not_run
 
      .. automethod:: not_available
+
+     .. automethod:: _get_facility_level_for_pnc
 
 
 

@@ -24,18 +24,15 @@ tlo.methods.hiv module
         * - art_coverage
           - DATA_FRAME
           - coverage of ART at baseline
-        * - fraction_of_those_infected_that_have_aids_at_initiation
-          - REAL
-          - Fraction of persons living with HIV at baseline that have developed AIDS
-        * - testing_coverage_male
-          - REAL
-          - proportion of adult male population tested
-        * - testing_coverage_female
-          - REAL
-          - proportion of adult female population tested
+        * - treatment_cascade
+          - DATA_FRAME
+          - spectrum estimates of treatment cascade
         * - beta
           - REAL
           - Transmission rate
+        * - unaids_prevalence_adjustment_factor
+          - REAL
+          - adjustment for baseline age-specific prevalence values to give correct population prevalence
         * - prob_mtct_untreated
           - REAL
           - Probability of mother to child transmission
@@ -75,27 +72,6 @@ tlo.methods.hiv module
         * - rr_sex_f
           - REAL
           - Relative risk of HIV if female
-        * - rr_age_gp20
-          - REAL
-          - Relative risk of HIV if age 20-24 compared with 15-19
-        * - rr_age_gp25
-          - REAL
-          - Relative risk of HIV if age 25-29
-        * - rr_age_gp30
-          - REAL
-          - Relative risk of HIV if age 30-34
-        * - rr_age_gp35
-          - REAL
-          - Relative risk of HIV if age 35-39
-        * - rr_age_gp40
-          - REAL
-          - Relative risk of HIV if age 40-44
-        * - rr_age_gp45
-          - REAL
-          - Relative risk of HIV if age 45-49
-        * - rr_age_gp50
-          - REAL
-          - Relative risk of HIV if age 50+
         * - rr_edlevel_primary
           - REAL
           - Relative risk of HIV with primary education
@@ -162,6 +138,9 @@ tlo.methods.hiv module
         * - art_default_to_aids_mean_years
           - REAL
           - Mean years between when a person (any change) stops being on treatment to when AIDS is onset (if the absence of resuming treatment).
+        * - prop_delayed_aids_onset
+          - REAL
+          - Proportion of PLHIV that will have delayed AIDS onset to compensate for AIDS-TB
         * - mean_survival_for_infants_infected_prior_to_birth
           - REAL
           - Exponential rate parameter for mortality in infants who are infected before birth
@@ -171,21 +150,33 @@ tlo.methods.hiv module
         * - infection_to_death_infant_infection_after_birth_weibull_shape
           - REAL
           - Weibull shape parameter for mortality in infants who are infected after birth
-        * - prob_spontaneous_test_12m
+        * - hiv_testing_rates
+          - DATA_FRAME
+          - annual rates of testing for children and adults
+        * - rr_test_hiv_positive
           - REAL
-          - Probability that a person will seek HIV testing per 12 month period.
-        * - prob_start_art_after_hiv_test
+          - relative likelihood of having HIV test for people with HIV
+        * - treatment_initiation_adjustment
           - REAL
-          - Probability that a person will start treatment, if HIV-positive, following testing
-        * - rr_start_art_if_aids_symptoms
+          - adjustment to current ART coverage levels to account for defaulters
+        * - vs_adjustment
           - REAL
-          - Relative probability of a person starting treatment if they have aids_symptoms compared to ifthey do not.
+          - adjustment to current viral suppression levels to account for defaulters
+        * - prob_anc_test_at_delivery
+          - REAL
+          - probability of a women having hiv test at anc following delivery
+        * - prob_start_art_or_vs
+          - REAL
+          - Probability that a person will start treatment and be virally suppressed following testing
         * - prob_behav_chg_after_hiv_test
           - REAL
           - Probability that a person will change risk behaviours, if HIV-negative, following testing
         * - prob_prep_for_fsw_after_hiv_test
           - REAL
           - Probability that a FSW will start PrEP, if HIV-negative, following testing
+        * - prob_prep_for_agyw
+          - REAL
+          - Probability that adolescent girls / young women will start PrEP
         * - prob_circ_after_hiv_test
           - REAL
           - Probability that a male will be circumcised, if HIV-negative, following testing
@@ -201,15 +192,6 @@ tlo.methods.hiv module
         * - probability_of_seeking_further_art_appointment_if_appointment_not_available
           - REAL
           - Probability that a person who 'should' be on art will seek another appointment if the health-system has not been able to provide them with an appointment
-        * - vls_m
-          - REAL
-          - Rates of viral load suppression males
-        * - vls_f
-          - REAL
-          - Rates of viral load suppression males
-        * - vls_child
-          - REAL
-          - Rates of viral load suppression in children 0-14 years
         * - prep_start_year
           - REAL
           - Year from which PrEP is available
@@ -219,6 +201,12 @@ tlo.methods.hiv module
         * - ART_age_cutoff_older_child
           - INT
           - Age cutoff for ART regimen for older children
+        * - rel_probability_art_baseline_aids
+          - REAL
+          - relative probability of person with HIV infection over 10 years being on ART at baseline
+        * - aids_tb_treatment_adjustment
+          - REAL
+          - probability of death if aids and tb, person on treatment for tb
 
 
      **PROPERTIES:**
@@ -259,15 +247,15 @@ tlo.methods.hiv module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'NewbornOutcomes'}
+     ADDITIONAL_DEPENDENCIES : {'NewbornOutcomes', 'Tb'}
 
-     CAUSES_OF_DEATH : {'AIDS': <tlo.methods.causes.Cause object at 0x7ff868fa8fd0>}
+     CAUSES_OF_DEATH : {'AIDS_non_TB': <tlo.methods.causes.Cause object at 0x7fb999986070>, 'AIDS_TB': <tlo.methods.causes.Cause object at 0x7fb9999865e0>}
 
-     CAUSES_OF_DISABILITY : {'AIDS': <tlo.methods.causes.Cause object at 0x7ff86a1010a0>}
+     CAUSES_OF_DISABILITY : {'HIV': <tlo.methods.causes.Cause object at 0x7fb9999866d0>}
 
-     INIT_DEPENDENCIES : {'Demography', 'HealthSystem', 'SymptomManager', 'Lifestyle'}
+     INIT_DEPENDENCIES : {'Demography', 'HealthSystem', 'Lifestyle', 'SymptomManager'}
 
-     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
@@ -291,8 +279,6 @@ tlo.methods.hiv module
 
      .. automethod:: on_birth
 
-     .. automethod:: on_hsi_alert
-
      .. automethod:: report_daly_values
 
      .. automethod:: mtct_during_breastfeeding
@@ -304,6 +290,10 @@ tlo.methods.hiv module
      .. automethod:: get_time_from_aids_to_death
 
      .. automethod:: do_when_hiv_diagnosed
+
+     .. automethod:: prob_art_start_after_test
+
+     .. automethod:: prob_viral_suppression
 
      .. automethod:: stops_treatment
 
@@ -396,6 +386,24 @@ tlo.methods.hiv module
 
 
      **Functions (defined or overridden in class HivAidsDeathEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HivAidsTbDeathEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HivAidsTbDeathEvent):**
 
      .. automethod:: __init__
 
@@ -522,6 +530,8 @@ tlo.methods.hiv module
      .. automethod:: consider_tb
 
      .. automethod:: never_ran
+
+     .. automethod:: _make_appt_footprint_according_age_and_patient_status
 
 
 

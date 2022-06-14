@@ -476,6 +476,10 @@ via HSI_NewbornOutcomes_ReceivesPostnatalCheck.</p>
 <td><p>LIST</p></td>
 <td><p>squeeze factor value over which an individual within a newborn HSI is said to experience type 3 delay i.e. delay in receiving appropriate care</p></td>
 </tr>
+<tr class="row-even"><td><p>treatment_effect_modifier_one_delay</p></td>
+<td><p>LIST</p></td>
+<td><p>factor by which treatment effectiveness is reduced in the presences of one delays</p></td>
+</tr>
 </tbody>
 </table>
 <p><strong>PROPERTIES:</strong></p>
@@ -595,11 +599,11 @@ via HSI_NewbornOutcomes_ReceivesPostnatalCheck.</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘PregnancySupervisor’, ‘Labour’, ‘PostnatalSupervisor’, ‘CareOfWomenDuringPregnancy’}</p>
-<p>CAUSES_OF_DEATH : {‘early_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x7ff86b884d00&gt;, ‘late_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x7ff86b884d90&gt;, ‘encephalopathy’: &lt;tlo.methods.causes.Cause object at 0x7ff86b884df0&gt;, ‘neonatal_respiratory_depression’: &lt;tlo.methods.causes.Cause object at 0x7ff86b884e50&gt;, ‘preterm_other’: &lt;tlo.methods.causes.Cause object at 0x7ff86b884eb0&gt;, ‘respiratory_distress_syndrome’: &lt;tlo.methods.causes.Cause object at 0x7ff86b884f10&gt;, ‘congenital_heart_anomaly’: &lt;tlo.methods.causes.Cause object at 0x7ff86b884f70&gt;, ‘limb_or_musculoskeletal_anomaly’: &lt;tlo.methods.causes.Cause object at 0x7ff86b884fd0&gt;, ‘urogenital_anomaly’: &lt;tlo.methods.causes.Cause object at 0x7ff86b8c7070&gt;, ‘digestive_anomaly’: &lt;tlo.methods.causes.Cause object at 0x7ff86b8c70d0&gt;, ‘other_anomaly’: &lt;tlo.methods.causes.Cause object at 0x7ff86b8c7130&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘Retinopathy of Prematurity’: &lt;tlo.methods.causes.Cause object at 0x7ff86b8c7190&gt;, ‘Neonatal Encephalopathy’: &lt;tlo.methods.causes.Cause object at 0x7ff86b8c71f0&gt;, ‘Neonatal Sepsis Long term Disability’: &lt;tlo.methods.causes.Cause object at 0x7ff86b8c7250&gt;, ‘Preterm Birth Disability’: &lt;tlo.methods.causes.Cause object at 0x7ff86b8c72b0&gt;}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘Labour’, ‘CareOfWomenDuringPregnancy’, ‘PostnatalSupervisor’, ‘PregnancySupervisor’}</p>
+<p>CAUSES_OF_DEATH : {‘early_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x7fb99a7258e0&gt;, ‘late_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x7fb99a725970&gt;, ‘encephalopathy’: &lt;tlo.methods.causes.Cause object at 0x7fb99a7259d0&gt;, ‘neonatal_respiratory_depression’: &lt;tlo.methods.causes.Cause object at 0x7fb99a725a30&gt;, ‘preterm_other’: &lt;tlo.methods.causes.Cause object at 0x7fb99a725a90&gt;, ‘respiratory_distress_syndrome’: &lt;tlo.methods.causes.Cause object at 0x7fb99a725af0&gt;, ‘congenital_heart_anomaly’: &lt;tlo.methods.causes.Cause object at 0x7fb99a725b50&gt;, ‘limb_or_musculoskeletal_anomaly’: &lt;tlo.methods.causes.Cause object at 0x7fb99a725bb0&gt;, ‘urogenital_anomaly’: &lt;tlo.methods.causes.Cause object at 0x7fb99a725c10&gt;, ‘digestive_anomaly’: &lt;tlo.methods.causes.Cause object at 0x7fb99a725c70&gt;, ‘other_anomaly’: &lt;tlo.methods.causes.Cause object at 0x7fb99a725cd0&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘Retinopathy of Prematurity’: &lt;tlo.methods.causes.Cause object at 0x7fb99a725d30&gt;, ‘Neonatal Encephalopathy’: &lt;tlo.methods.causes.Cause object at 0x7fb99a725d90&gt;, ‘Neonatal Sepsis Long term Disability’: &lt;tlo.methods.causes.Cause object at 0x7fb99a725df0&gt;, ‘Preterm Birth Disability’: &lt;tlo.methods.causes.Cause object at 0x7fb99a725e50&gt;}</p>
 <p>INIT_DEPENDENCIES : {‘Demography’, ‘HealthSystem’}</p>
-<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
+<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’}</p>
 <p><strong>Functions (defined or overridden in class NewbornOutcomes):</strong></p>
 <dl class="py method">
@@ -1016,6 +1020,11 @@ to allow the rescheduling. This is called each time that the event is tried to b
 <span class="sig-name descname"><span class="pre">not_available</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/newborn_outcomes.html#HSI_NewbornOutcomes_ReceivesPostnatalCheck.not_available"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.newborn_outcomes.HSI_NewbornOutcomes_ReceivesPostnatalCheck.not_available" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.newborn_outcomes.HSI_NewbornOutcomes_ReceivesPostnatalCheck._get_facility_level_for_pnc">
+<span class="sig-name descname"><span class="pre">_get_facility_level_for_pnc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/newborn_outcomes.html#HSI_NewbornOutcomes_ReceivesPostnatalCheck._get_facility_level_for_pnc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.newborn_outcomes.HSI_NewbornOutcomes_ReceivesPostnatalCheck._get_facility_level_for_pnc" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -1152,7 +1161,7 @@ constructor, but may also take further keyword arguments.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on May 23, 2022.
+        Last updated on May 31, 2022.
       </span>
 
     </p>

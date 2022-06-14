@@ -94,10 +94,10 @@ HealthSeekingBehaviour
 Hiv
 ***
 
-* ``Circumcision`` at facility level 1a with appointment footprint: ``MaleCirc``.
-* ``StartOrContinueOnPrep`` at facility level 1a with appointment footprint: ``Over5OPD``.
-* ``TestAndRefer`` at facility level 1a with appointment footprint: ``VCTNegative``.
-* ``Treatment_InitiationOrContinuation`` at facility level 1a with appointment footprint: ``Over5OPD``, ``NewAdult``.
+* ``Prevention_Circumcision`` at facility level 1a with appointment footprint: ``MaleCirc``.
+* ``Prevention_Prep`` at facility level 1a with appointment footprint: ``Over5OPD``, ``VCTNegative``.
+* ``Test`` at facility level 1a with appointment footprint: ``VCTNegative``.
+* ``Treatment`` at facility level 1a with appointment footprint: ``NewAdult``.
 
 Labour
 ******
@@ -187,4 +187,14 @@ Stunting
 ********
 
 * ``Undernutrition_Feeding`` at facility level 1a with appointment footprint: ``U5Malnutr``.
+
+Tb
+**
+
+* ``Prevention_Ipt`` at facility level 1a with appointment footprint: ``Over5OPD``.
+* ``Test_Screening`` at facility level 1a with appointment footprint: ``Over5OPD``.
+* ``Test_Xray`` at facility level 1b with appointment footprint: ``DiagRadio``.
+* ``Test_Xray`` at facility level 2 with appointment footprint: ``DiagRadio``.
+* ``Treatment`` at facility level 1a with appointment footprint: ``TBFollowUp``.
+* ``Treatment`` at facility level 1a with appointment footprint: ``TBNew``.
 

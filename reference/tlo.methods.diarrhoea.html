@@ -674,11 +674,11 @@ The individual may recovery naturally or die.</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘Alri’, ‘Stunting’, ‘Epi’}</p>
-<p>CAUSES_OF_DEATH : {‘Diarrhoea_rotavirus’: &lt;tlo.methods.causes.Cause object at 0x7ff86b87c3a0&gt;, ‘Diarrhoea_shigella’: &lt;tlo.methods.causes.Cause object at 0x7ff86b87c400&gt;, ‘Diarrhoea_adenovirus’: &lt;tlo.methods.causes.Cause object at 0x7ff86b87c460&gt;, ‘Diarrhoea_cryptosporidium’: &lt;tlo.methods.causes.Cause object at 0x7ff86b87c4c0&gt;, ‘Diarrhoea_campylobacter’: &lt;tlo.methods.causes.Cause object at 0x7ff86b87c520&gt;, ‘Diarrhoea_ETEC’: &lt;tlo.methods.causes.Cause object at 0x7ff86b87c580&gt;, ‘Diarrhoea_sapovirus’: &lt;tlo.methods.causes.Cause object at 0x7ff86b87c5e0&gt;, ‘Diarrhoea_norovirus’: &lt;tlo.methods.causes.Cause object at 0x7ff86b87c640&gt;, ‘Diarrhoea_astrovirus’: &lt;tlo.methods.causes.Cause object at 0x7ff86b87c6a0&gt;, ‘Diarrhoea_tEPEC’: &lt;tlo.methods.causes.Cause object at 0x7ff86b87c700&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘Diarrhoea’: &lt;tlo.methods.causes.Cause object at 0x7ff86b87c7c0&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘NewbornOutcomes’, ‘Demography’, ‘SymptomManager’, ‘Lifestyle’, ‘HealthSystem’, ‘Wasting’, ‘Hiv’}</p>
-<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘Stunting’, ‘Alri’, ‘Epi’}</p>
+<p>CAUSES_OF_DEATH : {‘Diarrhoea_rotavirus’: &lt;tlo.methods.causes.Cause object at 0x7fb99a6c8f10&gt;, ‘Diarrhoea_shigella’: &lt;tlo.methods.causes.Cause object at 0x7fb99a6c8f70&gt;, ‘Diarrhoea_adenovirus’: &lt;tlo.methods.causes.Cause object at 0x7fb99a6c8fd0&gt;, ‘Diarrhoea_cryptosporidium’: &lt;tlo.methods.causes.Cause object at 0x7fb99a71a070&gt;, ‘Diarrhoea_campylobacter’: &lt;tlo.methods.causes.Cause object at 0x7fb99a71a0d0&gt;, ‘Diarrhoea_ETEC’: &lt;tlo.methods.causes.Cause object at 0x7fb99a71a130&gt;, ‘Diarrhoea_sapovirus’: &lt;tlo.methods.causes.Cause object at 0x7fb99a71a190&gt;, ‘Diarrhoea_norovirus’: &lt;tlo.methods.causes.Cause object at 0x7fb99a71a1f0&gt;, ‘Diarrhoea_astrovirus’: &lt;tlo.methods.causes.Cause object at 0x7fb99a71a250&gt;, ‘Diarrhoea_tEPEC’: &lt;tlo.methods.causes.Cause object at 0x7fb99a71a2b0&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘Diarrhoea’: &lt;tlo.methods.causes.Cause object at 0x7fb99a71a370&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘Lifestyle’, ‘NewbornOutcomes’, ‘Demography’, ‘HealthSystem’, ‘Hiv’, ‘Wasting’, ‘SymptomManager’}</p>
+<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’}</p>
 <p>pathogens : [‘rotavirus’, ‘shigella’, ‘adenovirus’, ‘cryptosporidium’, ‘campylobacter’, ‘ETEC’, ‘sapovirus’, ‘norovirus’, ‘astrovirus’, ‘tEPEC’]</p>
 <p><strong>Functions (defined or overridden in class Diarrhoea):</strong></p>
@@ -1130,7 +1130,7 @@ constructor, but may also take further keyword arguments.</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ALTERNATIVE_TO : {‘Stunting’, ‘Epi’, ‘Alri’, ‘Wasting’, ‘Hiv’}</p>
+<p>ALTERNATIVE_TO : {‘Epi’, ‘Stunting’, ‘Hiv’, ‘Wasting’, ‘Alri’}</p>
 <p>INIT_DEPENDENCIES : {‘Demography’}</p>
 <p><strong>Functions (defined or overridden in class DiarrhoeaPropertiesOfOtherModules):</strong></p>
 <dl class="py method">
@@ -1256,7 +1256,7 @@ It is a good place to add initial events to the event queue.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on May 23, 2022.
+        Last updated on May 31, 2022.
       </span>
 
     </p>

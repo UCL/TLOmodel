@@ -148,13 +148,13 @@ tlo.methods.oesophagealcancer module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'OesophagealCancer': <tlo.methods.causes.Cause object at 0x7ff86b681d30>}
+     CAUSES_OF_DEATH : {'OesophagealCancer': <tlo.methods.causes.Cause object at 0x7fb99a543df0>}
 
-     CAUSES_OF_DISABILITY : {'OesophagealCancer': <tlo.methods.causes.Cause object at 0x7ff86b681dc0>}
+     CAUSES_OF_DISABILITY : {'OesophagealCancer': <tlo.methods.causes.Cause object at 0x7fb99a543e80>}
 
-     INIT_DEPENDENCIES : {'Demography', 'HealthSystem', 'SymptomManager', 'Lifestyle'}
+     INIT_DEPENDENCIES : {'Demography', 'HealthSystem', 'Lifestyle', 'SymptomManager'}
 
-     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
