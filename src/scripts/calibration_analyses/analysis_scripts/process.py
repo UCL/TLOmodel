@@ -35,7 +35,7 @@ def process(output_dir, scenario_runs_dir):
 
 if __name__ == '__main__':
     output_dir_for_processed = Path(sys.argv[1])
-    output_dir_for_scenario_runs = output_dir_for_processed.parent / run_directory_name
+    output_dir_for_scenario_runs = output_dir_for_processed.parent / run_directory_name / '0'
     scenario_output_dir = check_completed(output_dir_for_scenario_runs)
     if scenario_output_dir is not None:
         process(output_dir_for_processed, output_dir_for_scenario_runs)

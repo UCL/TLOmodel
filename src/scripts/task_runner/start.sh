@@ -85,9 +85,9 @@ do
         for index in $(eval "$seq_command")
         do
             echo "Calling task with index $index"
-            mkdir "${task_output_dir}/${index}"
+            mkdir -p "${task_output_dir}/0/${index}"
             /usr/local/bin/ts -E \
-            ./src/scripts/task_runner/task.sh "$fullpath" "${worktree_dir}" "${task_output_dir}/${index}" "${conda_env_root}/${commit_dir}" "$index";
+            ./src/scripts/task_runner/task.sh "$fullpath" "${worktree_dir}" "${task_output_dir}/0/${index}" "${conda_env_root}/${commit_dir}" "$index";
         done
     fi
 done
