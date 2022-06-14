@@ -22,26 +22,25 @@ from tlo.analysis.utils import (
     create_pickles_locally,
 )
 
-# %% Declare the name of the file that specified the scenarios used in this run.
-from tlo.analysis.utils import load_pickled_dataframes
+from tlo.analysis.utils import get_scenario_outputs, load_pickled_dataframes
 
+# %% Declare the name of the file that specified the scenarios used in this run.
 scenario_filename = 'long_run_all_diseases.py'
 
 # %% Declare usual paths.
 # path of model output
 outputspath = Path('./outputs/bshe@ic.ac.uk')
-# path of real appointment usage
-# todo: store the real data in the right folder
+# path of real appointment usage and relevant data
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
 results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
 
 # create_pickles_locally(results_folder, compressed_file_name_prefix="long_run")  # <-- sometimes needed after download
-log = load_pickled_dataframes(results_folder)['tlo.methods.healthsystem.summary']
+# log = load_pickled_dataframes(results_folder, 0, 1)['tlo.methods.healthsystem']
 
 # Declare period for which the results will be generated (defined inclusively)
-TARGET_PERIOD = (Date(2010, 1, 1), Date(2010, 12, 31))  # todo: 2012-01-01 to 2019-12-31
+TARGET_PERIOD = (Date(2015, 1, 1), Date(2019, 12, 31))
 
 # Declare path for output graphs from this script
 make_graph_file_name = lambda stub: results_folder / f"{stub}.png"
@@ -61,39 +60,48 @@ def formatting_hsi_df(_df):
     _df = drop_outside_period(_df) \
         .drop(_df.index[~_df.did_run]) \
         .reset_index(drop=True) \
-        .drop(columns=['Person_ID', 'Squeeze_Factor', 'Facility_ID', 'did_run'])  # todo: keep Facility_ID
+        .drop(columns=['Person_ID', 'Squeeze_Factor', 'did_run', 'TREATMENT_ID', 'Facility_Level'])
 
     # Unpack the dictionary in `Number_By_Appt_Type_Code`.
     _df = _df.join(_df['Number_By_Appt_Type_Code'].apply(pd.Series).fillna(0.0)).drop(
         columns='Number_By_Appt_Type_Code')
 
-    # Produce course version of TREATMENT_ID (just first level, which is the module)
-    _df['TREATMENT_ID_SHORT'] = _df['TREATMENT_ID'].str.split('_').apply(lambda x: x[0])
+    return _df
+
+
+# hsi = log['HSI_Event']
+# hsi = formatting_hsi_df(hsi)
+
+
+def get_counts_of_appt_type(_df):
+    # long format
+    _df = formatting_hsi_df(_df).melt(id_vars=['date', 'Facility_ID'], var_name='Appt_Type', value_name='Num')
+
+    # creat month and year
+    _df['Year'] = _df['date'].dt.year
+    _df['Month'] = _df['date'].dt.month
+
+    # group by Year, Month, Appt_Type, Facility_ID
+    _df = _df.drop(columns='date').groupby(by=['Year', 'Month', 'Facility_ID', 'Appt_Type'])['Num'].sum()
 
     return _df
 
 
-def get_counts_of_appt_type_by_treatment_id_short(_df):
-    return formatting_hsi_df(_df) \
-        .drop(columns=['date', 'TREATMENT_ID', 'Facility_Level']) \
-        .melt(id_vars=['TREATMENT_ID_SHORT'], var_name='Appt_Type', value_name='Num') \
-        .groupby(by=['TREATMENT_ID_SHORT', 'Appt_Type'])['Num'].sum()  # todo: keep date and Facility_Level; Year Month
-
+# hsi = log['HSI_Event']
+# hsi = get_counts_of_appt_type(hsi)
 
 # counts of appointments
-counts_of_appt_by_treatment_id_short = summarize(
+counts_of_appt_type = summarize(
     extract_results(
         results_folder,
-        module='tlo.methods.healthsystem',  # Q: .healthsystem or .healthsystem.summary?
+        module='tlo.methods.healthsystem',
         key='HSI_Event',
-        custom_generate_series=get_counts_of_appt_type_by_treatment_id_short,  # todo: update this function
+        custom_generate_series=get_counts_of_appt_type,
         do_scaling=True
     ),
-    only_mean=True,  # Q: the mean of different runs? how many runs to be considered? # Uncertainty
-    collapse_columns=True,  # Q: ?
-)
+    only_mean=True,  # the mean of different runs; if False, uncertainty will be considered
+    collapse_columns=True,  # squeeze dimensions of draws and runs
+).reset_index()
 
-
-# todo: For model output, get the monthly usage per appointment between 2012 and 2019
-
-# todo: Compare the model output with the real usage
+counts_of_appt_type_2015_2019 = counts_of_appt_type.copy()
+counts_of_appt_type_2015_2019.to_csv(outputspath/'Simulated appt usage between 2015 and 2019.csv')
