@@ -23,23 +23,24 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
+end_date = Date(2050, 1, 1)
 popsize = 1000
 
 # todo
-scenario = 0
-mode_appt_constraints = 0  # HR constraints, 0: no constraints,
-            # all HSI events run with no squeeze factor, 1: elastic constraints, all HSI
-            # events run with squeeze factor, 2: hard constraints, only HSI events with
-            # no squeeze factor run.
-cons_availability = "all"  # consumable constraints, default=use cons listing, all=everything available
-ignore_priority = True  # if True, do not use the priority information in HSI event to schedule
+# scenario = 3
+# mode_appt_constraints = 0  # HR constraints, 0: no constraints,
+#             # all HSI events run with no squeeze factor, 1: elastic constraints, all HSI
+#             # events run with squeeze factor, 2: hard constraints, only HSI events with
+#             # no squeeze factor run.
+# cons_availability = "all"  # consumable constraints, default=use cons listing, all=everything available
+# ignore_priority = True  # if True, do not use the priority information in HSI event to schedule
 
-
-# scenario = 2
-# mode_appt_constraints = 0  # HR constraints, 0=no constraints, 2=hard constraints
-# cons_availability = "default"  # consumable constraints, default=use cons listing, all=everything available
-# ignore_priority = True  # if True, use the priority information in HSI event to schedule
+# todo set whole sim to use constraints to replicate error
+scenario = 2
+mode_appt_constraints = 2  # HR constraints, 0=no constraints, 2=hard constraints
+cons_availability = "default"  # consumable constraints, default=use cons listing, all=everything available
+ignore_priority = False  # if True, use the priority information in HSI event to schedule
+use_funded_or_actual_staffing = "actual"
 
 
 # set up the log config
@@ -67,6 +68,7 @@ sim.register(*fullmodel(
     healthsystem_mode_appt_constraints=mode_appt_constraints,
     healthsystem_cons_availability=cons_availability,
     healthsystem_ignore_priority=ignore_priority,
+    healthsystem_use_funded_or_actual_staffing=use_funded_or_actual_staffing,
     healthsystem_capabilities_coefficient=1.0,
 ))
 
