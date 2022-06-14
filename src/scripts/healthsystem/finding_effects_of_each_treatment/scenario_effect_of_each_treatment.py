@@ -1,6 +1,10 @@
 """
 This scenario runs the full model under a set of scenario in which each one TREATMENT_ID is excluded.
 
+* No spurious symptoms
+* Appts Contraints: Mode 0 (No Constraints)
+* Consumables Availability: All
+
 Run on the batch system using:
 ```tlo batch-submit src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_effect_of_each_treatment.py```
 
@@ -45,12 +49,13 @@ class EffectOfEachTreatment(BaseScenario):
         }
 
     def modules(self):
-        return fullmodel(resourcefilepath=self.resources)
+        return fullmodel(resourcefilepath=self.resources, healthsystem_mode_appt_constraints=0)
 
     def draw_parameters(self, draw_number, rng):
         return {
             'HealthSystem': {
-                'Service_Availability': list(self._scenarios.values())[draw_number]
+                'Service_Availability': list(self._scenarios.values())[draw_number],
+                'cons_availability': 'all',
                 }
         }
 
