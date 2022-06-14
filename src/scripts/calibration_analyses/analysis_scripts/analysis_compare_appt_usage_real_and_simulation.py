@@ -25,17 +25,7 @@ rfp = Path('./resources')
 
 
 # real usage data path
-def real_usage_data_path(scenario='raw'):
-    p_str = './resources/real_appt_usage_data/' + scenario
-    p = Path(p_str)
 
-    return p
-
-
-actual_usage_path_raw = real_usage_data_path('raw')
-actual_usage_path_s2 = real_usage_data_path('s1-s2')
-actual_usage_path_s3 = real_usage_data_path('s1-s3')
-actual_usage_path_s4 = real_usage_data_path('s1-s4')
 
 # TLO simulation usage path
 # the name of the file that specified the scenarios used in this run.
@@ -47,6 +37,26 @@ results_folder = get_scenario_outputs(scenario_filename, model_output_path)[-1]
 
 # the simulation data
 simulation_usage = pd.read_csv(results_folder/'Simulated appt usage between 2015 and 2019.csv')
+# rename some appts to be compared with real usage
+appt_dict = {'Under5OPD': 'OPD',
+             'Over5OPD': 'OPD',
+             'NormalDelivery': 'Delivery',
+             'CompDelivery': 'Delivery',
+             'EstMedCom': 'EstAdult',
+             'EstNonCom': 'EstAdult',
+             'DentAccidEmerg': 'DentalAll',
+             'DentSurg': 'DentalAll',
+             'DentU5': 'DentalAll',
+             'DentO5': 'DentalAll',
+             'MentOPD': 'MentalAll',
+             'MentClinic': 'MentalAll'
+             }
+simulation_usage['Appt_Type'] = simulation_usage['Appt_Type'].replace(appt_dict)
+simulation_usage = pd.DataFrame(simulation_usage.groupby(
+    by=['Year', 'Month', 'Facility_ID', 'Appt_Type']).sum().reset_index())
 
 # Output path
 output_path = Path(results_folder)
+
+# HIV/TBNotifiedAll/STITreatment that have not been filled
+
