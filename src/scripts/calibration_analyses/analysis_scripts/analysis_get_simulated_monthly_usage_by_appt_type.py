@@ -1,7 +1,7 @@
 """
-Compare appointment usage from model output with real appointment usage.
+Obtain the simulated monthly usage by appt type, to be compared with real usage.
 
-The real appointment usage is collected from DHIS2 system and HIV Dept.
+N.B. This script takes hours to run due to the big data.
 
 N.B. This script uses the package `squarify`: so run, `pip install squarify` first.
 """
