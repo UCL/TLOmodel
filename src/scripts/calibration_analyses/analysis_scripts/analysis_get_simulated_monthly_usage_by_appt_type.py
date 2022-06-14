@@ -104,4 +104,4 @@ counts_of_appt_type = summarize(
 ).reset_index()
 
 counts_of_appt_type_2015_2019 = counts_of_appt_type.copy()
-counts_of_appt_type_2015_2019.to_csv(outputspath/'Simulated appt usage between 2015 and 2019.csv')
+counts_of_appt_type_2015_2019.to_csv(results_folder/'Simulated appt usage between 2015 and 2019.csv', index=False)
