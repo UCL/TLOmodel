@@ -23,13 +23,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     )
 
     data = pd.read_csv(resourcefilepath / "demography" / "ResourceFile_Deaths_2018Census.csv")
-    target_number_of_deaths_per_month = int(
-        pd.to_numeric(data['Count'], errors='coerce').dropna().sum() / (5 / 12)
+    target_number_of_deaths_per_year = int(
+        pd.to_numeric(data['Count'], errors='coerce').dropna().sum()
     )
 
     fig, ax = plt.subplots()
     res.plot.bar(ax=ax)
-    ax.axhline(target_number_of_deaths_per_month, color='r')
+    ax.axhline(target_number_of_deaths_per_year, color='r')
     ax.set_title("Number of deaths")
     fig.tight_layout()
     fig.savefig(output_folder / "my_plot.png")
