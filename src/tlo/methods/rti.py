@@ -3738,10 +3738,12 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
             self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
             return self.make_appt_footprint({})
 
-    def did_not_run(self, person_id):
+    def did_not_run(self):
         # Assume that untreated shock leads to death for now
         # Schedule the death
         df = self.sim.population.props
+        person_id = self.target
+
         df.at[person_id, 'rt_death_from_shock'] = True
         self.sim.modules['Demography'].do_death(individual_id=person_id, cause="RTI_death_shock",
                                                 originating_module=self.module)
@@ -3887,7 +3889,9 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
                          )
             return self.make_appt_footprint({})
 
-    def did_not_run(self, person_id):
+    def did_not_run(self):
+        person_id = self.target
+
         logger.debug(key='rti_general_message',
                      data=f"Fracture casts unavailable for person {person_id}")
 
@@ -3990,7 +3994,9 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
                          data=f"Person {person_id}'s has {open_fracture_counts} open fractures without treatment",
                          )
 
-    def did_not_run(self, person_id):
+    def did_not_run(self):
+        person_id = self.target
+
         logger.debug(key='rti_general_message',
                      data=f"Open fracture treatment unavailable for person {person_id}")
 
@@ -4077,7 +4083,9 @@ class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
                              data="This facility has no treatment for open wounds available.")
                 return self.make_appt_footprint({})
 
-    def did_not_run(self, person_id):
+    def did_not_run(self):
+        person_id = self.target
+
         logger.debug(key='rti_general_message',
                      data=f"Suture kits unavailable for person {person_id}")
 
@@ -4192,7 +4200,9 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
                 logger.debug(key='rti_general_message',
                              data="This facility has no treatment for burns available.")
 
-    def did_not_run(self, person_id):
+    def did_not_run(self):
+        person_id = self.target
+
         logger.debug(key='rti_general_message',
                      data=f"Burn treatment unavailable for person {person_id}")
 
@@ -4247,7 +4257,9 @@ class HSI_RTI_Tetanus_Vaccine(HSI_Event, IndividualScopeEventMixin):
                              data=f"Tetanus vaccine requested for person {person_id}, not given")
                 return self.make_appt_footprint({})
 
-    def did_not_run(self, person_id):
+    def did_not_run(self):
+        person_id = self.target
+
         logger.debug(key='rti_general_message',
                      data=f"Tetanus vaccine unavailable for person {person_id}")
 
@@ -4450,7 +4462,9 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
                                   f"{person_id}.")
                 return self.make_appt_footprint({})
 
-    def did_not_run(self, person_id):
+    def did_not_run(self):
+        person_id = self.target
+
         df = self.sim.population.props
         logger.debug(key='rti_general_message',
                      data=f"Pain relief unavailable for person {person_id}")
@@ -4841,7 +4855,9 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
                 df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
             return self.make_appt_footprint({})
 
-    def did_not_run(self, person_id):
+    def did_not_run(self):
+        person_id = self.target
+
         df = self.sim.population.props
         logger.debug(key='rti_general_message',
                      data=f"Major surgery not scheduled for person {person_id}")
@@ -5021,7 +5037,9 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
                               f"on date {self.sim.date}!!!!!!")
             return self.make_appt_footprint({})
 
-    def did_not_run(self, person_id):
+    def did_not_run(self):
+        person_id = self.target
+
         df = self.sim.population.props
         logger.debug(key='rti_general_message',
                      data=f"Minor surgery not scheduled for person {person_id}")
