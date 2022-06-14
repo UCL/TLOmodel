@@ -1397,25 +1397,25 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
         # 1) Compute footprint that arise from in-patient bed-days
         inpatient_appts = self.module.bed_days.get_inpatient_appts()
+
         inpatient_footprints = Counter()
-        inpatient_appt_by_facility_level = defaultdict(Counter)
+
         for _fac_id, _footprint in inpatient_appts.items():
             inpatient_footprints.update(self.module.get_appt_footprint_as_time_request(
                 facility_info=self.module._facility_by_facility_id[_fac_id], appt_footprint=_footprint)
             )
-            inpatient_appt_by_facility_level[self.module._facility_by_facility_id[_fac_id].level] += _footprint
 
         # Write the log that these in-patient appointments were needed:
-        if len(inpatient_appt_by_facility_level):
-            for _level, _inpatient_appts in inpatient_appt_by_facility_level.items():
+        if len(inpatient_appts):
+            for _fac_id, _inpatient_appts in inpatient_appts.items():
                 self.module.write_to_hsi_log(
                     treatment_id='Inpatient_Care',
                     number_by_appt_type_code=dict(_inpatient_appts),
                     person_id=-1,
                     squeeze_factor=0.0,
                     did_run=True,
-                    facility_level=_level,
-                    facility_id=None,
+                    facility_level=self.module._facility_by_facility_id[_fac_id].level,
+                    facility_id=_fac_id,
                 )
 
         # - Create hold-over list (will become a heapq). This will hold events that cannot occur today before they are
