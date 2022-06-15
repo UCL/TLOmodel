@@ -23,8 +23,9 @@ sns.set_theme(style="darkgrid")
 # path of resource files: real appt usage and mfl (facility id, level, district)
 rfp = Path('./resources/healthsystem')
 
-
 # real usage data path
+real_usage = pd.read_csv(rfp/'real_appt_usage_data'/'real_monthly_usage_of_appt_type.csv')
+real_usage_TB = pd.read_csv(rfp/'real_appt_usage_data'/'real_yearly_usage_of_TBNotifiedAll.csv')
 
 
 # TLO simulation usage path
@@ -64,7 +65,7 @@ appts = ['InpatientDays', 'IPAdmission', 'OPD',
          'U5Malnutr',
          'Delivery', 'Csection',
          'FamPlanCounsel', 'FamPlanMethods', 'FamPlan'
-         'AntenatalFirst', 'AntenatalTotal',
+         'AntenatalFirst', 'AntenatalTotal', 'ANCSubsequent'
          'EPI',
          'AccidentsandEmerg', 'MajorSurg', 'MinorSurg',
          'DentalAll',
