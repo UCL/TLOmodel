@@ -30,8 +30,8 @@ resourcefilepath = Path("./resources")
 # Create name for log-file
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
-log_filename = 'none'
-# log_filename = outputpath / 'GBD_lri_comparison_10k_pop__2022-06-08T161454.log'
+# log_filename = 'none'
+log_filename = outputpath / 'GBD_lri_comparison_10k_pop__2022-06-08T161454.log'
 # <-- insert name of log file to avoid re-running the simulation
 
 if not os.path.exists(log_filename):
@@ -399,3 +399,15 @@ plt.gca().set_ylim(0.0, 1.0)
 plt.legend(["Target hypoxaemia", "Model hypoxaemia", "Model pulmonary complications", "Model sepsis"])
 plt.tight_layout()
 plt.show()
+
+# -----------------------------------------------------------------------------------
+counts = output['tlo.methods.alri']['classification']
+counts['year'] = pd.to_datetime(counts['date']).dt.year
+counts.drop(columns='date', inplace=True)
+counts.set_index(
+    'year',
+    drop=True,
+    inplace=True
+)
+
+print(counts)

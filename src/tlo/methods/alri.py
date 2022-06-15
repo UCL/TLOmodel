@@ -445,6 +445,62 @@ class Alri(Module):
                       'odds ratio of ALRI death for very severe pneumonia (presenting danger signs)'
                       ),
 
+        'base_odds_death_ALRI_age<2mo':
+            Parameter(Types.REAL,
+                      'baseline odds of death from ALRI for young infants aged 0 month and severe pneumonia '
+                      '(base group)'
+                      ),
+        'or_death_ALRI_age<2mo_very_severe_pneumonia':
+            Parameter(Types.REAL,
+                      'odds ratio of death from ALRI for young infants with very severe pneumonia'
+                      ),
+        'or_death_ALRI_age<2mo_P.jirovecii':
+            Parameter(Types.REAL,
+                      'odds ratio of death from ALRI for young infants with P. jirovecii infection'
+                      ),
+        'or_death_ALRI_age<2mo_by_month_increase_in_age':
+            Parameter(Types.REAL,
+                      'odds ratio of death from ALRI for young infants by 1 month increase in age (1 month olds)'
+                      ),
+
+        'base_odds_death_ALRI_age2_59mo':
+            Parameter(Types.REAL,
+                      'baseline odds of death from ALRI for children aged 2 months, male, no SAM, '
+                      'and non-severe pneumonia classification (base group)'
+                      ),
+        'or_death_ALRI_age2_59mo_female':
+            Parameter(Types.REAL,
+                      'odds ratio of death from ALRI for children who are female'
+                      ),
+        'or_death_ALRI_age2_59mo_very_severe_pneumonia':
+            Parameter(Types.REAL,
+                      'odds ratio of death from ALRI for children with very severe pneumonia'
+                      ),
+        'or_death_ALRI_age2_59mo_P.jirovecii':
+            Parameter(Types.REAL,
+                      'odds ratio of death from ALRI for children with P. jirovecii infection'
+                      ),
+        'or_death_ALRI_age2_59mo_by_month_increase_in_age':
+            Parameter(Types.REAL,
+                      'odds ratio of death from ALRI by 1 month increase in age for 2 to 59 months olds'
+                      ),
+        'or_death_ALRI_age2_59mo_SAM':
+            Parameter(Types.REAL,
+                      'odds ratio of death from ALRI for children with severe acute malnutrition'
+                      ),
+
+        'or_death_ALRI_SpO2<90%':
+            Parameter(Types.REAL,
+                      'odds ratio of death from ALRI for children with oxygen saturation < 90%, '
+                      'base group: SpO2 <=93%'
+
+                      ),
+        'or_death_ALRI_SpO2_90_92%':
+            Parameter(Types.REAL,
+                      'odds ratio of death from ALRI for children with oxygen saturation between 09 to 92%, '
+                      'base group: SpO2 <=93%'
+                      ),
+
         # Probability of symptom development -----
         'prob_cough_in_pneumonia':
             Parameter(Types.REAL,
@@ -1573,47 +1629,73 @@ class Models:
         p = self.p
         df = self.module.sim.population.props
         person = df.loc[person_id]
-        # check if any complications - death occurs only if a complication is present
-        any_complications = person[[f'ri_complication_{c}' for c in self.module.complications]].any()
+        # # check if any complications - death occurs only if a complication is present
+        # any_complications = person[[f'ri_complication_{c}' for c in self.module.complications]].any()
 
-        # Baseline risk:
-        odds_death = p['baseline_odds_alri_death']
+        # Baseline risk for young infants aged less than 2 months:
+        odds_death_age_lt2mo = p['base_odds_death_ALRI_age<2mo']
 
-        # The effect of age:
-        if person['age_exact_years'] < 1.0 / 6.0:
-            odds_death *= p['or_death_ALRI_age<2mo']
+        # The effect of age increase by 1 month:
+        if 1.0 / 12.0 < person['age_exact_years'] < 1.0 / 6.0:
+            odds_death_age_lt2mo *= p['or_death_ALRI_age<2mo_by_month_increase_in_age']
 
-        # The effect of gender:
-        if person['sex'] == 'M':
-            odds_death *= p['or_death_ALRI_male']
+        # The effect of disease severity
+        # get the classification based on symptoms/ or get danger-signs
+        symptoms = self.module.sim.modules['SymptomManager'].has_what(person_id)
+        if {'danger_signs'}.intersection(symptoms):
+            odds_death_age_lt2mo *= p['or_death_ALRI_age<2mo_very_severe_pneumonia']
 
         # The effect of P.jirovecii infection:
         if person['ri_primary_pathogen'] == 'P.jirovecii':
-            odds_death *= p['or_death_ALRI_P.jirovecii']
+            odds_death_age_lt2mo *= p['or_death_ALRI_age<2mo_P.jirovecii']
 
-        # The effect of hypoxaemia:
-        if person['ri_complication_hypoxaemia']:
-            odds_death *= p['or_death_ALRI_SpO2<93%']
+        # Baseline risk for children aged 2 to 59 months:
+        odds_death_age2_59mo = p['base_odds_death_ALRI_age2_59mo']
+
+        # The effect of age by 1 month increase in age:
+        # age range for the 3 to 59 months (2 month old as baseline)
+        age_range_in_months = range(3, 60)
+        one_month_in_a_year = 1.0 / 12.0
+
+        for i in age_range_in_months:
+            if person['age_exact_years'].between(i * one_month_in_a_year, (i + 1) * one_month_in_a_year):
+                odds_death_age2_59mo *= p['or_death_ALRI_age2_59mo_by_month_increase_in_age'] * i
+
+        # The effect of gender:
+        if person['sex'] == 'F':
+            odds_death_age2_59mo *= p['or_death_ALRI_age2_59mo_female']
+
+        # The effect of disease severity
+        # get the classification based on symptoms/ or get danger-signs
+        symptoms = self.module.sim.modules['SymptomManager'].has_what(person_id)
+        if {'danger_signs'}.intersection(symptoms):
+            odds_death_age2_59mo *= p['or_death_ALRI_age2_59mo_very_severe_pneumonia']
+
+        # The effect of P.jirovecii infection:
+        if person['ri_primary_pathogen'] == 'P.jirovecii':
+            odds_death_age2_59mo *= p['or_death_ALRI_age2_59mo_P.jirovecii']
 
         # The effect of factors defined in other modules:
-        # HIV
-        if person['hv_inf'] & (person['hv_art'] != "on_VL_suppressed"):
-            odds_death *= p['or_death_ALRI_HIV/AIDS']
-
         # malnutrition:
         if person['un_clinical_acute_malnutrition'] == 'SAM':
-            odds_death *= p['or_death_ALRI_SAM']
-        elif person['un_clinical_acute_malnutrition'] == 'MAM':
-            odds_death *= p['or_death_ALRI_MAM']
+            odds_death_age2_59mo *= p['or_death_ALRI_age2_59mo_SAM']
+
+        # The effect of hypoxaemia for all ages:
+        if person['ri_SpO2_level'] == '<90%':
+            odds_death_age_lt2mo *= p['or_death_ALRI_SpO2<90%']
+            odds_death_age2_59mo *= p['or_death_ALRI_SpO2<90%']
+        if person['ri_SpO2_level'] == '90-92%':
+            odds_death_age_lt2mo *= p['or_death_ALRI_SpO2_90_92%']
+            odds_death_age2_59mo *= p['or_death_ALRI_SpO2_90_92%']
 
         # Convert odds to probability
-        risk_death = odds_death / (1 + odds_death)
+        risk_death_age_lt2mo = odds_death_age_lt2mo / (1 + odds_death_age_lt2mo)
+        risk_death_age2_59mo = odds_death_age2_59mo / (1 + odds_death_age2_59mo)
 
-        if any_complications:
-            return risk_death > self.rng.random_sample()
+        if person['age_exact_years'] < 1.0 / 6.0:
+            return risk_death_age_lt2mo > self.rng.random_sample()
         else:
-            return False
-
+            return risk_death_age2_59mo > self.rng.random_sample()
 
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
