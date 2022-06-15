@@ -113,8 +113,9 @@ num_deaths = extract_results(
     custom_generate_series=num_deaths_by_age_group,
     do_scaling=True
 ).pipe(set_param_names_as_column_index_level_0).sum()  # (Summing across age-groups)
-# todo - stochastic variability!? Look at differences which exceed stochastic variation somehow???
-# todo - run bigger and on "coarser" set and remove FirstAttendance* as a scenario ****
+# todo - UNCERTAINTY
+# todo - labelling - strip "No's" and replace "Nothing" --> "Everything"
+# todo - version for numbers and version for percent
 
 num_dalys = extract_results(
     results_folder,
