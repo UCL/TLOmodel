@@ -71,4 +71,3 @@ appts = ['InpatientDays', 'IPAdmission', 'OPD',
          'MentalAll',
          'NewAdult', 'Peds', 'PMTCT', 'EstAdult', 'VCTNegative', 'VCTPositive', 'STI', 'MaleCirc',
          'TBNew']
-

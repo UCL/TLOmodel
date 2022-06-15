@@ -375,7 +375,6 @@ def create_pickles_locally(scenario_output_dir, compressed_file_name_prefix=None
                 with open(logfile.parent / f"{key}.pickle", "wb") as f:
                     pickle.dump(output, f)
 
-
     def uncompress_and_save_logfile(compressed_file) -> Path:
         """Uncompress and save a log file and return its path."""
         target = compressed_file.parent / str(compressed_file.name[0:-3])
@@ -395,11 +394,11 @@ def create_pickles_locally(scenario_output_dir, compressed_file_name_prefix=None
             if compressed_file_name_prefix is None:
                 logfile = [x for x in os.listdir(run_folder) if x.endswith('.log')][0]
             else:
-                compressed_file_name = [x for x in os.listdir(run_folder) if x.startswith(compressed_file_name_prefix)][0]
+                compressed_file_name = [x for x in os.listdir(run_folder) if x.startswith(compressed_file_name_prefix)][
+                    0]
                 logfile = uncompress_and_save_logfile(Path(run_folder) / compressed_file_name)
 
             turn_log_into_pickles(logfile)
-
 
 
 def compare_number_of_deaths(logfile: Path, resourcefilepath: Path):
@@ -548,7 +547,7 @@ class LogsDict(Mapping):
                 result_df[key]['_metadata'] = result_df['_metadata']
                 if not cache:  # check if caching is disallowed
                     return result_df[key]
-                self._results_cache[key] = result_df[key]    # add key specific parsed results to cache
+                self._results_cache[key] = result_df[key]  # add key specific parsed results to cache
             return self._results_cache[key]  # return the added results
 
         else:
