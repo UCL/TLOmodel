@@ -63,10 +63,12 @@ class Simulation:
 
         self.show_progress_bar = show_progress_bar
 
+        # logging
+        if log_config is None:
+            log_config = dict()
+        self._custom_log_levels = None
         self._log_filepath = None
-
-        # save log_config argument (for processing after modules have been registered)
-        self._log_config = log_config if log_config is not None else {}
+        self.configure_logging(**log_config)
 
         # random number generator
         seed_from = 'auto' if seed is None else 'user'
@@ -100,10 +102,13 @@ class Simulation:
         logging.set_simulation(self)
 
         if custom_levels:
-            # if any modules have already been registered
+            # if modules have already been registered
             if self.modules:
                 module_paths = (module.__module__ for module in self.modules.values())
                 logging.set_logging_levels(custom_levels, module_paths)
+            else:
+                # save the configuration and apply in the `register` phase
+                self._custom_log_levels = custom_levels
 
         if filename:
             timestamp = datetime.datetime.now().strftime('%Y-%m-%dT%H%M%S')
@@ -159,11 +164,18 @@ class Simulation:
             )
             module.rng = np.random.RandomState(np.random.MT19937(seed_seq))
 
+            # if user provided custom log levels
+            if self._custom_log_levels is not None:
+                # get the log level of this module
+                path = module.__module__
+                if path in self._custom_log_levels:
+                    self._set_module_log_level(path, self._custom_log_levels[path])
+                elif '*' in self._custom_log_levels:
+                    self._set_module_log_level(path, self._custom_log_levels['*'])
+
             self.modules[module.name] = module
             module.sim = self
             module.read_parameters('')
-
-        self.configure_logging(**self._log_config)
 
     def make_initial_population(self, *, n):
         """Create the initial population to simulate.
