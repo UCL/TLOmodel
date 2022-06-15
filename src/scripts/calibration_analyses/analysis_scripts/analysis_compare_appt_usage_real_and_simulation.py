@@ -20,8 +20,8 @@ import calendar
 sns.set_theme(style="darkgrid")
 
 
-# path of resource files
-rfp = Path('./resources')
+# path of resource files: real appt usage and mfl (facility id, level, district)
+rfp = Path('./resources/healthsystem')
 
 
 # real usage data path
@@ -58,5 +58,17 @@ simulation_usage = pd.DataFrame(simulation_usage.groupby(
 # Output path
 output_path = Path(results_folder)
 
-# HIV/TBNotifiedAll/STITreatment that have not been filled
+# comparison and plots
+# the appts to be compared
+appts = ['InpatientDays', 'IPAdmission', 'OPD',
+         'U5Malnutr',
+         'Delivery', 'Csection',
+         'FamPlanCounsel', 'FamPlanMethods', 'FamPlan'
+         'AntenatalFirst', 'AntenatalTotal',
+         'EPI',
+         'AccidentsandEmerg', 'MajorSurg', 'MinorSurg',
+         'DentalAll',
+         'MentalAll',
+         'NewAdult', 'Peds', 'PMTCT', 'EstAdult', 'VCTNegative', 'VCTPositive', 'STI', 'MaleCirc',
+         'TBNew']
 
