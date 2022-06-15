@@ -37,7 +37,12 @@ rfp = Path('./resources')
 results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
 
 # create_pickles_locally(results_folder, compressed_file_name_prefix="long_run")  # <-- sometimes needed after download
-# log = load_pickled_dataframes(results_folder, 0, 1)['tlo.methods.healthsystem']
+# log = load_pickled_dataframes(results_folder, 0, 4)['tlo.methods.healthsystem.summary']
+#
+# hsi = log['HSI_Event']
+#
+# appt_usage = hsi.join(hsi['Number_By_Appt_Type_Code'].apply(pd.Series).fillna(0.0)).drop(
+#     columns='Number_By_Appt_Type_Code')
 
 # Declare period for which the results will be generated (defined inclusively)
 TARGET_PERIOD = (Date(2015, 1, 1), Date(2019, 12, 31))
