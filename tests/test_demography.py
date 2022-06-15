@@ -406,7 +406,6 @@ def test_can_turn_off_the_detailed_logger_when_using_custom_log_when_registering
         }
     }
 
-
     rfp = Path(os.path.dirname(__file__)) / '../resources'
 
     sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, log_config=log_config)
