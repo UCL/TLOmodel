@@ -350,3 +350,40 @@ def test_max_age_initial(seed):
     # `max_age_initial>MAX_AGE`
     with pytest.raises(ValueError):
         max_age_in_sim_with_max_age_initial_argument(MAX_AGE + 1)
+
+
+def test_can_turn_off_the_detailed_logger(seed, tmpdir):
+    """Check that the simulation can be set-up to get only the usual demography logger and not the detailed logger."""
+
+    rfp = Path(os.path.dirname(__file__)) / '../resources'
+
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, log_config={
+        'filename': 'temp',
+        'directory': tmpdir,
+        'custom_levels': {
+            "*": logging.WARNING,
+            'tlo.methods.demography.detail': logging.WARNING,  # <-- Explicitly turning off the detailed logger
+            'tlo.methods.demography': logging.INFO,  # <-- Turning on the normal logger
+        }
+    })
+
+    sim.register(demography.Demography(resourcefilepath=rfp))
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=sim.start_date)
+
+    # Cause one death to occur
+    sim.modules['Demography'].do_death(
+        individual_id=0,
+        originating_module=sim.modules['Demography'],
+        cause='Other'
+    )
+
+    log = parse_log_file(sim.log_filepath)
+
+    # Check the usual `tlo.methods.demography' log is created and that check persons have died (which would be when the
+    # detailed logger would be used).
+    assert 'tlo.methods.demography' in log.keys()
+    assert 1 == len(log['tlo.methods.demography']['death'])
+
+    # Check that the detailed logger is not created.
+    assert 'tlo.methods.demography.detail' not in log.keys()
