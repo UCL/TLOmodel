@@ -869,6 +869,7 @@ def test_is_treatment_id_allowed():
     assert hs.is_treatment_id_allowed('FirstAttendance*', ["A"])
     assert not hs.is_treatment_id_allowed('FirstAttendance*', [])
 
+
 def test_manipulation_of_service_availability(seed, tmpdir):
     """Check that the parameter `service_availability` can be used to allow/disallow certain `TREATMENT_ID`s.
     N.B. This is setting service_availability through a change in parameter, as would be done by BatchRunner."""
