@@ -864,6 +864,10 @@ def test_is_treatment_id_allowed():
     assert hs.is_treatment_id_allowed('Hiv_X_B_C_1_2_3', ['A', 'Hiv_X*'])
     assert not hs.is_treatment_id_allowed('Hiv_A_B', ['A', 'Hiv_A_B_C_D_E_F*'])
 
+    # First Attendance appointments are always allowed, if anything else is allowed (but not if nothing is allowed).
+    assert hs.is_treatment_id_allowed('FirstAttendance*', ["*"])
+    assert hs.is_treatment_id_allowed('FirstAttendance*', ["A"])
+    assert not hs.is_treatment_id_allowed('FirstAttendance*', [])
 
 def test_manipulation_of_service_availability(seed, tmpdir):
     """Check that the parameter `service_availability` can be used to allow/disallow certain `TREATMENT_ID`s.
