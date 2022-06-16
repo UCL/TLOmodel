@@ -9,12 +9,7 @@ import squarify
 from matplotlib import pyplot as plt
 
 from tlo import Date
-from tlo.analysis.utils import (
-    extract_results,
-    make_age_grp_lookup,
-    make_age_grp_types,
-    summarize,
-)
+from tlo.analysis.utils import extract_results, make_age_grp_lookup, make_age_grp_types, summarize
 
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
@@ -288,7 +283,7 @@ if __name__ == "__main__":
     outputspath = Path('./outputs/tbh03@ic.ac.uk')
     rfp = Path('./resources')
 
-    # Find results folder
+    # Find results folder (the results should have arisne from running `scenario_effect_of_each_treatment.py`.)
 
     # Most Recent:
     # results_folder = get_scenario_outputs('scenario_effect_of_each_treatment.py', outputspath)[-1]
