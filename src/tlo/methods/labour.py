@@ -3196,24 +3196,22 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         if self.timing == 'postpartum':
             self.module.apply_risk_of_early_postpartum_death(person_id)
 
-        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
-
-        # Here we edit the appointment footprint so only women receiving surgery require the surgical footprint
-        if mni[person_id]['referred_for_cs']:
-            actual_appt_footprint['MajorSurg'] = actual_appt_footprint['Csection']
-
-        elif (not mni[person_id]['referred_for_surgery'] and not mni[person_id]['referred_for_cs']) and\
-                mni[person_id]['referred_for_blood']:
-            actual_appt_footprint['MajorSurg'] = actual_appt_footprint['InpatientDays']
-
         # Schedule HSI that captures inpatient days
         if df.at[person_id, 'is_alive']:
             postnatal_inpatient = HSI_Labour_PostnatalWardInpatientCare(
-                    self.module, person_id=person_id)
+                self.module, person_id=person_id)
             self.sim.modules['HealthSystem'].schedule_hsi_event(postnatal_inpatient,
                                                                 priority=0,
                                                                 topen=self.sim.date,
                                                                 tclose=self.sim.date + DateOffset(days=1))
+
+        # Here we edit the appointment footprint so only women receiving surgery require the surgical footprint
+        if mni[person_id]['referred_for_cs']:
+            return self.make_appt_footprint({'Csection': 1})
+
+        elif (not mni[person_id]['referred_for_surgery'] and not mni[person_id]['referred_for_cs']) and\
+                mni[person_id]['referred_for_blood']:
+            return self.make_appt_footprint({'InpatientDays': 1})
 
     def never_ran(self):
         self.module.run_if_receives_comprehensive_emergency_obstetric_care_cant_run(self)
