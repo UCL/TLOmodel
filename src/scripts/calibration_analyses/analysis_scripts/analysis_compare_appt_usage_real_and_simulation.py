@@ -19,14 +19,14 @@ import calendar
 
 sns.set_theme(style="darkgrid")
 
-
 # path of resource files: real appt usage and mfl (facility id, level, district)
 rfp = Path('./resources/healthsystem')
 
-# real usage data path
-real_usage = pd.read_csv(rfp/'real_appt_usage_data'/'real_monthly_usage_of_appt_type.csv')
-real_usage_TB = pd.read_csv(rfp/'real_appt_usage_data'/'real_yearly_usage_of_TBNotifiedAll.csv')
-
+# real usage data
+real_usage = pd.read_csv(rfp / 'real_appt_usage_data' / 'real_monthly_usage_of_appt_type.csv')
+real_usage_TB = pd.read_csv(rfp / 'real_appt_usage_data' / 'real_yearly_usage_of_TBNotifiedAll.csv')
+# for TB usage, drop years outside of 2017-2019 according to data consistency and pandemic
+real_usage_TB = real_usage_TB[real_usage_TB['Year'].isin([2017, 2018, 2019])].copy()
 
 # TLO simulation usage path
 # the name of the file that specified the scenarios used in this run.
@@ -37,10 +37,12 @@ model_output_path = Path('./outputs/bshe@ic.ac.uk')
 results_folder = get_scenario_outputs(scenario_filename, model_output_path)[-1]
 
 # the simulation data
-simulation_usage = pd.read_csv(results_folder/'Simulated appt usage between 2015 and 2019.csv')
+simulation_usage = pd.read_csv(results_folder / 'Simulated appt usage between 2015 and 2019.csv')
 # rename some appts to be compared with real usage
 appt_dict = {'Under5OPD': 'OPD',
              'Over5OPD': 'OPD',
+             'AntenatalFirst': 'AntenatalTotal',
+             'ANCSubsequent': 'AntenatalTotal',
              'NormalDelivery': 'Delivery',
              'CompDelivery': 'Delivery',
              'EstMedCom': 'EstAdult',
@@ -55,20 +57,61 @@ appt_dict = {'Under5OPD': 'OPD',
 simulation_usage['Appt_Type'] = simulation_usage['Appt_Type'].replace(appt_dict)
 simulation_usage = pd.DataFrame(simulation_usage.groupby(
     by=['Year', 'Month', 'Facility_ID', 'Appt_Type']).sum().reset_index())
+simulation_usage.rename(columns={'mean': 'Usage'}, inplace=True)
 
 # Output path
 output_path = Path(results_folder)
 
+# add facility level and district columns to both real and simulation usage
+mfl = pd.read_csv(rfp / 'organisation' / 'ResourceFile_Master_Facilities_List.csv')
+real_usage = real_usage.merge(mfl[['Facility_ID', 'Facility_Level', 'District']],
+                              on='Facility_ID', how='left')
+real_usage_TB = real_usage_TB.merge(mfl[['Facility_ID', 'Facility_Level', 'District']],
+                                    on='Facility_ID', how='left')
+simulation_usage = simulation_usage.merge(mfl[['Facility_ID', 'Facility_Level', 'District']],
+                                          on='Facility_ID', how='left')
+
 # comparison and plots
 # the appts to be compared
-appts = ['InpatientDays', 'IPAdmission', 'OPD',
-         'U5Malnutr',
-         'Delivery', 'Csection',
-         'FamPlanCounsel', 'FamPlanMethods', 'FamPlan'
-         'AntenatalFirst', 'AntenatalTotal', 'ANCSubsequent'
-         'EPI',
-         'AccidentsandEmerg', 'MajorSurg', 'MinorSurg',
-         'DentalAll',
-         'MentalAll',
-         'NewAdult', 'Peds', 'PMTCT', 'EstAdult', 'VCTNegative', 'VCTPositive', 'STI', 'MaleCirc',
-         'TBNew']
+appts_real = list(pd.unique(real_usage['Appt_Type'])) + list(pd.unique(real_usage_TB['Appt_Type']))
+appts_model = list(pd.unique(simulation_usage['Appt_Type']))
+appts_to_compare = ['InpatientDays', 'IPAdmission', 'OPD',
+                    'U5Malnutr',
+                    'Delivery', 'Csection',
+                    'FamPlanCounsel', 'FamPlanMethods', 'FamPlan'
+                    # FamPlanCoundsel/Methods from data, FamPlan from model
+                                                        'AntenatalTotal',
+                    'EPI',
+                    'AccidentsandEmerg',
+                    'MentalAll',
+                    'NewAdult', 'EstAdult', 'Peds', 'VCTNegative', 'VCTPositive', 'MaleCirc',
+                    'TBNew']
+appts_not_compare = ['AntenatalFirst',  # real data only for 2013-2016
+                     'MajorSurg', 'MinorSurg',  # no real data
+                     'TBFollowUp',  # no real data
+                     'PMTCT', 'STI', 'DentalAll',  # no model data
+                     'LAB', 'RADIO',  # categories that have no real data
+                     'ConWithDCSA'  # no real data
+                     ]
+
+
+# calculations and plots - Mean national usage per appt of all months
+def avg_yearly_usage_by_nation(usage_df):
+    usage_df = pd.DataFrame(usage_df.groupby(
+        by=['Year', 'Appt_Type'], dropna=False).agg({'Usage': 'sum'}).reset_index())
+
+    usage_df = pd.DataFrame(usage_df.groupby(
+        by=['Appt_Type'], dropna=False).agg({'Usage': 'mean'}).reset_index())
+
+    return usage_df
+
+
+real_usage_year_nation = pd.concat([avg_yearly_usage_by_nation(real_usage),
+                                    avg_yearly_usage_by_nation(real_usage_TB)],
+                                   ignore_index=True)
+
+simulation_usage_year_nation = avg_yearly_usage_by_nation(simulation_usage)
+
+usage_year_nation = real_usage_year_nation.merge(
+    simulation_usage_year_nation, how='outer', on='Appt_Type').rename(
+    columns={'Usage_x': 'Real_Usage', 'Usage_y': 'Simulation_Usage'})
