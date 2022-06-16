@@ -1380,8 +1380,9 @@ class NewbornOutcomes(Module):
         logger.debug(key='message', data=f'NewbornOutcomes_CareOfTheNewbornBySkilledAttendant did not run for '
                                          f'{person_id}')
 
-        if not nci[person_id]['will_receive_pnc'] == 'early':
-            self.set_death_status(person_id)
+        if person_id in nci:
+            if not nci[person_id]['will_receive_pnc'] == 'early':
+                self.set_death_status(person_id)
 
     def run_if_care_of_the_receives_postnatal_check_cant_run(self, hsi_event):
         """
