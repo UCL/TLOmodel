@@ -78,9 +78,8 @@ appts_model = list(pd.unique(simulation_usage['Appt_Type']))
 appts_to_compare = ['InpatientDays', 'IPAdmission', 'OPD',
                     'U5Malnutr',
                     'Delivery', 'Csection',
-                    'FamPlanCounsel', 'FamPlanMethods', 'FamPlan'
-                    # FamPlanCoundsel/Methods from data, FamPlan from model
-                                                        'AntenatalTotal',
+                    'FamPlan',
+                    'AntenatalTotal',
                     'EPI',
                     'AccidentsandEmerg',
                     'MentalAll',
@@ -95,7 +94,8 @@ appts_not_compare = ['AntenatalFirst',  # real data only for 2013-2016
                      ]
 
 
-# calculations and plots - Mean national usage per appt of all months
+# calculations and plots
+# Average annual usage per appt type
 def avg_yearly_usage_by_nation(usage_df):
     usage_df = pd.DataFrame(usage_df.groupby(
         by=['Year', 'Appt_Type'], dropna=False).agg({'Usage': 'sum'}).reset_index())
@@ -114,4 +114,21 @@ simulation_usage_year_nation = avg_yearly_usage_by_nation(simulation_usage)
 
 usage_year_nation = real_usage_year_nation.merge(
     simulation_usage_year_nation, how='outer', on='Appt_Type').rename(
-    columns={'Usage_x': 'Real_Usage', 'Usage_y': 'Simulation_Usage'})
+    columns={'Usage_x': 'Real_Usage', 'Usage_y': 'Simulation_Usage'}).dropna().reset_index(drop=True)
+
+usage_year_nation['Relative_Difference'] = (
+    (usage_year_nation['Simulation_Usage'] - usage_year_nation['Real_Usage']) /
+    usage_year_nation['Real_Usage']
+)
+
+usage_year_nation = usage_year_nation[usage_year_nation['Relative_Difference'] <= 1].reset_index(drop=True)
+
+usage_year_nation.plot(kind='scatter', x='Appt_Type', y='Relative_Difference',
+                       title='Relative difference of model and real average annual usage by appt type')
+plt.xticks(rotation=90)
+plt.hlines(y=0, xmin=0, xmax=len(usage_year_nation)-1, colors='green', linewidth=2)
+for i in usage_year_nation.index:
+    plt.annotate(usage_year_nation.loc[i, 'Relative_Difference'].round(2),
+                 xy=(i-0.5, usage_year_nation.loc[i, 'Relative_Difference'] + 200 * (i % 2 + 1)))
+plt.tight_layout()
+plt.show()
