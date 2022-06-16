@@ -1,6 +1,7 @@
 """Produce plots to show the impact each set of treatments."""
 
 from pathlib import Path
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -33,7 +34,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         """Returns the target period as a string of the form YYYY-YYYY"""
         return "-".join(str(t.year) for t in TARGET_PERIOD)
 
-    def get_parameter_names_from_scenario_file() -> tuple[str]:
+    def get_parameter_names_from_scenario_file() -> Tuple[str]:
         """Get the tuple of names of the scenarios from `Scenario` class used to create the results."""
         from scripts.healthsystem.finding_effects_of_each_treatment.scenario_effect_of_each_treatment import (
             EffectOfEachTreatment,
@@ -72,7 +73,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         cmap = plt.cm.get_cmap('jet')
         return [cmap(i) for i in np.arange(0, 1, 1.0 / len(x))]
 
-    def find_difference_relative_to_comparison(_ser: pd.Series, comparison: str, scaled=False):
+    def find_difference_extra_relative_to_comparison(_ser: pd.Series, comparison: str, scaled=False):
         """Find the difference in the values in a pd.Series with a multi-index, between the draws (level 0)
         within the runs (level 1). Drop the comparison entries. The comparison is made: DIFF(X) = X - COMPARISON. """
         return _ser \
@@ -83,11 +84,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     def find_mean_difference_in_appts_relative_to_comparison(_df: pd.DataFrame, comparison: str):
         """Find the mean difference in the number of appointments between each draw and the comparison draw (within each
-        run)."""
-        return pd.concat({
-            _idx: row.unstack().apply(lambda x: (x[comparison] - x), axis=0).mean(axis=1)
+        run). We are looking for the number FEWER appointments that occur when treatment does not happen, so we flip the
+         sign (as `find_extra_difference_relative_to_comparison` gives the number extra relative the comparison)."""
+        return - summarize(pd.concat({
+            _idx: find_difference_extra_relative_to_comparison(row, comparison=comparison)
             for _idx, row in _df.iterrows()
-        }, axis=1).T.drop(columns=comparison)
+        }, axis=1).T, only_mean=True)
 
     # %% Define parameter names
     param_names = get_parameter_names_from_scenario_file()
@@ -144,12 +146,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     num_deaths_averted = summarize(
         pd.DataFrame(
-            find_difference_relative_to_comparison(num_deaths, comparison='Everything')).T
+            find_difference_extra_relative_to_comparison(num_deaths, comparison='Everything')).T
     ).iloc[0].unstack().sort_values(by='mean', ascending=True).drop(['All', 'FirstAttendance'])
 
     pc_deaths_averted = 100.0 * summarize(
         pd.DataFrame(
-            find_difference_relative_to_comparison(num_deaths, comparison='Everything', scaled=True)).T
+            find_difference_extra_relative_to_comparison(num_deaths, comparison='Everything', scaled=True)).T
     ).iloc[0].unstack().sort_values(by='mean', ascending=True).drop(['All', 'FirstAttendance'])
 
     num_dalys = extract_results(
@@ -162,12 +164,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     num_dalys_averted = summarize(
         pd.DataFrame(
-            find_difference_relative_to_comparison(num_dalys, comparison='Everything')).T
+            find_difference_extra_relative_to_comparison(num_dalys, comparison='Everything')).T
     ).iloc[0].unstack().drop(['All', 'FirstAttendance']).sort_values(by='mean', ascending=True)
 
     pc_dalys_averted = 100.0 * summarize(
         pd.DataFrame(
-            find_difference_relative_to_comparison(num_dalys, comparison='Everything', scaled=True)).T
+            find_difference_extra_relative_to_comparison(num_dalys, comparison='Everything', scaled=True)).T
     ).iloc[0].unstack().drop(['All', 'FirstAttendance']).sort_values(by='mean', ascending=True)
 
     fig, ax = plt.subplots()
@@ -295,4 +297,6 @@ if __name__ == "__main__":
     results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_effect_of_each_treatment-2022-06-13T181214Z')
 
     # TREATMENT_IDs split by module: consumables always available and healthsystem in mode 0
+    # when it's done, it will be: scenario_effect_of_each_treatment-2022-06-14T133746Z
+
     apply(results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
