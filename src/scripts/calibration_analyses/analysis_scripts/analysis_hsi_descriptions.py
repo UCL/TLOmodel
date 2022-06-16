@@ -16,7 +16,6 @@ from tlo.analysis.utils import (
     unflatten_flattened_multi_index_in_logging,
 )
 
-
 # todo - ** PLOTTING AESTHETICS **
 #  * define a colormap for TREATMENT_ID short and use this in Figure 1 and 3
 #  * selective labelling of only the biggest blocks.
