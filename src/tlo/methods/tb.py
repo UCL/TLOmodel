@@ -833,10 +833,6 @@ class Tb(Module):
             strain="mdr",
             incidence_rate=(incidence_year*p["prop_mdr2010"]))
 
-        self.send_for_screening(
-            population
-        )  # send some baseline population for screening
-
     def initialise_simulation(self, sim):
         """
         * 1) Schedule the regular TB events
@@ -864,6 +860,9 @@ class Tb(Module):
             sim.schedule_event(
                 TbCheckPropertiesEvent(self), sim.date + pd.DateOffset(months=1)
             )
+
+        # 5) schedule screening for baseline cases
+        self.send_for_screening(sim.population)  # send some baseline population for screening
 
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual
