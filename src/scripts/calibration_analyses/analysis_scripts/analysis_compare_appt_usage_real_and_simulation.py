@@ -124,11 +124,54 @@ usage_year_nation['Relative_Difference'] = (
 usage_year_nation = usage_year_nation[usage_year_nation['Relative_Difference'] <= 1].reset_index(drop=True)
 
 usage_year_nation.plot(kind='scatter', x='Appt_Type', y='Relative_Difference',
-                       title='Relative difference of model and real average annual usage by appt type')
+                       title='Relative difference of model and real average annual usage \n by appt type')
 plt.xticks(rotation=90)
-plt.hlines(y=0, xmin=0, xmax=len(usage_year_nation)-1, colors='green', linewidth=2)
+plt.hlines(y=0, xmin=0, xmax=len(usage_year_nation) - 1, colors='green', linewidth=2)
 for i in usage_year_nation.index:
     plt.annotate(usage_year_nation.loc[i, 'Relative_Difference'].round(2),
-                 xy=(i-0.5, usage_year_nation.loc[i, 'Relative_Difference'] + 200 * (i % 2 + 1)))
+                 xy=(i - 0.5, usage_year_nation.loc[i, 'Relative_Difference'] + 200 * (i % 2 + 1)))
 plt.tight_layout()
+plt.show()
+
+
+# Average annual usage per appt type per facility level
+def avg_yearly_usage_by_level(usage_df):
+    usage_df = pd.DataFrame(usage_df.groupby(
+        by=['Year', 'Appt_Type', 'Facility_Level'], dropna=False).agg({'Usage': 'sum'}).reset_index())
+
+    usage_df = pd.DataFrame(usage_df.groupby(
+        by=['Appt_Type', 'Facility_Level'], dropna=False).agg({'Usage': 'mean'}).reset_index())
+
+    return usage_df
+
+
+real_usage_year_level = pd.concat([avg_yearly_usage_by_level(real_usage),
+                                   avg_yearly_usage_by_level(real_usage_TB)],
+                                  ignore_index=True)
+
+simulation_usage_year_level = avg_yearly_usage_by_level(simulation_usage)
+
+usage_year_level = real_usage_year_level.merge(
+    simulation_usage_year_level, how='outer', on=['Appt_Type', 'Facility_Level']).rename(
+    columns={'Usage_x': 'Real_Usage', 'Usage_y': 'Simulation_Usage'}).dropna().reset_index(drop=True)
+
+usage_year_level['Relative_Difference'] = (
+    (usage_year_level['Simulation_Usage'] - usage_year_level['Real_Usage']) /
+    usage_year_level['Real_Usage']
+)
+
+level = ['1a', '1b', '2']
+usage_year_level = usage_year_level[usage_year_level['Facility_Level'].isin(level)].reset_index(drop=True)
+usage_year_level = usage_year_level[usage_year_level['Relative_Difference'] <= 1].reset_index(drop=True)
+
+color_dict = {'1a': 'yellow', '1b': 'blue', '2': 'red'}
+marker_dict = {'1a': 'v', '1b': '>', '2': '<'}
+
+sns.scatterplot(data=usage_year_level, x='Appt_Type', y='Relative_Difference',
+                hue='Facility_Level', style='Facility_Level',
+                palette=color_dict, markers=['v', '>', '<'])
+plt.title('Relative difference of model and real average annual usage \n by appt type and facility level')
+plt.xticks(rotation=90)
+plt.tight_layout()
+plt.hlines(y=0, xmin=0, xmax=len(pd.unique(usage_year_level['Appt_Type'])) - 1, colors='green', linewidth=2)
 plt.show()
