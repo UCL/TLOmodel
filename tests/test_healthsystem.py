@@ -689,7 +689,7 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
     assert {'date', 'TREATMENT_ID', 'did_run', 'Squeeze_Factor', 'Number_By_Appt_Type_Code', 'Person_ID',
             'Facility_Level', 'Facility_ID',
             } == set(detailed_hsi_event.columns)
-    assert {'date', 'Frac_Time_Used_Overall', 'Frac_Time_Used_By_Facility_ID'
+    assert {'date', 'Frac_Time_Used_Overall', 'Frac_Time_Used_By_Facility_ID', 'Frac_Time_Used_By_OfficerType',
             } == set(detailed_capacity.columns)
     assert {'date', 'TREATMENT_ID', 'Item_Available', 'Item_NotAvailable'
             } == set(detailed_consumables.columns)

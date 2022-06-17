@@ -5,7 +5,7 @@ It maintains a current record of the availability and usage of beds in the healt
 
 """
 from collections import defaultdict
-from typing import Dict
+from typing import Dict, Tuple
 
 import numpy as np
 import pandas as pd
@@ -197,10 +197,13 @@ class BedDays:
                 description=f'Use of bed_type {bed_type}, by day and facility'
             )
 
-        # 2) Record the total usage of each bed type (across all facilities)
+        # 2) Record the total usage of each bed type today (across all facilities)
         self._summary_counter.record_usage_of_beds(
-            {bed_type: (self._scaled_capacity[bed_type] - tracker.iloc[0]).sum()
-             for bed_type, tracker in self.bed_tracker.items()}
+            {
+                bed_type:
+                    (self._scaled_capacity[bed_type].sum(), tracker.iloc[0].sum())  # (Total, Number-available-now)
+                for bed_type, tracker in self.bed_tracker.items()
+             }
         )
 
     def get_blank_beddays_footprint(self):
@@ -486,21 +489,32 @@ class BedDaysSummaryCounter:
         {<bed_type>: <number_of_beddays>}."""
 
         self._bed_days_used = defaultdict(int)
+        self._bed_days_available = defaultdict(int)
 
-    def record_usage_of_beds(self, bed_days_used: Dict[str, int]) -> None:
+    def record_usage_of_beds(self, bed_days_used: Dict[str, Tuple[int, int]]) -> None:
         """Add record of usage of beds. `bed_days_used` is a dict of the form
-        {<bed_type>: <total_number_used_in_one_day>}."""
+        {<bed_type>: tuple(total_numbers_of_bed_available, total_number_available_now)}."""
 
-        for _bed_type, _num_used in bed_days_used.items():
-            self._bed_days_used[_bed_type] += _num_used
+        for _bed_type, (_total, _num_available) in bed_days_used.items():
+            self._bed_days_used[_bed_type] += (_total - _num_available)
+            self._bed_days_available[_bed_type] += _total
 
     def write_to_log_and_reset_counters(self):
         """Log summary statistics and reset the data structures."""
 
         logger_summary.info(
             key="BedDays",
-            description="Counts of the bed-days that have been used.",
+            description="Counts of the bed-days that have been used (by type).",
             data=self._bed_days_used,
+        )
+
+        logger_summary.info(
+            key="FractionOfBedDaysUsed",
+            description="Fraction of the bed-days available in the last year that were used (by type).",
+            data={
+                _bed_type: self._bed_days_used[_bed_type] / _total
+                for _bed_type, _total in self._bed_days_available.items()
+            }
         )
 
         self._reset_internal_stores()
