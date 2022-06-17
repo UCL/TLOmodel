@@ -593,6 +593,10 @@ class HealthSystem(Module):
 
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
+
+        # Determine service_availability
+        self.service_availability = self.get_service_availability()
+
         self.process_human_resources_files()
 
         # Initialise the BedDays class
@@ -642,9 +646,6 @@ class HealthSystem(Module):
         if not (self.disable or self.disable_and_reject_all):
             self.healthsystemscheduler = HealthSystemScheduler(self)
             sim.schedule_event(self.healthsystemscheduler, sim.date)
-
-        # Determine service_availability
-        self.set_service_availability()
 
     def on_birth(self, mother_id, child_id):
         self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
@@ -821,8 +822,8 @@ class HealthSystem(Module):
         # return the pd.Series of `Total_Minutes_Per_Day' indexed for each type of officer at each facility
         return capabilities_ex['Total_Minutes_Per_Day']
 
-    def set_service_availability(self):
-        """Set service availability. (Should be equal to what is specified by the parameter, but overwrite with what was
+    def get_service_availability(self) -> List[str]:
+        """Returns service availability. (Should be equal to what is specified by the parameter, but overwrite with what was
          provided in argument if an argument was specified -- provided for backward compatibility/debugging.)"""
 
         if self.arg_service_availabily is None:
@@ -831,13 +832,13 @@ class HealthSystem(Module):
             service_availability = self.arg_service_availabily
 
         assert isinstance(service_availability, list)
-        self.service_availability = service_availability
 
         # Log the service_availability
         logger.info(key="message",
                     data=f"Running Health System With the Following Service Availability: "
                          f"{self.service_availability}"
                     )
+        return service_availability
 
     def get_cons_availability(self) -> str:
         """Set consumables availability. (Should be equal to what is specified by the parameter, but overwrite with
@@ -934,7 +935,7 @@ class HealthSystem(Module):
             self.check_hsi_event_is_valid(hsi_event)
 
         # Check that this request is allowable under current policy (i.e. included in service_availability).
-        if not self.is_treatment_id_allowed(hsi_event.TREATMENT_ID):
+        if not self.is_treatment_id_allowed(hsi_event.TREATMENT_ID, self.service_availability):
             # HSI is not allowable under the services_available parameter: run the HSI's 'never_ran' method on the date
             # of tclose.
             self.sim.schedule_event(HSIEventWrapper(hsi_event=hsi_event, run_hsi=False), tclose)
@@ -989,28 +990,29 @@ class HealthSystem(Module):
                 f"which it is not possible: TREATMENT_ID={hsi_event.TREATMENT_ID}"
             )
 
-    def is_treatment_id_allowed(self, treatment_id: str) -> bool:
+    @staticmethod
+    def is_treatment_id_allowed(treatment_id: str, service_availability: list) -> bool:
         """Determine if a treatment_id (specified as a string) can be run (i.e., is within the allowable set of
          treatments, given by `self.service_availability`."""
 
-        if not self.service_availability:
+        if not service_availability:
             # Empty list --> nothing is allowable
             return False
-        elif self.service_availability[0] == '*':
+        elif service_availability == ['*']:
             # Wildcard --> everything is allowed
             return True
         elif treatment_id is None:
             # Treatment_id is None --> allowed
             return True
-        elif treatment_id in self.service_availability:
+        elif treatment_id in service_availability:
             # Explicit inclusion of this treatment_id --> allowed
             return True
-        elif treatment_id.startswith('GenericFirstAppt'):
-            # GenericAppts --> allowable
+        elif treatment_id.startswith('FirstAttendance'):
+            # FirstAttendance* --> allowable
             return True
         else:
             # Check if treatment_id matches any services specified with wildcard * patterns
-            for service_pattern in self.service_availability:
+            for service_pattern in service_availability:
                 if fnmatch.fnmatch(treatment_id, service_pattern):
                     return True
         return False
