@@ -15,7 +15,7 @@ from tlo.analysis.utils import (
     get_scenario_outputs,
     summarize,
     unflatten_flattened_multi_index_in_logging,
-    # create_pickles_locally,
+    create_pickles_locally,
 )
 
 # todo - ** PLOTTING AESTHETICS **
