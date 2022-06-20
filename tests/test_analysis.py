@@ -3,10 +3,15 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from matplotlib import pyplot as plt
 
 from tlo import Date, Module, Simulation, logging
 from tlo.analysis.utils import (
     flatten_multi_index_series_into_dict_for_logging,
+    get_color_coarse_appt,
+    get_color_short_treatment_id,
+    get_corase_appt_type,
+    get_filtered_treatment_ids,
     parse_log_file,
     unflatten_flattened_multi_index_in_logging,
 )
@@ -83,3 +88,73 @@ def test_flattening_and_unflattening_multiindex(tmpdir):
 
         # Check equal
         pd.testing.assert_series_equal(original, series_unflattened.rename(None))
+
+
+def test_corase_appt_type():
+    """Check the function that maps each appt_types to a coarser definition."""
+    appt_types = pd.read_csv(
+        resourcefilepath / 'healthsystem' / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Types_Table.csv'
+    )['Appt_Type'].values
+
+    appts = pd.DataFrame({
+            "original": pd.Series(appt_types),
+            "coarse": pd.Series(appt_types).map(get_corase_appt_type)
+    })
+
+    assert not pd.isnull(appts).any().any()
+    assert 17 == len(appts['coarse'].drop_duplicates())  # 17 coarse categories
+
+
+def test_colormap_coarse_appts():
+    """Check the function that allocates a unique colour to each coarse appointment type."""
+    coarse_appt_types = pd.read_csv(
+        resourcefilepath / 'healthsystem' / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Types_Table.csv'
+    )['Appt_Type'].map(get_corase_appt_type).drop_duplicates().values
+
+    colors = [get_color_coarse_appt(x) for x in coarse_appt_types]
+
+    assert len(set(colors)) == len(colors)  # No duplicates
+    assert all([isinstance(_x, str) for _x in colors])  # All strings
+    assert np.nan is get_color_coarse_appt('????')  # Return `np.nan` if appt_type not recognised.
+
+    # Check can produce plot:
+    fig, ax = plt.subplots()
+    for i, (_appt_type, _color) in enumerate(zip(coarse_appt_types, colors)):
+        ax.bar(i, 10, color=_color, label=_appt_type)
+    ax.legend(fontsize=10, ncol=2)
+    ax.title('Colormap for Coarse Appointment Types')
+    plt.show()
+
+
+def test_get_treatment_ids(tmpdir):
+    """Check the function that generates the list of TREATMENT_IDs defined in the model."""
+
+    x = get_filtered_treatment_ids()  # All TREATMENT_IDs
+    y = get_filtered_treatment_ids(depth=1)  # TREATMENT_IDs to the first level of depth (i.e. module level)
+
+    assert isinstance(x, list)
+    assert all([isinstance(_x, str) for _x in x])
+
+    assert isinstance(y, list)
+    assert all([isinstance(_y, str) for _y in y])
+
+    assert len(y) < len(x)
+
+
+def test_colormap_short_treatment_id():
+    """Check the function that allocates a unique colour to each shortened TREATMENT_ID (i.e. each module)"""
+    ...
+    short_treatment_ids = get_filtered_treatment_ids(depth=1)
+    colors = [get_color_short_treatment_id(x) for x in short_treatment_ids]
+
+    assert len(set(colors)) == len(colors)  # No duplicates
+    assert all([isinstance(_x, str) for _x in colors])  # All strings
+    assert np.nan is get_color_coarse_appt('????')  # Return `np.nan` if appt_type not recognised.
+
+    # Check can produce plot:
+    fig, ax = plt.subplots()
+    for i, (_appt_type, _color) in enumerate(zip(short_treatment_ids, colors)):
+        ax.bar(i, 10, color=_color, label=_appt_type)
+    ax.legend(fontsize=10, ncol=2)
+    ax.title('Colormap for Short TREATMENT_IDs')
+    plt.show()
