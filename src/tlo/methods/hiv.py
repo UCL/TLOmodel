@@ -118,8 +118,8 @@ class Hiv(Module):
             Types.BOOL, "Knows that they are HIV+: i.e. is HIV+ and tested as HIV+"
         ),
         "hv_number_tests": Property(Types.INT, "Number of HIV tests ever taken"),
-        "hv_last_test_date": Property(Types.DATE, "Date of last HIV test"),
         # --- Dates on which things have happened:
+        "hv_last_test_date": Property(Types.DATE, "Date of last HIV test"),
         "hv_date_inf": Property(Types.DATE, "Date infected with HIV"),
     }
 
@@ -2089,24 +2089,40 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Hiv_Prevention_Circumcision"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MaleCirc": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.number_of_occurrences = 0
 
     def apply(self, person_id, squeeze_factor):
-        """Do the circumcision for this man"""
-
+        """ Do the circumcision for this man. If he is already circumcised, this is a follow-up appointment."""
+        self.number_of_occurrences += 1  # The current appointment is included in the count.
         df = self.sim.population.props  # shortcut to the dataframe
 
         person = df.loc[person_id]
 
-        # Do not run if the person is not alive or is already circumcised
-        if not person["is_alive"] or person["li_is_circ"]:
+        # Do not run if the person is not alive
+        if not person["is_alive"]:
             return
 
-        # Check/log use of consumables, and do circumcision if materials available
-        # NB. If materials not available, it is assumed that the procedure is not carried out for this person following
-        # this particular referral.
-        if self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['circ']):
-            # Update circumcision state
-            df.at[person_id, "li_is_circ"] = True
+        # if person not circumcised, perform the procedure
+        if not person["li_is_circ"]:
+            # Check/log use of consumables, and do circumcision if materials available
+            # NB. If materials not available, assume the procedure is not carried out for this person following
+            # this particular referral.
+            if self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['circ']):
+                # Update circumcision state
+                df.at[person_id, "li_is_circ"] = True
+
+        # Schedule follow-up appts
+        # - if this is the first appointment, follow-up 3 days from procedure;
+        # - if this is the second appointment, follow-up 4 days from second appt;
+        # - if this is the third appointment, do nothing.
+        if self.number_of_occurrences < 3:
+            days_to_fup = 3 if self.number_of_occurrences == 1 else 4
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                self,
+                topen=self.sim.date + DateOffset(days=days_to_fup),
+                tclose=None,
+                priority=0,
+            )
 
 
 class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):

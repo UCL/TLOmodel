@@ -351,7 +351,8 @@ class SampleRunner:
                 module = sim.modules[module_name]
                 for param_name, param_val in overrides.items():
                     assert param_name in module.PARAMETERS, f"{module} does not have parameter '{param_name}'"
-                    assert np.isscalar(param_val), f"Parameter value '{param_val}' is not scalar type (float, int, str)"
+                    # assert np.isscalar(param_val),
+                    #  f"Parameter value '{param_val}' is not scalar type (float, int, str)"
 
                     old_value = module.parameters[param_name]
                     assert type(old_value) == type(param_val), f"Cannot override parameter '{param_name}' - wrong type"

@@ -1204,7 +1204,8 @@ class Models:
             )
 
         # Probability that treatment "blocks" the death for someone that would have died.
-        prob_treatment_blocks_death = 1 - prob_death['after_treatment']/prob_death['before_treatment']
+        prob_treatment_blocks_death = (1.0 - prob_death['after_treatment'] / prob_death['before_treatment']) if \
+            prob_death['before_treatment'] != 0.0 else 1.0
 
         # Return outcome, determine probabilstically
         return self.rng.rand() < prob_treatment_blocks_death
