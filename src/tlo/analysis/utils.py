@@ -803,14 +803,14 @@ def get_color_short_treatment_id(short_treatment_id: str) -> str:
     return lookup.get(short_treatment_id.rstrip('*'), np.nan)
 
 
-def squarify_neat(sizes: np.array, label: np.array, colormap: Callable, **kwargs):
+def squarify_neat(sizes: np.array, label: np.array, colormap: Callable, numlabels=5, **kwargs):
     """Pass through to squarify, with some customisation: ...
      * Apply the colormap specified
      * Only give label a selection of the segments
     """
 
-    # Include labels only for the biggest 8 segments.
-    to_label = pd.Series(index=label, data=sizes).sort_values(ascending=False).iloc[0:8].index.to_list()
+    # Suppress labels for all but the top `numlabels` biggest entries.
+    to_label = pd.Series(index=label, data=sizes).sort_values(ascending=False).iloc[0:numlabels].index.to_list()
 
     squarify.plot(
         sizes=sizes,
