@@ -764,10 +764,11 @@ def squarify_neat(sizes: np.array, label: np.array, colormap: Callable, numlabel
     """Pass through to squarify, with some customisation: ...
      * Apply the colormap specified
      * Only give label a selection of the segments
+     N.B. The package `squarify` is required.
     """
 
-    # Suppress labels for all but the top `numlabels` biggest entries.
-    to_label = pd.Series(index=label, data=sizes).sort_values(ascending=False).iloc[0:numlabels].index.to_list()
+    # Suppress labels for all but the `numlabels` largest entries.
+    to_label = set(pd.Series(index=label, data=sizes).sort_values(ascending=False).iloc[0:numlabels].index)
 
     squarify.plot(
         sizes=sizes,

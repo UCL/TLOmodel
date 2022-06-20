@@ -51,6 +51,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         return _df
 
     # %% "Figure 1": The Distribution of HSI_Events that occur by TREATMENT_ID
+    # todo - these could be done using the summary logger for speed
 
     def get_counts_of_hsi_by_treatment_id(_df):
         return formatting_hsi_df(_df).groupby(by='TREATMENT_ID').size()
