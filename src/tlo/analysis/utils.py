@@ -715,16 +715,16 @@ def _define_short_treatment_ids() -> pd.Series:
         'Epi*': 'darkgoldenrod',
 
         'Contraception*': 'darkseagreen',
-        'AntenatalCare*': 'forestgreen',
+        'AntenatalCare*': 'green',
         'DeliveryCare*': 'limegreen',
         'PostnatalCare*': 'springgreen',
         'PostnatalSupervisor*': 'mediumaquamarine',  # todo <-- remove this when it's gone from code.
 
-        'Hiv*': 'darkblue',
-        'Malaria*': 'blue',
-        'Measles*': 'slateblue',
-        'Tb*': 'blueviolet',
-        'Schisto*': 'indigo',
+        'Hiv*': 'deepskyblue',
+        'Malaria*': 'lightsteelblue',
+        'Measles*': 'cornflowerblue',
+        'Tb*': 'mediumslateblue',
+        'Schisto*': 'skyblue',
 
         'CardioMetabolicDisorders*': 'brown',
 
@@ -734,9 +734,9 @@ def _define_short_treatment_ids() -> pd.Series:
         'ProstateCancer*': 'hotpink',
         'OtherAdultCancer*': 'palevioletred',
 
-        'Depression*': 'teal',
-        'Epilepsy*': 'cadetblue',
-        'Rti*': 'skyblue',
+        'Depression*': 'indianred',
+        'Epilepsy*': 'red',
+        'Rti*': 'lightsalmon',
     })
 
 
