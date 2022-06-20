@@ -7,7 +7,7 @@ import os
 import pickle
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, TextIO, Union, Callable
+from typing import Callable, Dict, Iterable, List, Optional, TextIO, Union
 
 import numpy as np
 import pandas as pd
@@ -614,193 +614,150 @@ def get_filtered_treatment_ids(depth: Optional[int] = None) -> List[str]:
 # todo - factorize so it's all in one place: label, entries, color
 
 
+def _define_coarse_appts() -> pd.DataFrame:
+    """Define which appointment types fall into which 'coarse appointment' category, the order of the categories and the
+    colour of the category."""
+    return pd.DataFrame.from_dict(
+        [
+            {
+                'category': 'Outpatient',
+                'appt_types': ['Under5OPD', 'Over5OPD'],
+                'color': 'magenta'
+            },
+            {
+                'category': 'Con w/ DCSA',
+                'appt_types': ['ConWithDCSA'],
+                'color': 'crimson'},
+            {
+                'category': 'A & E',
+                'appt_types': ['AccidentsandEmerg'],
+                'color': 'forestgreen'},
+            {
+                'category': 'Inpatient',
+                'appt_types': ['InpatientDays', 'IPAdmission'],
+                'color': 'mediumorchid'},
+            {
+                'category': 'RMNCH',
+                'appt_types': ['AntenatalFirst', 'ANCSubsequent', 'NormalDelivery', 'CompDelivery', 'Csection', 'EPI',
+                               'FamPlan', 'U5Malnutr'],
+                'color': 'darkturquoise'},
+            {
+                'category': 'HIV/AIDS',
+                'appt_types': ['VCTNegative', 'VCTPositive', 'MaleCirc', 'NewAdult', 'EstMedCom', 'EstNonCom', 'PMTCT',
+                               'Peds'],
+                'color': 'gold'},
+            {
+                'category': 'Tb',
+                'appt_types': ['TBNew', 'TBFollowUp'],
+                'color': 'y'},
+            {
+                'category': 'Dental',
+                'appt_types': ['DentAccidEmerg', 'DentSurg', 'DentalU5', 'DentalO5'],
+                'color': 'red'},
+            {
+                'category': 'Mental Health',
+                'appt_types': [ 'MentOPD', 'MentClinic'],
+                'color': 'orangered'},
+            {
+                'category': 'Surgery / Radiotherapy',
+                'appt_types': ['MajorSurg', 'MinorSurg','Radiotherapy'],
+                'color': 'orange'},
+            {
+                'category': 'STI',
+                'appt_types': ['STI'],
+                'color': 'slateblue'},
+            {
+                'category': 'Lab / Diagnostics',
+                'appt_types': ['LabHaem', 'LabPOC', 'LabParasit', 'LabBiochem', 'LabMicrobio', 'LabMolec', 'LabTBMicro',
+                               'LabSero', 'LabCyto', 'LabTrans', 'Ultrasound', 'Mammography', 'MRI', 'Tomography',
+                               'DiagRadio'],
+                'color': 'dodgerblue'}
+        ]
+    ).set_index('category')
+
 
 def get_corase_appt_type(appt_type: str) -> str:
     """Return the `coarser` categorization of appt_types for a given appt_type. """
-    if appt_type in (
-        'Under5OPD', 'Over5OPD'
-    ):
-        return 'Outpatient'
-    elif appt_type in (
-        'ConWithDCSA'
-    ):
-        return 'Con w/ DCSA'
-    elif appt_type in (
-        'AccidentsandEmerg'
-    ):
-        return "A & E"
-    elif appt_type in (
-        'InpatientDays', 'IPAdmission'
-    ):
-        return 'Inpatient'
-    elif appt_type in (
-        'AntenatalFirst', 'ANCSubsequent', 'NormalDelivery', 'CompDelivery', 'Csection', 'EPI', 'FamPlan', 'U5Malnutr',
-    ):
-        return 'RMNCH'
-    elif appt_type in (
-        'VCTNegative', 'VCTPositive', 'MaleCirc', 'NewAdult', 'EstMedCom', 'EstNonCom', 'PMTCT', 'Peds'
-    ):
-        return 'HIV/AIDS'
-    elif appt_type in (
-        'TBNew', 'TBFollowUp'
-    ):
-        return 'Tb'
-    elif appt_type in (
-        'DentAccidEmerg', 'DentSurg', 'DentalU5', 'DentalO5',
-    ):
-        return 'Dental'
-    elif appt_type in (
-        'MentOPD', 'MentClinic',
-    ):
-        return 'Mental Health'
-    elif appt_type in (
-        'MajorSurg',
-        'MinorSurg',
-        'Radiotherapy',
-    ):
-        return 'Surgery / Radiotherapy'
-    elif appt_type in (
-        'STI',
-    ):
-        return 'STI'
-    elif appt_type in (
-        'LabHaem', 'LabPOC', 'LabParasit', 'LabBiochem', 'LabMicrobio', 'LabMolec', 'LabTBMicro', 'LabSero', 'LabCyto',
-        'LabTrans', 'Ultrasound', 'Mammography', 'MRI', 'Tomography', 'DiagRadio',
-    ):
-        return 'Lab / Diagnostics'
-    else:
-        return np.nan
+    for coarse_appt_types, row in _define_coarse_appts().iterrows():
+        if appt_type in row['appt_types']:
+            return coarse_appt_types
 
 
-def order_of_coarse_appt(_short_treatment_id: Union[str, pd.Index]) -> int:
+def order_of_coarse_appt(_coarse_appt: Union[str, pd.Index]) -> int:
     """Define a standard order for the coarse appointment types."""
-    order = (
-        'Outpatient',
-        'Con w/ DCSA',
-        'A & E',
-        'Inpatient',
-        'RMNCH',
-        'HIV/AIDS',
-        'Tb',
-        'Dental',
-        'Mental Health',
-        'Surgery / Radiotherapy',
-        'STI',
-        'Lab / Diagnostics',
-    )
-
-    if isinstance(_short_treatment_id, str):
-        return order.index(_short_treatment_id)
+    order = _define_coarse_appts().index
+    if isinstance(_coarse_appt, str):
+        return tuple(order).index(_coarse_appt)
     else:
-        return pd.Index(sorted([_x for _x in _short_treatment_id if _x in order], key=lambda f: order.index(f)))
+        return order[order.isin(_coarse_appt)]
 
 
 def get_color_coarse_appt(coarse_appt_type: str) -> str:
     """Return the colour (as matplotlib string) assigned to this appointment type. Returns `np.nan` if appointment-type
     is not recognised.
     Names of colors are selected with reference to: https://i.stack.imgur.com/lFZum.png"""
+    colors = _define_coarse_appts().color
+    if coarse_appt_type in colors.index:
+        return colors.loc[coarse_appt_type]
+    else:
+        return np.nan
 
-    lookup = {
-        'Outpatient': 'magenta',
-        'Con w/ DCSA': 'crimson',
-        'A & E': 'forestgreen',
-        'Inpatient': 'mediumorchid',
-        'RMNCH': 'darkturquoise',
-        'HIV/AIDS': 'gold',
-        'Tb': 'y',
-        'Dental': 'red',
-        'Mental Health': 'orangered',
-        'Surgery / Radiotherapy': 'orange',
-        'STI': 'slateblue',
-        'Lab / Diagnostics': 'dodgerblue',
-    }
 
-    return lookup.get(coarse_appt_type, np.nan)
+def _define_short_treatment_ids() -> pd.Series:
+    """Define the order of the short treatment_ids and the color for each"""
+    return pd.Series({
+        'FirstAttendance*': 'dimgrey',
+        'Inpatient*': 'darkgrey',
+
+        'Alri*': 'darkorange',
+        'Diarrhoea*': 'tan',
+        'Undernutrition*': 'gold',
+        'Epi*': 'darkgoldenrod',
+
+        'Contraception*': 'darkseagreen',
+        'AntenatalCare*': 'forestgreen',
+        'DeliveryCare*': 'limegreen',
+        'PostnatalCare*': 'springgreen',
+        'PostnatalSupervisor*': 'mediumaquamarine',  # todo <-- remove this when it's gone from code.
+
+        'Hiv*': 'darkblue',
+        'Malaria*': 'blue',
+        'Measles*': 'slateblue',
+        'Tb*': 'blueviolet',
+        'Schisto*': 'indigo',
+
+        'CardioMetabolicDisorders*': 'brown',
+
+        'BladderCancer*': 'orchid',
+        'BreastCancer*': 'mediumvioletred',
+        'OesophagealCancer*': 'deeppink',
+        'ProstateCancer*': 'hotpink',
+        'OtherAdultCancer*': 'palevioletred',
+
+        'Depression*': 'teal',
+        'Epilepsy*': 'cadetblue',
+        'Rti*': 'skyblue',
+    })
 
 
 def order_of_short_treatment_ids(_short_treatment_id) -> int:
     """Define a standard order for short treatment_ids."""
-
-    order = (
-        'FirstAttendance',
-        'Inpatient',
-
-        'Contraception',
-        'AntenatalCare',
-        'DeliveryCare',
-        'PostnatalCare',
-        'PostnatalSupervisor',
-
-        'Alri',
-        'Diarrhoea',
-        'Undernutrition',
-        'Epi',
-
-        'Hiv',
-        'Malaria',
-        'Measles',
-        'Tb',
-        'Schist',
-
-        'CardioMetabolicDisorders',
-
-        'BladderCancer',
-        'BreastCancer',
-        'OesophagealCancer',
-        'ProstateCancer',
-        'OtherAdultCancer',
-
-        'Depression',
-        'Epilepsy',
-        'Rti',
-    )
+    order = _define_short_treatment_ids().index
     if isinstance(_short_treatment_id, str):
-        order.index(_short_treatment_id.rstrip('*'))
+        return tuple(order).index(_short_treatment_id)
     else:
-        return pd.Index(sorted([_x for _x in _short_treatment_id if _x.rstrip('*') in order], key=lambda f: order.index(f)))
+        return order[order.isin(_short_treatment_id)]
 
 
 def get_color_short_treatment_id(short_treatment_id: str) -> str:
     """Return the colour (as matplotlib string) assigned to this shorted TREATMENT_ID. Returns `np.nan` if treatment_id
     is not recognised.
     Names of colors are selected with reference to: https://i.stack.imgur.com/lFZum.png"""
-
-    lookup = {
-
-        'FirstAttendance': 'dimgrey',
-        'Inpatient': 'darkgrey',
-
-        'Alri': 'darkorange',
-        'Diarrhoea': 'tan',
-        'Undernutrition': 'gold',
-        'Epi': 'darkgoldenrod',
-
-        'Contraception': 'darkseagreen',
-        'AntenatalCare': 'forestgreen',
-        'DeliveryCare': 'limegreen',
-        'PostnatalCare': 'springgreen',
-        'PostnatalSupervisor': 'mediumaquamarine',
-
-        'Hiv': 'darkblue',
-        'Malaria': 'blue',
-        'Measles': 'slateblue',
-        'Tb': 'blueviolet',
-        'Schisto': 'indigo',
-
-        'CardioMetabolicDisorders': 'brown',
-
-        'BladderCancer': 'orchid',
-        'BreastCancer': 'mediumvioletred',
-        'OesophagealCancer': 'deeppink',
-        'ProstateCancer': 'hotpink',
-        'OtherAdultCancer': 'palevioletred',
-
-        'Depression': 'teal',
-        'Epilepsy': 'cadetblue',
-        'Rti': 'skyblue',
-    }
-
-    return lookup.get(short_treatment_id.rstrip('*'), np.nan)
+    colors = _define_short_treatment_ids()
+    if short_treatment_id in colors.index:
+        return colors.loc[short_treatment_id]
+    else:
+        return np.nan
 
 
 def squarify_neat(sizes: np.array, label: np.array, colormap: Callable, numlabels=5, **kwargs):
