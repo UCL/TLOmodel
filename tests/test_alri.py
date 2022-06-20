@@ -293,7 +293,8 @@ def test_basic_run_lasting_two_years(sim_hs_all_consumables):
 
     # increase death risk
     params = sim.modules['Alri'].parameters
-    params['baseline_odds_alri_death'] *= 5.0
+    params['base_odds_death_ALRI_age<2mo'] *= 5.0
+    params['base_odds_death_ALRI_age2_59mo'] *= 5.0
 
     sim.simulate(end_date=start_date + dur)
 

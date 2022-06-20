@@ -637,7 +637,55 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'mortality among children who changed to 2nd line antibiotics '
                       ),
+        'tf_oral_amoxicillin_only_for_severe_pneumonia_with_SpO2>=93%':
+            Parameter(Types.REAL,
+                      'probability of treatment failure by day 2 '
+                      'for oral amoxicillin given to severe pneumonia (danger-signs)  without hypoxaemia (SpO2>=93%)'
+                      ),
+        'tf_oral_amoxicillin_only_for_non_severe_pneumonia_with_SpO2<90%':
+            Parameter(Types.REAL,
+                      'probability of treatment failure or relapse'
+                      'for oral amoxicillin given to non-severe pneumonia (fast-breathing or chest-indrawing) '
+                      'with hypoxaemia (SpO2<90%)'
+                      ),
+        'tf_oral_amoxicillin_only_for_severe_pneumonia_with_SpO2<90%':
+            Parameter(Types.REAL,
+                      'probability of treatment failure or relapse'
+                      'for oral amoxicillin given to severe pneumonia (danger-signs) '
+                      'with hypoxaemia (SpO2<90%)'
+                      ),
+        'tf_1st_line_antibiotic_for_severe_pneumonia_with_SpO2>=93%':
+            Parameter(Types.REAL,
+                      'probability of treatment failure by day 2'
+                      'for 1st line antibiotic (with/out oxygen) given to severe pneumonia (danger-signs) '
+                      'without hypoxaemia (SpO2>=93%)'
+                      ),
+        'tf_1st_line_antibiotic_only_for_severe_pneumonia_with_SpO2_90_92%':
+            Parameter(Types.REAL,
+                      'probability of treatment failure by day 2'
+                      'for 1st line antibiotic (no oxygen) given to severe pneumonia (danger-signs) '
+                      'with moderate hypoxaemia (SpO2 between 90-92%)'
+                      ),
+        'tf_1st_line_antibiotic_oxygen_for_severe_pneumonia_with_SpO2_90_92%':
+            Parameter(Types.REAL,
+                      'probability of treatment failure by day 2'
+                      'for 1st line antibiotic and oxygen given to severe pneumonia (danger-signs) '
+                      'with moderate hypoxaemia (SpO2 between 90-92%)'
+                      ),
+        'tf_1st_line_antibiotic_only_for_severe_pneumonia_with_SpO2<90%':
+            Parameter(Types.REAL,
+                      'probability of treatment failure by day 2'
+                      'for 1st line antibiotic (no oxygen) given to severe pneumonia (danger-signs) '
+                      'with moderate hypoxaemia (SpO2 between 90-92%)'
+                      ),
+        'tf_1st_line_antibiotic_oxygen_for_severe_pneumonia_with_SpO2<90%':
+            Parameter(Types.REAL,
+                      'probability of treatment failure by day 2'
+                      'for 1st line antibiotic and oxygen given to severe pneumonia (danger-signs) '
+                      'with moderate hypoxaemia (SpO2<90%)'
+                      ),
 
+        # sensitivities for correct classification by health workers
         'sensitivity_of_classification_of_fast_breathing_pneumonia_facility_level0':
             Parameter(Types.REAL,
                       'sensitivity of correct classification and treatment decision by the HSA trained in iCCM,'
@@ -1227,6 +1275,7 @@ class Alri(Module):
         if not needs_oxygen:
             # For no hypoxaemia (SpO2 >= 90%) -----
 
+            # chest-indrawing pneumonia
             if imci_symptom_based_classification == 'chest_indrawing_pneumonia':
                 if antibiotic_provided == '5day_oral_amoxicillin':
                     return p['5day_amoxicillin_for_chest_indrawing_treatment_failure_or_relapse'] > \
@@ -1243,7 +1292,7 @@ class Alri(Module):
                     return p['3day_amoxicillin_for_fast_breathing_treatment_failure_or_relapse'] > \
                            self.rng.random_sample()
                 elif antibiotic_provided == '5day_oral_amoxicillin':
-                    return p['5day_amoxicillin_for_chest_indrawing_treatment_failure_or_relapse'] > \
+                    return p['5day_amoxicillin_for_fast_breathing_treatment_failure_or_relapse'] > \
                            self.rng.random_sample()
                 else:
                     _raise_error()
@@ -1251,13 +1300,15 @@ class Alri(Module):
             # danger-signs pneumonia
             elif imci_symptom_based_classification in ('danger_signs_pneumonia', 'serious_bacterial_infection'):
                 if antibiotic_provided == '1st_line_IV_antibiotics':
-                    return p['1st_line_antibiotic_for_severe_pneumonia_treatment_failure_by_day2'] \
+                    return p['tf_1st_line_antibiotic_for_severe_pneumonia_with_SpO2>=93%'] \
                            > self.rng.random_sample()
                 elif antibiotic_provided == '5day_oral_amoxicillin':
-                    return True
+                    return p['tf_oral_amoxicillin_only_for_severe_pneumonia_with_SpO2>=93%'] \
+                           > self.rng.random_sample()
                 else:
                     _raise_error()
 
+            # no pneumonia
             elif imci_symptom_based_classification == "cough_or_cold":
                 return False  # Treatment cannot 'fail' for a cough_or_cold
 
@@ -1265,24 +1316,29 @@ class Alri(Module):
                 _raise_error()
 
         else:
-            # todo - @Ines - this should depend on whether or not oxygen is actually provided!
             # For hypoxaemia (SpO2 < 90%) -----
+
+            # non-severe pneumonia
             if imci_symptom_based_classification in ('fast_breathing_pneumonia', 'chest_indrawing_pneumonia'):
-                # todo @Ines - treatment always fails, no matter what is provided! Ask consultant and make this depend
-                #  whether oxygen provided. ("Ask him if this classification gets oral antibiotics and oxygen- does it
-                #  have an effect").
-                return True
+                if antibiotic_provided in ('3day_oral_amoxicillin',  '5day_oral_amoxicillin') and \
+                        (oxygen_provided == False):
+                    return p['tf_oral_amoxicillin_only_for_non_severe_pneumonia_with_SpO2<90%'] \
+                       > self.rng.random_sample()
+                elif antibiotic_provided in ('3day_oral_amoxicillin', '5day_oral_amoxicillin',
+                                             '1st_line_IV_antibiotics') and oxygen_provided:
+                    return p['tf_1st_line_antibiotic_oxygen_for_severe_pneumonia_with_SpO2<90%'] \
+                           > self.rng.random_sample()
 
             # danger-signs pneumonia
             elif imci_symptom_based_classification in ('danger_signs_pneumonia', 'serious_bacterial_infection'):
                 if (antibiotic_provided == '1st_line_IV_antibiotics') and oxygen_provided:
-                    return (
-                               p['1st_line_antibiotic_for_severe_pneumonia_treatment_failure_by_day2']
-                               # * p['rr_1st_line_treatment_failure_low_oxygen_saturation']
-                           ) > self.rng.random_sample()
-                else:
-                    return True
+                    return p['tf_1st_line_antibiotic_oxygen_for_severe_pneumonia_with_SpO2<90%'] \
+                           > self.rng.random_sample()
+                elif (antibiotic_provided == '1st_line_IV_antibiotics') and (oxygen_provided == False):
+                    return p['tf_1st_line_antibiotic_only_for_severe_pneumonia_with_SpO2<90%'] \
+                           > self.rng.random_sample()
 
+            # no pneumonia
             elif imci_symptom_based_classification == "cough_or_cold":
                 return False  # Treatment cannot 'fail' for a cough_or_cold
 
@@ -1629,8 +1685,11 @@ class Models:
         p = self.p
         df = self.module.sim.population.props
         person = df.loc[person_id]
-        # # check if any complications - death occurs only if a complication is present
-        # any_complications = person[[f'ri_complication_{c}' for c in self.module.complications]].any()
+        # check if any complications - death occurs only if a complication is present
+        any_complications = person[[f'ri_complication_{c}' for c in self.module.complications]].any()
+
+        # get the classification based on symptoms/ or get danger-signs
+        symptoms = self.module.sim.modules['SymptomManager'].has_what(person_id)
 
         # Baseline risk for young infants aged less than 2 months:
         odds_death_age_lt2mo = p['base_odds_death_ALRI_age<2mo']
@@ -1640,8 +1699,6 @@ class Models:
             odds_death_age_lt2mo *= p['or_death_ALRI_age<2mo_by_month_increase_in_age']
 
         # The effect of disease severity
-        # get the classification based on symptoms/ or get danger-signs
-        symptoms = self.module.sim.modules['SymptomManager'].has_what(person_id)
         if {'danger_signs'}.intersection(symptoms):
             odds_death_age_lt2mo *= p['or_death_ALRI_age<2mo_very_severe_pneumonia']
 
@@ -1658,16 +1715,14 @@ class Models:
         one_month_in_a_year = 1.0 / 12.0
 
         for i in age_range_in_months:
-            if person['age_exact_years'].between(i * one_month_in_a_year, (i + 1) * one_month_in_a_year):
-                odds_death_age2_59mo *= p['or_death_ALRI_age2_59mo_by_month_increase_in_age'] * i
+            if (i * one_month_in_a_year) <= person['age_exact_years'] < ((i + 1) * one_month_in_a_year):
+                odds_death_age2_59mo *= (p['or_death_ALRI_age2_59mo_by_month_increase_in_age'] ** i)
 
         # The effect of gender:
         if person['sex'] == 'F':
             odds_death_age2_59mo *= p['or_death_ALRI_age2_59mo_female']
 
         # The effect of disease severity
-        # get the classification based on symptoms/ or get danger-signs
-        symptoms = self.module.sim.modules['SymptomManager'].has_what(person_id)
         if {'danger_signs'}.intersection(symptoms):
             odds_death_age2_59mo *= p['or_death_ALRI_age2_59mo_very_severe_pneumonia']
 
@@ -1692,10 +1747,19 @@ class Models:
         risk_death_age_lt2mo = odds_death_age_lt2mo / (1 + odds_death_age_lt2mo)
         risk_death_age2_59mo = odds_death_age2_59mo / (1 + odds_death_age2_59mo)
 
+        # if any_complications:
+        #     if person['age_exact_years'] < 1.0 / 6.0:
+        #         return risk_death_age_lt2mo > self.rng.random_sample()
+        #     else:
+        #         return risk_death_age2_59mo > self.rng.random_sample()
+        # else:
+        #     return False
+
         if person['age_exact_years'] < 1.0 / 6.0:
             return risk_death_age_lt2mo > self.rng.random_sample()
         else:
             return risk_death_age2_59mo > self.rng.random_sample()
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
@@ -1883,7 +1947,8 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
                                                )
 
         # log the complications to the tracker
-        if any(['pneumothorax', 'pleural_effusion', 'empyema', 'lung_abscess']) in sorted(complications_that_onset):
+        if any(x in ['pneumothorax', 'pleural_effusion', 'empyema', 'lung_abscess']
+               for x in sorted(complications_that_onset)):
             self.module.logging_event.new_pulmonary_complication_case()
         if 'sepsis' in sorted(complications_that_onset):
             self.module.logging_event.new_systemic_complication_case()
