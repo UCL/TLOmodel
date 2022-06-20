@@ -22,6 +22,7 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
     tb,
+    rti,
 )
 
 # Where will outputs go
@@ -69,12 +70,12 @@ sim.register(
         resourcefilepath=resourcefilepath,
         service_availability=["*"],  # all treatment allowed
         mode_appt_constraints=0,  # mode of constraints to do with officer numbers and time
-        cons_availability="default",  # mode for consumable constraints (if ignored, all consumables available)
+        cons_availability="none",  # mode for consumable constraints (if ignored, all consumables available)
         ignore_priority=False,  # do not use the priority information in HSI event to schedule
         capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
         use_funded_or_actual_staffing="actual",  # actual: use numbers/distribution of staff available currently
         disable=False,  # disables the healthsystem (no constraints and no logging) and every HSI runs
-        disable_and_reject_all=False,  # disable healthsystem and no HSI runs
+        disable_and_reject_all=True,  # disable healthsystem and no HSI runs
         store_hsi_events_that_have_run=False,  # convenience function for debugging
     ),
     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
@@ -83,6 +84,7 @@ sim.register(
     epi.Epi(resourcefilepath=resourcefilepath),
     hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False),
     tb.Tb(resourcefilepath=resourcefilepath),
+    rti.RTI(resourcefilepath=resourcefilepath)
     # deviance_measure.Deviance(resourcefilepath=resourcefilepath),
 )
 
