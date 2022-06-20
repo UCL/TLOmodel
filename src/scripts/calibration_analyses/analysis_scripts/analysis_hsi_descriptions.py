@@ -14,10 +14,6 @@ from tlo.analysis.utils import (
     squarify_neat, get_color_short_treatment_id, get_color_coarse_appt, get_corase_appt_type, order_of_coarse_appt,
 )
 
-# todo - ** PLOTTING AESTHETICS **
-#  * define a colormap for TREATMENT_ID short and use this in Figure 1 and 3
-#  * selective labelling of only the biggest blocks.
-
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Description of the usage of healthcare system resources."""
