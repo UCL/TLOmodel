@@ -7,7 +7,7 @@ import os
 import pickle
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Dict, Optional, TextIO
+from typing import Dict, Iterable, List, Optional, TextIO
 
 import numpy as np
 import pandas as pd
@@ -586,3 +586,186 @@ class LogsDict(Mapping):
         for key in self.keys():
             self.__getitem__(key, cache=True)
         return self.__dict__
+
+
+def get_filtered_treatment_ids(depth: Optional[int] = None) -> List[str]:
+    """Return a list of treatment_ids that are defined in the model, filtered to a specified depth."""
+
+    def filter_treatments(_treatments: Iterable[str], depth: int = 1) -> List[str]:
+        """Reduce an iterable of `TREATMENT_IDs` by ignoring difference beyond a certain depth of specification.
+        The TREATMENT_ID is defined with each increasing level of specification separated by a `_`. """
+        return sorted(list(set(
+            [
+                "".join(f"{x}_" for i, x in enumerate(t.split('_')) if i < depth).rstrip('_') + '*'
+                for t in set(_treatments)
+            ]
+        )))
+
+    # Get pd.DataFrame with information of all the defined HSI
+    from docs.tlo_hsi_events import get_all_treatments_ids
+    all_treatment_ids = get_all_treatments_ids()
+
+    # Return list of TREATMENT_IDs and filter to the resolution needed
+    return filter_treatments(all_treatment_ids['treatment_id'], depth=depth if depth is not None else np.inf)
+
+
+def get_corase_appt_type(appt_type: str) -> str:
+    """Return the `coarser` categorization of appt_types for a given appt_type. """
+    if appt_type.startswith('Inpatient'):
+        return 'Inpatient'
+    elif appt_type.endswith('Outpatient Visit') or appt_type.endswith('Outpatient visit'):
+        return 'Outpatient'
+    elif (
+        appt_type.endswith('Deliveries')
+        or (appt_type == 'Caesarean Sections')
+    ):
+        return 'Deliveries'
+    elif appt_type.startswith('Antenatal Care'):
+        return 'Antenatal Care'
+    elif appt_type.endswith('Malnutirion'):   # [sic]
+        return 'Malnutrition'
+    elif appt_type.endswith('Surgical Procedures'):
+        return 'Surgery'
+    elif appt_type.startswith('TB'):
+        return 'Tb'
+    elif (
+        appt_type.startswith('HIV/AIDS Program')
+        or appt_type.startswith('Voluntary Counseling')  # [sic]
+        or (appt_type == 'Male Circumscisions')  # [sic]
+    ):
+        return 'HIV/AIDS'
+    elif appt_type.startswith('Laboratory'):
+        return 'Laboratory'
+    elif (
+        appt_type in ('Ultrasound', 'Mammography', 'MRI', 'Tomography')
+        or appt_type.startswith('Diagnostic')
+    ):
+        return 'Diagnostic Investigation'
+    elif appt_type.startswith('Dental'):
+        return 'Dental'
+    elif appt_type.startswith('Mental Health'):
+        return 'Mental Health'
+    elif (appt_type == 'Accidents and Emergencies'):
+        return 'A & E'
+    elif appt_type in (
+        'ConWithDCSA',
+        'Family Planning',
+        'EPI',
+    ):
+        return appt_type
+    elif appt_type in (
+        'STI',
+        'Radiotherapy',
+    ):
+        return 'Other'
+    else:
+        return np.nan
+
+
+def get_color_coarse_appt(coarse_appt_type: str) -> str:
+    """Return the colour (as matplotlib string) assigned to this appointment type. Returns `np.nan` if appointment-type
+    is not recognised.
+    Names of colors are selected with reference to: https://i.stack.imgur.com/lFZum.png"""
+
+    lookup = {
+        'ConWithDCSA': 'crimson',
+        'Outpatient': 'magenta',
+        'Inpatient': 'mediumorchid',
+        'Deliveries': 'slateblue',
+        'Family Planning': 'dodgerblue',
+        'Antenatal Care': 'darkturquoise',
+        'EPI': 'springgreen',
+        'A & E': 'forestgreen',
+        'Tb': 'y',
+        'HIV/AIDS': 'gold',
+        'Malnutrition': 'darkgoldenrod',
+        'Surgery': 'orange',
+        'Laboratory': 'tan',
+        'Diagnostic Investigation': 'peru',
+        'Mental Health': 'orangered',
+        'Dental': 'red',
+        'Other': 'brown',
+    }
+
+    return lookup.get(coarse_appt_type, np.nan)
+
+
+def order_of_short_treatment_ids(_short_treatment_id) -> int:
+    """Define a standard order for short treatment_ids."""
+
+    order = (
+        'FirstAttendance*',
+
+        'Contraception*',
+        'AntenatalCare*',
+        'DeliveryCare*',
+        'PostnatalCare*',
+        'PostnatalSupervisor*',
+
+        'Alri*',
+        'Diarrhoea*',
+        'Undernutrition*',
+        'Epi*',
+
+        'Hiv*',
+        'Malaria*',
+        'Measles*',
+        'Tb*',
+        'Schisto*',
+
+        'CardioMetabolicDisorders*',
+
+        'BladderCancer*',
+        'BreastCancer*',
+        'OesophagealCancer*',
+        'ProstateCancer*',
+        'OtherAdultCancer*',
+
+        'Depression*',
+        'Epilepsy*',
+        'Rti*',
+    )
+
+    return order.index(_short_treatment_id)
+
+
+def get_color_short_treatment_id(short_treatment_id: str) -> str:
+    """Return the colour (as matplotlib string) assigned to this shorted TREATMENT_ID. Returns `np.nan` if treatment_id
+    is not recognised.
+    Names of colors are selected with reference to: https://i.stack.imgur.com/lFZum.png"""
+
+    lookup = {
+
+        'FirstAttendance*': 'dimgrey',
+
+        'Alri*': 'darkorange',
+        'Diarrhoea*': 'tan',
+        'Undernutrition*': 'gold',
+        'Epi*': 'darkgoldenrod',
+
+        'Contraception*': 'darkseagreen',
+        'AntenatalCare*': 'forestgreen',
+        'DeliveryCare*': 'limegreen',
+        'PostnatalCare*': 'springgreen',
+        'PostnatalSupervisor*': 'mediumaquamarine',
+
+        'Hiv*': 'darkblue',
+        'Malaria*': 'blue',
+        'Measles*': 'slateblue',
+        'Tb*': 'blueviolet',
+        'Schisto*': 'indigo',
+
+        'CardioMetabolicDisorders*': 'brown',
+
+        'BladderCancer*': 'orchid',
+        'BreastCancer*': 'mediumvioletred',
+        'OesophagealCancer*': 'deeppink',
+        'ProstateCancer*': 'hotpink',
+        'OtherAdultCancer*': 'palevioletred',
+
+        'Depression*': 'teal',
+        'Epilepsy*': 'cadetblue',
+        'Rti*': 'skyblue',
+    }
+
+    return lookup.get(short_treatment_id, np.nan)
