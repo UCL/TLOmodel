@@ -1274,7 +1274,7 @@ class HSI_PostnatalSupervisor_TreatmentForObstetricFistula(HSI_Event, Individual
         super().__init__(module, person_id=person_id)
         assert isinstance(module, PostnatalSupervisor)
 
-        self.TREATMENT_ID = 'PostnatalSupervisor_TreatmentForObstetricFistula'
+        self.TREATMENT_ID = 'PostnatalCare_TreatmentForObstetricFistula'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MajorSurg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
