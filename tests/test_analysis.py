@@ -13,7 +13,7 @@ from tlo.analysis.utils import (
     get_corase_appt_type,
     get_filtered_treatment_ids,
     parse_log_file,
-    unflatten_flattened_multi_index_in_logging,
+    unflatten_flattened_multi_index_in_logging, order_of_short_treatment_ids,
 )
 from tlo.methods import demography
 
@@ -122,8 +122,8 @@ def test_colormap_coarse_appts():
     for i, (_appt_type, _color) in enumerate(zip(coarse_appt_types, colors)):
         ax.bar(i, 10, color=_color, label=_appt_type)
     ax.legend(fontsize=10, ncol=2)
-    ax.title('Colormap for Coarse Appointment Types')
-    plt.show()
+    ax.set_title('Colormap for Coarse Appointment Types')
+    plt.close(fig)
 
 
 def test_get_treatment_ids(tmpdir):
@@ -143,8 +143,8 @@ def test_get_treatment_ids(tmpdir):
 
 def test_colormap_short_treatment_id():
     """Check the function that allocates a unique colour to each shortened TREATMENT_ID (i.e. each module)"""
-    ...
-    short_treatment_ids = get_filtered_treatment_ids(depth=1)
+
+    short_treatment_ids = sorted(get_filtered_treatment_ids(depth=1), key=order_of_short_treatment_ids)
     colors = [get_color_short_treatment_id(x) for x in short_treatment_ids]
 
     assert len(set(colors)) == len(colors)  # No duplicates
@@ -153,8 +153,8 @@ def test_colormap_short_treatment_id():
 
     # Check can produce plot:
     fig, ax = plt.subplots()
-    for i, (_appt_type, _color) in enumerate(zip(short_treatment_ids, colors)):
-        ax.bar(i, 10, color=_color, label=_appt_type)
+    for i, (_short_treatment_id, _color) in enumerate(zip(short_treatment_ids, colors)):
+        ax.bar(i, 10, color=_color, label=_short_treatment_id)
     ax.legend(fontsize=10, ncol=2)
-    ax.title('Colormap for Short TREATMENT_IDs')
-    plt.show()
+    ax.set_title('Colormap for Short TREATMENT_IDs')
+    plt.close(fig)

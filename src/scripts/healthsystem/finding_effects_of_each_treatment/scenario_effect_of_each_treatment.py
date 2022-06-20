@@ -13,11 +13,8 @@ or locally using:
     ```
 
 """
-import os
 from pathlib import Path
-from typing import Dict, Iterable, List
-
-import pandas as pd
+from typing import Dict, List
 
 from tlo import Date, logging
 from tlo.analysis.utils import get_filtered_treatment_ids
