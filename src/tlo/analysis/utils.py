@@ -706,8 +706,8 @@ def get_color_coarse_appt(coarse_appt_type: str) -> str:
 def _define_short_treatment_ids() -> pd.Series:
     """Define the order of the short treatment_ids and the color for each"""
     return pd.Series({
-        'FirstAttendance*': 'dimgrey',
-        'Inpatient*': 'darkgrey',
+        'FirstAttendance*': 'darkgrey',
+        'Inpatient*': 'silver',
 
         'Alri*': 'darkorange',
         'Diarrhoea*': 'tan',

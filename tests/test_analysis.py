@@ -12,8 +12,10 @@ from tlo.analysis.utils import (
     get_color_short_treatment_id,
     get_corase_appt_type,
     get_filtered_treatment_ids,
+    order_of_coarse_appt,
+    order_of_short_treatment_ids,
     parse_log_file,
-    unflatten_flattened_multi_index_in_logging, order_of_short_treatment_ids, order_of_coarse_appt,
+    unflatten_flattened_multi_index_in_logging,
 )
 from tlo.methods import demography
 
@@ -113,10 +115,12 @@ def test_corase_appt_type():
 def test_colormap_coarse_appts():
     """Check the function that allocates a unique colour to each coarse appointment type."""
     coarse_appt_types = pd.read_csv(
-        resourcefilepath / 'healthsystem' / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Types_Table.csv'
-    )['Appt_Type_Code'].map(get_corase_appt_type).drop_duplicates().values
+            resourcefilepath / 'healthsystem' / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Types_Table.csv'
+        )['Appt_Type_Code'].map(get_corase_appt_type).drop_duplicates().values
 
-    colors = [get_color_coarse_appt(x) for x in sorted(coarse_appt_types, key=order_of_coarse_appt)]
+    coarse_appt_types = sorted(coarse_appt_types, key=order_of_coarse_appt)
+
+    colors = [get_color_coarse_appt(x) for x in coarse_appt_types]
 
     assert len(set(colors)) == len(colors)  # No duplicates
     assert all([isinstance(_x, str) for _x in colors])  # All strings

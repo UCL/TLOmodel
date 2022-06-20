@@ -5,11 +5,15 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
-from tlo.analysis.utils import get_filtered_treatment_ids, order_of_short_treatment_ids, get_color_short_treatment_id, \
-    get_color_coarse_appt, get_corase_appt_type, order_of_coarse_appt
+from tlo.analysis.utils import (
+    get_color_coarse_appt,
+    get_color_short_treatment_id,
+    get_corase_appt_type,
+    get_filtered_treatment_ids,
+    order_of_coarse_appt,
+    order_of_short_treatment_ids,
+)
 
-# todo - make these legend only plots.
-# todo - write name on in black.
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Plot the legend for (Short) TREATMENT_ID and (Coarse) APPT_TYPE, which are used in the standard plots."""
@@ -24,18 +28,18 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig.savefig(output_folder / f"{name_of_plot.replace(' ', '_')}.png")
         return fig, ax
 
-
     # %% Short TREATMENT_ID
-    short_treatment_ids = sorted(get_filtered_treatment_ids(depth=1), key=order_of_short_treatment_ids)
+    x = get_filtered_treatment_ids(depth=1)
 
-    name_of_plot = "Colormap for Coarse Appointment Types"
+    short_treatment_ids = sorted(x, key=order_of_short_treatment_ids)
+
+    name_of_plot = "Colormap for Short TREATMENT_ID"
     fig, ax = plot_legend(
-        labels=short_treatment_ids,
+        labels=[_label for _label in short_treatment_ids],
         colors=[get_color_short_treatment_id(x) for x in short_treatment_ids],
         title=name_of_plot,
     )
     fig.show()
-
 
     # %% Coarse Appt Type
     coarse_appt_types = sorted(
@@ -60,4 +64,3 @@ if __name__ == "__main__":
         output_folder=Path('./outputs'),
         resourcefilepath=Path('./resources')
     )
-

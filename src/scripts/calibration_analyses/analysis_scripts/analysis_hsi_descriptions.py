@@ -9,9 +9,13 @@ from matplotlib import pyplot as plt
 from tlo import Date
 from tlo.analysis.utils import (
     extract_results,
+    get_color_coarse_appt,
+    get_color_short_treatment_id,
+    get_corase_appt_type,
+    order_of_coarse_appt,
+    squarify_neat,
     summarize,
     unflatten_flattened_multi_index_in_logging,
-    squarify_neat, get_color_short_treatment_id, get_color_coarse_appt, get_corase_appt_type, order_of_coarse_appt,
 )
 
 
@@ -91,7 +95,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
 
-
     fig, ax = plt.subplots()
     name_of_plot = 'HSI Events by TREATMENT_ID (Short)'
     squarify_neat(
@@ -107,7 +110,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
-
 
     # %% "Figure 2": The Appointments Used
 
@@ -157,7 +159,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
-
 
     # %% "Figure 3": The Fraction of the time of each HCW used by each TREATMENT_ID (Short)
 
@@ -230,7 +231,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.suptitle(name_of_plot, fontproperties={'size': 12})
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
-
 
     # %% "Figure 4": The level of usage of the HealthSystem HR Resources
 
@@ -346,7 +346,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
 
-
     # %% "Figure 5": The level of usage of the Beds in the HealthSystem
 
     def get_frac_of_beddays_used(_df):
@@ -379,7 +378,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
-
 
     # %% "Figure 6": Usage of consumables in the HealthSystem
 

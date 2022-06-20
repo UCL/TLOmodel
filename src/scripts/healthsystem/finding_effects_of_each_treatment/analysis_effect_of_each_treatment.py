@@ -7,9 +7,17 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 from tlo import Date
-from tlo.analysis.utils import extract_results, make_age_grp_lookup, make_age_grp_types, summarize, \
-    get_corase_appt_type, order_of_coarse_appt, get_color_coarse_appt, get_color_short_treatment_id, \
-    squarify_neat
+from tlo.analysis.utils import (
+    extract_results,
+    get_color_coarse_appt,
+    get_color_short_treatment_id,
+    get_corase_appt_type,
+    make_age_grp_lookup,
+    make_age_grp_types,
+    order_of_coarse_appt,
+    squarify_neat,
+    summarize,
+)
 
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
@@ -52,7 +60,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             # reflects the effects of all the interventions.
 
         else:
-            return _sn.lstrip("No ").rstrip("*")
+            return _sn.lstrip("No ")
 
     def set_param_names_as_column_index_level_0(_df):
         """Set the columns index (level 0) as the param_names."""
@@ -140,12 +148,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     num_deaths_averted = summarize(
         pd.DataFrame(
             find_difference_extra_relative_to_comparison(num_deaths, comparison='Everything')).T
-    ).iloc[0].unstack().sort_values(by='mean', ascending=True).drop(['All', 'FirstAttendance'])
+    ).iloc[0].unstack().sort_values(by='mean', ascending=True).drop(['All', 'FirstAttendance*'])
 
     pc_deaths_averted = 100.0 * summarize(
         pd.DataFrame(
             find_difference_extra_relative_to_comparison(num_deaths, comparison='Everything', scaled=True)).T
-    ).iloc[0].unstack().sort_values(by='mean', ascending=True).drop(['All', 'FirstAttendance'])
+    ).iloc[0].unstack().sort_values(by='mean', ascending=True).drop(['All', 'FirstAttendance*'])
 
     num_dalys = extract_results(
         results_folder,
@@ -158,12 +166,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     num_dalys_averted = summarize(
         pd.DataFrame(
             find_difference_extra_relative_to_comparison(num_dalys, comparison='Everything')).T
-    ).iloc[0].unstack().drop(['All', 'FirstAttendance']).sort_values(by='mean', ascending=True)
+    ).iloc[0].unstack().drop(['All', 'FirstAttendance*']).sort_values(by='mean', ascending=True)
 
     pc_dalys_averted = 100.0 * summarize(
         pd.DataFrame(
             find_difference_extra_relative_to_comparison(num_dalys, comparison='Everything', scaled=True)).T
-    ).iloc[0].unstack().drop(['All', 'FirstAttendance']).sort_values(by='mean', ascending=True)
+    ).iloc[0].unstack().drop(['All', 'FirstAttendance*']).sort_values(by='mean', ascending=True)
 
     fig, ax = plt.subplots()
     name_of_plot = f'Deaths Averted by Each TREATMENT_ID, {target_period()}'
@@ -200,8 +208,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # %% Quantify the healthcare system resources used with each TREATMENT_ID (short) (The difference in the number of
     # appointments between each scenario and the 'Everything' scenario.)
 
-
     # 1) Examine the HSI that are occurring by TREATMENT_ID
+
     def get_counts_of_hsi_by_short_treatment_id(_df):
         """Get the counts of the short TREATMENT_IDs occurring (up to first underscore)"""
         _counts_by_treatment_id = _df \
@@ -209,7 +217,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             .apply(pd.Series) \
             .sum() \
             .astype(int)
-        _short_treatment_id = _counts_by_treatment_id.index.map(lambda x: x.split('_')[0])
+        _short_treatment_id = _counts_by_treatment_id.index.map(lambda x: x.split('_')[0] + "*")
         return _counts_by_treatment_id.groupby(by=_short_treatment_id).sum()
 
     counts_of_hsi_by_short_treatment_id = extract_results(
@@ -218,7 +226,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         key='HSI_Event',
         custom_generate_series=get_counts_of_hsi_by_short_treatment_id,
         do_scaling=True
-    ).pipe(set_param_names_as_column_index_level_0).fillna(0.0).sort_index().drop(columns=['All', 'FirstAttendance'])
+    ).pipe(set_param_names_as_column_index_level_0).fillna(0.0).sort_index().drop(columns=['All', 'FirstAttendance*'])
 
     mean_num_hsi_by_short_treatment_id = summarize(counts_of_hsi_by_short_treatment_id, only_mean=True)
 
@@ -242,8 +250,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
             fig.show()
 
-
     # 2) Examine the Difference in the number/type of appointments occurring
+
     def get_counts_of_appts(_df):
         """Get the counts of appointments of each type being used."""
         return _df \
@@ -258,7 +266,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         key='HSI_Event',
         custom_generate_series=get_counts_of_appts,
         do_scaling=True
-    ).pipe(set_param_names_as_column_index_level_0).fillna(0.0).sort_index().drop(columns=['All', 'FirstAttendance'])
+    ).pipe(set_param_names_as_column_index_level_0).fillna(0.0).sort_index().drop(columns=['All', 'FirstAttendance*'])
 
     delta_appts = find_mean_difference_in_appts_relative_to_comparison(counts_of_appts, comparison='Everything')
 
@@ -315,9 +323,9 @@ if __name__ == "__main__":
     # results_folder = get_scenario_outputs('scenario_effect_of_each_treatment.py', outputspath)[-1]
 
     # TREATMENT_IDs split by module; consumables not always available
-    results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_effect_of_each_treatment-2022-06-13T181214Z')
+    # results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_effect_of_each_treatment-2022-06-13T181214Z')
 
     # TREATMENT_IDs split by module: consumables always available and healthsystem in mode 0
-    # when it's done, it will be: scenario_effect_of_each_treatment-2022-06-14T133746Z
+    results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_effect_of_each_treatment-2022-06-14T133746Z')
 
     apply(results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
