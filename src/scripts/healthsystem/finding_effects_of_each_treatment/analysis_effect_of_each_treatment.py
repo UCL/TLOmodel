@@ -3,13 +3,13 @@
 from pathlib import Path
 from typing import Tuple
 
-import numpy as np
 import pandas as pd
-import squarify
 from matplotlib import pyplot as plt
 
 from tlo import Date
-from tlo.analysis.utils import extract_results, make_age_grp_lookup, make_age_grp_types, summarize
+from tlo.analysis.utils import extract_results, make_age_grp_lookup, make_age_grp_types, summarize, \
+    get_corase_appt_type, order_of_coarse_appt, get_color_coarse_appt, get_color_short_treatment_id, \
+    squarify_neat
 
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
@@ -64,10 +64,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _df.columns = _df.columns.set_levels(reformatted_names, level=0)
         return _df
 
-    def get_colors(x):
-        cmap = plt.cm.get_cmap('jet')
-        return [cmap(i) for i in np.arange(0, 1, 1.0 / len(x))]
-
     def find_difference_extra_relative_to_comparison(_ser: pd.Series, comparison: str, scaled=False):
         """Find the difference in the values in a pd.Series with a multi-index, between the draws (level 0)
         within the runs (level 1). Drop the comparison entries. The comparison is made: DIFF(X) = X - COMPARISON. """
@@ -107,12 +103,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             .sum()
 
     def do_barh_plot_with_ci(_df, _ax):
-        """Make a horizontal bar plot of the _df onto axis _ax"""
+        """Make a horizontal bar plot for each TREATMENT_ID for the _df onto axis _ax"""
         errors = pd.concat([
             _df['mean'] - _df['lower'],
             _df['upper'] - _df['mean']
         ], axis=1).T.to_numpy()
-        _df.plot.barh(ax=_ax, y='mean', xerr=errors, legend=False)
+        _df.plot.barh(
+            ax=_ax, y='mean', xerr=errors, legend=False, color=[get_color_short_treatment_id(_id) for _id in _df.index]
+        )
 
     def do_label_barh_plot(_df, _ax):
         """Add text annotation from values in _df onto _ax"""
@@ -202,36 +200,38 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # %% Quantify the healthcare system resources used with each TREATMENT_ID (short) (The difference in the number of
     # appointments between each scenario and the 'Everything' scenario.)
 
-    # 1) Examine the HSI that are occurring by TREATMENT_ID
 
-    def get_counts_of_hsi_by_treatment_id(_df):
-        """Get the counts of the TREATMENT_IDs occurring."""
-        return _df \
+    # 1) Examine the HSI that are occurring by TREATMENT_ID
+    def get_counts_of_hsi_by_short_treatment_id(_df):
+        """Get the counts of the short TREATMENT_IDs occurring (up to first underscore)"""
+        _counts_by_treatment_id = _df \
             .loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), 'TREATMENT_ID'] \
             .apply(pd.Series) \
             .sum() \
             .astype(int)
+        _short_treatment_id = _counts_by_treatment_id.index.map(lambda x: x.split('_')[0])
+        return _counts_by_treatment_id.groupby(by=_short_treatment_id).sum()
 
-    counts_of_hsi_by_treatment_id = extract_results(
+    counts_of_hsi_by_short_treatment_id = extract_results(
         results_folder,
         module='tlo.methods.healthsystem.summary',
         key='HSI_Event',
-        custom_generate_series=get_counts_of_hsi_by_treatment_id,
+        custom_generate_series=get_counts_of_hsi_by_short_treatment_id,
         do_scaling=True
     ).pipe(set_param_names_as_column_index_level_0).fillna(0.0).sort_index().drop(columns=['All', 'FirstAttendance'])
 
-    mean_appts = summarize(counts_of_hsi_by_treatment_id, only_mean=True)
+    mean_num_hsi_by_short_treatment_id = summarize(counts_of_hsi_by_short_treatment_id, only_mean=True)
 
-    for scenario_name, _counts in mean_appts.T.iterrows():
+    for scenario_name, _counts in mean_num_hsi_by_short_treatment_id.T.iterrows():
         _counts_non_zero = _counts[_counts > 0]
 
         if len(_counts_non_zero):
             fig, ax = plt.subplots()
             name_of_plot = f'HSI Events Occurring: {scenario_name}, {target_period()}'
-            squarify.plot(
+            squarify_neat(
                 sizes=_counts_non_zero.values,
                 label=_counts_non_zero.index,
-                color=get_colors(_counts_non_zero.values),
+                colormap=get_color_short_treatment_id,
                 alpha=1,
                 pad=True,
                 ax=ax,
@@ -242,8 +242,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
             fig.show()
 
-    # 2) Examine the Difference in the number/type of appointments occurring
 
+    # 2) Examine the Difference in the number/type of appointments occurring
     def get_counts_of_appts(_df):
         """Get the counts of appointments of each type being used."""
         return _df \
@@ -264,7 +264,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     fig, ax = plt.subplots()
     name_of_plot = f'Additional Appointments With Intervention, {target_period()}'
-    (delta_appts / 1e6).T.plot.bar(stacked=True, legend=True, ax=ax)
+    (
+        delta_appts / 1e6
+    ).T.plot.bar(
+        stacked=True, legend=True, ax=ax
+    )
     ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
     ax.set_ylabel('(/1e6)')
     ax.set_xlabel('TREATMENT_ID (Short)')
@@ -275,7 +279,29 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
-    # todo - this plot would benefit from colormap for appointment types
+
+    # VERSION WITH COARSE APPOINTMENTS, CONFORMING TO STANDARD ORDERING/COLORS
+    fig, ax = plt.subplots()
+    name_of_plot = f'Additional Appointments [Coarse] With Intervention, {target_period()}'
+    delta_appts_coarse = delta_appts\
+        .groupby(axis=0, by=delta_appts.index.map(get_corase_appt_type))\
+        .sum()\
+        .sort_index(key=order_of_coarse_appt)
+    (
+         delta_appts_coarse / 1e6
+    ).T.plot.bar(
+        stacked=True, legend=True, ax=ax, color=[get_color_coarse_appt(_a) for _a in delta_appts_coarse.index]
+    )
+    ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
+    ax.set_ylabel('(/1e6)')
+    ax.set_xlabel('TREATMENT_ID (Short)')
+    ax.axhline(0, color='grey')
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.legend(ncol=2, fontsize=7, loc='upper left')
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
+    fig.show()
 
 
 if __name__ == "__main__":
