@@ -5,24 +5,23 @@ N.B. This script takes hours to run due to the big data.
 
 N.B. This script uses the package `squarify`: so run, `pip install squarify` first.
 """
-from collections import defaultdict
+# from collections import defaultdict
 from pathlib import Path
 
-import numpy as np
+# import numpy as np
 import pandas as pd
-import squarify
-from matplotlib import pyplot as plt
+# import squarify
+# from matplotlib import pyplot as plt
 
 from tlo import Date
 from tlo.analysis.utils import (
     extract_results,
     get_scenario_outputs,
     summarize,
-    unflatten_flattened_multi_index_in_logging,
-    create_pickles_locally,
+    # unflatten_flattened_multi_index_in_logging,
+    # create_pickles_locally,
+    # load_pickled_dataframes,
 )
-
-from tlo.analysis.utils import get_scenario_outputs, load_pickled_dataframes
 
 # %% Declare the name of the file that specified the scenarios used in this run.
 scenario_filename = 'long_run_all_diseases.py'
@@ -48,11 +47,10 @@ results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
 TARGET_PERIOD = (Date(2015, 1, 1), Date(2019, 12, 31))
 
 # Declare path for output graphs from this script
-make_graph_file_name = lambda stub: results_folder / f"{stub}.png"
+# make_graph_file_name = lambda stub: results_folder / f"{stub}.png"
 
 
 # %% Declare helper functions
-
 def drop_outside_period(_df):
     """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
     return _df.drop(index=_df.index[~_df['date'].between(*TARGET_PERIOD)])
@@ -109,4 +107,4 @@ counts_of_appt_type = summarize(
 ).reset_index()
 
 counts_of_appt_type_2015_2019 = counts_of_appt_type.copy()
-counts_of_appt_type_2015_2019.to_csv(results_folder/'Simulated appt usage between 2015 and 2019.csv', index=False)
+counts_of_appt_type_2015_2019.to_csv(results_folder / 'Simulated appt usage between 2015 and 2019.csv', index=False)
