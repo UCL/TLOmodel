@@ -13,7 +13,7 @@ from tlo.analysis.utils import (
     get_corase_appt_type,
     get_filtered_treatment_ids,
     parse_log_file,
-    unflatten_flattened_multi_index_in_logging, order_of_short_treatment_ids,
+    unflatten_flattened_multi_index_in_logging, order_of_short_treatment_ids, order_of_coarse_appt,
 )
 from tlo.methods import demography
 
@@ -94,24 +94,29 @@ def test_corase_appt_type():
     """Check the function that maps each appt_types to a coarser definition."""
     appt_types = pd.read_csv(
         resourcefilepath / 'healthsystem' / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Types_Table.csv'
-    )['Appt_Type'].values
+    )['Appt_Type_Code'].values
 
     appts = pd.DataFrame({
             "original": pd.Series(appt_types),
             "coarse": pd.Series(appt_types).map(get_corase_appt_type)
     })
 
+    coarse_appts = appts['coarse'].drop_duplicates()
+
     assert not pd.isnull(appts).any().any()
-    assert 17 == len(appts['coarse'].drop_duplicates())  # 17 coarse categories
+    assert 12 == len(coarse_appts)  # 12 coarse categories
+
+    # Check can run sorting on these
+    assert 12 == len(sorted(coarse_appts, key=order_of_coarse_appt))
 
 
 def test_colormap_coarse_appts():
     """Check the function that allocates a unique colour to each coarse appointment type."""
     coarse_appt_types = pd.read_csv(
         resourcefilepath / 'healthsystem' / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Types_Table.csv'
-    )['Appt_Type'].map(get_corase_appt_type).drop_duplicates().values
+    )['Appt_Type_Code'].map(get_corase_appt_type).drop_duplicates().values
 
-    colors = [get_color_coarse_appt(x) for x in coarse_appt_types]
+    colors = [get_color_coarse_appt(x) for x in sorted(coarse_appt_types, key=order_of_coarse_appt)]
 
     assert len(set(colors)) == len(colors)  # No duplicates
     assert all([isinstance(_x, str) for _x in colors])  # All strings
