@@ -138,6 +138,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         usage_year_nation['Real_Usage']
     )
 
+    usage_year_nation.to_csv(output_folder/'comparison_to_real_usage_year_nation.csv', index=False)
+
     # usage_year_nation = usage_year_nation[usage_year_nation['Relative_Difference'] <= 1].reset_index(drop=True)
 
     fig = usage_year_nation.plot(
@@ -176,6 +178,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         (usage_year_level['Simulation_Usage'] - usage_year_level['Real_Usage']) /
         usage_year_level['Real_Usage']
     )
+
+    usage_year_level.to_csv(output_folder / 'comparison_to_real_usage_year_level.csv', index=False)
 
     level = ['1a', '1b', '2']
     usage_year_level = usage_year_level[usage_year_level['Facility_Level'].isin(level)].reset_index(drop=True)
