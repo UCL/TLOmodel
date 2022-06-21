@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from typing import Set
 
 import numpy as np
 import pandas as pd
@@ -20,7 +21,8 @@ from tlo.methods import (
     symptommanager,
 )
 from tlo.methods.consumables import Consumables, create_dummy_data_for_cons_availability
-from tlo.methods.healthsystem import HealthSystemChangeParameters, HSI_Event
+from tlo.methods.fullmodel import fullmodel
+from tlo.methods.healthsystem import HealthSystem, HealthSystemChangeParameters, HSI_Event
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
@@ -689,7 +691,7 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
     assert {'date', 'TREATMENT_ID', 'did_run', 'Squeeze_Factor', 'Number_By_Appt_Type_Code', 'Person_ID',
             'Facility_Level', 'Facility_ID',
             } == set(detailed_hsi_event.columns)
-    assert {'date', 'Frac_Time_Used_Overall', 'Frac_Time_Used_By_Facility_ID'
+    assert {'date', 'Frac_Time_Used_Overall', 'Frac_Time_Used_By_Facility_ID', 'Frac_Time_Used_By_OfficerType',
             } == set(detailed_capacity.columns)
     assert {'date', 'TREATMENT_ID', 'Item_Available', 'Item_NotAvailable'
             } == set(detailed_consumables.columns)
@@ -846,3 +848,85 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
     assert logged_access_consumables.loc[start_date].all()  # All consumables available at start
     assert not logged_access_consumables.loc[start_date + pd.DateOffset(days=4)].any()  # No consumables available after
     #                                                                                 parameter change
+
+
+def test_is_treatment_id_allowed():
+    """Check the pattern matching in `is_treatment_id_allowed`."""
+    hs = HealthSystem(resourcefilepath=resourcefilepath)
+
+    assert hs.is_treatment_id_allowed('Hiv', ['*'])
+    assert not hs.is_treatment_id_allowed('Hiv', [])
+    assert not hs.is_treatment_id_allowed('Hiv', ['A', 'B', 'C'])
+    assert hs.is_treatment_id_allowed('Hiv_X', ['A*', 'Hiv*'])
+    assert hs.is_treatment_id_allowed('Hiv_Y', ['A', 'Hiv*'])
+    assert hs.is_treatment_id_allowed('Hiv_A_B_C', ['A', 'Hiv_A_B*'])
+    assert not hs.is_treatment_id_allowed('Hiv_A_B_C', ['A', 'Hiv_X*'])
+    assert hs.is_treatment_id_allowed('Hiv_X_B_C_1_2_3', ['A', 'Hiv_X*'])
+    assert not hs.is_treatment_id_allowed('Hiv_A_B', ['A', 'Hiv_A_B_C_D_E_F*'])
+
+    # First Attendance appointments are always allowed, if anything else is allowed (but not if nothing is allowed).
+    assert hs.is_treatment_id_allowed('FirstAttendance*', ["*"])
+    assert hs.is_treatment_id_allowed('FirstAttendance*', ["A"])
+    assert not hs.is_treatment_id_allowed('FirstAttendance*', [])
+
+
+def test_manipulation_of_service_availability(seed, tmpdir):
+    """Check that the parameter `service_availability` can be used to allow/disallow certain `TREATMENT_ID`s.
+    N.B. This is setting service_availability through a change in parameter, as would be done by BatchRunner."""
+
+    generic_first_appts = {'FirstAttendance_NonEmergency', 'FirstAttendance_Emergency'}
+
+    def run_sim(service_availability) -> Set[str]:
+        """Return set of TREATMENT_IDs that occur when running the simulation with the `service_availability`."""
+        sim = Simulation(start_date=start_date, seed=seed, log_config={
+            'filename': 'tmpfile',
+            'directory': tmpdir,
+            'custom_levels': {
+                "tlo.methods.healthsystem": logging.INFO,
+            }
+        })
+
+        sim.register(*fullmodel(resourcefilepath=resourcefilepath))
+        sim.modules['HealthSystem'].parameters['Service_Availability'] = service_availability  # Change parameter
+        sim.make_initial_population(n=500)
+        sim.simulate(end_date=start_date + pd.DateOffset(days=7))
+
+        log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']
+        if 'HSI_Event' in log:
+            return set(log['HSI_Event']['TREATMENT_ID'].value_counts().to_dict().keys())
+        else:
+            return set()
+
+    # Run model with everything available by default using "*"
+    everything = run_sim(service_availability=["*"])
+
+    # Run model with everything specified individually
+    assert everything == run_sim(service_availability=list(everything))
+
+    # Run model with nothing available
+    assert set() == run_sim(service_availability=[])
+
+    # Only allow 'Hiv_Test' (Not `Hiv_Treatment`)
+    assert set({'Hiv_Test'}) == run_sim(service_availability=["Hiv_Test*"]) - generic_first_appts
+
+    # Allow all `Hiv` things (but nothing else)
+    assert set({'Hiv_Test', 'Hiv_Treatment'}) == run_sim(service_availability=["Hiv*"]) - generic_first_appts
+
+    # Allow all except `Hiv_Test`
+    everything_except_hiv_test = everything - set({'Hiv_Test'})
+    run_everything_except_hiv_test = run_sim(service_availability=list(everything_except_hiv_test))
+    assert 'Hiv_Test' not in run_everything_except_hiv_test
+    assert len(run_everything_except_hiv_test.union(everything))
+
+    # Allow all except `Hiv_Treatment`
+    everything_except_hiv_treatment = everything - set({'Hiv_Treatment'})
+    run_everything_except_hiv_treatment = run_sim(service_availability=list(everything_except_hiv_treatment))
+    assert 'Hiv_Treatment' not in run_everything_except_hiv_treatment
+    assert len(run_everything_except_hiv_treatment.union(everything))
+
+    # Allow all except `HIV*`
+    everything_except_hiv_anything = {x for x in everything if not x.startswith('Hiv')}
+    run_everything_except_hiv_anything = run_sim(service_availability=list(everything_except_hiv_anything))
+    assert 'Hiv_Treatment' not in run_everything_except_hiv_anything
+    assert 'Hiv_Test' not in run_everything_except_hiv_anything
+    assert len(run_everything_except_hiv_anything.union(everything))

@@ -18,6 +18,7 @@ import pandas as pd
 
 import tlo
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
+from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.bed_days import BedDays
@@ -592,6 +593,10 @@ class HealthSystem(Module):
 
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
+
+        # Determine service_availability
+        self.service_availability = self.get_service_availability()
+
         self.process_human_resources_files()
 
         # Initialise the BedDays class
@@ -641,9 +646,6 @@ class HealthSystem(Module):
         if not (self.disable or self.disable_and_reject_all):
             self.healthsystemscheduler = HealthSystemScheduler(self)
             sim.schedule_event(self.healthsystemscheduler, sim.date)
-
-        # Determine service_availability
-        self.set_service_availability()
 
     def on_birth(self, mother_id, child_id):
         self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
@@ -820,8 +822,8 @@ class HealthSystem(Module):
         # return the pd.Series of `Total_Minutes_Per_Day' indexed for each type of officer at each facility
         return capabilities_ex['Total_Minutes_Per_Day']
 
-    def set_service_availability(self):
-        """Set service availability. (Should be equal to what is specified by the parameter, but overwrite with what was
+    def get_service_availability(self) -> List[str]:
+        """Returns service availability. (Should be equal to what is specified by the parameter, but overwrite with what was
          provided in argument if an argument was specified -- provided for backward compatibility/debugging.)"""
 
         if self.arg_service_availabily is None:
@@ -830,13 +832,13 @@ class HealthSystem(Module):
             service_availability = self.arg_service_availabily
 
         assert isinstance(service_availability, list)
-        self.service_availability = service_availability
 
         # Log the service_availability
         logger.info(key="message",
                     data=f"Running Health System With the Following Service Availability: "
                          f"{self.service_availability}"
                     )
+        return service_availability
 
     def get_cons_availability(self) -> str:
         """Set consumables availability. (Should be equal to what is specified by the parameter, but overwrite with
@@ -933,7 +935,7 @@ class HealthSystem(Module):
             self.check_hsi_event_is_valid(hsi_event)
 
         # Check that this request is allowable under current policy (i.e. included in service_availability).
-        if not self.is_treatment_id_allowed(hsi_event.TREATMENT_ID):
+        if not self.is_treatment_id_allowed(hsi_event.TREATMENT_ID, self.service_availability):
             # HSI is not allowable under the services_available parameter: run the HSI's 'never_ran' method on the date
             # of tclose.
             self.sim.schedule_event(HSIEventWrapper(hsi_event=hsi_event, run_hsi=False), tclose)
@@ -988,28 +990,29 @@ class HealthSystem(Module):
                 f"which it is not possible: TREATMENT_ID={hsi_event.TREATMENT_ID}"
             )
 
-    def is_treatment_id_allowed(self, treatment_id: str) -> bool:
+    @staticmethod
+    def is_treatment_id_allowed(treatment_id: str, service_availability: list) -> bool:
         """Determine if a treatment_id (specified as a string) can be run (i.e., is within the allowable set of
          treatments, given by `self.service_availability`."""
 
-        if not self.service_availability:
+        if not service_availability:
             # Empty list --> nothing is allowable
             return False
-        elif self.service_availability[0] == '*':
+        elif service_availability == ['*']:
             # Wildcard --> everything is allowed
             return True
         elif treatment_id is None:
             # Treatment_id is None --> allowed
             return True
-        elif treatment_id in self.service_availability:
+        elif treatment_id in service_availability:
             # Explicit inclusion of this treatment_id --> allowed
             return True
-        elif treatment_id.startswith('GenericFirstAppt'):
-            # GenericAppts --> allowable
+        elif treatment_id.startswith('FirstAttendance'):
+            # FirstAttendance* --> allowable
             return True
         else:
             # Check if treatment_id matches any services specified with wildcard * patterns
-            for service_pattern in self.service_availability:
+            for service_pattern in service_availability:
                 if fnmatch.fnmatch(treatment_id, service_pattern):
                     return True
         return False
@@ -1270,7 +1273,6 @@ class HealthSystem(Module):
     def log_current_capabilities(self, current_capabilities, total_footprint):
         """
         This will log the percentage of the current capabilities that is used at each Facility Type
-        NB. To get this per Officer_Type_Code, it would be possible to simply log the entire current_capabilities df.
         :param current_capabilities: the current_capabilities of the health system.
         :param total_footprint: Per-officer totals of footprints of all the HSI events that ran
         """
@@ -1282,30 +1284,40 @@ class HealthSystem(Module):
         comparison['Minutes_Used'] = comparison['Minutes_Used'].fillna(0.0)
         assert len(comparison) == len(current_capabilities)
 
-        # Sum within each Facility_ID
-        facility_id = [_f.split('_')[1] for _f in comparison.index]
-        summary = comparison.groupby(by=facility_id)[['Total_Minutes_Per_Day', 'Minutes_Used']].sum()
-
-        # Compute Fraction of Time Used Across All Facilities
-        total_available = summary['Total_Minutes_Per_Day'].sum()
-        fraction_time_used_across_all_facilities = (
-            summary['Minutes_Used'].sum() / total_available if total_available > 0 else 0
+        # Compute Fraction of Time Used Overall
+        total_available = comparison['Total_Minutes_Per_Day'].sum()
+        fraction_time_used_overall = (
+            comparison['Minutes_Used'].sum() / total_available if total_available > 0 else 0
         )
 
         # Compute Fraction of Time Used In Each Facility
-        summary['Fraction_Time_Used'] = summary['Minutes_Used'] / summary['Total_Minutes_Per_Day']
-        summary['Fraction_Time_Used'].replace([np.inf, -np.inf, np.nan], 0.0, inplace=True)
+        facility_id = [_f.split('_')[1] for _f in comparison.index]
+        summary_by_fac_id = comparison.groupby(by=facility_id)[['Total_Minutes_Per_Day', 'Minutes_Used']].sum()
+        summary_by_fac_id['Fraction_Time_Used'] = (
+            summary_by_fac_id['Minutes_Used'] / summary_by_fac_id['Total_Minutes_Per_Day']
+        ).replace([np.inf, -np.inf, np.nan], 0.0)
 
-        log_capacity = dict()
-        log_capacity['Frac_Time_Used_Overall'] = fraction_time_used_across_all_facilities
-        log_capacity['Frac_Time_Used_By_Facility_ID'] = summary['Fraction_Time_Used'].to_dict()
+        # Compute Fraction of Time For Each Officer and level
+        officer = [_f.rsplit('Officer_')[1] for _f in comparison.index]
+        level = [self._facility_by_facility_id[int(_fac_id)].level for _fac_id in facility_id]
+        summary_by_officer = comparison.groupby(by=[officer, level])[['Total_Minutes_Per_Day', 'Minutes_Used']].sum()
+        summary_by_officer['Fraction_Time_Used'] = (
+            summary_by_officer['Minutes_Used'] / summary_by_officer['Total_Minutes_Per_Day']
+        ).replace([np.inf, -np.inf, np.nan], 0.0)
+        summary_by_officer.index.names = ['Officer_Type', 'Facility_Level']
 
         logger.info(key='Capacity',
-                    data=log_capacity,
+                    data={
+                        'Frac_Time_Used_Overall': fraction_time_used_overall,
+                        'Frac_Time_Used_By_Facility_ID': summary_by_fac_id['Fraction_Time_Used'].to_dict(),
+                        'Frac_Time_Used_By_OfficerType':  flatten_multi_index_series_into_dict_for_logging(
+                            summary_by_officer['Fraction_Time_Used']
+                        ),
+                    },
                     description='daily summary of utilisation and capacity of health system resources')
 
         self._summary_counter.record_hs_status(
-            fraction_time_used_across_all_facilities=fraction_time_used_across_all_facilities)
+            fraction_time_used_across_all_facilities=fraction_time_used_overall)
 
     def remove_beddays_footprint(self, person_id):
         # removing bed_days from a particular individual if any
@@ -1397,25 +1409,25 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
         # 1) Compute footprint that arise from in-patient bed-days
         inpatient_appts = self.module.bed_days.get_inpatient_appts()
+
         inpatient_footprints = Counter()
-        inpatient_appt_by_facility_level = defaultdict(Counter)
+
         for _fac_id, _footprint in inpatient_appts.items():
             inpatient_footprints.update(self.module.get_appt_footprint_as_time_request(
                 facility_info=self.module._facility_by_facility_id[_fac_id], appt_footprint=_footprint)
             )
-            inpatient_appt_by_facility_level[self.module._facility_by_facility_id[_fac_id].level] += _footprint
 
         # Write the log that these in-patient appointments were needed:
-        if len(inpatient_appt_by_facility_level):
-            for _level, _inpatient_appts in inpatient_appt_by_facility_level.items():
+        if len(inpatient_appts):
+            for _fac_id, _inpatient_appts in inpatient_appts.items():
                 self.module.write_to_hsi_log(
                     treatment_id='Inpatient_Care',
                     number_by_appt_type_code=dict(_inpatient_appts),
                     person_id=-1,
                     squeeze_factor=0.0,
                     did_run=True,
-                    facility_level=_level,
-                    facility_id=None,
+                    facility_level=self.module._facility_by_facility_id[_fac_id].level,
+                    facility_id=_fac_id,
                 )
 
         # - Create hold-over list (will become a heapq). This will hold events that cannot occur today before they are
