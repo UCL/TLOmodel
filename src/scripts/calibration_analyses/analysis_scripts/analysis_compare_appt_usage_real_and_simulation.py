@@ -8,7 +8,7 @@ N.B. This script uses the package `squarify`: so run, `pip install squarify` fir
 
 from pathlib import Path
 
-from tlo.analysis.utils import get_scenario_outputs
+# from tlo.analysis.utils import get_scenario_outputs
 
 # import numpy as np
 import pandas as pd
