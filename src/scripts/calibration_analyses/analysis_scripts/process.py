@@ -29,7 +29,7 @@ def process(output_dir, scenario_runs_dir):
     module = import_module(module_name)
     function = getattr(module, function_name)
     # def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
-    function(scenario_runs_dir, output_dir, '/home/azureuser/TLOmodel/resources')
+    function(scenario_runs_dir, output_dir, Path('/home/azureuser/TLOmodel/resources'))
 
 
 if __name__ == '__main__':
@@ -39,7 +39,7 @@ if __name__ == '__main__':
     _output_dir_for_scenario_runs = _output_dir_for_processed.parent / _run_directory_name / '0'
     _scenario_output_dir = check_completed(_output_dir_for_scenario_runs, _number_of_runs)
     if _scenario_output_dir is not None:
-        process(_output_dir_for_processed, _output_dir_for_scenario_runs)
+        process(_output_dir_for_processed, _output_dir_for_processed.parent / _run_directory_name)
     else:
         # exit status 99 to signal we're not ready to process results, resubmit this task
         sys.exit(99)
