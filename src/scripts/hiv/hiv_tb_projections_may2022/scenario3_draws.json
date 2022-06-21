@@ -1,7 +1,7 @@
 {
   "scenario_script_path": "src/scripts/hiv/hiv_tb_projections_may2022/scenario3.py",
   "scenario_seed": 5,
-  "runs_per_draw": 5,
+  "runs_per_draw": 3,
   "draws": [
     {
       "draw_number": 0,
@@ -64,6 +64,6 @@
       }
     }
   ],
-  "commit": "0a3f978b85636347c847471ab337c901b3512d02",
-  "github": "https://github.com/UCL/TLOmodel/blob/0a3f978b85636347c847471ab337c901b3512d02/src/scripts/hiv/hiv_tb_projections_may2022/scenario3.py"
+  "commit": "a3623af42f569813990823c31ca313375c928a8e",
+  "github": "https://github.com/UCL/TLOmodel/blob/a3623af42f569813990823c31ca313375c928a8e/src/scripts/hiv/hiv_tb_projections_may2022/scenario3.py"
 }
