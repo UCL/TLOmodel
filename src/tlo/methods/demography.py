@@ -621,10 +621,10 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         # merge the population dataframe with the parameter dataframe to pick-up the death_rate for each person
         # (where there is no entry [the person is older than the data provides for] fill this with 1.0)
         length_before_merge = len(alive)
-        alive = alive.reset_index().merge(mort_risk,
-                                          left_on=['age_years', 'sex'],
-                                          right_on=['age_years', 'sex'],
-                                          how='left').set_index('person').fillna(1.0)
+        alive = alive.merge(mort_risk,
+                            left_on=['age_years', 'sex'],
+                            right_on=['age_years', 'sex'],
+                            how='left').fillna(1.0)
         assert length_before_merge == len(alive)
 
         # flipping the coin to determine if this person will die
