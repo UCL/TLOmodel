@@ -20,11 +20,11 @@ import seaborn as sns
 sns.set_theme(style="darkgrid")
 
 # path of resource files: real appt usage and mfl (facility id, level, district)
-rfp = Path('./resources/healthsystem')
+rfp = Path('./resources')
 
-# real usage data
-real_usage = pd.read_csv(rfp / 'real_appt_usage_data' / 'real_monthly_usage_of_appt_type.csv')
-real_usage_TB = pd.read_csv(rfp / 'real_appt_usage_data' / 'real_yearly_usage_of_TBNotifiedAll.csv')
+# get real usage data
+real_usage = pd.read_csv(rfp / 'healthsystem' / 'real_appt_usage_data' / 'real_monthly_usage_of_appt_type.csv')
+real_usage_TB = pd.read_csv(rfp / 'healthsystem' / 'real_appt_usage_data' / 'real_yearly_usage_of_TBNotifiedAll.csv')
 # for TB usage, drop years outside of 2017-2019 according to data consistency and pandemic
 real_usage_TB = real_usage_TB[real_usage_TB['Year'].isin([2017, 2018, 2019])].copy()
 
@@ -67,7 +67,7 @@ output_path = Path(results_folder)
 make_graph_file_name = lambda stub: output_path / f"{stub}.png"  # noqa: E731
 
 # add facility level and district columns to both real and simulation usage
-mfl = pd.read_csv(rfp / 'organisation' / 'ResourceFile_Master_Facilities_List.csv')
+mfl = pd.read_csv(rfp / 'healthsystem' / 'organisation' / 'ResourceFile_Master_Facilities_List.csv')
 real_usage = real_usage.merge(mfl[['Facility_ID', 'Facility_Level', 'District']],
                               on='Facility_ID', how='left')
 real_usage_TB = real_usage_TB.merge(mfl[['Facility_ID', 'Facility_Level', 'District']],
