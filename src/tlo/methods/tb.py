@@ -854,8 +854,8 @@ class Tb(Module):
         """
 
         # 1) Regular events
-        sim.schedule_event(TbActiveEvent(self), sim.date + DateOffset(months=0))
-        sim.schedule_event(TbActiveCasePoll(self), sim.date + DateOffset(years=1))
+        sim.schedule_event(TbActiveEvent(self), sim.date + DateOffset(days=0))
+        sim.schedule_event(TbActiveCasePoll(self), sim.date + DateOffset(days=0))
 
         sim.schedule_event(TbTreatmentAndRelapseEvents(self), sim.date + DateOffset(months=1))
         sim.schedule_event(TbSelfCureEvent(self), sim.date + DateOffset(months=1))
@@ -863,7 +863,7 @@ class Tb(Module):
         sim.schedule_event(ScenarioSetupEvent(self), self.parameters["scenario_start_date"])
 
         # 2) Logging
-        sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(days=364))
+        sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(years=1))
 
         # 3) Define the DxTests and get the consumables required
         self.get_consumables_for_dx_and_tx()
@@ -1058,7 +1058,6 @@ class Tb(Module):
         # should return risk=0 for everyone not eligible for relapse
 
         # risk of relapse if <2 years post treatment start, includes risk if HIV+
-        # todo uses latent status and ever_treated
         risk_of_relapse_early = self.lm["risk_relapse_2yrs"].predict(
             df.loc[df.is_alive
                    & df.tb_ever_treated
@@ -1490,7 +1489,7 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
         # if on IPT or treatment - do nothing
         active_idx = df.loc[
             df.is_alive
-            & (df.tb_scheduled_date_active > (now - DateOffset(months=self.repeat)))
+            & (df.tb_scheduled_date_active >= (now - DateOffset(months=self.repeat)))
             & (df.tb_scheduled_date_active <= now)
             & ~df.tb_on_ipt
             & ~df.tb_on_treatment
@@ -1513,7 +1512,7 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
         # -------- 3) if HIV+ assign smear status and schedule AIDS onset --------
         active_and_hiv = df.loc[
             df.is_alive
-            & (df.tb_scheduled_date_active > (now - DateOffset(months=self.repeat)))
+            & (df.tb_scheduled_date_active >= (now - DateOffset(months=self.repeat)))
             & (df.tb_scheduled_date_active <= now)
             & ~df.tb_on_ipt
             & ~df.tb_on_treatment
@@ -1674,11 +1673,9 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         p = self.module.parameters
         person = df.loc[person_id]
 
-        if not person["is_alive"]:
-            return
-
-        if person["tb_diagnosed"]:
-            return
+        # If the person is dead or already diagnosed, do nothing do not occupy any resources
+        if not person["is_alive"] or person["tb_diagnosed"]:
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         logger.debug(
             key="message", data=f"HSI_Tb_ScreeningAndRefer: person {person_id}"
@@ -1893,12 +1890,13 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
-        smear_status = df.at[person_id, "tb_smear"]
+
+        if not df.at[person_id, "is_alive"] or df.at[person_id, "tb_diagnosed"]:
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
 
-        if not df.at[person_id, "is_alive"]:
-            return
+        smear_status = df.at[person_id, "tb_smear"]
 
         # select sensitivity/specificity of test based on smear status
         if smear_status:
@@ -1972,12 +1970,13 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
-        smear_status = df.at[person_id, "tb_smear"]
+
+        if not df.at[person_id, "is_alive"] or df.at[person_id, "tb_diagnosed"]:
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
 
-        if not df.at[person_id, "is_alive"]:
-            return
+        smear_status = df.at[person_id, "tb_smear"]
 
         # select sensitivity/specificity of test based on smear status
         if smear_status:
@@ -2044,10 +2043,11 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         person = df.loc[person_id]
 
         if not person["is_alive"]:
-            return
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
-        if person["tb_on_treatment"]:
-            return
+        # if person already on treatment or not yet diagnosed, do nothing
+        if person["tb_on_treatment"] or not person["tb_diagnosed"]:
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         treatment_regimen = self.select_treatment(person_id)
         treatment_available = self.get_consumables(
@@ -2454,18 +2454,18 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # number of new active cases
         new_tb_cases = len(
-            df[(df.tb_date_active >= (now - DateOffset(months=self.repeat)))]
+            df[(df.tb_date_active > (now - DateOffset(months=self.repeat)))]
         )
 
         # number of latent cases
         new_latent_cases = len(
-            df[(df.tb_date_latent >= (now - DateOffset(months=self.repeat)))]
+            df[(df.tb_date_latent > (now - DateOffset(months=self.repeat)))]
         )
 
         # number of new active cases in HIV+
         inc_active_hiv = len(
             df[
-                (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
+                (df.tb_date_active > (now - DateOffset(months=self.repeat)))
                 & df.hv_inf
                 ]
         )
@@ -2560,7 +2560,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         new_mdr_cases = len(
             df[
                 (df.tb_strain == "mdr")
-                & (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
+                & (df.tb_date_active > (now - DateOffset(months=self.repeat)))
                 ]
         )
 
