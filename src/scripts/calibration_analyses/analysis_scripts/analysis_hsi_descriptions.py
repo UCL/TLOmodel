@@ -51,34 +51,45 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         return _df
 
     # %% "Figure 1": The Distribution of HSI_Events that occur by TREATMENT_ID
-    # todo - these could be done using the summary logger for speed
+    # N.B. This uses the summary logger for speed. All other figures use the full logger as that is necessary.
 
     def get_counts_of_hsi_by_treatment_id(_df):
-        return formatting_hsi_df(_df).groupby(by='TREATMENT_ID').size()
+        """Get the counts of the short TREATMENT_IDs occurring"""
+        _counts_by_treatment_id = _df \
+            .loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), 'TREATMENT_ID'] \
+            .apply(pd.Series) \
+            .sum() \
+            .astype(int)
+        return _counts_by_treatment_id.groupby(level=0).sum()
 
-    def get_counts_of_hsi_by_treatment_id_short(_df):
-        return formatting_hsi_df(_df).groupby(by='TREATMENT_ID_SHORT').size()
+    def get_counts_of_hsi_by_short_treatment_id(_df):
+        """Get the counts of the short TREATMENT_IDs occurring (shortened, up to first underscore)"""
+        _counts_by_treatment_id = get_counts_of_hsi_by_treatment_id(_df)
+        _short_treatment_id = _counts_by_treatment_id.index.map(lambda x: x.split('_')[0] + "*")
+        return _counts_by_treatment_id.groupby(by=_short_treatment_id).sum()
 
     counts_of_hsi_by_treatment_id = summarize(
         extract_results(
             results_folder,
-            module='tlo.methods.healthsystem',
+            module='tlo.methods.healthsystem.summary',
             key='HSI_Event',
             custom_generate_series=get_counts_of_hsi_by_treatment_id,
             do_scaling=True
         ),
-        only_mean=True
+        only_mean=True,
+        collapse_columns=True,
     )
 
     counts_of_hsi_by_treatment_id_short = summarize(
         extract_results(
             results_folder,
-            module='tlo.methods.healthsystem',
+            module='tlo.methods.healthsystem.summary',
             key='HSI_Event',
-            custom_generate_series=get_counts_of_hsi_by_treatment_id_short,
+            custom_generate_series=get_counts_of_hsi_by_short_treatment_id,
             do_scaling=True
         ),
-        only_mean=True
+        only_mean=True,
+        collapse_columns=True,
     )
 
     fig, ax = plt.subplots()
@@ -99,8 +110,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig, ax = plt.subplots()
     name_of_plot = 'HSI Events by TREATMENT_ID (Short)'
     squarify_neat(
-        sizes=counts_of_hsi_by_treatment_id_short[0].values,
-        label=counts_of_hsi_by_treatment_id_short[0].index,
+        sizes=counts_of_hsi_by_treatment_id_short.values,
+        label=counts_of_hsi_by_treatment_id_short.index,
         colormap=get_color_short_treatment_id,
         alpha=1,
         pad=True,
@@ -112,8 +123,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
 
+
     # %% "Figure 2": The Appointments Used
 
+    # USING LONG LOGGER
     def get_counts_of_appt_type_by_treatment_id_short(_df):
         return formatting_hsi_df(_df) \
             .drop(columns=['date', 'TREATMENT_ID', 'Facility_Level']) \
