@@ -31,7 +31,7 @@ resourcefilepath = Path("./resources")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 log_filename = 'none'
-# log_filename = outputpath / 'GBD_lri_comparison_10k_pop__2022-06-15T132356.log'
+# log_filename = outputpath / 'alri_with_treatment_and_without_treatment__2022-06-21T092704.log'
 # <-- insert name of log file to avoid re-running the simulation
 
 if not os.path.exists(log_filename):
@@ -40,10 +40,10 @@ if not os.path.exists(log_filename):
 
     start_date = Date(2010, 1, 1)
     end_date = Date(2022, 12, 31)
-    popsize = 10000
+    popsize = 20000
 
     log_config = {
-        "filename": "GBD_lri_comparison_10k_pop",
+        "filename": "GBD_lri_comparison_20k_pop",
         "directory": "./outputs",
         "custom_levels": {
             "*": logging.WARNING,
@@ -63,17 +63,28 @@ if not os.path.exists(log_filename):
         demography.Demography(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath,
+                                                      force_any_symptom_to_lead_to_healthcareseeking=True),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                  service_availability=['*']),
+                                  service_availability=['*'], cons_availability='all', disable=True),
         alri.Alri(resourcefilepath=resourcefilepath),
         alri.AlriPropertiesOfOtherModules()
     )
 
     # Run the simulation
     sim.make_initial_population(n=popsize)
+
+    # Assume perfect sensitivity in hw classification
+    p = sim.modules['Alri'].parameters
+    p['sensitivity_of_classification_of_fast_breathing_pneumonia_facility_level0'] = 1.0
+    p['sensitivity_of_classification_of_danger_signs_pneumonia_facility_level0'] = 1.0
+    p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level1'] = 1.0
+    p['sensitivity_of_classification_of_severe_pneumonia_facility_level1'] = 1.0
+    p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level2'] = 1.0
+    p['sensitivity_of_classification_of_severe_pneumonia_facility_level2'] = 1.0
+
     sim.simulate(end_date=end_date)
 
     # display filename
@@ -272,43 +283,43 @@ plt.show()
 # -------------------------------------------------------------------------------------------------------------
 # # # # # # # # # # ALRI DALYs # # # # # # # # # #
 # ------------------------------------------------------------------
-# Get the total DALYs from the output of health burden
-dalys = output['tlo.methods.healthburden']['dalys']
-dalys.drop(columns='Other', inplace=True)
-dalys.drop(columns='date', inplace=True)
-dalys.drop(dalys.loc[dalys['age_range'] != '0-4'].index, inplace=True)
-dalys.set_index(
-    'year',
-    drop=True,
-    inplace=True
-)
-
-dalys = dalys.groupby('year').sum()
-
-plt.style.use("ggplot")
-plt.figure(1, figsize=(10, 10))
-fig4, ax4 = plt.subplots()
-
-# GBD estimates
-plt.plot(GBD_data.Year, GBD_data.DALYs)  # GBD data
-plt.fill_between(
-    GBD_data.Year,
-    GBD_data.DALYs_lower,
-    GBD_data.DALYs_upper,
-    alpha=0.5,
-)
-# model output
-plt.plot(dalys, color="mediumseagreen")  # model
-plt.title("ALRI DALYs")
-plt.xlabel("Year")
-plt.xticks(rotation=90)
-plt.ylabel("DALYs")
-plt.gca().set_xlim(start_date, end_date)
-plt.legend(["GBD", "Model"])
-plt.tight_layout()
-# plt.savefig(outputpath / ("ALRI_DALYs_model_comparison" + datestamp + ".png"), format='png')
-
-plt.show()
+# # Get the total DALYs from the output of health burden
+# dalys = output['tlo.methods.healthburden']['dalys']
+# dalys.drop(columns='Other', inplace=True)
+# dalys.drop(columns='date', inplace=True)
+# dalys.drop(dalys.loc[dalys['age_range'] != '0-4'].index, inplace=True)
+# dalys.set_index(
+#     'year',
+#     drop=True,
+#     inplace=True
+# )
+#
+# dalys = dalys.groupby('year').sum()
+#
+# plt.style.use("ggplot")
+# plt.figure(1, figsize=(10, 10))
+# fig4, ax4 = plt.subplots()
+#
+# # GBD estimates
+# plt.plot(GBD_data.Year, GBD_data.DALYs)  # GBD data
+# plt.fill_between(
+#     GBD_data.Year,
+#     GBD_data.DALYs_lower,
+#     GBD_data.DALYs_upper,
+#     alpha=0.5,
+# )
+# # model output
+# plt.plot(dalys, color="mediumseagreen")  # model
+# plt.title("ALRI DALYs")
+# plt.xlabel("Year")
+# plt.xticks(rotation=90)
+# plt.ylabel("DALYs")
+# plt.gca().set_xlim(start_date, end_date)
+# plt.legend(["GBD", "Model"])
+# plt.tight_layout()
+# # plt.savefig(outputpath / ("ALRI_DALYs_model_comparison" + datestamp + ".png"), format='png')
+#
+# plt.show()
 
 # -----------------------------------------------------------------------------------------------
 # check the case fatality rates (CFR)
