@@ -1659,7 +1659,8 @@ class HealthSystemSummaryCounter:
 
         self._treatment_ids = defaultdict(int)  # Running record of the `TREATMENT_ID`s of `HSI_Event`s
         self._appts = defaultdict(int)  # Running record of the Appointments of `HSI_Event`s that have run
-        self._appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}  # Same as `self._appts` but also split by facility_level  todo - get level definition from somewhere else
+        self._appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
+        # <--Same as `self._appts` but also split by facility_level
         self._frac_time_used_overall = []  # Running record of the usage of the healthcare system
 
     def record_hsi_event(self, treatment_id: str, appt_footprint: Counter, level: str) -> None:
