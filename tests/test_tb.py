@@ -2,11 +2,13 @@
 
 import os
 from pathlib import Path
+import pickle
 
 import pandas as pd
 import pytest
+from tlo.analysis.utils import parse_log_file
 
-from tlo import Date, Simulation
+from tlo import Date, Simulation, logging
 from tlo.methods import (
     care_of_women_during_pregnancy,
     demography,
@@ -39,13 +41,29 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
-def get_sim(seed, use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True):
+outputpath = Path("./outputs")  # folder for convenience of storing outputs
+
+
+def get_sim(tmpdir, seed, use_simplified_birth=True, disable_HS=False, ignore_con_constraints=False):
     """
     get sim with the checks for configuration of properties running in the TB module
     """
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed)
+    # sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
+    sim = Simulation(
+        start_date=start_date,
+        seed=seed,
+        log_config={
+            'filename': 'tmp',
+            'directory': tmpdir,
+            'custom_levels': {
+                "*": logging.WARNING,
+                "tlo.methods.healthsystem.summary": logging.INFO,
+                "tlo.methods.healthsystem": logging.INFO,
+                "tlo.methods.tb": logging.INFO}
+        }
+    )
 
     # Register the appropriate modules
     if use_simplified_birth:
@@ -849,3 +867,89 @@ def test_use_dummy_version(seed):
     sim.simulate(end_date=Date(2014, 12, 31))
 
     check_dtypes(sim)
+
+
+def test_tb_consumables(tmpdir, seed):
+    """
+    check the cons logged for tb screening and treatment
+
+    """
+
+    popsize = 10
+
+    sim = get_sim(tmpdir, seed, use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
+
+    # set population to either adults or children
+    sim.modules["Demography"].parameters["max_age_initial"] = 3
+
+    # no incident cases of active TB
+    sim.modules['Tb'].parameters["who_incidence_estimates"]["incidence_per_100k"] = 0
+
+    # make diagnosis perfect
+    sim.modules['Tb'].parameters["sens_clinical"] = 1.0
+    sim.modules['Tb'].parameters["spec_clinical"] = 1.0
+    sim.modules['Tb'].parameters["sens_xray_smear_negative"] = 1.0
+    sim.modules['Tb'].parameters["sens_xray_smear_positive"] = 1.0
+    sim.modules['Tb'].parameters["spec_xray_smear_negative"] = 1.0
+    sim.modules['Tb'].parameters["spec_xray_smear_positive"] = 1.0
+    sim.modules['Tb'].parameters["probability_access_to_xray"] = 1.0
+
+    # make sure all active cases are screened
+    sim.modules["Tb"].parameters["rate_testing_active_tb"]["testing_rate_active_cases"] = 100
+
+    # change prob treatment success for tb treatment end checks
+    sim.modules['Tb'].parameters['prob_tx_success_ds'] = 1.0
+    sim.modules['Tb'].parameters['prob_tx_success_new'] = 1.0
+
+    # Make the population
+    sim.make_initial_population(n=popsize)
+
+    df = sim.population.props
+
+    # set properties - no risk factors
+    person_id = 0
+    df.at[person_id, 'tb_inf'] = 'active'
+    df.at[person_id, 'tb_smear'] = True
+    df.at[person_id, 'tb_strain'] = 'ds'
+    df.at[person_id, 'tb_date_active'] = sim.date
+
+    # df.at[person_id, 'age_years'] = 2
+    # df.at[person_id, 'age_exact_years'] = 2
+    df.at[person_id, 'hv_inf'] = False
+
+    # assign symptoms
+    symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
+    sim.modules["SymptomManager"].change_symptom(
+        person_id=person_id,
+        symptom_string=symptom_list,
+        add_or_remove="+",
+        disease_module=sim.modules['Tb'],
+        duration_in_days=None,
+    )
+
+    # simulate for 1 year
+    sim.simulate(end_date=sim.date + pd.DateOffset(years=1))
+
+    # person should be cured
+    assert df.at[person_id, 'tb_inf'] == "latent"
+    assert not df.at[person_id, 'tb_smear']
+
+    # diagnosed, finished treatment
+    assert df.at[person_id, 'tb_ever_tested']
+    assert not df.at[person_id, 'tb_diagnosed']  # not currently diagnosed
+    assert not df.at[person_id, 'tb_diagnosed_mdr']
+    assert df.at[person_id, 'tb_treatment_regimen'] == 'tb_tx_child'
+
+    assert df.at[person_id, 'tb_date_diagnosed'] > df.at[person_id, 'tb_date_active']
+    assert df.at[person_id, 'tb_ever_treated']
+    assert not df.at[person_id, 'tb_on_treatment']
+
+    cons_log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']['Consumables']
+    # item 176 is First line treatment for new TB cases for adults, assert one item requested
+    assert "{176: 1}" == cons_log.loc[cons_log.TREATMENT_ID == "Tb_Treatment", 'Item_Available'].values[0]
+
+    # one treatment event should have occurred
+    hsi_log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']['HSI_Event']
+    assert 1 in hsi_log.loc[hsi_log.TREATMENT_ID == "Tb_Treatment", 'Number_By_Appt_Type_Code'].keys()
+
+

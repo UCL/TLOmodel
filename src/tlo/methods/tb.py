@@ -1241,7 +1241,7 @@ class Tb(Module):
         df.loc[end_tx_idx, "tb_diagnosed"] = False
         df.loc[end_tx_idx, "tb_on_treatment"] = False
         df.loc[end_tx_idx, "tb_treated_mdr"] = False
-        df.loc[end_tx_idx, "tb_treatment_regimen"] = "none"
+        # df.loc[end_tx_idx, "tb_treatment_regimen"] = "none"
         # this will indicate that this person has had one complete course of tb treatment
         # subsequent infections will be classified as retreatment
         df.loc[end_tx_idx, "tb_ever_treated"] = True
@@ -2161,7 +2161,7 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Tb)
 
-        self.TREATMENT_ID = "Tb_Treatment"
+        self.TREATMENT_ID = "Tb_Test_FollowUp"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"TBFollowUp": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
 

@@ -1441,64 +1441,67 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                     ]
             )
 
-            # Get Susceptible (non-infected alive 15-80 year-old) persons:
-            susc_idx = df.loc[
-                df.is_alive
-                & ~df.hv_inf
-                & df.age_years.between(15, 80)
-                & (df.sex == to_sex)
-                ].index
-            n_susceptible = len(susc_idx)
+            if n_infectious > 0:
 
-            # Compute chance that each susceptible person becomes infected:
-            #  - relative chance of infection (acts like a scaling-factor on 'beta')
-            rr_of_infection = self.module.lm["rr_of_infection"].predict(
-                df.loc[susc_idx]
-            )
-
-            #  - probability of infection = beta * I/N
-            p_infection = (
-                rr_of_infection * beta * (n_infectious / (n_infectious + n_susceptible))
-            )
-
-            # New infections:
-            will_be_infected = (
-                self.module.rng.random_sample(len(p_infection)) < p_infection
-            )
-            idx_new_infection = will_be_infected[will_be_infected].index
-
-            idx_new_infection_fsw = []
-
-            # additional risk for fsw
-            if to_sex == "F":
-                fsw_at_risk = df.loc[
+                # Get Susceptible (non-infected alive 15-80 year-old) persons:
+                susc_idx = df.loc[
                     df.is_alive
                     & ~df.hv_inf
-                    & df.li_is_sexworker
-                    & ~df.hv_is_on_prep
                     & df.age_years.between(15, 80)
+                    & (df.sex == to_sex)
                     ].index
+                n_susceptible = len(susc_idx)
 
-                #  - probability of infection - relative risk applies only to fsw
-                p_infection_fsw = (
-                    self.module.parameters["rr_fsw"] * beta * (n_infectious / (n_infectious + n_susceptible))
+                # Compute chance that each susceptible person becomes infected:
+                #  - relative chance of infection (acts like a scaling-factor on 'beta')
+                rr_of_infection = self.module.lm["rr_of_infection"].predict(
+                    df.loc[susc_idx]
                 )
 
-                fsw_infected = (
-                    self.module.rng.random_sample(len(fsw_at_risk)) < p_infection_fsw
+                #  - probability of infection = beta * I/N
+                p_infection = (
+                    rr_of_infection * beta * (n_infectious / (n_infectious + n_susceptible))
                 )
-                idx_new_infection_fsw = fsw_at_risk[fsw_infected]
 
-            idx_new_infection = list(idx_new_infection) + list(idx_new_infection_fsw)
 
-            # Schedule the date of infection for each new infection:
-            for idx in idx_new_infection:
-                date_of_infection = self.sim.date + pd.DateOffset(
-                    days=self.module.rng.randint(0, 365 * fraction_of_year_between_polls)
+                # New infections:
+                will_be_infected = (
+                    self.module.rng.random_sample(len(p_infection)) < p_infection
                 )
-                self.sim.schedule_event(
-                    HivInfectionEvent(self.module, idx), date_of_infection
-                )
+                idx_new_infection = will_be_infected[will_be_infected].index
+
+                idx_new_infection_fsw = []
+
+                # additional risk for fsw
+                if to_sex == "F":
+                    fsw_at_risk = df.loc[
+                        df.is_alive
+                        & ~df.hv_inf
+                        & df.li_is_sexworker
+                        & ~df.hv_is_on_prep
+                        & df.age_years.between(15, 80)
+                        ].index
+
+                    #  - probability of infection - relative risk applies only to fsw
+                    p_infection_fsw = (
+                        self.module.parameters["rr_fsw"] * beta * (n_infectious / (n_infectious + n_susceptible))
+                    )
+
+                    fsw_infected = (
+                        self.module.rng.random_sample(len(fsw_at_risk)) < p_infection_fsw
+                    )
+                    idx_new_infection_fsw = fsw_at_risk[fsw_infected]
+
+                idx_new_infection = list(idx_new_infection) + list(idx_new_infection_fsw)
+
+                # Schedule the date of infection for each new infection:
+                for idx in idx_new_infection:
+                    date_of_infection = self.sim.date + pd.DateOffset(
+                        days=self.module.rng.randint(0, 365 * fraction_of_year_between_polls)
+                    )
+                    self.sim.schedule_event(
+                        HivInfectionEvent(self.module, idx), date_of_infection
+                    )
 
         # ----------------------------------- SPONTANEOUS TESTING -----------------------------------
         def spontaneous_testing(current_year):
