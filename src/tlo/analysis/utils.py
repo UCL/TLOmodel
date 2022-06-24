@@ -5,6 +5,7 @@ import gzip
 import json
 import os
 import pickle
+import subprocess
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Dict, Optional, TextIO
@@ -587,11 +588,9 @@ class LogsDict(Mapping):
             self.__getitem__(key, cache=True)
         return self.__dict__
 
-def get_src_path() -> Path:
-    """Returns the absolute path of `src`."""
-    CURRENT_PATH = os.path.abspath(os.curdir)
 
-    def is_path_content_root(path: Path) -> bool:
-        path.is_dir()
-
-
+def get_root_path() -> Path:
+    """Returns the absolute path of the top level of the repository. Based on answer found at:
+     https://stackoverflow.com/a/53675112"""
+    return Path(subprocess.Popen(['git', 'rev-parse', '--show-toplevel'], stdout=subprocess.PIPE).communicate()[
+        0].rstrip().decode('utf-8'))

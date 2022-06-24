@@ -7,8 +7,9 @@ import pandas as pd
 from tlo import Date, Module, Simulation, logging
 from tlo.analysis.utils import (
     flatten_multi_index_series_into_dict_for_logging,
+    get_root_path,
     parse_log_file,
-    unflatten_flattened_multi_index_in_logging, get_src_path,
+    unflatten_flattened_multi_index_in_logging,
 )
 from tlo.methods import demography
 
@@ -85,12 +86,12 @@ def test_flattening_and_unflattening_multiindex(tmpdir):
         pd.testing.assert_series_equal(original, series_unflattened.rename(None))
 
 
-def test_get_src_path():
+def test_get_root_path():
     """Check that `get_content_root` works as expected."""
 
-    SRC_PATH = os.path.abspath(
-        Path(os.path.dirname(__file__)) / '../src'
-    )
+    ROOT_PATH = Path(os.path.abspath(
+        Path(os.path.dirname(__file__)) / '../'
+    ))
 
     # Different directories to move to:
     dirs = [
@@ -100,7 +101,7 @@ def test_get_src_path():
         Path(os.path.dirname(__file__)),
     ]
 
-    # Change current directory to different directory and get the `src` folder.
+    # Change current directory to different directories and then find the path of the root.
     for _dir in dirs:
         os.chdir(_dir)
-        assert SRC_PATH == get_src_path()
+        assert ROOT_PATH == get_root_path()
