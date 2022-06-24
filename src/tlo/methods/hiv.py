@@ -428,16 +428,16 @@ class Hiv(Module):
             Predictor("sex").when("F", p["rr_sex_f"]),
             Predictor("li_is_circ").when(True, p["rr_circumcision"]),
             Predictor("hv_is_on_prep")
-            .when(True, 1.0 - p["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"]),
+                .when(True, 1.0 - p["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"]),
             Predictor("li_urban").when(False, p["rr_rural"]),
             Predictor("li_wealth", conditions_are_mutually_exclusive=True)
-            .when(2, p["rr_windex_poorer"])
-            .when(3, p["rr_windex_middle"])
-            .when(4, p["rr_windex_richer"])
-            .when(5, p["rr_windex_richest"]),
+                .when(2, p["rr_windex_poorer"])
+                .when(3, p["rr_windex_middle"])
+                .when(4, p["rr_windex_richer"])
+                .when(5, p["rr_windex_richest"]),
             Predictor("li_ed_lev", conditions_are_mutually_exclusive=True)
-            .when(2, p["rr_edlevel_primary"])
-            .when(3, p["rr_edlevel_secondary"]),
+                .when(2, p["rr_edlevel_primary"])
+                .when(3, p["rr_edlevel_secondary"]),
             Predictor("hv_behaviour_change").when(True, p["rr_behaviour_change"]),
         )
 
@@ -447,14 +447,14 @@ class Hiv(Module):
                 "age_years",
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True)
-            .when("<20", p["infection_to_death_weibull_scale_1519"])
-            .when(".between(20, 24)", p["infection_to_death_weibull_scale_2024"])
-            .when(".between(25, 29)", p["infection_to_death_weibull_scale_2529"])
-            .when(".between(30, 34)", p["infection_to_death_weibull_scale_3034"])
-            .when(".between(35, 39)", p["infection_to_death_weibull_scale_3539"])
-            .when(".between(40, 44)", p["infection_to_death_weibull_scale_4044"])
-            .when(".between(45, 49)", p["infection_to_death_weibull_scale_4549"])
-            .when(">= 50", p["infection_to_death_weibull_scale_4549"])
+                .when("<20", p["infection_to_death_weibull_scale_1519"])
+                .when(".between(20, 24)", p["infection_to_death_weibull_scale_2024"])
+                .when(".between(25, 29)", p["infection_to_death_weibull_scale_2529"])
+                .when(".between(30, 34)", p["infection_to_death_weibull_scale_3034"])
+                .when(".between(35, 39)", p["infection_to_death_weibull_scale_3539"])
+                .when(".between(40, 44)", p["infection_to_death_weibull_scale_4044"])
+                .when(".between(45, 49)", p["infection_to_death_weibull_scale_4549"])
+                .when(">= 50", p["infection_to_death_weibull_scale_4549"])
         )
 
         self.lm["shape_parameter_for_infection_to_death"] = LinearModel.multiplicative(
@@ -462,14 +462,14 @@ class Hiv(Module):
                 "age_years",
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True)
-            .when("<20", p["infection_to_death_weibull_shape_1519"])
-            .when(".between(20, 24)", p["infection_to_death_weibull_shape_2024"])
-            .when(".between(25, 29)", p["infection_to_death_weibull_shape_2529"])
-            .when(".between(30, 34)", p["infection_to_death_weibull_shape_3034"])
-            .when(".between(35, 39)", p["infection_to_death_weibull_shape_3539"])
-            .when(".between(40, 44)", p["infection_to_death_weibull_shape_4044"])
-            .when(".between(45, 49)", p["infection_to_death_weibull_shape_4549"])
-            .when(">= 50", p["infection_to_death_weibull_shape_4549"])
+                .when("<20", p["infection_to_death_weibull_shape_1519"])
+                .when(".between(20, 24)", p["infection_to_death_weibull_shape_2024"])
+                .when(".between(25, 29)", p["infection_to_death_weibull_shape_2529"])
+                .when(".between(30, 34)", p["infection_to_death_weibull_shape_3034"])
+                .when(".between(35, 39)", p["infection_to_death_weibull_shape_3539"])
+                .when(".between(40, 44)", p["infection_to_death_weibull_shape_4044"])
+                .when(".between(45, 49)", p["infection_to_death_weibull_shape_4549"])
+                .when(">= 50", p["infection_to_death_weibull_shape_4549"])
         )
 
         # -- Linear Models for the Uptake of Services
@@ -1023,8 +1023,7 @@ class Hiv(Module):
             # usually performed by care_of_women_during_pregnancy module
             if not mother.hv_diagnosed and \
                 mother.is_alive and (
-                    self.rng.random_sample() < params["prob_anc_test_at_delivery"]):
-
+                self.rng.random_sample() < params["prob_anc_test_at_delivery"]):
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_TestAndRefer(
                         person_id=mother_id,
@@ -1038,8 +1037,7 @@ class Hiv(Module):
             # if mother known HIV+, schedule test for infant in 6 weeks (EI
             if mother.hv_diagnosed and \
                 df.at[child_id, "is_alive"] and (
-                    self.rng.random_sample() < params["prob_anc_test_at_delivery"]):
-
+                self.rng.random_sample() < params["prob_anc_test_at_delivery"]):
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_TestAndRefer(
                         person_id=child_id,
@@ -1128,10 +1126,10 @@ class Hiv(Module):
         if age == 0.0:
             # The person is infected prior to, or at, birth:
             months_to_death = int(self.rng.exponential(
-                        scale=p["mean_survival_for_infants_infected_prior_to_birth"]
-                    )
-                    * 12,
-                )
+                scale=p["mean_survival_for_infants_infected_prior_to_birth"]
+            )
+                                  * 12,
+                                  )
 
             months_to_aids = int(
                 max(
@@ -1266,9 +1264,9 @@ class Hiv(Module):
         age_group = "adults" if age_of_person >= 15 else "children"
 
         return_prob = prob_vs.loc[
-                          (prob_vs.year == current_year) &
-                          (prob_vs.age == age_group),
-                          "virally_suppressed_on_art"].values[0]
+            (prob_vs.year == current_year) &
+            (prob_vs.age == age_group),
+            "virally_suppressed_on_art"].values[0]
 
         # convert to probability and adjust for defaulters
         return_prob = (return_prob / 100) * self.parameters["vs_adjustment"]
@@ -1462,7 +1460,6 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 p_infection = (
                     rr_of_infection * beta * (n_infectious / (n_infectious + n_susceptible))
                 )
-
 
                 # New infections:
                 will_be_infected = (
@@ -1698,7 +1695,7 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
 
         # need to delay onset of AIDS (non-tb) to compensate for AIDS-TB
         if (self.cause == "AIDS_non_TB") and (
-                self.sim.modules["Hiv"].rng.rand() < self.sim.modules["Hiv"].parameters["prop_delayed_aids_onset"]):
+            self.sim.modules["Hiv"].rng.rand() < self.sim.modules["Hiv"].parameters["prop_delayed_aids_onset"]):
 
             # redraw time to aids and reschedule
             months_to_aids = int(
@@ -1774,12 +1771,12 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
         # Do nothing if person is now on ART and VL suppressed (non VL suppressed has no effect)
         # only if no current TB infection
         if (df.at[person_id, "hv_art"] == "on_VL_suppressed") and (
-                df.at[person_id, "tb_inf"] != "active"):
+            df.at[person_id, "tb_inf"] != "active"):
             return
 
         # off ART, no TB infection
         if (df.at[person_id, "hv_art"] != "on_VL_suppressed") and (
-                df.at[person_id, "tb_inf"] != "active"):
+            df.at[person_id, "tb_inf"] != "active"):
             # cause is HIV (no TB)
             self.sim.modules["Demography"].do_death(
                 individual_id=person_id,
@@ -2423,6 +2420,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         else:
             return self.make_appt_footprint({"EstNonCom": 1})  # Adult already on treatment
 
+
 # ---------------------------------------------------------------------------
 #   Logging
 # ---------------------------------------------------------------------------
@@ -2467,13 +2465,14 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         adult_prev_1549 = len(
             df[df.hv_inf & df.is_alive & df.age_years.between(15, 49)]
-        ) / len(df[df.is_alive & df.age_years.between(15, 49)]) if len(df[df.is_alive & df.age_years.between(15, 49)]) else 0
+        ) / len(df[df.is_alive & df.age_years.between(15, 49)]) if len(
+            df[df.is_alive & df.age_years.between(15, 49)]) else 0
 
         # child prevalence
         child_prev = len(
             df[df.hv_inf & df.is_alive & (df.age_years < 15)]
         ) / len(df[df.is_alive & (df.age_years < 15)]
-        ) if len(df[df.is_alive & (df.age_years < 15)]) else 0
+                ) if len(df[df.is_alive & (df.age_years < 15)]) else 0
 
         # incidence in the period since the last log for 15+ and 15-49 year-olds (denominator is approximate)
         n_new_infections_adult_15plus = len(
@@ -2580,19 +2579,23 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         male_prev_1524 = len(
             df[df.hv_inf & df.is_alive & df.age_years.between(15, 24) & (df.sex == "M")]
-        ) / len(df[df.is_alive & df.age_years.between(15, 24) & (df.sex == "M")]) if len(df[df.is_alive & df.age_years.between(15, 24) & (df.sex == "M")]) else 0
+        ) / len(df[df.is_alive & df.age_years.between(15, 24) & (df.sex == "M")]) if len(
+            df[df.is_alive & df.age_years.between(15, 24) & (df.sex == "M")]) else 0
 
         male_prev_2549 = len(
             df[df.hv_inf & df.is_alive & df.age_years.between(25, 49) & (df.sex == "M")]
-        ) / len(df[df.is_alive & df.age_years.between(25, 49) & (df.sex == "M")]) if len(df[df.is_alive & df.age_years.between(25, 49) & (df.sex == "M")]) else 0
+        ) / len(df[df.is_alive & df.age_years.between(25, 49) & (df.sex == "M")]) if len(
+            df[df.is_alive & df.age_years.between(25, 49) & (df.sex == "M")]) else 0
 
         female_prev_1524 = len(
             df[df.hv_inf & df.is_alive & df.age_years.between(15, 24) & (df.sex == "F")]
-        ) / len(df[df.is_alive & df.age_years.between(15, 24) & (df.sex == "F")]) if len(df[df.is_alive & df.age_years.between(15, 24) & (df.sex == "F")]) else 0
+        ) / len(df[df.is_alive & df.age_years.between(15, 24) & (df.sex == "F")]) if len(
+            df[df.is_alive & df.age_years.between(15, 24) & (df.sex == "F")]) else 0
 
         female_prev_2549 = len(
             df[df.hv_inf & df.is_alive & df.age_years.between(25, 49) & (df.sex == "F")]
-        ) / len(df[df.is_alive & df.age_years.between(25, 49) & (df.sex == "F")]) if len(df[df.is_alive & df.age_years.between(25, 49) & (df.sex == "F")])  else 0
+        ) / len(df[df.is_alive & df.age_years.between(25, 49) & (df.sex == "F")]) if len(
+            df[df.is_alive & df.age_years.between(25, 49) & (df.sex == "F")]) else 0
 
         total_prev = len(
             df[df.hv_inf & df.is_alive]
@@ -2645,9 +2648,9 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 ]
         )
         denom_female_1524 = len(df[
-                                  df.is_alive
-                                  & (df.sex == "F")
-                                  & df.age_years.between(15, 24)])
+                                    df.is_alive
+                                    & (df.sex == "F")
+                                    & df.age_years.between(15, 24)])
         female_inc_1524 = n_new_infections_female_1524 / denom_female_1524 if denom_female_1524 else 0
 
         n_new_infections_female_2549 = len(
@@ -2659,11 +2662,10 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 ]
         )
         denom_female_2549 = len(df[
-                                  df.is_alive
-                                  & (df.sex == "F")
-                                  & df.age_years.between(25, 49)])
+                                    df.is_alive
+                                    & (df.sex == "F")
+                                    & df.age_years.between(25, 49)])
         female_inc_2549 = n_new_infections_female_2549 / denom_female_2549 if denom_female_2549 else 0
-
 
         logger.info(
             key="infections_by_2age_groups_and_sex",
@@ -2693,19 +2695,23 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         male_prev_1524 = len(
             df[df.hv_inf & df.is_alive & df.age_years.between(15, 24) & (df.sex == "M")]
-        ) / len(df[df.is_alive & df.age_years.between(15, 24) & (df.sex == "M")]) if len(df[df.is_alive & df.age_years.between(15, 24) & (df.sex == "M")]) else 0
+        ) / len(df[df.is_alive & df.age_years.between(15, 24) & (df.sex == "M")]) if len(
+            df[df.is_alive & df.age_years.between(15, 24) & (df.sex == "M")]) else 0
 
         male_prev_2549 = len(
             df[df.hv_inf & df.is_alive & df.age_years.between(25, 49) & (df.sex == "M")]
-        ) / len(df[df.is_alive & df.age_years.between(25, 49) & (df.sex == "M")]) if len(df[df.is_alive & df.age_years.between(25, 49) & (df.sex == "M")]) else 0
+        ) / len(df[df.is_alive & df.age_years.between(25, 49) & (df.sex == "M")]) if len(
+            df[df.is_alive & df.age_years.between(25, 49) & (df.sex == "M")]) else 0
 
         female_prev_1524 = len(
             df[df.hv_inf & df.is_alive & df.age_years.between(15, 24) & (df.sex == "F")]
-        ) / len(df[df.is_alive & df.age_years.between(15, 24) & (df.sex == "F")]) if len(df[df.is_alive & df.age_years.between(15, 24) & (df.sex == "F")]) else 0
+        ) / len(df[df.is_alive & df.age_years.between(15, 24) & (df.sex == "F")]) if len(
+            df[df.is_alive & df.age_years.between(15, 24) & (df.sex == "F")]) else 0
 
         female_prev_2549 = len(
             df[df.hv_inf & df.is_alive & df.age_years.between(25, 49) & (df.sex == "F")]
-        ) / len(df[df.is_alive & df.age_years.between(25, 49) & (df.sex == "F")]) if len(df[df.is_alive & df.age_years.between(25, 49) & (df.sex == "F")]) else 0
+        ) / len(df[df.is_alive & df.age_years.between(25, 49) & (df.sex == "F")]) if len(
+            df[df.is_alive & df.age_years.between(25, 49) & (df.sex == "F")]) else 0
 
         total_prev = len(
             df[df.hv_inf & df.is_alive]
@@ -2758,9 +2764,9 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 ]
         )
         denom_female_1524 = len(df[
-                                  df.is_alive
-                                  & (df.sex == "F")
-                                  & df.age_years.between(15, 24)])
+                                    df.is_alive
+                                    & (df.sex == "F")
+                                    & df.age_years.between(15, 24)])
         female_inc_1524 = n_new_infections_female_1524 / denom_female_1524 if denom_female_1524 else 0
 
         n_new_infections_female_2549 = len(
@@ -2772,9 +2778,9 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 ]
         )
         denom_female_2549 = len(df[
-                                  df.is_alive
-                                  & (df.sex == "F")
-                                  & df.age_years.between(25, 49)])
+                                    df.is_alive
+                                    & (df.sex == "F")
+                                    & df.age_years.between(25, 49)])
         female_inc_2549 = n_new_infections_female_2549 / denom_female_2549 if denom_female_2549 else 0
 
         logger.info(
@@ -2923,7 +2929,8 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # NB. Among adult men
         prop_men_circ = len(
             df[df.is_alive & (df.sex == "M") & (df.age_years >= 15) & df.li_is_circ]
-        ) / len(df[df.is_alive & (df.sex == "M") & (df.age_years >= 15)]) if len(df[df.is_alive & (df.sex == "M") & (df.age_years >= 15)]) else 0
+        ) / len(df[df.is_alive & (df.sex == "M") & (df.age_years >= 15)]) if len(
+            df[df.is_alive & (df.sex == "M") & (df.age_years >= 15)]) else 0
 
         logger.info(
             key="hiv_program_coverage",
