@@ -3,20 +3,24 @@
 from pathlib import Path
 from typing import Tuple
 
+import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
 from tlo import Date
 from tlo.analysis.utils import (
     extract_results,
+    get_color_cause_of_death_label,
     get_color_coarse_appt,
     get_color_short_treatment_id,
     get_corase_appt_type,
     make_age_grp_lookup,
     make_age_grp_types,
+    order_of_cause_of_death_label,
     order_of_coarse_appt,
     squarify_neat,
     summarize,
+    to_age_group,
 )
 
 
@@ -86,6 +90,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         run). We are looking for the number FEWER appointments that occur when treatment does not happen, so we flip the
          sign (as `find_extra_difference_relative_to_comparison` gives the number extra relative the comparison)."""
         return - summarize(pd.concat({
+            _idx: find_difference_extra_relative_to_comparison(row, comparison=comparison)
+            for _idx, row in _df.iterrows()
+        }, axis=1).T, only_mean=True)
+
+    def find_difference_extra_relative_to_comparison_dataframe(_df: pd.DataFrame, comparison: str):
+        """Same as `find_difference_extra_relative_to_comparison` but for pd.DataFrame, which is the same as
+        `find_mean_difference_in_appts_relative_to_comparison`.
+        """
+        # todo factorize these -- it's the same operation for a pd.Series or a pd.DataFrame
+        return summarize(pd.concat({
             _idx: find_difference_extra_relative_to_comparison(row, comparison=comparison)
             for _idx, row in _df.iterrows()
         }, axis=1).T, only_mean=True)
@@ -204,6 +218,100 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
+
+    # %% Quantify the health associated with each TREATMENT_ID (short) SPLIT BY AGE and WEALTH
+
+    def get_total_num_death_by_agegrp_and_label(_df):
+        """Return the total number of deaths in the TARGET_PERIOD by age-group and cause label."""
+        age_group = to_age_group(_df['age'])
+        return _df \
+            .loc[_df['date'].between(*TARGET_PERIOD)] \
+            .groupby([age_group, 'label'])['person_id'].size()
+
+    total_num_death_by_agegrp_and_label = extract_results(
+        results_folder,
+        module="tlo.methods.demography",
+        key="death",
+        custom_generate_series=get_total_num_death_by_agegrp_and_label,
+        do_scaling=True
+    ).pipe(set_param_names_as_column_index_level_0)
+
+    deaths_averted_by_agegrp_and_label = find_difference_extra_relative_to_comparison_dataframe(
+        total_num_death_by_agegrp_and_label, comparison='Everything'
+    ).drop(columns=['All', 'FirstAttendance*'])
+
+    for _scenario_name, _deaths_av in deaths_averted_by_agegrp_and_label.T.iterrows():
+        format_to_plot = _deaths_av.unstack()
+        format_to_plot.index = format_to_plot.index.astype(make_age_grp_types())
+        format_to_plot = format_to_plot.sort_index(axis=0)
+        format_to_plot = format_to_plot[order_of_cause_of_death_label(format_to_plot.columns)]
+
+        fig, ax = plt.subplots()
+        name_of_plot = f'Deaths Averted by {_scenario_name} by Age and Cause {target_period()}'
+        (
+            format_to_plot / 1000
+         ).plot.bar(stacked=True, ax=ax,
+                    color=[get_color_cause_of_death_label(_label) for _label in format_to_plot.columns],
+                    )
+        ax.axhline(0.0, color='black')
+        ax.set_title(name_of_plot)
+        ax.set_ylabel('Number of Deaths Averted (/1000)')
+        ax.set_ylim(-50, 150)
+        ax.set_xlabel('Age-group')
+        ax.grid()
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.legend(ncol=3, fontsize=8, loc='upper right')
+        fig.tight_layout()
+        fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
+        fig.show()
+
+    def get_total_num_death_by_wealth_and_label(_df):
+        """Return the total number of deaths in the TARGET_PERIOD by wealth and cause label."""
+        wealth_group = pd.Series(index=_df.index, data=np.random.choice(range(5), len(_df)))
+        #                                               todo <-- UPDATE WHEN WE HAVE A RUN WHERE `li_wealth` is there
+        return _df \
+            .loc[_df['date'].between(*TARGET_PERIOD)] \
+            .groupby([wealth_group, 'label'])['person_id'].size()
+
+    total_num_death_by_wealth_and_label = extract_results(
+        results_folder,
+        module="tlo.methods.demography",
+        key="death",
+        custom_generate_series=get_total_num_death_by_wealth_and_label,
+        do_scaling=True
+    ).pipe(set_param_names_as_column_index_level_0)
+
+    deaths_averted_by_wealth_and_label = find_difference_extra_relative_to_comparison_dataframe(
+        total_num_death_by_wealth_and_label, comparison='Everything'
+    ).drop(columns=['All', 'FirstAttendance*'])
+
+    for _scenario_name, _deaths_av in deaths_averted_by_wealth_and_label.T.iterrows():
+        format_to_plot = _deaths_av.unstack()
+        format_to_plot = format_to_plot.sort_index(axis=0)
+        format_to_plot.index = format_to_plot.index.map({0: "Lowest 20%", 1: "Next 20%", 2: "Next 20%", 3: "Next 20%",
+                                                         4: "Highest 20%"})
+        format_to_plot = format_to_plot[order_of_cause_of_death_label(format_to_plot.columns)]
+
+        fig, ax = plt.subplots()
+        name_of_plot = f'Deaths Averted by {_scenario_name} by Wealth and Cause {target_period()}'
+        (
+            format_to_plot / 1000
+         ).plot.bar(stacked=True, ax=ax,
+                    color=[get_color_cause_of_death_label(_label) for _label in format_to_plot.columns],
+                    )
+        ax.axhline(0.0, color='black')
+        ax.set_title(name_of_plot)
+        ax.set_ylabel('Number of Deaths Averted (/1000)')
+        ax.set_ylim(-50, 150)
+        ax.set_xlabel('Wealth')
+        ax.grid()
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.legend(ncol=3, fontsize=8, loc='upper right')
+        fig.tight_layout()
+        fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
+        fig.show()
 
     # %% Quantify the healthcare system resources used with each TREATMENT_ID (short) (The difference in the number of
     # appointments between each scenario and the 'Everything' scenario.)

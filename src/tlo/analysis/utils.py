@@ -144,6 +144,12 @@ def make_age_grp_types():
     return pd.CategoricalDtype(categories=keys, ordered=True)
 
 
+def to_age_group(_ages: pd.Series):
+    """Return a pd.Series with age-group formatted as a categorical type, created from a pd.Series with exact age."""
+    _, agegrplookup = make_age_grp_lookup()
+    return _ages.map(agegrplookup).astype(make_age_grp_types())
+
+
 def get_scenario_outputs(scenario_filename: str, outputs_dir: Path) -> list:
     """Returns paths of folders associated with a batch_file, in chronological order."""
     stub = scenario_filename.rstrip('.py')
@@ -610,13 +616,10 @@ def get_filtered_treatment_ids(depth: Optional[int] = None) -> List[str]:
     return filter_treatments(all_treatment_ids['treatment_id'], depth=depth if depth is not None else np.inf)
 
 
-
-# todo - factorize so it's all in one place: label, entries, color
-
-
 def _define_coarse_appts() -> pd.DataFrame:
     """Define which appointment types fall into which 'coarse appointment' category, the order of the categories and the
-    colour of the category."""
+    colour of the category.
+    Names of colors are selected with reference to: https://i.stack.imgur.com/lFZum.png"""
     return pd.DataFrame.from_dict(
         [
             {
@@ -656,11 +659,11 @@ def _define_coarse_appts() -> pd.DataFrame:
                 'color': 'red'},
             {
                 'category': 'Mental Health',
-                'appt_types': [ 'MentOPD', 'MentClinic'],
+                'appt_types': ['MentOPD', 'MentClinic'],
                 'color': 'orangered'},
             {
                 'category': 'Surgery / Radiotherapy',
-                'appt_types': ['MajorSurg', 'MinorSurg','Radiotherapy'],
+                'appt_types': ['MajorSurg', 'MinorSurg', 'Radiotherapy'],
                 'color': 'orange'},
             {
                 'category': 'STI',
@@ -704,7 +707,8 @@ def get_color_coarse_appt(coarse_appt_type: str) -> str:
 
 
 def _define_short_treatment_ids() -> pd.Series:
-    """Define the order of the short treatment_ids and the color for each"""
+    """Define the order of the short treatment_ids and the color for each.
+    Names of colors are selected with reference to: https://i.stack.imgur.com/lFZum.png"""
     return pd.Series({
         'FirstAttendance*': 'darkgrey',
         'Inpatient*': 'silver',
@@ -736,6 +740,7 @@ def _define_short_treatment_ids() -> pd.Series:
 
         'Depression*': 'indianred',
         'Epilepsy*': 'red',
+
         'Rti*': 'lightsalmon',
     })
 
@@ -751,11 +756,61 @@ def order_of_short_treatment_ids(_short_treatment_id) -> int:
 
 def get_color_short_treatment_id(short_treatment_id: str) -> str:
     """Return the colour (as matplotlib string) assigned to this shorted TREATMENT_ID. Returns `np.nan` if treatment_id
-    is not recognised.
-    Names of colors are selected with reference to: https://i.stack.imgur.com/lFZum.png"""
+    is not recognised."""
     colors = _define_short_treatment_ids()
     if short_treatment_id in colors.index:
         return colors.loc[short_treatment_id]
+    else:
+        return np.nan
+
+
+def _define_cause_of_death_labels() -> pd.Series:
+    """Define the order of the cause_of_death_labels and the color for each.
+    Names of colors are selected with reference to: https://i.stack.imgur.com/lFZum.png"""
+    return pd.Series({
+        'Maternal Disorders': 'green',
+        'Neonatal Disorders': 'springgreen',
+        'Congenital birth defects': 'mediumaquamarine',
+
+        'Lower respiratory infections': 'darkorange',
+        'Childhood Diarrhoea': 'tan',
+
+        'AIDS': 'deepskyblue',
+        'Malaria': 'lightsteelblue',
+        'Measles': 'cornflowerblue',
+        'non_AIDS_TB': 'mediumslateblue',
+
+        'Heart Disease': 'sienna',  # brown-ish
+        'Kidney Disease': 'chocolate',  # brown-ish
+        'Diabetes': 'peru',  # brown-ish
+        'Stroke': 'burlywood',  # brown-ish
+
+        'Cancer': 'deeppink',
+
+        'Depression / Self-harm': 'indianred',
+        'Epilepsy': 'red',
+
+        'Transport Injuries': 'lightsalmon',
+
+        'Other': 'dimgrey',
+    })
+
+
+def order_of_cause_of_death_label(_cause_of_death_label) -> int:
+    """Define a standard order for Cause-of-Death labels."""
+    order = _define_cause_of_death_labels().index
+    if isinstance(_cause_of_death_label, str):
+        return tuple(order).index(_cause_of_death_label)
+    else:
+        return order[order.isin(_cause_of_death_label)]
+
+
+def get_color_cause_of_death_label(cause_of_death_label: str) -> str:
+    """Return the colour (as matplotlib string) assigned to this shorted Cause-of-Death Label. Returns `np.nan` if
+    label is not recognised."""
+    colors = _define_cause_of_death_labels()
+    if cause_of_death_label in colors.index:
+        return colors.loc[cause_of_death_label]
     else:
         return np.nan
 

@@ -6,6 +6,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 from tlo.analysis.utils import (
+    _define_cause_of_death_labels,
     get_color_coarse_appt,
     get_color_short_treatment_id,
     get_corase_appt_type,
@@ -24,7 +25,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             ax.bar(i, np.nan, color=_color, label=_label)
         ax.legend(fontsize=14, ncol=2, loc='center')
         ax.axis('off')
-        ax.set_title(title, fontsize=20)
+        ax.set_title(title, fontsize=14)
         fig.savefig(output_folder / f"{name_of_plot.replace(' ', '_')}.png")
         return fig, ax
 
@@ -39,6 +40,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         colors=[get_color_short_treatment_id(x) for x in short_treatment_ids],
         title=name_of_plot,
     )
+    fig.tight_layout()
     fig.show()
 
     # %% Coarse Appt Type
@@ -53,6 +55,17 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig, ax = plot_legend(
         labels=coarse_appt_types,
         colors=[get_color_coarse_appt(x) for x in coarse_appt_types],
+        title=name_of_plot,
+    )
+    fig.show()
+
+    # %% Cause of Death Labels
+    all_labels = _define_cause_of_death_labels()
+
+    name_of_plot = "Colormap for Cause-of-Death Labels"
+    fig, ax = plot_legend(
+        labels=all_labels.index,
+        colors=all_labels.values,
         title=name_of_plot,
     )
     fig.show()

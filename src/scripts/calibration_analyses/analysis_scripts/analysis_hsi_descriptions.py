@@ -123,10 +123,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
 
-
     # %% "Figure 2": The Appointments Used
 
     # USING LONG LOGGER
+
     def get_counts_of_appt_type_by_treatment_id_short(_df):
         return formatting_hsi_df(_df) \
             .drop(columns=['date', 'TREATMENT_ID', 'Facility_Level']) \

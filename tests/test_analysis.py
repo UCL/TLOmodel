@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from typing import List
 
 import numpy as np
 import pandas as pd
@@ -8,6 +9,7 @@ from matplotlib import pyplot as plt
 from tlo import Date, Module, Simulation, logging
 from tlo.analysis.utils import (
     flatten_multi_index_series_into_dict_for_logging,
+    get_color_cause_of_death_label,
     get_color_coarse_appt,
     get_color_short_treatment_id,
     get_corase_appt_type,
@@ -18,6 +20,7 @@ from tlo.analysis.utils import (
     unflatten_flattened_multi_index_in_logging,
 )
 from tlo.methods import demography
+from tlo.methods.fullmodel import fullmodel
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
@@ -131,7 +134,6 @@ def test_colormap_coarse_appts():
     for i, (_appt_type, _color) in enumerate(zip(coarse_appt_types, colors)):
         ax.bar(i, 10, color=_color, label=_appt_type)
     ax.legend(fontsize=10, ncol=2)
-    ax.set_title('Colormap for Coarse Appointment Types')
     plt.close(fig)
 
 
@@ -165,5 +167,34 @@ def test_colormap_short_treatment_id():
     for i, (_short_treatment_id, _color) in enumerate(zip(short_treatment_ids, colors)):
         ax.bar(i, 10, color=_color, label=_short_treatment_id)
     ax.legend(fontsize=10, ncol=2)
-    ax.set_title('Colormap for Short TREATMENT_IDs')
+    plt.close(fig)
+
+
+def test_colormap_cause_of_death_label(seed):
+    """Check that all the Cause-of-Deaths labels defined in the full model are assigned to a unique colour when
+     plotting."""
+
+    def get_all_cause_of_death_labels(seed=0) -> List[str]:
+        """Return list of all the causes of death defined in the full model."""
+        start_date = Date(2010, 1, 1)
+        sim = Simulation(start_date=start_date, seed=seed)
+        sim.register(*fullmodel(resourcefilepath=resourcefilepath, use_simplified_births=False))
+        sim.make_initial_population(n=1_000)
+        sim.simulate(end_date=start_date)
+        mapper, _ = (sim.modules['Demography']).create_mappers_from_causes_of_death_to_label()
+        return sorted(set(mapper.values()))
+
+    all_labels = get_all_cause_of_death_labels(seed)
+
+    colors = [get_color_cause_of_death_label(_label) for _label in all_labels]
+
+    assert len(set(colors)) == len(colors)  # No duplicates
+    assert all([isinstance(_x, str) for _x in colors])  # All strings
+    assert np.nan is get_color_coarse_appt('????')  # Return `np.nan` if label is not recognised.
+
+    # Check can produce plot:
+    fig, ax = plt.subplots()
+    for i, (_short_treatment_id, _color) in enumerate(zip(all_labels, colors)):
+        ax.bar(i, 10, color=_color, label=_short_treatment_id)
+    ax.legend(fontsize=10, ncol=2)
     plt.close(fig)
