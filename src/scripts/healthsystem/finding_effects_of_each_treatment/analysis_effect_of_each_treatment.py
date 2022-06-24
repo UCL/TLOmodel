@@ -18,9 +18,10 @@ from tlo.analysis.utils import (
     make_age_grp_types,
     order_of_cause_of_death_label,
     order_of_coarse_appt,
+    order_of_short_treatment_ids,
     squarify_neat,
     summarize,
-    to_age_group, order_of_short_treatment_ids,
+    to_age_group,
 )
 
 
