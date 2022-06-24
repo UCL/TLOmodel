@@ -869,19 +869,8 @@ def test_use_dummy_version(seed):
     check_dtypes(sim)
 
 
-def test_tb_consumables(tmpdir, seed):
-    """
-    check the cons logged for tb screening and treatment
-
-    """
-
-    popsize = 10
-
-    sim = get_sim(tmpdir, seed, use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
-
-    # set population to either adults or children
-    sim.modules["Demography"].parameters["max_age_initial"] = 3
-
+# set parameters for perfect diagnosis and treatment
+def set_parameters(sim):
     # no incident cases of active TB
     sim.modules['Tb'].parameters["who_incidence_estimates"]["incidence_per_100k"] = 0
 
@@ -901,20 +890,17 @@ def test_tb_consumables(tmpdir, seed):
     sim.modules['Tb'].parameters['prob_tx_success_ds'] = 1.0
     sim.modules['Tb'].parameters['prob_tx_success_new'] = 1.0
 
-    # Make the population
-    sim.make_initial_population(n=popsize)
+
+# set properties and assign symptoms
+def set_properties(person_id, sim):
 
     df = sim.population.props
 
     # set properties - no risk factors
-    person_id = 0
     df.at[person_id, 'tb_inf'] = 'active'
     df.at[person_id, 'tb_smear'] = True
     df.at[person_id, 'tb_strain'] = 'ds'
     df.at[person_id, 'tb_date_active'] = sim.date
-
-    # df.at[person_id, 'age_years'] = 2
-    # df.at[person_id, 'age_exact_years'] = 2
     df.at[person_id, 'hv_inf'] = False
 
     # assign symptoms
@@ -927,8 +913,10 @@ def test_tb_consumables(tmpdir, seed):
         duration_in_days=None,
     )
 
-    # simulate for 1 year
-    sim.simulate(end_date=sim.date + pd.DateOffset(years=1))
+
+# check properties after running
+def check_properties(person_id, sim):
+    df = sim.population.props
 
     # person should be cured
     assert df.at[person_id, 'tb_inf'] == "latent"
@@ -938,12 +926,68 @@ def test_tb_consumables(tmpdir, seed):
     assert df.at[person_id, 'tb_ever_tested']
     assert not df.at[person_id, 'tb_diagnosed']  # not currently diagnosed
     assert not df.at[person_id, 'tb_diagnosed_mdr']
-    assert df.at[person_id, 'tb_treatment_regimen'] == 'tb_tx_child'
 
     assert df.at[person_id, 'tb_date_diagnosed'] > df.at[person_id, 'tb_date_active']
     assert df.at[person_id, 'tb_ever_treated']
     assert not df.at[person_id, 'tb_on_treatment']
 
+
+def test_tb_consumables(tmpdir, seed):
+    """
+    check the cons logged for tb screening and treatment
+    """
+
+    popsize = 1
+
+    sim = get_sim(tmpdir, seed, use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
+
+    ## CHILDREN
+    # set population to either adults or children
+    sim.modules["Demography"].parameters["max_age_initial"] = 3
+
+    set_parameters(sim)
+
+    # Make the population
+    sim.make_initial_population(n=popsize)
+
+    # set properties - no risk factors
+    set_properties(person_id=0, sim=sim)
+
+    # simulate for 1 year
+    sim.simulate(end_date=sim.date + pd.DateOffset(years=1))
+
+    # person should be cured
+    check_properties(person_id=0, sim=sim)
+
+    # check consumables and HSIs logged
+    cons_log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']['Consumables']
+    # item 178 is First line treatment for new TB cases for children, assert one item requested
+    assert "{178: 1}" == cons_log.loc[cons_log.TREATMENT_ID == "Tb_Treatment", 'Item_Available'].values[0]
+
+    # one tb treatment event should have occurred
+    hsi_log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']['HSI_Event']
+    tmp = hsi_log.loc[hsi_log.TREATMENT_ID == "Tb_Treatment", 'Number_By_Appt_Type_Code']
+    assert "{'TBNew': 1}" == str(tmp.iloc[0])
+
+    ## ADULTS
+    # set population to either adults or children
+    sim.modules["Demography"].parameters["max_age_initial"] = 80
+
+    set_parameters(sim)
+
+    # Make the population
+    sim.make_initial_population(n=popsize)
+
+    # set properties - no risk factors
+    set_properties(person_id=0, sim=sim)
+
+    # simulate for 1 year
+    sim.simulate(end_date=sim.date + pd.DateOffset(years=1))
+
+    # person should be cured
+    check_properties(person_id=0, sim=sim)
+
+    # check consumables and HSIs logged
     cons_log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']['Consumables']
     # item 176 is First line treatment for new TB cases for adults, assert one item requested
     assert "{176: 1}" == cons_log.loc[cons_log.TREATMENT_ID == "Tb_Treatment", 'Item_Available'].values[0]
@@ -951,5 +995,8 @@ def test_tb_consumables(tmpdir, seed):
     # one treatment event should have occurred
     hsi_log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']['HSI_Event']
     assert 1 in hsi_log.loc[hsi_log.TREATMENT_ID == "Tb_Treatment", 'Number_By_Appt_Type_Code'].keys()
+
+
+
 
 
