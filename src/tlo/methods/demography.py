@@ -393,7 +393,7 @@ class Demography(Module):
             'cause': cause,
             'label': self.causes_of_death[cause].label,
             'person_id': individual_id,
-            'li_wealth': person['li_wealth'],
+            'li_wealth': person['li_wealth'] if 'li_wealth' in person else -99,
         }
 
         if ('Contraception' in self.sim.modules) or ('SimplifiedBirths' in self.sim.modules):
