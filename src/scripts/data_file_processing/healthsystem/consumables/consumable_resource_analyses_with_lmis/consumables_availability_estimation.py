@@ -734,17 +734,71 @@ size = 10
 calibration_df['item_code'] = calibration_df['item_code'].astype(str)
 calibration_df['labels'] = calibration_df['consumable_name_tlo'].str[:10]
 
-fac_type_strings = ['Facility_level_1a', 'Facility_level_1b', 'Facility_level_2', 'Facility_level_3']
-for fac_type in fac_type_strings:
+# Define function to draw calibration plots at different levels of disaggregation
+def calibration_plot(level_of_disaggregation, group_by_var, colour):
+    calibration_df_agg = calibration_df.groupby([group_by_var],
+                                                as_index=False).agg({'available_prop': 'mean',
+                                                                     'available_prop_hhfa': 'mean',
+                                                                     'fac_type_tlo': 'first',
+                                                                     'consumable_name_tlo': 'first'})
+    calibration_df_agg['labels'] = calibration_df_agg[level_of_disaggregation]
+
+    ax = calibration_df_agg.plot.scatter('available_prop', 'available_prop_hhfa', c = colour)
+    ax.axline([0, 0], [1, 1])
+    for i, label in enumerate(calibration_df_agg['labels']):
+        plt.annotate(label,
+                     (calibration_df_agg['available_prop'][i]+0.005, calibration_df_agg['available_prop_hhfa'][i]+0.005), \
+                     fontsize=6, rotation=38)
+    if level_of_disaggregation != 'aggregate':
+        plt.title('Disaggregated by ' + level_of_disaggregation, fontsize=size, weight="bold")
+    else:
+        plt.title('Aggregate', fontsize=size, weight="bold")
+    plt.xlabel('Pr(drug available) as per TLO model')
+    plt.ylabel('Pr(drug available) as per HHFA')
+    save_name = 'calibration_plots/calibration_to_hhfa_' + level_of_disaggregation + '.png'
+    plt.savefig(path_to_files_in_the_tlo_dropbox / save_name)
+
+# 8.2.1 Aggregate plot
+calibration_df['aggregate'] = 'aggregate'
+level_of_disaggregation = 'aggregate'
+colour = 'red'
+group_by_var = 'aggregate'
+calibration_plot(level_of_disaggregation, group_by_var, colour)
+
+# 8.2.2 Plot by facility level
+level_of_disaggregation = 'fac_type_tlo'
+group_by_var = 'fac_type_tlo'
+colour = 'orange'
+calibration_plot(level_of_disaggregation, group_by_var, colour)
+
+# 8.2.3 Plot by item
+level_of_disaggregation = 'consumable_name_tlo'
+group_by_var = 'consumable_name_tlo'
+colour = 'yellow'
+calibration_plot(level_of_disaggregation, group_by_var, colour)
+
+# 8.2.4 Plot by item and facility level
+def calibration_plot_by_level(fac_type):
     cond_fac_type = calibration_df['fac_type_tlo'] == fac_type
     calibration_df_by_level = calibration_df[cond_fac_type].reset_index()
-    ax = calibration_df_by_level.plot.scatter('available_prop', 'available_prop_hhfa')
-    ax.axline([0, 0], [1, 1])
+    plt.scatter(calibration_df_by_level['available_prop'],
+                     calibration_df_by_level['available_prop_hhfa'])
+    plt.axline([0, 0], [1, 1])
     for i, label in enumerate(calibration_df_by_level['labels']):
-        plt.annotate(label, (calibration_df_by_level['available_prop'][i], calibration_df_by_level['available_prop_hhfa'][i]), \
-                     fontsize=6, rotation = 45)
+        plt.annotate(label, (calibration_df_by_level['available_prop'][i]+0.005, calibration_df_by_level['available_prop_hhfa'][i]+0.005), \
+                     fontsize=6, rotation = 27)
     plt.title(fac_type, fontsize=size, weight="bold")
     plt.xlabel('Pr(drug available) as per TLO model')
     plt.ylabel('Pr(drug available) as per HHFA')
-    save_name = 'calibration_plots/calibration_to_hhfa_' + fac_type + '.png'
-    plt.savefig(path_to_files_in_the_tlo_dropbox / save_name)
+
+fig = plt.figure(figsize=(22, 22))
+plt.subplot(421)
+calibration_plot_by_level(fac_type_strings[0])
+plt.subplot(422)
+calibration_plot_by_level(fac_type_strings[1])
+plt.subplot(423)
+calibration_plot_by_level(fac_type_strings[2])
+plt.subplot(424)
+calibration_plot_by_level(fac_type_strings[3])
+plt.savefig(path_to_files_in_the_tlo_dropbox / 'calibration_plots/calibration_to_hhfa_fac_type_and_consumable.png')
+
