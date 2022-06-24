@@ -586,3 +586,12 @@ class LogsDict(Mapping):
         for key in self.keys():
             self.__getitem__(key, cache=True)
         return self.__dict__
+
+def get_src_path() -> Path:
+    """Returns the absolute path of `src`."""
+    CURRENT_PATH = os.path.abspath(os.curdir)
+
+    def is_path_content_root(path: Path) -> bool:
+        path.is_dir()
+
+

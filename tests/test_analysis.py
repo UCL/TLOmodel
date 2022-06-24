@@ -8,7 +8,7 @@ from tlo import Date, Module, Simulation, logging
 from tlo.analysis.utils import (
     flatten_multi_index_series_into_dict_for_logging,
     parse_log_file,
-    unflatten_flattened_multi_index_in_logging,
+    unflatten_flattened_multi_index_in_logging, get_src_path,
 )
 from tlo.methods import demography
 
@@ -83,3 +83,24 @@ def test_flattening_and_unflattening_multiindex(tmpdir):
 
         # Check equal
         pd.testing.assert_series_equal(original, series_unflattened.rename(None))
+
+
+def test_get_src_path():
+    """Check that `get_content_root` works as expected."""
+
+    SRC_PATH = os.path.abspath(
+        Path(os.path.dirname(__file__)) / '../src'
+    )
+
+    # Different directories to move to:
+    dirs = [
+        Path(os.path.dirname(__file__)) / '../src',
+        Path(os.path.dirname(__file__)) / '../resources',
+        Path(os.path.dirname(__file__)) / '../tests',
+        Path(os.path.dirname(__file__)),
+    ]
+
+    # Change current directory to different directory and get the `src` folder.
+    for _dir in dirs:
+        os.chdir(_dir)
+        assert SRC_PATH == get_src_path()
