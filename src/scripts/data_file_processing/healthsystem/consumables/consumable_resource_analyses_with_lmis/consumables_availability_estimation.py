@@ -31,7 +31,7 @@ from tlo.methods.consumables import check_format_of_consumables_file
 
 # Set local Dropbox source
 path_to_dropbox = Path(  # <-- point to the TLO dropbox locally
-    # 'C:/Users/sm2511/Dropbox/Thanzi la Onse'
+     'C:/Users/sm2511/Dropbox/Thanzi la Onse'
     # '/Users/sejjj49/Dropbox/Thanzi la Onse'
     # 'C:/Users/tmangal/Dropbox/Thanzi la Onse'
 )
@@ -729,36 +729,22 @@ calibration_df['difference'] = (calibration_df['available_prop_hhfa'] - calibrat
 # Summary results by level of care
 calibration_df.groupby(['fac_type_tlo'])[['available_prop', 'available_prop_hhfa', 'difference']].mean()
 
-# Plots by consumable
+# Plots
 size = 10
 calibration_df['item_code'] = calibration_df['item_code'].astype(str)
-calibration_df['labels'] = calibration_df['consumable_name_tlo'].str[:5]
+calibration_df['labels'] = calibration_df['consumable_name_tlo'].str[:10]
 
-cond = calibration_df['fac_type_tlo'] == 'Facility_level_1a'
-ax = calibration_df[cond].plot.line(x='labels', y=['available_prop', 'available_prop_hhfa'])
-ax.set_xticks(np.arange(len(calibration_df[cond]['labels'])))
-ax.set_xticklabels(calibration_df[cond]['labels'], rotation=90, fontsize=7)
-plt.title('Level 1a', fontsize=size, weight="bold")
-# plt.savefig(outputfilepath / 'consumableavailability_calibration_level1a.png')
-
-cond = calibration_df['fac_type_tlo'] == 'Facility_level_1b'
-ax = calibration_df[cond].plot.line(x='labels', y=['available_prop', 'available_prop_hhfa'])
-ax.set_xticks(np.arange(len(calibration_df[cond]['labels'])))
-ax.set_xticklabels(calibration_df[cond]['labels'], rotation=90, fontsize=7)
-plt.title('Level 1b', fontsize=size, weight="bold")
-# plt.savefig(outputfilepath / 'consumableavailability_calibration_level1b.png')
-
-cond = calibration_df['fac_type_tlo'] == 'Facility_level_2'
-ax = calibration_df[cond].plot.line(x='labels', y=['available_prop', 'available_prop_hhfa'])
-ax.set_xticks(np.arange(len(calibration_df[cond]['labels'])))
-ax.set_xticklabels(calibration_df[cond]['labels'], rotation=90, fontsize=7)
-plt.title('Level 2', fontsize=size, weight="bold")
-plt.show()
-# plt.savefig(outputfilepath / 'consumableavailability_calibration_level2.png')
-
-cond = calibration_df['fac_type_tlo'] == 'Facility_level_3'
-ax = calibration_df[cond].plot.line(x='labels', y=['available_prop', 'available_prop_hhfa'])
-ax.set_xticks(np.arange(len(calibration_df[cond]['labels'])))
-ax.set_xticklabels(calibration_df[cond]['labels'], rotation=90, fontsize=7)
-plt.title('Level 3', fontsize=size, weight="bold")
-# plt.savefig(outputfilepath / 'consumableavailability_calibration_level3.png')
+fac_type_strings = ['Facility_level_1a', 'Facility_level_1b', 'Facility_level_2', 'Facility_level_3']
+for fac_type in fac_type_strings:
+    cond_fac_type = calibration_df['fac_type_tlo'] == fac_type
+    calibration_df_by_level = calibration_df[cond_fac_type].reset_index()
+    ax = calibration_df_by_level.plot.scatter('available_prop', 'available_prop_hhfa')
+    ax.axline([0, 0], [1, 1])
+    for i, label in enumerate(calibration_df_by_level['labels']):
+        plt.annotate(label, (calibration_df_by_level['available_prop'][i], calibration_df_by_level['available_prop_hhfa'][i]), \
+                     fontsize=6, rotation = 45)
+    plt.title(fac_type, fontsize=size, weight="bold")
+    plt.xlabel('Pr(drug available) as per TLO model')
+    plt.ylabel('Pr(drug available) as per HHFA')
+    save_name = 'calibration_plots/calibration_to_hhfa_' + fac_type + '.png'
+    plt.savefig(path_to_files_in_the_tlo_dropbox / save_name)
