@@ -20,7 +20,7 @@ from tlo.analysis.utils import (
     order_of_coarse_appt,
     squarify_neat,
     summarize,
-    to_age_group,
+    to_age_group, order_of_short_treatment_ids,
 )
 
 
@@ -30,7 +30,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     - We estimate the draw on healthcare system resources as the FEWER appointments when that treatment does not occur.
     """
 
-    TARGET_PERIOD = (Date(2010, 1, 1), Date(2019, 12, 31))
+    TARGET_PERIOD = (Date(2010, 1, 1), Date(2014, 12, 31))
 
     # Definitions of general helper functions
     make_graph_file_name = lambda stub: output_folder / f"{stub}.png"  # noqa: E731
@@ -396,13 +396,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
 
-    # VERSION WITH COARSE APPOINTMENTS, CONFORMING TO STANDARD ORDERING/COLORS
+    # VERSION WITH COARSE APPOINTMENTS, CONFORMING TO STANDARD ORDERING/COLORS AND ORDER
     fig, ax = plt.subplots()
     name_of_plot = f'Additional Appointments [Coarse] With Intervention, {target_period()}'
     delta_appts_coarse = delta_appts\
         .groupby(axis=0, by=delta_appts.index.map(get_corase_appt_type))\
         .sum()\
         .sort_index(key=order_of_coarse_appt)
+    delta_appts_coarse = delta_appts_coarse[order_of_short_treatment_ids(delta_appts_coarse.columns)]
     (
          delta_appts_coarse / 1e6
     ).T.plot.bar(
@@ -435,5 +436,8 @@ if __name__ == "__main__":
 
     # TREATMENT_IDs split by module: consumables always available and healthsystem in mode 0
     results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_effect_of_each_treatment-2022-06-14T133746Z')
+
+    # VERSION WITH WEALTH LEVEL RECORDED
+    # <<running ...>>
 
     apply(results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
