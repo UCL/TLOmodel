@@ -932,7 +932,7 @@ def check_properties(person_id, sim):
     assert not df.at[person_id, 'tb_on_treatment']
 
 
-def test_tb_consumables(tmpdir, seed):
+def test_tb_consumables_child(tmpdir, seed):
     """
     check the cons logged for tb screening and treatment
     """
@@ -968,6 +968,16 @@ def test_tb_consumables(tmpdir, seed):
     hsi_log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']['HSI_Event']
     tmp = hsi_log.loc[hsi_log.TREATMENT_ID == "Tb_Treatment", 'Number_By_Appt_Type_Code']
     assert "{'TBNew': 1}" == str(tmp.iloc[0])
+
+
+def test_tb_consumables_adult(tmpdir, seed):
+    """
+    check the cons logged for tb screening and treatment
+    """
+
+    popsize = 1
+
+    sim = get_sim(tmpdir, seed, use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
 
     ## ADULTS
     # set population to either adults or children
