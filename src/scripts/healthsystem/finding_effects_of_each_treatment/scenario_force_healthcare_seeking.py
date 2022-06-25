@@ -7,10 +7,10 @@ This scenario runs the full model under a set of scenario in which each one TREA
 * Health care seeking forced to occur for every symptom
 
 Run on the batch system using:
-```tlo batch-submit src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_effect_of_each_treatment_force_healthcare_seeking.py```
+```tlo batch-submit src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_force_healthcare_seeking.py```
 
 or locally using:
-    ```tlo scenario-run src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_effect_of_each_treatment_force_healthcare_seeking.py
+    ```tlo scenario-run src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_force_healthcare_seeking.py
     ```
 
 """
