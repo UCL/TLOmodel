@@ -685,7 +685,7 @@ def get_corase_appt_type(appt_type: str) -> str:
             return coarse_appt_types
 
 
-def order_of_coarse_appt(_coarse_appt: Union[str, pd.Index]) -> int:
+def order_of_coarse_appt(_coarse_appt: Union[str, pd.Index]) -> Union[int, pd.Index]:
     """Define a standard order for the coarse appointment types."""
     order = _define_coarse_appts().index
     if isinstance(_coarse_appt, str):
@@ -744,7 +744,7 @@ def _define_short_treatment_ids() -> pd.Series:
     })
 
 
-def order_of_short_treatment_ids(_short_treatment_id) -> int:
+def order_of_short_treatment_ids(_short_treatment_id: Union[str, pd.Index]) -> Union[int, pd.Index]:
     """Define a standard order for short treatment_ids."""
     order = _define_short_treatment_ids().index
     if isinstance(_short_treatment_id, str):
@@ -795,7 +795,7 @@ def _define_cause_of_death_labels() -> pd.Series:
     })
 
 
-def order_of_cause_of_death_label(_cause_of_death_label) -> int:
+def order_of_cause_of_death_label(_cause_of_death_label: Union[str, pd.Index]) -> Union[int, pd.Index]:
     """Define a standard order for Cause-of-Death labels."""
     order = _define_cause_of_death_labels().index
     if isinstance(_cause_of_death_label, str):
