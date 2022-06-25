@@ -8,10 +8,10 @@ import io
 import json
 import os.path
 import pkgutil
-from collections import namedtuple
-from typing import Any, Iterable, List, Mapping, Set, Union
 import warnings
+from collections import namedtuple
 from pathlib import Path
+from typing import Any, Iterable, List, Mapping, Set, Union
 
 import pandas as pd
 
@@ -19,9 +19,12 @@ import tlo.methods
 from tlo import Date, Module, Simulation
 from tlo.analysis.utils import get_root_path
 from tlo.dependencies import (
-    get_dependencies_and_initialise, get_init_dependencies, get_module_class_map, is_valid_tlo_module_subclass
+    get_dependencies_and_initialise,
+    get_init_dependencies,
+    get_module_class_map,
+    is_valid_tlo_module_subclass,
 )
-from tlo.methods import alri, contraception, diarrhoea, healthseekingbehaviour, hiv, tb, stunting
+from tlo.methods import alri, contraception, diarrhoea, healthseekingbehaviour, hiv, stunting, tb
 from tlo.methods.healthsystem import HSI_Event, HSIEventDetails
 
 
@@ -462,6 +465,7 @@ def do_work(args, return_df=False) -> Union[None, pd.DataFrame]:
 
 
 if __name__ == '__main__':
+    print("Running At Main")
     parser = argparse.ArgumentParser(
         description="Generate formatted description of HSI events."
     )

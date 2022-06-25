@@ -14,10 +14,11 @@ from tlo.analysis.utils import (
     get_color_short_treatment_id,
     get_corase_appt_type,
     get_filtered_treatment_ids,
+    get_root_path,
     order_of_coarse_appt,
     order_of_short_treatment_ids,
     parse_log_file,
-    unflatten_flattened_multi_index_in_logging, get_root_path,
+    unflatten_flattened_multi_index_in_logging,
 )
 from tlo.methods import demography
 from tlo.methods.fullmodel import fullmodel
