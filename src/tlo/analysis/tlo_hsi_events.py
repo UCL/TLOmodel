@@ -465,7 +465,6 @@ def do_work(args, return_df=False) -> Union[None, pd.DataFrame]:
 
 
 if __name__ == '__main__':
-    print("Running At Main")
     parser = argparse.ArgumentParser(
         description="Generate formatted description of HSI events."
     )
