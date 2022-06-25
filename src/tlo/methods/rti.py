@@ -3664,21 +3664,21 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         logger.debug(key='rti_general_message',
                      data=f"RTIMedicalInterventionEvent did not run on date {self.sim.date} (end of treatment) for "
                           f"person {person_id}")
-        injurycodes = {'First injury': df.loc[person_id, 'rt_injury_1'],
-                       'Second injury': df.loc[person_id, 'rt_injury_2'],
-                       'Third injury': df.loc[person_id, 'rt_injury_3'],
-                       'Fourth injury': df.loc[person_id, 'rt_injury_4'],
-                       'Fifth injury': df.loc[person_id, 'rt_injury_5'],
-                       'Sixth injury': df.loc[person_id, 'rt_injury_6'],
-                       'Seventh injury': df.loc[person_id, 'rt_injury_7'],
-                       'Eight injury': df.loc[person_id, 'rt_injury_8']}
+        injurycodes = {'First injury': df.at[person_id, 'rt_injury_1'],
+                       'Second injury': df.at[person_id, 'rt_injury_2'],
+                       'Third injury': df.at[person_id, 'rt_injury_3'],
+                       'Fourth injury': df.at[person_id, 'rt_injury_4'],
+                       'Fifth injury': df.at[person_id, 'rt_injury_5'],
+                       'Sixth injury': df.at[person_id, 'rt_injury_6'],
+                       'Seventh injury': df.at[person_id, 'rt_injury_7'],
+                       'Eight injury': df.at[person_id, 'rt_injury_8']}
         logger.debug(key='rti_injury_profile_of_untreated_person', data=injurycodes)
         # reset the treatment plan
-        df.loc[person_id, 'rt_injuries_for_major_surgery'] = []
-        df.loc[person_id, 'rt_injuries_for_minor_surgery'] = []
-        df.loc[person_id, 'rt_injuries_to_cast'] = []
-        df.loc[person_id, 'rt_injuries_to_heal_with_time'] = []
-        df.loc[person_id, 'rt_injuries_for_open_fracture_treatment'] = []
+        df.at[person_id, 'rt_injuries_for_major_surgery'] = []
+        df.at[person_id, 'rt_injuries_for_minor_surgery'] = []
+        df.at[person_id, 'rt_injuries_to_cast'] = []
+        df.at[person_id, 'rt_injuries_to_heal_with_time'] = []
+        df.at[person_id, 'rt_injuries_for_open_fracture_treatment'] = []
 
 
 class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
@@ -4468,14 +4468,14 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         logger.debug(key='rti_general_message',
                      data=f"Pain relief unavailable for person {person_id}")
-        injurycodes = {'First injury': df.loc[person_id, 'rt_injury_1'],
-                       'Second injury': df.loc[person_id, 'rt_injury_2'],
-                       'Third injury': df.loc[person_id, 'rt_injury_3'],
-                       'Fourth injury': df.loc[person_id, 'rt_injury_4'],
-                       'Fifth injury': df.loc[person_id, 'rt_injury_5'],
-                       'Sixth injury': df.loc[person_id, 'rt_injury_6'],
-                       'Seventh injury': df.loc[person_id, 'rt_injury_7'],
-                       'Eight injury': df.loc[person_id, 'rt_injury_8']}
+        injurycodes = {'First injury': df.at[person_id, 'rt_injury_1'],
+                       'Second injury': df.at[person_id, 'rt_injury_2'],
+                       'Third injury': df.at[person_id, 'rt_injury_3'],
+                       'Fourth injury': df.at[person_id, 'rt_injury_4'],
+                       'Fifth injury': df.at[person_id, 'rt_injury_5'],
+                       'Sixth injury': df.at[person_id, 'rt_injury_6'],
+                       'Seventh injury': df.at[person_id, 'rt_injury_7'],
+                       'Eight injury': df.at[person_id, 'rt_injury_8']}
         logger.debug(key='rti_general_message',
                      data=f"Injury profile of person {person_id}, {injurycodes}")
 
@@ -4861,14 +4861,14 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         logger.debug(key='rti_general_message',
                      data=f"Major surgery not scheduled for person {person_id}")
-        injurycodes = {'First injury': df.loc[person_id, 'rt_injury_1'],
-                       'Second injury': df.loc[person_id, 'rt_injury_2'],
-                       'Third injury': df.loc[person_id, 'rt_injury_3'],
-                       'Fourth injury': df.loc[person_id, 'rt_injury_4'],
-                       'Fifth injury': df.loc[person_id, 'rt_injury_5'],
-                       'Sixth injury': df.loc[person_id, 'rt_injury_6'],
-                       'Seventh injury': df.loc[person_id, 'rt_injury_7'],
-                       'Eight injury': df.loc[person_id, 'rt_injury_8']}
+        injurycodes = {'First injury': df.at[person_id, 'rt_injury_1'],
+                       'Second injury': df.at[person_id, 'rt_injury_2'],
+                       'Third injury': df.at[person_id, 'rt_injury_3'],
+                       'Fourth injury': df.at[person_id, 'rt_injury_4'],
+                       'Fifth injury': df.at[person_id, 'rt_injury_5'],
+                       'Sixth injury': df.at[person_id, 'rt_injury_6'],
+                       'Seventh injury': df.at[person_id, 'rt_injury_7'],
+                       'Eight injury': df.at[person_id, 'rt_injury_8']}
         logger.debug(key='rti_general_message',
                      data=f"Injury profile of person {person_id}, {injurycodes}")
 
@@ -5043,14 +5043,14 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         logger.debug(key='rti_general_message',
                      data=f"Minor surgery not scheduled for person {person_id}")
-        injurycodes = {'First injury': df.loc[person_id, 'rt_injury_1'],
-                       'Second injury': df.loc[person_id, 'rt_injury_2'],
-                       'Third injury': df.loc[person_id, 'rt_injury_3'],
-                       'Fourth injury': df.loc[person_id, 'rt_injury_4'],
-                       'Fifth injury': df.loc[person_id, 'rt_injury_5'],
-                       'Sixth injury': df.loc[person_id, 'rt_injury_6'],
-                       'Seventh injury': df.loc[person_id, 'rt_injury_7'],
-                       'Eight injury': df.loc[person_id, 'rt_injury_8']}
+        injurycodes = {'First injury': df.at[person_id, 'rt_injury_1'],
+                       'Second injury': df.at[person_id, 'rt_injury_2'],
+                       'Third injury': df.at[person_id, 'rt_injury_3'],
+                       'Fourth injury': df.at[person_id, 'rt_injury_4'],
+                       'Fifth injury': df.at[person_id, 'rt_injury_5'],
+                       'Sixth injury': df.at[person_id, 'rt_injury_6'],
+                       'Seventh injury': df.at[person_id, 'rt_injury_7'],
+                       'Eight injury': df.at[person_id, 'rt_injury_8']}
         logger.debug(key='rti_injury_profile_of_untreated_person',
                      data=injurycodes)
 
