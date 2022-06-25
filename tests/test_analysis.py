@@ -7,6 +7,7 @@ import pandas as pd
 
 from tlo import Date, Module, Simulation, logging
 from tlo.analysis.utils import (
+    colors_in_matplotlib,
     flatten_multi_index_series_into_dict_for_logging,
     get_color_cause_of_death_label,
     get_color_coarse_appt,
@@ -17,7 +18,7 @@ from tlo.analysis.utils import (
     order_of_coarse_appt,
     order_of_short_treatment_ids,
     parse_log_file,
-    unflatten_flattened_multi_index_in_logging, full_list_of_colors_in_matplotlib,
+    unflatten_flattened_multi_index_in_logging,
 )
 from tlo.methods import demography
 from tlo.methods.fullmodel import fullmodel
@@ -150,7 +151,7 @@ def test_colormap_coarse_appts():
     assert len(set(colors)) == len(colors)  # No duplicates
     assert all([isinstance(_x, str) for _x in colors])  # All strings
     assert np.nan is get_color_coarse_appt('????')  # Return `np.nan` if appt_type not recognised.
-    assert all(map(lambda x: x in full_list_of_colors_in_matplotlib(), colors))  # All colors recognised
+    assert all(map(lambda x: x in colors_in_matplotlib(), colors))  # All colors recognised
 
 
 def test_get_treatment_ids(tmpdir):
@@ -177,7 +178,7 @@ def test_colormap_short_treatment_id():
     assert len(set(colors)) == len(colors)  # No duplicates
     assert all([isinstance(_x, str) for _x in colors])  # All strings
     assert np.nan is get_color_coarse_appt('????')  # Return `np.nan` if appt_type not recognised.
-    assert all(map(lambda x: x in full_list_of_colors_in_matplotlib(), colors))  # All colors recognised
+    assert all(map(lambda x: x in colors_in_matplotlib(), colors))  # All colors recognised
 
 
 def test_colormap_cause_of_death_label(seed):
@@ -201,4 +202,4 @@ def test_colormap_cause_of_death_label(seed):
     assert len(set(colors)) == len(colors)  # No duplicates
     assert all([isinstance(_x, str) for _x in colors])  # All strings
     assert np.nan is get_color_coarse_appt('????')  # Return `np.nan` if label is not recognised.
-    assert all(map(lambda x: x in full_list_of_colors_in_matplotlib(), colors))  # All colors recognised
+    assert all(map(lambda x: x in colors_in_matplotlib(), colors))  # All colors recognised

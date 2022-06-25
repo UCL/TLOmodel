@@ -615,6 +615,18 @@ def get_filtered_treatment_ids(depth: Optional[int] = None) -> List[str]:
     return filter_treatments(all_treatment_ids['treatment_id'], depth=depth if depth is not None else np.inf)
 
 
+def colors_in_matplotlib() -> tuple:
+    """Return tuple of the strings for all the colours defined in Matplotlib."""
+    import matplotlib.colors as mcolors
+    return tuple(
+        set().union(
+            mcolors.BASE_COLORS.keys(),
+            mcolors.TABLEAU_COLORS.keys(),
+            mcolors.CSS4_COLORS.keys(),
+        )
+    )
+
+
 def _define_coarse_appts() -> pd.DataFrame:
     """Define which appointment types fall into which 'coarse appointment' category, the order of the categories and the
     colour of the category.
@@ -707,7 +719,7 @@ def get_color_coarse_appt(coarse_appt_type: str) -> str:
 
 def _define_short_treatment_ids() -> pd.Series:
     """Define the order of the short treatment_ids and the color for each.
-    Names of colors are selected with reference to: https://i.stack.imgur.com/lFZum.png"""
+    Names of colors are selected with reference to: https://matplotlib.org/stable/gallery/color/named_colors.html"""
     return pd.Series({
         'FirstAttendance*': 'darkgrey',
         'Inpatient*': 'silver',
@@ -765,7 +777,7 @@ def get_color_short_treatment_id(short_treatment_id: str) -> str:
 
 def _define_cause_of_death_labels() -> pd.Series:
     """Define the order of the cause_of_death_labels and the color for each.
-    Names of colors are selected with reference to: https://i.stack.imgur.com/lFZum.png"""
+    Names of colors are selected with reference to: https://matplotlib.org/stable/gallery/color/named_colors.html"""
     return pd.Series({
         'Maternal Disorders': 'green',
         'Neonatal Disorders': 'springgreen',
@@ -838,7 +850,7 @@ def get_root_path(starter_path: Optional[Path] = None) -> Path:
 
     def find_repo(path):
         """Find repository root from the path's parents. Based on answer found at:
-        https://stackoverflow.com/a/67516092"""
+        https://matplotlib.org/stable/gallery/color/named_colors.html"""
 
         def is_root(_p: Path) -> bool:
             """Tests whether this path is the repository root."""
