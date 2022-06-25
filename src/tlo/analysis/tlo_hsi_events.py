@@ -421,12 +421,14 @@ def do_work(args, return_df=False) -> Union[None, pd.DataFrame]:
             'stunting': stunting.Stunting
         }
         print('Getting details of defined HSI events by inspecting tlo.methods...')
+        resource_file_path = Path(os.path.dirname(__file__)).parent / 'resources'
+        resource_file_path = Path('resources')
         inspect_hsi_event_details = get_details_of_defined_hsi_events(
             excluded_modules=excluded_modules,
             zero_module_class_map=zero_module_class_map,
             multiple_module_class_map=multiple_module_class_map,
             init_population=10,
-            resource_file_path=Path(os.path.dirname(__file__)).parent / 'resources'
+            resource_file_path=resource_file_path
         )
         print('...done.\n')
 

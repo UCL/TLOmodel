@@ -609,7 +609,7 @@ def get_filtered_treatment_ids(depth: Optional[int] = None) -> List[str]:
         )))
 
     # Get pd.DataFrame with information of all the defined HSI
-    from docs.tlo_hsi_events import get_all_treatments_ids
+    from tlo.analysis.tlo_hsi_events import get_all_treatments_ids
     all_treatment_ids = get_all_treatments_ids()
 
     # Return list of TREATMENT_IDs and filter to the resolution needed
