@@ -4,6 +4,7 @@ This scenario runs the full model under a set of scenario in which each one TREA
 * No spurious symptoms
 * Appts Contraints: Mode 0 (No Constraints)
 * Consumables Availability: All
+* Health care seeking as per defaults
 
 Run on the batch system using:
 ```tlo batch-submit src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_effect_of_each_treatment.py```
@@ -54,7 +55,7 @@ class EffectOfEachTreatment(BaseScenario):
             'HealthSystem': {
                 'Service_Availability': list(self._scenarios.values())[draw_number],
                 'cons_availability': 'all',
-                }
+                },
         }
 
     def _get_scenarios(self) -> Dict[str, List[str]]:
