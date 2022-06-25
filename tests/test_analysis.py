@@ -87,21 +87,10 @@ def test_flattening_and_unflattening_multiindex(tmpdir):
 
 
 def test_get_root_path():
-    """Check that `get_content_root` works as expected."""
+    """Check that `get_root_path` works as expected."""
 
     ROOT_PATH = Path(os.path.abspath(
         Path(os.path.dirname(__file__)) / '../'
     ))
 
-    # Different directories to move to:
-    dirs = [
-        Path(os.path.dirname(__file__)) / '../src',
-        Path(os.path.dirname(__file__)) / '../resources',
-        Path(os.path.dirname(__file__)) / '../tests',
-        Path(os.path.dirname(__file__)),
-    ]
-
-    # Change current directory to different directories and then find the path of the root.
-    for _dir in dirs:
-        os.chdir(_dir)
-        assert ROOT_PATH == get_root_path()
+    assert ROOT_PATH == get_root_path()
