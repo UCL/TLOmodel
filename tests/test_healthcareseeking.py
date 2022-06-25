@@ -388,11 +388,12 @@ def test_one_per_hsi_scheduled_per_day_when_emergency_and_non_emergency_symptoms
 
 
 def test_force_healthcare_seeking(seed):
-    """Check that can force that any symptom onset leads immediately to healthcare seeking."""
+    """Check that the parameter/argument 'force_any_symptom_to_lead_to_healthcare_seeking' causes any symptom onset to
+    lead immediately to healthcare seeking."""
 
     def hsi_scheduled_following_symptom_onset(force_any_symptom_to_lead_to_healthcare_seeking):
         """Returns True if a FirstAttendance HSI has been scheduled for a person following onset of symptoms with low
-        probability of causing healthcare seekeing."""
+        probability of causing healthcare seeking."""
 
         class DummyDisease(Module):
             METADATA = {Metadata.USES_SYMPTOMMANAGER}
@@ -423,7 +424,6 @@ def test_force_healthcare_seeking(seed):
         start_date = Date(2010, 1, 1)
         sim = Simulation(start_date=start_date, seed=seed)
 
-        # Register the core modules
         sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                      enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                      healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
