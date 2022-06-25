@@ -5,6 +5,7 @@ import gzip
 import json
 import os
 import pickle
+import subprocess
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Callable, Dict, Iterable, List, Optional, TextIO, Union
@@ -831,3 +832,10 @@ def squarify_neat(sizes: np.array, label: np.array, colormap: Callable, numlabel
         color=[colormap(_x) for _x in label],
         **kwargs,
     )
+
+
+def get_root_path() -> Path:
+    """Returns the absolute path of the top level of the repository. Based on answer found at:
+     https://stackoverflow.com/a/53675112"""
+    return Path(subprocess.Popen(['git', 'rev-parse', '--show-toplevel'], stdout=subprocess.PIPE).communicate()[
+        0].rstrip().decode('utf-8'))

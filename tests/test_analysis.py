@@ -95,6 +95,16 @@ def test_flattening_and_unflattening_multiindex(tmpdir):
         pd.testing.assert_series_equal(original, series_unflattened.rename(None))
 
 
+def test_get_root_path():
+    """Check that `get_root_path` works as expected."""
+
+    ROOT_PATH = Path(os.path.abspath(
+        Path(os.path.dirname(__file__)) / '../'
+    ))
+
+    assert ROOT_PATH == get_root_path()
+
+
 def test_corase_appt_type():
     """Check the function that maps each appt_types to a coarser definition."""
     appt_types = pd.read_csv(
