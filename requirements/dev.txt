@@ -188,3 +188,5 @@ virtualenv==20.4.2
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip
+
+squarify~=0.4.3
