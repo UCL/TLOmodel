@@ -102,7 +102,19 @@ def test_get_root_path():
         Path(os.path.dirname(__file__)) / '../'
     ))
 
-    assert ROOT_PATH == get_root_path()
+    def is_correct_absolute_path(_path):
+        return (ROOT_PATH == _path) and _path.is_absolute() and isinstance(_path, Path)
+
+    assert is_correct_absolute_path(get_root_path())
+
+    for test_dir in [
+        os.path.abspath(Path(os.path.dirname(__file__)) / '../src/'),
+        os.path.abspath(Path(os.path.dirname(__file__)) / '../resources/'),
+        os.path.abspath(Path(os.path.dirname(__file__)) / '../tests/'),
+        os.path.abspath(Path(os.path.dirname(__file__)) / '../'),
+        os.path.abspath(Path(os.path.dirname(__file__))),
+    ]:
+        assert is_correct_absolute_path(get_root_path(test_dir)), f"Failed on {test_dir=}"
 
 
 def test_corase_appt_type():
