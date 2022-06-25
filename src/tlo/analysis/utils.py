@@ -5,7 +5,6 @@ import gzip
 import json
 import os
 import pickle
-import subprocess
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Dict, Optional, TextIO
@@ -589,8 +588,25 @@ class LogsDict(Mapping):
         return self.__dict__
 
 
-def get_root_path() -> Path:
-    """Returns the absolute path of the top level of the repository. Based on answer found at:
-     https://stackoverflow.com/a/53675112"""
-    return Path(subprocess.Popen(['git', 'rev-parse', '--show-toplevel'], stdout=subprocess.PIPE).communicate()[
-        0].rstrip().decode('utf-8'))
+def get_root_path(starter_path: Optional[Path] = None) -> Path:
+    """Returns the absolute path of the top level of the repository"""
+
+    def find_repo(path):
+        """Find repository root from the path's parents. Based on answer found at:
+        https://stackoverflow.com/a/67516092"""
+
+        def is_root(_p: Path) -> bool:
+            """Tests whether this path is the repository root."""
+            return (_p / ".git").is_dir()  # Check whether "path/.git" exists and is a directory
+
+        places_to_search = (Path(path), *Path(path).parents)  # path and all its parents
+        for _path in places_to_search:
+            if is_root(_path):
+                return _path
+
+    if starter_path is None:
+        return find_repo(__file__)
+    elif Path(starter_path).exists() and Path(starter_path).is_absolute():
+        return find_repo(starter_path)
+    else:
+        return None
