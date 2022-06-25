@@ -17,7 +17,7 @@ from tlo.analysis.utils import (
     order_of_coarse_appt,
     order_of_short_treatment_ids,
     parse_log_file,
-    unflatten_flattened_multi_index_in_logging,
+    unflatten_flattened_multi_index_in_logging, get_root_path,
 )
 from tlo.methods import demography
 from tlo.methods.fullmodel import fullmodel
