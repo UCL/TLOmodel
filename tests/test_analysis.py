@@ -4,7 +4,6 @@ from typing import List
 
 import numpy as np
 import pandas as pd
-from matplotlib import pyplot as plt
 
 from tlo import Date, Module, Simulation, logging
 from tlo.analysis.utils import (
@@ -18,7 +17,7 @@ from tlo.analysis.utils import (
     order_of_coarse_appt,
     order_of_short_treatment_ids,
     parse_log_file,
-    unflatten_flattened_multi_index_in_logging,
+    unflatten_flattened_multi_index_in_logging, full_list_of_colors_in_matplotlib,
 )
 from tlo.methods import demography
 from tlo.methods.fullmodel import fullmodel
@@ -151,13 +150,7 @@ def test_colormap_coarse_appts():
     assert len(set(colors)) == len(colors)  # No duplicates
     assert all([isinstance(_x, str) for _x in colors])  # All strings
     assert np.nan is get_color_coarse_appt('????')  # Return `np.nan` if appt_type not recognised.
-
-    # Check can produce plot:
-    fig, ax = plt.subplots()
-    for i, (_appt_type, _color) in enumerate(zip(coarse_appt_types, colors)):
-        ax.bar(i, 10, color=_color, label=_appt_type)
-    ax.legend(fontsize=10, ncol=2)
-    plt.close(fig)
+    assert all(map(lambda x: x in full_list_of_colors_in_matplotlib(), colors))  # All colors recognised
 
 
 def test_get_treatment_ids(tmpdir):
@@ -184,13 +177,7 @@ def test_colormap_short_treatment_id():
     assert len(set(colors)) == len(colors)  # No duplicates
     assert all([isinstance(_x, str) for _x in colors])  # All strings
     assert np.nan is get_color_coarse_appt('????')  # Return `np.nan` if appt_type not recognised.
-
-    # Check can produce plot:
-    fig, ax = plt.subplots()
-    for i, (_short_treatment_id, _color) in enumerate(zip(short_treatment_ids, colors)):
-        ax.bar(i, 10, color=_color, label=_short_treatment_id)
-    ax.legend(fontsize=10, ncol=2)
-    plt.close(fig)
+    assert all(map(lambda x: x in full_list_of_colors_in_matplotlib(), colors))  # All colors recognised
 
 
 def test_colormap_cause_of_death_label(seed):
@@ -214,10 +201,4 @@ def test_colormap_cause_of_death_label(seed):
     assert len(set(colors)) == len(colors)  # No duplicates
     assert all([isinstance(_x, str) for _x in colors])  # All strings
     assert np.nan is get_color_coarse_appt('????')  # Return `np.nan` if label is not recognised.
-
-    # Check can produce plot:
-    fig, ax = plt.subplots()
-    for i, (_short_treatment_id, _color) in enumerate(zip(all_labels, colors)):
-        ax.bar(i, 10, color=_color, label=_short_treatment_id)
-    ax.legend(fontsize=10, ncol=2)
-    plt.close(fig)
+    assert all(map(lambda x: x in full_list_of_colors_in_matplotlib(), colors))  # All colors recognised
