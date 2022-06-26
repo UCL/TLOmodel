@@ -4,6 +4,7 @@ from scripts.calibration_analyses.analysis_scripts import (
     analysis_cause_of_death_and_disability_calibrations,
     analysis_demography_calibrations,
     analysis_hsi_descriptions,
+    plot_legends,
 )
 
 
@@ -19,6 +20,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     analysis_hsi_descriptions.apply(
         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath)
+
+    # Plot the legends
+    plot_legends.apply(
+        results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
 
 
 if __name__ == "__main__":

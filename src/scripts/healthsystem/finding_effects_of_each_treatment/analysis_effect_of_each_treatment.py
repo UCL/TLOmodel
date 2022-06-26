@@ -6,6 +6,7 @@ from typing import Tuple
 import pandas as pd
 from matplotlib import pyplot as plt
 
+from scripts.calibration_analyses.analysis_scripts import plot_legends
 from tlo import Date
 from tlo.analysis.utils import (
     extract_results,
@@ -445,3 +446,7 @@ if __name__ == "__main__":
     results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_force_healthcare_seeking-2022-06-25T121344Z')
 
     apply(results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
+
+    # Plot the legends
+    plot_legends.apply(
+        results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
