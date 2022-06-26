@@ -9,6 +9,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Dict, Optional, TextIO
 
+import git
 import numpy as np
 import pandas as pd
 
@@ -589,24 +590,18 @@ class LogsDict(Mapping):
 
 
 def get_root_path(starter_path: Optional[Path] = None) -> Path:
-    """Returns the absolute path of the top level of the repository"""
+    """Returns the absolute path of the top level of the repository. `starter_path` optionally gives a reference
+    location from which to begin search; if omitted the location of this file is used."""
 
-    def find_repo(path):
-        """Find repository root from the path's parents. Based on answer found at:
-        https://stackoverflow.com/a/67516092"""
-
-        def is_root(_p: Path) -> bool:
-            """Tests whether this path is the repository root."""
-            return (_p / ".git").is_dir()  # Check whether "path/.git" exists and is a directory
-
-        places_to_search = (Path(path), *Path(path).parents)  # path and all its parents
-        for _path in places_to_search:
-            if is_root(_path):
-                return _path
+    def get_git_root(path: Path) -> Path:
+        """Return path of git repo. Based on: https://stackoverflow.com/a/41920796"""
+        git_repo = git.Repo(path, search_parent_directories=True)
+        git_root = git_repo.working_dir
+        return Path(git_root)
 
     if starter_path is None:
-        return find_repo(__file__)
+        return get_git_root(__file__)
     elif Path(starter_path).exists() and Path(starter_path).is_absolute():
-        return find_repo(starter_path)
+        return get_git_root(starter_path)
     else:
-        return None
+        raise OSError("File Not Found")
