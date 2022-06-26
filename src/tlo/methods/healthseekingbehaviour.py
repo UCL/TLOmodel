@@ -116,12 +116,6 @@ class HealthSeekingBehaviour(Module):
             pd.DataFrame(pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_HealthSeekingBehaviour.csv'))
         )
 
-        # Import the value for `force_any_symptom_to_lead_to_healthcareseeking` "manually" as
-        # `load_parameters_from_dataframe` does not handle bools correctly (issue #650).
-        self.parameters['force_any_symptom_to_lead_to_healthcareseeking'] = bool(eval(pd.read_csv(
-            Path(self.resourcefilepath) / 'ResourceFile_HealthSeekingBehaviour.csv'
-        ).set_index('parameter_name').at['force_any_symptom_to_lead_to_healthcareseeking', 'value']))
-
         # Check that force_any_symptom_to_lead_to_healthcareseeking is a bool (this is returned in
         # `self.force_any_symptom_to_lead_to_healthcareseeking` without any further checking).
         assert isinstance(self.parameters['force_any_symptom_to_lead_to_healthcareseeking'], bool)

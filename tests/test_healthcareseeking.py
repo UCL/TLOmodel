@@ -458,9 +458,9 @@ def test_force_healthcare_seeking_control_of_behaviour_through_parameters_and_ar
     module."""
     start_date = Date(2010, 1, 1)
 
-    value_in_resourcefile = bool(eval(pd.read_csv(
+    value_in_resourcefile = bool(pd.read_csv(
         resourcefilepath / 'ResourceFile_HealthSeekingBehaviour.csv'
-    ).set_index('parameter_name').at['force_any_symptom_to_lead_to_healthcareseeking', 'value']))
+    ).set_index('parameter_name').at['force_any_symptom_to_lead_to_healthcareseeking', 'value'])
 
     # No specification with argument --> behaviour is as per the parameter value in the ResourceFile
     sim = Simulation(start_date=start_date, seed=seed)
@@ -474,6 +474,8 @@ def test_force_healthcare_seeking_control_of_behaviour_through_parameters_and_ar
     sim.make_initial_population(n=100)
     sim.simulate(end_date=start_date + pd.DateOffset(days=0))
     assert value_in_resourcefile == sim.modules['HealthSeekingBehaviour'].force_any_symptom_to_lead_to_healthcareseeking
+    assert False is sim.modules['HealthSeekingBehaviour'].force_any_symptom_to_lead_to_healthcareseeking,\
+        "Default behaviour in resourcefile should be 'False'"
 
     # Editing parameters --> behaviour is as per the edited parameters
     value_as_edited = not value_in_resourcefile
