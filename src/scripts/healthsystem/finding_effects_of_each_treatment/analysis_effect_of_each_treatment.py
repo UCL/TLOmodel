@@ -3,7 +3,6 @@
 from pathlib import Path
 from typing import Tuple
 
-import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
@@ -444,6 +443,5 @@ if __name__ == "__main__":
 
     # VERSION WITH WEALTH LEVEL RECORDED AND FORCED HEALTHCARE SEEKING
     results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_force_healthcare_seeking-2022-06-25T121344Z')
-
 
     apply(results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
