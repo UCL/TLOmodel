@@ -269,8 +269,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     def get_total_num_death_by_wealth_and_label(_df):
         """Return the total number of deaths in the TARGET_PERIOD by wealth and cause label."""
-        wealth_group = pd.Series(index=_df.index, data=np.random.choice(range(5), len(_df)))
-        #                                               todo <-- UPDATE WHEN WE HAVE A RUN WHERE `li_wealth` is there
+        wealth_cats = {1: '0-19%', 2: '20-39%', 3: '40-59%', 4: '60-79%', 5: '80-100%'}
+        wealth_group = _df['li_wealth']\
+            .map(wealth_cats)\
+            .astype(pd.CategoricalDtype(wealth_cats.values(), ordered=True))
+
         return _df \
             .loc[_df['date'].between(*TARGET_PERIOD)] \
             .groupby([wealth_group, 'label'])['person_id'].size()
@@ -290,8 +293,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     for _scenario_name, _deaths_av in deaths_averted_by_wealth_and_label.T.iterrows():
         format_to_plot = _deaths_av.unstack()
         format_to_plot = format_to_plot.sort_index(axis=0)
-        format_to_plot.index = format_to_plot.index.map({0: "Lowest 20%", 1: "Next 20%", 2: "Next 20%", 3: "Next 20%",
-                                                         4: "Highest 20%"})
         format_to_plot = format_to_plot[order_of_cause_of_death_label(format_to_plot.columns)]
 
         fig, ax = plt.subplots()
@@ -305,7 +306,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.set_title(name_of_plot)
         ax.set_ylabel('Number of Deaths Averted (/1000)')
         ax.set_ylim(-50, 150)
-        ax.set_xlabel('Wealth')
+        ax.set_xlabel('Wealth Percentile')
         ax.grid()
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
