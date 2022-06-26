@@ -608,11 +608,11 @@ def get_filtered_treatment_ids(depth: Optional[int] = None) -> List[str]:
         )))
 
     # Get pd.DataFrame with information of all the defined HSI
-    from tlo.analysis.tlo_hsi_events import get_all_treatments_ids
-    all_treatment_ids = get_all_treatments_ids()
+    from tlo.analysis.tlo_hsi_events import get_all_hsi_info
+    all_hsi_info = get_all_hsi_info()
 
     # Return list of TREATMENT_IDs and filter to the resolution needed
-    return filter_treatments(all_treatment_ids['treatment_id'], depth=depth if depth is not None else np.inf)
+    return filter_treatments(all_hsi_info['treatment_id'], depth=depth if depth is not None else np.inf)
 
 
 def colors_in_matplotlib() -> tuple:

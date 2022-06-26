@@ -385,7 +385,7 @@ def merge_hsi_event_details(
     return merged_hsi_event_details
 
 
-def do_work(args, return_df=False) -> Union[None, pd.DataFrame]:
+def generate_table_of_hsi_info(args, return_df=False) -> Union[None, pd.DataFrame]:
     """Entry point to do the inspection of HSI Events.
     When called with `return_df=False` (as from the __main__ entry point), a file is written to.
     When called with `return_df=True` (as from helper functions), a pd.DataFrame is returned instead."""
@@ -508,11 +508,11 @@ if __name__ == '__main__':
     )
     args = parser.parse_args()
 
-    do_work(args)
+    generate_table_of_hsi_info(args)
 
 
-def get_all_treatments_ids():
-    """Return a list of all the TREATMENT_IDs defined in the model. """
+def get_all_hsi_info() -> pd.DataFrame:
+    """Return a table detailing all the `HSI_Event` classes defined in the model. """
 
     # Mock the results of args being passed through a command line interface
     _Args = namedtuple("args",
@@ -520,4 +520,4 @@ def get_all_treatments_ids():
                        )
     _args = _Args(None, None, None, None)
 
-    return do_work(args=_args, return_df=True)
+    return generate_table_of_hsi_info(args=_args, return_df=True)
