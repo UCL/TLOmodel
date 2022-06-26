@@ -728,7 +728,6 @@ def _define_short_treatment_ids() -> pd.Series:
         'AntenatalCare*': 'green',
         'DeliveryCare*': 'limegreen',
         'PostnatalCare*': 'springgreen',
-        'PostnatalSupervisor*': 'mediumaquamarine',  # todo <-- remove this when it's gone from code.
 
         'Alri*': 'darkorange',
         'Diarrhoea*': 'tan',
