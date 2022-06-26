@@ -437,9 +437,13 @@ if __name__ == "__main__":
     # results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_effect_of_each_treatment-2022-06-13T181214Z')
 
     # TREATMENT_IDs split by module: consumables always available and healthsystem in mode 0
-    results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_effect_of_each_treatment-2022-06-14T133746Z')
+    # results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_effect_of_each_treatment-2022-06-14T133746Z')
 
     # VERSION WITH WEALTH LEVEL RECORDED
-    # <<running ...>>
+    results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_effect_of_each_treatment-2022-06-25T121008Z')
+
+    # VERSION WITH WEALTH LEVEL RECORDED AND FORCED HEALTHCARE SEEKING
+    # results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_force_healthcare_seeking-2022-06-25T121344Z')
+
 
     apply(results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
