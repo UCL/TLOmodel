@@ -23,6 +23,8 @@ from tlo.methods import (
 )
 
 # %%
+from tlo.methods.diarrhoea import make_treatment_perfect
+
 resourcefilepath = Path("./resources")
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
@@ -74,6 +76,7 @@ for label, service_avail in scenarios.items():
                  diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
                  )
 
+    # make_treatment_perfect(sim.modules['Diarrhoea'])  # Make treatment perfect
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
