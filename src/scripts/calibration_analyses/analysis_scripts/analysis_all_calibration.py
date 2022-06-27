@@ -1,10 +1,8 @@
 from pathlib import Path
 
-from scripts.calibration_analyses.analysis_scripts import (
-    analysis_cause_of_death_and_disability_calibrations,
-    analysis_demography_calibrations,
-    analysis_hsi_descriptions,
-)
+from . import analysis_cause_of_death_and_disability_calibrations
+from . import analysis_demography_calibrations
+from . import analysis_hsi_descriptions
 from tlo.analysis.utils import get_scenario_outputs
 
 
