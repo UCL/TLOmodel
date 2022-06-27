@@ -23,7 +23,7 @@ def check_completed(scenario_outputs, number_of_runs):
 
 
 def process(output_dir, scenario_runs_dir):
-    module_name = 'simple_analysis'
+    module_name = 'analysis_all_calibration'
     function_name = 'apply'
     from importlib import import_module
     module = import_module(module_name)
