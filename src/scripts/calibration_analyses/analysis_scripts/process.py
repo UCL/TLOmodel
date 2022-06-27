@@ -23,13 +23,19 @@ def check_completed(scenario_outputs, number_of_runs):
 
 
 def process(output_dir, scenario_runs_dir):
-    module_name = 'analysis_all_calibration'
-    function_name = 'apply'
     from importlib import import_module
-    module = import_module(module_name)
-    function = getattr(module, function_name)
-    # def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
+
+    function = getattr(import_module('analysis_all_calibration'), 'apply')
     function(scenario_runs_dir, output_dir, Path('/home/azureuser/TLOmodel/resources'))
+
+    # function = getattr(import_module('analysis_demography_calibrations'), 'apply')
+    # function(scenario_runs_dir, output_dir, Path('/home/azureuser/TLOmodel/resources'))
+    #
+    # function = getattr(import_module('analysis_cause_of_death_and_disability_calibrations'), 'apply')
+    # function(scenario_runs_dir, output_dir, Path('/home/azureuser/TLOmodel/resources'))
+    #
+    # function = getattr(import_module('analysis_hsi_descriptions'), 'apply')
+    # function(scenario_runs_dir, output_dir, Path('/home/azureuser/TLOmodel/resources'))
 
 
 if __name__ == '__main__':
