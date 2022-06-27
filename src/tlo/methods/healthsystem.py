@@ -1401,6 +1401,75 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     def _is_today_last_day_of_the_year(date):
         return (date.month == 12) and (date.day == 31)
 
+    def _get_events_due_today(self,) -> Tuple[List, List]:
+        """Interrogate the HSI_EVENT queue object to remove from it the events due today, and to return these in two
+        lists:
+         * list_of_individual_hsi_event_tuples_due_today
+         * list_of_population_hsi_event_tuples_due_today
+        """
+
+        _list_of_individual_hsi_event_tuples_due_today = list()
+        _list_of_population_hsi_event_tuples_due_today = list()
+        _list_of_events_not_due_today = list()
+
+        # To avoid repeated dataframe accesses in subsequent loop, assemble set of alive
+        # person IDs as  one-off operation, exploiting the improved efficiency of
+        # boolean-indexing of a Series compared to row-by-row access. From benchmarks
+        # converting Series to list before converting to set is ~2x more performant than
+        # direct conversion to set, while checking membership of set is ~10x quicker
+        # than checking membership of Pandas Index object and ~25x quicker than checking
+        # membership of list
+        alive_persons = set(
+            self.sim.population.props.index[self.sim.population.props.is_alive].to_list()
+        )
+
+        # Traverse the queue and split events into the three lists (due-individual, due-population, not_due)
+        while len(self.module.HSI_EVENT_QUEUE) > 0:
+
+            next_event_tuple = hp.heappop(self.module.HSI_EVENT_QUEUE)
+            # Read the tuple and assemble into a dict 'next_event'
+
+            event = next_event_tuple.hsi_event
+
+            if self.sim.date > next_event_tuple.tclose:
+                # The event has expired (after tclose) having never been run. Call the 'never_ran' function
+                event.never_ran()
+
+            elif not (
+                isinstance(event.target, tlo.population.Population)
+                or event.target in alive_persons
+            ):
+                # if individual level event and the person who is the target is no longer alive, do nothing more
+                pass
+
+            elif self.sim.date < next_event_tuple.topen:
+                # The event is not yet due (before topen)
+                hp.heappush(_list_of_events_not_due_today, next_event_tuple)
+
+                if next_event_tuple.priority == 2:
+                    # Check the priority
+                    # If the next event is not due and has low priority, then stop looking through the heapq
+                    # as all other events will also not be due.
+                    break
+
+            else:
+                # The event is now due to run today and the person is confirmed to be still alive
+                # Add it to the list of events due today (individual or population level)
+                # NB. These list is ordered by priority and then due date
+
+                is_pop_level_hsi_event = isinstance(event.target, tlo.population.Population)
+                if is_pop_level_hsi_event:
+                    _list_of_population_hsi_event_tuples_due_today.append(next_event_tuple)
+                else:
+                    _list_of_individual_hsi_event_tuples_due_today.append(next_event_tuple)
+
+        # add events from the _list_of_events_not_due_today back into the queue
+        while len(_list_of_events_not_due_today) > 0:
+            hp.heappush(self.module.HSI_EVENT_QUEUE, hp.heappop(_list_of_events_not_due_today))
+
+        return _list_of_individual_hsi_event_tuples_due_today, _list_of_population_hsi_event_tuples_due_today
+
+
     def apply(self, population):
 
         # 0) Refresh information ready for new day:
@@ -1430,63 +1499,11 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     facility_id=_fac_id,
                 )
 
-        # - Create hold-over list (will become a heapq). This will hold events that cannot occur today before they are
-        #  added back to the heapq
-        hold_over = list()
-
         # 1) Get the events that are due today:
-        list_of_individual_hsi_event_tuples_due_today = list()
-        list_of_population_hsi_event_tuples_due_today = list()
-
-        # To avoid repeated dataframe accesses in subsequent loop, assemble set of alive
-        # person IDs as  one-off operation, exploiting the improved efficiency of
-        # boolean-indexing of a Series compared to row-by-row access. From benchmarks
-        # converting Series to list before converting to set is ~2x more performant than
-        # direct conversion to set, while checking membership of set is ~10x quicker
-        # than checking membership of Pandas Index object and ~25x quicker than checking
-        # membership of list
-        alive_persons = set(
-            self.sim.population.props.index[self.sim.population.props.is_alive].to_list()
-        )
-
-        while len(self.module.HSI_EVENT_QUEUE) > 0:
-
-            next_event_tuple = hp.heappop(self.module.HSI_EVENT_QUEUE)
-            # Read the tuple and assemble into a dict 'next_event'
-
-            event = next_event_tuple.hsi_event
-
-            if self.sim.date > next_event_tuple.tclose:
-                # The event has expired (after tclose) having never been run. Call the 'never_ran' function
-                event.never_ran()
-
-            elif not (
-                isinstance(event.target, tlo.population.Population)
-                or event.target in alive_persons
-            ):
-                # if individual level event and the person who is the target is no longer alive, do nothing more
-                pass
-
-            elif self.sim.date < next_event_tuple.topen:
-                # The event is not yet due (before topen), add to the hold-over list
-                hp.heappush(hold_over, next_event_tuple)
-
-                if next_event_tuple.priority == 2:
-                    # Check the priority
-                    # If the next event is not due and has low priority, then stop looking through the heapq
-                    # as all other events will also not be due.
-                    break
-
-            else:
-                # The event is now due to run today and the person is confirmed to be still alive
-                # Add it to the list of events due today (individual or population level)
-                # NB. These list is ordered by priority and then due date
-
-                is_pop_level_hsi_event = isinstance(event.target, tlo.population.Population)
-                if is_pop_level_hsi_event:
-                    list_of_population_hsi_event_tuples_due_today.append(next_event_tuple)
-                else:
-                    list_of_individual_hsi_event_tuples_due_today.append(next_event_tuple)
+        (
+            list_of_individual_hsi_event_tuples_due_today,
+            list_of_population_hsi_event_tuples_due_today
+         ) = self._get_events_due_today()
 
         # 2) Run all population-level HSI events
         while len(list_of_population_hsi_event_tuples_due_today) > 0:
@@ -1501,6 +1518,10 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
         # Define the total footprint of all calls today, which begins with those due to existing in-patients.
         total_footprint = inpatient_footprints
+
+        # - Create hold-over list (will become a heapq). This will hold events that cannot occur today before they are
+        #  added back to the heapq
+        hold_over = list()
 
         if list_of_individual_hsi_event_tuples_due_today:
             # 4) Examine total call on health officers time from the HSI events that are due today
@@ -1622,12 +1643,12 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         did_run=False,
                     )
 
+        # -- End of day activities --
+
         # 7) Add back to the HSI_EVENT_QUEUE heapq all those events
         # which are still eligible to run but which did not run
         while len(hold_over) > 0:
             hp.heappush(self.module.HSI_EVENT_QUEUE, hp.heappop(hold_over))
-
-        # -- End of day activities --
 
         # 8) Log total usage of the facilities
         self.module.log_current_capabilities(
