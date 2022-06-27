@@ -1647,26 +1647,29 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
         # 3) Run all events due today, repeating the check for due events until none are due (this allows for HSI that
         # are added to the queue in the course of other HSI for this today to be run this day).
+        while True:
+            # Get the events that are due today:
+            (
+                list_of_individual_hsi_event_tuples_due_today,
+                list_of_population_hsi_event_tuples_due_today
+             ) = self._get_events_due_today()
 
-        # -- REPEAT THE BELOW....
-        # Get the events that are due today:
-        (
-            list_of_individual_hsi_event_tuples_due_today,
-            list_of_population_hsi_event_tuples_due_today
-         ) = self._get_events_due_today()
+            if (
+                (len(list_of_individual_hsi_event_tuples_due_today) == 0)
+                and (len(list_of_population_hsi_event_tuples_due_today) == 0)
+            ):
+                break
 
-        # Run the list of population-level HSI events
-        self._run_population_level_events(list_of_population_hsi_event_tuples_due_today)
+            # Run the list of population-level HSI events
+            self._run_population_level_events(list_of_population_hsi_event_tuples_due_today)
 
-        # Run the list of individual-level events
-        _to_be_held_over, total_footprint = self._run_individual_level_events(
-            list_of_individual_hsi_event_tuples_due_today,
-            total_footprint,
-            current_capabilities,
-        )
-        hold_over.extend(_to_be_held_over)
-        #-------
-
+            # Run the list of individual-level events
+            _to_be_held_over, total_footprint = self._run_individual_level_events(
+                list_of_individual_hsi_event_tuples_due_today,
+                total_footprint,
+                current_capabilities,
+            )
+            hold_over.extend(_to_be_held_over)
 
         # -- End-of-day activities --
 
