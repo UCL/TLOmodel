@@ -52,17 +52,18 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     def format_scenario_name(_sn: str) -> str:
         """Return a reformatted scenario name ready for plotting.
-        - Remove prefix of No
-        - Remove suffix of *
+        - Remove prefix of "No "
+        - Remove suffix of "*"
         """
 
         if _sn == "Everything":
+            # This is when every TREATMENT_ID is allowed to occur.
             return _sn
 
         elif _sn == "Nothing":
-            return "All"
-            # In the scenario called "Nothing", all interventions are off, so the difference relative to "Everything"
-            # reflects the effects of all the interventions.
+            return "*"
+            # In the scenario called "Nothing", all interventions are off. (So, the difference relative to "Everything"
+            # reflects the effects of all the interventions.)
 
         else:
             return _sn.lstrip("No ")
@@ -163,12 +164,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     num_deaths_averted = summarize(
         pd.DataFrame(
             find_difference_extra_relative_to_comparison(num_deaths, comparison='Everything')).T
-    ).iloc[0].unstack().sort_values(by='mean', ascending=True).drop(['All', 'FirstAttendance*'])
+    ).iloc[0].unstack().sort_values(by='mean', ascending=True).drop(['FirstAttendance*'])
 
     pc_deaths_averted = 100.0 * summarize(
         pd.DataFrame(
             find_difference_extra_relative_to_comparison(num_deaths, comparison='Everything', scaled=True)).T
-    ).iloc[0].unstack().sort_values(by='mean', ascending=True).drop(['All', 'FirstAttendance*'])
+    ).iloc[0].unstack().sort_values(by='mean', ascending=True).drop(['FirstAttendance*'])
 
     num_dalys = extract_results(
         results_folder,
@@ -181,21 +182,22 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     num_dalys_averted = summarize(
         pd.DataFrame(
             find_difference_extra_relative_to_comparison(num_dalys, comparison='Everything')).T
-    ).iloc[0].unstack().drop(['All', 'FirstAttendance*']).sort_values(by='mean', ascending=True)
+    ).iloc[0].unstack().drop(['FirstAttendance*']).sort_values(by='mean', ascending=True)
 
     pc_dalys_averted = 100.0 * summarize(
         pd.DataFrame(
             find_difference_extra_relative_to_comparison(num_dalys, comparison='Everything', scaled=True)).T
-    ).iloc[0].unstack().drop(['All', 'FirstAttendance*']).sort_values(by='mean', ascending=True)
+    ).iloc[0].unstack().drop(['FirstAttendance*']).sort_values(by='mean', ascending=True)
 
+    # PLOTS FOR EACH TREATMENT_ID
     fig, ax = plt.subplots()
     name_of_plot = f'Deaths Averted by Each TREATMENT_ID, {target_period()}'
-    do_barh_plot_with_ci(num_deaths_averted / 1e3, ax)
+    do_barh_plot_with_ci(num_deaths_averted.drop(['*']) / 1e3, ax)
     ax.set_title(name_of_plot)
     ax.set_ylabel('TREATMENT_ID (Short)')
     ax.set_xlabel('Number of Deaths Averted (/1000)')
     ax.set_xlim(0, 140)
-    do_label_barh_plot(pc_deaths_averted, ax)
+    do_label_barh_plot(pc_deaths_averted.drop(['*']), ax)
     ax.grid()
     ax.yaxis.set_tick_params(labelsize=7)
     ax.spines['top'].set_visible(False)
@@ -206,12 +208,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     fig, ax = plt.subplots()
     name_of_plot = f'DALYS Averted by Each TREATMENT_ID, {target_period()}'
-    do_barh_plot_with_ci(num_dalys_averted / 1e6, ax)
+    do_barh_plot_with_ci(num_dalys_averted.drop(['*']) / 1e6, ax)
     ax.set_title(name_of_plot)
     ax.set_ylabel('TREATMENT_ID (Short)')
     ax.set_xlabel('Number of DALYS Averted (1/1e6)')
     ax.set_xlim(0, 6)
-    do_label_barh_plot(pc_dalys_averted, ax)
+    do_label_barh_plot(pc_dalys_averted.drop(['*']), ax)
     ax.grid()
     ax.yaxis.set_tick_params(labelsize=7)
     ax.spines['top'].set_visible(False)
@@ -239,7 +241,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     deaths_averted_by_agegrp_and_label = find_difference_extra_relative_to_comparison_dataframe(
         total_num_death_by_agegrp_and_label, comparison='Everything'
-    ).drop(columns=['All', 'FirstAttendance*'])
+    ).drop(columns=['FirstAttendance*'])
 
     for _scenario_name, _deaths_av in deaths_averted_by_agegrp_and_label.T.iterrows():
         format_to_plot = _deaths_av.unstack()
@@ -269,7 +271,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     def get_total_num_death_by_wealth_and_label(_df):
         """Return the total number of deaths in the TARGET_PERIOD by wealth and cause label."""
-        wealth_cats = {1: '0-19%', 2: '20-39%', 3: '40-59%', 4: '60-79%', 5: '80-100%'}
+        wealth_cats = {5: '0-19%', 4: '20-39%', 3: '40-59%', 2: '60-79%', 1: '80-100%'}
         wealth_group = _df['li_wealth']\
             .map(wealth_cats)\
             .astype(pd.CategoricalDtype(wealth_cats.values(), ordered=True))
@@ -288,7 +290,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     deaths_averted_by_wealth_and_label = find_difference_extra_relative_to_comparison_dataframe(
         total_num_death_by_wealth_and_label, comparison='Everything'
-    ).drop(columns=['All', 'FirstAttendance*'])
+    ).drop(columns=['FirstAttendance*'])
 
     for _scenario_name, _deaths_av in deaths_averted_by_wealth_and_label.T.iterrows():
         format_to_plot = _deaths_av.unstack()
@@ -336,7 +338,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         key='HSI_Event',
         custom_generate_series=get_counts_of_hsi_by_short_treatment_id,
         do_scaling=True
-    ).pipe(set_param_names_as_column_index_level_0).fillna(0.0).sort_index().drop(columns=['All', 'FirstAttendance*'])
+    ).pipe(set_param_names_as_column_index_level_0).fillna(0.0).sort_index().drop(columns=['FirstAttendance*'])
 
     mean_num_hsi_by_short_treatment_id = summarize(counts_of_hsi_by_short_treatment_id, only_mean=True)
 
@@ -345,7 +347,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         if len(_counts_non_zero):
             fig, ax = plt.subplots()
-            name_of_plot = f'HSI Events Occurring: {scenario_name}, {target_period()}'
+            name_of_plot = f'HSI Events Occurring, {scenario_name}, {target_period()}'
             squarify_neat(
                 sizes=_counts_non_zero.values,
                 label=_counts_non_zero.index,
@@ -376,7 +378,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         key='HSI_Event',
         custom_generate_series=get_counts_of_appts,
         do_scaling=True
-    ).pipe(set_param_names_as_column_index_level_0).fillna(0.0).sort_index().drop(columns=['All', 'FirstAttendance*'])
+    ).pipe(set_param_names_as_column_index_level_0).fillna(0.0).sort_index().drop(columns=['FirstAttendance*'])
 
     delta_appts = find_mean_difference_in_appts_relative_to_comparison(counts_of_appts, comparison='Everything')
 
@@ -424,13 +426,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
 
 if __name__ == "__main__":
-    # Declare usual paths:
-    outputspath = Path('./outputs/tbh03@ic.ac.uk')
     rfp = Path('./resources')
 
-    # Find results folder (the results should have arisne from running `scenario_effect_of_each_treatment.py`.)
-
-    # Most Recent:
+    # Most Recent arising from running `scenario_effect_of_each_treatment.py`.)
+    # outputspath = Path('./outputs/tbh03@ic.ac.uk')
     # results_folder = get_scenario_outputs('scenario_effect_of_each_treatment.py', outputspath)[-1]
 
     # TREATMENT_IDs split by module; consumables not always available
@@ -439,11 +438,17 @@ if __name__ == "__main__":
     # TREATMENT_IDs split by module: consumables always available and healthsystem in mode 0
     # results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_effect_of_each_treatment-2022-06-14T133746Z')
 
-    # VERSION WITH WEALTH LEVEL RECORDED
+    # VERSION WITH WEALTH LEVEL RECORDED (50k pops)
     # results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_effect_of_each_treatment-2022-06-25T121008Z')
 
-    # VERSION WITH WEALTH LEVEL RECORDED AND FORCED HEALTHCARE SEEKING
+    # VERSION WITH WEALTH LEVEL RECORDED AND FORCED HEALTHCARE SEEKING (50k pops)
     results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_force_healthcare_seeking-2022-06-25T121344Z')
+
+    # VERSION WITH WEALTH LEVEL RECORDED (100k pops)
+    # results_folder = Path('')
+
+    # VERSION WITH WEALTH LEVEL RECORDED AND FORCED HEALTHCARE SEEKING (100k pops)
+    # results_folder = Path('')
 
     apply(results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
 
