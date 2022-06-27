@@ -1469,79 +1469,43 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
         return _list_of_individual_hsi_event_tuples_due_today, _list_of_population_hsi_event_tuples_due_today
 
-
-    def apply(self, population):
-
-        # 0) Refresh information ready for new day:
-        self.module.bed_days.on_start_of_day()
-        self.module.consumables.on_start_of_day(self.sim.date)
-
-        # 1) Compute footprint that arise from in-patient bed-days
-        inpatient_appts = self.module.bed_days.get_inpatient_appts()
-
-        inpatient_footprints = Counter()
-
-        for _fac_id, _footprint in inpatient_appts.items():
-            inpatient_footprints.update(self.module.get_appt_footprint_as_time_request(
-                facility_info=self.module._facility_by_facility_id[_fac_id], appt_footprint=_footprint)
-            )
-
-        # Write the log that these in-patient appointments were needed:
-        if len(inpatient_appts):
-            for _fac_id, _inpatient_appts in inpatient_appts.items():
-                self.module.write_to_hsi_log(
-                    treatment_id='Inpatient_Care',
-                    number_by_appt_type_code=dict(_inpatient_appts),
-                    person_id=-1,
-                    squeeze_factor=0.0,
-                    did_run=True,
-                    facility_level=self.module._facility_by_facility_id[_fac_id].level,
-                    facility_id=_fac_id,
-                )
-
-        # 1) Get the events that are due today:
-        (
-            list_of_individual_hsi_event_tuples_due_today,
-            list_of_population_hsi_event_tuples_due_today
-         ) = self._get_events_due_today()
-
-        # 2) Run all population-level HSI events
-        while len(list_of_population_hsi_event_tuples_due_today) > 0:
-            pop_level_hsi_event_tuple = list_of_population_hsi_event_tuples_due_today.pop()
-
+    def _run_population_level_events(self, _list_of_population_hsi_event_tuples: List) -> None:
+        """Run a list of population level events."""
+        while len(_list_of_population_hsi_event_tuples) > 0:
+            pop_level_hsi_event_tuple = _list_of_population_hsi_event_tuples.pop()
             pop_level_hsi_event = pop_level_hsi_event_tuple.hsi_event
             pop_level_hsi_event.run(squeeze_factor=0)
             self.module.record_hsi_event(hsi_event=pop_level_hsi_event)
 
-        # 3) Get the capabilities that are available today and prepare dataframe to store all the calls for today
-        current_capabilities = self.module.get_capabilities_today()
+    def _run_individual_level_events(
+        self,
+        _list_of_individual_hsi_event_tuples: List,
+        _total_footprint,
+        _current_capabilities,
+    ) -> List:
+        """Run a list of individual level events. Returns:
+         * list of events that did not run (maybe an empty a list),
+         * updated value of _total_footprint
+         """
+        _to_be_held_over = list()
 
-        # Define the total footprint of all calls today, which begins with those due to existing in-patients.
-        total_footprint = inpatient_footprints
+        if _list_of_individual_hsi_event_tuples:
+            # Examine total call on health officers time from the HSI events in the list:
 
-        # - Create hold-over list (will become a heapq). This will hold events that cannot occur today before they are
-        #  added back to the heapq
-        hold_over = list()
-
-        if list_of_individual_hsi_event_tuples_due_today:
-            # 4) Examine total call on health officers time from the HSI events that are due today
-
-            # For all events in 'list_of_individual_hsi_event_tuples_due_today',
-            # expand the appt-footprint of the event to give the demands on
-            # each officer-type in each facility_id.
-
+            # For all events in the list, expand the appt-footprint of the event to give the demands on each
+            # officer-type in each facility_id.
             footprints_of_all_individual_level_hsi_event = [
                 event_tuple.hsi_event.expected_time_requests
-                for event_tuple in list_of_individual_hsi_event_tuples_due_today
+                for event_tuple in _list_of_individual_hsi_event_tuples
             ]
 
             # Compute total appointment footprint across all events
             for footprint in footprints_of_all_individual_level_hsi_event:
                 # Counter.update method when called with dict-like argument adds counts
                 # from argument to Counter object called from
-                total_footprint.update(footprint)
+                _total_footprint.update(footprint)
 
-            # 5) Estimate Squeeze-Factors for today
+            # Estimate Squeeze-Factors for today
             if self.module.mode_appt_constraints == 0:
                 # For Mode 0 (no Constraints), the squeeze factors are all zero.
                 squeeze_factor_per_hsi_event = np.zeros(
@@ -1550,13 +1514,13 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 # For Other Modes, the squeeze factors must be computed
                 squeeze_factor_per_hsi_event = self.module.get_squeeze_factors(
                     footprints_per_event=footprints_of_all_individual_level_hsi_event,
-                    total_footprint=total_footprint,
-                    current_capabilities=current_capabilities,
+                    total_footprint=_total_footprint,
+                    current_capabilities=_current_capabilities,
                 )
 
-            # 6) For each event, determine if run or not, and run if so.
-            for ev_num, _ in enumerate(list_of_individual_hsi_event_tuples_due_today):
-                event = list_of_individual_hsi_event_tuples_due_today[ev_num].hsi_event
+            # For each event, determine to run or not, and run if so.
+            for ev_num, _ in enumerate(_list_of_individual_hsi_event_tuples):
+                event = _list_of_individual_hsi_event_tuples[ev_num].hsi_event
                 squeeze_factor = squeeze_factor_per_hsi_event[ev_num]
 
                 ok_to_run = (
@@ -1599,16 +1563,16 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         )
                         original_call = footprints_of_all_individual_level_hsi_event[ev_num]
                         footprints_of_all_individual_level_hsi_event[ev_num] = updated_call
-                        total_footprint -= original_call
-                        total_footprint += updated_call
+                        _total_footprint -= original_call
+                        _total_footprint += updated_call
 
                         if self.module.mode_appt_constraints != 0:
                             # only need to recompute squeeze factors if running with constraints
                             # i.e. mode != 0
                             squeeze_factor_per_hsi_event = self.module.get_squeeze_factors(
                                 footprints_per_event=footprints_of_all_individual_level_hsi_event,
-                                total_footprint=total_footprint,
-                                current_capabilities=current_capabilities,
+                                total_footprint=_total_footprint,
+                                current_capabilities=_current_capabilities,
                             )
                     else:
                         # no actual footprint is returned so take the expected initial declaration as the actual
@@ -1633,7 +1597,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
                     if not (rtn_from_did_not_run is False):
                         # reschedule event
-                        hp.heappush(hold_over, list_of_individual_hsi_event_tuples_due_today[ev_num])
+                        hp.heappush(_to_be_held_over, _list_of_individual_hsi_event_tuples[ev_num])
 
                     # Log that the event did not run
                     self.module.record_hsi_event(
@@ -1643,23 +1607,83 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         did_run=False,
                     )
 
-        # -- End of day activities --
+        return _to_be_held_over, _total_footprint
 
-        # 7) Add back to the HSI_EVENT_QUEUE heapq all those events
-        # which are still eligible to run but which did not run
+    def apply(self, population):
+
+        # Refresh information ready for new day:
+        self.module.bed_days.on_start_of_day()
+        self.module.consumables.on_start_of_day(self.sim.date)
+
+        # Get the capabilities that are available today and prepare dataframe to store all the calls for today
+        current_capabilities = self.module.get_capabilities_today()
+
+        # Compute footprint that arise from in-patient bed-days
+        inpatient_appts = self.module.bed_days.get_inpatient_appts()
+        inpatient_footprints = Counter()
+        for _fac_id, _footprint in inpatient_appts.items():
+            inpatient_footprints.update(self.module.get_appt_footprint_as_time_request(
+                facility_info=self.module._facility_by_facility_id[_fac_id], appt_footprint=_footprint)
+            )
+
+        # Write to the log that these in-patient appointments were needed:
+        if len(inpatient_appts):
+            for _fac_id, _inpatient_appts in inpatient_appts.items():
+                self.module.write_to_hsi_log(
+                    treatment_id='Inpatient_Care',
+                    number_by_appt_type_code=dict(_inpatient_appts),
+                    person_id=-1,
+                    squeeze_factor=0.0,
+                    did_run=True,
+                    facility_level=self.module._facility_by_facility_id[_fac_id].level,
+                    facility_id=_fac_id,
+                )
+
+        # Define the total footprint of all calls today, which begins with those due to existing in-patients.
+        total_footprint = inpatient_footprints
+
+        # Create hold-over list. This will hold events that cannot occur today before they are added back to the queue.
+        hold_over = list()
+
+        # 3) Run all events due today, repeating the check for due events until none are due (this allows for HSI that
+        # are added to the queue in the course of other HSI for this today to be run this day).
+
+        # -- REPEAT THE BELOW....
+        # Get the events that are due today:
+        (
+            list_of_individual_hsi_event_tuples_due_today,
+            list_of_population_hsi_event_tuples_due_today
+         ) = self._get_events_due_today()
+
+        # Run the list of population-level HSI events
+        self._run_population_level_events(list_of_population_hsi_event_tuples_due_today)
+
+        # Run the list of individual-level events
+        _to_be_held_over, total_footprint = self._run_individual_level_events(
+            list_of_individual_hsi_event_tuples_due_today,
+            total_footprint,
+            current_capabilities,
+        )
+        hold_over.extend(_to_be_held_over)
+        #-------
+
+
+        # -- End-of-day activities --
+
+        # Add back to the HSI_EVENT_QUEUE heapq all those events which are still eligible to run but which did not run
         while len(hold_over) > 0:
             hp.heappush(self.module.HSI_EVENT_QUEUE, hp.heappop(hold_over))
 
-        # 8) Log total usage of the facilities
+        # Log total usage of the facilities
         self.module.log_current_capabilities(
             current_capabilities=current_capabilities,
             total_footprint=total_footprint
         )
 
-        # 9) Trigger jobs to be done at the end of the day (after all HSI run)
+        # Trigger jobs to be done at the end of the day (after all HSI run)
         self.module.on_end_of_day()
 
-        # 10) Do activities required at end of year (if today is the last day of the year)
+        # Do activities required at end of year (if today is the last day of the year)
         if self._is_today_last_day_of_the_year(self.sim.date):
             self.module.on_end_of_year()
 
