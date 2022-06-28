@@ -249,12 +249,12 @@ class Simulation:
 
         logger.info(key='info', data=f'simulate() {time.time() - start} s')
 
-    def schedule_event(self, event, date):
+    def schedule_event(self, event, date, order_in_day=None):
         """Schedule an event to happen on the given future date.
 
         :param event: the Event to schedule
         :param date: when the event should happen
-        :param force_over_from_healthsystem: allows an HSI event to enter the scheduler
+        :param order_in_day: controls when during the day the event occurs ["first", "last", None (--> in-between)]
         """
         assert date >= self.date, 'Cannot schedule events in the past'
 
@@ -263,7 +263,8 @@ class Simulation:
         assert (event.__str__().find('HSI_') < 0), \
             'This looks like an HSI event. It should be handed to the healthsystem scheduler'
 
-        self.event_queue.schedule(event, date)
+        order_in_day_int = {'first': 0, 'last': 2}.get(order_in_day, 1)
+        self.event_queue.schedule(event, date, order_in_day_int)
 
     def fire_single_event(self, event, date):
         """Fires the event once for the given date
@@ -317,14 +318,15 @@ class EventQueue:
         self.counter = itertools.count()
         self.queue = []
 
-    def schedule(self, event, date):
+    def schedule(self, event, date, order_in_day_int):
         """Schedule a new event.
 
         :param event: the event to schedule
         :param date: when it should happen
+        :param order_in_day_int: integer indicating when in the same the event should happen (0, 1, 2)
         """
 
-        entry = (date, next(self.counter), event)
+        entry = (date, order_in_day_int, next(self.counter), event)
         heapq.heappush(self.queue, entry)
 
     def next_event(self):
@@ -332,7 +334,7 @@ class EventQueue:
 
         :returns: an (event, date) pair
         """
-        date, count, event = heapq.heappop(self.queue)
+        date, _, _, event = heapq.heappop(self.queue)
         return event, date
 
     def __len__(self):
