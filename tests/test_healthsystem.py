@@ -461,7 +461,7 @@ def test_run_in_with_hs_disabled(tmpdir, seed):
     assert any(sim.population.props['mi_status'] == 'P')  # At least some mockitis cure have occurred (though HS)
 
     # Check for hsi_wrappers in the main event queue
-    list_of_ev_name = [ev[2] for ev in sim.event_queue.queue]
+    list_of_ev_name = [ev[3] for ev in sim.event_queue.queue]
     assert any(['HSIEventWrapper' in str(ev_name) for ev_name in list_of_ev_name])
 
 
@@ -984,11 +984,21 @@ def test_hsi_run_on_same_day_if_scheduled_for_same_day(seed, tmpdir):
             pass
 
         def initialise_simulation(self, sim):
+            # Schedule the HSI to run on the same day
+            sim.modules['HealthSystem'].schedule_hsi_event(
+                DummyHSI_To_Run_On_Same_Day(self, person_id=0, source='initialise_simulation'),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0)
+
+            # Schedule an HSI that will schedule a further HSI to run on the same day
             sim.modules['HealthSystem'].schedule_hsi_event(
                 DummyHSI_To_Run_On_First_Day_Of_Simulation(module=self, person_id=0),
                 topen=self.sim.date,
                 tclose=None,
                 priority=0)
+
+            # Schedule an event that will schedule an HSI to run on the same day
             sim.schedule_event(Event_To_Run_On_First_Day_Of_Simulation(self, person_id=0), sim.date)
 
     log_config = {
@@ -1010,8 +1020,11 @@ def test_hsi_run_on_same_day_if_scheduled_for_same_day(seed, tmpdir):
 
     # Check that all events ran on the same day, the first day of the simulation.
     log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']['HSI_Event']
-    assert 3 == len(log)  # 3 HSI events should have occurred
-    assert sorted(log['TREATMENT_ID'].to_list()) == sorted(['DummyHSI_To_Run_On_First_Day_Of_Simulation',
-                                                            'DummyHSI_To_Run_On_Same_Day_Event',
-                                                            'DummyHSI_To_Run_On_Same_Day_HSI'])
+    assert 4 == len(log)  # 3 HSI events should have occurred
     assert (log['date'] == sim.start_date).all()
+    assert log['TREATMENT_ID'].to_list() == [
+        'DummyHSI_To_Run_On_Same_Day_initialise_simulation',
+        'DummyHSI_To_Run_On_First_Day_Of_Simulation',
+        'DummyHSI_To_Run_On_Same_Day_Event',
+        'DummyHSI_To_Run_On_Same_Day_HSI',
+    ]
