@@ -859,20 +859,15 @@ class CareOfWomenDuringPregnancy(Module):
         if the TB module is registered.
         :param hsi_event: HSI event in which the function has been called
         """
-        pass
-
-        # TODO: link when TB module finalised (following code should still be functional)
 
         # Currently we schedule women to the TB screening HSI in the TB module
+        if 'Tb' in self.sim.modules.keys():
+            tb_screen = HSI_Tb_ScreeningAndRefer(
+                    module=self.sim.modules['Tb'], person_id=hsi_event.target)
 
-        # if 'Tb' in self.sim.modules.keys():
-
-        #        tb_screen = HSI_TbScreening(
-        #            module=self.sim.modules['tb'], person_id=person_id)
-
-        #        self.sim.modules['HealthSystem'].schedule_hsi_event(tb_screen, priority=0,
-        #                                                            topen=self.sim.date,
-        #                                                            tclose=self.sim.date + DateOffset(days=1))
+            self.sim.modules['HealthSystem'].schedule_hsi_event(tb_screen, priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(days=1))
 
     def tetanus_vaccination(self, hsi_event):
         """
