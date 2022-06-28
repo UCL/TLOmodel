@@ -3,10 +3,10 @@ from pathlib import Path
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.events import IndividualScopeEventMixin
+from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata, pregnancy_helper_functions
 from tlo.methods.dxmanager import DxTest
-# from tlo.methods.tb import HSI_TbScreening
+from tlo.methods.tb import HSI_Tb_ScreeningAndRefer
 from tlo.methods.epi import HSI_TdVaccine
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
@@ -54,6 +54,9 @@ class CareOfWomenDuringPregnancy(Module):
         # and then define a dictionary which will hold the required consumables for each intervention
         self.item_codes_preg_consumables = dict()
 
+        # Finally set up a counter for ANC visits.
+        self.anc_counter = dict()
+
     INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'PregnancySupervisor'}
 
     ADDITIONAL_DEPENDENCIES = {'Contraception', 'Labour', 'Lifestyle'}
@@ -90,7 +93,7 @@ class CareOfWomenDuringPregnancy(Module):
 
         # INTERVENTION PROBABILITIES...
         'squeeze_factor_threshold_anc': Parameter(
-            Types.LIST, 'squeeze factor threshold over which an ANC appointment cannot run'),
+            Types.INT, 'squeeze factor threshold over which an ANC appointment cannot run'),
         'prob_intervention_delivered_urine_ds': Parameter(
             Types.LIST, 'probability a woman will receive the intervention "urine dipstick" given that the HSI has ran '
                         'and the consumables are available (proxy for clinical quality)'),
@@ -187,9 +190,6 @@ class CareOfWomenDuringPregnancy(Module):
         parameter_dataframe = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_AntenatalCare.xlsx',
                                             sheet_name='parameter_values')
         self.load_parameters_from_dataframe(parameter_dataframe)
-
-        # For the first period (2010-2015) we use the first value in each list as a parameter
-        pregnancy_helper_functions.update_current_parameter_dictionary(self, list_position=0)
 
     def initialise_population(self, population):
         df = population.props
@@ -366,6 +366,15 @@ class CareOfWomenDuringPregnancy(Module):
         # We call the following function to store the required consumables for the simulation run within the appropriate
         # dictionary
         self.get_and_store_pregnancy_item_codes()
+
+        # set up anc counter
+        self.anc_counter = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0}
+
+        # Schedule logging event
+        sim.schedule_event(CareOfWomenDuringPregnancyLoggingEvent(self), sim.date + DateOffset(days=364))
+
+        # For the first period (2010-2015) we use the first value in each list as a parameter
+        pregnancy_helper_functions.update_current_parameter_dictionary(self, list_position=0)
 
         # ==================================== REGISTERING DX_TESTS =================================================
         params = self.current_parameters
@@ -1471,6 +1480,7 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
         can_anc1_run = self.module.check_anc1_can_run(person_id, squeeze_factor, gest_age_next_contact)
 
         if can_anc1_run:
+            self.module.anc_counter[1] += 1
 
             # Add variables to the mni dictionary to store information on interventions received and GA at first visit
             anc_rows = {'ga_anc_one': df.at[person_id, 'ps_gestational_age_in_weeks'],
@@ -1561,6 +1571,7 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
                                                                gest_age_next_contact=gest_age_next_contact)
 
         if can_anc_run:
+            self.module.anc_counter[2] += 1
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
 
             #  =================================== INTERVENTIONS ====================================================
@@ -1645,6 +1656,7 @@ class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, Indivi
                                                                gest_age_next_contact)
 
         if can_anc_run:
+            self.module.anc_counter[3] += 1
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
 
             #  =================================== INTERVENTIONS ====================================================
@@ -1717,6 +1729,7 @@ class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(HSI_Event, Indiv
                                                                gest_age_next_contact)
 
         if can_anc_run:
+            self.module.anc_counter[4] += 1
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
 
             #  =================================== INTERVENTIONS ====================================================
@@ -1785,6 +1798,7 @@ class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(HSI_Event, Indivi
                                                                gest_age_next_contact)
 
         if can_anc_run:
+            self.module.anc_counter[5] += 1
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
 
             #  =================================== INTERVENTIONS ====================================================
@@ -1850,6 +1864,7 @@ class HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(HSI_Event, Indivi
                                                                gest_age_next_contact)
 
         if can_anc_run:
+            self.module.anc_counter[6] += 1
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
 
             gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
@@ -1911,6 +1926,7 @@ class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(HSI_Event, Indi
                                                                gest_age_next_contact)
 
         if can_anc_run:
+            self.module.anc_counter[7] += 1
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
 
             #  =================================== INTERVENTIONS ====================================================
@@ -1965,6 +1981,7 @@ class HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(HSI_Event, Indiv
                                                                gest_age_next_contact)
 
         if can_anc_run:
+            self.module.anc_counter[8] += 1
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
 
             self.module.interventions_delivered_each_visit_from_anc2(hsi_event=self)
@@ -2037,6 +2054,8 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
         ):
             return
 
+        self.module.anc_counter[self.visit_number] += 1
+
         # Women who are inpatients at the time the HSI should run will return at the next recommended point in
         # pregnancy
         if df.at[person_id, 'hs_is_inpatient'] and (df.at[person_id, 'ps_gestational_age_in_weeks'] < 37):
@@ -2058,11 +2077,9 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
                                                                 tclose=self.sim.date + DateOffset(days=2))
             return
 
-        # Add variables to the mni dictionary to store information on interventions received and GA at first visit
+        # updated mni with GA at first visit
         if self.visit_number == 1:
-            anc_rows = {'ga_anc_one': df.at[person_id, 'ps_gestational_age_in_weeks'],
-                        'anc_ints': []}
-            self.sim.modules['PregnancySupervisor'].mother_and_newborn_info[person_id].update(anc_rows)
+            mni[person_id]['ga_anc_one'] = df.at[person_id, 'ps_gestational_age_in_weeks']
 
         # We add a visit to a rolling total of ANC visits in this pregnancy used for logging
         df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
@@ -2715,3 +2732,18 @@ class HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(HSI_Event, Ind
 
     def not_available(self):
         self.module.ectopic_pregnancy_treatment_doesnt_run(self)
+
+
+class CareOfWomenDuringPregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+    """This is CareOfWomenDuringPregnancyLoggingEvent. It runs yearly to capture the number of ANC visits which
+    have ran (and interventions are delivered) for women during pregnancy."""
+
+    def __init__(self, module):
+        self.repeat = 12
+        super().__init__(module, frequency=DateOffset(months=self.repeat))
+
+    def apply(self, population):
+
+        yearly_counts = self.module.anc_counter
+        logger.info(key='anc_visits_which_ran', data=yearly_counts)
+        self.module.anc_counter = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0}
