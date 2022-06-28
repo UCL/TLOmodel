@@ -50,8 +50,8 @@ def test_control_of_ordering_in_the_day(seed, tmpdir):
 
         def initialise_simulation(self, sim):
             sim.schedule_event(Event_For_Middle_Of_Day(self), sim.date)  # No `order` argument provided
-            sim.schedule_event(Event_For_End_Of_Day(self), sim.date, order_in_day=-1)  # order=-1 --> last in the day
-            sim.schedule_event(Event_For_Start_Of_Day(self), sim.date, order_in_day=0)  # order=0 --> first in the day
+            sim.schedule_event(Event_For_End_Of_Day(self), sim.date, order_in_day="last")
+            sim.schedule_event(Event_For_Start_Of_Day(self), sim.date, order_in_day="first")
 
     log_config = {
         'filename': 'tmpfile',

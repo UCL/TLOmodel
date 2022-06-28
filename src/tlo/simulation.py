@@ -254,7 +254,7 @@ class Simulation:
 
         :param event: the Event to schedule
         :param date: when the event should happen
-        :param order_in_day: controls when during the day the event occurs [0: first, -1: last, None: in-between]
+        :param order_in_day: controls when during the day the event occurs ["first", "last", None (--> in-between)]
         """
         assert date >= self.date, 'Cannot schedule events in the past'
 
@@ -263,7 +263,8 @@ class Simulation:
         assert (event.__str__().find('HSI_') < 0), \
             'This looks like an HSI event. It should be handed to the healthsystem scheduler'
 
-        self.event_queue.schedule(event, self._set_date_time(date, order_in_day))
+        order_in_day_int = {'first': 0, 'last': 2}.get(order_in_day, 1)
+        self.event_queue.schedule(event, date, order_in_day_int)
 
     def fire_single_event(self, event, date):
         """Fires the event once for the given date
@@ -304,18 +305,6 @@ class Simulation:
 
         return person_events
 
-    @staticmethod
-    def _set_date_time(date: Date, _order) -> datetime.datetime:
-        """Returns a datetime.datetime which is the date provided and a time that is chosen according to the argument
-        `order`. This is used as the datetime for which events are scheduled, so the `order` argument determines when
-        during the day the event occurs."""
-        if _order == 0:
-            return date.replace(hour=0, minute=0, second=0, microsecond=0)  # midnight on the day
-        elif _order == -1:
-            return date.replace(hour=23, minute=0, second=0, microsecond=0)  # 11pm on the day
-        else:
-            return date.replace(hour=1, minute=0, second=0, microsecond=0)  # 1am on the day
-
 
 class EventQueue:
     """A simple priority queue for events.
@@ -329,14 +318,15 @@ class EventQueue:
         self.counter = itertools.count()
         self.queue = []
 
-    def schedule(self, event, date):
+    def schedule(self, event, date, order_in_day_int):
         """Schedule a new event.
 
         :param event: the event to schedule
         :param date: when it should happen
+        :param order_in_day_int: integer indicating when in the same the event should happen (0, 1, 2)
         """
 
-        entry = (date, next(self.counter), event)
+        entry = (date, order_in_day_int, next(self.counter), event)
         heapq.heappush(self.queue, entry)
 
     def next_event(self):
@@ -344,7 +334,7 @@ class EventQueue:
 
         :returns: an (event, date) pair
         """
-        date, count, event = heapq.heappop(self.queue)
+        date, _, _, event = heapq.heappop(self.queue)
         return event, date
 
     def __len__(self):
