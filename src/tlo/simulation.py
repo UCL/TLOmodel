@@ -254,7 +254,8 @@ class Simulation:
 
         :param event: the Event to schedule
         :param date: when the event should happen
-        :param order_in_day: controls when during the day the event occurs ["first", "last", None (--> in-between)]
+        :param order_in_day: controls when during the day the event occurs ["first", "last", "second-to-last",
+        None (--> in-between first and second-to-last)]
         """
         assert date >= self.date, 'Cannot schedule events in the past'
 

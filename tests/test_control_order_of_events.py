@@ -11,6 +11,9 @@ from tlo.methods.fullmodel import fullmodel
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 start_date = Date(2010, 1, 1)
 
+resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+start_date = Date(2010, 1, 1)
+
 
 def test_control_of_ordering_in_the_day(seed, tmpdir):
     """Check that the ordering of regular events in a day can be controlled
@@ -23,20 +26,32 @@ def test_control_of_ordering_in_the_day(seed, tmpdir):
     class Event_For_Start_Of_Day(RegularEvent, PopulationScopeEventMixin):
 
         def __init__(self, module):
-            super().__init__(module, frequency=pd.DateOffset(days=1))
+            super().__init__(module, frequency=pd.DateOffset(days=1), order_in_day="first")
 
         def apply(self, population):
             logger = logging.getLogger('tlo.simulation')
             logger.info(key='event', data={'id': self.__class__.__name__})
+            assert self.order_in_day == "first"
 
     class Event_For_Middle_Of_Day(RegularEvent, PopulationScopeEventMixin):
 
         def __init__(self, module):
-            super().__init__(module, frequency=pd.DateOffset(days=1))
+            super().__init__(module, frequency=pd.DateOffset(days=1))  # order_in_day argument not given
 
         def apply(self, population):
             logger = logging.getLogger('tlo.simulation')
             logger.info(key='event', data={'id': self.__class__.__name__})
+            assert self.order_in_day is None
+
+    class Event_For_Second_to_Last_At_End_Of_Day(RegularEvent, PopulationScopeEventMixin):
+
+        def __init__(self, module):
+            super().__init__(module, frequency=pd.DateOffset(days=1), order_in_day="second_to_last")
+
+        def apply(self, population):
+            logger = logging.getLogger('tlo.simulation')
+            logger.info(key='event', data={'id': self.__class__.__name__})
+            assert self.order_in_day == "second_to_last"
 
     class Event_For_Second_to_Last_At_End_Of_Day(RegularEvent, PopulationScopeEventMixin):
 
@@ -50,11 +65,12 @@ def test_control_of_ordering_in_the_day(seed, tmpdir):
     class Event_For_End_Of_Day(RegularEvent, PopulationScopeEventMixin):
 
         def __init__(self, module):
-            super().__init__(module, frequency=pd.DateOffset(days=1))
+            super().__init__(module, frequency=pd.DateOffset(days=1), order_in_day="last")
 
         def apply(self, population):
             logger = logging.getLogger('tlo.simulation')
             logger.info(key='event', data={'id': self.__class__.__name__})
+            assert self.order_in_day == "last"
 
     class DummyModule(Module):
 
