@@ -1,6 +1,7 @@
 """Test for HealthCareSeeking Module"""
 import os
 from pathlib import Path
+from typing import List
 
 from pandas import DateOffset
 
@@ -16,10 +17,6 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
-from tlo.methods.hsi_generic_first_appts import (
-    HSI_GenericEmergencyFirstApptAtFacilityLevel1,
-    HSI_GenericFirstApptAtFacilityLevel0,
-)
 from tlo.methods.symptommanager import Symptom
 
 try:
@@ -29,12 +26,19 @@ except NameError:
     resourcefilepath = './resources'
 
 
+def get_events_run_and_scheduled(_sim) -> List:
+    """Returns a list of HSI_Events that have been run already or are scheduled to run."""
+    return [ev['HSI_Event'] for ev in _sim.modules['HealthSystem'].store_of_hsi_events_that_have_run] + \
+           [e[4].__class__.__name__ for e in _sim.modules['HealthSystem'].HSI_EVENT_QUEUE]
+
+
 def test_healthcareseeking_does_occur_from_symptom_that_does_give_healthcareseeking_behaviour(seed):
     """test that a symptom that gives healthcare seeking results in generic HSI scheduled."""
 
     class DummyDisease(Module):
         METADATA = {Metadata.USES_SYMPTOMMANAGER}
         """Dummy Disease - it's only job is to create a symptom and impose it everyone"""
+
         def read_parameters(self, data_folder):
             self.sim.modules['SymptomManager'].register_symptom(
                 Symptom(
@@ -64,7 +68,7 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_healthcareseek
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, store_hsi_events_that_have_run=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  DummyDisease()
@@ -76,7 +80,7 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_healthcareseek
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    # Check that the symptom has been registered and is flagged as not causing healthcare seeking
+    # Check that the symptom has been registered and is flagged as causing healthcare seeking
     assert 'Symptom_that_does_cause_healthcare_seeking' in \
            sim.modules['SymptomManager'].symptom_names
     assert 'Symptom_that_does_cause_healthcare_seeking' not in \
@@ -89,10 +93,11 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_healthcareseek
     assert set(df.loc[df.is_alive].index) == set(
         sim.modules['SymptomManager'].who_has('Symptom_that_does_cause_healthcare_seeking'))
 
-    # Check that an Non-Emergency Generic HSI and no Emergency Generic HSI events are scheduled
-    q = sim.modules['HealthSystem'].HSI_EVENT_QUEUE
-    assert any([isinstance(e[4], HSI_GenericFirstApptAtFacilityLevel0) for e in q])
-    assert not any([isinstance(e[4], HSI_GenericEmergencyFirstApptAtFacilityLevel1) for e in q])
+    # Check that `HSI_GenericFirstApptAtFacilityLevel0` are triggered (but not
+    # `HSI_GenericEmergencyFirstApptAtFacilityLevel1`)
+    events_run_and_scheduled = get_events_run_and_scheduled(sim)
+    assert 'HSI_GenericFirstApptAtFacilityLevel0' in events_run_and_scheduled
+    assert 'HSI_GenericEmergencyFirstApptAtFacilityLevel1' not in events_run_and_scheduled
 
 
 def test_healthcareseeking_does_not_occurs_from_symptom_that_do_not_give_healthcareseeking_behaviour(seed):
@@ -101,6 +106,7 @@ def test_healthcareseeking_does_not_occurs_from_symptom_that_do_not_give_healthc
     class DummyDisease(Module):
         METADATA = {Metadata.USES_SYMPTOMMANAGER}
         """Dummy Disease - it's only job is to create a symptom and impose it everyone"""
+
         def read_parameters(self, data_folder):
             self.sim.modules['SymptomManager'].register_symptom(
                 Symptom(
@@ -132,7 +138,7 @@ def test_healthcareseeking_does_not_occurs_from_symptom_that_do_not_give_healthc
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, store_hsi_events_that_have_run=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  DummyDisease()
@@ -144,7 +150,7 @@ def test_healthcareseeking_does_not_occurs_from_symptom_that_do_not_give_healthc
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    # Check that the symptom has been registered and is flagged as not causing healthcare seeking
+    # Check that the symptom has been registered and is flagged as _not_ causing healthcare seeking
     assert 'Symptom_that_does_not_cause_healthcare_seeking' in \
            sim.modules['SymptomManager'].symptom_names
     assert 'Symptom_that_does_not_cause_healthcare_seeking' in \
@@ -157,10 +163,11 @@ def test_healthcareseeking_does_not_occurs_from_symptom_that_do_not_give_healthc
     assert set(df.loc[df.is_alive].index) == set(
         sim.modules['SymptomManager'].who_has('Symptom_that_does_not_cause_healthcare_seeking'))
 
-    # Check that no Non-Emergency Generic HSI and no Emergency Generic HSI events are scheduled
-    q = sim.modules['HealthSystem'].HSI_EVENT_QUEUE
-    assert not any([isinstance(e[4], HSI_GenericFirstApptAtFacilityLevel0) for e in q])
-    assert not any([isinstance(e[4], HSI_GenericEmergencyFirstApptAtFacilityLevel1) for e in q])
+    # Check no GenericFirstAppts at all
+    events_run_and_scheduled = get_events_run_and_scheduled(sim)
+    assert 0 == len(events_run_and_scheduled)
+    assert 'HSI_GenericFirstApptAtFacilityLevel0' not in events_run_and_scheduled
+    assert 'HSI_GenericEmergencyFirstApptAtFacilityLevel1' not in events_run_and_scheduled
 
 
 def test_healthcareseeking_does_occur_from_symptom_that_does_give_emergency_healthcareseeking_behaviour(seed):
@@ -169,6 +176,7 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_emergency_heal
     class DummyDisease(Module):
         METADATA = {Metadata.USES_SYMPTOMMANAGER}
         """Dummy Disease - it's only job is to create a symptom and impose it everyone"""
+
         def read_parameters(self, data_folder):
             self.sim.modules['SymptomManager'].register_symptom(
                 Symptom(
@@ -200,7 +208,7 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_emergency_heal
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, store_hsi_events_that_have_run=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  DummyDisease()
@@ -225,10 +233,12 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_emergency_heal
     assert set(df.loc[df.is_alive].index) == set(
         sim.modules['SymptomManager'].who_has('Symptom_that_does_cause_emergency_healthcare_seeking'))
 
-    # Check that no Non-Emergency Generic HSI and no Emergency Generic HSI events are scheduled or have happened
-    q = sim.modules['HealthSystem'].HSI_EVENT_QUEUE
-    assert not any([isinstance(e[4], HSI_GenericFirstApptAtFacilityLevel0) for e in q])
-    assert any([isinstance(e[4], HSI_GenericEmergencyFirstApptAtFacilityLevel1) for e in q])
+    # Check that `HSI_GenericEmergencyFirstApptAtFacilityLevel1` are triggered (but not
+    # `HSI_GenericFirstApptAtFacilityLevel0`)
+    events_run_and_scheduled = get_events_run_and_scheduled(sim)
+    assert 'HSI_GenericFirstApptAtFacilityLevel0' not in events_run_and_scheduled
+    assert 'HSI_GenericEmergencyFirstApptAtFacilityLevel1' in events_run_and_scheduled
+    assert all(map(lambda x: x == 'HSI_GenericEmergencyFirstApptAtFacilityLevel1', events_run_and_scheduled))
 
 
 def test_no_healthcareseeking_when_no_spurious_symptoms_and_no_disease_modules(seed):
@@ -239,7 +249,7 @@ def test_no_healthcareseeking_when_no_spurious_symptoms_and_no_disease_modules(s
     # Register the core modules including Chronic Syndrome and Mockitis -
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, store_hsi_events_that_have_run=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
@@ -251,10 +261,11 @@ def test_no_healthcareseeking_when_no_spurious_symptoms_and_no_disease_modules(s
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    # Check that Generic HSI events are scheduled
-    q = sim.modules['HealthSystem'].HSI_EVENT_QUEUE
-    assert not any([isinstance(e[4], HSI_GenericFirstApptAtFacilityLevel0) for e in q])
-    assert not any([isinstance(e[4], HSI_GenericEmergencyFirstApptAtFacilityLevel1) for e in q])
+    # Check no GenericFirstAppts at all
+    events_run_and_scheduled = get_events_run_and_scheduled(sim)
+    assert 0 == len(events_run_and_scheduled)
+    assert 'HSI_GenericFirstApptAtFacilityLevel0' not in events_run_and_scheduled
+    assert 'HSI_GenericEmergencyFirstApptAtFacilityLevel1' not in events_run_and_scheduled
 
 
 def test_healthcareseeking_occurs_with_spurious_symptoms_only(seed):
@@ -266,7 +277,7 @@ def test_healthcareseeking_occurs_with_spurious_symptoms_only(seed):
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, store_hsi_events_that_have_run=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  )
@@ -287,13 +298,14 @@ def test_healthcareseeking_occurs_with_spurious_symptoms_only(seed):
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    # Check that Generic Non-Emergency HSI events are scheduled but not Emergency HSI
-    q = sim.modules['HealthSystem'].HSI_EVENT_QUEUE
-    assert any([isinstance(e[4], HSI_GenericFirstApptAtFacilityLevel0) for e in q])
-    assert not any([isinstance(e[4], HSI_GenericEmergencyFirstApptAtFacilityLevel1) for e in q])
+    # Check that 'HSI_GenericFirstApptAtFacilityLevel0' are triggerd (but not
+    # 'HSI_GenericEmergencyFirstApptAtFacilityLevel1')
+    events_run_and_scheduled = get_events_run_and_scheduled(sim)
+    assert 'HSI_GenericFirstApptAtFacilityLevel0' in events_run_and_scheduled
+    assert 'HSI_GenericEmergencyFirstApptAtFacilityLevel1' not in events_run_and_scheduled
 
     # And that the persons who have those HSI do have symptoms currently:
-    person_ids = [i[4].target for i in q]
+    person_ids = [i[4].target for i in sim.modules['HealthSystem'].HSI_EVENT_QUEUE]
     for person in person_ids:
         assert 0 < len(sim.modules['SymptomManager'].has_what(person))
 
@@ -306,7 +318,7 @@ def test_healthcareseeking_occurs_with_spurious_symptoms_and_disease_modules(see
     # Register the core modules including Chronic Syndrome and Mockitis -
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, store_hsi_events_that_have_run=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
@@ -320,10 +332,10 @@ def test_healthcareseeking_occurs_with_spurious_symptoms_and_disease_modules(see
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    # Check that Non-Emergency Generic HSI and Emergency Generic HSI events are scheduled
-    q = sim.modules['HealthSystem'].HSI_EVENT_QUEUE
-    assert any([isinstance(e[4], HSI_GenericFirstApptAtFacilityLevel0) for e in q])
-    assert any([isinstance(e[4], HSI_GenericEmergencyFirstApptAtFacilityLevel1) for e in q])
+    # Check that Emergency and Non-Emergency GenericFirstAppts are triggerd
+    events_run_and_scheduled = get_events_run_and_scheduled(sim)
+    assert 'HSI_GenericFirstApptAtFacilityLevel0' in events_run_and_scheduled
+    assert 'HSI_GenericEmergencyFirstApptAtFacilityLevel1' in events_run_and_scheduled
 
 
 def test_one_per_hsi_scheduled_per_day_when_emergency_and_non_emergency_symptoms_are_onset(seed):
@@ -333,6 +345,7 @@ def test_one_per_hsi_scheduled_per_day_when_emergency_and_non_emergency_symptoms
     class DummyDisease(Module):
         METADATA = {Metadata.USES_SYMPTOMMANAGER}
         """Dummy Disease - it's only job is to create a symptom and impose it everyone"""
+
         def read_parameters(self, data_folder):
             self.sim.modules['SymptomManager'].register_symptom(
                 Symptom(name='NonEmergencySymptom'),
@@ -360,7 +373,7 @@ def test_one_per_hsi_scheduled_per_day_when_emergency_and_non_emergency_symptoms
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, store_hsi_events_that_have_run=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath,
                                                                force_any_symptom_to_lead_to_healthcareseeking=True),
