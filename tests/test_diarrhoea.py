@@ -940,7 +940,8 @@ def test_effect_of_vaccine(seed):
 
 
 def test_zero_deaths_when_perfect_treatment(seed):
-    """Check that there are no deaths when treatment is perfect and there is perfect healthcare seeking."""
+    """Check that there are no deaths when treatment is perfect and there is perfect healthcare seeking, and no
+    healthcare constraints."""
 
     class DummyModule(Module):
         """Dummy module that will cause everyone to have diarrhoea from the first day of the simulation"""
@@ -965,8 +966,6 @@ def test_zero_deaths_when_perfect_treatment(seed):
                     date=sim.date
                 )
 
-
-    # ** If consumables are available **:
     start_date = Date(2010, 1, 1)
     popsize = 1_000
     sim = Simulation(start_date=start_date, seed=seed)
@@ -1002,9 +1001,3 @@ def test_zero_deaths_when_perfect_treatment(seed):
 
     # Check no deaths to diarrhoea
     assert not df.loc[~df.is_alive, 'cause_of_death'].str.startswith('Diarrhoea').any()
-
-    # df.loc[~df.is_alive & df['cause_of_death'].str.startswith('Diarrhoea')].index
-    # Int64Index([118, 373, 543, 547], dtype='int64', name='person')
-
-    # did they die too soon?
-
