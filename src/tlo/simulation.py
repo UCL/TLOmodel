@@ -254,7 +254,8 @@ class Simulation:
 
         :param event: the Event to schedule
         :param date: when the event should happen
-        :param order_in_day: controls when during the day the event occurs ["first", "last", None (--> in-between)]
+        :param order_in_day: controls when during the day the event occurs ["first", "last", "second-to-last",
+        None (--> in-between first and second-to-last)]
         """
         assert date >= self.date, 'Cannot schedule events in the past'
 
@@ -263,7 +264,7 @@ class Simulation:
         assert (event.__str__().find('HSI_') < 0), \
             'This looks like an HSI event. It should be handed to the healthsystem scheduler'
 
-        order_in_day_int = {'first': 0, 'last': 2}.get(order_in_day, 1)
+        order_in_day_int = {'first': 0, 'second_to_last': 8, 'last': 9}.get(order_in_day, 1)
         self.event_queue.schedule(event, date, order_in_day_int)
 
     def fire_single_event(self, event, date):
