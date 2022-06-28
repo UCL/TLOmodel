@@ -265,7 +265,7 @@ def test_bed_days_property_is_inpatient(tmpdir, seed):
             # Schedule event that will query the status of the property 'is_inpatient' each day
             self.sim.schedule_event(
                 QueryInPatientStatus(self),
-                self.sim.date
+                self.sim.date + pd.DateOffset(days=1)
             )
             self.in_patient_status = pd.DataFrame(
                 index=pd.date_range(self.sim.start_date, self.sim.start_date + pd.DateOffset(days=self.parameters[
@@ -307,10 +307,14 @@ def test_bed_days_property_is_inpatient(tmpdir, seed):
             super().__init__(module, frequency=pd.DateOffset(days=1))
 
         def apply(self, population):
-            self.module.in_patient_status.loc[self.sim.date] = \
+            # This event occurs _before_ the HealthSystemScheduler event, which determines changes in status. Therefore,
+            # this event is reporting on the status that existed following "yesterday's" HealthSystemScheduler. So,
+            # the "reporting date" is yesterday.
+            reporting_date = self.sim.date - pd.DateOffset(days=1)
+            self.module.in_patient_status.loc[reporting_date] = \
                 population.props.loc[[0, 1, 2], 'hs_is_inpatient'].values
 
-    # Create a dummy HSI with both-types of Bed Day specified
+    # Create a dummy HSI with one particular type of bed needed fo4 5 days
     class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
         def __init__(self, module, person_id):
             super().__init__(module, person_id=person_id)
@@ -350,7 +354,7 @@ def test_bed_days_property_is_inpatient(tmpdir, seed):
     ips.index = pd.to_datetime(ips.index)
 
     # check that the daily checks on 'is_inpatient' are as expected:
-    false_ser = pd.Series(index=pd.date_range(sim.start_date, sim.end_date - pd.DateOffset(days=1), freq='D'),
+    false_ser = pd.Series(index=pd.date_range(sim.start_date, sim.end_date - pd.DateOffset(days=2), freq='D'),
                           data=False)
 
     # person 0
@@ -372,7 +376,11 @@ def test_bed_days_property_is_inpatient(tmpdir, seed):
     tot_time_as_in_patient = ips.sum(axis=1)
     beds_occupied = tracker.sum(axis=1)[0] - tracker.sum(axis=1)
 
-    assert beds_occupied.equals(tot_time_as_in_patient)
+    def assert_two_series_are_the_same_where_index_overlaps(a, b):
+        return pd.concat([tot_time_as_in_patient, beds_occupied], axis=1)\
+            .dropna().apply(lambda row: row[0] == row[1], axis=1).all()
+
+    assert assert_two_series_are_the_same_where_index_overlaps(beds_occupied, tot_time_as_in_patient)
 
 
 def test_bed_days_released_on_death(tmpdir, seed):

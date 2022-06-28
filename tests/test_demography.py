@@ -350,3 +350,23 @@ def test_max_age_initial(seed):
     # `max_age_initial>MAX_AGE`
     with pytest.raises(ValueError):
         max_age_in_sim_with_max_age_initial_argument(MAX_AGE + 1)
+
+
+def test_ageing_of_old_people_up_to_max_age(simulation):
+    """Check persons can age naturally up to MAX_AGE and are then assumed to die with cause 'Other'."""
+
+    # Populate the model with persons aged 90 years
+    simulation.make_initial_population(n=1000)
+    df = simulation.population.props
+    df.loc[df.is_alive, 'date_of_birth'] = simulation.start_date - pd.DateOffset(years=90)
+    ever_alive = set(df.loc[df.is_alive].index)
+
+    # Make the intrinsic risk of death zero (to enable ageing up to MAX_AGE)
+    simulation.modules['Demography'].parameters['all_cause_mortality_schedule']['death_rate'] = 0.0
+
+    # Simulate the model for 40 years (such that the persons would be 130 years old, greater than MAX_AGE)
+    simulation.simulate(end_date=simulation.start_date + pd.DateOffset(years=40))
+
+    # All persons should have died, with a cause of 'Other'
+    assert not df.loc[ever_alive].is_alive.any()
+    assert (df.loc[ever_alive, 'cause_of_death'] == 'Other').all()

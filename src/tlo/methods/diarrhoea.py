@@ -1669,6 +1669,6 @@ def make_treatment_perfect(diarrhoea_module):
     diarrhoea_module.parameters['prob_antibiotic_cures_dysentery'] = 1.0
 
     # Apply perfect assessment and referral
-    diarrhoea_module.parameters['prob_hospitalization_referral_for_severe_diarrhoea'] = 1.0
+    diarrhoea_module.parameters['prob_hospitalization_on_danger_signs'] = 1.0
     diarrhoea_module.parameters['sensitivity_severe_dehydration_visual_inspection'] = 1.0
     diarrhoea_module.parameters['specificity_severe_dehydration_visual_inspection'] = 1.0

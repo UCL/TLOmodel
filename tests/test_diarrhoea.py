@@ -8,7 +8,7 @@ import pandas as pd
 import pytest
 from pandas import DateOffset
 
-from tlo import Date, Simulation, logging
+from tlo import Date, Simulation, logging, Module
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     demography,
@@ -18,7 +18,7 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     simplified_births,
-    symptommanager,
+    symptommanager, Metadata,
 )
 from tlo.methods.diarrhoea import (
     DiarrhoeaCureEvent,
@@ -27,7 +27,7 @@ from tlo.methods.diarrhoea import (
     HSI_Diarrhoea_Treatment_Outpatient,
     increase_incidence_of_pathogens,
     increase_risk_of_death,
-    make_treatment_perfect,
+    make_treatment_perfect, DiarrhoeaIncidentCase,
 )
 from tlo.methods.hsi_generic_first_appts import HSI_GenericFirstApptAtFacilityLevel0
 
@@ -665,7 +665,7 @@ def test_does_treatment_prevent_death(seed):
 
 
 def test_do_treatment_for_those_that_will_die_if_consumables_available(seed):
-    """Check that when someone who will die and is provided with treatment, that the death is prevented"""
+    """Check that when someone who will die and is provided with treatment, that the death is prevented."""
 
     # ** If consumables are available **:
     start_date = Date(2010, 1, 1)
@@ -937,3 +937,67 @@ def test_effect_of_vaccine(seed):
                         for _ in range(100)]
     assert 'severe' in [get_dehydration(pathogen='rotavirus', va_rota_all_doses=True, age_years=2)
                         for _ in range(100)]
+
+
+def test_zero_deaths_when_perfect_treatment(seed):
+    """Check that there are no deaths when treatment is perfect and there is perfect healthcare seeking, and no
+    healthcare constraints."""
+
+    class DummyModule(Module):
+        """Dummy module that will cause everyone to have diarrhoea from the first day of the simulation"""
+        METADATA = {Metadata.DISEASE_MODULE}
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            diarrhoea_module = sim.modules['Diarrhoea']
+            pathogens = diarrhoea_module.pathogens
+
+            df = sim.population.props
+            for idx in df[df.is_alive].index:
+                sim.schedule_event(
+                    event=DiarrhoeaIncidentCase(module=diarrhoea_module,
+                                                person_id=idx,
+                                                pathogen=self.rng.choice(pathogens)),
+                    date=sim.date
+                )
+
+    start_date = Date(2010, 1, 1)
+    popsize = 1_000
+    sim = Simulation(start_date=start_date, seed=seed)
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(
+                     resourcefilepath=resourcefilepath,
+                     disable=False,
+                     cons_availability='all',
+                 ),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(
+                     resourcefilepath=resourcefilepath,
+                     force_any_symptom_to_lead_to_healthcareseeking=True  # every symptom leads to health-care seeking
+                 ),
+                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
+                 diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
+                 DummyModule(),
+                 )
+    # Make entire population under five years old
+    sim.modules['Demography'].parameters['max_age_initial'] = 5
+
+    # Set high risk of death and perfect treatment
+    increase_risk_of_death(sim.modules['Diarrhoea'])
+    make_treatment_perfect(sim.modules['Diarrhoea'])
+
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date + pd.DateOffset(months=3))
+
+    df = sim.population.props
+
+    # Check no deaths to diarrhoea
+    assert not df.loc[~df.is_alive, 'cause_of_death'].str.startswith('Diarrhoea').any()

@@ -113,14 +113,8 @@ class HealthSeekingBehaviour(Module):
         """Read in ResourceFile"""
         # Load parameters from resource file:
         self.load_parameters_from_dataframe(
-            pd.DataFrame(pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_HealthSeekingBehaviour.csv'))
+            pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_HealthSeekingBehaviour.csv')
         )
-
-        # Import the value for `force_any_symptom_to_lead_to_healthcareseeking` "manually" as
-        # `load_parameters_from_dataframe` does not handle bools correctly (issue #650).
-        self.parameters['force_any_symptom_to_lead_to_healthcareseeking'] = bool(eval(pd.read_csv(
-            Path(self.resourcefilepath) / 'ResourceFile_HealthSeekingBehaviour.csv'
-        ).set_index('parameter_name').at['force_any_symptom_to_lead_to_healthcareseeking', 'value']))
 
         # Check that force_any_symptom_to_lead_to_healthcareseeking is a bool (this is returned in
         # `self.force_any_symptom_to_lead_to_healthcareseeking` without any further checking).
@@ -143,7 +137,7 @@ class HealthSeekingBehaviour(Module):
 
         # Schedule the HealthSeekingBehaviourPoll
         self.theHealthSeekingBehaviourPoll = HealthSeekingBehaviourPoll(self)
-        sim.schedule_event(self.theHealthSeekingBehaviourPoll, sim.date)
+        sim.schedule_event(self.theHealthSeekingBehaviourPoll, sim.date, order_in_day='second_to_last')
 
         # Assemble the health-care seeking information from the registered symptoms
         for symptom in self.sim.modules['SymptomManager'].all_registered_symptoms:
@@ -238,7 +232,7 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         """Initialise the HealthSeekingBehaviourPoll
         :param module: the module that created this event
         """
-        super().__init__(module, frequency=DateOffset(days=1))
+        super().__init__(module, frequency=DateOffset(days=1), order_in_day="second_to_last")
         assert isinstance(module, HealthSeekingBehaviour)
 
     @staticmethod
@@ -251,7 +245,9 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         ]
 
     def apply(self, population):
-        """Determine if persons with newly onset acute generic symptoms will seek care.
+        """Determine if persons with newly onset acute generic symptoms will seek care. This event runs second-to-last
+        every day (i.e., just before the `HealthSystemScheduler`) in order that symptoms arising this day can lead to
+        FirstAttendance on the same day.
 
         :param population: the current population
         """
