@@ -933,14 +933,14 @@ def test_manipulation_of_service_availability(seed, tmpdir):
 
 
 def test_that_healthsystem_scheduler_event_is_the_last_event_of_the_day(seed, tmpdir):
-    """Check that the daily event `HealthSystemScheduler` is the last event of the day."""
+    """Check that the daily event `HealthSystemScheduler` is the last event of the day, every day."""
     ...
-
 
 
 def test_hsi_run_on_same_day_if_scheduled_for_same_day(seed, tmpdir):
     """An HSI_Event which is scheduled for the current day should run on the current day. This should be the case
     whether the HSI_Event is scheduled from initialise_simulation, a normal event, or an HSI_Event."""
+    # todo add an event to run the same day that is scheduled in initialise_simulation
 
     class DummyHSI_To_Run_On_Same_Day(HSI_Event, IndividualScopeEventMixin):
         """HSI event that will demonstrate it has been run."""
@@ -982,7 +982,6 @@ def test_hsi_run_on_same_day_if_scheduled_for_same_day(seed, tmpdir):
     class DummyModule(Module):
         """Schedules an HSI to occur on the first day of the simulation from initialise_simulation, and an event that
          will schedule the event for the same day."""
-        # todo add an event to run the same day that is scheduled in initialise_simulation
 
         def read_parameters(self, data_folder):
             pass
@@ -991,11 +990,21 @@ def test_hsi_run_on_same_day_if_scheduled_for_same_day(seed, tmpdir):
             pass
 
         def initialise_simulation(self, sim):
+            # Schedule the HSI to run on the same day
+            sim.modules['HealthSystem'].schedule_hsi_event(
+                DummyHSI_To_Run_On_Same_Day(self, person_id=0, source='initialise_simulation'),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0)
+
+            # Schedule an HSI that will schedule a further HSI to run on the same day
             sim.modules['HealthSystem'].schedule_hsi_event(
                 DummyHSI_To_Run_On_First_Day_Of_Simulation(module=self, person_id=0),
                 topen=self.sim.date,
                 tclose=None,
                 priority=0)
+
+            # Schedule an event that will schedule an HSI to run on the same day
             sim.schedule_event(Event_To_Run_On_First_Day_Of_Simulation(self, person_id=0), sim.date)
 
     log_config = {
@@ -1017,8 +1026,11 @@ def test_hsi_run_on_same_day_if_scheduled_for_same_day(seed, tmpdir):
 
     # Check that all events ran on the same day, the first day of the simulation.
     log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']['HSI_Event']
-    assert 3 == len(log)  # 3 HSI events should have occurred
-    assert sorted(log['TREATMENT_ID'].to_list()) == sorted(['DummyHSI_To_Run_On_First_Day_Of_Simulation',
-                                                            'DummyHSI_To_Run_On_Same_Day_Event',
-                                                            'DummyHSI_To_Run_On_Same_Day_HSI'])
+    assert 4 == len(log)  # 3 HSI events should have occurred
+    assert log['TREATMENT_ID'].to_list() == [
+        'DummyHSI_To_Run_On_Same_Day_initialise_simulation',
+        'DummyHSI_To_Run_On_First_Day_Of_Simulation',
+        'DummyHSI_To_Run_On_Same_Day_Event',
+        'DummyHSI_To_Run_On_Same_Day_HSI',
+    ]
     assert (log['date'] == sim.start_date).all()
