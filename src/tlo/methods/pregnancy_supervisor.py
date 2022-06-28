@@ -685,7 +685,7 @@ class PregnancySupervisor(Module):
                 # Ensure some weight is assigned
                 if mni[person][f'{complication}_onset'] != self.sim.date:
                     if monthly_daly[person] == 0:
-                        logger.debug(key='error', data=f'Daly wt not correctly assigned for person {person}')
+                        logger.info(key='error', data=f'Daly wt not correctly assigned for person {person}')
 
                 # Reset the variable within the mni dictionary to prevent double counting
                 mni[person][f'{complication}_onset'] = pd.NaT
@@ -714,7 +714,7 @@ class PregnancySupervisor(Module):
                     monthly_daly[person] += daly_weight
 
                     if not monthly_daly[person] >= 0:
-                        logger.debug(key='error', data=f'Daly wt not correctly assigned for person {person}')
+                        logger.info(key='error', data=f'Daly wt not correctly assigned for person {person}')
 
             else:
                 # Its possible for a condition to resolve (via treatment) and onset within the same month
@@ -739,14 +739,14 @@ class PregnancySupervisor(Module):
                     monthly_daly[person] += daily_weight * days_with_comp
 
                     if not monthly_daly[person] >= 0:
-                        logger.debug(key='error', data=f'Daly wt not correctly assigned for person {person}')
+                        logger.info(key='error', data=f'Daly wt not correctly assigned for person {person}')
 
                     mni[person][f'{complication}_resolution'] = pd.NaT
 
                 else:
                     # If the complication has truly resolved, check the dates make sense
                     if not mni[person][f'{complication}_resolution'] >= mni[person][f'{complication}_onset']:
-                        logger.debug(key='error', data=f'Complication resolution has occurred before onset in'
+                        logger.info(key='error', data=f'Complication resolution has occurred before onset in'
                                                        f' {person}')
                         return
 
@@ -761,7 +761,7 @@ class PregnancySupervisor(Module):
                     monthly_daly[person] += daly_weight
 
                     if not monthly_daly[person] >= 0:
-                        logger.debug(key='error', data=f'Daly wt not correctly assigned for person {person}')
+                        logger.info(key='error', data=f'Daly wt not correctly assigned for person {person}')
 
                     # Reset the dates to stop additional disability being applied
                     mni[person][f'{complication}_onset'] = pd.NaT
@@ -1201,7 +1201,7 @@ class PregnancySupervisor(Module):
         # Check theres no accidental cross over between these subsets
         for v in women_not_on_anti_htns.loc[women_not_on_anti_htns].index:
             if v in women_on_anti_htns.loc[women_on_anti_htns].index:
-                logger.debug(key='error', data='Risk of progression of HTN disorder is being applied to some women '
+                logger.info(key='error', data='Risk of progression of HTN disorder is being applied to some women '
                                                'twice')
 
         risk_progression_mild_to_severe_htn = params['probs_for_mgh_matrix'][1]
@@ -1626,7 +1626,7 @@ class PregnancySupervisor(Module):
         # Check there are no duplicates
         for v in late_initiation_anc4.loc[late_initiation_anc4].index:
             if v in early_initiation_anc4.loc[early_initiation_anc4].index:
-                logger.debug(key='error', data='Probability of ANC4 is being applied to some women twice')
+                logger.info(key='error', data='Probability of ANC4 is being applied to some women twice')
 
         # Update this variable used in the ANC HSIs for scheduling the next visits
         df.loc[early_initiation_anc4.loc[early_initiation_anc4].index, 'ps_anc4'] = True
@@ -1695,7 +1695,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[alive_and_preg, "ps_gestational_age_in_weeks"] = rounded_weeks + 2
 
         if not (df.loc[alive_and_preg, 'ps_gestational_age_in_weeks'] > 1).all().all():
-            logger.debug(key='error', data='Gestational age was incorrectly calculated for some women')
+            logger.info(key='error', data='Gestational age was incorrectly calculated for some women')
 
         # Here we begin to populate the mni dictionary for each newly pregnant woman. Within this module this dictionary
         # contains information about the onset of complications in order to calculate monthly DALYs
