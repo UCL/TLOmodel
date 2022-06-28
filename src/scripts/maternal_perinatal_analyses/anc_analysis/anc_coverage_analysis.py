@@ -11,7 +11,7 @@ from tlo.analysis.utils import extract_results, get_scenario_outputs, load_pickl
 
 # %% Declare the name of the file that specified the scenarios used in this run.
 baseline_scenario_filename = 'baseline_anc_scenario.py'
-intervention_scenario_filename = 'increased_anc_scenario.py'
+intervention_scenario_filename = '../scenario_files/anc/increased_anc_scenario.py'
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
