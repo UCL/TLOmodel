@@ -624,7 +624,7 @@ class NewbornOutcomes(Module):
 
             # Check all encephalopathy cases receive a grade
             if df.at[child_id, 'nb_encephalopathy'] == 'none':
-                logger.debug(key='error', data=f'Child {child_id} should have developed encephalopathy but didnt')
+                logger.info(key='error', data=f'Child {child_id} should have developed encephalopathy but didnt')
 
     def apply_risk_of_preterm_respiratory_distress_syndrome(self, child_id):
         """
@@ -690,7 +690,7 @@ class NewbornOutcomes(Module):
 
         # Ensure that these newborns are less than one week old and scheduled the event accordingly
         if not days_post_birth_int < 6:
-            logger.debug(key='error', data=f'Child {individual_id} was older than 6 days when '
+            logger.info(key='error', data=f'Child {individual_id} was older than 6 days when '
                                            f'PostnatalWeekOneNeonatalEvent was scheduled')
 
         day_for_event = int(self.rng.choice([2, 3, 4, 5, 6], p=params['prob_day_reaches_week_one_event']))
@@ -802,7 +802,6 @@ class NewbornOutcomes(Module):
         if individual_id not in nci:
             return
 
-        self.rng.choice(('none', 'non_exclusive', 'exclusive'), p=params['prob_breastfeeding_type'])
         if nci[individual_id]['ga_at_birth'] < 32:
             if self.rng.random_sample() < params['prob_mild_disability_preterm_<32weeks']:
                 df.at[individual_id, 'nb_preterm_birth_disab'] = self.rng.choice(
@@ -860,6 +859,7 @@ class NewbornOutcomes(Module):
 
         # -------------------------------------- CHLORHEXIDINE CORD CARE ----------------------------------------------
         # Next we determine if cord care with chlorhexidine is applied (consumables are counted during labour)
+        # todo: condition on use of clean birth kit?
         df.at[person_id, 'nb_received_cord_care'] = True
 
         # ---------------------------------- VITAMIN D AND EYE CARE -----------------------------------------------
@@ -975,17 +975,20 @@ class NewbornOutcomes(Module):
 
         if df.at[person_id, 'nb_not_breathing_at_birth']:
 
-            # Required consumables are defined
-            avail = hsi_event.get_consumables(item_codes=self.item_codes_nb_consumables['resuscitation'])
+            # check consumables
+            avail = pregnancy_helper_functions.return_cons_avail(
+                self, hsi_event, self.item_codes_nb_consumables, core='resuscitation')
 
             # Run HCW check
-            sf_check = self.sim.modules['Labour'].check_emonc_signal_function_will_run(
-                sf='neo_resus',  f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
+            sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.sim.modules['Labour'],
+                                                                                       sf='neo_resus',
+                                                                                       hsi_event=hsi_event)
 
             # Then, if the consumables are available,resuscitation is started. We assume this is delayed in
             # deliveries that are not attended
             if avail and sf_check:
                 df.at[person_id, 'nb_received_neonatal_resus'] = True
+                pregnancy_helper_functions.log_met_need(self, 'neo_resus', hsi_event)
             else:
                 self.apply_risk_of_encephalopathy(person_id, timing='after_birth')
 
@@ -1001,7 +1004,6 @@ class NewbornOutcomes(Module):
         """
         df = self.sim.population.props
         person_id = int(hsi_event.target)
-        cons = self.item_codes_nb_consumables
 
         # We assume that only hospitals are able to deliver full supportive care for neonatal sepsis, full supportive
         # care evokes a stronger treatment effect than injectable antibiotics alone
@@ -1010,24 +1012,30 @@ class NewbornOutcomes(Module):
            df.at[person_id, 'pn_sepsis_early_neonatal']:
 
             # Run HCW check
-            sf_check = self.sim.modules['Labour'].check_emonc_signal_function_will_run(
-                sf='iv_abx', f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
-
+            sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.sim.modules['Labour'],
+                                                                                       sf='iv_abx',
+                                                                                       hsi_event=hsi_event)
             if facility_type != '1a':
-                avail = hsi_event.get_consumables(item_codes=cons['sepsis_supportive_care_core'],
-                                                  optional_item_codes=cons['sepsis_supportive_care_optional'])
+
+                # check consumables
+                avail = pregnancy_helper_functions.return_cons_avail(
+                    self, hsi_event, self.item_codes_nb_consumables, core='sepsis_supportive_care_core',
+                    optional='sepsis_supportive_care_optional')
 
                 # Then, if the consumables are available, treatment for sepsis is delivered
                 if avail and sf_check:
                     df.at[person_id, 'nb_supp_care_neonatal_sepsis'] = True
+                    pregnancy_helper_functions.log_met_need(self, 'neo_sep_supportive_care', hsi_event)
 
             # The same pattern is then followed for health centre care
             else:
-                avail = hsi_event.get_consumables(item_codes=cons['sepsis_abx'],
-                                                  optional_item_codes=cons['iv_drug_equipment'])
+                avail = pregnancy_helper_functions.return_cons_avail(
+                    self, hsi_event, self.item_codes_nb_consumables, core='sepsis_abx',
+                    optional='iv_drug_equipment')
 
                 if avail and sf_check:
                     df.at[person_id, 'nb_inj_abx_neonatal_sepsis'] = True
+                    pregnancy_helper_functions.log_met_need(self, 'neo_sep_abx', hsi_event)
 
     def link_twins(self, child_one, child_two, mother_id):
         """
@@ -1206,7 +1214,7 @@ class NewbornOutcomes(Module):
         # Check no children born at term or postterm women are incorrectly categorised as preterm
         if (m['labour_state'] == 'term_labour') or (m['labour_state'] == 'postterm_labour'):
             if df.at[child_id, 'nb_early_preterm'] or df.at[child_id, 'nb_late_preterm']:
-                logger.debug(key='error', data=f'Child {child_id} has been registered as preterm despite their mother '
+                logger.info(key='error', data=f'Child {child_id} has been registered as preterm despite their mother '
                                                f'delivering at term')
 
         if df.at[child_id, 'is_alive']:
@@ -1232,7 +1240,7 @@ class NewbornOutcomes(Module):
 
             # Check these variables are not unassigned
             if nci[child_id]['delivery_setting'] == 'none':
-                logger.debug(key='error', data=f'Child {child_id} does not have a delivery setting stored')
+                logger.info(key='error', data=f'Child {child_id} does not have a delivery setting stored')
 
             # --------------------------------------- Breastfeeding -------------------------------------------------
             # Check see if this newborn will start breastfeeding
@@ -1424,7 +1432,7 @@ class HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth(HSI_Event, I
         if (not self.sim.date == df.at[person_id, 'date_of_birth'] or
            df.at[person_id, 'nb_death_after_birth'] or
            nci[person_id]['delivery_setting'] == 'home_birth'):
-            logger.debug(key='error', data=f'Child {person_id} arrived at CareOfTheNewbornBySkilledAttendantAtBirth '
+            logger.info(key='error', data=f'Child {person_id} arrived at CareOfTheNewbornBySkilledAttendantAtBirth '
                                            f'when they shouldnt have')
             return
 
@@ -1477,17 +1485,17 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
 
         if (nci[person_id]['will_receive_pnc'] == 'early') and not nci[person_id]['passed_through_week_one']:
             if not self.sim.date < (df.at[person_id, 'date_of_birth'] + pd.DateOffset(days=2)):
-                logger.debug(key='error', data=f'Child {person_id} arrived at early PNC too late')
+                logger.info(key='error', data=f'Child {person_id} arrived at early PNC too late')
 
             if not df.at[person_id, 'nb_pnc_check'] == 0:
-                logger.debug(key='error', data=f'Child {person_id} arrived at early PNC twice')
+                logger.info(key='error', data=f'Child {person_id} arrived at early PNC twice')
 
         elif nci[person_id]['will_receive_pnc'] == 'late' and not nci[person_id]['passed_through_week_one']:
             if not self.sim.date >= (df.at[person_id, 'date_of_birth'] + pd.DateOffset(days=2)):
-                logger.debug(key='error', data=f'Child {person_id} arrived at late PNC too early')
+                logger.info(key='error', data=f'Child {person_id} arrived at late PNC too early')
 
             if not df.at[person_id, 'nb_pnc_check'] == 0:
-                logger.debug(key='error', data=f'Child {person_id} arrived at late PNC twice')
+                logger.info(key='error', data=f'Child {person_id} arrived at late PNC twice')
 
         # Log the PNC check
         logger.info(key='postnatal_check', data={'person_id': person_id,
