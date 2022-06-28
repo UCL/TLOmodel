@@ -1538,7 +1538,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module: HealthSystem):
-        super().__init__(module, frequency=DateOffset(days=1))
+        super().__init__(module, frequency=DateOffset(days=1), order_in_day="last")
 
     @staticmethod
     def _is_today_last_day_of_the_year(date):
