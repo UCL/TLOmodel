@@ -117,7 +117,7 @@ def test_control_of_ordering_in_full_model(seed, tmpdir):
 
     def replacement_fire_single_event(*args):
         original(*args)
-        logger = logging.getLogger(f'tlo.simulation')
+        logger = logging.getLogger('tlo.simulation')
         event = args[0]
         logger.info(key='events', data={'event': event.__class__.__name__})
 

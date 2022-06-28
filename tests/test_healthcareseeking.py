@@ -19,7 +19,6 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
-from tlo.methods.fullmodel import fullmodel
 from tlo.methods.symptommanager import Symptom
 
 try:
