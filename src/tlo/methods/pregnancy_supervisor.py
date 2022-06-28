@@ -2115,8 +2115,8 @@ class PregnancyAnalysisEvent(Event, PopulationScopeEventMixin):
         if params['alternative_anc_coverage'] or params['alternative_anc_quality']:
 
             # Update this parameter which is a signal used in the pregnancy_helper_function_file to ensure that
-            # alternative functionality for determining availbility of interventions only occurs when analysis is
-            # occuring
+            # alternative functionality for determining availability of interventions only occurs when analysis is
+            # occurring
             params['ps_analysis_in_progress'] = True
 
             # When this parameter is set as True, the following parameters are overridden when the event is called.

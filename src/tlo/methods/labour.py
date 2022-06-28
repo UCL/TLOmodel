@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import scipy.stats
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel
 from tlo.methods import Metadata, labour_lm, pregnancy_helper_functions
@@ -407,7 +407,11 @@ class Labour(Module):
 
         # EMERGENCY CARE SEEKING...
         'prob_careseeking_for_complication': Parameter(
-            Types.LIST, 'odds of a woman seeking skilled assistance after developing a complication at a home birth'),
+            Types.LIST, 'probability of a woman seeking skilled assistance after developing a complication at a '
+                        'home birth'),
+        'prob_careseeking_for_complication_pn': Parameter(
+            Types.LIST, 'probability of a woman seeking skilled assistance after developing a postnatal complication '
+                        'following a home birth'),
         'test_care_seeking_probs': Parameter(
             Types.LIST, 'dummy probabilities of delivery care seeking used in testing'),
 
@@ -533,6 +537,34 @@ class Labour(Module):
         'prob_intervention_delivered_anaemia_assessment_pnc': Parameter(
             Types.LIST, 'probability a woman will have their Hb levels checked during PNC given that the HSI has ran '
                         'and the consumables are available (proxy for clinical quality)'),
+
+        # ANALYSIS PARAMETERS
+        'analysis_year': Parameter(
+            Types.INT, 'Year on which which changes in parameters as part of analysis should be enacted (1st day, '
+                       '1st month)'),
+        'la_analysis_in_progress': Parameter(
+            Types.BOOL, 'Used within the pregnancy_helper_function to signify that labour/postnatal '
+                        'analysis is currently being conducted'),
+        'alternative_bemonc_availability': Parameter(
+            Types.BOOL, 'parameter used in analysis to allow manipulation of coverage of BEmONC interventions'),
+        'alternative_cemonc_availability': Parameter(
+            Types.BOOL, 'parameter used in analysis to allow manipulation of coverage of CEmONC interventions'),
+        'bemonc_availability': Parameter(
+            Types.REAL, 'set probability of BEmONC intervention being delivered during analysis'),
+        'cemonc_availability': Parameter(
+            Types.REAL, 'set probability of CEmONC intervention being delivered during analysis'),
+        'alternative_pnc_coverage': Parameter(
+            Types.BOOL, 'Signals within the analysis event that an alternative level of PNC coverage has been '
+                        'determined following the events run'),
+        'alternative_pnc_quality': Parameter(
+            Types.BOOL, 'Signals within the analysis event that an alternative level of PNC quality has been '
+                        'determined following the events run'),
+        'pnc_availability_odds': Parameter(
+            Types.REAL, 'Target odds of maternal PNC coverage when analysis is being conducted - only applied if'
+                        'alternative_pnc_coverage is true'),
+        'pnc_availability_probability': Parameter(
+            Types.REAL, 'Target probability of quality/consumables when analysis is being conducted - only applied if '
+                        'alternative_pnc_coverage is true'),
     }
 
     PROPERTIES = {
@@ -586,11 +618,13 @@ class Labour(Module):
                                             sheet_name='parameter_values')
         self.load_parameters_from_dataframe(parameter_dataframe)
 
-        # For the first period (2010-2015) we use the first value in each list as a parameter
-        pregnancy_helper_functions.update_current_parameter_dictionary(self, list_position=0)
-
     def initialise_population(self, population):
         df = population.props
+
+        # For the first period (2010-2015) we use the first value in each list as a parameter
+        # todo: way to avoid repeating this function?
+        pregnancy_helper_functions.update_current_parameter_dictionary(self, list_position=0)
+
         params = self.current_parameters
 
         df.loc[df.is_alive, 'la_currently_in_labour'] = False
@@ -701,7 +735,6 @@ class Labour(Module):
                                      "Chlorhexidine 1.5% solution_5_CMST"])
 
         # -------------------------------------------- OBSTETRIC SURGERY ----------------------------------------------
-        # TODO: this package may not be accurate yet
         self.item_codes_lab_consumables['obstetric_surgery_core'] = \
             get_list_of_items(self, ['Halothane (fluothane)_250ml_CMST',
                                      'Ceftriaxone 1g, PFR_each_CMST',
@@ -818,6 +851,7 @@ class Labour(Module):
             get_item_code_from_pkg('Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg')
 
     def initialise_simulation(self, sim):
+        pregnancy_helper_functions.update_current_parameter_dictionary(self, list_position=0)
 
         # We call the following function to store the required consumables for the simulation run within the appropriate
         # dictionary
@@ -825,6 +859,10 @@ class Labour(Module):
 
         # We set the LoggingEvent to run a the last day of each year to produce statistics for that year
         sim.schedule_event(LabourLoggingEvent(self), sim.date + DateOffset(days=1))
+
+        # Schedule analysis event
+        sim.schedule_event(LabourAndPostnatalCareAnalysisEvent(self),
+                           Date(self.current_parameters['analysis_year'], 1, 1))
 
         # This list contains all the women who are currently in labour and is used for checks/testing
         self.women_in_labour = []
@@ -1594,35 +1632,6 @@ class Labour(Module):
     # ============================================== HSI FUNCTIONS ====================================================
     # Management of each complication is housed within its own function, defined here in the module, and all follow a
     # similar pattern in which consumables are requested and the intervention is delivered if they are available
-
-    # The function is only called if the squeeze factor of the HSI calling the function is below a set 'threshold' for
-    # each intervention. Thresholds will vary between intervention
-
-    def check_emonc_signal_function_will_run(self, sf, f_lvl):
-        """
-        This function runs a check against parameters describing the mean availability of HCWs capable of delivering
-        this intervention in the health system and the mean HCW competence to determine if a EmONC signal function of
-        interest will run (pending consumable check)
-        :param sf: (str) signal function
-        :param f_lvl: (str) facility level
-        :return: bool True or False
-        """
-        params = self.current_parameters
-
-        if sf in ('surg', 'blood_tran'):
-            list_pos = 1
-        else:
-            list_pos = 0
-
-        if f_lvl == '1a':
-            competence = params['mean_hcw_competence_hc'][list_pos]
-        else:
-            competence = params['mean_hcw_competence_hp'][list_pos]
-
-        if (self.rng.random_sample() < params[f'prob_hcw_avail_{sf}']) and (self.rng.random_sample() < competence):
-            return True
-
-        return False
 
     def prophylactic_labour_interventions(self, hsi_event):
         """
@@ -3253,6 +3262,79 @@ class HSI_Labour_PostnatalWardInpatientCare(HSI_Event, IndividualScopeEventMixin
     def not_available(self):
         logger.debug(key='message', data='HSI_Labour_PostnatalWardInpatientCare: cannot not run with '
                                          'this configuration')
+
+
+class LabourAndPostnatalCareAnalysisEvent(Event, PopulationScopeEventMixin):
+    """
+    This is LabourAndPostnatalCareAnalysisEvent. This event is scheduled in initialise_simulation. When this event runs,
+     and if any of the module parameters the signify analysis is being conducted are set to True, then key parameters
+    are overridden to alter the coverage and/or quality of either B/CEmONC interventions or Postnatal Care for mothers
+    and newborns.
+    """
+    def __init__(self, module):
+        super().__init__(module)
+
+    def apply(self, population):
+        params = self.module.current_parameters
+        df = self.sim.population.props
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+        mni_df = pd.DataFrame.from_dict(mni, orient='index')
+        pn_params = self.sim.modules['PostnatalSupervisor'].current_parameters
+        nb_params = self.sim.modules['NewbornOutcomes'].current_parameters
+
+        # Check to see if analysis is being conducted when this event runs
+        if params['alternative_bemonc_availability'] or params['alternative_cemonc_availability'] or \
+            params['alternative_pnc_coverage'] or params['alternative_pnc_quality']:\
+
+            params['la_analysis_in_progress'] = True
+
+            # Remove squeeze thresholds which impact effectiveness of the interventions
+            if params['alternative_bemonc_availability']:
+                params['squeeze_threshold_for_delay_three_bemonc'] = 10_000
+                nb_params['squeeze_threshold_for_delay_three_nb_care'] = 10_000
+
+            if params['alternative_cemonc_availability']:
+                params['squeeze_threshold_for_delay_three_cemonc'] = 10_000
+
+            # If PNC analysis is being conducted we reset the intercept parameter of the equation determining care
+            # seeking for PNC and scale the model
+            if params['alternative_pnc_coverage']:
+                target = params['pnc_availability_odds']
+                params['odds_will_attend_pnc'] = 1
+
+                women = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)]
+                mode_of_delivery = pd.Series(False, index=women.index)
+                delivery_setting = pd.Series(False, index=women.index)
+
+                if 'mode_of_delivery' in mni_df.columns:
+                    mode_of_delivery = pd.Series(mni_df['mode_of_delivery'], index=women.index)
+                if 'delivery_setting' in mni_df.columns:
+                    delivery_setting = pd.Series(mni_df['delivery_setting'], index=women.index)
+
+                mean = self.module.la_linear_models['postnatal_check'].predict(
+                    df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)],
+                    year=self.sim.date.year,
+                    mode_of_delivery=mode_of_delivery,
+                    delivery_setting=delivery_setting).mean()
+
+                mean = mean / (1.0 - mean)
+                scaled_intercept = 1.0 * (target / mean) if (target != 0 and mean != 0 and not np.isnan(mean)) else 1.0
+                params['odds_will_attend_pnc'] = scaled_intercept
+
+                # Then override the parameters which control neonatal care seeking
+                params['prob_careseeking_for_complication_pn'] = params['pnc_availability_probability']
+                params['prob_timings_pnc'] = [1.0, 0]
+
+                nb_params['prob_pnc_check_newborn'] = params['pnc_availability_probability']
+                nb_params['prob_care_seeking_for_complication'] = params['pnc_availability_probability']
+                nb_params['prob_timings_pnc_newborns'] = [1.0, 0]
+
+                pn_params['prob_care_seeking_postnatal_emergency'] = params['pnc_availability_probability']
+                pn_params['prob_care_seeking_postnatal_emergency_neonate'] = params['pnc_availability_probability']
+
+            if params['alternative_pnc_quality']:
+                params['squeeze_threshold_for_delay_three_pn'] = 10_000
+                params['prob_intervention_delivered_anaemia_assessment_pnc'] = params['pnc_availability_probability']
 
 
 class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
