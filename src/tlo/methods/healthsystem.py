@@ -945,38 +945,20 @@ class HealthSystem(Module):
 
         else:
             # The HSI is allowed and will be added to the HSI_EVENT_QUEUE.
-
-            # Let the HSI gather information about itself (facility_id and appt-footprint time requirements)
+            # Let the HSI gather information about itself (facility_id and appt-footprint time requirements):
             hsi_event.initialise()
-
-            # Create HSIEventQueue Item and add to the HSI_EVENT_QUEUE
-            # (NB. the sorting is done ascending and by the order of the items in the tuple)
+            # Add the event to the queue:
             self._add_hsi_event_queue_item_to_hsi_event_queue(
-                HSIEventQueueItem(
-                    priority, topen, self.hsi_event_queue_counter, tclose, hsi_event
-                )
-            )
+                priority=priority, topen=topen, tclose=tclose, hsi_event=hsi_event)
 
-    def _add_hsi_event_queue_item_to_hsi_event_queue(self, _new_item: HSIEventQueueItem) -> None:
-        """Add HSIEventQueueItem to the HSI_EVENT_QUEUE. If the event is already due, try to run it, and add it to the
-         queue if it's held over."""
-
-        def _try_running_individual_level_event():
-            to_be_held_over = self.run_individual_level_events([_new_item])
-            if len(to_be_held_over) == 0:
-                return
-
-        def _try_running_population_level_event():
-            self.run_population_level_events([_new_item])
-
-        if _new_item.topen <= self.sim.date:
-            if isinstance(_new_item.hsi_event.target, tlo.population.Population):
-                _try_running_population_level_event()
-            else:
-                _try_running_individual_level_event()
-
-        # Add to queue:
+    def _add_hsi_event_queue_item_to_hsi_event_queue(self, priority, topen, tclose, hsi_event) -> None:
+        """Add an event to the HSI_EVENT_QUEUE."""
+        # Create HSIEventQueue Item, including a counter for the number of HSI_Events, to assist with sorting in the
+        # queue (NB. the sorting is done ascending and by the order of the items in the tuple).
         self.hsi_event_queue_counter += 1
+        _new_item: HSIEventQueueItem = HSIEventQueueItem(
+            priority, topen, self.hsi_event_queue_counter, tclose, hsi_event)
+        # Add to queue:
         hp.heappush(self.HSI_EVENT_QUEUE, _new_item)
 
     def check_hsi_event_is_valid(self, hsi_event):
@@ -1398,7 +1380,7 @@ class HealthSystem(Module):
         self.consumables.on_end_of_year()
         self.bed_days.on_end_of_year()
 
-    def run_population_level_events(self, _list_of_population_hsi_event_tuples: List) -> None:
+    def run_population_level_events(self, _list_of_population_hsi_event_tuples: List[HSIEventQueueItem]) -> None:
         """Run a list of population level events."""
         while len(_list_of_population_hsi_event_tuples) > 0:
             pop_level_hsi_event_tuple = _list_of_population_hsi_event_tuples.pop()
@@ -1406,7 +1388,7 @@ class HealthSystem(Module):
             pop_level_hsi_event.run(squeeze_factor=0)
             self.record_hsi_event(hsi_event=pop_level_hsi_event)
 
-    def run_individual_level_events(self, _list_of_individual_hsi_event_tuples: List) -> List:
+    def run_individual_level_events(self, _list_of_individual_hsi_event_tuples: List[HSIEventQueueItem]) -> List:
         """Run a list of individual level events. Returns: list of events that did not run (maybe an empty a list)."""
         _to_be_held_over = list()
 
@@ -1442,7 +1424,7 @@ class HealthSystem(Module):
             # For each event, determine to run or not, and run if so.
             for ev_num, _ in enumerate(_list_of_individual_hsi_event_tuples):
                 event = _list_of_individual_hsi_event_tuples[ev_num].hsi_event
-                squeeze_factor = squeeze_factor_per_hsi_event[ev_num]
+                squeeze_factor = squeeze_factor_per_hsi_event[ev_num]                  # todo use zip here!
 
                 ok_to_run = (
                     (self.mode_appt_constraints == 0)
@@ -1533,12 +1515,15 @@ class HealthSystem(Module):
 
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     """
-    This is the HealthSystemScheduler. It is an event that occurs every day, inspects the calls on the healthsystem
-    and commissions event to occur that are consistent with the healthsystem's capabilities for the following day, given
-    assumptions about how this decision is made.
-    The overall Prioritization algorithm is:
-        * Look at events in order (the order is set by the heapq: see schedule_event
-        * Ignore is the current data is before topen
+    This is the HealthSystemScheduler. It is an event that occurs every day and must be the LAST event of the day.
+    It inspects the calls on the healthsystem and commissions event to occur that are consistent with the
+    healthsystem's capabilities for the following day, given assumptions about how this decision is made.
+
+    N.B. Events scheduled for the same day will occur that day, but after those which were scheduled on an earlier date.
+
+        The overall Prioritization algorithm is:
+        * Look at events in order (the order is set by the heapq: see `schedule_hsi_event`)
+        * Ignore if the current data is before topen
         * Remove and do nothing if tclose has expired
         * Run any  population-level HSI events
         * For an individual-level HSI event, check if there are sufficient health system capabilities to run the event
@@ -1565,7 +1550,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
          * list_of_individual_hsi_event_tuples_due_today
          * list_of_population_hsi_event_tuples_due_today
         """
-
         _list_of_individual_hsi_event_tuples_due_today = list()
         _list_of_population_hsi_event_tuples_due_today = list()
         _list_of_events_not_due_today = list()
@@ -1685,7 +1669,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             hold_over.extend(_to_be_held_over)
 
         # -- End-of-day activities --
-
         # Add back to the HSI_EVENT_QUEUE heapq all those events which are still eligible to run but which did not run
         while len(hold_over) > 0:
             hp.heappush(self.module.HSI_EVENT_QUEUE, hp.heappop(hold_over))
@@ -1696,7 +1679,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         # Trigger jobs to be done at the end of the day (after all HSI run)
         self.module.on_end_of_day()
 
-        # Do activities required at end of year (if today is the last day of the year)
+        # Do activities that are required at end of year (if today is the last day of the year)
         if self._is_today_last_day_of_the_year(self.sim.date):
             self.module.on_end_of_year()
 

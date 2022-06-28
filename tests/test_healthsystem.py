@@ -932,6 +932,12 @@ def test_manipulation_of_service_availability(seed, tmpdir):
     assert len(run_everything_except_hiv_anything.union(everything))
 
 
+def test_that_healthsystem_scheduler_event_is_the_last_event_of_the_day(seed, tmpdir):
+    """Check that the daily event `HealthSystemScheduler` is the last event of the day."""
+    ...
+
+
+
 def test_hsi_run_on_same_day_if_scheduled_for_same_day(seed, tmpdir):
     """An HSI_Event which is scheduled for the current day should run on the current day. This should be the case
     whether the HSI_Event is scheduled from initialise_simulation, a normal event, or an HSI_Event."""
@@ -976,6 +982,7 @@ def test_hsi_run_on_same_day_if_scheduled_for_same_day(seed, tmpdir):
     class DummyModule(Module):
         """Schedules an HSI to occur on the first day of the simulation from initialise_simulation, and an event that
          will schedule the event for the same day."""
+        # todo add an event to run the same day that is scheduled in initialise_simulation
 
         def read_parameters(self, data_folder):
             pass
