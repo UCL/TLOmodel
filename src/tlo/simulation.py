@@ -298,7 +298,7 @@ class Simulation:
         """
         person_events = list()
 
-        for date, counter, event in self.event_queue.queue:
+        for date, _, _, event in self.event_queue.queue:
             if isinstance(event, IndividualScopeEventMixin):
                 if event.target == person_id:
                     person_events.append((date, event))
