@@ -49,9 +49,9 @@ def test_control_of_ordering_in_the_day(seed, tmpdir):
             pass
 
         def initialise_simulation(self, sim):
-            sim.schedule_event(Event_For_Middle_Of_Day(self), sim.date)
-            sim.schedule_event(Event_For_End_Of_Day(self), sim.date)
-            sim.schedule_event(Event_For_Start_Of_Day(self), sim.date)
+            sim.schedule_event(Event_For_Middle_Of_Day(self), sim.date)  # No `order` argument provided
+            sim.schedule_event(Event_For_End_Of_Day(self), sim.date, order_in_day=-1)  # order=-1 --> last in the day
+            sim.schedule_event(Event_For_Start_Of_Day(self), sim.date, order_in_day=0)  # order=0 --> first in the day
 
     log_config = {
         'filename': 'tmpfile',
@@ -68,10 +68,15 @@ def test_control_of_ordering_in_the_day(seed, tmpdir):
     # Examine order in which the events actually ran on each day
     events = parse_log_file(sim.log_filepath)['tlo.simulation']['event'].reset_index()
 
-    # Check order is the same every day
+    # Check that order is as expected: Start -> Middle --> End
+    events['date'] = pd.to_datetime(events['date']).dt.date
     order_on_day_one = tuple(events.loc[events['date'] == Date(2010, 1, 1), 'id'])
-    for day in events['date'].drop_duplicates():
+    assert order_on_day_one == ("Event_For_Start_Of_Day", "Event_For_Middle_Of_Day", "Event_For_End_Of_Day")
+
+    # Check order is the same every day
+    dates = pd.to_datetime(events['date']).dt.date.drop_duplicates()
+    for day in dates:
         assert order_on_day_one == tuple(events.loc[events['date'] == day, 'id'])
 
-    # Check that order is as expected: Start -> Middle --> End
-    assert order_on_day_one == ("Event_For_Start_Of_Day", "Event_For_Middle_Of_Day", "Event_For_End_Of_Day")
+    # todo for recurrences
+    # todo log only the date
