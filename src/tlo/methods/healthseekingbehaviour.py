@@ -113,7 +113,7 @@ class HealthSeekingBehaviour(Module):
         """Read in ResourceFile"""
         # Load parameters from resource file:
         self.load_parameters_from_dataframe(
-            pd.DataFrame(pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_HealthSeekingBehaviour.csv'))
+            pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_HealthSeekingBehaviour.csv')
         )
 
         # Check that force_any_symptom_to_lead_to_healthcareseeking is a bool (this is returned in
