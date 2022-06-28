@@ -347,13 +347,25 @@ class PregnancySupervisor(Module):
         # ANALYSIS PARAMETERS...
         'anc_service_structure': Parameter(
             Types.INT, 'stores type of ANC service being delivered in the model (anc4 or anc8) and is used in analysis'
-                       ' scripts to change ANC structure'),
-        'switch_anc_coverage': Parameter(
-            Types.BOOL, 'used to signal if a change in parameters governing ANC coverage should be made at some '
-                        'predetermined time point'),
-        'target_anc_coverage_for_analysis': Parameter(
-            Types.REAL, 'contains a target level of coverage for analysis so that a linear model of choice can be '
-                        'scaled to force set level of intervention coverage'),
+                       'scripts to change ANC structure'),
+        'analysis_year': Parameter(
+            Types.INT, 'Year on which the pregnancy analysis event is scheduled to update any relevant parameters for '
+                       'analysis (1st day 1st month)'),
+        'ps_analysis_in_progress': Parameter(
+            Types.BOOL, 'Used within the pregnancy_helper_function to signify that analysis is currently being '
+                        'conducted'),
+        'alternative_anc_coverage': Parameter(
+            Types.BOOL, 'Signals within the analysis event that an alternative level of ANC coverage has been '
+                        'determined following the events run'),
+        'alternative_anc_quality': Parameter(
+            Types.BOOL, 'Signals within the analysis event that an alternative level of ANC quality has been '
+                        'determined following the events run'),
+        'anc_availability_odds': Parameter(
+            Types.REAL, 'Target odds of early initiation of ANC4+ when analysis is being conducted - only applied if'
+                        'alternative_anc_coverage is true '),
+        'anc_availability_probability': Parameter(
+            Types.REAL, 'Target probability of quality/consumables when analysis is being conducted - only applied if '
+                        'alternative_anc_quality is true'),
 
     }
 
@@ -407,9 +419,6 @@ class PregnancySupervisor(Module):
         parameter_dataframe = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_PregnancySupervisor.xlsx',
                                             sheet_name='parameter_values')
         self.load_parameters_from_dataframe(parameter_dataframe)
-
-        # self.current_parameters is used to store the module level parameters for this time period
-        pregnancy_helper_functions.update_current_parameter_dictionary(self, list_position=0)
 
         # Here we map 'disability' parameters to associated DALY weights to be passed to the health burden module.
         # Currently this module calculates and reports all DALY weights from all maternal modules
@@ -482,6 +491,10 @@ class PregnancySupervisor(Module):
         df.loc[previous_miscarriage.loc[previous_miscarriage].index, 'ps_prev_spont_abortion'] = True
 
     def initialise_simulation(self, sim):
+        # self.current_parameters is used to store the module level parameters for this time period
+        pregnancy_helper_functions.update_current_parameter_dictionary(self, list_position=0)
+
+        params = self.current_parameters
 
         # Next we register and schedule the PregnancySupervisorEvent
         sim.schedule_event(PregnancySupervisorEvent(self),
@@ -496,9 +509,9 @@ class PregnancySupervisor(Module):
                            Date(2015, 1, 1))
 
         # ... and finally register and schedule the parameter override event. This is used in analysis scripts to change
-        # key parameters after the simulation 'burn in' period
-        sim.schedule_event(OverrideKeyParameterForAnalysis(self),
-                           Date(2021, 1, 1))
+        # key parameters after the simulation 'burn in' period. The event is schedule to run even when analysis is not
+        # conducted but no changes to parameters can be made.
+        sim.schedule_event(PregnancyAnalysisEvent(self), Date(params['analysis_year'], 1, 1))
 
         # ==================================== LINEAR MODEL EQUATIONS =================================================
         # Next we scale linear models according to distribution of predictors in the dataframe at baseline
@@ -2093,10 +2106,11 @@ class ParameterUpdateEvent(Event, PopulationScopeEventMixin):
                 self.sim.modules['Labour'], model=model[0], parameter_key=model[1])
 
 
-class OverrideKeyParameterForAnalysis(Event, PopulationScopeEventMixin):
+class PregnancyAnalysisEvent(Event, PopulationScopeEventMixin):
     """
-    This is OverrideKeyParameterForAnalysis. This event is scheduled in initialise_simulation and allows for a parameter
-     value/values to be overridden at a set time point within a simulation run.
+    This is PregnancyAnalysisEvent. This event is scheduled in initialise_simulation. When this event runs, and if
+    either of the module parameters the signify analysis is being conducted are set to True, then key parameters
+    are overridden to alter the coverage and/or quality of routine antenatal care delivery.
     """
     def __init__(self, module):
         super().__init__(module)
@@ -2105,18 +2119,55 @@ class OverrideKeyParameterForAnalysis(Event, PopulationScopeEventMixin):
         params = self.module.current_parameters
         df = self.sim.population.props
 
-        # When this parameter is set as True, the following parameters are overridden when the event is called.
-        # Otherwise no parameters are updated.
-        if params['switch_anc_coverage']:
-            target = params['target_anc_coverage_for_analysis']
-            params['odds_early_init_anc4'] = 1
-            mean = self.module.ps_linear_models['early_initiation_anc4'].predict(
+        # Check if either of the analysis parameters are set to True
+        if params['alternative_anc_coverage'] or params['alternative_anc_quality']:
+
+            # Update this parameter which is a signal used in the pregnancy_helper_function_file to ensure that
+            # alternative functionality for determining availbility of interventions only occurs when analysis is
+            # occuring
+            params['ps_analysis_in_progress'] = True
+
+            # When this parameter is set as True, the following parameters are overridden when the event is called.
+            # Otherwise no parameters are updated.
+            if params['alternative_anc_coverage']:
+
+                # Reset the intercept parameter of the equation determining care seeking for ANC4+ and scale the model
+                target = params['anc_availability_odds']
+                params['odds_early_init_anc4'] = 1
+                mean = self.module.ps_linear_models['early_initiation_anc4'].predict(
                     df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)],
                     year=self.sim.date.year).mean()
 
-            mean = mean / (1.0 - mean)
-            scaled_intercept = 1.0 * (target / mean) if (target != 0 and mean != 0 and not np.isnan(mean)) else 1.0
-            params['odds_early_init_anc4'] = scaled_intercept
+                mean = mean / (1.0 - mean)
+                scaled_intercept = 1.0 * (target / mean) if (target != 0 and mean != 0 and not np.isnan(mean)) else 1.0
+
+                # Update parameters that also control when women will initiate visits
+                params['odds_early_init_anc4'] = scaled_intercept
+                params['prob_anc1_months_2_to_4'] = [1.0, 0, 0]
+                params['prob_late_initiation_anc4'] = 0
+
+                # Finally, remove squeeze factor threshold for ANC attendance to ensure that higher levels of ANC
+                # coverage can  be reached with current logic
+                self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters['squeeze_factor_threshold_anc'] = \
+                    10_000
+
+            if params['alternative_anc_quality']:
+
+                # Override the availability of IPTp consumables with the set level of coverage
+                if 'Malaria' in self.sim.modules:
+                    iptp = self.sim.modules['Malaria'].item_codes_for_consumables_required['malaria_iptp']
+                    ic = list(iptp.keys())[0]
+                    self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                        {ic: params['anc_availability_probability']})
+
+                # And then override the quality parameters in the model
+                for parameter in ['prob_intervention_delivered_urine_ds', 'prob_intervention_delivered_bp',
+                                  'prob_intervention_delivered_ifa', 'prob_intervention_delivered_llitn',
+                                  'prob_intervention_delivered_llitn', 'prob_intervention_delivered_tt',
+                                  'prob_intervention_delivered_poct', 'prob_intervention_delivered_syph_test',
+                                  'prob_intervention_delivered_iptp', 'prob_intervention_delivered_gdm_test']:
+                    self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters[parameter] = \
+                        params['anc_availability_probability']
 
 
 class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
