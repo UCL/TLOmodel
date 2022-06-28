@@ -249,12 +249,12 @@ class Simulation:
 
         logger.info(key='info', data=f'simulate() {time.time() - start} s')
 
-    def schedule_event(self, event, date):
+    def schedule_event(self, event, date, order_in_day=None):
         """Schedule an event to happen on the given future date.
 
         :param event: the Event to schedule
         :param date: when the event should happen
-        :param force_over_from_healthsystem: allows an HSI event to enter the scheduler
+        :param order_in_day: controls when during the day the event occurs [0: first, -1: last, None: in-between]
         """
         assert date >= self.date, 'Cannot schedule events in the past'
 
@@ -263,7 +263,7 @@ class Simulation:
         assert (event.__str__().find('HSI_') < 0), \
             'This looks like an HSI event. It should be handed to the healthsystem scheduler'
 
-        self.event_queue.schedule(event, date)
+        self.event_queue.schedule(event, self._set_date_time(date, order_in_day))
 
     def fire_single_event(self, event, date):
         """Fires the event once for the given date
@@ -303,6 +303,18 @@ class Simulation:
                     person_events.append((date, event))
 
         return person_events
+
+    @staticmethod
+    def _set_date_time(date: Date, _order) -> datetime.datetime:
+        """Returns a datetime.datetime which is the date provided and a time that is chosen according to the argument
+        `order`. This is used as the datetime for which events are scheduled, so the `order` argument determines when
+        during the day the event occurs."""
+        if _order == 0:
+            return date.replace(hour=0, minute=0, second=0, microsecond=0)  # midnight on the day
+        elif _order == -1:
+            return date.replace(hour=23, minute=0, second=0, microsecond=0)  # 11pm on the day
+        else:
+            return date.replace(hour=1, minute=0, second=0, microsecond=0)  # 1am on the day
 
 
 class EventQueue:
