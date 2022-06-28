@@ -461,7 +461,7 @@ def test_run_in_with_hs_disabled(tmpdir, seed):
     assert any(sim.population.props['mi_status'] == 'P')  # At least some mockitis cure have occurred (though HS)
 
     # Check for hsi_wrappers in the main event queue
-    list_of_ev_name = [ev[2] for ev in sim.event_queue.queue]
+    list_of_ev_name = [ev[3] for ev in sim.event_queue.queue]
     assert any(['HSIEventWrapper' in str(ev_name) for ev_name in list_of_ev_name])
 
 
