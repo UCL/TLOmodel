@@ -934,13 +934,12 @@ def test_manipulation_of_service_availability(seed, tmpdir):
 
 def test_that_healthsystem_scheduler_event_is_the_last_event_of_the_day(seed, tmpdir):
     """Check that the daily event `HealthSystemScheduler` is the last event of the day, every day."""
-    ...
+    ...  # todo
 
 
 def test_hsi_run_on_same_day_if_scheduled_for_same_day(seed, tmpdir):
     """An HSI_Event which is scheduled for the current day should run on the current day. This should be the case
     whether the HSI_Event is scheduled from initialise_simulation, a normal event, or an HSI_Event."""
-    # todo add an event to run the same day that is scheduled in initialise_simulation
 
     class DummyHSI_To_Run_On_Same_Day(HSI_Event, IndividualScopeEventMixin):
         """HSI event that will demonstrate it has been run."""
