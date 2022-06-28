@@ -1027,10 +1027,10 @@ def test_hsi_run_on_same_day_if_scheduled_for_same_day(seed, tmpdir):
     # Check that all events ran on the same day, the first day of the simulation.
     log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']['HSI_Event']
     assert 4 == len(log)  # 3 HSI events should have occurred
+    assert (log['date'] == sim.start_date).all()
     assert log['TREATMENT_ID'].to_list() == [
         'DummyHSI_To_Run_On_Same_Day_initialise_simulation',
         'DummyHSI_To_Run_On_First_Day_Of_Simulation',
         'DummyHSI_To_Run_On_Same_Day_Event',
         'DummyHSI_To_Run_On_Same_Day_HSI',
     ]
-    assert (log['date'] == sim.start_date).all()
