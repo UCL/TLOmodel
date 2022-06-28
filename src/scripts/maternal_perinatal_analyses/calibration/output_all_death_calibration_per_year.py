@@ -7,12 +7,12 @@ from matplotlib import pyplot as plt
 
 from tlo.analysis.utils import extract_results, get_scenario_outputs
 
-from .. import analysis_utility_functions
+from ..analysis_scripts import analysis_utility_functions
 
 plt.style.use('seaborn')
 
 
-def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_size, sim_years, daly_years):
+def output_all_death_calibrations(scenario_filename, outputspath, pop_size, sim_years, daly_years):
     results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
 
     # Create folder to store graphs (if it hasnt already been created when ran previously)

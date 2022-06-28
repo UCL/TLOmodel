@@ -5,12 +5,12 @@ from matplotlib import pyplot as plt
 
 from tlo.analysis.utils import extract_results, get_scenario_outputs
 
-from .. import analysis_utility_functions
+from ..analysis_scripts import analysis_utility_functions
 
 plt.style.use('seaborn')
 
 
-def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputspath, sim_years, show_and_store_graphs):
+def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, sim_years, show_and_store_graphs):
     """
     :param scenario_filename:
     :param pop_size:
