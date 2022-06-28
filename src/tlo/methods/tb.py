@@ -1317,6 +1317,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
     * scenario 2 optimistic with program constraints
     * scenario 3 optimistic with program constraints and additional measures to reduce incidence
     * scenario 4 optimistic and additional measures to reduce incidence
+    * scenario 5 SHINE trial
 
     It only occurs once at param: scenario_start_date,
     called by initialise_simulation
@@ -2132,7 +2133,7 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                 treatment_regimen = "tb_retx_child"
 
         # -------- SHINE Trial shorter paediatric regimen -------- #
-        if (self.module.parameters["scenario"] == 4) \
+        if (self.module.parameters["scenario"] == 5) \
             & (self.sim.date >= self.module.parameters["scenario_start_date"]) \
             & (person["age_years"] <= 16) \
             & ~(person["tb_smear"]) \

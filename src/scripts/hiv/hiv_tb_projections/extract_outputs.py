@@ -15,19 +15,21 @@ from tlo.analysis.utils import (
 outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
 
 # download all files (and get most recent [-1])
-results_folder1 = get_scenario_outputs("scenario1.py", outputspath)[-1]
-results_folder2 = get_scenario_outputs("scenario2.py", outputspath)[-1]
-results_folder3 = get_scenario_outputs("scenario3.py", outputspath)[-1]
+results0 = get_scenario_outputs("scenario0.py", outputspath)[-1]
+results1 = get_scenario_outputs("scenario1.py", outputspath)[-1]
+results2 = get_scenario_outputs("scenario2.py", outputspath)[-1]
+results3 = get_scenario_outputs("scenario3.py", outputspath)[-1]
+results4 = get_scenario_outputs("scenario4.py", outputspath)[-1]
 
 # look at one log (so can decide what to extract)
-log = load_pickled_dataframes(results_folder3)
+log = load_pickled_dataframes(results0)
 
 # ---------------------------------- Fraction HCW time-------------------------------------
 
 # fraction of HCW time
 # output fraction of time by year
 capacity1 = summarize(extract_results(
-    results_folder1,
+    results0,
     module="tlo.methods.healthsystem.summary",
     key="health_system_annual_logs",
     custom_generate_series=(
