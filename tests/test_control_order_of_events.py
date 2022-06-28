@@ -6,7 +6,6 @@ import pandas as pd
 from tlo import Date, Module, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.events import PopulationScopeEventMixin, RegularEvent
-from tlo.methods.fullmodel import fullmodel
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 start_date = Date(2010, 1, 1)
