@@ -489,7 +489,7 @@ class CareOfWomenDuringPregnancy(Module):
 
             #  run a check at birth to make sure no women exceed 8 visits
             if df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'] > 9:
-                logger.debug(key='error', data=f'Mother {mother_id} attended >8 ANC visits during her pregnancy')
+                logger.info(key='error', data=f'Mother {mother_id} attended >8 ANC visits during her pregnancy')
 
             # We log the total number of ANC contacts a woman has undergone at the time of birth via this dictionary
             if 'ga_anc_one' in mni[mother_id]:
@@ -595,8 +595,8 @@ class CareOfWomenDuringPregnancy(Module):
 
         # We check that women will only be scheduled for the next ANC contact in the schedule
         if df.at[individual_id, 'ps_gestational_age_in_weeks'] > recommended_gestation_next_anc:
-            logger.debug(key='error', data=f'Attempted to schedule an ANC visit for mother {individual_id} at a'
-                                           f' gestation lower than her current gestation')
+            logger.info(key='error', data=f'Attempted to schedule an ANC visit for mother {individual_id} at a'
+                                          f' gestation lower than her current gestation')
             return
 
         visit_dict = {2: HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(self, person_id=individual_id),
@@ -649,8 +649,8 @@ class CareOfWomenDuringPregnancy(Module):
 
         # check correct women have been sent
         if not df.at[individual_id, 'ac_to_be_admitted']:
-            logger.debug(key='error', data=f'Mother {individual_id} was scheduled for admission despite not requiring'
-                                           f' it')
+            logger.info(key='error', data=f'Mother {individual_id} was scheduled for admission despite not requiring'
+                                          f' it')
             return
 
         logger.info(key='anc_interventions', data={'mother': individual_id, 'intervention': 'admission'})
@@ -2023,6 +2023,7 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
         df = self.sim.population.props
         mother = df.loc[person_id]
         params = self.module.current_parameters
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         # First we determine at what point in this womans pregnancy should she return for another visit
         if mother.ps_gestational_age_in_weeks < 22:
@@ -2242,7 +2243,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
             # This test returns one of a number of possible outcomes as seen below...
             fbc_result = self.module.full_blood_count_testing(self)
             if fbc_result not in ('none', 'mild', 'moderate', 'severe'):
-                logger.debug(key='error', data='FBC result error')
+                logger.info(key='error', data='FBC result error')
 
             # If the FBC detected non severe anaemia (Hb >7) she is treated
             if fbc_result in ('mild', 'moderate'):
@@ -2389,7 +2390,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                     # self.module.antenatal_blood_transfusion(person_id, self, cause='antepartum_haem')
 
             if df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'none':
-                logger.debug(key='error', data=f'Mother {person_id} was not admitted for delviery following APH')
+                logger.info(key='error', data=f'Mother {person_id} was not admitted for delviery following APH')
 
         # ===================================== INITIATE TREATMENT FOR PROM =======================================
         # Treatment for women with premature rupture of membranes is dependent upon a womans gestational age and if
@@ -2611,7 +2612,6 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         mother = df.loc[person_id]
-        cons = self.module.item_codes_preg_consumables
         abortion_complications = self.sim.modules['PregnancySupervisor'].abortion_complications
 
         if not mother.is_alive or not abortion_complications.has_any([person_id], 'sepsis', 'haemorrhage', 'injury',
@@ -2700,7 +2700,6 @@ class HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(HSI_Event, Ind
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         mother = df.loc[person_id]
-        cons = self.module.item_codes_preg_consumables
 
         if not mother.is_alive or (mother.ps_ectopic_pregnancy == 'none'):
             return
