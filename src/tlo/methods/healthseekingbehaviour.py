@@ -232,7 +232,7 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         """Initialise the HealthSeekingBehaviourPoll
         :param module: the module that created this event
         """
-        super().__init__(module, frequency=DateOffset(days=1))
+        super().__init__(module, frequency=DateOffset(days=1), order_in_day="second_to_last")
         assert isinstance(module, HealthSeekingBehaviour)
 
     @staticmethod
