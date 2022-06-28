@@ -1320,6 +1320,7 @@ class PregnancySupervisor(Module):
         params = self.current_parameters
         mni = self.mother_and_newborn_info
 
+        # select at risk population and apply risk
         at_risk = \
             df.is_alive & df.is_pregnant & (df.ps_gestational_age_in_weeks == gestation_of_interest) & \
             (df.ps_ectopic_pregnancy == 'none') & ~df.la_currently_in_labour
@@ -1852,6 +1853,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
                                                                     topen=self.sim.date,
                                                                     tclose=self.sim.date + DateOffset(days=1))
             else:
+                # Women who cant seek care as they are admitted for another reason have a risk of death applied
                 apply_death_risk(person)
 
         # -------- APPLYING RISK OF DEATH/STILL BIRTH FOR NON-CARE SEEKERS FOLLOWING PREGNANCY EMERGENCIES --------
