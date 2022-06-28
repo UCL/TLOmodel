@@ -53,15 +53,6 @@ def test_control_of_ordering_in_the_day(seed, tmpdir):
             logger.info(key='event', data={'id': self.__class__.__name__})
             assert self.order_in_day == "second_to_last"
 
-    class Event_For_Second_to_Last_At_End_Of_Day(RegularEvent, PopulationScopeEventMixin):
-
-        def __init__(self, module):
-            super().__init__(module, frequency=pd.DateOffset(days=1))
-
-        def apply(self, population):
-            logger = logging.getLogger('tlo.simulation')
-            logger.info(key='event', data={'id': self.__class__.__name__})
-
     class Event_For_End_Of_Day(RegularEvent, PopulationScopeEventMixin):
 
         def __init__(self, module):
