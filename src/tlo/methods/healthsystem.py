@@ -648,7 +648,7 @@ class HealthSystem(Module):
         # Launch the healthsystem scheduler (a regular event occurring each day) [if not disabled]
         if not (self.disable or self.disable_and_reject_all):
             self.healthsystemscheduler = HealthSystemScheduler(self)
-            sim.schedule_event(self.healthsystemscheduler, sim.date)
+            sim.schedule_event(self.healthsystemscheduler, sim.date, order_in_day="last")
 
     def on_birth(self, mother_id, child_id):
         self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
