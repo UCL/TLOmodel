@@ -34,7 +34,7 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
 
     # ============================================HELPER FUNCTIONS... =================================================
     def get_modules_maternal_complication_dataframes(module):
-        complications_df = extract_results(
+        cd_df = extract_results(
             results_folder,
             module=f"tlo.methods.{module}",
             key="maternal_complication",
@@ -42,6 +42,7 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
                 lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'type'])['person'].count()),
             do_scaling=False
         )
+        complications_df = cd_df.fillna(0)
 
         return complications_df
 
@@ -100,7 +101,7 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
     sa_mean_numbers_per_year = analysis_utility_functions.get_mean_and_quants_from_str_df(
         an_comps, 'spontaneous_abortion', sim_years)[0]
 
-    an_stillbirth_results = extract_results(
+    an_sb = extract_results(
         results_folder,
         module="tlo.methods.pregnancy_supervisor",
         key="antenatal_stillbirth",
@@ -108,8 +109,9 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
             lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()
         ),
     )
+    an_stillbirth_results = an_sb.fillna(0)
 
-    ip_stillbirth_results = extract_results(
+    ip_sb = extract_results(
         results_folder,
         module="tlo.methods.labour",
         key="intrapartum_stillbirth",
@@ -117,6 +119,7 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
             lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()
         ),
     )
+    ip_stillbirth_results = ip_sb.fillna(0)
 
     an_still_birth_data = analysis_utility_functions.get_mean_and_quants(an_stillbirth_results, sim_years)
     ip_still_birth_data = analysis_utility_functions.get_mean_and_quants(ip_stillbirth_results, sim_years)
@@ -509,7 +512,7 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
     # ========================================== COMPLICATION/DISEASE RATES.... =======================================
     # ---------------------------------------- Twinning Rate... -------------------------------------------------------
     # % Twin births/Total Births per year
-    twins_results = extract_results(
+    tr = extract_results(
         results_folder,
         module="tlo.methods.newborn_outcomes",
         key="twin_birth",
@@ -517,6 +520,7 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
             lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()
         ),
     )
+    twins_results = tr.fillna(0)
 
     twin_data = analysis_utility_functions.get_mean_and_quants(twins_results, sim_years)
 
@@ -889,7 +893,7 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
         'Antenatal Stillbirth Rate per Year', graph_location, 'sbr_an')
 
     # ------------------------------------------------- Birth weight... -----------------------------------------------
-    nb_outcomes_df = extract_results(
+    nb_oc_df = extract_results(
             results_folder,
             module="tlo.methods.newborn_outcomes",
             key="newborn_complication",
@@ -897,8 +901,9 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
                 lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'type'])['newborn'].count()),
             do_scaling=False
         )
+    nb_outcomes_df = nb_oc_df.fillna(0)
 
-    nb_outcomes_pn_df = extract_results(
+    nb_oc_pn_df = extract_results(
             results_folder,
             module="tlo.methods.postnatal_supervisor",
             key="newborn_complication",
@@ -906,6 +911,7 @@ def output_key_outcomes_from_scenario_file(scenario_filename, pop_size, outputsp
                 lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'type'])['newborn'].count()),
             do_scaling=False
         )
+    nb_outcomes_pn_df =nb_oc_pn_df.fillna(0)
 
     lbw_data = analysis_utility_functions.get_comp_mean_and_rate(
         'low_birth_weight', birth_data_ex2010[0], nb_outcomes_df, 100, sim_years)

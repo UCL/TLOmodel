@@ -1,6 +1,9 @@
-from .output_all_death_calibration_per_year import output_all_death_calibration_per_year
-from .output_all_key_outcomes_per_year import output_key_outcomes_from_scenario_file
+from src.scripts.maternal_perinatal_analyses.calibration.output_all_death_calibration_per_year\
+    import output_all_death_calibration_per_year
+from src.scripts.maternal_perinatal_analyses.calibration.output_all_key_outcomes_per_year \
+    import output_key_outcomes_from_scenario_file
 
+# todo: from .output_all_key_outcomes_per_year import output_key_outcomes_from_scenario_file didnt work
 for file in ['standard_mph_calibration']:
     output_key_outcomes_from_scenario_file(scenario_filename=f'{file}.py',
                                            pop_size='50k',

@@ -53,7 +53,7 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
         return [target_rate, target_rate_adjusted]
 
     def get_modules_maternal_complication_dataframes(module):
-        complications_df = extract_results(
+        c_df = extract_results(
             results_folder,
             module=f"tlo.methods.{module}",
             key="maternal_complication",
@@ -61,6 +61,7 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
                 lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'type'])['person'].count()),
             do_scaling=False
         )
+        complications_df= c_df.fillna(0)
 
         return complications_df
 
@@ -100,28 +101,30 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
 
     # ==============================================  YEARLY MMR... ==================================================
     # Output direct deaths...
-    death_results_labels = extract_results(
+    death_results = extract_results(
         results_folder,
         module="tlo.methods.demography",
         key="death",
         custom_generate_series=(
-            lambda df: df.assign(year=df['date'].dt.year).groupby(['year', 'label'])['year'].count()
+            lambda df: df.assign(year=df['date'].dt.year).groupby(['year', 'label'])['year'].count().fillna(0)
         ),
     )
+    death_results_labels = death_results.fillna(0)
     mm = analysis_utility_functions.get_comp_mean_and_rate('Maternal Disorders', total_births_per_year_ex2010,
                                                            death_results_labels, 100000, sim_years)
 
     # Output indirect deaths...
-    indirect_deaths = extract_results(
+    i_d = extract_results(
         results_folder,
         module="tlo.methods.demography.detail",
         key="properties_of_deceased_persons",
         custom_generate_series=(
             lambda df: df.loc[(df['is_pregnant'] | df['la_is_postpartum']) &
                               df['cause_of_death'].str.contains(
-                                  'AIDS|Malaria|TB|Suicide|ever_stroke|diabetes|chronic_ischemic_hd|'
-                                  'ever_heart_attack|ever_stroke|chronic_kidney_disease')].assign(
+                                  'AIDS_non_TB|AIDS_TB|TB|Malaria|Suicide|ever_stroke|diabetes|chronic_ischemic_hd|'
+                                  'ever_heart_attack|chronic_kidney_disease')].assign(
                 year=df['date'].dt.year).groupby(['year'])['year'].count()))
+    indirect_deaths = i_d.fillna(0)
 
     id_preg_data = analysis_utility_functions.get_mean_and_quants(indirect_deaths, sim_years)
 
@@ -167,7 +170,7 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
         if title == 'Direct':
             ax.set(ylim=(0, 750))
         else:
-            ax.set(ylim=(0, 3500))
+            ax.set(ylim=(0, 2200))
         plt.xlabel('Year')
         plt.ylabel("Deaths per 100,000 live births")
         plt.title(f'{title} Maternal Mortality Ratio per Year')
@@ -203,12 +206,14 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
         custom_generate_series=(
             lambda df: df.loc[(df['is_pregnant'] | df['la_is_postpartum']) &
                               df['cause_of_death'].str.contains(
-                                  'AIDS|Malaria|TB|Suicide|ever_stroke|diabetes|chronic_ischemic_hd|'
+                                  'AIDS_non_TB|AIDS_TB|TB|Malaria|Suicide|ever_stroke|diabetes|chronic_ischemic_hd|'
                                   'ever_heart_attack|chronic_kidney_disease')].assign(
                 year=df['date'].dt.year).groupby(['year', 'cause_of_death'])['year'].count()))
 
-    indirect_causes = ['AIDS', 'Malaria', 'TB', 'Suicide', 'ever_stroke', 'diabetes', 'chronic_ischemic_hd',
-                       'ever_heart_attack', 'chronic_kidney_disease']
+    id_by_cause_df = indirect_deaths_by_cause.fillna(0)
+
+    indirect_causes = ['AIDS_non_TB', 'AIDS_TB', 'TB', 'Malaria', 'Suicide', 'ever_stroke', 'diabetes',
+                       'chronic_ischemic_hd', 'ever_heart_attack', 'chronic_kidney_disease']
 
     indirect_deaths_means = {}
 
@@ -216,9 +221,9 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
         indirect_deaths_means.update({complication: []})
 
         for year in sim_years:
-            if complication in indirect_deaths_by_cause.loc[year].index:
+            if complication in id_by_cause_df.loc[year].index:
                 births = births_results_exc_2010.loc[year].mean()
-                deaths = indirect_deaths_by_cause.loc[year, complication].mean()
+                deaths = id_by_cause_df.loc[year, complication].mean()
                 indirect_deaths_means[complication].append((deaths/births) * 100000)
             else:
                 indirect_deaths_means[complication].append(0)
@@ -227,16 +232,33 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
     width = 0.35  # the width of the bars: can also be len(x) sequence
     fig, ax = plt.subplots()
 
+    ax.bar(labels, indirect_deaths_means['AIDS_TB'], width, label='AIDS_TB',
+           bottom=[a + b + c + d + e + f + g + h + i for a, b, c, d, e, f, g, h, i in zip(
+               indirect_deaths_means['AIDS_non_TB'],
+               indirect_deaths_means['Malaria'],
+               indirect_deaths_means['TB'],
+               indirect_deaths_means['Suicide'],
+               indirect_deaths_means['ever_stroke'],
+               indirect_deaths_means['diabetes'],
+               indirect_deaths_means['chronic_ischemic_hd'],
+               indirect_deaths_means['ever_heart_attack'],
+               indirect_deaths_means['chronic_kidney_disease'])],
+           color='yellow')
+
     ax.bar(labels, indirect_deaths_means['chronic_kidney_disease'], width, label='CKD',
            bottom=[a + b + c + d + e + f + g + h for a, b, c, d, e, f, g, h in zip(
-               indirect_deaths_means['AIDS'],  indirect_deaths_means['Malaria'], indirect_deaths_means['TB'],
-               indirect_deaths_means['Suicide'],  indirect_deaths_means['ever_stroke'],
-               indirect_deaths_means['diabetes'], indirect_deaths_means['chronic_ischemic_hd'],
+               indirect_deaths_means['AIDS_non_TB'],
+               indirect_deaths_means['Malaria'],
+               indirect_deaths_means['TB'],
+               indirect_deaths_means['Suicide'],
+               indirect_deaths_means['ever_stroke'],
+               indirect_deaths_means['diabetes'],
+               indirect_deaths_means['chronic_ischemic_hd'],
                indirect_deaths_means['ever_heart_attack'], )],
            color='pink')
 
     ax.bar(labels, indirect_deaths_means['ever_heart_attack'], width, label='MI',
-           bottom=[a+b+c+d+e+f+g for a, b, c, d, e, f, g in zip(indirect_deaths_means['AIDS'],
+           bottom=[a+b+c+d+e+f+g for a, b, c, d, e, f, g in zip(indirect_deaths_means['AIDS_non_TB'],
                                                                 indirect_deaths_means['Malaria'],
                                                                 indirect_deaths_means['TB'],
                                                                 indirect_deaths_means['Suicide'],
@@ -246,7 +268,7 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
            color='darkred')
 
     ax.bar(labels, indirect_deaths_means['chronic_ischemic_hd'], width, label='Chronic HD',
-           bottom=[a+b+c+d+e+f for a, b, c, d, e, f in zip(indirect_deaths_means['AIDS'],
+           bottom=[a+b+c+d+e+f for a, b, c, d, e, f in zip(indirect_deaths_means['AIDS_non_TB'],
                                                            indirect_deaths_means['Malaria'],
                                                            indirect_deaths_means['TB'],
                                                            indirect_deaths_means['Suicide'],
@@ -254,26 +276,32 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
                                                            indirect_deaths_means['diabetes'])], color='grey')
 
     ax.bar(labels, indirect_deaths_means['diabetes'], width, label='Diabetes',
-           bottom=[a+b+c+d+e for a, b, c, d, e in zip(indirect_deaths_means['AIDS'], indirect_deaths_means['Malaria'],
+           bottom=[a+b+c+d+e for a, b, c, d, e in zip(indirect_deaths_means['AIDS_non_TB'],
+                                                      indirect_deaths_means['Malaria'],
                                                       indirect_deaths_means['TB'], indirect_deaths_means['Suicide'],
                                                       indirect_deaths_means['ever_stroke'])], color='darkorange')
 
     ax.bar(labels, indirect_deaths_means['ever_stroke'], width, label='Stoke',
-           bottom=[a + b + c + d for a, b, c, d in zip(indirect_deaths_means['AIDS'],
+           bottom=[a + b + c + d for a, b, c, d in zip(indirect_deaths_means['AIDS_non_TB'],
                                                        indirect_deaths_means['Malaria'],
                                                        indirect_deaths_means['TB'],
                                                        indirect_deaths_means['Suicide'])], color='yellowgreen')
     ax.bar(labels, indirect_deaths_means['Suicide'], width, label='Suicide',
-           bottom=[a + b + c for a, b, c in zip(indirect_deaths_means['AIDS'],
+           bottom=[a + b + c for a, b, c in zip(indirect_deaths_means['AIDS_non_TB'],
                                                 indirect_deaths_means['Malaria'],
                                                 indirect_deaths_means['TB'])], color='cornflowerblue')
+
     ax.bar(labels, indirect_deaths_means['TB'], width, label='TB',
-           bottom=[a + b for a, b in zip(indirect_deaths_means['AIDS'], indirect_deaths_means['Malaria'])],
+           bottom=[a + b for a, b in zip(indirect_deaths_means['AIDS_non_TB'],
+                                         indirect_deaths_means['Malaria'])],
            color='darkmagenta')
-    ax.bar(labels, indirect_deaths_means['Malaria'], width, label='Malaria', bottom=indirect_deaths_means['AIDS'],
+
+    ax.bar(labels, indirect_deaths_means['Malaria'], width, label='Malaria',
+           bottom=indirect_deaths_means['AIDS_non_TB'],
            color='slategrey')
-    ax.bar(labels, indirect_deaths_means['AIDS'], width, label='AIDS', color='hotpink')
-    ax.set(ylim=(0, 3000))
+    ax.bar(labels, indirect_deaths_means['AIDS_non_TB'], width, label='AIDS_non_TB', color='hotpink')
+
+    ax.set(ylim=(0, 1200))
     ax.set_ylabel('Deaths per 100,000 live births')
     ax.set_ylabel('Year')
     ax.set_title('Indirect Causes of Maternal Death During Pregnancy')
@@ -282,7 +310,7 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
     plt.show()
 
     # ==============================================  DEATHS... ======================================================
-    scaled_deaths = extract_results(
+    s_d = extract_results(
         results_folder,
         module="tlo.methods.demography",
         key="death",
@@ -290,6 +318,7 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
             lambda df: df.assign(year=df['date'].dt.year).groupby(['year', 'label'])['year'].count()),
         do_scaling=True
     )
+    scaled_deaths = s_d.fillna(0)
 
     m_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(scaled_deaths, 'Maternal Disorders',
                                                                           gbd_years)
@@ -328,7 +357,7 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
     # do WHO estiamte also
 
     # =================================== COMPLICATION LEVEL MMR ======================================================
-    death_results = extract_results(
+    d_r = extract_results(
         results_folder,
         module="tlo.methods.demography",
         key="death",
@@ -336,7 +365,7 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
             lambda df: df.assign(year=df['date'].dt.year).groupby(['year', 'cause'])['year'].count()
         ),
     )
-
+    death_results = d_r.fillna(0)
     simplified_causes = ['ectopic_pregnancy', 'abortion', 'severe_pre_eclampsia', 'sepsis', 'uterine_rupture',
                          'postpartum_haemorrhage',  'antepartum_haemorrhage']
 
@@ -623,27 +652,30 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
         'Neonatal Disorders', total_births_per_year_ex2010, death_results_labels, 1000, sim_years)
 
     # Total NMR...(FROM ALL CAUSES UP TO 28 DAYS)
-    total_neonatal_deaths = extract_results(
+    tnd = extract_results(
         results_folder,
         module="tlo.methods.demography.detail",
         key="properties_of_deceased_persons",
         custom_generate_series=(
             lambda df: df.loc[(df['age_days'] < 28) & (df['cause_of_death'] != 'Other')].assign(
                 year=df['date'].dt.year).groupby(['year'])['year'].count()))
+    total_neonatal_deaths = tnd.fillna(0)
 
     t_nm = analysis_utility_functions.get_mean_and_quants(total_neonatal_deaths, sim_years)
     tnmr = [x / y * 1000 for x, y in zip(t_nm[0], total_births_per_year_ex2010_data[0])]
     tnmr_lq = [x / y * 1000 for x, y in zip(t_nm[1], total_births_per_year_ex2010_data[1])]
     tnmr_uq = [x / y * 1000 for x, y in zip(t_nm[2], total_births_per_year_ex2010_data[2])]
 
-    indirect_neonatal_deaths = extract_results(
+    id_nd = extract_results(
         results_folder,
         module="tlo.methods.demography.detail",
         key="properties_of_deceased_persons",
         custom_generate_series=(
             lambda df: df.loc[(df['age_days'] < 28) &
-                              df['cause_of_death'].str.contains('AIDS|ALRI|Diarrhoea|Malaria|anomaly')].assign(
+                              df['cause_of_death'].str.contains(
+                                  'AIDS_non_TB|AIDS_TB|TB|ALRI|Diarrhoea|Malaria|anomaly')].assign(
                 year=df['date'].dt.year).groupby(['year'])['year'].count()))
+    indirect_neonatal_deaths = id_nd.fillna(0)
 
     i_nm = analysis_utility_functions.get_mean_and_quants(indirect_neonatal_deaths, sim_years)
     i_nmr = [x / y * 1000 for x, y in zip(i_nm[0], total_births_per_year_ex2010_data[0])]
@@ -784,7 +816,7 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
         plt.show()
 
     # ------------------------------------------- CASE FATALITY PER COMPLICATION ------------------------------------
-    nb_outcomes_df = extract_results(
+    nb_oc_df = extract_results(
             results_folder,
             module="tlo.methods.newborn_outcomes",
             key="newborn_complication",
@@ -792,8 +824,9 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
                 lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'type'])['newborn'].count()),
             do_scaling=False
         )
+    nb_outcomes_df = nb_oc_df.fillna(0)
 
-    nb_outcomes_pn_df = extract_results(
+    nb_oc_pn_df = extract_results(
             results_folder,
             module="tlo.methods.postnatal_supervisor",
             key="newborn_complication",
@@ -801,14 +834,13 @@ def output_all_death_calibration_per_year(scenario_filename, outputspath, pop_si
                 lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'type'])['newborn'].count()),
             do_scaling=False
         )
+    nb_outcomes_pn_df = nb_oc_pn_df.fillna(0)
 
     tr = list()
     dummy_denom = list()
     for years in sim_years:
         tr.append(0)
         dummy_denom.append(1)
-    mean_ep = analysis_utility_functions.get_mean_and_quants_from_str_df(
-        an_comps, 'ectopic_unruptured', sim_years)[0]
 
     early_ns = analysis_utility_functions.get_mean_and_quants_from_str_df(
         nb_outcomes_df, 'early_onset_sepsis', sim_years)[0]
