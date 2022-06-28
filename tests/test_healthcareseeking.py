@@ -521,3 +521,131 @@ def test_force_healthcare_seeking_control_of_behaviour_through_parameters_and_ar
     sim.make_initial_population(n=100)
     sim.simulate(end_date=start_date + pd.DateOffset(days=0))
     assert value_in_argument == sim.modules['HealthSeekingBehaviour'].force_any_symptom_to_lead_to_healthcareseeking
+
+
+def test_same_day_healthcare_seeking_for_emergency_symptoms(seed, tmpdir):
+    """Check that emergency symptoms cause the FirstGenericEmergency HSI_Event to run on the same day."""
+
+    date_symptom_is_imposed = Date(2010, 1, 3)
+
+    class DummyDisease(Module):
+        METADATA = {Metadata.USES_SYMPTOMMANAGER}
+        """Dummy Disease - it's only job is to create a symptom and impose it everyone"""
+
+        def read_parameters(self, data_folder):
+            self.sim.modules['SymptomManager'].register_symptom(
+                Symptom(
+                    name='Symptom_that_does_cause_emergency_healthcare_seeking',
+                    emergency_in_adults=True,
+                    emergency_in_children=True
+                ),
+            )
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            """Give person 0 the symptom on the date that the symptom is imposed."""
+            self.sim.modules['SymptomManager'].change_symptom(
+                person_id=0,
+                disease_module=self,
+                symptom_string='Symptom_that_does_cause_emergency_healthcare_seeking',
+                add_or_remove='+',
+                date_of_onset=date_symptom_is_imposed
+            )
+
+        def on_birth(self, mother, child):
+            pass
+
+    start_date = Date(2010, 1, 1)
+    sim = Simulation(start_date=start_date, seed=seed)
+
+    # Register the core modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, store_hsi_events_that_have_run=True),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 DummyDisease()
+                 )
+
+    # Run the simulation for ten days
+    end_date = start_date + DateOffset(days=10)
+    popsize = 200
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
+
+    # Open log and check that the 'HSI_GenericEmergencyFirstApptAtFacilityLevel1' was the only event to occur
+    # and that it occurred on the day that the symptom was imposed.
+    events_run = sim.modules['HealthSystem'].store_of_hsi_events_that_have_run
+
+    assert 1 == len(events_run)
+
+    only_event_that_ran = events_run[0]
+    assert 'HSI_GenericEmergencyFirstApptAtFacilityLevel1' == only_event_that_ran['HSI_Event']
+    assert date_symptom_is_imposed == only_event_that_ran['date']
+
+
+def test_same_day_healthcare_seeking_when_using_force_healthcare_seeking(seed, tmpdir):
+    """Check that when using `force_healthcare_seeking` non-emergency symptoms cause the FirstGenericNonEmergency
+    HSI_Event to happeon the same day."""
+
+    date_symptom_is_imposed = Date(2010, 1, 3)
+
+    class DummyDisease(Module):
+        METADATA = {Metadata.USES_SYMPTOMMANAGER}
+        """Dummy Disease - it's only job is to create a symptom and impose it everyone"""
+
+        def read_parameters(self, data_folder):
+            self.sim.modules['SymptomManager'].register_symptom(
+                Symptom(
+                    name='Symptom_that_does_not_cause_emergency_healthcare_seeking',
+                    emergency_in_adults=False,
+                    emergency_in_children=False
+                ),
+            )
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            """Give person 0 the symptom on the date that the symptom is imposed."""
+            self.sim.modules['SymptomManager'].change_symptom(
+                person_id=0,
+                disease_module=self,
+                symptom_string='Symptom_that_does_not_cause_emergency_healthcare_seeking',
+                add_or_remove='+',
+                date_of_onset=date_symptom_is_imposed
+            )
+
+        def on_birth(self, mother, child):
+            pass
+
+    start_date = Date(2010, 1, 1)
+    sim = Simulation(start_date=start_date, seed=seed)
+
+    # Register the core modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, store_hsi_events_that_have_run=True),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath,
+                                                               force_any_symptom_to_lead_to_healthcareseeking=True),
+                 DummyDisease()
+                 )
+
+    # Run the simulation for ten days
+    end_date = start_date + DateOffset(days=10)
+    popsize = 200
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
+
+    # Open log and check that the 'HSI_GenericFirstApptAtFacilityLevel0' was the only event to occur
+    # and that it occurred on the day that the symptom was imposed.
+    events_run = sim.modules['HealthSystem'].store_of_hsi_events_that_have_run
+
+    assert 1 == len(events_run)
+
+    only_event_that_ran = events_run[0]
+    assert 'HSI_GenericFirstApptAtFacilityLevel0' == only_event_that_ran['HSI_Event']
+    assert date_symptom_is_imposed == only_event_that_ran['date']
