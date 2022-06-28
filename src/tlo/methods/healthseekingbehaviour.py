@@ -137,7 +137,7 @@ class HealthSeekingBehaviour(Module):
 
         # Schedule the HealthSeekingBehaviourPoll
         self.theHealthSeekingBehaviourPoll = HealthSeekingBehaviourPoll(self)
-        sim.schedule_event(self.theHealthSeekingBehaviourPoll, sim.date)
+        sim.schedule_event(self.theHealthSeekingBehaviourPoll, sim.date, order_in_day='second_to_last')
 
         # Assemble the health-care seeking information from the registered symptoms
         for symptom in self.sim.modules['SymptomManager'].all_registered_symptoms:
@@ -245,7 +245,9 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         ]
 
     def apply(self, population):
-        """Determine if persons with newly onset acute generic symptoms will seek care.
+        """Determine if persons with newly onset acute generic symptoms will seek care. This event runs second-to-last
+        every day (i.e., just before the `HealthSystemScheduler`) in order that symptoms arising this day can lead to
+        FirstAttendance on the same day.
 
         :param population: the current population
         """

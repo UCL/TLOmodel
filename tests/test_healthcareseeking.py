@@ -7,6 +7,7 @@ import pandas as pd
 from pandas import DateOffset
 
 from tlo import Date, Module, Simulation
+from tlo.events import Event, IndividualScopeEventMixin
 from tlo.methods import (
     Metadata,
     chronicsyndrome,
@@ -18,6 +19,7 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
+from tlo.methods.fullmodel import fullmodel
 from tlo.methods.symptommanager import Symptom
 
 try:
@@ -524,9 +526,23 @@ def test_force_healthcare_seeking_control_of_behaviour_through_parameters_and_ar
 
 
 def test_same_day_healthcare_seeking_for_emergency_symptoms(seed, tmpdir):
-    """Check that emergency symptoms cause the FirstGenericEmergency HSI_Event to run on the same day."""
+    """Check that emergency symptoms cause the FirstGenericEmergency HSI_Event to run on the same day. N.B. The
+    fullmodel is used here because without it, the ordering of events can be correct by chance."""
 
     date_symptom_is_imposed = Date(2010, 1, 3)
+
+    class EventToImposeSymptom(Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+
+        def apply(self, person_id):
+            """Give person 0 the symptom."""
+            self.sim.modules['SymptomManager'].change_symptom(
+                person_id=0,
+                disease_module=self.module,
+                symptom_string='Symptom_that_does_cause_emergency_healthcare_seeking',
+                add_or_remove='+',
+            )
 
     class DummyDisease(Module):
         METADATA = {Metadata.USES_SYMPTOMMANAGER}
@@ -545,14 +561,8 @@ def test_same_day_healthcare_seeking_for_emergency_symptoms(seed, tmpdir):
             pass
 
         def initialise_simulation(self, sim):
-            """Give person 0 the symptom on the date that the symptom is imposed."""
-            self.sim.modules['SymptomManager'].change_symptom(
-                person_id=0,
-                disease_module=self,
-                symptom_string='Symptom_that_does_cause_emergency_healthcare_seeking',
-                add_or_remove='+',
-                date_of_onset=date_symptom_is_imposed
-            )
+            """Schedule for the symptom to be imposed on `date_symptom_is_imposed`"""
+            sim.schedule_event(EventToImposeSymptom(self, person_id=0), date_symptom_is_imposed)
 
         def on_birth(self, mother, child):
             pass
@@ -566,7 +576,7 @@ def test_same_day_healthcare_seeking_for_emergency_symptoms(seed, tmpdir):
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, store_hsi_events_that_have_run=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 DummyDisease()
+                 DummyDisease(),
                  )
 
     # Run the simulation for ten days
@@ -588,9 +598,22 @@ def test_same_day_healthcare_seeking_for_emergency_symptoms(seed, tmpdir):
 
 def test_same_day_healthcare_seeking_when_using_force_healthcare_seeking(seed, tmpdir):
     """Check that when using `force_healthcare_seeking` non-emergency symptoms cause the FirstGenericNonEmergency
-    HSI_Event to happeon the same day."""
+    HSI_Event to run on the same day."""
 
     date_symptom_is_imposed = Date(2010, 1, 3)
+
+    class EventToImposeSymptom(Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+
+        def apply(self, person_id):
+            """Give person 0 the symptom on the date that the symptom is imposed."""
+            self.sim.modules['SymptomManager'].change_symptom(
+                person_id=0,
+                disease_module=self.module,
+                symptom_string='Symptom_that_does_not_cause_emergency_healthcare_seeking',
+                add_or_remove='+',
+            )
 
     class DummyDisease(Module):
         METADATA = {Metadata.USES_SYMPTOMMANAGER}
@@ -609,14 +632,8 @@ def test_same_day_healthcare_seeking_when_using_force_healthcare_seeking(seed, t
             pass
 
         def initialise_simulation(self, sim):
-            """Give person 0 the symptom on the date that the symptom is imposed."""
-            self.sim.modules['SymptomManager'].change_symptom(
-                person_id=0,
-                disease_module=self,
-                symptom_string='Symptom_that_does_not_cause_emergency_healthcare_seeking',
-                add_or_remove='+',
-                date_of_onset=date_symptom_is_imposed
-            )
+            """Schedule for the symptom to be imposed on `date_symptom_is_imposed`"""
+            sim.schedule_event(EventToImposeSymptom(self, person_id=0), date_symptom_is_imposed)
 
         def on_birth(self, mother, child):
             pass
