@@ -77,6 +77,3 @@ def test_control_of_ordering_in_the_day(seed, tmpdir):
     dates = pd.to_datetime(events['date']).dt.date.drop_duplicates()
     for day in dates:
         assert order_on_day_one == tuple(events.loc[events['date'] == day, 'id'])
-
-    # todo for recurrences
-    # todo log only the date
