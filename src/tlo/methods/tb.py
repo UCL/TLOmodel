@@ -612,6 +612,7 @@ class Tb(Module):
         random_draw = rng.random_sample(size=len(df))
 
         # randomly select some individuals for screening and testing
+        # this may include some newly infected active tb cases (that's fine)
         screen_idx = df.index[
             df.is_alive
             & ~df.tb_diagnosed
@@ -620,12 +621,14 @@ class Tb(Module):
             ]
 
         # randomly select some symptomatic individuals for screening and testing
+        # would only be screened if have symptoms for >= 14 days
         # this rate increases by year
         screen_active_idx = df.index[
             df.is_alive
             & ~df.tb_diagnosed
             & ~df.tb_on_treatment
             & (df.tb_inf == "active")
+            & (df.tb_date_active <= (self.sim.date - pd.DateOffset(days=14)))
             & (random_draw < current_active_testing_rate)
             ]
 
@@ -634,7 +637,7 @@ class Tb(Module):
         for person in all_screened:
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Tb_ScreeningAndRefer(person_id=person, module=self),
-                topen=self.sim.date,
+                topen=self.sim.date + DateOffset(days=14),
                 tclose=None,
                 priority=0,
             )
@@ -2595,15 +2598,15 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # ------------------------------------ CASE NOTIFICATIONS ------------------------------------
         # number diagnoses (new, relapse, reinfection) in last timeperiod
         new_tb_diagnosis = len(
-            df[(df.tb_date_diagnosed >= (now - DateOffset(months=self.repeat)))]
+            df[(df.tb_date_diagnosed > (now - DateOffset(months=self.repeat)))]
         )
 
         # ------------------------------------ TREATMENT ------------------------------------
         # number of tb cases who became active in last timeperiod and initiated treatment
         new_tb_tx = len(
             df[
-                (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
-                & (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
+                (df.tb_date_active > (now - DateOffset(months=self.repeat)))
+                & (df.tb_date_treated > (now - DateOffset(months=self.repeat)))
                 ]
         )
 
@@ -2617,7 +2620,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # ipt coverage
         new_tb_ipt = len(
             df[
-                (df.tb_date_ipt >= (now - DateOffset(months=self.repeat)))
+                (df.tb_date_ipt > (now - DateOffset(months=self.repeat)))
             ]
         )
 
@@ -2634,6 +2637,34 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 "tbNewDiagnosis": new_tb_diagnosis,
                 "tbTreatmentCoverage": tx_coverage,
                 "tbIptCoverage": ipt_coverage,
+            },
+        )
+
+        # ------------------------------------ TREATMENT DELAYS ------------------------------------
+        # for every person initiated on treatment, record time from onset to treatment
+        # each year a series of intervals in days (treatment date - onset date) are recorded
+        # convert to list
+
+        # adults
+        # get index of adults starting tx in last time-period
+        adult_tx_idx = df.loc[(df.age_years >= 16) &
+                     (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))].index
+        # calculate treatment_date - onset_date for each person in index
+        adult_tx_delays = (df.loc[adult_tx_idx, "tb_date_treated"] - df.loc[adult_tx_idx, "tb_date_active"]).dt.days
+        adult_tx_delays = adult_tx_delays.tolist()
+
+        # children
+        child_tx_idx = df.loc[(df.age_years < 16) &
+                     (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))].index
+        child_tx_delays = (df.loc[child_tx_idx, "tb_date_treated"] - df.loc[child_tx_idx, "tb_date_active"]).dt.days
+        child_tx_delays = child_tx_delays.tolist()
+
+        logger.info(
+            key="tb_treatment_delays",
+            description="TB time from onset to treatment",
+            data={
+                "tbTreatmentDelayAdults": adult_tx_delays,
+                "tbTreatmentDelayChildren": child_tx_delays,
             },
         )
 
