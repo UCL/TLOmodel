@@ -9,6 +9,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Dict, Optional, TextIO
 
+import git
 import numpy as np
 import pandas as pd
 
@@ -586,3 +587,21 @@ class LogsDict(Mapping):
         for key in self.keys():
             self.__getitem__(key, cache=True)
         return self.__dict__
+
+
+def get_root_path(starter_path: Optional[Path] = None) -> Path:
+    """Returns the absolute path of the top level of the repository. `starter_path` optionally gives a reference
+    location from which to begin search; if omitted the location of this file is used."""
+
+    def get_git_root(path: Path) -> Path:
+        """Return path of git repo. Based on: https://stackoverflow.com/a/41920796"""
+        git_repo = git.Repo(path, search_parent_directories=True)
+        git_root = git_repo.working_dir
+        return Path(git_root)
+
+    if starter_path is None:
+        return get_git_root(__file__)
+    elif Path(starter_path).exists() and Path(starter_path).is_absolute():
+        return get_git_root(starter_path)
+    else:
+        raise OSError("File Not Found")
