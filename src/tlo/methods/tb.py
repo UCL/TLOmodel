@@ -93,9 +93,9 @@ class Tb(Module):
         "tb_date_latent": Property(
             Types.DATE, "Date acquired tb infection (latent stage)"
         ),
-        "tb_scheduled_date_active": Property(
-            Types.DATE, "Date active tb is scheduled to start"
-        ),
+        # "tb_scheduled_date_active": Property(
+        #     Types.DATE, "Date active tb is scheduled to start"
+        # ),
         "tb_date_active": Property(Types.DATE, "Date active tb started"),
         "tb_smear": Property(
             Types.BOOL,
@@ -857,7 +857,7 @@ class Tb(Module):
         """
 
         # 1) Regular events
-        sim.schedule_event(TbActiveEvent(self), sim.date + DateOffset(days=0))
+        # sim.schedule_event(TbActiveEvent(self), sim.date + DateOffset(days=0))
         sim.schedule_event(TbActiveCasePoll(self), sim.date + DateOffset(years=1))
 
         sim.schedule_event(TbTreatmentAndRelapseEvents(self), sim.date + DateOffset(months=1))
@@ -889,7 +889,7 @@ class Tb(Module):
         df.at[child_id, "tb_strain"] = "none"
 
         df.at[child_id, "tb_date_latent"] = pd.NaT
-        df.at[child_id, "tb_scheduled_date_active"] = pd.NaT
+        # df.at[child_id, "tb_scheduled_date_active"] = pd.NaT
         df.at[child_id, "tb_date_active"] = pd.NaT
         df.at[child_id, "tb_smear"] = False
 
@@ -1007,12 +1007,12 @@ class Tb(Module):
 
         # schedule onset of active tb, time now up to 1 year
         for person_id in idx_new_infection:
-            date_progression = now + pd.DateOffset(
-                days=rng.randint(0, 365)
+            self.sim.schedule_event(
+                event=TbActiveEvent(person_id=person_id,
+                                    module=self,
+                                    date=now + pd.DateOffset(days=rng.randint(0, 365)),
+                                    )
             )
-
-            # set date of active tb - properties will be updated at TbActiveEvent every month
-            df.at[person_id, "tb_scheduled_date_active"] = date_progression
 
     def consider_ipt_for_those_initiating_art(self, person_id):
         """
@@ -1457,7 +1457,6 @@ class TbTreatmentAndRelapseEvents(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=1))
 
     def apply(self, population):
-
         # schedule some background rates of tb testing (non-symptom + symptom-driven)
         self.module.send_for_screening(population)
         self.module.end_treatment(population)
@@ -1465,9 +1464,9 @@ class TbTreatmentAndRelapseEvents(RegularEvent, PopulationScopeEventMixin):
 
 
 # todo make this individual event called by TbActiveCasePoll
+# todo find all calls with TbScheduledDateActive and schedule this event instead
 class TbActiveEvent(Event, IndividualScopeEventMixin):
     """
-    * check for those with dates of active tb onset within last time-period
     *1 change individual properties for active disease
     *2 assign symptoms
     *3 if HIV+, assign smear status and schedule AIDS onset
@@ -1480,7 +1479,6 @@ class TbActiveEvent(Event, IndividualScopeEventMixin):
     def apply(self, person_id):
         df = self.sim.population.props
         person = df.loc[person_id]
-        m = self.module
         now = self.sim.date
         p = self.module.parameters
         rng = self.module.rng
