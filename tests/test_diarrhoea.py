@@ -1072,7 +1072,6 @@ def test_zero_deaths_when_perfect_treatment(seed):
 
         # Return number of children who have died with a cause of Diarrhoea
         died_of_diarrhoea = df.loc[~df.is_alive & df['cause_of_death'].str.startswith('Diarrhoea')].index
-        print(died_of_diarrhoea)
         return len(died_of_diarrhoea)
 
     # Some deaths with imperfect treatment and default healthcare seeking
