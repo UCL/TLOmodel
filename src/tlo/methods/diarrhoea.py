@@ -1152,6 +1152,10 @@ class Models:
         if un_clinical_acute_malnutrition == 'SAM':
             risk *= self.p['rr_diarr_death_SAM']
 
+        # For the lowest risk cause (watery diarrhoea, without dehydration, reset risk of death to zero).
+        if (type == 'watery') and (dehydration == 'none'):
+            return 0.0
+
         return risk
 
     def will_die(self,
