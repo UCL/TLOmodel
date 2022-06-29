@@ -943,61 +943,84 @@ def test_zero_deaths_when_perfect_treatment(seed):
     """Check that there are no deaths when treatment is perfect and there is perfect healthcare seeking, and no
     healthcare constraints."""
 
-    class DummyModule(Module):
-        """Dummy module that will cause everyone to have diarrhoea from the first day of the simulation"""
-        METADATA = {Metadata.DISEASE_MODULE}
+    def get_number_of_deaths_from_cohort_of_children_with_diarrhoea(
+        force_any_symptom_to_lead_to_healthcareseeking,
+        do_make_treatment_perfect,
+        do_increase_risk_of_death=True,
+    ) -> int:
+        """Run a cohort of children all with newly onset diarrhoea and return number of them that die from diarrhoea."""
 
-        def read_parameters(self, data_folder):
-            pass
+        class DummyModule(Module):
+            """Dummy module that will cause everyone to have diarrhoea from the first day of the simulation"""
+            METADATA = {Metadata.DISEASE_MODULE}
 
-        def initialise_population(self, population):
-            pass
+            def read_parameters(self, data_folder):
+                pass
 
-        def initialise_simulation(self, sim):
-            diarrhoea_module = sim.modules['Diarrhoea']
-            pathogens = diarrhoea_module.pathogens
+            def initialise_population(self, population):
+                pass
 
-            df = sim.population.props
-            for idx in df[df.is_alive].index:
-                sim.schedule_event(
-                    event=DiarrhoeaIncidentCase(module=diarrhoea_module,
-                                                person_id=idx,
-                                                pathogen=self.rng.choice(pathogens)),
-                    date=sim.date
-                )
+            def initialise_simulation(self, sim):
+                diarrhoea_module = sim.modules['Diarrhoea']
+                pathogens = diarrhoea_module.pathogens
 
-    start_date = Date(2010, 1, 1)
-    popsize = 1_000
-    sim = Simulation(start_date=start_date, seed=seed)
-    # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(
-                     resourcefilepath=resourcefilepath,
-                     disable=False,
-                     cons_availability='all',
-                 ),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(
-                     resourcefilepath=resourcefilepath,
-                     force_any_symptom_to_lead_to_healthcareseeking=True  # every symptom leads to health-care seeking
-                 ),
-                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
-                 diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
-                 DummyModule(),
-                 )
-    # Make entire population under five years old
-    sim.modules['Demography'].parameters['max_age_initial'] = 5
+                df = sim.population.props
+                for idx in df[df.is_alive].index:
+                    sim.schedule_event(
+                        event=DiarrhoeaIncidentCase(module=diarrhoea_module,
+                                                    person_id=idx,
+                                                    pathogen=self.rng.choice(pathogens)),
+                        date=sim.date
+                    )
 
-    # Set high risk of death and perfect treatment
-    increase_risk_of_death(sim.modules['Diarrhoea'])
-    make_treatment_perfect(sim.modules['Diarrhoea'])
+        start_date = Date(2010, 1, 1)
+        popsize = 1_000
+        sim = Simulation(start_date=start_date, seed=seed)
+        # Register the appropriate modules
+        sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                     simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                     healthsystem.HealthSystem(
+                         resourcefilepath=resourcefilepath,
+                         disable=False,
+                         cons_availability='all',
+                     ),
+                     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                     healthseekingbehaviour.HealthSeekingBehaviour(
+                         resourcefilepath=resourcefilepath,
+                         force_any_symptom_to_lead_to_healthcareseeking=force_any_symptom_to_lead_to_healthcareseeking
+                         # every symptom leads to health-care seeking
+                     ),
+                     diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
+                     diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
+                     DummyModule(),
+                     )
+        # Make entire population under five years old
+        sim.modules['Demography'].parameters['max_age_initial'] = 5
 
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=start_date + pd.DateOffset(months=3))
+        # Set high risk of death and perfect treatment
+        if do_increase_risk_of_death:
+            increase_risk_of_death(sim.modules['Diarrhoea'])
 
-    df = sim.population.props
+        if do_make_treatment_perfect:
+            make_treatment_perfect(sim.modules['Diarrhoea'])
 
-    # Check no deaths to diarrhoea
-    assert not df.loc[~df.is_alive, 'cause_of_death'].str.startswith('Diarrhoea').any()
+        sim.make_initial_population(n=popsize)
+        sim.simulate(end_date=start_date + pd.DateOffset(months=3))
+
+        df = sim.population.props
+
+        # Return number of children who have died with a cause of Diarrhoea
+        return df.loc[~df.is_alive, 'cause_of_death'].str.startswith('Diarrhoea').sum()
+
+    # Some deaths with imperfect treatment and default healthcare seeking
+    assert 0 < get_number_of_deaths_from_cohort_of_children_with_diarrhoea(
+        force_any_symptom_to_lead_to_healthcareseeking=False,
+        do_make_treatment_perfect=False,
+    )
+
+    # No deaths with perfect healthcare seeking and perfect treatment
+    assert 0 == get_number_of_deaths_from_cohort_of_children_with_diarrhoea(
+        force_any_symptom_to_lead_to_healthcareseeking=True,
+        do_make_treatment_perfect=True,
+    )
