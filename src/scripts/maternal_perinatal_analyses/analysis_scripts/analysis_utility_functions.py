@@ -336,7 +336,6 @@ def comparison_graph_multiple_scenarios(intervention_years, data_dict, y_label, 
     plt.xlabel('Year')
     plt.title(title)
     plt.gca().set_ylim(bottom=0)
-    #plt.style.use('seaborn-darkgrid')
     plt.legend()
     plt.savefig(f'./{graph_location}/{save_name}.png')
     plt.show()
