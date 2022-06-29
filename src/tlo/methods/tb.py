@@ -1374,12 +1374,12 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
 
         # introduce consumables and HR constraints
         if (scenario == 2) or (scenario == 3):
-            # add in constraints on consumables and personnel
+            # list only things that change: constraints on consumables and personnel
             new_parameters = {
                 'mode_appt_constraints': 2,  # hard constraints
                 'ignore_priority': False,  # If True do not use priority info in HSI event to schedule
-                'capabilities_coefficient': 1.0,
                 'cons_availability': 'default',  # use cons availability from LMIS
+                'beds_availability': 'default',  # use bed availability in resourcefile
                 'use_funded_or_actual_staffing': 'actual',  # use actual staff distribution
             }
             self.sim.schedule_event(
