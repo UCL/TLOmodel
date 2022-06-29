@@ -33,7 +33,7 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2018, 1, 1)
+end_date = Date(2014, 1, 1)
 popsize = 10000
 
 scenario = 1
@@ -93,9 +93,9 @@ sim.simulate(end_date=end_date)
 output = parse_log_file(sim.log_filepath)
 
 # save the results, argument 'wb' means write using binary mode. use 'rb' for reading file
-# with open(outputpath / "default_run.pickle", "wb") as f:
-#     # Pickle the 'data' dictionary using the highest protocol available.
-#     pickle.dump(dict(output), f, pickle.HIGHEST_PROTOCOL)
+with open(outputpath / "default_run.pickle", "wb") as f:
+    # Pickle the 'data' dictionary using the highest protocol available.
+    pickle.dump(dict(output), f, pickle.HIGHEST_PROTOCOL)
 
 for key, dfs in output.items():
     if key.startswith("tlo."):
