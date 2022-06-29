@@ -2296,10 +2296,12 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Tb_Prevention_Ipt"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.number_of_occurrences = 0
 
     def apply(self, person_id, squeeze_factor):
 
         logger.debug(key="message", data=f"Starting IPT for person {person_id}")
+        self.number_of_occurrences += 1
 
         df = self.sim.population.props  # shortcut to the dataframe
 
@@ -2339,13 +2341,16 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
                     Tb_DecisionToContinueIPT(self.module, person_id),
                     self.sim.date + DateOffset(months=6),
                 )
+
             else:
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    HSI_Tb_Start_or_Continue_Ipt(person_id=person_id, module=self.module),
-                    topen=self.sim.date,
-                    tclose=self.sim.date + pd.DateOffset(days=14),
-                    priority=0,
-                )
+                # Reschedule this HSI to occur again, up to a 3 times in total
+                if self.number_of_occurrences < 3:
+                    self.sim.modules["HealthSystem"].schedule_hsi_event(
+                        self,
+                        topen=self.sim.date + pd.DateOffset(days=1),
+                        tclose=self.sim.date + pd.DateOffset(days=14),
+                        priority=0,
+                    )
 
 
 class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):
