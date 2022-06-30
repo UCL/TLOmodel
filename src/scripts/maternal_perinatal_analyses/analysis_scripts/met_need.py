@@ -12,7 +12,18 @@ from scripts.maternal_perinatal_analyses.analysis_scripts import analysis_utilit
 def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath, intervention_years,
                                                  service_of_interest):
     """
+    When called this function will extract and output results relating to met need for the specific interventions
+    delivered during the pregnancy modules. (met need here meaning (total cases/total treatments) for each
+    'death causing' complication in the model. In addition the function will output the proportion of women
+    who have died that have experienced factors impacting treatment such as delays, not seeking care, no consumables
+    etc etc)
+    :param scenario_file_dict: dict containing names of python scripts for each scenario of interest
+    :param outputspath: directory for graphs to be saved
+    :param intervention_years: years of interest for the analysis
+    :param service_of_interest: ANC/SBA/PNC
     """
+    # TODO: this is still a bit of a work in process and should be refined later (i.e. errors with uncertainty
+    #  intervals and some estimates exceed 100 in certain runs)
 
     # Find results folder (most recent run generated using that scenario_filename)
     results_folders = {k: get_scenario_outputs(scenario_file_dict[k], outputspath)[-1] for k in scenario_file_dict}
@@ -392,5 +403,3 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
         plt.show()
 
     # todo: proportion of women who died with 0, 1, 2, 3 factors etc?
-
-    x ='y'

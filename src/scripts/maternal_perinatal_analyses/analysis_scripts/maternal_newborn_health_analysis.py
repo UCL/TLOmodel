@@ -3,13 +3,10 @@ import numpy as np
 import os
 from matplotlib import pyplot as plt
 
-plt.style.use('seaborn-darkgrid')
-
 from ..analysis_scripts import analysis_utility_functions
 from tlo.analysis.utils import extract_results, get_scenario_outputs
 
-
-# from tlo.methods.demography import get_scaling_factor
+plt.style.use('seaborn-darkgrid')
 
 
 def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, intervention_years, service_of_interest,
@@ -21,6 +18,7 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
     :param outputspath: directory for graphs to be saved
     :param intervention_years: years of interest for the analysis
     :param service_of_interest: ANC/SBA/PNC
+    :param show_all_results: bool - whether to output all results
     """
 
     # Create dictionary containing the results folder for each scenario
@@ -40,8 +38,10 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
                                                                                        intervention_years)
 
     # ===================================== INTERVENTION COVERAGE ====================================================
-    if service_of_interest == 'anc' or show_all_results:
+    # Depending on the service of interest for the scenarios being analysed, here we output the coverage of
+    # relevant interventions
 
+    if service_of_interest == 'anc' or show_all_results:
         def get_anc_coverage(folder, service_structure):
             """ Returns the mean, lower quantile, upper quantile proportion of women who gave birth per year who
             received
@@ -96,8 +96,6 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
 
     if service_of_interest == 'sba' or show_all_results:
         def get_delivery_place_info(folder, intervention_years):
-            """
-            """
             deliver_setting_results = extract_results(
                 folder,
                 module="tlo.methods.labour",
@@ -258,7 +256,8 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
             f'Total {group} Deaths (scaled)', f'Yearly Baseline {group} Deaths Compared to Intervention',
             plot_destination_folder, f'{group}_crude_deaths_comparison.png')
 
-    #  ================================== STILLBIRTH  ===============================================
+    #  ================================== STILLBIRTH  ================================================================
+    # For interventions that may impact rates of stillbirth we output that information here
     if (service_of_interest != 'pnc') or show_all_results:
         sbr_data = analysis_utility_functions.return_stillbirth_data_from_multiple_scenarios(
             results_folders, births_dict, intervention_years)
@@ -288,7 +287,7 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
             plot_destination_folder, 'crude_stillbirths_comparison.png')
 
     # =================================================== DALYS =======================================================
-    # Store DALYs data for baseline and intervention
+    # Here we extract maternal and neonatal DALYs from each scenario to allow for comparison
     dalys_data = analysis_utility_functions.return_dalys_from_multiple_scenarios(results_folders, intervention_years)
     for dict_key, axis, title, save_name in zip(['maternal_dalys_crude', 'maternal_dalys_rate', 'maternal_yll_crude',
                                                  'maternal_yll_rate', 'maternal_yld_crude', 'maternal_yld_rate',
@@ -326,6 +325,7 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
             intervention_years, dalys_data, dict_key, axis, title, plot_destination_folder, save_name)
 
     # ========================================= DIFFERENCE IN OUTCOMES ===============================================
+    # Next we calculate the crude and percentage difference between scenarios for each year
     if service_of_interest == 'pnc':
         output_list = ['direct_mmr', 'nmr']
         data_list = [death_data, death_data]
@@ -363,8 +363,9 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
             plt.show()
 
     # ========================================= HEALTH SYSTEM OUTCOMES ================================================
-    if service_of_interest == 'anc' or show_all_results:
+    # Next we output certain health system outcomes such as number of HSIs by scenario
 
+    if service_of_interest == 'anc' or show_all_results:
         def get_hsi_counts_from_cowdp_logger(folder, intervention_years):
 
             def get_counts_of_hsi_by_treatment_id(_df):
@@ -386,14 +387,13 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
         hs_data = {k: get_hsi_counts_from_cowdp_logger(results_folders[k], intervention_years) for k in
                    results_folders}
 
-        # Better as a rate?
+        # todo: Better as a rate?
         analysis_utility_functions.comparison_graph_multiple_scenarios(
             intervention_years, hs_data, 'Crude Number',
             'Total Number of Antenatal Care Visits per Year Per Scenario',
             plot_destination_folder, f'{service_of_interest}_visits')
 
     if service_of_interest == 'pnc' or show_all_results:
-
         def get_hsi_counts_from_summary_logger(folder, intervention_years):
             hsi = extract_results(
                 folder,
@@ -422,7 +422,7 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
         hs_data = {k: get_hsi_counts_from_summary_logger(results_folders[k], intervention_years) for k in
                    results_folders}
 
-        # Better as a rate?
+        # todo: Better as a rate?
         analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
             intervention_years, hs_data, 'mat',
             'Crude Number',
@@ -436,12 +436,14 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
             plot_destination_folder, f'{service_of_interest}_neo_visits')
 
     # =========================================== ADDITIONAL OUTCOMES ================================================
-    # ------------------------------------------------ MALARIA ------------------------------------------------------
-    if service_of_interest == 'anc' or show_all_results:
-        # todo: what else? (proportion of infected women receiving iptp)
-        def get_malaria_incidence_in_pregnancy(folder):
-            # Number of clinical episodes in pregnant women per year
+    # Finally we output secondary outcomes related to other disease in the model which are related to/affected by
+    # the pregnancy modules
 
+    # ------------------------------------------------ MALARIA ------------------------------------------------------
+    # Output malaria total incidence and clinical cases  during pregnancy
+
+    if service_of_interest == 'anc' or show_all_results:
+        def get_malaria_incidence_in_pregnancy(folder):
             preg_clin_counter_dates = extract_results(
                 folder,
                 module="tlo.methods.malaria",
@@ -487,6 +489,7 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
             plot_destination_folder, 'mal_incidence')
 
         # ------------------------------------------------ TB ------------------------------------------------------
+        # Output total new Tb diagnoses per year (all people) and then the coverage of treatment
         def get_tb_info_in_pregnancy(folder):
             # New Tb diagnoses per year
             tb_new_diag_dates = extract_results(
@@ -533,10 +536,11 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
             plot_destination_folder, 'tb_treatment')
 
     # ------------------------------------------------ HIV ------------------------------------------------------
+    # Output the proportion of all women per year that are tested for HIV, the per-capita testing rate and the
+    # number of women on ART per year
+
     if (service_of_interest != 'sba') or show_all_results:
         def get_hiv_information(folder):
-            # Proportion of adult females tested in the last year
-
             hiv_tests_dates = extract_results(
                 folder,
                 module="tlo.methods.hiv",
@@ -600,6 +604,10 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
             'Women',
             'Number of Women Receiving ART per Year Per Scenario',
             plot_destination_folder, 'hiv_women_art')
+
+    # ------------------------------------------- Depression ---------------------------------------------------------
+    # For depression we output diagnosis of ever depressed people, proportion of depressed people started on
+    # antidepressants and proportion of depressed people started on talking therapy
 
     if service_of_interest != 'sba' or show_all_results:
         def get_depression_info_in_pregnancy(folder, intervention_years):

@@ -377,7 +377,7 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
         plot_destination_folder, 'aph')
 
     # --------------------------------------------- Preterm birth ... ------------------------------------------------
-
+    # Extract and plot rate of preterm birth rates across scenarios
     def get_ptl_data(total_births_per_year, comps_df):
         early_ptl_data = analysis_utility_functions.get_comp_mean_and_rate(
             'early_preterm_labour', total_births_per_year, comps_df['labour'], 100, intervention_years)
@@ -399,6 +399,7 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
         plot_destination_folder, 'ptl')
 
     # --------------------------------------------- Post term birth ... -----------------------------------------------
+    # Extract and plot rate of post term birth rates across scenarios
     potl = {k: analysis_utility_functions.get_comp_mean_and_rate(
         'post_term_labour', preg_dict[k][0], comp_dfs[k]['labour'], 100, intervention_years)
         for k in results_folders}
@@ -409,6 +410,7 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
         plot_destination_folder, 'potl')
 
     # ------------------------------------------------- Birth weight... ----------------------------------------------
+    # Extract and plot prevalence of low birth weight, macrosomia and small for gestational age
     lbw = {k: analysis_utility_functions.get_comp_mean_and_rate(
         'low_birth_weight', births_dict[k][0], neo_comp_dfs[k]['newborn_outcomes'], 100, intervention_years)
         for k in results_folders}
@@ -437,6 +439,7 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
         plot_destination_folder, 'sga')
 
     # --------------------------------------------- Obstructed Labour... ---------------------------------------------
+    # Extract and plot rate of obstructed labour across scenarios
     ol = {k: analysis_utility_functions.get_comp_mean_and_rate(
         'obstructed_labour', births_dict[k][0], comp_dfs[k]['labour'], 1000, intervention_years)
         for k in results_folders}
@@ -447,6 +450,7 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
         plot_destination_folder, 'ol')
 
     # --------------------------------------------- Uterine rupture... ------------------------------------------------
+    # Extract and plot rate of uterine rupture across scenarios
     ur = {k: analysis_utility_functions.get_comp_mean_and_rate(
         'uterine_rupture', births_dict[k][0], comp_dfs[k]['labour'], 1000, intervention_years)
         for k in results_folders}
@@ -457,7 +461,8 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
         plot_destination_folder, 'ur')
 
     # ---------------------------Caesarean Section Rate & Assisted Vaginal Delivery Rate... ---------------------------
-    def get_delivery_data(results_folder,total_births_per_year):
+    # Extract and plot rates of caesarean section and assisted vaginal delivery
+    def get_delivery_data(results_folder, total_births_per_year):
         delivery_mode = extract_results(
             results_folder,
             module="tlo.methods.labour",
@@ -490,6 +495,8 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
         plot_destination_folder, 'avd')
 
     # ------------------------------------------ Maternal Sepsis Rate... ----------------------------------------------
+    # Extract and plot rates of maternal sepsis - here total rate is derived by summing the rates across the pregnancy
+    # time points
     def get_total_sepsis_rates(total_births_per_year, comps_df):
         an_sep_data = analysis_utility_functions.get_comp_mean_and_rate(
             'clinical_chorioamnionitis', total_births_per_year, comps_df['pregnancy_supervisor'], 1000,
@@ -506,9 +513,8 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
 
         pn_la_sep_data = analysis_utility_functions.get_comp_mean_and_rate(
             'sepsis_postnatal', total_births_per_year, comps_df['labour'], 1000, intervention_years)
-        pn_la_number = analysis_utility_functions.get_mean_and_quants_from_str_df(comps_df['labour'],
-                                                                               'sepsis_postnatal',
-                                                                                  intervention_years)
+        pn_la_number = analysis_utility_functions.get_mean_and_quants_from_str_df(
+            comps_df['labour'], 'sepsis_postnatal', intervention_years)
 
         pn_sep_data = analysis_utility_functions.get_comp_mean_and_rate(
             'sepsis', total_births_per_year, comps_df['postnatal_supervisor'], 1000, intervention_years)
@@ -562,6 +568,8 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
         plot_destination_folder, 'pn_sep')
 
     # ----------------------------------------- Postpartum Haemorrhage... ---------------------------------------------
+    # Extract and plot rates of postpartum sepsis - here total rate is derived by summing the rates across the modules
+
     def get_pph_data(total_births_per_year, comps_df):
         la_pph_data = analysis_utility_functions.get_comp_mean_and_rate(
             'primary_postpartum_haemorrhage', total_births_per_year, comps_df['labour'], 1000, intervention_years)

@@ -10,14 +10,13 @@ from ..analysis_scripts import analysis_utility_functions
 plt.style.use('seaborn')
 
 
-def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, sim_years, show_and_store_graphs):
+def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, sim_years):
     """
-    :param scenario_filename:
-    :param pop_size:
-    :param outputspath:
-    :param sim_years:
-    :param show_and_store_graphs:
-    :return:
+    This function extracts incidence rates (and more) from the model and generates key calibration plots
+    :param scenario_filename: file name of the scenario
+    :param pop_size: population size this scenario was run on
+    :param outputspath:directory for graphs to be saved
+    :param sim_years: years the scenario was ran for
     """
 
     # Find results folder (most recent run generated using that scenario_filename)
@@ -29,8 +28,6 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         os.makedirs(f'{outputspath}/calibration_output_graphs_{pop_size}_{results_folder.name}')
 
     graph_location = path
-
-    # create_pickles_locally(results_folder)
 
     # ============================================HELPER FUNCTIONS... =================================================
     def get_modules_maternal_complication_dataframes(module):
