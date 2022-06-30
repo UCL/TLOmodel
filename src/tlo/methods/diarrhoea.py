@@ -1152,6 +1152,10 @@ class Models:
         if un_clinical_acute_malnutrition == 'SAM':
             risk *= self.p['rr_diarr_death_SAM']
 
+        # For the lowest risk cause (watery diarrhoea, without dehydration, reset risk of death to zero).
+        if (type == 'watery') and (dehydration == 'none'):
+            return 0.0
+
         return risk
 
     def will_die(self,
@@ -1183,12 +1187,19 @@ class Models:
 
     def does_treatment_prevent_death(self, **kwargs):
         """For a case of diarrhoea that will cause death if untreated, that is now being treated, determine if the
-        treatment will prevent a death from occuring.
-        Each parameter can be provided as a single value or as an itterable representing the status as that
-        ("before_treatment", "after_treatment").
+        treatment will prevent a death from occurring.
         This method is called for a person for whom a death is scheduled and is receiving treatment. If the outcome is
-        True then the death should be cancalled as the change in circumstances (treatment of diarrhoea type or
-        dehydration) have reduced the probabilty of death such that there it will not occur."""
+        True then the death should be cancelled as the change in circumstances (treatment of diarrhoea type or
+        dehydration) have reduced the probability of death such that there it will not occur."""
+
+        # Return outcome, determined probabilistically
+        return self.rng.rand() < self._get_probability_that_treatment_blocks_death(**kwargs)
+
+    def _get_probability_that_treatment_blocks_death(self, **kwargs):
+        """Return probability that treatment blocks deaths, computed as the probability of not dying in the treated
+        state, given that the person was going to die in the before treated state.
+        Each argument can be provided as a single value or as an iterable representing the status as that
+        ("before_treatment", "after_treatment")."""
 
         def is_iterable_and_not_string(x):
             return isinstance(x, Iterable) and not isinstance(x, str)
@@ -1204,11 +1215,8 @@ class Models:
             )
 
         # Probability that treatment "blocks" the death for someone that would have died.
-        prob_treatment_blocks_death = (1.0 - prob_death['after_treatment'] / prob_death['before_treatment']) if \
+        return (1.0 - (prob_death['after_treatment'] / prob_death['before_treatment'])) if \
             prob_death['before_treatment'] != 0.0 else 1.0
-
-        # Return outcome, determine probabilstically
-        return self.rng.rand() < prob_treatment_blocks_death
 
     def get_symptoms(self, pathogen):
         """For new incident case of diarrhoea, determine the symptoms that onset."""
@@ -1669,6 +1677,6 @@ def make_treatment_perfect(diarrhoea_module):
     diarrhoea_module.parameters['prob_antibiotic_cures_dysentery'] = 1.0
 
     # Apply perfect assessment and referral
-    diarrhoea_module.parameters['prob_hospitalization_referral_for_severe_diarrhoea'] = 1.0
+    diarrhoea_module.parameters['prob_hospitalization_on_danger_signs'] = 1.0
     diarrhoea_module.parameters['sensitivity_severe_dehydration_visual_inspection'] = 1.0
     diarrhoea_module.parameters['specificity_severe_dehydration_visual_inspection'] = 1.0

@@ -143,7 +143,7 @@ def test_perfect_run_of_anc_contacts_no_constraints(seed):
 
     sim.make_initial_population(n=100)
 
-    params = sim.modules['CareOfWomenDuringPregnancy'].current_parameters
+    params = sim.modules['CareOfWomenDuringPregnancy'].parameters
     params_dep = sim.modules['Depression'].parameters
 
     # Set sensitivity/specificity of dx_tests to one
@@ -585,7 +585,7 @@ def test_initiation_of_treatment_for_maternal_anaemia_during_antenatal_inpatient
     sim.make_initial_population(n=100)
 
     # Set DxTest parameters to 1 to ensure anaemia is detected correctly
-    params = sim.modules['CareOfWomenDuringPregnancy'].current_parameters
+    params = sim.modules['CareOfWomenDuringPregnancy'].parameters
     params['sensitivity_fbc_hb_test'] = 1.0
     params['specificity_fbc_hb_test'] = 1.0
 
@@ -608,6 +608,11 @@ def test_initiation_of_treatment_for_maternal_anaemia_during_antenatal_inpatient
     sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id] = {'severe_anaemia_resolution': pd.NaT,
                                                                              'delay_one_two': False,
                                                                              'delay_three': False}
+
+    # and over ride quality parameters
+    lparams = sim.modules['Labour'].current_parameters
+    lparams['prob_hcw_avail_blood_tran'] = 1.0
+    lparams['mean_hcw_competence_hp'] = [1.0, 1.0]
 
     # Set anaemia status
     df.at[mother_id, 'ps_anaemia_in_pregnancy'] = 'severe'

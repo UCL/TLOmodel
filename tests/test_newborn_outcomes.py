@@ -412,11 +412,15 @@ def test_newborn_sba_hsi_deliveries_resuscitation_treatment_as_expected(seed):
 
     # set risk of comps very high and force care seeking
     params = sim.modules['NewbornOutcomes'].current_parameters
+    la_params = sim.modules['Labour'].parameters
     params['prob_encephalopathy'] = 1.0
     params['prob_enceph_severity'] = [0, 0, 1]
     params['treatment_effect_resuscitation'] = 0.0
     params['sensitivity_of_assessment_of_ftt_hc'] = 1.0
     params['cfr_enceph'] = 1.0
+    la_params['prob_hcw_avail_neo_resus'] = 1.0
+    la_params['mean_hcw_competence_hc'] = [[1.0, 1.0], [1.0, 1.0]]
+    la_params['mean_hcw_competence_hp'] = [[1.0, 1.0], [1.0, 1.0]]
 
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
@@ -459,9 +463,14 @@ def test_newborn_postnatal_check_hsi_delivers_treatment_as_expected(seed):
 
     # set risk of comps very high and force care seeking
     params = sim.modules['NewbornOutcomes'].current_parameters
+    la_params = sim.modules['Labour'].parameters
+
     # set probabilities that effect delivery of treatment to 1
     params['sensitivity_of_assessment_of_neonatal_sepsis_hp'] = 1.0
     params['sensitivity_of_assessment_of_lbw_hp'] = 1.0
+    la_params['prob_hcw_avail_iv_abx'] = 1.0
+    la_params['mean_hcw_competence_hc'] = [[1.0, 1.0], [1.0, 1.0]]
+    la_params['mean_hcw_competence_hp'] = [[1.0, 1.0], [1.0, 1.0]]
 
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 

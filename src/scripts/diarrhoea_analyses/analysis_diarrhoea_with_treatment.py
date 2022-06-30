@@ -40,7 +40,7 @@ if not os.path.exists(log_filename):
     # Do not run this cell if you already have a  logfile from a simulation:
     start_date = Date(2010, 1, 1)
     end_date = Date(2019, 12, 31)
-    popsize = 20_000
+    popsize = 50_000
 
     log_config = {
         'filename': 'diarrhoea_with_treatment',

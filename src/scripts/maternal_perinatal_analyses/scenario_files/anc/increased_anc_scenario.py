@@ -20,38 +20,45 @@ from tlo.methods import (
     pregnancy_supervisor,
     stunting,
     symptommanager,
+    tb,
     wasting,
 )
+
 from tlo.scenario import BaseScenario
 
 
 class TestScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 222
+        self.seed = 55447
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2021, 1, 1)
-        self.pop_size = 30000
+        self.end_date = Date(2031, 1, 1)
+        self.pop_size = 200_000
         self.number_of_draws = 1
         self.runs_per_draw = 20
 
     def log_configuration(self):
         return {
-            'filename': 'calibration_30k', 'directory': './outputs',
-            "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
+            'filename': 'increased_anc_cov_200k', 'directory': './outputs',
+            "custom_levels": {
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
+                "tlo.methods.demography.detail": logging.INFO,
+                "tlo.methods.depression": logging.INFO,
                 "tlo.methods.contraception": logging.INFO,
                 "tlo.methods.healthsystem.summary": logging.INFO,
                 "tlo.methods.healthburden": logging.INFO,
+                "tlo.methods.hiv": logging.INFO,
                 "tlo.methods.labour": logging.INFO,
+                "tlo.methods.labour.detail": logging.INFO,
+                "tlo.methods.malaria": logging.INFO,
                 "tlo.methods.newborn_outcomes": logging.INFO,
                 "tlo.methods.care_of_women_during_pregnancy": logging.INFO,
                 "tlo.methods.pregnancy_supervisor": logging.INFO,
                 "tlo.methods.postnatal_supervisor": logging.INFO,
+                "tlo.methods.tb": logging.INFO,
             }
         }
-
     def modules(self):
         return [demography.Demography(resourcefilepath=self.resources),
                 contraception.Contraception(resourcefilepath=self.resources),
@@ -72,6 +79,7 @@ class TestScenario(BaseScenario):
                 # dependencies)
                 alri.Alri(resourcefilepath=self.resources),
                 hiv.Hiv(resourcefilepath=self.resources),
+                tb.Tb(resourcefilepath=self.resources),
                 malaria.Malaria(resourcefilepath=self.resources),
                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=self.resources),
                 depression.Depression(resourcefilepath=self.resources),
@@ -82,6 +90,9 @@ class TestScenario(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
         return {
+            'PregnancySupervisor': {'alternative_anc_coverage': True,
+                                    'anc_availability_odds': 9.0,
+                                    'analysis_year': 2021},
         }
 
 
