@@ -548,7 +548,8 @@ if __name__ == "__main__":
     # results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_effect_of_each_treatment-2022-06-25T121008Z')
 
     # VERSION WITH WEALTH LEVEL RECORDED AND FORCED HEALTHCARE SEEKING (50k pops)
-    # results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_force_healthcare_seeking-2022-06-25T121344Z')  # <--- currently being used
+    # results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_force_healthcare_seeking-2022-06-25T121344Z')
+    # <--- currently being used
 
     # VERSION WITH WEALTH LEVEL RECORDED (100k pops)
     # results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_effect_of_each_treatment-2022-06-26T221002Z')
@@ -557,11 +558,12 @@ if __name__ == "__main__":
     # results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_force_healthcare_seeking-2022-06-26T220938Z')
 
     # VERSION FOLLOWING FIXES TO HEALTHCARE SYSTEM AND DIARRHOEA (50k pops) --- FORCED HEALTHCARE SEEKING
-    results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_force_healthcare_seeking-2022-06-29T202230Z')  # <--- looks ok
+    results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_force_healthcare_seeking-2022-06-29T202230Z')
+    # <--- latest version
 
     # VERSION FOLLOWING FIXES TO HEALTHCARE SYSTEM AND DIARRHOEA (50k pops) --- DEFAULT HEALTHCARE SEEKING
-    # results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_effect_of_each_treatment-2022-06-29T202321Z')  # <--- didn't work
-
+    # results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_effect_of_each_treatment-2022-06-29T202321Z')
+    # <--- didn't work
 
     apply(results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
 
