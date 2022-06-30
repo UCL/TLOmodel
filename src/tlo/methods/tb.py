@@ -1448,9 +1448,6 @@ class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
         # transmission mdr-tb, around 1% of total tb incidence
         self.module.assign_active_tb(population, strain="mdr", incidence_rate=(incidence_year * p["prop_mdr2010"]))
 
-        # # schedule some background rates of tb testing (non-symptom driven)
-        self.module.send_for_screening(population)
-
 
 class TbTreatmentAndRelapseEvents(RegularEvent, PopulationScopeEventMixin):
     """ This event runs each month and calls two functions:
@@ -1462,6 +1459,10 @@ class TbTreatmentAndRelapseEvents(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=1))
 
     def apply(self, population):
+
+        # # schedule some background rates of tb testing (non-symptom driven)
+        self.module.send_for_screening(population)
+
         self.module.end_treatment(population)
         self.module.relapse_event(population)
 
