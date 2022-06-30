@@ -3,6 +3,7 @@
 from pathlib import Path
 from typing import Tuple
 
+import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
@@ -78,53 +79,158 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _df.columns = _df.columns.set_levels(reformatted_names, level=0)
         return _df
 
-    def find_difference_extra_relative_to_comparison(_ser: pd.Series, comparison: str, scaled=False):
+    def find_difference_extra_relative_to_comparison(_ser: pd.Series,
+                                                     comparison: str,
+                                                     scaled: bool = False,
+                                                     drop_comparison: bool = True
+                                                     ):
         """Find the difference in the values in a pd.Series with a multi-index, between the draws (level 0)
         within the runs (level 1). Drop the comparison entries. The comparison is made: DIFF(X) = X - COMPARISON. """
         return _ser \
             .unstack() \
             .apply(lambda x: (x - x[comparison]) / (x[comparison] if scaled else 1.0), axis=0) \
-            .drop(index=[comparison]) \
+            .drop(index=([comparison] if drop_comparison else [])) \
             .stack()
 
-    def find_mean_difference_in_appts_relative_to_comparison(_df: pd.DataFrame, comparison: str):
+    def find_mean_difference_in_appts_relative_to_comparison(_df: pd.DataFrame,
+                                                             comparison: str,
+                                                             drop_comparison: bool=True
+                                                             ):
         """Find the mean difference in the number of appointments between each draw and the comparison draw (within each
         run). We are looking for the number FEWER appointments that occur when treatment does not happen, so we flip the
          sign (as `find_extra_difference_relative_to_comparison` gives the number extra relative the comparison)."""
         return - summarize(pd.concat({
-            _idx: find_difference_extra_relative_to_comparison(row, comparison=comparison)
+            _idx: find_difference_extra_relative_to_comparison(row,
+                                                               comparison=comparison,
+                                                               drop_comparison=drop_comparison)
             for _idx, row in _df.iterrows()
         }, axis=1).T, only_mean=True)
 
-    def find_difference_extra_relative_to_comparison_dataframe(_df: pd.DataFrame, comparison: str):
+    def find_mean_difference_extra_relative_to_comparison_dataframe(_df: pd.DataFrame,
+                                                                    comparison: str,
+                                                                    drop_comparison: bool = True,
+                                                                    ):
         """Same as `find_difference_extra_relative_to_comparison` but for pd.DataFrame, which is the same as
         `find_mean_difference_in_appts_relative_to_comparison`.
         """
-        # todo factorize these -- it's the same operation for a pd.Series or a pd.DataFrame
+        # todo factorize these three functions more -- it's the same operation for a pd.Series or a pd.DataFrame
         return summarize(pd.concat({
-            _idx: find_difference_extra_relative_to_comparison(row, comparison=comparison)
+            _idx: find_difference_extra_relative_to_comparison(row,
+                                                               comparison=comparison,
+                                                               drop_comparison=drop_comparison)
             for _idx, row in _df.iterrows()
         }, axis=1).T, only_mean=True)
 
     # %% Define parameter names
     param_names = get_parameter_names_from_scenario_file()
 
-    # %% Quantify the health associated with each TREATMENT_ID (short) (The difference in deaths and DALYS between each
-    # scenario and the 'Everything' scenario.)
 
-    def num_deaths_by_age_group(_df):
+    # %% Quantify the health gains associated with all interventions combined.
+
+    def get_num_deaths_by_cause_label(_df):
+        """Return total number of Deaths by label (total by age-group within the TARGET_PERIOD)
+        """
+        return _df \
+            .loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)] \
+            .groupby(_df['label']) \
+            .size()
+
+    def get_num_dalys_by_cause_label(_df):
+        """Return total number of DALYS (Stacked) by label (total by age-group within the TARGET_PERIOD)
+        """
+        return _df \
+            .loc[_df.year.between(*[i.year for i in TARGET_PERIOD])] \
+            .drop(columns=['date', 'sex', 'age_range', 'year']) \
+            .sum()
+
+    num_deaths_by_cause_label = summarize(
+        extract_results(
+            results_folder,
+            module='tlo.methods.demography',
+            key='death',
+            custom_generate_series=get_num_deaths_by_cause_label,
+            do_scaling=True
+        ).pipe(set_param_names_as_column_index_level_0)[['Everything', '*']]
+    )
+
+    num_dalys_by_cause_label = summarize(
+        extract_results(
+            results_folder,
+            module='tlo.methods.healthburden',
+            key='dalys_stacked',
+            custom_generate_series=get_num_dalys_by_cause_label,
+            do_scaling=True
+        ).pipe(set_param_names_as_column_index_level_0)[['Everything', '*']]
+    )
+
+    # Plots.....
+    def do_bar_plot_with_ci(_df, _ax):
+        """Make a vertical bar plot for each Cause-of-Death Label for the _df onto axis _ax"""
+        _df_sorted = _df.loc[order_of_cause_of_death_label(_df.index)]  # sort cause-of-death labels
+
+        for i, cause_label in enumerate(_df_sorted.index):
+            # plot bar for one cause
+            color = get_color_cause_of_death_label(cause_label)
+            one_cause = _df.loc[cause_label]
+
+            mean_deaths = one_cause.loc[(slice(None), "mean")]
+            lower_bar = mean_deaths["Everything"]  # (When all interventions are on)
+            full_height_of_bar = mean_deaths["*"]  # (When all interventions are off)
+            upper_bar = full_height_of_bar - lower_bar
+            lower_bar_yerr = np.array([
+                one_cause.loc[("Everything", "mean")] - one_cause.loc[("Everything", "lower")],
+                one_cause.loc[("Everything", "upper")] - one_cause.loc[("Everything", "mean")]
+            ]).reshape(2, 1)
+            full_height_bar_yerr = np.array([
+                one_cause.loc[("*", "mean")] - one_cause.loc[("*", "lower")],
+                one_cause.loc[("*", "upper")] - one_cause.loc[("*", "mean")]
+            ]).reshape(2, 1)
+
+            lb, = ax.bar(i, lower_bar, yerr=lower_bar_yerr, bottom=0, label="All TREATMENT_IDs", color=color)
+            ub, = _ax.bar(i, upper_bar, yerr=full_height_bar_yerr, bottom=lower_bar, label="No TREATMENT_IDs", color=color, alpha=0.5)
+        _ax.set_xticks(range(len(_df_sorted.index)))
+        _ax.set_xticklabels(_df_sorted.index, rotation=90)
+        _ax.legend([lb, ub], ['All TREATMENT_IDs', 'No TREATMENT_IDs'], loc='upper right')
+
+    fig, ax = plt.subplots()
+    name_of_plot = f'Deaths With None or All TREATMENT_IDs, {target_period()}'
+    do_bar_plot_with_ci(num_deaths_by_cause_label / 1e3, ax)
+    ax.set_title(name_of_plot)
+    ax.set_xlabel('TREATMENT_ID (Short)')
+    ax.set_ylabel('Number of Deaths (/1000)')
+    ax.set_ylim(0, 400)
+    ax.grid(axis="y")
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
+    fig.show()
+
+    fig, ax = plt.subplots()
+    name_of_plot = f'DALYS With None or All TREATMENT_IDs, {target_period()}'
+    do_bar_plot_with_ci(num_dalys_by_cause_label / 1e6, ax)
+    ax.set_title(name_of_plot)
+    ax.set_xlabel('TREATMENT_ID (Short)')
+    ax.set_ylabel('Number of DALYS Averted (1/1e6)')
+    ax.set_ylim(0, 15)
+    ax.set_yticks(range(0, 18, 3))
+    ax.grid(axis="y")
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
+    fig.show()
+
+
+    # %%  Quantify the health gais associated with each TREATMENT_ID (short) individually (i.e., the
+    # difference in deaths and DALYS between each scenario and the 'Everything' scenario.)
+
+    def get_num_deaths_by_age_group(_df):
         """Return total number of deaths (total by age-group within the TARGET_PERIOD)"""
         return _df \
             .loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)] \
             .groupby(_df['age'].map(age_grp_lookup).astype(make_age_grp_types())) \
             .size()
-
-    def num_dalys_by_cause(_df):
-        """Return total number of DALYS (Stacked) (total by age-group within the TARGET_PERIOD)"""
-        return _df \
-            .loc[_df.year.between(*[i.year for i in TARGET_PERIOD])] \
-            .drop(columns=['date', 'sex', 'age_range', 'year']) \
-            .sum()
 
     def do_barh_plot_with_ci(_df, _ax):
         """Make a horizontal bar plot for each TREATMENT_ID for the _df onto axis _ax"""
@@ -157,7 +263,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         results_folder,
         module='tlo.methods.demography',
         key='death',
-        custom_generate_series=num_deaths_by_age_group,
+        custom_generate_series=get_num_deaths_by_age_group,
         do_scaling=True
     ).pipe(set_param_names_as_column_index_level_0).sum()  # (Summing across age-groups)
 
@@ -175,7 +281,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         results_folder,
         module='tlo.methods.healthburden',
         key='dalys_stacked',
-        custom_generate_series=num_dalys_by_cause,
+        custom_generate_series=get_num_dalys_by_cause_label,
         do_scaling=True
     ).pipe(set_param_names_as_column_index_level_0).sum()  # (Summing across causes)
 
@@ -189,7 +295,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             find_difference_extra_relative_to_comparison(num_dalys, comparison='Everything', scaled=True)).T
     ).iloc[0].unstack().drop(['FirstAttendance*']).sort_values(by='mean', ascending=True)
 
-    # PLOTS FOR EACH TREATMENT_ID
+
+    # PLOTS FOR EACH TREATMENT_ID (Short)
     fig, ax = plt.subplots()
     name_of_plot = f'Deaths Averted by Each TREATMENT_ID, {target_period()}'
     do_barh_plot_with_ci(num_deaths_averted.drop(['*']) / 1e3, ax)
@@ -239,7 +346,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         do_scaling=True
     ).pipe(set_param_names_as_column_index_level_0)
 
-    deaths_averted_by_agegrp_and_label = find_difference_extra_relative_to_comparison_dataframe(
+    deaths_averted_by_agegrp_and_label = find_mean_difference_extra_relative_to_comparison_dataframe(
         total_num_death_by_agegrp_and_label, comparison='Everything'
     ).drop(columns=['FirstAttendance*'])
 
@@ -288,7 +395,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         do_scaling=True
     ).pipe(set_param_names_as_column_index_level_0)
 
-    deaths_averted_by_wealth_and_label = find_difference_extra_relative_to_comparison_dataframe(
+    deaths_averted_by_wealth_and_label = find_mean_difference_extra_relative_to_comparison_dataframe(
         total_num_death_by_wealth_and_label, comparison='Everything'
     ).drop(columns=['FirstAttendance*'])
 
@@ -449,6 +556,13 @@ if __name__ == "__main__":
 
     # VERSION WITH WEALTH LEVEL RECORDED AND FORCED HEALTHCARE SEEKING (100k pops)
     # results_folder = Path('')
+
+    # VERSION FOLLOWING FIXES TO HEALTCARE SYSTEM AND DIARRHOEA (50k pops) --- FORCED HEALTHCARE SEEKING
+    # results_folder = Path('')
+
+    # VERSION FOLLOWING FIXES TO HEALTCARE SYSTEM AND DIARRHOEA (50k pops) --- DEFAULT HEALTHCARE SEEKING
+    # results_folder = Path('')
+
 
     apply(results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
 
