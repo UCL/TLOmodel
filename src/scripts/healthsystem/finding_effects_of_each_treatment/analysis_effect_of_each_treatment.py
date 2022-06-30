@@ -8,6 +8,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 from scripts.calibration_analyses.analysis_scripts import plot_legends
+from scripts.healthsystem.finding_effects_of_each_treatment import plot_org_chart_treatment_ids
 from tlo import Date
 from tlo.analysis.utils import (
     extract_results,
@@ -94,7 +95,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     def find_mean_difference_in_appts_relative_to_comparison(_df: pd.DataFrame,
                                                              comparison: str,
-                                                             drop_comparison: bool=True
+                                                             drop_comparison: bool = True
                                                              ):
         """Find the mean difference in the number of appointments between each draw and the comparison draw (within each
         run). We are looking for the number FEWER appointments that occur when treatment does not happen, so we flip the
@@ -123,7 +124,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # %% Define parameter names
     param_names = get_parameter_names_from_scenario_file()
-
 
     # %% Quantify the health gains associated with all interventions combined.
 
@@ -187,7 +187,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             ]).reshape(2, 1)
 
             lb, = ax.bar(i, lower_bar, yerr=lower_bar_yerr, bottom=0, label="All TREATMENT_IDs", color=color)
-            ub, = _ax.bar(i, upper_bar, yerr=full_height_bar_yerr, bottom=lower_bar, label="No TREATMENT_IDs", color=color, alpha=0.5)
+            ub, = _ax.bar(i, upper_bar, yerr=full_height_bar_yerr, bottom=lower_bar, label="No TREATMENT_IDs",
+                          color=color, alpha=0.5)
         _ax.set_xticks(range(len(_df_sorted.index)))
         _ax.set_xticklabels(_df_sorted.index, rotation=90)
         _ax.legend([lb, ub], ['All TREATMENT_IDs', 'No TREATMENT_IDs'], loc='upper right')
@@ -220,7 +221,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
-
 
     # %%  Quantify the health gais associated with each TREATMENT_ID (short) individually (i.e., the
     # difference in deaths and DALYS between each scenario and the 'Everything' scenario.)
@@ -295,7 +295,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             find_difference_extra_relative_to_comparison(num_dalys, comparison='Everything', scaled=True)).T
     ).iloc[0].unstack().drop(['FirstAttendance*']).sort_values(by='mean', ascending=True)
 
-
     # PLOTS FOR EACH TREATMENT_ID (Short)
     fig, ax = plt.subplots()
     name_of_plot = f'Deaths Averted by Each TREATMENT_ID, {target_period()}'
@@ -360,9 +359,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         name_of_plot = f'Deaths Averted by {_scenario_name} by Age and Cause {target_period()}'
         (
             format_to_plot / 1000
-         ).plot.bar(stacked=True, ax=ax,
-                    color=[get_color_cause_of_death_label(_label) for _label in format_to_plot.columns],
-                    )
+        ).plot.bar(stacked=True, ax=ax,
+                   color=[get_color_cause_of_death_label(_label) for _label in format_to_plot.columns],
+                   )
         ax.axhline(0.0, color='black')
         ax.set_title(name_of_plot)
         ax.set_ylabel('Number of Deaths Averted (/1000)')
@@ -379,8 +378,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     def get_total_num_death_by_wealth_and_label(_df):
         """Return the total number of deaths in the TARGET_PERIOD by wealth and cause label."""
         wealth_cats = {5: '0-19%', 4: '20-39%', 3: '40-59%', 2: '60-79%', 1: '80-100%'}
-        wealth_group = _df['li_wealth']\
-            .map(wealth_cats)\
+        wealth_group = _df['li_wealth'] \
+            .map(wealth_cats) \
             .astype(pd.CategoricalDtype(wealth_cats.values(), ordered=True))
 
         return _df \
@@ -408,9 +407,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         name_of_plot = f'Deaths Averted by {_scenario_name} by Wealth and Cause {target_period()}'
         (
             format_to_plot / 1000
-         ).plot.bar(stacked=True, ax=ax,
-                    color=[get_color_cause_of_death_label(_label) for _label in format_to_plot.columns],
-                    )
+        ).plot.bar(stacked=True, ax=ax,
+                   color=[get_color_cause_of_death_label(_label) for _label in format_to_plot.columns],
+                   )
         ax.axhline(0.0, color='black')
         ax.set_title(name_of_plot)
         ax.set_ylabel('Number of Deaths Averted (/1000)')
@@ -510,13 +509,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # VERSION WITH COARSE APPOINTMENTS, CONFORMING TO STANDARD ORDERING/COLORS AND ORDER
     fig, ax = plt.subplots()
     name_of_plot = f'Additional Appointments [Coarse] With Intervention, {target_period()}'
-    delta_appts_coarse = delta_appts\
-        .groupby(axis=0, by=delta_appts.index.map(get_corase_appt_type))\
-        .sum()\
+    delta_appts_coarse = delta_appts \
+        .groupby(axis=0, by=delta_appts.index.map(get_corase_appt_type)) \
+        .sum() \
         .sort_index(key=order_of_coarse_appt)
     delta_appts_coarse = delta_appts_coarse[order_of_short_treatment_ids(delta_appts_coarse.columns)]
     (
-         delta_appts_coarse / 1e6
+        delta_appts_coarse / 1e6
     ).T.plot.bar(
         stacked=True, legend=True, ax=ax, color=[get_color_coarse_appt(_a) for _a in delta_appts_coarse.index]
     )
@@ -563,9 +562,12 @@ if __name__ == "__main__":
     # VERSION FOLLOWING FIXES TO HEALTCARE SYSTEM AND DIARRHOEA (50k pops) --- DEFAULT HEALTHCARE SEEKING
     # results_folder = Path('')
 
-
-    apply(results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
+    # apply(results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
 
     # Plot the legends
     plot_legends.apply(
-        results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
+        results_folder=None, output_folder=results_folder, resourcefilepath=rfp)
+
+    # Plot the organisation chart of the TREATMENT_IDs
+    plot_org_chart_treatment_ids.appply(
+        results_folder=None, output_folder=results_folder, resourcefilepath=None)
