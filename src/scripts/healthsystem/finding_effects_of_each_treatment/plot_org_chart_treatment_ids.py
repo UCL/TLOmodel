@@ -18,16 +18,16 @@ from tlo.analysis.utils import (
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Plot a graph off the TREATMENT_IDs defined in the model."""
 
-    all = pd.Series(get_filtered_treatment_ids())
+    all_treatment_ids = pd.Series(get_filtered_treatment_ids())
 
-    base = pd.Series(index=all.index, data="*")
-    zero_level_up = all.apply(lambda s: "_".join(c for i, c in enumerate(s.split("_")) if i < 1))
-    one_level_up = all.apply(lambda s: "_".join(c for i, c in enumerate(s.split("_")) if i < 2))
-    two_level_up = all.apply(lambda s: "_".join(c for i, c in enumerate(s.split("_")) if i < 3))
-    # todo generalise to any depth
+    # Define hierarchy of treatment_id (up to depth of 3)
+    base = pd.Series(index=all_treatment_ids.index, data="*")
+    one_level_up = all_treatment_ids.apply(lambda s: "_".join(c for i, c in enumerate(s.split("_")) if i < 1))
+    two_level_up = all_treatment_ids.apply(lambda s: "_".join(c for i, c in enumerate(s.split("_")) if i < 2))
+    three_level_up = all_treatment_ids.apply(lambda s: "_".join(c for i, c in enumerate(s.split("_")) if i < 3))
 
-    split = pd.concat([base, zero_level_up, one_level_up, two_level_up], axis=1)
-    split = split.set_index(zero_level_up + '*')
+    split = pd.concat([base, one_level_up, two_level_up, three_level_up], axis=1)
+    split = split.set_index(one_level_up + '*')  # One level up is equivalent to the Short TREATMENT_ID
     split = split.loc[order_of_short_treatment_ids(split.index)]  # ordering
 
     graph = pydot.Dot(graph_type='digraph',
