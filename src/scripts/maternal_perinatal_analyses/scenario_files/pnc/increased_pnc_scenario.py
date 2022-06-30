@@ -20,10 +20,9 @@ from tlo.methods import (
     pregnancy_supervisor,
     stunting,
     symptommanager,
-    wasting,
     tb,
+    wasting
 )
-
 from tlo.scenario import BaseScenario
 
 

@@ -1,6 +1,8 @@
-from matplotlib import pyplot as plt
 import numpy as np
+from matplotlib import pyplot as plt
+
 from tlo.analysis.utils import extract_results
+
 plt.style.use('seaborn-darkgrid')
 
 """This file contains functions used through maternal/perinatal analysis and calibration scripts to extract results,

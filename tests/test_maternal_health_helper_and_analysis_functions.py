@@ -4,10 +4,14 @@ from pathlib import Path
 import pandas as pd
 
 from tlo import Date, Simulation
+from tlo.methods import (
+    care_of_women_during_pregnancy,
+    labour,
+    newborn_outcomes,
+    pregnancy_helper_functions
+)
 from tlo.methods.fullmodel import fullmodel
 from tlo.methods.healthsystem import FacilityInfo
-from tlo.methods import (labour, care_of_women_during_pregnancy, newborn_outcomes,
-                         pregnancy_helper_functions)
 
 
 start_date = Date(2010, 1, 1)

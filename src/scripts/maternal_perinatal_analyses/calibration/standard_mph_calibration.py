@@ -23,7 +23,6 @@ from tlo.methods import (
     tb,
     wasting,
 )
-
 from tlo.scenario import BaseScenario
 
 

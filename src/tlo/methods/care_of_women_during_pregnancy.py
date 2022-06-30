@@ -6,12 +6,12 @@ from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata, pregnancy_helper_functions
 from tlo.methods.dxmanager import DxTest
-from tlo.methods.tb import HSI_Tb_ScreeningAndRefer
 from tlo.methods.epi import HSI_TdVaccine
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.methods.labour import LabourOnsetEvent
 from tlo.methods.malaria import HSI_MalariaIPTp
+from tlo.methods.tb import HSI_Tb_ScreeningAndRefer
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

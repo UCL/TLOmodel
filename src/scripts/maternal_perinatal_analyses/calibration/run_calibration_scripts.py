@@ -1,5 +1,4 @@
-from ..calibration import output_all_death_calibration_per_year
-from ..calibration import output_all_key_outcomes_per_year
+from ..calibration import output_all_death_calibration_per_year, output_all_key_outcomes_per_year
 
 # This script runs the the files which output calibration plots for the maternal and perinatal health modules
 

@@ -1,6 +1,8 @@
-from ..analysis_scripts import compare_incidence_rates_between_scenarios
-from ..analysis_scripts import maternal_newborn_health_analysis
-from ..analysis_scripts import met_need
+from ..analysis_scripts import (
+    compare_incidence_rates_between_scenarios,
+    maternal_newborn_health_analysis,
+    met_need
+)
 
 # create dict of some scenario 'title' and the filename of the associated title
 scenario_dict = {'Status Quo': 'baseline_anc_scenario',
