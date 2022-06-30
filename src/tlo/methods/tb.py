@@ -596,19 +596,12 @@ class Tb(Module):
             ),
         )
 
-    def send_for_screening(self, population):
+    def send_for_screening_general(self, population):
 
         df = population.props
         p = self.parameters
         rng = self.rng
-        year = self.sim.date.year if self.sim.date.year < 2050 else 2050
 
-        active_testing_rates = p["rate_testing_active_tb"]
-        current_active_testing_rate = active_testing_rates.loc[
-                                          (
-                                              active_testing_rates.year == year),
-                                          "testing_rate_active_cases"].values[
-                                          0] / 100
         random_draw = rng.random_sample(size=len(df))
 
         # randomly select some individuals for screening and testing
@@ -620,24 +613,10 @@ class Tb(Module):
             & (random_draw < p["rate_testing_general_pop"])
             ]
 
-        # randomly select some symptomatic individuals for screening and testing
-        # would only be screened if have symptoms for >= 14 days
-        # this rate increases by year
-        screen_active_idx = df.index[
-            df.is_alive
-            & ~df.tb_diagnosed
-            & ~df.tb_on_treatment
-            & (df.tb_inf == "active")
-            & (df.tb_date_active <= (self.sim.date - pd.DateOffset(days=14)))
-            & (random_draw < current_active_testing_rate)
-            ]
-
-        all_screened = screen_idx.union(screen_active_idx).drop_duplicates()
-
-        for person in all_screened:
+        for person in screen_idx:
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Tb_ScreeningAndRefer(person_id=person, module=self),
-                topen=self.sim.date + DateOffset(days=14),
+                topen=self.sim.date,
                 tclose=None,
                 priority=0,
             )
@@ -845,7 +824,7 @@ class Tb(Module):
             strain="mdr",
             incidence_rate=(incidence_year*p["prop_mdr2010"]))
 
-        self.send_for_screening(
+        self.send_for_screening_general(
             population
         )  # send some baseline population for screening
 
@@ -1459,6 +1438,9 @@ class TbTreatmentAndRelapseEvents(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
 
+        # schedule some background rates of tb testing (non-symptom-driven)
+        self.module.send_for_screening_general(population)
+
         self.module.end_treatment(population)
         self.module.relapse_event(population)
 
@@ -1470,13 +1452,13 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
     *2 assign symptoms
     *3 if HIV+, assign smear status and schedule AIDS onset
     *4 if HIV-, assign smear status and schedule death
-    *5 schedule screening for general population and symptomatic active cases
+    *5 schedule screening for symptomatic active cases
     """
 
     def __init__(self, module):
 
         self.repeat = 1
-        super().__init__(module, frequency=DateOffset(months=self.repeat))
+        super().__init__(module, frequency=DateOffset(days=self.repeat))
 
     def apply(self, population):
         df = population.props
@@ -1485,16 +1467,19 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
         rng = self.module.rng
 
         # find people eligible for progression to active disease
-        # date of active disease scheduled to occur within the last month
+        # date of active disease scheduled to occur today
         # some will be scheduled for future dates
         # if on IPT or treatment - do nothing
         active_idx = df.loc[
             df.is_alive
-            & (df.tb_scheduled_date_active >= (now - DateOffset(months=self.repeat)))
-            & (df.tb_scheduled_date_active <= now)
+            & (df.tb_scheduled_date_active < (now + DateOffset(days=self.repeat)))
+            & (df.tb_scheduled_date_active >= now)
             & ~df.tb_on_ipt
             & ~df.tb_on_treatment
             ].index
+
+        if active_idx.empty:
+            return
 
         # -------- 1) change individual properties for active disease --------
         df.loc[active_idx, "tb_inf"] = "active"
@@ -1512,13 +1497,7 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
 
         # -------- 3) if HIV+ assign smear status and schedule AIDS onset --------
         active_and_hiv = df.loc[
-            df.is_alive
-            & (df.tb_scheduled_date_active >= (now - DateOffset(months=self.repeat)))
-            & (df.tb_scheduled_date_active <= now)
-            & ~df.tb_on_ipt
-            & ~df.tb_on_treatment
-            & df.hv_inf
-            ].index
+            (df.index.isin(active_idx) & df.hv_inf)].index
 
         # higher probability of being smear positive than HIV-
         smear_pos = (
@@ -1562,9 +1541,31 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
             )
 
         # -------- 5) schedule screening for asymptomatic and symptomatic people --------
+        # sample from all new active cases (active_idx) and determine whether they will seek a test
+        year = now.year if now.year < 2050 else 2050
 
-        # schedule some background rates of tb testing (non-symptom + symptom-driven)
-        self.module.send_for_screening(population)
+        active_testing_rates = p["rate_testing_active_tb"]
+        current_active_testing_rate = active_testing_rates.loc[
+                                          (
+                                              active_testing_rates.year == year),
+                                          "testing_rate_active_cases"].values[
+                                          0] / 100
+        random_draw = rng.random_sample(size=len(df))
+
+        # randomly select some symptomatic individuals for screening and testing
+        # would only be screened if have symptoms for >= 14 days
+        # sample some of active_idx to go for screening
+        screen_active_idx = df.loc[
+            (df.index.isin(active_idx) & (random_draw < current_active_testing_rate))].index
+
+        # TB screening checks for symptoms lasting at least 14 days, so add delay
+        for person in screen_active_idx:
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                HSI_Tb_ScreeningAndRefer(person_id=person, module=self.module),
+                topen=self.sim.date + DateOffset(days=14),
+                tclose=None,
+                priority=0,
+            )
 
 
 class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):

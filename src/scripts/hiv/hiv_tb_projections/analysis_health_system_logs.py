@@ -33,10 +33,10 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2018, 1, 1)
-popsize = 10000
+end_date = Date(2030, 1, 1)
+popsize = 15000
 
-scenario = 1
+scenario = 0
 
 # set up the log config
 log_config = {
@@ -54,7 +54,7 @@ log_config = {
 # Register the appropriate modules
 # need to call epi before tb to get bcg vax
 # seed = random.randint(0, 50000)
-seed = 14  # set seed for reproducibility
+seed = 24  # set seed for reproducibility
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
 sim.register(
     demography.Demography(resourcefilepath=resourcefilepath),
@@ -82,8 +82,8 @@ sim.register(
 
 # set the scenario
 sim.modules["Tb"].parameters["scenario"] = scenario
-sim.modules["Tb"].parameters["scenario_start_date"] =  Date(2010, 1, 1)
-
+# sim.modules["Tb"].parameters["scenario_start_date"] = Date(2010, 1, 1)
+# sim.modules["Tb"].parameters["rate_testing_active_tb"]["testing_rate_active_cases"] = 100
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
@@ -92,33 +92,4 @@ sim.simulate(end_date=end_date)
 # parse the results
 output = parse_log_file(sim.log_filepath)
 
-# save the results, argument 'wb' means write using binary mode. use 'rb' for reading file
-# with open(outputpath / "default_run.pickle", "wb") as f:
-#     # Pickle the 'data' dictionary using the highest protocol available.
-#     pickle.dump(dict(output), f, pickle.HIGHEST_PROTOCOL)
-
-for key, dfs in output.items():
-    if key.startswith("tlo."):
-        with open(outputpath / f"{key}.pickle", "wb") as f:
-            print(f)
-            pickle.dump(dfs, f)
-
-# tmp = output["tlo.methods.healthsystem.summary"]["health_system_annual_logs"]
-# new = tmp[['date', 'treatment_counts']].copy()
-# new2 = pd.DataFrame(new['treatment_counts'].to_list())
-
-
-# Active TB incidence per 100,000 person-years - annual outputs
-TB_inc = output["tlo.methods.tb"]["tb_incidence"]
-years = pd.to_datetime(TB_inc["date"]).dt.year
-TB_inc.index = pd.to_datetime(years, format="%Y")
-# todo change scenario
-activeTB_inc_rate_sc3 = (TB_inc["num_new_active_tb"] / popsize) * 100000
-
-prev_and_inc_over_time = output["tlo.methods.hiv"][
-    "summary_inc_and_prev_for_adults_and_children_and_fsw"
-]
-prev_and_inc_over_time = prev_and_inc_over_time.set_index("date")
-# todo change scenario
-hiv_inc_sc3 = prev_and_inc_over_time["hiv_adult_inc_1549"] * 100
-
+tmp=output["tlo.methods.tb"]
