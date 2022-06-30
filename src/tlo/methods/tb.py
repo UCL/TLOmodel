@@ -727,8 +727,6 @@ class Tb(Module):
         )
 
         # 4) -------- Define the treatment options --------
-        # todo these packages all include an x-ray with availability 0.85 (consumables sheet)
-
         # adult treatment - primary
         # self.item_codes_for_consumables_required['tb_tx_adult'] = \
         #     hs.get_item_codes_from_package_name("First line treatment for new TB cases for adults")
