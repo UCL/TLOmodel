@@ -4,8 +4,8 @@ from scripts.calibration_analyses.analysis_scripts import (
     analysis_cause_of_death_and_disability_calibrations,
     analysis_demography_calibrations,
     analysis_hsi_descriptions,
+    plot_legends,
 )
-from tlo.analysis.utils import get_scenario_outputs
 
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
@@ -13,12 +13,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     the results of running `long_run_all_diseases.py`."""
 
     analysis_demography_calibrations.apply(
-        results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath)
 
     analysis_cause_of_death_and_disability_calibrations.apply(
-        results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath)
 
     analysis_hsi_descriptions.apply(
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath)
+
+    # Plot the legends
+    plot_legends.apply(
         results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
 
 
@@ -28,10 +32,12 @@ if __name__ == "__main__":
 
     # Find results folder (most recent run generated using that scenario_filename)
     scenario_filename = 'long_run_all_diseases.py'
-    results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
+
+    # from tlo.analysis.utils import get_scenario_outputs
+    # results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
 
     # Test dataset:
-    # results_folder = Path('/Users/tbh03/GitHub/TLOmodel/outputs/tbh03@ic.ac.uk/long_run_all_diseases-small')
+    results_folder = Path('/Users/tbh03/GitHub/TLOmodel/outputs/tbh03@ic.ac.uk/long_run_all_diseases-small')
 
     # If needed -- in the case that pickles were not created remotely during batch
     # create_pickles_locally(results_folder)

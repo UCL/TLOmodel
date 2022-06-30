@@ -2327,8 +2327,8 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
                 )
             else:
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    HSI_Tb_Start_or_Continue_Ipt(person_id=person_id, module=self.module),
-                    topen=self.sim.date,
+                    self,
+                    topen=self.sim.date + pd.DateOffset(days=1),
                     tclose=self.sim.date + pd.DateOffset(days=14),
                     priority=0,
                 )
