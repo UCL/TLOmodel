@@ -1423,7 +1423,6 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
 class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
     """The Tb Regular Poll Event for assigning active infections
     * selects people for latent infection and schedules onset of active tb
-    * schedules tb screening / testing
     """
 
     def __init__(self, module):
@@ -1459,9 +1458,6 @@ class TbTreatmentAndRelapseEvents(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=1))
 
     def apply(self, population):
-
-        # # schedule some background rates of tb testing (non-symptom driven)
-        self.module.send_for_screening(population)
 
         self.module.end_treatment(population)
         self.module.relapse_event(population)
