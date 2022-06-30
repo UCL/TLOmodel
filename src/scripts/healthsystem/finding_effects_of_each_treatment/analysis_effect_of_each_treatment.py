@@ -197,7 +197,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     name_of_plot = f'Deaths With None or All TREATMENT_IDs, {target_period()}'
     do_bar_plot_with_ci(num_deaths_by_cause_label / 1e3, ax)
     ax.set_title(name_of_plot)
-    ax.set_xlabel('TREATMENT_ID (Short)')
+    ax.set_xlabel('Cause of Death')
     ax.set_ylabel('Number of Deaths (/1000)')
     ax.set_ylim(0, 400)
     ax.grid(axis="y")
@@ -211,7 +211,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     name_of_plot = f'DALYS With None or All TREATMENT_IDs, {target_period()}'
     do_bar_plot_with_ci(num_dalys_by_cause_label / 1e6, ax)
     ax.set_title(name_of_plot)
-    ax.set_xlabel('TREATMENT_ID (Short)')
+    ax.set_xlabel('Cause of Disability/Death')
     ax.set_ylabel('Number of DALYS Averted (1/1e6)')
     ax.set_ylim(0, 15)
     ax.set_yticks(range(0, 18, 3))
@@ -548,26 +548,27 @@ if __name__ == "__main__":
     # results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_effect_of_each_treatment-2022-06-25T121008Z')
 
     # VERSION WITH WEALTH LEVEL RECORDED AND FORCED HEALTHCARE SEEKING (50k pops)
-    results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_force_healthcare_seeking-2022-06-25T121344Z')
+    # results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_force_healthcare_seeking-2022-06-25T121344Z')  # <--- currently being used
 
     # VERSION WITH WEALTH LEVEL RECORDED (100k pops)
-    # results_folder = Path('')
+    # results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_effect_of_each_treatment-2022-06-26T221002Z')
 
     # VERSION WITH WEALTH LEVEL RECORDED AND FORCED HEALTHCARE SEEKING (100k pops)
-    # results_folder = Path('')
+    # results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_force_healthcare_seeking-2022-06-26T220938Z')
 
-    # VERSION FOLLOWING FIXES TO HEALTCARE SYSTEM AND DIARRHOEA (50k pops) --- FORCED HEALTHCARE SEEKING
-    # results_folder = Path('')
+    # VERSION FOLLOWING FIXES TO HEALTHCARE SYSTEM AND DIARRHOEA (50k pops) --- FORCED HEALTHCARE SEEKING
+    results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_force_healthcare_seeking-2022-06-29T202230Z')  # <--- looks ok
 
-    # VERSION FOLLOWING FIXES TO HEALTCARE SYSTEM AND DIARRHOEA (50k pops) --- DEFAULT HEALTHCARE SEEKING
-    # results_folder = Path('')
+    # VERSION FOLLOWING FIXES TO HEALTHCARE SYSTEM AND DIARRHOEA (50k pops) --- DEFAULT HEALTHCARE SEEKING
+    # results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_effect_of_each_treatment-2022-06-29T202321Z')  # <--- didn't work
 
-    # apply(results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
+
+    apply(results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
 
     # Plot the legends
     plot_legends.apply(
         results_folder=None, output_folder=results_folder, resourcefilepath=rfp)
 
     # Plot the organisation chart of the TREATMENT_IDs
-    plot_org_chart_treatment_ids.appply(
+    plot_org_chart_treatment_ids.apply(
         results_folder=None, output_folder=results_folder, resourcefilepath=None)
