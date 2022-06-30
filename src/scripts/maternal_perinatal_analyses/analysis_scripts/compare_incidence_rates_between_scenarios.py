@@ -6,16 +6,17 @@ from tlo.analysis.utils import (
     get_scenario_outputs,
 )
 
-from scripts.maternal_perinatal_analyses.analysis_scripts import analysis_utility_functions
+from ..analysis_scripts import analysis_utility_functions
 
 
 def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_interest, outputspath,
                                                  intervention_years):
     """
-    This function can be called to output plots showing the incidence of core complications within a model run across
-    a series of scenarios.
-    :param scenario_file_dict: dict containing names of python scripts for each scenario of interest
-    :param service_of_interest:  ANC/SBA/PNC
+    This function will output and store plots of key outcomes (incidence, care seeking etc) across multiple
+    scenarios. This can largely be used as a sense check or in some instances will contain secondary outcomes
+    for some analyses.
+    :param scenario_file_dict: dictionary containing file names for results folders for a selection of scenarios
+    :param service_of_interest:  string variable (anc/sba/pnc)
     :param outputspath: directory for graphs to be saved
     :param intervention_years: years of interest for the analysis
     :return:
@@ -62,6 +63,7 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
     neo_comp_dfs = {k: get_neonatal_comp_dfs(results_folders[k]) for k in results_folders}
 
     # ------------------------------------ PREGNANCIES AND BIRTHS ----------------------------------------------------
+    # Extract and plot pregnancies and births across scenarios
     preg_dict = analysis_utility_functions.return_pregnancy_data_from_multiple_scenarios(results_folders,
                                                                                          intervention_years)
     births_dict = analysis_utility_functions.return_birth_data_from_multiple_scenarios(results_folders,
@@ -79,6 +81,8 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
 
     # TOTAL COMPLETED PREGNANCIES
     def get_completed_pregnancies(comps_df, total_births_per_year, results_folder):
+        """Sums the number of pregnancies that have ended in a given year including ectopic pregnancies,
+        abortions, stillbirths and births"""
         ectopic_mean_numbers_per_year = analysis_utility_functions.get_mean_and_quants_from_str_df(
             comps_df['pregnancy_supervisor'], 'ectopic_unruptured', intervention_years)[0]
 
@@ -110,6 +114,8 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
     comp_pregs = {k: get_completed_pregnancies(comp_dfs[k], births_dict[k][0], results_folders[k]) for k in
                   results_folders}
 
+    # TWINS....
+    # Extract and plot the twin birth rate across scenarios
     def get_twin_data(results_folder, total_births_per_year):
         t_df = extract_results(
             results_folder,
@@ -138,6 +144,7 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
         plot_destination_folder, 'twins')
 
     # ---------------------------------------- Early Pregnancy Loss... ----------------------------------------------
+    # Extract and plot the rate of ectopic pregnancy, miscarriage and induced abortion across the scenarios
     ectopic_data = {k: analysis_utility_functions.get_comp_mean_and_rate(
         'ectopic_unruptured', preg_dict[k][0], comp_dfs[k]['pregnancy_supervisor'], 1000, intervention_years) for k in
         results_folders}
@@ -166,6 +173,7 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
         plot_destination_folder, 'abortion')
 
     # --------------------------------------------------- Syphilis Rate... --------------------------------------------
+    # Extract and plot the syphilis rate across scenarios
     syph_data = {k: analysis_utility_functions.get_comp_mean_and_rate(
         'syphilis', comp_pregs[k], comp_dfs[k]['pregnancy_supervisor'], 1000, intervention_years)
         for k in results_folders}
@@ -176,6 +184,7 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
         plot_destination_folder, 'syphilis')
 
     # ------------------------------------------------ Gestational Diabetes... ----------------------------------------
+    # Extract and plot the gestational diabetes rate across scenarios
     gdm_data = {k: analysis_utility_functions.get_comp_mean_and_rate(
         'gest_diab', comp_pregs[k], comp_dfs[k]['pregnancy_supervisor'], 1000, intervention_years)
         for k in results_folders}
@@ -186,6 +195,7 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
         plot_destination_folder, 'gdm')
 
     # ------------------------------------------------ PROM... --------------------------------------------------------
+    # Extract and plot the premature rupture of membranes rate across scenarios
     prom_data = {k: analysis_utility_functions.get_comp_mean_and_rate(
         'PROM', births_dict[k][0], comp_dfs[k]['pregnancy_supervisor'], 1000, intervention_years)
         for k in results_folders}
@@ -196,7 +206,8 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
         plot_destination_folder, 'prom')
 
     # ---------------------------------------------- Anaemia... --------------------------------------------------------
-    # Total prevalence of Anaemia at birth (total cases of anaemia at birth/ total births per year) and by severity
+    # Extract the total prevalence of Anaemia at birth (total cases of anaemia at birth/ total births per year) and by
+    # severity
     def get_anaemia_output_at_birth(results_folder, total_births_per_year):
         anaemia_results = extract_results(
             results_folder,
@@ -220,6 +231,7 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
     anaemia_birth_data = {k: get_anaemia_output_at_birth(results_folders[k], births_dict[k][0]) for k in
                           results_folders}
 
+    # Repeat this process looking at anaemia at the time of delivery
     def get_anaemia_output_at_delivery(results_folder, total_births_per_year):
         pnc_anaemia = extract_results(
             results_folder,
@@ -253,8 +265,13 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
         plot_destination_folder, 'anaemia_pn')
 
     # ------------------------------------------- Hypertensive disorders ---------------------------------------------
+    # Extract rates of all hypertensive disorders of pregnancy across the antenatal, intrapartum and postpartum periods
+    # of pregnancy and plot
     def get_htn_disorders_outputs(comps_df, total_births_per_year):
+        """Extracts rates of HDPs across the modules"""
         output = dict()
+
+        # Here total rates of each HDP is provided (summing cases across time periods)
         output['gh'] = analysis_utility_functions.get_comp_mean_and_rate_across_multiple_dataframes(
             'mild_gest_htn', total_births_per_year, 1000, [comps_df['pregnancy_supervisor'],
                                                            comps_df['postnatal_supervisor']], intervention_years)
@@ -308,7 +325,8 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
         'Eclampsia Rate Per Year Per Scenario',
         plot_destination_folder, 'ec')
 
-#  ---------------------------------------------Placenta praevia... ------------------------------------------------
+    #  ---------------------------------------------Placenta praevia... ------------------------------------------------
+    # Extract and plot the rate of placenta praevia across scenarios
     praevia_data = {k: analysis_utility_functions.get_comp_mean_and_rate(
         'placenta_praevia', preg_dict[k][0], comp_dfs[k]['pregnancy_supervisor'], 1000, intervention_years)
         for k in results_folders}
@@ -319,6 +337,7 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
         plot_destination_folder, 'praevia')
 
     #  ---------------------------------------------Placental abruption... --------------------------------------------
+    # Extract and plot rate of placenta praevia across scenarios
     abruption = {k: analysis_utility_functions.get_comp_mean_and_rate_across_multiple_dataframes(
         'placental_abruption', births_dict[k][0], 1000, [comp_dfs[k]['pregnancy_supervisor'], comp_dfs[k]['labour']],
         intervention_years)
@@ -330,9 +349,12 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
         plot_destination_folder, 'abruption')
 
     # --------------------------------------------- Antepartum Haemorrhage... -----------------------------------------
-    # Rate of APH/total births (antenatal and labour)
+    # Extract and plot the total rate of antepartum haemorrhage across scenarios (by summing the number of cases in the
+    # antenatal and intrapartum periods
 
     def get_aph_data(comps_df, total_births_per_year):
+        """Extract incidence of mild/moderate and severe antepartum haemorrhage across the modules"""
+
         mm_aph_data = analysis_utility_functions.get_comp_mean_and_rate_across_multiple_dataframes(
             'mild_mod_antepartum_haemorrhage', total_births_per_year, 1000,
             [comps_df['pregnancy_supervisor'], comps_df['labour']], intervention_years)
@@ -355,6 +377,7 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
         plot_destination_folder, 'aph')
 
     # --------------------------------------------- Preterm birth ... ------------------------------------------------
+
     def get_ptl_data(total_births_per_year, comps_df):
         early_ptl_data = analysis_utility_functions.get_comp_mean_and_rate(
             'early_preterm_labour', total_births_per_year, comps_df['labour'], 100, intervention_years)
@@ -368,7 +391,7 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
 
         return [total_ptl_rates, ptl_lqs, ltl_uqs]
 
-    ptl_data = {k: get_ptl_data( births_dict[k][0], comp_dfs[k]) for k in results_folders}
+    ptl_data = {k: get_ptl_data(births_dict[k][0], comp_dfs[k]) for k in results_folders}
 
     analysis_utility_functions.comparison_graph_multiple_scenarios(
         intervention_years, ptl_data, 'Rate per 100 Births',

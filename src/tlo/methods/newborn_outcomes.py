@@ -345,9 +345,6 @@ class NewbornOutcomes(Module):
                                             sheet_name='parameter_values')
         self.load_parameters_from_dataframe(parameter_dataframe)
 
-        # For the first period (2010-2015) we use the first value in each list as a parameter
-        pregnancy_helper_functions.update_current_parameter_dictionary(self, list_position=0)
-
         # Here we map 'disability' parameters to associated DALY weights to be passed to the health burden module
         if 'HealthBurden' in self.sim.modules:
             self.parameters['nb_daly_weights'] = {
@@ -422,7 +419,6 @@ class NewbornOutcomes(Module):
         # ---------------------------------- BLOOD TEST EQUIPMENT ---------------------------------------------------
         self.item_codes_nb_consumables['blood_test_equipment'] = \
             get_list_of_items(self, ['Disposables gloves, powder free, 100 pieces per box'])
-        # todo: remove entirely?
 
         # -------------------------------------------- VITAMIN K ------------------------------------------
         self.item_codes_nb_consumables['vitamin_k'] = \
@@ -455,6 +451,9 @@ class NewbornOutcomes(Module):
                                      'Gentamicin 40mg/ml, 2ml_each_CMST'])
 
     def initialise_simulation(self, sim):
+        # For the first period (2010-2015) we use the first value in each list as a parameter
+        pregnancy_helper_functions.update_current_parameter_dictionary(self, list_position=0)
+
         # We call the following function to store the required consumables for the simulation run within the appropriate
         # dictionary
         self.get_and_store_newborn_item_codes()
@@ -691,7 +690,7 @@ class NewbornOutcomes(Module):
         # Ensure that these newborns are less than one week old and scheduled the event accordingly
         if not days_post_birth_int < 6:
             logger.info(key='error', data=f'Child {individual_id} was older than 6 days when '
-                                           f'PostnatalWeekOneNeonatalEvent was scheduled')
+                                          f'PostnatalWeekOneNeonatalEvent was scheduled')
 
         day_for_event = int(self.rng.choice([2, 3, 4, 5, 6], p=params['prob_day_reaches_week_one_event']))
 
@@ -1215,7 +1214,7 @@ class NewbornOutcomes(Module):
         if (m['labour_state'] == 'term_labour') or (m['labour_state'] == 'postterm_labour'):
             if df.at[child_id, 'nb_early_preterm'] or df.at[child_id, 'nb_late_preterm']:
                 logger.info(key='error', data=f'Child {child_id} has been registered as preterm despite their mother '
-                                               f'delivering at term')
+                                              f'delivering at term')
 
         if df.at[child_id, 'is_alive']:
 
@@ -1433,7 +1432,7 @@ class HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth(HSI_Event, I
            df.at[person_id, 'nb_death_after_birth'] or
            nci[person_id]['delivery_setting'] == 'home_birth'):
             logger.info(key='error', data=f'Child {person_id} arrived at CareOfTheNewbornBySkilledAttendantAtBirth '
-                                           f'when they shouldnt have')
+                                          f'when they shouldnt have')
             return
 
         if not df.at[person_id, 'is_alive']:

@@ -747,7 +747,7 @@ class PregnancySupervisor(Module):
                     # If the complication has truly resolved, check the dates make sense
                     if not mni[person][f'{complication}_resolution'] >= mni[person][f'{complication}_onset']:
                         logger.info(key='error', data=f'Complication resolution has occurred before onset in'
-                                                       f' {person}')
+                                                      f' {person}')
                         return
 
                     # We calculate how many days she has been free of the complication this month to determine how
@@ -1202,7 +1202,7 @@ class PregnancySupervisor(Module):
         for v in women_not_on_anti_htns.loc[women_not_on_anti_htns].index:
             if v in women_on_anti_htns.loc[women_on_anti_htns].index:
                 logger.info(key='error', data='Risk of progression of HTN disorder is being applied to some women '
-                                               'twice')
+                                              'twice')
 
         risk_progression_mild_to_severe_htn = params['probs_for_mgh_matrix'][1]
 

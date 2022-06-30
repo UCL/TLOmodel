@@ -219,7 +219,6 @@ class CareOfWomenDuringPregnancy(Module):
         # ---------------------------------- BLOOD TEST EQUIPMENT ---------------------------------------------------
         self.item_codes_preg_consumables['blood_test_equipment'] = \
             get_list_of_items(self, ['Disposables gloves, powder free, 100 pieces per box'])
-        # todo: remove entirely?
 
         # ---------------------------------- IV DRUG ADMIN EQUIPMENT  -------------------------------------------------
         self.item_codes_preg_consumables['iv_drug_equipment'] = \
@@ -503,10 +502,6 @@ class CareOfWomenDuringPregnancy(Module):
 
             logger.info(key='anc_count_on_birth', data=total_anc_visit_count,
                         description='A dictionary containing the number of ANC visits each woman has on birth')
-
-            # We then reset all relevant variables pertaining to care received during the antenatal period to avoid
-            # treatments remaining in place for future pregnancies
-            # self.care_of_women_in_pregnancy_property_reset(id_or_index=mother_id)
 
     def on_hsi_alert(self, person_id, treatment_id):
         logger.debug(key='message', data=f'This is CareOfWomenDuringPregnancy, being alerted about a health system '
@@ -1007,12 +1002,12 @@ class CareOfWomenDuringPregnancy(Module):
         params = self.current_parameters
         person_id = hsi_event.target
         df = self.sim.population.props
-        cons = self.item_codes_preg_consumables
 
         # If this woman has already been screened twice for syphilis then the intervention will not run
         if not self.check_intervention_should_run_and_update_mni(person_id, 'syph_1', 'syph_2'):
             return
 
+        # See if she will receive testing
         if self.rng.random_sample() < params['prob_intervention_delivered_syph_test']:
             logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'syphilis_test'})
 
@@ -1020,6 +1015,7 @@ class CareOfWomenDuringPregnancy(Module):
                 self, hsi_event, self.item_codes_preg_consumables, core='syphilis_test',
                 optional='blood_test_equipment')
 
+            # If the testing occurs and detects syphilis she will get treatment (if consumables are available)
             if avail and self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
                          dx_tests_to_run='blood_test_syphilis', hsi_event=hsi_event):
 
@@ -1384,6 +1380,7 @@ class CareOfWomenDuringPregnancy(Module):
         df = self.sim.population.props
         cons = self.item_codes_preg_consumables
 
+        # check consumables and whether HCW are available to deliver the intervention
         avail = hsi_event.get_consumables(item_codes=cons['abx_for_prom'],
                                           optional_item_codes=cons['iv_drug_equipment'])
 
@@ -2670,7 +2667,6 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
 
         if df.at[person_id, 'ac_received_post_abortion_care']:
             pregnancy_helper_functions.log_met_need(self.module, 'pac', self)
-
 
     def did_not_run(self):
         logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement: did not run')

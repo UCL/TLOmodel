@@ -545,7 +545,7 @@ class Labour(Module):
 
         # ANALYSIS PARAMETERS
         'analysis_year': Parameter(
-            Types.INT, 'Year on which which changes in parameters as part of analysis should be enacted (1st day, '
+            Types.INT, 'Year on which changes in parameters as part of analysis should be enacted (1st day, '
                        '1st month)'),
         'la_analysis_in_progress': Parameter(
             Types.BOOL, 'Used within the pregnancy_helper_function to signify that labour/postnatal '
@@ -673,7 +673,7 @@ class Labour(Module):
             parity_equation.predict(df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14)])
 
         if not (df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14), 'la_parity'] >= 0).all().all():
-            logger.info(key='error', data='Parity was calculated incorrectly at initialisation ')
+            logger.info(key='error', data='Parity was calculated incorrectly at initialisation')
 
         #  ----------------------- ASSIGNING PREVIOUS CS DELIVERY AT BASELINE -----------------------------------------
         # This equation determines the proportion of women at baseline who have previously delivered via caesarean
@@ -705,7 +705,6 @@ class Labour(Module):
         # ---------------------------------- BLOOD TEST EQUIPMENT ---------------------------------------------------
         self.item_codes_lab_consumables['blood_test_equipment'] = \
             get_list_of_items(self, ['Disposables gloves, powder free, 100 pieces per box'])
-        # todo: remove entirely
 
         # -------------------------------------------- DELIVERY ------------------------------------------------------
         # assuming CDK has blade, soap, cord tie
@@ -720,8 +719,6 @@ class Labour(Module):
                                      'Paracetamol, tablet, 500 mg'])
 
         # -------------------------------------------- CAESAREAN DELIVERY ------------------------------------------
-        # TODO: this package is incomplete?
-        # todo: replace- halothane with thiopental
         self.item_codes_lab_consumables['caesarean_delivery_core'] = \
             get_list_of_items(self, ['Halothane (fluothane)_250ml_CMST',
                                      'Ceftriaxone 1g, PFR_each_CMST',
@@ -856,6 +853,7 @@ class Labour(Module):
             get_item_code_from_pkg('Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg')
 
     def initialise_simulation(self, sim):
+        # Update self.current_parameters
         pregnancy_helper_functions.update_current_parameter_dictionary(self, list_position=0)
 
         # We call the following function to store the required consumables for the simulation run within the appropriate
@@ -1339,12 +1337,12 @@ class Labour(Module):
         # This function follows a roughly similar pattern as set_intrapartum_complications
         if mni[individual_id]['delivery_setting'] == 'none':
             logger.info(key='error', data=f'Mother {individual_id} is having risk of complications applied but has no '
-                                           f'delivery setting')
+                                          f'delivery setting')
             return
 
         if complication not in self.possible_postpartum_complications:
             logger.info(key='error', data=f'A complication ("{complication}") was passed to '
-                                           f'set_postpartum_complications')
+                                          f'set_postpartum_complications')
             return
 
         #  We determine if this woman has experienced any of the other potential preceding causes of PPH
@@ -1564,7 +1562,7 @@ class Labour(Module):
 
                 if not days_post_birth_int < 6:
                     logger.info(key='error', data=f'Mother {individual_id} scheduled to PN week one at >1 '
-                                                   f'week postnatal')
+                                                  f'week postnatal')
 
                 day_for_event = int(self.rng.choice([2, 3, 4, 5, 6], p=params['probs_of_attending_pn_event_by_day']))
 
@@ -1582,7 +1580,7 @@ class Labour(Module):
 
                 if df.at[individual_id, 'la_currently_in_labour']:
                     logger.info(key='error', data=f'Mother {individual_id} is currently in labour within '
-                                                   f'apply_risk_of_early_postpartum_death')
+                                                  f'apply_risk_of_early_postpartum_death')
 
     def labour_characteristics_checker(self, individual_id):
         """This function is called at multiples points in the module to ensure women of the right characteristics are
@@ -1603,7 +1601,7 @@ class Labour(Module):
             pd.isnull(mother.la_due_date_current_pregnancy)
           ):
             logger.info(key='error', data=f'Person {individual_id} has characteristics that mean they should'
-                                           f' not be in labour ')
+                                          f' not be in labour ')
 
     def postpartum_characteristics_checker(self, individual_id):
         """This function is called at multiples points in the module to ensure women of the right characteristics are
@@ -1624,7 +1622,7 @@ class Labour(Module):
             (not mni[individual_id]['passed_through_week_one'] and individual_id not in self.women_in_labour)
         ):
             logger.info(key='error', data=f'Person {individual_id} has characteristics that mean they should'
-                                           f' not be in the postnatal period ')
+                                          f' not be in the postnatal period ')
 
     # ============================================== HSI FUNCTIONS ====================================================
     # Management of each complication is housed within its own function, defined here in the module, and all follow a
@@ -2400,7 +2398,7 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
             # We check all women have had their labour state set
             if labour_state is None:
                 logger.info(key='error', data=f'Mother {individual_id} has not had their labour state stored in '
-                                               f'the mni')
+                                              f'the mni')
 
             logger.debug(key='message', data=f'This is LabourOnsetEvent, person {individual_id} has now gone into '
                                              f'{labour_state} on date {self.sim.date}')
@@ -2489,7 +2487,7 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
             # Check all women's 'delivery setting' is set
             if mni[individual_id]['delivery_setting'] is None:
                 logger.info(key='error', data=f'Mother {individual_id} did not have their delivery setting stored in '
-                                               f'the mni')
+                                              f'the mni')
 
             # Women delivering at home move the the LabourAtHomeEvent as they will not receive skilled birth attendance
             if mni[individual_id]['delivery_setting'] == 'home_birth':

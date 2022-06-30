@@ -242,9 +242,6 @@ class PostnatalSupervisor(Module):
                                             sheet_name='parameter_values')
         self.load_parameters_from_dataframe(parameter_dataframe)
 
-        # For the first period (2010-2015) we use the first value in each list as a parameter
-        pregnancy_helper_functions.update_current_parameter_dictionary(self, list_position=0)
-
     def initialise_population(self, population):
         df = population.props
 
@@ -261,6 +258,8 @@ class PostnatalSupervisor(Module):
         df.loc[df.is_alive, 'pn_emergency_event_mother'] = False
 
     def initialise_simulation(self, sim):
+        # For the first period (2010-2015) we use the first value in each list as a parameter
+        pregnancy_helper_functions.update_current_parameter_dictionary(self, list_position=0)
 
         # Schedule the first instance of the PostnatalSupervisorEvent
         sim.schedule_event(PostnatalSupervisorEvent(self),

@@ -3,6 +3,9 @@ import numpy as np
 from tlo.analysis.utils import extract_results
 plt.style.use('seaborn-darkgrid')
 
+"""This file contains functions used through maternal/perinatal analysis and calibration scripts to extract results,
+derive results and generate plots"""
+
 
 # =========================================== FUNCTIONS TO EXTRACT RATES  ============================================
 def get_mean_and_quants_from_str_df(df, complication, sim_years):
