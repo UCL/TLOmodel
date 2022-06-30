@@ -1,7 +1,7 @@
 from ..analysis_scripts import (
     compare_incidence_rates_between_scenarios,
     maternal_newborn_health_analysis,
-    met_need
+    met_need,
 )
 
 # create dict of some scenario 'title' and the filename of the associated title
