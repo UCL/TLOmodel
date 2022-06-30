@@ -1717,17 +1717,16 @@ class Labour(Module):
         df = self.sim.population.props
         params = self.current_parameters
         person_id = hsi_event.target
-        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         # Women who have been admitted for delivery due to severe pre-eclampsia AND have already received magnesium
         # before moving to the labour ward do not receive the intervention again
         if ('assessment_and_treatment_of_severe_pre_eclampsia' not in params['allowed_interventions']) or \
             ((df.at[person_id, 'ac_admitted_for_immediate_delivery'] != 'none') and
-            df.at[person_id, 'ac_mag_sulph_treatment'] and (labour_stage == 'ip')):
+           df.at[person_id, 'ac_mag_sulph_treatment'] and (labour_stage == 'ip')):
             return
 
         if (df.at[person_id, 'ps_htn_disorders'] == 'severe_pre_eclamp') or \
-            (df.at[person_id, 'pn_htn_disorders'] == 'severe_pre_eclamp'):
+           (df.at[person_id, 'pn_htn_disorders'] == 'severe_pre_eclamp'):
 
             # Determine if this person will deliver vaginally or via caesarean
             if (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'none') and (labour_stage == 'ip'):
@@ -2862,7 +2861,6 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         df = self.sim.population.props
         params = self.module.current_parameters
-        cons = self.module.item_codes_lab_consumables
 
         if not df.at[person_id, 'is_alive']:
             return

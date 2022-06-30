@@ -61,7 +61,7 @@ def output_all_death_calibrations(scenario_filename, outputspath, pop_size, sim_
                 lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'type'])['person'].count()),
             do_scaling=False
         )
-        complications_df= c_df.fillna(0)
+        complications_df = c_df.fillna(0)
 
         return complications_df
 

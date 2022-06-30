@@ -66,9 +66,9 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
         for treatment in interventions:
             if treatment == 'neo_sep_treat':
                 abx = analysis_utility_functions.get_mean_and_quants_from_str_df(
-                intervention_results, 'neo_sep_abx', intervention_years)
+                    intervention_results, 'neo_sep_abx', intervention_years)
                 supp = analysis_utility_functions.get_mean_and_quants_from_str_df(
-                intervention_results, 'neo_sep_supportive_care', intervention_years)
+                    intervention_results, 'neo_sep_supportive_care', intervention_years)
                 treatment_dict.update({treatment: []})
                 for lp in [0, 1, 2]:
                     data = [abx[lp], supp[lp]]
@@ -111,11 +111,11 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
         crude_comps.update({'an_ip_sepsis': sum_lists(incidence_an_sep, incidence_la_sep)})
 
         # Antenatal/Intrapartum Haemorrhage
-        incidence_an_haem_mm= analysis_utility_functions.get_mean_and_quants_from_str_df(
+        incidence_an_haem_mm = analysis_utility_functions.get_mean_and_quants_from_str_df(
             mat_comps['pregnancy_supervisor'], 'mild_mod_antepartum_haemorrhage', intervention_years)
         incidence_an_haem_s = analysis_utility_functions.get_mean_and_quants_from_str_df(
             mat_comps['pregnancy_supervisor'], 'severe_antepartum_haemorrhage', intervention_years)
-        incidence_la_haem_mm= analysis_utility_functions.get_mean_and_quants_from_str_df(
+        incidence_la_haem_mm = analysis_utility_functions.get_mean_and_quants_from_str_df(
             mat_comps['labour'], 'mild_mod_antepartum_haemorrhage', intervention_years)
         incidence_la_haem_s = analysis_utility_functions.get_mean_and_quants_from_str_df(
             mat_comps['labour'], 'severe_antepartum_haemorrhage', intervention_years)
@@ -306,7 +306,7 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
                               'ec_pn': ['iv_htns_pn_eclampsia', 'mag_sulph_pn_eclampsia'],
                               'obs_labour_other': 'avd_ol',
                               'neo_resp_distress': 'neo_resus',
-                              'neo_sepsis':'neo_sep_treat'}
+                              'neo_sepsis': 'neo_sep_treat'}
 
         for k in comp_and_treatment:
             if not isinstance(comp_and_treatment[k], list):

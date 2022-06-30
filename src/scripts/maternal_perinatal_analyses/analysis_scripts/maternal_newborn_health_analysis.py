@@ -671,5 +671,3 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
             'Proportion (%)',
             'Proportion of Ever Depressed Individuals Started on Talking Therapy',
             plot_destination_folder, 'depression_tt')
-
-

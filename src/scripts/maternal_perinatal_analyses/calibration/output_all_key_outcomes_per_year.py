@@ -908,7 +908,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
                 lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'type'])['newborn'].count()),
             do_scaling=False
         )
-    nb_outcomes_pn_df =nb_oc_pn_df.fillna(0)
+    nb_outcomes_pn_df = nb_oc_pn_df.fillna(0)
 
     lbw_data = analysis_utility_functions.get_comp_mean_and_rate(
         'low_birth_weight', birth_data_ex2010[0], nb_outcomes_df, 100, sim_years)

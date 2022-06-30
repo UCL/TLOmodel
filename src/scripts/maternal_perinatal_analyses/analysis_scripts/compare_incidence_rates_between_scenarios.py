@@ -384,7 +384,6 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
         late_ptl_data = analysis_utility_functions.get_comp_mean_and_rate(
             'late_preterm_labour', total_births_per_year, comps_df['labour'], 100, intervention_years)
 
-
         total_ptl_rates = [x + y for x, y in zip(early_ptl_data[0], late_ptl_data[0])]
         ptl_lqs = [x + y for x, y in zip(early_ptl_data[1], late_ptl_data[1])]
         ltl_uqs = [x + y for x, y in zip(early_ptl_data[2], late_ptl_data[2])]
@@ -477,7 +476,7 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
         avd_data = analysis_utility_functions.get_comp_mean_and_rate(
             'instrumental', total_births_per_year, delivery_mode, 100, intervention_years)
 
-        return {'cs':cs_data,
+        return {'cs': cs_data,
                 'avd': avd_data}
 
     delivery_data = {k: get_delivery_data(results_folders[k], births_dict[k][0]) for k in results_folders}
@@ -519,9 +518,7 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
         pn_sep_data = analysis_utility_functions.get_comp_mean_and_rate(
             'sepsis', total_births_per_year, comps_df['postnatal_supervisor'], 1000, intervention_years)
         pn_number = analysis_utility_functions.get_mean_and_quants_from_str_df(comps_df['postnatal_supervisor'],
-                                                                                  'sepsis',
-                                                                               intervention_years)
-
+                                                                               'sepsis', intervention_years)
 
         complete_pn_sep_data = [x + y for x, y in zip(pn_la_sep_data[0], pn_sep_data[0])]
         complete_pn_sep_lq = [x + y for x, y in zip(pn_la_sep_data[1], pn_sep_data[1])]
@@ -864,4 +861,3 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
         plt.legend()
         plt.savefig(f'./{nmr_destination}/{cause}_mmr.png')
         plt.show()
-

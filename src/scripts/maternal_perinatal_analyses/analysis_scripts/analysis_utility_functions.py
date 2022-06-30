@@ -344,9 +344,8 @@ def comparison_graph_multiple_scenarios(intervention_years, data_dict, y_label, 
     plt.show()
 
 
-def comparison_graph_multiple_scenarios_multi_level_dict(
-    # todo combine with above
-    intervention_years, data_dict, key, y_label, title, graph_location, save_name):
+def comparison_graph_multiple_scenarios_multi_level_dict(intervention_years, data_dict, key, y_label, title,
+                                                         graph_location, save_name):
     fig, ax = plt.subplots()
 
     for k, colour in zip(data_dict, ['deepskyblue', 'olivedrab', 'darksalmon', 'darkviolet']):
@@ -357,7 +356,6 @@ def comparison_graph_multiple_scenarios_multi_level_dict(
     plt.xlabel('Year')
     plt.title(title)
     plt.gca().set_ylim(bottom=0)
-    #plt.style.use('seaborn-darkgrid')
     plt.legend()
     plt.savefig(f'./{graph_location}/{save_name}.png')
     plt.show()
@@ -389,26 +387,25 @@ def comparison_bar_chart_multiple_bars(data, dict_name, intervention_years, y_ti
 
 # =========================== FUNCTIONS RETURNING DATA FROM MULTIPLE SCENARIOS =======================================
 def return_birth_data_from_multiple_scenarios(results_folders, intervention_years):
-        """
-        Extract mean, lower and upper quantile births per year for a given scenario
-        :param folder: results folder for scenario
-        :return: list of total births per year of pre defined intervention period (i.e. 2020-2030)
-        """
+    """
+    Extract mean, lower and upper quantile births per year for a given scenario
+    :param folder: results folder for scenario
+    :return: list of total births per year of pre defined intervention period (i.e. 2020-2030)
+    """
+    def extract_births(folder):
+        br = extract_results(
+            folder,
+            module="tlo.methods.demography",
+            key="on_birth",
+            custom_generate_series=(
+                lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()),
+            do_scaling=True
+        )
+        births_results = br.fillna(0)
+        total_births_per_year = get_mean_and_quants(births_results, intervention_years)
+        return total_births_per_year
 
-        def extract_births(folder):
-            br = extract_results(
-                folder,
-                module="tlo.methods.demography",
-                key="on_birth",
-                custom_generate_series=(
-                    lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()),
-                do_scaling=True
-            )
-            births_results = br.fillna(0)
-            total_births_per_year = get_mean_and_quants(births_results, intervention_years)
-            return total_births_per_year
-
-        return {k: extract_births(results_folders[k]) for k in results_folders}
+    return {k: extract_births(results_folders[k]) for k in results_folders}
 
 
 def return_pregnancy_data_from_multiple_scenarios(results_folders, intervention_years):
@@ -521,7 +518,7 @@ def return_death_data_from_multiple_scenarios(results_folders, births_dict, inte
         return {'direct_mmr': mmr,
                 'total_mmr': total_mmr,
                 'nmr': nmr,
-                'crude_m_deaths': crude_m_deaths, # TODO: THIS EXLUDES INDIRECT CRUDE DEATHS....
+                'crude_m_deaths': crude_m_deaths,  # TODO: THIS EXLUDES INDIRECT CRUDE DEATHS....
                 'crude_n_deaths': crude_n_deaths}
 
     # Extract data from scenarios
@@ -627,8 +624,8 @@ def return_dalys_from_multiple_scenarios(results_folders, intervention_years):
             module="tlo.methods.demography",
             key="person_years",
             custom_generate_series=(
-                lambda df: df.assign(total=(df['M'].apply(lambda x: sum(x.values()))) +
-                                            df['F'].apply(lambda x: sum(x.values()))).assign(
+                lambda df: df.assign(total=(df['M'].apply(lambda x: sum(x.values()))) + df['F'].apply(
+                    lambda x: sum(x.values()))).assign(
                     year=df['date'].dt.year).groupby(['year'])['total'].sum()),
             do_scaling=True)
 
@@ -734,4 +731,3 @@ def return_dalys_from_multiple_scenarios(results_folders, intervention_years):
 
     # Store DALYs data for baseline and intervention
     return {k: get_dalys_from_scenario(results_folders[k], intervention_years) for k in results_folders}
-

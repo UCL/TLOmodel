@@ -2,13 +2,11 @@ import os
 from pathlib import Path
 
 import pandas as pd
-import pytest
 
 from tlo import Date, Simulation
-from tlo.analysis.utils import parse_log_file
 from tlo.methods.fullmodel import fullmodel
 from tlo.methods.healthsystem import FacilityInfo
-from tlo.methods import (labour, pregnancy_supervisor, care_of_women_during_pregnancy, newborn_outcomes,
+from tlo.methods import (labour, care_of_women_during_pregnancy, newborn_outcomes,
                          pregnancy_helper_functions)
 
 
@@ -555,5 +553,3 @@ def test_analysis_events_circumnavigates_sf_and_competency_parameters(seed):
     assert df.at[mother_id, 'la_severe_pre_eclampsia_treatment']
     assert mni[mother_id]['mode_of_delivery'] == 'instrumental'
     assert df.at[mother_id, 'la_sepsis_treatment']
-
-

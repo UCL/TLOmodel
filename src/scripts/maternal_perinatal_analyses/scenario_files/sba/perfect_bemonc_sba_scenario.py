@@ -59,6 +59,7 @@ class SBAPerfectEMONC(BaseScenario):
                 "tlo.methods.tb": logging.INFO,
             }
         }
+
     def modules(self):
         return [demography.Demography(resourcefilepath=self.resources),
                 contraception.Contraception(resourcefilepath=self.resources),
