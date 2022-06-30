@@ -402,7 +402,6 @@ class Lifestyle(Module):
         # initialise all properties using linear models
         self.models.initialise_all_properties(df)
 
-
     def initialise_simulation(self, sim):
         """Add lifestyle events to the simulation
         """
@@ -456,66 +455,6 @@ class Lifestyle(Module):
             self.rng.rand() < self.parameters['proportion_of_men_that_are_assumed_to_be_circumcised_at_birth']
         )
 
-class FemaleSexWorkers:
-    """ a class that is used to initialise and update the sex workers property in the population dataframe. it
-    predicts the number of women who will be sex workers at both population initialisation and in Lifestyle event"""
-
-    def __init__(self, months_since_last_poll: int, module_params):
-        # initialise parameters
-        self.months_since_last_poll = months_since_last_poll
-        self.params = module_params
-
-    def predict(self, df, rng=None) -> pd.Series:
-        """Determine which women will be sex workers.
-        This is called by initialise_population and the LifestyleEvent.
-        Subject to the constraints:
-        (i) Women who are in sex work may stop and there is a proportion that stop during each year.
-        (ii) New women are 'recruited' to start sex work such that the overall proportion of women who are sex workers
-            does not fall below a given level.
-
-        :param df: population dataframe
-        :param rng: random number generator """
-
-        # create a series that will return all female sexworkers
-        f_sex_worker = pd.Series(data=copy.deepcopy(df.li_is_sexworker), index=df.index)
-
-        # Select current sex workers to stop being a sex worker
-        sw_idx = df.loc[df.is_alive & df.li_is_sexworker].index
-        proportion_that_will_stop_being_sexworker = self.params['fsw_transition'] * self.months_since_last_poll / 12
-        will_stop = sw_idx[rng.rand(len(sw_idx)) < proportion_that_will_stop_being_sexworker]
-        f_sex_worker.loc[will_stop] = False
-
-        # Select women to start sex worker (irrespective of any characteristic)
-        # eligible to become a sex worker: alive, unmarried, women aged 15-49 who are not currently sex worker
-        eligible_idx = df.loc[
-            df.is_alive &
-            (df.sex == 'F') &
-            ~df.li_is_sexworker &
-            df.age_years.between(15, 49) &
-            (df.li_mar_stat != 2)
-            ].index
-
-        n_sw = len(df.loc[df.is_alive & df.li_is_sexworker].index)
-        target_n_sw = int(np.round(len(df.loc[
-                                           df.is_alive &
-                                           (df.sex == 'F') &
-                                           df.age_years.between(15, 49)
-                                           ].index) * self.params["proportion_female_sex_workers"]
-                                   ))
-        deficit = target_n_sw - n_sw
-        if deficit > 0:
-            if deficit < len(eligible_idx):
-                # randomly select women to start sex work:
-                will_start_sw_idx = rng.choice(eligible_idx, deficit, replace=False)
-            else:
-                # select all eligible women to start sex work:
-                will_start_sw_idx = eligible_idx
-            # make is_sexworker for selected women:
-            f_sex_worker.loc[will_start_sw_idx] = True
-
-        # return updated female sexworker series
-        return f_sex_worker
-
 class EduProperties:
     """ a class that will initialise education property in the population dataframe. it is calling education
     linear models defined in Lifestyle modules and use the result to determine both education level and whether they
@@ -526,7 +465,7 @@ class EduProperties:
         self.edu_property = _property
         self.module = module
 
-    def predict(self, df, rng=None) -> pd.Series:
+    def predict(self, df, rng=None, **kwargs) -> pd.Series:
         """ use output from education linear models to set education levels and status
 
         :param self: a reference to EduProperties class
@@ -534,7 +473,7 @@ class EduProperties:
         :param rng: random number generator """
 
         # create a new dataframe to hold results
-        edu_df = pd.DataFrame(data=copy.deepcopy(df[['li_in_ed', 'li_ed_lev']]), index=df.index)
+        edu_df = pd.DataFrame(data=df[['li_in_ed', 'li_ed_lev']].copy(), index=df.index)
 
         # select individuals who are alive and 5+ years
         age_gte5 = df.index[(df.age_years >= 5) & df.is_alive]
@@ -545,8 +484,8 @@ class EduProperties:
         rnd_draw = pd.Series(rng.random_sample(size=len(age_gte5)), index=age_gte5)
 
         # make some predictions
-        p_some_ed = LifestyleModels(self.module).education_linear_models()['some_edu_linear_model'].predict(edu_pop)
-        p_ed_lev_3 = LifestyleModels(self.module).education_linear_models()['level_3_edu_linear_model'].predict(edu_pop)
+        p_some_ed = self.module.models.education_linear_models()['some_edu_linear_model'].predict(edu_pop)
+        p_ed_lev_3 = self.module.models.education_linear_models()['level_3_edu_linear_model'].predict(edu_pop)
 
         dfx = pd.concat([(1 - p_ed_lev_3), (1 - p_some_ed)], axis=1)
         dfx.columns = ['cut_off_ed_levl_3', 'p_ed_lev_1']
@@ -570,14 +509,14 @@ class BmiProperty:
         # initialise some parameters here
         self.module = module
 
-    def predict(self, df, rng=None) -> pd.Series:
+    def predict(self, df, rng=None, **kwargs) -> pd.Series:
         """ set property for BMI in population dataframe
 
         :param df: population dataframe
         :param rng: random number generator    """
 
         # create a series that will hold all bmi categories
-        bmi_cat_series = pd.Series(data=copy.deepcopy(df.li_bmi), index=df.index)
+        bmi_cat_series = pd.Series(data=0, index=df.index)
 
         # get indexes of population alive and 15+ years
         age_ge15_idx = df.index[df.is_alive & (df.age_years >= 15)]
@@ -591,7 +530,7 @@ class BmiProperty:
             bmi_pow = [-2, -1, 0, 1, 2]
 
             for index_ in range(0, 5):
-                df_lm[index_ + 1] = LifestyleModels(self.module).bmi_linear_model(index_, bmi_pow[index_]).predict(prop_df)
+                df_lm[index_ + 1] = self.module.models.bmi_linear_model(index_, bmi_pow[index_]).predict(prop_df)
 
             dfxx = df_lm.div(df_lm.sum(axis=1), axis=0)
 
@@ -613,10 +552,10 @@ class LifestyleModels:
             7.  education
             8.  unimproved sanitation
             9.  no clean drinking water
-            10.  wood burn stove
-            11.  no access hand washing
-            12.  salt intake
-            13  sugar intake
+            10. wood burn stove
+            11. no access hand washing
+            12. salt intake
+            13. sugar intake
             14. bmi """
 
     def __init__(self, module):
@@ -689,8 +628,8 @@ class LifestyleModels:
                 'init': self.male_circumsision_property_linear_model()
             },
             'li_is_sexworker': {
-                'init': FemaleSexWorkers(0, self.params),
-                'update': FemaleSexWorkers(3, self.params)
+                'init': self.female_sex_workers(),
+                'update': self.female_sex_workers()
             }
         }
 
@@ -700,8 +639,21 @@ class LifestyleModels:
         :param df: The population dataframe """
         # loop through linear models dictionary and initialise each property in the population dataframe
         for _property_name, _model in self.models.items():
-            print(f'the property is {_property_name}')
-            df.loc[df.is_alive, _property_name] = _model['init'].predict(df.loc[df.is_alive], self.rng)
+            df.loc[df.is_alive, _property_name] = _model['init'].predict(
+                df.loc[df.is_alive], rng=self.rng, other=self.module.sim.date, months_since_last_poll=0)
+
+    def update_all_properties(self, df):
+        """update population properties using linear models defined in LifestyleModels class. This function is to be
+         called by the Lifestyle Event class
+
+        :param df: The population dataframe """
+        # loop through linear models dictionary and initialise each property in the population dataframe
+        for _property_name, _model in self.models.items():
+            if _property_name in ['li_wealth', 'li_is_circ']:
+                pass
+            else:
+                df.loc[df.is_alive, _property_name] = _model['update'].predict(
+                    df.loc[df.is_alive], rng=self.rng, other=self.module.sim.date, months_since_last_poll=3)
 
     def rural_urban_linear_model(self) -> LinearModel:
         """ a function to create linear model for rural urban properties. Here we are using additive linear model and
@@ -719,18 +671,31 @@ class LifestyleModels:
         return rural_urban_lm
 
     def wealth_level_linear_model(self) -> LinearModel:
-        """ a function to create linear model for wealth level property. Here are using multiplicative linear model
+        """ a function to create linear model for wealth level property. Here are using custom linear model
         and are setting probabilities based on whether the individual is urban or rural """
 
-        wealth_level_lm = LinearModel.multiplicative(
-            Predictor('li_urban').when(True, self.rng.choice(
-                [1, 2, 3, 4, 5], p=self.params['init_p_wealth_urban']
-            ))
-                .otherwise(self.rng.choice(
-                [1, 2, 3, 4, 5], p=self.params['init_p_wealth_rural']))
-        )
-        # return wealth level linear model
-        return wealth_level_lm
+        def predict_wealth_levels(self, df, rng=None, **externals) -> pd.Series:
+            """ a function to assign individuals different wealth levels
+
+            :param  self:   a reference to the calling custom linear model
+            :param  df:     population dataframe
+            :param  rng:    a random number generator
+            :param  externals: a dict containing any other variables passed on to this function """
+            # get access to module parameters
+            p=self.parameters
+
+            # create a new series to hold different wealth levels
+            res = pd.Series(index=df.index)
+            res[df.li_urban] = df.loc[df.li_urban].apply(
+                lambda _: rng.choice([1, 2, 3, 4, 5], p=p['init_p_wealth_urban']), axis=1)
+            res[~df.li_urban] = df.loc[~df.li_urban].apply(
+                lambda _: rng.choice([1, 2, 3, 4, 5], p=p['init_p_wealth_rural']), axis=1)
+            # return wealth level linear model
+            return res
+
+        # create and return welath levels linear model
+        wealth_lev_lm = LinearModel.custom(predict_wealth_levels, parameters = self.params)
+        return wealth_lev_lm
 
     def low_exercise_linear_model(self) -> LinearModel:
         """A function to create a linear model for lower exercise property of Lifestyle module. Here we are using
@@ -801,31 +766,45 @@ class LifestyleModels:
         return excessive_alc_lm
 
     def marital_status_linear_model(self) -> LinearModel:
-        """A function to create linear model for individual's marital status. Here, We are using a multiplicative
+        """A function to create linear model for individual's marital status. Here, We are using a custom
         linear model and we are assigning individual's marital status based on their age group.In this module,
         marital status is in three categories;
                 1.  Never Married
                 2.  Currently Married
                 3   Divorced or Widowed
         """
+        def init_marital_status(self, df, rng=None, **externals) -> pd.Series:
+            """ a function to assign marital status to individuals of different age groups
 
-        # create marital status linear model
-        mar_status_lm = LinearModel.multiplicative(
-            Predictor('age_years').when('.between(15, 19)', self.rng.choice(
-                [1, 2, 3], p=self.params['init_dist_mar_stat_age1520']))
-                .when('.between(20, 29)', self.rng.choice(
-                [1, 2, 3], p=self.params['init_dist_mar_stat_age2030']))
-                .when('.between(30, 39)', self.rng.choice(
-                [1, 2, 3], p=self.params['init_dist_mar_stat_age3040']))
-                .when('.between(40, 49)', self.rng.choice(
-                [1, 2, 3], p=self.params['init_dist_mar_stat_age4050']))
-                .when('.between(50, 59)', self.rng.choice(
-                [1, 2, 3], p=self.params['init_dist_mar_stat_age5060']))
-                .when('>= 60', self.rng.choice(
-                [1, 2, 3], p=self.params['init_dist_mar_stat_agege60'])),
-                )
+            :param self: a reference to cutom linear model
+            :param df:  population dataframe
+            :param  rng:
+            :param  externals a dict containing any other variables passed on to this function """
+            # get access to Lifestyle module parameters
+            p=self.parameters
 
-        # return marital status linear model
+            # create a new series to hold individual's marital status
+            mar_stat = pd.Series(data=1, index=df.index)
+
+            # select individuals of different age category
+            age_15_19 = df.index[df.age_years.between(15, 19) & df.is_alive]
+            age_20_29 = df.index[df.age_years.between(20, 29) & df.is_alive]
+            age_30_39 = df.index[df.age_years.between(30, 39) & df.is_alive]
+            age_40_49 = df.index[df.age_years.between(40, 49) & df.is_alive]
+            age_50_59 = df.index[df.age_years.between(50, 59) & df.is_alive]
+            age_gte60 = df.index[(df.age_years >= 60) & df.is_alive]
+
+            mar_stat.loc[age_15_19] = rng.choice( [1, 2, 3], size=len(age_15_19), p=p['init_dist_mar_stat_age1520'])
+            mar_stat.loc[age_20_29] = rng.choice([1, 2, 3], size=len(age_20_29), p=p['init_dist_mar_stat_age2030'])
+            mar_stat.loc[age_30_39] = rng.choice([1, 2, 3], size=len(age_30_39), p=p['init_dist_mar_stat_age3040'])
+            mar_stat.loc[age_40_49] = rng.choice([1, 2, 3], size=len(age_40_49), p=p['init_dist_mar_stat_age4050'])
+            mar_stat.loc[age_50_59] = rng.choice([1, 2, 3], size=len(age_50_59), p=p['init_dist_mar_stat_age5060'])
+            mar_stat.loc[age_gte60] = rng.choice([1, 2, 3], size=len(age_gte60), p=p['init_dist_mar_stat_agege60'])
+            # return marital status series
+            return mar_stat
+
+        # create and return marital status linear model
+        mar_status_lm = LinearModel.custom(init_marital_status, parameters=self.params)
         return mar_status_lm
 
     def education_linear_models(self) -> Dict[str, LinearModel]:
@@ -1055,11 +1034,64 @@ class LifestyleModels:
 
         return bmi_lm
 
+    def female_sex_workers(self) -> LinearModel:
+        """ a function that is used to initialise and update the sex workers property in the population dataframe. it
+        predicts the number of women who will be sex workers at both population initialisation and in Lifestyle event.
+        Here we are using custom linear model """
+
+        def predict_female_sex_workers(self, df, rng=None, **externals) -> pd.Series:
+            """Determine which women will be sex workers.
+            This is called by initialise_population and the LifestyleEvent.
+            Subject to the constraints:
+            (i) Women who are in sex work may stop and there is a proportion that stop during each year.
+            (ii) New women are 'recruited' to start sex work such that the overall proportion of women who are sex workers
+                does not fall below a given level.
+
+            :param df: population dataframe
+            :param rng: random number generator
+            :param externals: any other variable passed on to this function """
+
+            p = self.parameters
+            # create a series that will return all female sexworkers
+            f_sex_worker = pd.Series(data=df.li_is_sexworker.copy(), index=df.index)
+
+            # Select current sex workers to stop being a sex worker
+            sw_idx = df.loc[df.is_alive & df.li_is_sexworker].index
+            proportion_that_will_stop_being_sexworker = p['fsw_transition'] * externals['months_since_last_poll'] / 12
+            will_stop = sw_idx[rng.rand(len(sw_idx)) < proportion_that_will_stop_being_sexworker]
+            f_sex_worker.loc[will_stop] = False
+
+            # Select women to start sex worker (irrespective of any characteristic)
+            # eligible to become a sex worker: alive, unmarried, women aged 15-49 who are not currently sex worker
+            eligible_idx = df.loc[df.is_alive & (df.sex == 'F') & ~df.li_is_sexworker & df.age_years.between(15, 49)
+                                  & (df.li_mar_stat != 2)].index
+
+            n_sw = len(df.loc[df.is_alive & df.li_is_sexworker].index)
+            target_n_sw = int(np.round(len(df.loc[df.is_alive & (df.sex == 'F') & df.age_years.between(15, 49)
+                                           ].index) * p["proportion_female_sex_workers"]))
+            deficit = target_n_sw - n_sw
+            if deficit > 0:
+                if deficit < len(eligible_idx):
+                    # randomly select women to start sex work:
+                    will_start_sw_idx = rng.choice(eligible_idx, deficit, replace=False)
+                else:
+                    # select all eligible women to start sex work:
+                    will_start_sw_idx = eligible_idx
+                # make is_sexworker for selected women:
+                f_sex_worker.loc[will_start_sw_idx] = True
+
+            # return updated female sexworker series
+            return f_sex_worker
+
+        # return female sex worker linear model
+        f_sex_worker_lm = LinearModel.custom(predict_female_sex_workers, parameters=self.params)
+        return f_sex_worker_lm
+
     def male_circumsision_property_linear_model(self) -> LinearModel:
         """A function to create linear model for initialising the male circumcision property. Here, we are using
         custom linear model """
 
-        def handle_male_circumcision_prop(self, df, rng=None) -> pd.Series:
+        def handle_male_circumcision_prop(self, df, rng=None, **externals) -> pd.Series:
             """ # determine the proportion of men that are circumcised at initiation
             # NB. this is determined with respect to any characteristics (eg. ethnicity or religion)
             Steps:
@@ -1070,18 +1102,21 @@ class LifestyleModels:
 
             :param self: a reference to the calling custom linear model
             :param df: population dataframe
-            :param rng: random number generator """
+            :param rng: random number generator
+            :param  externals a dict containing any other variables passed on to this function """
 
             # get module parameters
             p = self.parameters
 
             # create a new male circumcision series
-            male_circ = pd.Series(data=copy.deepcopy(df.li_is_circ), index=df.index)
+            male_circ = pd.Series(data=False, index=df.index)
 
             # select a population of men to be circumcised
             men = df.loc[df.is_alive & (df.sex == 'M')]
             will_be_circ = rng.rand(len(men)) < p['proportion_of_men_circumcised_at_initiation']
             male_circ.loc[men[will_be_circ].index] = True
+            # return male circumcision series
+            return male_circ
 
         # return male circumcision linear model
         male_circ_lm = LinearModel.custom(handle_male_circumcision_prop, parameters=self.params)
@@ -1095,7 +1130,7 @@ class LifestyleModels:
         """A function to create linear model for updating the rural urban status of an individual. Here, we are using
         custom linear model """
 
-        def handle_rural_urban_transitions(self, df, rng=None) -> pd.Series:
+        def handle_rural_urban_transitions(self, df, rng=None, **externals) -> pd.Series:
             """ a function that will return a series containing rural urban transitions in individuals
             Steps:
                 1.  accept a population dataframe from the predict method of a custom linear model
@@ -1105,25 +1140,26 @@ class LifestyleModels:
 
             :param self: a reference to the calling custom linear model i.e LinearModel.custom(handle_rural_urban_transitions, parameters=self.params)
             :param df: population dataframe
-            :param rng: random number generator """
+            :param rng: random number generator
+            :param  externals: a dict containing any other variables passed on to this function """
 
             # get module parameters
             p = self.parameters
 
             # create a new series that will hold all rural urban transitions
-            rural_urban_trans = pd.Series(data=copy.deepcopy(df.li_urban), index=df.index)
+            rural_urban_trans = pd.Series(data=df.li_urban.copy(), index=df.index)
 
             # get index of current urban/rural status
             currently_rural = df.index[~df.li_urban & df.is_alive]
             currently_urban = df.index[df.li_urban & df.is_alive]
 
             # handle new transitions
-            rural_to_urban = currently_rural[m.rng.random_sample(size=len(currently_rural)) < p['r_urban']]
-            rural_urban_trans.loc[rural_to_urban, 'li_urban'] = True
+            rural_to_urban = currently_rural[rng.random_sample(size=len(currently_rural)) < p['r_urban']]
+            rural_urban_trans.loc[rural_to_urban] = True
 
             # handle new transitions to rural
             urban_to_rural = currently_urban[rng.random_sample(size=len(currently_urban)) < p['r_rural']]
-            rural_urban_trans.loc[urban_to_rural, 'li_urban'] = False
+            rural_urban_trans.loc[urban_to_rural] = False
 
             # return updated rural urban series
             return rural_urban_trans
@@ -1136,7 +1172,7 @@ class LifestyleModels:
         """ A function to create linear model for updating the exercise property. Here we are using custom
         linear model and are looking at rate of transitions from low exercise to not low exercise and vice versa """
 
-        def handle_low_exercise_transitions(self, df, rng=None) -> pd.Series:
+        def handle_low_exercise_transitions(self, df, rng=None, **externals) -> pd.Series:
             """ a function that will return a series containing low exercise transitions in individuals
             Steps:
                 1.  accept a population dataframe from the predict method of a custom linear model
@@ -1146,13 +1182,14 @@ class LifestyleModels:
 
             :param self: a reference to the calling custom linear model i.e LinearModel.custom(handle_low_exercise_transitions, parameters=self.params)
             :param df: population dataframe
-            :param rng: random number generator """
+            :param rng: random number generator
+            :param externals: an external variable passed on to this function """
 
             # get module parameters
             p = self.parameters
 
             # create a new series that will hold all low exercise transitions
-            low_ex_trans = pd.Series(data=copy.deepcopy(df.li_low_ex), index=df.index)
+            low_ex_trans = pd.Series(data=df.li_low_ex.copy(), index=df.index)
 
             # transition new individuals from not low exercise to low exercise
             adults_not_low_ex = df.index[~df.li_low_ex & df.is_alive & (df.age_years >= 15)]
@@ -1173,7 +1210,7 @@ class LifestyleModels:
 
             # setting below properties direclty here. perhaps I can do beter?
             all_idx_campaign_exercise_increase = df.index[
-                df.is_alive & (self.sim.date == p['start_date_campaign_exercise_increase'])
+                df.is_alive & (externals['other'] == p['start_date_campaign_exercise_increase'])
                 ]
             df.loc[all_idx_campaign_exercise_increase, 'li_exposed_to_campaign_exercise_increase'] = True
 
@@ -1188,7 +1225,7 @@ class LifestyleModels:
         """A function to create linear model for tobacco use property. Here we are using custom linear model
         and are looking at transitions from not tobacco use to tobacco use and vice versa"""
 
-        def handle_all_tob_tansitions(self, df, rng=None) -> pd.Series:
+        def handle_all_tob_tansitions(self, df, rng=None, **externals) -> pd.Series:
             """ a function that will return a serie containg tobacco transitions in individuals
             Steps:
                 1.  accept a population dataframe from the predict method of a custom linear model
@@ -1198,19 +1235,20 @@ class LifestyleModels:
 
             :param self: a reference to the calling custom linear model
             :param df: population dataframe
-            :param rng: random number generator  """
+            :param rng: random number generator
+            :param externals: any external variable passed on to this function """
             # get module parameters
             p = self.parameters
 
             # create a new serie that will hold all tobacco use transitions
-            tob_trans = pd.Series(data=copy.deepcopy(df.li_tob), index=df.index)
+            tob_trans = pd.Series(data=df.li_tob.copy(), index=df.index)
 
             # select indiviuals 15+ who are not smoking tobacco
             adults_not_tob = df.index[(df.age_years >= 15) & df.is_alive & ~df.li_tob]
 
             # start tobacco use
-            eff_p_tob = pd.Series(m.parameters['r_tob'], index=adults_not_tob)
-            eff_p_tob.loc[(df.age_years >= 20) & (df.age_years < 40)] *= m.parameters['rr_tob_age2039']
+            eff_p_tob = pd.Series(p['r_tob'], index=adults_not_tob)
+            eff_p_tob.loc[(df.age_years >= 20) & (df.age_years < 40)] *= p['rr_tob_age2039']
             eff_p_tob.loc[df.age_years >= 40] *= p['rr_tob_agege40']
             eff_p_tob.loc[df.sex == 'F'] *= p['rr_tob_f']
             eff_p_tob *= p['rr_tob_wealth'] ** (pd.to_numeric(df.loc[adults_not_tob, 'li_wealth']) - 1)
@@ -1223,12 +1261,12 @@ class LifestyleModels:
             eff_rate_not_tob.loc[df.li_exposed_to_campaign_quit_smoking] *= (p['rr_not_tob_pop_advice_tobacco'])
             random_draw = rng.random_sample(len(tob_idx))
             newly_not_tob_idx = tob_idx[random_draw < eff_rate_not_tob]
-            tob_trans.loc[newly_not_tob_idx, 'li_tob'] = False
+            tob_trans.loc[newly_not_tob_idx] = False
 
             # setting below properties direclty here. perhaps I can do beter?
-            df.loc[newly_not_tob_idx, 'li_date_not_tob'] = self.sim.date
+            df.loc[newly_not_tob_idx, 'li_date_not_tob'] = externals['other']
             all_idx_campaign_quit_smoking = df.index[df.is_alive &
-                                                     (self.sim.date == p['start_date_campaign_quit_smoking'])]
+                                                     (externals['other'] == p['start_date_campaign_quit_smoking'])]
             df.loc[all_idx_campaign_quit_smoking, 'li_exposed_to_campaign_quit_smoking'] = True
 
             # return updated tobacco serie
@@ -1242,7 +1280,7 @@ class LifestyleModels:
         model and are looking at individuals transition from either excess alcohol to not excess alcohol or vice
         versa """
 
-        def handle_excess_alcohol_transitions(self, df, rng=None) -> pd.Series:
+        def handle_excess_alcohol_transitions(self, df, rng=None, **externals) -> pd.Series:
             """ a function that will return a serie containg excess alcohol transitions in individuals
                         Steps:
                             1.  accept a population dataframe from the predict method of a custom linear model
@@ -1252,12 +1290,13 @@ class LifestyleModels:
 
                         :param self: a reference to the calling custom linear model
                         :param df: population dataframe
-                        :param rng: random number generator  """
+                        :param rng: random number generator
+                        :param externals: any external variable passed on to this function """
             # get module parameters
             p = self.parameters
 
             # create a new serie that will hold all excess alcohol transitions
-            li_ex_alc_trans = pd.Series(data=copy.deepcopy(df.li_ex_alc), index=df.index)
+            li_ex_alc_trans = pd.Series(data=df.li_ex_alc.copy(), index=df.index)
 
             # select index of individuals of different categories
             not_ex_alc_f = df.index[~df.li_ex_alc & df.is_alive & (df.sex == 'F') & (df.age_years >= 15)]
@@ -1281,7 +1320,7 @@ class LifestyleModels:
 
             # setting below properties direclty here. perhaps I can do beter?
             all_idx_campaign_alcohol_reduction = df.index[
-                df.is_alive & (self.sim.date == p['start_date_campaign_alcohol_reduction'])
+                df.is_alive & (externals['other'] == p['start_date_campaign_alcohol_reduction'])
                 ]
             df.loc[all_idx_campaign_alcohol_reduction, 'li_exposed_to_campaign_alcohol_reduction'] = True
 
@@ -1296,7 +1335,7 @@ class LifestyleModels:
         """A function to create linear model for marital status property. Here we are using custom linear
         model and are looking at individuals ability to transition into different marital statuses """
 
-        def handle_marital_status_transitions(self, df, rng=None) -> pd.Series:
+        def handle_marital_status_transitions(self, df, rng=None, **externals) -> pd.Series:
             """ a function that will return a serie containing marital status transitions in individuals
                         Steps:
                             1.  accept a population dataframe from the predict method of a custom linear model
@@ -1306,22 +1345,23 @@ class LifestyleModels:
 
                         :param self: a reference to the calling custom linear model
                         :param df: population dataframe
-                        :param rng: random number generator  """
+                        :param rng: random number generator
+                        :param externals: any external variable passed on to this function """
             # get module parameters
             p = self.parameters
 
             # create a new serie that will hold all marital status transitions
-            mar_stat_trans = pd.Series(data=copy.deepcopy(df.li_mar_stat), index=df.index)
+            mar_stat_trans = pd.Series(data=df.li_mar_stat.copy(), index=df.index)
 
             curr_never_mar = df.index[df.is_alive & df.age_years.between(15, 29) & (df.li_mar_stat == 1)]
             curr_mar = df.index[df.is_alive & (df.li_mar_stat == 2)]
 
             # update if now married
-            now_mar = rng.random_sample(len(curr_never_mar)) < m.parameters['r_mar']
+            now_mar = rng.random_sample(len(curr_never_mar)) < p['r_mar']
             mar_stat_trans.loc[curr_never_mar[now_mar]] = 2
 
             # update if now divorced/widowed
-            now_div_wid = rng.random_sample(len(curr_mar)) < m.parameters['r_div_wid']
+            now_div_wid = rng.random_sample(len(curr_mar)) < p['r_div_wid']
             mar_stat_trans.loc[curr_mar[now_div_wid]] = 3
             return mar_stat_trans
 
@@ -1335,7 +1375,7 @@ class LifestyleModels:
 
         :param _property: This should be either `li_ed_lev` or `li_in_ed` i.e. the two education properties we are handling in `handle_edu_transitions` function """
 
-        def handle_edu_transitions(self, df, rng=None) -> pd.Series:
+        def handle_edu_transitions(self, df, rng=None, **externals) -> pd.Series:
             """ a function that will return a serie containing education transitions in individuals
                         Steps:
                             1.  accept a population dataframe from the predict method of a custom linear model
@@ -1345,12 +1385,13 @@ class LifestyleModels:
 
                         :param self: a reference to the calling custom linear model
                         :param df: population dataframe
-                        :param rng: random number generator  """
+                        :param rng: random number generator
+                        :param externals: any external variable passed on to this function """
             # get module parameters
             p = self.parameters
 
             # create a new dataframe that will hold all education transitions
-            edu_trans = pd.DataFrame(data=copy.deepcopy(df[['li_in_ed', 'li_ed_lev']]), index=df.index)
+            edu_trans = pd.DataFrame(data=df[['li_in_ed', 'li_ed_lev']].copy(), index=df.index)
 
             # get all individuals currently in education
             in_ed = df.index[df.is_alive & df.li_in_ed]
@@ -1415,7 +1456,7 @@ class LifestyleModels:
         custom linear model and are looking at individual's ability to transition from unimproved sanitation to
         improved sanitation or vice versa """
 
-        def handle_unimproved_sanitation_transitions(self, df, rng=None) -> pd.Series:
+        def handle_unimproved_sanitation_transitions(self, df, rng=None, **externals) -> pd.Series:
             """ a function that will return a series containing unimproved sanitation transitions in individuals
                         Steps:
                             1.  accept a population dataframe from the predict method of a custom linear model
@@ -1425,12 +1466,13 @@ class LifestyleModels:
 
                         :param self: a reference to the calling custom linear model
                         :param df: population dataframe
-                        :param rng: random number generator  """
+                        :param rng: random number generator
+                        :param externals: any external variable passed on to this function """
             # get module parameters
             p = self.parameters
 
             # create a new series that will hold all unimproved sanitation transitions
-            unimproved_san_trans = pd.Series(data=copy.deepcopy(df.li_unimproved_sanitation), index=df.index)
+            unimproved_san_trans = pd.Series(data=df.li_unimproved_sanitation.copy(), index=df.index)
 
             # probability of improved sanitation at all follow-up times
             unimproved_sanitaton_idx = df.index[df.li_unimproved_sanitation & df.is_alive]
@@ -1444,7 +1486,7 @@ class LifestyleModels:
 
             # probability of improved sanitation upon moving to urban from rural
             unimproved_sanitation_newly_urban_idx = df.index[
-                df.li_unimproved_sanitation & df.is_alive & (df.li_date_trans_to_urban == self.sim.date)
+                df.li_unimproved_sanitation & df.is_alive & (df.li_date_trans_to_urban == externals['other'])
                 ]
 
             random_draw = rng.random_sample(len(unimproved_sanitation_newly_urban_idx))
@@ -1469,7 +1511,7 @@ class LifestyleModels:
         custom linear models and are looking at individual ability to transition from no access to hand
         washing to having access to hand washing """
 
-        def handle_no_access_hand_washing_transitions(self, df, rng=None) -> pd.Series:
+        def handle_no_access_hand_washing_transitions(self, df, rng=None, **externals) -> pd.Series:
             """ a function that will return a series containing no access handwashing transitions in individuals
                         Steps:
                             1.  accept a population dataframe from the predict method of a custom linear model
@@ -1479,12 +1521,13 @@ class LifestyleModels:
 
                         :param self: a reference to the calling custom linear model
                         :param df: population dataframe
-                        :param rng: random number generator  """
+                        :param rng: random number generator
+                        :param externals: any external variable passed on to this function """
             # get module parameters
             p = self.parameters
 
             # create a new dataframe that will hold all no access handwashing transitions
-            trans_no_access_handwashing = pd.Series(data=copy.deepcopy(df.li_no_access_handwashing), index=df.index)
+            trans_no_access_handwashing = pd.Series(data=df.li_no_access_handwashing.copy(), index=df.index)
 
             # probability of moving to access to handwashing at all follow-up times
             no_access_handwashing_idx = df.index[df.li_no_access_handwashing & df.is_alive]
@@ -1494,10 +1537,10 @@ class LifestyleModels:
             random_draw = rng.random_sample(len(no_access_handwashing_idx))
 
             newly_access_handwashing_idx = no_access_handwashing_idx[random_draw < eff_rate_access_handwashing]
-            trans_no_access_handwashing.loc[newly_access_handwashing_idx, 'li_no_access_handwashing'] = False
+            trans_no_access_handwashing.loc[newly_access_handwashing_idx] = False
 
             # setting `li_date_acquire_access_handwashing` directly here, perhaps I can do better?
-            df.loc[newly_access_handwashing_idx, 'li_date_acquire_access_handwashing'] = self.sim.date
+            df.loc[newly_access_handwashing_idx, 'li_date_acquire_access_handwashing'] = externals['other']
 
             # return the updated no access handwashing series
             return trans_no_access_handwashing
@@ -1511,7 +1554,7 @@ class LifestyleModels:
         custom linear model and are looking at individuals ability to transition from no access to clean
         drinking water to having an access to drinking water """
 
-        def handle_no_clean_drinking_water_transitions(self, df, rng=None) -> pd.Series:
+        def handle_no_clean_drinking_water_transitions(self, df, rng=None, **externals) -> pd.Series:
             """ a function that will return a series containing no clean drinking water transitions in individuals
                         Steps:
                             1.  accept a population dataframe from the predict method of a custom linear model
@@ -1521,12 +1564,13 @@ class LifestyleModels:
 
                         :param self: a reference to the calling custom linear model
                         :param df: population dataframe
-                        :param rng: random number generator  """
+                        :param rng: random number generator
+                        :param externals: any external variable passed on to this function """
             # get module parameters
             p = self.parameters
 
             # create a new series that will hold all no clean drinking water transitions
-            trans_no_clean_drinking_water = pd.Series(data=copy.deepcopy(df.li_no_clean_drinking_water),
+            trans_no_clean_drinking_water = pd.Series(data=df.li_no_clean_drinking_water.copy(),
                                                       index=df.index)
 
             # probability of moving to clean drinking water at all follow-up times
@@ -1538,14 +1582,14 @@ class LifestyleModels:
             random_draw = rng.random_sample(len(no_clean_drinking_water_idx))
 
             newly_clean_drinking_water_idx = no_clean_drinking_water_idx[random_draw < eff_rate_clean_drinking_water]
-            trans_no_clean_drinking_water.loc[newly_clean_drinking_water_idx, 'li_no_clean_drinking_water'] = False
+            trans_no_clean_drinking_water.loc[newly_clean_drinking_water_idx] = False
 
             # setting property `li_date_acquire_clean_drinking_water` direct here. perhaps I can do better?
-            df.loc[newly_clean_drinking_water_idx, 'li_date_acquire_clean_drinking_water'] = self.sim.date
+            df.loc[newly_clean_drinking_water_idx, 'li_date_acquire_clean_drinking_water'] = externals['other']
 
             # probability of no clean drinking water upon moving to urban from rural
             no_clean_drinking_water_newly_urban_idx = df.index[
-                df.li_no_clean_drinking_water & df.is_alive & (df.li_date_trans_to_urban == self.sim.date)
+                df.li_no_clean_drinking_water & df.is_alive & (df.li_date_trans_to_urban == externals['other'])
                 ]
 
             random_draw = rng.random_sample(len(no_clean_drinking_water_newly_urban_idx))
@@ -1554,7 +1598,7 @@ class LifestyleModels:
                 p['init_p_no_clean_drinking_water_urban'], index=no_clean_drinking_water_newly_urban_idx
             )
 
-            trans_no_clean_drinking_water.loc[no_clean_drinking_water_newly_urban_idx, 'li_no_clean_drinking_water'] = (
+            trans_no_clean_drinking_water.loc[no_clean_drinking_water_newly_urban_idx] = (
                 random_draw < eff_prev_no_clean_drinking_water_urban
             )
 
@@ -1571,7 +1615,7 @@ class LifestyleModels:
         custom linear model and are looking at individual's ability to transition from wood burn stove to non
         wood burn stove """
 
-        def handle_wood_burn_stove_transitions(self, df, rng=None) -> pd.Series:
+        def handle_wood_burn_stove_transitions(self, df, rng=None, **externals) -> pd.Series:
             """ a function that will return a series containing wood burn stove transitions in individuals
                         Steps:
                             1.  accept a population dataframe from the predict method of a custom linear model
@@ -1581,12 +1625,13 @@ class LifestyleModels:
 
                         :param self: a reference to the calling custom linear model
                         :param df: population dataframe
-                        :param rng: random number generator  """
+                        :param rng: random number generator
+                        :param externals: any external variable passed on to this function """
             # get module parameters
             p = self.parameters
 
             # create a new series that will hold allwood burn stove transitions
-            trans_wood_burn_stove = pd.Series(data=copy.deepcopy(df.li_wood_burn_stove), index=df.index)
+            trans_wood_burn_stove = pd.Series(data=df.li_wood_burn_stove.copy(), index=df.index)
 
             # probability of moving to non wood burn stove at all follow-up times
             wood_burn_stove_idx = df.index[df.li_wood_burn_stove & df.is_alive]
@@ -1596,14 +1641,14 @@ class LifestyleModels:
             random_draw = rng.random_sample(len(wood_burn_stove_idx))
 
             newly_non_wood_burn_stove_idx = wood_burn_stove_idx[random_draw < eff_rate_non_wood_burn_stove]
-            trans_wood_burn_stove.loc[newly_non_wood_burn_stove_idx, 'li_wood_burn_stove'] = False
+            trans_wood_burn_stove.loc[newly_non_wood_burn_stove_idx] = False
 
             # setting property `li_date_acquire_non_wood_burn_stove` directly here, perhaps I can do better?
-            df.loc[newly_non_wood_burn_stove_idx, 'li_date_acquire_non_wood_burn_stove'] = self.sim.date
+            df.loc[newly_non_wood_burn_stove_idx, 'li_date_acquire_non_wood_burn_stove'] = externals['other']
 
             # probability of moving to wood burn stove upon moving to urban from rural
             wood_burn_stove_newly_urban_idx = df.index[
-                df.li_wood_burn_stove & df.is_alive & (df.li_date_trans_to_urban == self.sim.date)
+                df.li_wood_burn_stove & df.is_alive & (df.li_date_trans_to_urban == externals['other'])
                 ]
 
             random_draw = rng.random_sample(len(wood_burn_stove_newly_urban_idx))
@@ -1612,7 +1657,7 @@ class LifestyleModels:
                 p['init_p_wood_burn_stove_urban'], index=wood_burn_stove_newly_urban_idx
             )
 
-            trans_wood_burn_stove.loc[wood_burn_stove_newly_urban_idx, 'li_wood_burn_stove'] = \
+            trans_wood_burn_stove.loc[wood_burn_stove_newly_urban_idx] = \
                 random_draw < eff_prev_wood_burn_stove_urban
 
             # return the preffered column in the dataframe
@@ -1626,7 +1671,7 @@ class LifestyleModels:
         """ a function to create linear model for updating high salt property. here we are using custom
         linear model and are looking at individuals ability to transition from high salt to not high salt """
 
-        def handle_high_salt_transitions(self, df, rng=None) -> pd.Series:
+        def handle_high_salt_transitions(self, df, rng=None, **externals) -> pd.Series:
             """ a function that will return a series containing high salt transitions in individuals
                         Steps:
                             1.  accept a population dataframe from the predict method of a custom linear model
@@ -1636,12 +1681,13 @@ class LifestyleModels:
 
                         :param self: a reference to the calling custom linear model
                         :param df: population dataframe
-                        :param rng: random number generator  """
+                        :param rng: random number generator
+                        :param externals: any external variable passed on to this function """
             # get module parameters
             p = self.parameters
 
             # create a new series that will hold all high salt transitions
-            trans_high_salt = pd.Series(data=copy.deepcopy(df.li_high_salt),index=df.index)
+            trans_high_salt = pd.Series(data=df.li_high_salt.copy(),index=df.index)
 
             # select individuals who are not high salt and make some to be high salt
             not_high_salt_idx = df.index[~df.li_high_salt & df.is_alive]
@@ -1662,7 +1708,7 @@ class LifestyleModels:
             trans_high_salt.loc[newly_not_high_salt_idx] = False
 
             # setting `li_exposed_to_campaign_salt_reduction` directly here, perhaps I can do better?
-            all_idx_campaign_salt_reduction = df.index[df.is_alive & (self.sim.date == datetime.date(2010, 7, 1))]
+            all_idx_campaign_salt_reduction = df.index[df.is_alive & (externals['other'] == datetime.date(2010, 7, 1))]
             df.loc[all_idx_campaign_salt_reduction, 'li_exposed_to_campaign_salt_reduction'] = True
 
             # return high salt transitions series
@@ -1676,7 +1722,7 @@ class LifestyleModels:
         """ a function to create linear model for updating high sugar property. Here we are using multiplicative
         linear model and are looking at individuals ability to transition from high sugar to not high sugar """
 
-        def handle_high_sugar_transitions(self, df, rng=None) -> pd.Series:
+        def handle_high_sugar_transitions(self, df, rng=None, **externals) -> pd.Series:
             """ a function that will return a series containing high sugar transitions in individuals
                        Steps:
                            1.  accept a population dataframe from the predict method of a custom linear model
@@ -1686,12 +1732,13 @@ class LifestyleModels:
 
                        :param self: a reference to the calling custom linear model
                        :param df: population dataframe
-                       :param rng: random number generator  """
+                       :param rng: random number generator
+                       :param externals: any external variable passed on to this function """
             # get module parameters
             p = self.parameters
 
             # create a new series that will hold all high sugar transitions
-            trans_high_sugar = pd.Series(data=copy.deepcopy(df.li_high_sugar), index=df.index)
+            trans_high_sugar = pd.Series(data=df.li_high_sugar.copy(), index=df.index)
 
             not_high_sugar_idx = df.index[~df.li_high_sugar & df.is_alive]
             eff_p_high_sugar = pd.Series(p['r_high_sugar'], index=not_high_sugar_idx)
@@ -1711,7 +1758,7 @@ class LifestyleModels:
 
             # make exposed to campaing sugar reduction reflect index of individuals who have transition
             # from high sugar to not high sugar. setting `li_exposed_to_campaign_sugar_reduction` directly here, perhaps we can do better?
-            all_idx_campaign_sugar_reduction = df.index[df.is_alive & (self.sim.date == datetime.date(2010, 7, 1))]
+            all_idx_campaign_sugar_reduction = df.index[df.is_alive & (externals['other'] == datetime.date(2010, 7, 1))]
             df.loc[all_idx_campaign_sugar_reduction, 'li_exposed_to_campaign_sugar_reduction'] = True
 
             # return series containing high sugar transitions
@@ -1725,7 +1772,7 @@ class LifestyleModels:
         """ a function to create linear model for updating bmi categories. here we are using multiplicative linear
         model and are looking at individual's ability to transition from different bmi categories """
 
-        def handle_bmi_transitions(self, df, rng=None) -> pd.Series:
+        def handle_bmi_transitions(self, df, rng=None, **externals) -> pd.Series:
             """ a function that will return a serie containing bmi transitions in individuals
                         Steps:
                             1.  accept a population dataframe from the predict method of a custom linear model
@@ -1735,17 +1782,18 @@ class LifestyleModels:
 
                         :param self: a reference to the calling custom linear model
                         :param df: population dataframe
-                        :param rng: random number generator  """
+                        :param rng: random number generator
+                        :param externals: any external variable passed on to this function """
             # get module parameters
             p = self.parameters
 
             # create a new series that will hold all bmi transitions
-            trans_bmi = pd.Series(data=copy.deepcopy(df.li_bmi), index=df.index)
+            trans_bmi = pd.Series(data=df.li_bmi.copy(), index=df.index)
 
             # those reaching age 15 allocated bmi 3
 
             age15_idx = df.index[df.is_alive & (df.age_exact_years >= 15) & (df.age_exact_years < 15.25)]
-            trans_bmi.loc[age15_idx, 'li_bmi'] = 3
+            trans_bmi.loc[age15_idx] = 3
 
             # possible increase in category of bmi
 
@@ -1764,7 +1812,7 @@ class LifestyleModels:
 
             random_draw = rng.random_sample(len(bmi_cat_1_to_4_idx))
             newly_increase_bmi_cat_idx = bmi_cat_1_to_4_idx[random_draw < eff_rate_higher_bmi]
-            trans_bmi.loc[newly_increase_bmi_cat_idx, 'li_bmi'] = df['li_bmi'] + 1
+            trans_bmi.loc[newly_increase_bmi_cat_idx] = df['li_bmi'] + 1
 
             # possible decrease in category of bmi
 
@@ -1774,11 +1822,11 @@ class LifestyleModels:
             eff_rate_lower_bmi.loc[df.li_exposed_to_campaign_weight_reduction] *= p['rr_lower_bmi_pop_advice_weight']
             random_draw = rng.random_sample(len(bmi_cat_3_to_5_idx))
             newly_decrease_bmi_cat_idx = bmi_cat_3_to_5_idx[random_draw < eff_rate_lower_bmi]
-            trans_bmi.loc[newly_decrease_bmi_cat_idx, 'li_bmi'] = df['li_bmi'] - 1
+            trans_bmi.loc[newly_decrease_bmi_cat_idx] = df['li_bmi'] - 1
 
             # make exposed to campaing weigh reduction reflect individuals who have decreased their bmi category.
             # setting `li_exposed_to_campaign_weight_reduction` directly here, perhaps we can do better?
-            all_idx_campaign_weight_reduction = df.index[df.is_alive & (self.sim.date == datetime.date(2010, 7, 1))]
+            all_idx_campaign_weight_reduction = df.index[df.is_alive & (externals['other'] == datetime.date(2010, 7, 1))]
             df.loc[all_idx_campaign_weight_reduction, 'li_exposed_to_campaign_weight_reduction'] = True
 
             # return updated bmi categories
@@ -1800,6 +1848,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         :param module: the module that created this event
         """
         self.repeat_months = 3
+        self.module = module
         super().__init__(module, frequency=DateOffset(months=self.repeat_months))
         assert isinstance(module, Lifestyle)
 
@@ -1807,9 +1856,10 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         """Apply this event to the population.
         :param population: the current population
         """
-        # call a function to handle all transitions
-        # --- FSW ---
-        self.module.determine_who_will_be_sexworker(months_since_last_poll=self.repeat_months)
+        df = self.module.sim.population.props
+        # update all properties on Lifestyle Event run
+        self.module.models.update_all_properties(df)
+
 
 class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """Handles lifestyle logging"""
@@ -1827,11 +1877,11 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         """
         # get some summary statistics
         df = population.props
-        prop_dict = LifestyleModels(self.module).models
+        all_lm_dict = self.module.models.models
 
         # log summary of each lifestyle property
-        for _property in prop_dict.keys():
-            if _property in ['li_wealth', 'li_mar_stat', 'li_bmi']:
+        for _property in all_lm_dict.keys():
+            if _property in ['li_wealth', 'li_mar_stat', 'li_bmi', 'li_ed_lev']:
                 print(f'ignoring property {_property} for now')
                 pass
             else:
@@ -1840,22 +1890,3 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     data=flatten_multi_index_series_into_dict_for_logging(df.loc[df.is_alive & df[_property]].groupby(
                         ['sex', 'age_range']).size())
                 )
-
-        # log summary of males circumcised
-        logger.info(
-            key='prop_adult_men_circumcised',
-            data=[df.loc[df.is_alive & (df.sex == 'M') & (df.age_years >= 15)].li_is_circ.mean()]
-        )
-
-        women_1549 = df.is_alive & (df.sex == "F") & df.age_years.between(15, 49)
-
-        if sum(women_1549) > 0:
-            logger.info(
-                key='proportion_1549_women_sexworker',
-                data=[sum(women_1549 & df.li_is_sexworker) / sum(women_1549)]
-            )
-        else:
-            logger.info(
-                key='proportion_1549_women_sexworker',
-                data=[0]
-            )
