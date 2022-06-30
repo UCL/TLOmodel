@@ -79,7 +79,14 @@ class Contraception(Module):
             Types.LIST, "Scaling factor (by age-group: 15-19, 20-24, ..., 45-49) on the monthly risk of pregnancy and "
                         "contraceptive failure rate. This value is found through calibration so that, at the beginning "
                         "of the simulation, the age-specific monthly probability of a woman having a live birth matches"
-                        " the WPP age-specific fertility rate value for the same year.")
+                        " the WPP age-specific fertility rate value for the same year."),
+
+        'max_number_of_runs_of_hsi_if_consumable_not_available': Parameter(
+            Types.INT, "The maximum number of time an HSI can run (repeats occur if the consumables are not available"),
+
+        'max_days_delay_between_decision_to_change_method_and_hsi_scheduled': Parameter(
+            Types.INT, "The maximum delay (in days) between the decision for a contraceptive to change and the `topen`"
+                       "date of the HSI that is scheduled to effect the change (when using the healthsystem),")
     }
 
     all_contraception_states = {
@@ -481,17 +488,38 @@ class Contraception(Module):
     def get_item_code_for_each_contraceptive(self):
         """Get the item_code for each contraceptive"""
 
-        get_items = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
+        get_items_from_pkg = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
+        get_items_from_name = self.sim.modules['HealthSystem'].get_item_code_from_item_name
 
         _cons_codes = dict()
-        _cons_codes['pill'] = get_items('Pill')
-        _cons_codes['IUD'] = get_items('IUD')
-        _cons_codes['injections'] = get_items('Injectable')
-        _cons_codes['implant'] = get_items('Implant')
-        _cons_codes['male_condom'] = get_items('Male condom')
-        _cons_codes['female_sterilization'] = get_items('Female sterilization')
-        _cons_codes['other_modern'] = get_items('Female Condom')  # NB. The consumable female condom is used for the
-        # contraceptive state of "other_modern method"
+        _cons_codes['pill'] = get_items_from_pkg('Pill')
+        _cons_codes['male_condom'] = get_items_from_pkg('Male condom')
+        _cons_codes['other_modern'] = get_items_from_pkg('Female Condom')  # NB. The consumable female condom is used
+        # for the contraceptive state of "other_modern method"
+
+        _cons_codes['IUD'] = [get_items_from_name('IUD, Copper T-380A')]
+        _cons_codes['injections'] = [get_items_from_name(item) for item in
+                                     ['Depot-Medroxyprogesterone Acetate 150 mg - 3 monthly',
+                                      'Povidone iodine, solution, 10 %, 5 ml per injection',
+                                      'Syringe, Autodisable SoloShot IX ']]
+
+        _cons_codes['implant'] = [get_items_from_name(item) for item in
+                                  ['Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml',
+                                   'Povidone iodine, solution, 10 %, 5 ml per injection',
+                                   'Jadelle (implant), box of 2_CMST',
+                                   'Implanon (Etonogestrel 68 mg)',
+                                   'Suture pack']]
+
+        _cons_codes['female_sterilization'] = [get_items_from_name(item) for item in
+                                               ['Atropine sulphate, injection, 1 mg in 1 ml ampoule',
+                                                'Diazepam, injection, 5 mg/ml, in 2 ml ampoule',
+                                                'Lidocaine, injection, 1 % in 20 ml vial',
+                                                'Lidocaine, spray, 10%, 500 ml bottle',
+                                                'Tape, adhesive, 2.5 cm wide, zinc oxide, 5 m roll',
+                                                'Paracetamol, tablet, 500 mg',
+                                                'Povidone iodine, solution, 10 %, 5 ml per injection',
+                                                'Suture pack',
+                                                'Gauze, absorbent 90cm x 40m_each_CMST']]
 
         assert set(_cons_codes.keys()) == set(self.states_that_may_require_HSI_to_switch_to)
         return _cons_codes
@@ -528,12 +556,13 @@ class Contraception(Module):
                     hsi_event=HSI_Contraception_FamilyPlanningAppt(
                         person_id=_woman_id,
                         module=self,
-                        old_contraceptive=_old,
                         new_contraceptive=_new
                     ),
                     topen=random_date(
-                        # scatter dates over the month
-                        self.sim.date, self.sim.date + pd.DateOffset(days=28), self.rng2),
+                        self.sim.date,
+                        self.sim.date + pd.DateOffset(
+                            days=self.parameters['max_days_delay_between_decision_to_change_method_and_hsi_scheduled']),
+                        self.rng2),
                     tclose=None,
                     priority=1
                 )
@@ -904,20 +933,25 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
     """HSI event for the starting a contraceptive method, maintaining use of a method of a contraceptive, or switching
      between contraceptives."""
 
-    def __init__(self, module, person_id, old_contraceptive, new_contraceptive):
+    def __init__(self, module, person_id, new_contraceptive):
         super().__init__(module, person_id=person_id)
-        self.old_contraceptive = old_contraceptive
-        self.new_contraceptive = new_contraceptive
 
-        self.TREATMENT_ID = "Contraception_FamilyPlanningAppt"
+        _facility_level = '2' if new_contraceptive in ('implant', 'female_sterilization') else '1a'
+
+        self.new_contraceptive = new_contraceptive
+        self._number_of_times_run = 0
+
+        self.TREATMENT_ID = "Contraception_Routine"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'FamPlan': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.ALERT_OTHER_DISEASES = []
+        self.ACCEPTED_FACILITY_LEVEL = _facility_level
 
     def apply(self, person_id, squeeze_factor):
         """If the relevant consumable is available, do change in contraception and log it"""
 
+        self._number_of_times_run += 1
+
         person = self.sim.population.props.loc[person_id]
+        current_method = person.co_contraception
 
         if not (person.is_alive and not person.is_pregnant):
             return
@@ -929,25 +963,38 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         cons_available = self.get_consumables(self.module.cons_codes[self.new_contraceptive])
         _new_contraceptive = self.new_contraceptive if cons_available else "not_using"
 
-        # If the old method is the same as the new method, do nothing else (not even logging)
-        if self.old_contraceptive == _new_contraceptive:
-            return
+        if current_method != _new_contraceptive:
+            # Do the change:
+            self.module.do_and_log_individual_contraception_change(
+                woman_id=self.target,
+                old=current_method,
+                new=_new_contraceptive
+            )
+            # (N.B. If the current method is the same as the new method, there is no logging.)
 
-        # Do the change:
-        self.module.do_and_log_individual_contraception_change(
-            woman_id=self.target,
-            old=self.old_contraceptive,
-            new=_new_contraceptive
-        )
+        # If the intended change was not possible due to non-available consumable, reschedule the appointment
+        if not cons_available and (
+            self._number_of_times_run < self.module.parameters['max_number_of_runs_of_hsi_if_consumable_not_available']
+        ):
+            self.reschedule()
+
+    def reschedule(self):
+        """Schedule for this same HSI_Event to occur tomorrow."""
+        self.module.sim.modules['HealthSystem'].schedule_hsi_event(hsi_event=self,
+                                                                   topen=self.sim.date + pd.DateOffset(days=1),
+                                                                   tclose=None,
+                                                                   priority=2)
 
     def never_ran(self):
         """If this HSI never ran, the person defaults to "not_using" a contraceptive."""
-        if not self.sim.population.props.at[self.target, 'is_alive']:
+        person = self.sim.population.props.loc[self.target]
+
+        if not person.is_alive:
             return
 
         self.module.do_and_log_individual_contraception_change(
             woman_id=self.target,
-            old=self.old_contraceptive,
+            old=person.co_contraception,  # Current Method
             new="not_using"
         )
 
@@ -992,8 +1039,11 @@ class SimplifiedPregnancyAndLabour(Module):
         super().__init__(name='Labour')
 
     def read_parameters(self, *args):
-        self.parameters['prob_live_birth'] = 0.67
-        # This is a reasonable estimate for the current versions of the Labour and other modules
+
+        parameter_dataframe = pd.read_excel(self.sim.modules['Contraception'].resourcefilepath /
+                                            'ResourceFile_Contraception.xlsx',
+                                            sheet_name='simplified_labour_parameters')
+        self.load_parameters_from_dataframe(parameter_dataframe)
 
     def initialise_population(self, population):
         df = population.props

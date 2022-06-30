@@ -363,7 +363,7 @@ class Epi(Module):
 
     def get_item_codes(self):
         """Look-up the item-codes for each vaccine and update `self.cons_item_codes`"""
-        get_item_codes_from_package_name = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
+        # get_item_codes_from_package_name = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
         get_item_code_from_item_name = self.sim.modules['HealthSystem'].get_item_code_from_item_name
 
         self.cons_item_codes['bcg'] = [
@@ -379,10 +379,18 @@ class Epi(Module):
                 get_item_code_from_item_name("Pneumococcal vaccine"),
                 get_item_code_from_item_name("Syringe, Autodisable SoloShot IX "),
                 get_item_code_from_item_name("Safety box for used syringes/needles, 5 liter")]
-        self.cons_item_codes['measles_and_rubella'] = get_item_codes_from_package_name("Measles rubella vaccine")
-        self.cons_item_codes['hpv'] = get_item_codes_from_package_name("HPV vaccine")
-        self.cons_item_codes['td'] = get_item_codes_from_package_name("Tetanus toxoid (pregnant women)")
-
+        self.cons_item_codes["measles_and_rubella"] = [
+            get_item_code_from_item_name("Measles vaccine"),
+            get_item_code_from_item_name("Syringe, Autodisable SoloShot IX "),
+            get_item_code_from_item_name("Safety box for used syringes/needles, 5 liter")]
+        self.cons_item_codes["hpv"] = [
+            get_item_code_from_item_name("HPV vaccine"),
+            get_item_code_from_item_name("Syringe, Autodisable SoloShot IX "),
+            get_item_code_from_item_name("Safety box for used syringes/needles, 5 liter")]
+        self.cons_item_codes['td'] = [
+            get_item_code_from_item_name("Tetanus toxoid, injection"),
+            get_item_code_from_item_name("Syringe, Autodisable SoloShot IX "),
+            get_item_code_from_item_name("Safety box for used syringes/needles, 5 liter")]
 
 # ---------------------------------------------------------------------------------
 # Individually Scheduled Vaccine Events
@@ -516,11 +524,9 @@ class HsiBaseVaccine(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Epi)
 
-        # Define the necessary information for an HSI
         self.TREATMENT_ID = self.treatment_id()
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"ConWithDCSA": 1})
-        self.ACCEPTED_FACILITY_LEVEL = '0'
-        self.ALERT_OTHER_DISEASES = []
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"EPI": 1})
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
 
     def treatment_id(self):
         """subclasses should implement this method to return the TREATMENT_ID"""
@@ -537,7 +543,7 @@ class HsiBaseVaccine(HSI_Event, IndividualScopeEventMixin):
 class HSI_BcgVaccine(HsiBaseVaccine):
     """gives bcg vaccine 24 hours after birth or as soon as possible afterwards"""
     def treatment_id(self):
-        return "Epi_bcg"
+        return "Epi_Childhood_Bcg"
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -549,7 +555,7 @@ class HSI_BcgVaccine(HsiBaseVaccine):
 class HSI_opv(HsiBaseVaccine):
     """gives poliovirus vaccine 24 hours after birth, plus weeks 6, 10, 14 or as soon as possible afterwards"""
     def treatment_id(self):
-        return "Epi_opv"
+        return "Epi_Childhood_Opv"
 
     def apply(self, person_id, squeeze_factor):
         if self.get_consumables(item_codes=self.module.cons_item_codes["opv"]):
@@ -559,7 +565,7 @@ class HSI_opv(HsiBaseVaccine):
 class HSI_DtpHibHepVaccine(HsiBaseVaccine):
     """ gives DTP-Hib_HepB vaccine """
     def treatment_id(self):
-        return "Epi_DtpHibHep"
+        return "Epi_Childhood_DtpHibHep"
 
     def apply(self, person_id, squeeze_factor):
         if self.get_consumables(item_codes=self.module.cons_item_codes['pentavalent_vaccine']):
@@ -571,7 +577,7 @@ class HSI_DtpHibHepVaccine(HsiBaseVaccine):
 class HSI_RotaVaccine(HsiBaseVaccine):
     """ gives Rotavirus vaccine 6 and 10 weeks after birth """
     def treatment_id(self):
-        return "Epi_Rota"
+        return "Epi_Childhood_Rota"
 
     def apply(self, person_id, squeeze_factor):
         logger.debug(key="debug", data=f"HSI_RotaVaccine: requesting vaccines for {person_id}")
@@ -587,7 +593,7 @@ class HSI_RotaVaccine(HsiBaseVaccine):
 class HSI_PneumoVaccine(HsiBaseVaccine):
     """ gives Pneumococcal vaccine 6, 10 and 14 weeks after birth """
     def treatment_id(self):
-        return "Epi_Pneumo"
+        return "Epi_Childhood_Pneumo"
 
     def apply(self, person_id, squeeze_factor):
         if self.get_consumables(item_codes=self.module.cons_item_codes["pneumo"]):
@@ -597,7 +603,7 @@ class HSI_PneumoVaccine(HsiBaseVaccine):
 class HSI_MeaslesRubellaVaccine(HsiBaseVaccine):
     """ administers measles+rubella vaccine """
     def treatment_id(self):
-        return "Epi_MeaslesRubella"
+        return "Epi_Childhood_MeaslesRubella"
 
     def apply(self, person_id, squeeze_factor):
         if self.get_consumables(item_codes=self.module.cons_item_codes["measles_and_rubella"]):
@@ -608,7 +614,7 @@ class HSI_MeaslesRubellaVaccine(HsiBaseVaccine):
 class HSI_HpvVaccine(HsiBaseVaccine):
     """ gives HPV vaccine to 9 year old girls; recommended 2 doses (WHO) """
     def treatment_id(self):
-        return "Epi_hpv"
+        return "Epi_Adolescent_Hpv"
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -617,13 +623,12 @@ class HSI_HpvVaccine(HsiBaseVaccine):
                 self.module.increment_dose(person_id, "hpv")
 
 
-# TODO this will be called by the antenatal care module as part of routine care: currently not implemented
 class HSI_TdVaccine(HsiBaseVaccine):
     """ gives tetanus/diphtheria vaccine to pregnant women as part of routine antenatal care
     recommended 2+ doses (WHO)
     """
     def treatment_id(self):
-        return "Epi_Td"
+        return "Epi_Pregnancy_Td"
 
     def apply(self, person_id, squeeze_factor):
         if self.get_consumables(item_codes=self.module.cons_item_codes["td"]):

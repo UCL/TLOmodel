@@ -639,10 +639,10 @@ class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, Individ
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-        self.TREATMENT_ID = "OesophagealCancer_Investigation_Following_Dysphagia"
+
+        self.TREATMENT_ID = "OesophagealCancer_Investigation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -697,9 +697,6 @@ class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, Individ
                     tclose=None
                 )
 
-    def did_not_run(self):
-        pass
-
 
 class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     """
@@ -711,11 +708,10 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = "OesophagealCancer_StartTreatment"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1, 'MajorSurg': 1})
+        self.TREATMENT_ID = "OesophagealCancer_Treatment"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MajorSurg": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
-        self.ALERT_OTHER_DISEASES = []
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": 5})
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -724,9 +720,23 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
 
+        # If the status is already in `stage4`, start palliative care (instead of treatment)
+        if df.at[person_id, "oc_status"] == 'stage4':
+            logger.warning(key="warning", data="Cancer is in stage 4 - aborting HSI_OesophagaelCancer_StartTreatment,"
+                                               "scheduling HSI_OesophagaelCancer_PalliativeCare")
+
+            hs.schedule_hsi_event(
+                hsi_event=HSI_OesophagealCancer_PalliativeCare(
+                    module=self.module,
+                    person_id=person_id,
+                ),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0
+            )
+            return self.make_appt_footprint({})
         # Check that the person has cancer, not in stage4, has been diagnosed and is not on treatment
         assert not df.at[person_id, "oc_status"] == 'none'
-        assert not df.at[person_id, "oc_status"] == 'stage4'
         assert not pd.isnull(df.at[person_id, "oc_date_diagnosis"])
         assert pd.isnull(df.at[person_id, "oc_date_treatment"])
 
@@ -745,9 +755,6 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
             priority=0
         )
 
-    def did_not_run(self):
-        pass
-
 
 class HSI_OesophagealCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
     """
@@ -760,11 +767,9 @@ class HSI_OesophagealCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMi
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = "OesophagealCancer_MonitorTreatment"
+        self.TREATMENT_ID = "OesophagealCancer_Treatment"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        self.ACCEPTED_FACILITY_LEVEL = '2'
-        self.ALERT_OTHER_DISEASES = []
+        self.ACCEPTED_FACILITY_LEVEL = '3'
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -802,9 +807,6 @@ class HSI_OesophagealCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMi
                 priority=0
             )
 
-    def did_not_run(self):
-        pass
-
 
 class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
     """
@@ -820,11 +822,10 @@ class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin)
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        # Define the necessary information for an HSI
         self.TREATMENT_ID = "OesophagealCancer_PalliativeCare"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '2'
-        self.ALERT_OTHER_DISEASES = []
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 15})
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -850,9 +851,6 @@ class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin)
             tclose=None,
             priority=0
         )
-
-    def did_not_run(self):
-        pass
 
 
 # ---------------------------------------------------------------------------------------------------------

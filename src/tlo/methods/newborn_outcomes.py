@@ -69,11 +69,12 @@ class NewbornOutcomes(Module):
         'neonatal_respiratory_depression': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
         'preterm_other': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
         'respiratory_distress_syndrome': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
-        'congenital_heart_anomaly': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
-        'limb_or_musculoskeletal_anomaly': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
-        'urogenital_anomaly': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
-        'digestive_anomaly': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
-        'other_anomaly': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
+        'congenital_heart_anomaly': Cause(gbd_causes='Congenital birth defects', label='Congenital birth defects'),
+        'limb_or_musculoskeletal_anomaly': Cause(gbd_causes='Congenital birth defects', label='Congenital birth '
+                                                                                              'defects'),
+        'urogenital_anomaly': Cause(gbd_causes='Congenital birth defects', label='Congenital birth defects'),
+        'digestive_anomaly': Cause(gbd_causes='Congenital birth defects', label='Congenital birth defects'),
+        'other_anomaly': Cause(gbd_causes='Congenital birth defects', label='Congenital birth defects'),
 
     }
 
@@ -278,6 +279,8 @@ class NewbornOutcomes(Module):
         'squeeze_threshold_for_delay_three_nb_care': Parameter(
             Types.LIST, 'squeeze factor value over which an individual within a newborn HSI is said to experience '
                         'type 3 delay i.e. delay in receiving appropriate care'),
+        'treatment_effect_modifier_one_delay': Parameter(
+            Types.LIST, 'factor by which treatment effectiveness is reduced in the presences of one delays'),
 
     }
 
@@ -408,40 +411,43 @@ class NewbornOutcomes(Module):
         This function defines the required consumables for each intervention delivered during this module and stores
         them in a module level dictionary called within HSIs
         """
-        get_item_code_from_pkg = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
-
         get_list_of_items = pregnancy_helper_functions.get_list_of_items
 
         # ---------------------------------- IV DRUG ADMIN EQUIPMENT  -------------------------------------------------
         self.item_codes_nb_consumables['iv_drug_equipment'] = \
-            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 20_each_CMST',
-                                     'IV giving/infusion set, with needle',
-                                     'Gloves, exam, latex, disposable, pair'])
+            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 18_each_CMST',
+                                     'Giving set iv administration + needle 15 drops/ml_each_CMST',
+                                     'Disposables gloves, powder free, 100 pieces per box'])
 
         # ---------------------------------- BLOOD TEST EQUIPMENT ---------------------------------------------------
         self.item_codes_nb_consumables['blood_test_equipment'] = \
-            get_list_of_items(self, ['Blood collecting tube, 5 ml',
-                                     'Syringe, needle + swab',
-                                     'Gloves, exam, latex, disposable, pair'])
+            get_list_of_items(self, ['Disposables gloves, powder free, 100 pieces per box'])
+        # todo: remove entirely?
 
         # -------------------------------------------- VITAMIN K ------------------------------------------
         self.item_codes_nb_consumables['vitamin_k'] = \
             get_list_of_items(self, ['vitamin K1  (phytomenadione) 1 mg/ml, 1 ml, inj._100_IDA'])
 
         # -------------------------------------------- EYE CARE  ------------------------------------------
-        self.item_codes_nb_consumables['eye_care'] = get_list_of_items(self, ['Tetracycline eye ointment 1%_3.5_CMST'])
+        self.item_codes_nb_consumables['eye_care'] = get_list_of_items(
+            self, ['Tetracycline eye ointment, 1 %, tube 5 mg'])
 
         # -------------------------------------------- RESUSCITATION ------------------------------------------
         self.item_codes_nb_consumables['resuscitation'] = \
-            get_item_code_from_pkg('Neonatal resuscitation (institutional)')
+            get_list_of_items(self, ['Infant resuscitator, clear plastic + mask + bag_each_CMST'])
 
         # ------------------------------------- SEPSIS - FULL SUPPORTIVE CARE ---------------------------------------
-        self.item_codes_nb_consumables['sepsis_supportive_care'] = \
+        self.item_codes_nb_consumables['sepsis_supportive_care_core'] = \
             get_list_of_items(self, ['Benzylpenicillin 1g (1MU), PFR_Each_CMST',
                                      'Gentamicin 40mg/ml, 2ml_each_CMST',
-                                     'Oxygen, 1000 liters, primarily with oxygen cylinders',
-                                     'Dextrose (glucose) 5%, 1000ml_each_CMST',
-                                     'Tube, feeding CH 8_each_CMST'])
+                                     'Oxygen, 1000 liters, primarily with oxygen cylinders'])
+
+        self.item_codes_nb_consumables['sepsis_supportive_care_optional'] = \
+            get_list_of_items(self, ['Dextrose (glucose) 5%, 1000ml_each_CMST',
+                                     'Tube, feeding CH 8_each_CMST',
+                                     'Cannula iv  (winged with injection pot) 18_each_CMST',
+                                     'Giving set iv administration + needle 15 drops/ml_each_CMST',
+                                     'Disposables gloves, powder free, 100 pieces per box'])
 
         # ---------------------------------------- SEPSIS - ANTIBIOTICS ---------------------------------------------
         self.item_codes_nb_consumables['sepsis_abx'] =\
@@ -765,6 +771,8 @@ class NewbornOutcomes(Module):
 
         # Finally we schedule the postnatal week one event
         if individual_id in nci:
+            nci[individual_id]['third_delay'] = False
+
             if not nci[individual_id]['passed_through_week_one']:
                 self.scheduled_week_one_postnatal_event(individual_id)
 
@@ -1001,20 +1009,24 @@ class NewbornOutcomes(Module):
         if df.at[person_id, 'nb_early_onset_neonatal_sepsis'] or df.at[person_id, 'pn_sepsis_late_neonatal'] or\
            df.at[person_id, 'pn_sepsis_early_neonatal']:
 
-            if facility_type == 'hp':
-                avail = hsi_event.get_consumables(item_codes=cons['sepsis_supportive_care'],
-                                                  optional_item_codes=cons['iv_drug_equipment'])
+            # Run HCW check
+            sf_check = self.sim.modules['Labour'].check_emonc_signal_function_will_run(
+                sf='iv_abx', f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
+
+            if facility_type != '1a':
+                avail = hsi_event.get_consumables(item_codes=cons['sepsis_supportive_care_core'],
+                                                  optional_item_codes=cons['sepsis_supportive_care_optional'])
 
                 # Then, if the consumables are available, treatment for sepsis is delivered
-                if avail:
+                if avail and sf_check:
                     df.at[person_id, 'nb_supp_care_neonatal_sepsis'] = True
 
             # The same pattern is then followed for health centre care
-            elif facility_type == 'hc':
+            else:
                 avail = hsi_event.get_consumables(item_codes=cons['sepsis_abx'],
                                                   optional_item_codes=cons['iv_drug_equipment'])
 
-                if avail:
+                if avail and sf_check:
                     df.at[person_id, 'nb_inj_abx_neonatal_sepsis'] = True
 
     def link_twins(self, child_one, child_two, mother_id):
@@ -1368,8 +1380,9 @@ class NewbornOutcomes(Module):
         logger.debug(key='message', data=f'NewbornOutcomes_CareOfTheNewbornBySkilledAttendant did not run for '
                                          f'{person_id}')
 
-        if not nci[person_id]['will_receive_pnc'] == 'early':
-            self.set_death_status(person_id)
+        if person_id in nci:
+            if not nci[person_id]['will_receive_pnc'] == 'early':
+                self.set_death_status(person_id)
 
     def run_if_care_of_the_receives_postnatal_check_cant_run(self, hsi_event):
         """
@@ -1397,10 +1410,9 @@ class HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth(HSI_Event, I
         super().__init__(module, person_id=person_id)
         assert isinstance(module, NewbornOutcomes)
 
-        self.TREATMENT_ID = 'NewbornOutcomes_CareOfTheNewbornBySkilledAttendant'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 1})
+        self.TREATMENT_ID = 'DeliveryCare_Neonatal'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
-        self.ALERT_OTHER_DISEASES = []
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 1})
 
     def apply(self, person_id, squeeze_factor):
@@ -1451,15 +1463,14 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
         super().__init__(module, person_id=person_id)
         assert isinstance(module, NewbornOutcomes)
 
-        self.TREATMENT_ID = 'NewbornOutcomes_ReceivesEarlyPostnatalCheck'
+        self.TREATMENT_ID = 'PostnatalCare_Neonatal'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Under5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.ALERT_OTHER_DISEASES = []
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})
+        self.ACCEPTED_FACILITY_LEVEL = self._get_facility_level_for_pnc(person_id)
 
     def apply(self, person_id, squeeze_factor):
         nci = self.module.newborn_care_info
         df = self.sim.population.props
+        params = self.module.current_parameters
 
         if not df.at[person_id, 'is_alive'] or df.at[person_id, 'nb_death_after_birth'] or (person_id not in nci):
             return
@@ -1486,17 +1497,11 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
 
         df.at[person_id, 'nb_pnc_check'] += 1
 
-        # This HSI contains the interventions delivered as part of a full postnatal check of the newborn after birth -
-        # this include newborns who delivered at home or in facility
-        if nci[person_id]['delivery_setting'] == 'health_centre':
-            facility_type_code = 'hc'
-        elif nci[person_id]['delivery_setting'] == 'hospital':
-            facility_type_code = 'hp'
-        elif nci[person_id]['delivery_setting'] == 'home_birth':
-            facility_type_code = self.module.rng.choice(['hc', 'hp'])
+        if squeeze_factor > params['squeeze_threshold_for_delay_three_nb_care']:
+            nci[person_id]['third_delay'] = True
 
         # First the newborn is assessed for sepsis and treated if needed
-        self.module.assessment_and_treatment_newborn_sepsis(self, facility_type_code)
+        self.module.assessment_and_treatment_newborn_sepsis(self, self.ACCEPTED_FACILITY_LEVEL)
 
         # Next, interventions pertaining to essential newborn care
         if df.at[person_id, 'nb_pnc_check'] == 1:
@@ -1530,6 +1535,14 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
     def not_available(self):
         self.module.run_if_care_of_the_receives_postnatal_check_cant_run(self)
 
+    def _get_facility_level_for_pnc(self, person_id):
+        nci = self.module.newborn_care_info
+
+        if (person_id in nci) and (nci[person_id]['delivery_setting'] == 'hospital'):
+            return self.module.rng.choice(['1b', '2'])
+        else:
+            return '1a'
+
 
 class HSI_NewbornOutcomes_NeonatalWardInpatientCare(HSI_Event, IndividualScopeEventMixin):
     """This is HSI_PostnatalSupervisor_NeonatalWardInpatientCare. It is scheduled by any of the PNC HSIs for neonates
@@ -1540,10 +1553,9 @@ class HSI_NewbornOutcomes_NeonatalWardInpatientCare(HSI_Event, IndividualScopeEv
         super().__init__(module, person_id=person_id)
         assert isinstance(module, NewbornOutcomes)
 
-        self.TREATMENT_ID = 'NewbornOutcomes_NeonatalWardInpatientCare'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'IPAdmission': 1})
+        self.TREATMENT_ID = 'PostnatalCare_Neonatal_Inpatient'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.ALERT_OTHER_DISEASES = []
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})
 
     def apply(self, person_id, squeeze_factor):

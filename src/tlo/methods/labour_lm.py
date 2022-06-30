@@ -218,7 +218,7 @@ def predict_placental_abruption_ip(self, df, rng=None, **externals):
     params = self.parameters
     result = params['prob_placental_abruption_during_labour']
 
-    if person['la_previous_cs_delivery']:
+    if person['la_previous_cs_delivery'] > 0:
         result *= params['rr_placental_abruption_previous_cs']
     if person['ps_htn_disorders'] != 'none':
         result *= params['rr_placental_abruption_hypertension']
@@ -358,7 +358,7 @@ def predict_uterine_rupture_ip(self, df, rng=None, **externals):
     result[(df.la_parity > 2) & (df.la_parity < 5)] *= params['rr_ur_parity_3_or_4']
     result[df.la_parity >= 5] *= params['rr_ur_parity_5+']
 
-    result[df.la_previous_cs_delivery] *= params['rr_ur_prev_cs']
+    result[df.la_previous_cs_delivery > 0] *= params['rr_ur_prev_cs']
     result[df.la_obstructed_labour] *= params['rr_ur_obstructed_labour']
 
     return result

@@ -324,3 +324,59 @@ def test_healthcareseeking_occurs_with_spurious_symptoms_and_disease_modules(see
     q = sim.modules['HealthSystem'].HSI_EVENT_QUEUE
     assert any([isinstance(e[4], HSI_GenericFirstApptAtFacilityLevel0) for e in q])
     assert any([isinstance(e[4], HSI_GenericEmergencyFirstApptAtFacilityLevel1) for e in q])
+
+
+def test_one_per_hsi_scheduled_per_day_when_emergency_and_non_emergency_symptoms_are_onset(seed):
+    """When an individual is onset with a set of symptoms including emergency and non-emergency symptoms, there should
+    be only scheduled the emergency appointment."""
+
+    class DummyDisease(Module):
+        METADATA = {Metadata.USES_SYMPTOMMANAGER}
+        """Dummy Disease - it's only job is to create a symptom and impose it everyone"""
+        def read_parameters(self, data_folder):
+            self.sim.modules['SymptomManager'].register_symptom(
+                Symptom(name='NonEmergencySymptom'),
+                Symptom(name='EmergencySymptom', emergency_in_adults=True, emergency_in_children=True)
+            )
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            """Give person_id=0 both symptoms"""
+            self.sim.modules['SymptomManager'].change_symptom(
+                person_id=[0],
+                disease_module=self,
+                symptom_string=['NonEmergencySymptom', 'EmergencySymptom'],
+                add_or_remove='+'
+            )
+
+        def on_birth(self, mother, child):
+            pass
+
+    start_date = Date(2010, 1, 1)
+    sim = Simulation(start_date=start_date, seed=seed)
+
+    # Register the core modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath,
+                                                               force_any_symptom_to_lead_to_healthcareseeking=True),
+                 DummyDisease()
+                 )
+
+    # Initialise the simulation (run the simulation for zero days)
+    popsize = 200
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date)
+
+    # Run the HealthSeeingBehaviourPoll
+    sim.modules['HealthSeekingBehaviour'].theHealthSeekingBehaviourPoll.run()
+
+    # See what HSI are scheduled to occur for the person
+    evs = [x[1].TREATMENT_ID for x in sim.modules['HealthSystem'].sim.modules['HealthSystem'].find_events_for_person(0)]
+
+    assert 'FirstAttendance_Emergency' in evs
+    assert 'FirstAttendance_NonEmergency' not in evs
