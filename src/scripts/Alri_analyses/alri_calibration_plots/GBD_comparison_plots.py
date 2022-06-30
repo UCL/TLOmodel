@@ -30,8 +30,8 @@ resourcefilepath = Path("./resources")
 # Create name for log-file
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
-log_filename = 'none'
-# log_filename = outputpath / 'alri_with_treatment_and_without_treatment__2022-06-21T092704.log'
+# log_filename = 'none'
+log_filename = outputpath / 'alri_with_treatment__2022-06-30T114728.log'
 # <-- insert name of log file to avoid re-running the simulation
 
 if not os.path.exists(log_filename):

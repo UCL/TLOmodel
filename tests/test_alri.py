@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from pandas import DateOffset
+import datetime
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
@@ -881,10 +882,14 @@ def test_do_effects_of_alri_treatment(sim_hs_all_consumables):
 
     # Set the treatment failure parameters to null
     p = sim.modules['Alri'].parameters
-    p['5day_amoxicillin_for_chest_indrawing_treatment_failure_or_relapse'] = 0.0
-    p['3day_amoxicillin_for_chest_indrawing_treatment_failure_or_relapse'] = 0.0
-    p['1st_line_antibiotic_for_severe_pneumonia_treatment_failure_by_day2'] = 0.0
-    p['rr_1st_line_treatment_failure_low_oxygen_saturation'] = 0.0
+    p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%'] = 0.0
+    p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%'] = 0.0
+    p['tf_3day_amoxicillin_for_chest_indrawing_with_SpO2>=90%'] = 0.0
+    p['tf_7day_amoxicillin_for_fast_breathing_pneumonia_in_young_infants'] = 0.0
+    p['tf_1st_line_antibiotic_for_severe_pneumonia'] = 0.0
+    p['tf_oral_amoxicillin_only_for_severe_pneumonia_with_SpO2>=90%'] = 0.0
+    p['tf_oral_amoxicillin_only_for_non_severe_pneumonia_with_SpO2<90%'] = 0.0
+    p['tf_oral_amoxicillin_only_for_severe_pneumonia_with_SpO2<90%'] = 0.0
 
     # start simulation
     sim.simulate(end_date=start_date)
@@ -950,6 +955,63 @@ def test_do_effects_of_alri_treatment(sim_hs_all_consumables):
     assert 0 == sim.modules['Alri'].logging_event.trackers['recovered_cases'].report_current_total()
     assert 0 == sim.modules['Alri'].logging_event.trackers['deaths'].report_current_total()
     assert 1 == sim.modules['Alri'].logging_event.trackers['cured_cases'].report_current_total()
+
+
+def test_po_oxygen_availability_override(sim_hs_all_consumables):
+    """Check that pulse oximeter and oxygen availability override to 0% no treatment occurs"""
+    sim = sim_hs_all_consumables
+    popsize = 2000
+
+    # make pop of children only
+    sim.modules['Demography'].parameters['max_age_initial'] = 5
+    sim.make_initial_population(n=popsize)
+
+    # start simulation
+    sim.simulate(end_date=start_date)
+    df = sim.population.props
+
+    # Get person to use (not currently infected) aged between 2 months and 5 years and not infected:
+    person_id = _get_person_id(df, (2.0/12.0, 5.0))
+
+    # Give this person severe pneumonia:
+    pathogen = list(sim.modules['Alri'].all_pathogens)[0]
+    incidentcase = AlriIncidentCase_Lethal_Severe_Pneumonia(person_id=int(person_id),
+                                                            pathogen=pathogen, module=sim.modules['Alri'])
+    incidentcase.run()
+
+    # Check infected and not on treatment:
+    assert not df.at[person_id, 'ri_on_treatment']
+
+    # Run the healthcare seeking behaviour poll
+    sim.modules['HealthSeekingBehaviour'].theHealthSeekingBehaviourPoll.run()
+
+    # Check that person 0 has an Emergency Generic HSI scheduled
+    generic_appt = [event_tuple[1] for event_tuple in sim.modules['HealthSystem'].find_events_for_person(person_id)
+                    if isinstance(event_tuple[1], HSI_GenericEmergencyFirstApptAtFacilityLevel1)][0]
+
+    # Override the availability of the consumables within the health system. set to 0.
+    m = sim.modules['Alri']
+    po_and_oxygen = m.consumables_used_in_hsi['Oxygen_Therapy']
+
+    for k, v in po_and_oxygen.items():
+        sim.modules['HealthSystem'].override_availability_of_consumables({k: 0.0})
+
+    # refresh the consumables
+    sim.modules['HealthSystem'].consumables._refresh_availability_of_consumables(date=sim.date)
+
+    # Run generic appt and check that there is an Outpatient `HSI_Alri_Treatment` scheduled
+    generic_appt.run(squeeze_factor=0.0)
+    hsi = [event_tuple[1] for event_tuple in sim.modules['HealthSystem'].find_events_for_person(person_id)
+           if isinstance(event_tuple[1], HSI_Alri_Treatment)][0]
+    assert hsi.TREATMENT_ID == 'Alri_Pneumonia_Treatment_Outpatient'
+
+    # check that none of the consumables are available
+    for k, v in po_and_oxygen.items():
+        available = hsi.get_consumables(item_codes=k)
+        assert not available
+
+    # Check not on treatment:
+    assert not df.at[person_id, 'ri_on_treatment']
 
 
 def test_severe_pneumonia_referral_from_hsi_first_appts(sim_hs_all_consumables):

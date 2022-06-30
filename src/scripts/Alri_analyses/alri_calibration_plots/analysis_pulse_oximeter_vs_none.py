@@ -38,8 +38,8 @@ output_files = dict()
 
 # %% Run the Simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2019, 12, 31)
-popsize = 50000
+end_date = Date(2015, 12, 31)
+popsize = 20000
 
 for label, oximeter_avail in scenarios.items():
 
@@ -61,20 +61,23 @@ for label, oximeter_avail in scenarios.items():
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath,
-                                                      force_any_symptom_to_lead_to_healthcareseeking=True),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, cons_availability='all'),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                  service_availability=["*"],  # all treatment allowed
+                                  mode_appt_constraints=0,  # mode of constraints to do with officer numbers and time
+                                  cons_availability="default",  # mode for consumable constraints (if ignored, all consumables available)
+                                  ignore_priority=True,  # do not use the priority information in HSI event to schedule
+                                  capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
+                                  disable=True,  # disables the healthsystem (no constraints and no logging) and every HSI runs
+                                  disable_and_reject_all=False,  # disable healthsystem and no HSI runs
+                                  store_hsi_events_that_have_run=False,  # convenience function for debugging
+                                  ),
         alri.Alri(resourcefilepath=resourcefilepath),
         alri.AlriPropertiesOfOtherModules()
     )
 
     sim.make_initial_population(n=popsize)
-
-    if oximeter_avail:
-        sim.modules['HealthSystem'].override_availability_of_consumables({127: 1.0})
-    else:
-        sim.modules['HealthSystem'].override_availability_of_consumables({127: 0.0})
 
     # Assume perfect sensitivity in hw classification
     p = sim.modules['Alri'].parameters
@@ -85,14 +88,23 @@ for label, oximeter_avail in scenarios.items():
     p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level2'] = 1.0
     p['sensitivity_of_classification_of_severe_pneumonia_facility_level2'] = 1.0
 
+    if oximeter_avail:
+        # override item code 127 to availability of 100%
+        p['override_po_and_oxygen_availability'] = True
+        p['override_po_and_oxygen_to_full_availability'] = True
+    else:
+        # override item code 127 to availability of 0%
+        p['override_po_and_oxygen_availability'] = True
+        p['override_po_and_oxygen_to_full_availability'] = False
+
     sim.simulate(end_date=end_date)
 
     # Save the full set of results:
     output_files[label] = sim.log_filepath
 
 
-# output_files['No_oximeter_and_oxygen'] = outputpath / 'alri_No_oximeter_and_oxygen__2022-06-21T175854.log'
-# output_files['With_oximeter_and_oxygen'] = outputpath / 'alri_With_oximeter_and_oxygen__2022-06-22T000713.log'
+# output_files['No_oximeter_and_oxygen'] = outputpath / 'alri_with_treatment__2022-06-30T124146.log'
+# output_files['With_oximeter_and_oxygen'] = outputpath / 'alri_with_treatment__2022-06-30T114728.log'
 
 
 # %% Extract the relevant outputs and make a graph:

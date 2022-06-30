@@ -38,8 +38,8 @@ output_files = dict()
 
 # %% Run the Simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2019, 12, 31)
-popsize = 50000
+end_date = Date(2015, 12, 31)
+popsize = 10000
 
 for label, service_avail in scenarios.items():
 
@@ -99,7 +99,7 @@ for label, service_avail in scenarios.items():
     output_files[label] = sim.log_filepath
 
 # output_files['No_Treatment'] = outputpath / 'alri_with_treatment_and_without_treatment__2022-06-22T142842.log'
-# output_files['Treatment'] = outputpath / 'alri_with_treatment_and_without_treatment__2022-06-22T150252.log'
+# output_files['Treatment'] = outputpath / 'alri_with_treatment__2022-06-30T100457.log'
 
 
 # %% Extract the relevant outputs and make a graph:
@@ -166,7 +166,7 @@ def plot_for_column_of_interest(results, column_of_interest):
     data.plot.bar()
     plt.title(f'Incidence rate (/100 py): {column_of_interest}')
     plt.tight_layout()
-    plt.savefig(outputpath / ("ALRI_inc_rate_by_scenario" + datestamp + ".pdf"), format='pdf')
+    # plt.savefig(outputpath / ("ALRI_inc_rate_by_scenario" + datestamp + ".pdf"), format='pdf')
     plt.show()
 
 
