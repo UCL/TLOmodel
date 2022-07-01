@@ -1,5 +1,6 @@
 commit_id="${1:-12345}"
 
-conda env remove -p "/mnt/autoload/envs/${commit_id}"
-git worktree remove --force "/mnt/autoload/worktrees/${commit_id}"
-rm -r "/home/$(whoami)/automated_runs/outputs/${commit_id}"
+root_dir="/mnt/tlo-dev-fs-1/task-runner"
+conda env remove -p "${root_dir}/envs/${commit_id}"
+git worktree remove --force "${root_dir}/worktrees/${commit_id}"
+rm -r "${root_dir}/output/${commit_id}"
