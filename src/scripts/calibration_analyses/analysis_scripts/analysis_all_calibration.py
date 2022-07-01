@@ -31,7 +31,7 @@ if __name__ == "__main__":
 
     # Find results folder (most recent run generated using that scenario_filename)
     # scenario_filename = 'long_run_all_diseases.py'
-    from tlo.analysis.utils import get_scenario_outputs
+    # from tlo.analysis.utils import get_scenario_outputs
     # results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
 
     # Test dataset:
