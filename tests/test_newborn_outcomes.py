@@ -160,11 +160,11 @@ def test_care_seeking_for_babies_delivered_at_home_who_develop_complications(see
     sim.make_initial_population(n=100)
 
     # set risk of comps to 1 and force care seeking
-    params = sim.modules['NewbornOutcomes'].current_parameters
+    params = sim.modules['NewbornOutcomes'].parameters
     params['prob_early_onset_neonatal_sepsis_day_0'] = 1.0
     params['prob_early_breastfeeding_hb'] = 0.0
     params['prob_care_seeking_for_complication'] = 1.0
-    params['prob_timings_pnc_newborns'] = [1, 0]
+    params['prob_timings_pnc_newborns'] = [[1.0, 0.0], [1.0, 0.0]]
 
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
@@ -246,7 +246,7 @@ def test_care_seeking_for_twins_delivered_at_home_who_develop_complications(seed
 
     # set risk of complications to 1 so that both twins develop sepsis immediately following birth and set probability
     # of care seeking to 1
-    params = sim.modules['NewbornOutcomes'].current_parameters
+    params = sim.modules['NewbornOutcomes'].parameters
     params['prob_early_onset_neonatal_sepsis_day_0'] = 1.0
     params['prob_early_breastfeeding_hb'] = 0.0
     params['prob_pnc_check_newborn'] = 1.0
@@ -300,12 +300,12 @@ def test_on_birth_applies_risk_of_complications_and_death_in_term_newborns_deliv
     sim.make_initial_population(n=100)
 
     # set risk of comps to 1 and force care seeking
-    params = sim.modules['NewbornOutcomes'].current_parameters
+    params = sim.modules['NewbornOutcomes'].parameters
     params['prob_early_onset_neonatal_sepsis_day_0'] = 1.0
     params['treatment_effect_early_init_bf'] = 1.0
     params['prob_failure_to_transition'] = 1.0
     params['prob_encephalopathy'] = 1.0
-    params['prob_enceph_severity'] = [0, 0, 1]
+    params['prob_enceph_severity'] = [[0, 0, 1],  [0, 0, 1]]
     params['prob_congenital_heart_anomaly'] = 1.0
     params['prob_limb_musc_skeletal_anomaly'] = 1.0
     params['prob_urogenital_anomaly'] = 1.0
@@ -368,10 +368,10 @@ def test_on_birth_applies_risk_of_complications_and_death_in_preterm_newborns_de
     sim.make_initial_population(n=100)
 
     # set risk of comps to 1 and force care seeking
-    params = sim.modules['NewbornOutcomes'].current_parameters
+    params = sim.modules['NewbornOutcomes'].parameters
     params['prob_retinopathy_preterm'] = 1.0
     params['prob_respiratory_distress_preterm'] = 1.0
-    params['prob_retinopathy_severity'] = [0, 0, 0, 1]
+    params['prob_retinopathy_severity'] = [[0, 0, 0, 1], [0, 0, 0, 1]]
 
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
@@ -411,10 +411,10 @@ def test_newborn_sba_hsi_deliveries_resuscitation_treatment_as_expected(seed):
     sim.make_initial_population(n=100)
 
     # set risk of comps very high and force care seeking
-    params = sim.modules['NewbornOutcomes'].current_parameters
+    params = sim.modules['NewbornOutcomes'].parameters
     la_params = sim.modules['Labour'].parameters
     params['prob_encephalopathy'] = 1.0
-    params['prob_enceph_severity'] = [0, 0, 1]
+    params['prob_enceph_severity'] = [[0, 0, 1], [0, 0, 1]]
     params['treatment_effect_resuscitation'] = 0.0
     params['sensitivity_of_assessment_of_ftt_hc'] = 1.0
     params['cfr_enceph'] = 1.0
