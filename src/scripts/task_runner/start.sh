@@ -9,7 +9,7 @@ username=$(whoami)
 wd_root="/mnt/tlodev2stg/tlo-dev-fs-2/task-runner"
 output_root="${wd_root}/output"
 worktrees_root="${wd_root}/worktrees"
-conda_env_root="${wd_root}/envs"
+conda_env_root="/mnt/task-runner/envs"
 
 # construct the worktree and output directories for this commit
 # commit_id=${1:0:8}
