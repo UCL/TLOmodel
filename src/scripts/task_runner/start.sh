@@ -6,9 +6,8 @@ if [ -a .profile ]; then
 fi
 
 username=$(whoami)
-wd_root="/mnt/tlo-dev-fs-1/task-runner"
-output_root="/mnt/tlo-dev-fs-1/task-runner/output"
-
+wd_root="/mnt/tlodev2stg/tlo-dev-fs-2/task-runner"
+output_root="${wd_root}/output"
 worktrees_root="${wd_root}/worktrees"
 conda_env_root="${wd_root}/envs"
 

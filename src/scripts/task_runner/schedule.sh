@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 username=$(whoami)
 tlo_dirname="/home/${username}/TLOmodel"
-output_dir="/mnt/tlo-dev-fs-1/task-runner/output"
+output_dir="/mnt/tlodev2stg/tlo-dev-fs-2/task-runner/output"
 
 . /etc/profile
 

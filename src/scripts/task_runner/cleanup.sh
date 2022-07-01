@@ -1,6 +1,6 @@
 commit_id="${1:-12345}"
 
-root_dir="/mnt/tlo-dev-fs-1/task-runner"
+root_dir="/mnt/tlodev2stg/tlo-dev-fs-2/task-runner"
 conda env remove -p "${root_dir}/envs/${commit_id}"
 git worktree remove --force "${root_dir}/worktrees/${commit_id}"
 rm -r "${root_dir}/output/${commit_id}"
