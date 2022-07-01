@@ -4,6 +4,7 @@ import datetime
 import json
 import math
 import os
+import tempfile
 from collections import defaultdict
 from pathlib import Path
 from typing import Dict
@@ -53,13 +54,19 @@ def scenario_run(scenario_file, draw_only, draw: tuple, output_dir=None):
     SCENARIO_FILE is path to file containing a scenario class
     """
     scenario = load_scenario(scenario_file)
-    run_json = scenario.save_draws()
+    config = scenario.save_draws(return_config=True)
+    json_string = json.dumps(config, indent=2)
+
     if draw_only:
-        with open(run_json) as f:
-            print(f.read())
+        # pretty-print json
+        print(json_string)
         return
 
-    runner = SampleRunner(run_json)
+    tmp = tempfile.NamedTemporaryFile()
+    with open(tmp.name, 'w') as f:
+        f.write(json_string)
+    runner = SampleRunner(tmp.name)
+
     if draw:
         runner.run_sample_by_number(output_directory=output_dir, draw_number=draw[0], sample_number=draw[1])
     else:
