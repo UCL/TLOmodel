@@ -6,7 +6,6 @@ from scripts.calibration_analyses.analysis_scripts import (
     analysis_demography_calibrations,
     analysis_hsi_descriptions,
 )
-from tlo.analysis.utils import get_scenario_outputs
 
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
@@ -31,7 +30,8 @@ if __name__ == "__main__":
     rfp = Path('./resources')
 
     # Find results folder (most recent run generated using that scenario_filename)
-    scenario_filename = 'long_run_all_diseases.py'
+    # scenario_filename = 'long_run_all_diseases.py'
+    from tlo.analysis.utils import get_scenario_outputs
     # results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
 
     # Test dataset:
