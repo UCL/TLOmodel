@@ -374,7 +374,7 @@ def test_application_of_risk_of_infection_and_sepsis_postnatal_supervisor_event(
     # check women are scheduled for death not careseeking
     assert not sim.population.props.at[mother_id, 'is_alive']
 
-test_application_of_risk_of_infection_and_sepsis_postnatal_supervisor_event(0)
+
 def test_application_of_risk_of_spph_postnatal_supervisor_event(seed):
     """Test that risk of maternal haemorrhage is applied within the population level postnatal event as expected,
     including care seeking and application of risk of death"""
