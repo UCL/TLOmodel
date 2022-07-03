@@ -13,6 +13,9 @@ cd "${tlo_dirname}"
 
 script_full_path=$(dirname "$0")
 
+# get latest changes
+git pull
+
 # loop over commits and kick off those that haven't run
 git log --date=format:'%Y-%m-%d_%H%M%S' --format="%cd_%h %H" | while read -r commit_key commit_hash
 do
