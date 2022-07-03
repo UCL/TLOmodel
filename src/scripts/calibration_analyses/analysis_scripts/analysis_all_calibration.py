@@ -1,4 +1,5 @@
 import glob
+import os.path
 import zipfile
 from pathlib import Path
 
@@ -26,13 +27,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     html = "<html><body>"
 
     for filename in sorted(glob.glob(str(output_folder / "*.png"))):
-        html += f"<p style='text-align: center; font-size: 130%'><a href='{filename}'>{filename}</a></p>"
-        html += f"<img style='max-width:100%; display:block; margin-left:auto; margin-right:auto' src='{filename}'/>"
+        basename = os.path.basename(filename)
+        html += f"<p style='text-align: center; font-size: 130%'><a href='{basename}'>{basename}</a></p>"
+        html += f"<img style='max-width:100%; display:block; margin-left:auto; margin-right:auto' src='{basename}'/>"
         html += "<br><br>"
 
     with zipfile.ZipFile(output_folder / "images.zip", mode="w") as archive:
-        for filename in glob.glob("*.png"):
-            archive.write(filename)
+        for filename in sorted(glob.glob(str(output_folder / "*.png"))):
+            archive.write(filename, os.path.basename(filename))
 
     html += """<hr><p><a href='images.zip'>images.zip</a> <a href='stdout.txt'>stdout.txt</a>
             <a href='stderr.txt'>stderr.txt</a> <a href='task.txt'>task.txt</a></p>"""
