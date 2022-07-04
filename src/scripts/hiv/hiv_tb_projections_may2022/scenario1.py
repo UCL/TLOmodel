@@ -52,20 +52,19 @@ class TestScenario(BaseScenario):
         }
 
     def modules(self):
-        def modules(self):
-            return fullmodel(
-                resourcefilepath=self.resources,
-                use_simplified_births=False,
-                symptommanager_spurious_symptoms=True,
-                healthsystem_disable=False,
-                healthsystem_mode_appt_constraints=0,  # no constraints
-                healthsystem_cons_availability="all",  # all cons always available
-                healthsystem_beds_availability="all",  # all beds always available
-                healthsystem_ignore_priority=True,  # ignore priority in HSI scheduling
-                healthsystem_use_funded_or_actual_staffing="funded_plus",  # daily capabilities of staff
-                healthsystem_capabilities_coefficient=None,  # if 'None' set to ratio of init 2010 pop
-                healthsystem_record_hsi_event_details=False
-            )
+        return fullmodel(
+            resourcefilepath=self.resources,
+            use_simplified_births=False,
+            symptommanager_spurious_symptoms=True,
+            healthsystem_disable=False,
+            healthsystem_mode_appt_constraints=0,  # no constraints
+            healthsystem_cons_availability="all",  # all cons always available
+            healthsystem_beds_availability="all",  # all beds always available
+            healthsystem_ignore_priority=True,  # ignore priority in HSI scheduling
+            healthsystem_use_funded_or_actual_staffing="funded_plus",  # daily capabilities of staff
+            healthsystem_capabilities_coefficient=None,  # if 'None' set to ratio of init 2010 pop
+            healthsystem_record_hsi_event_details=False
+        )
 
     def draw_parameters(self, draw_number, rng):
         return {
