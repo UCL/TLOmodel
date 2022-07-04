@@ -2,6 +2,7 @@
 import os
 from pathlib import Path
 
+import pandas as pd
 from pandas import DateOffset
 
 from tlo import Date, Module, Simulation
@@ -35,6 +36,7 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_healthcareseek
     class DummyDisease(Module):
         METADATA = {Metadata.USES_SYMPTOMMANAGER}
         """Dummy Disease - it's only job is to create a symptom and impose it everyone"""
+
         def read_parameters(self, data_folder):
             self.sim.modules['SymptomManager'].register_symptom(
                 Symptom(
@@ -101,6 +103,7 @@ def test_healthcareseeking_does_not_occurs_from_symptom_that_do_not_give_healthc
     class DummyDisease(Module):
         METADATA = {Metadata.USES_SYMPTOMMANAGER}
         """Dummy Disease - it's only job is to create a symptom and impose it everyone"""
+
         def read_parameters(self, data_folder):
             self.sim.modules['SymptomManager'].register_symptom(
                 Symptom(
@@ -169,6 +172,7 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_emergency_heal
     class DummyDisease(Module):
         METADATA = {Metadata.USES_SYMPTOMMANAGER}
         """Dummy Disease - it's only job is to create a symptom and impose it everyone"""
+
         def read_parameters(self, data_folder):
             self.sim.modules['SymptomManager'].register_symptom(
                 Symptom(
@@ -333,6 +337,7 @@ def test_one_per_hsi_scheduled_per_day_when_emergency_and_non_emergency_symptoms
     class DummyDisease(Module):
         METADATA = {Metadata.USES_SYMPTOMMANAGER}
         """Dummy Disease - it's only job is to create a symptom and impose it everyone"""
+
         def read_parameters(self, data_folder):
             self.sim.modules['SymptomManager'].register_symptom(
                 Symptom(name='NonEmergencySymptom'),
@@ -380,3 +385,130 @@ def test_one_per_hsi_scheduled_per_day_when_emergency_and_non_emergency_symptoms
 
     assert 'FirstAttendance_Emergency' in evs
     assert 'FirstAttendance_NonEmergency' not in evs
+
+
+def test_force_healthcare_seeking(seed):
+    """Check that the parameter/argument 'force_any_symptom_to_lead_to_healthcare_seeking' causes any symptom onset to
+    lead immediately to healthcare seeking."""
+
+    def hsi_scheduled_following_symptom_onset(force_any_symptom_to_lead_to_healthcare_seeking):
+        """Returns True if a FirstAttendance HSI has been scheduled for a person following onset of symptoms with low
+        probability of causing healthcare seeking."""
+
+        class DummyDisease(Module):
+            METADATA = {Metadata.USES_SYMPTOMMANAGER}
+            """Dummy Disease - it's only job is to create a symptom and impose it everyone"""
+
+            def read_parameters(self, data_folder):
+                self.sim.modules['SymptomManager'].register_symptom(
+                    Symptom(name='NonEmergencySymptom',
+                            odds_ratio_health_seeking_in_adults=0.0001,
+                            odds_ratio_health_seeking_in_children=0.0001),
+                )
+
+            def initialise_population(self, population):
+                pass
+
+            def initialise_simulation(self, sim):
+                """Give person_id=0 both symptoms"""
+                self.sim.modules['SymptomManager'].change_symptom(
+                    person_id=[0],
+                    disease_module=self,
+                    symptom_string='NonEmergencySymptom',
+                    add_or_remove='+'
+                )
+
+            def on_birth(self, mother, child):
+                pass
+
+        start_date = Date(2010, 1, 1)
+        sim = Simulation(start_date=start_date, seed=seed)
+
+        sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                     healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+                     symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
+                     healthseekingbehaviour.HealthSeekingBehaviour(
+                         resourcefilepath=resourcefilepath,
+                         force_any_symptom_to_lead_to_healthcareseeking=force_any_symptom_to_lead_to_healthcare_seeking
+                     ),
+                     DummyDisease()
+                     )
+
+        # Initialise the simulation (run the simulation for zero days)
+        popsize = 200
+        sim.make_initial_population(n=popsize)
+        sim.simulate(end_date=start_date)
+
+        # Run the HealthSeeingBehaviourPoll
+        sim.modules['HealthSeekingBehaviour'].theHealthSeekingBehaviourPoll.run()
+
+        # See what HSI are scheduled to occur for the person
+        evs = [x[1].TREATMENT_ID for x in
+               sim.modules['HealthSystem'].sim.modules['HealthSystem'].find_events_for_person(0)]
+
+        return 'FirstAttendance_NonEmergency' in evs
+
+    assert not hsi_scheduled_following_symptom_onset(force_any_symptom_to_lead_to_healthcare_seeking=False)
+    assert hsi_scheduled_following_symptom_onset(force_any_symptom_to_lead_to_healthcare_seeking=True)
+
+
+def test_force_healthcare_seeking_control_of_behaviour_through_parameters_and_arguements(seed):
+    """Check that behaviour of 'forced healthcare seeking' can be controlled via parameters and arguments to the
+    module."""
+    start_date = Date(2010, 1, 1)
+
+    value_in_resourcefile = bool(pd.read_csv(
+        resourcefilepath / 'ResourceFile_HealthSeekingBehaviour.csv'
+    ).set_index('parameter_name').at['force_any_symptom_to_lead_to_healthcareseeking', 'value'])
+
+    # No specification with argument --> behaviour is as per the parameter value in the ResourceFile
+    sim = Simulation(start_date=start_date, seed=seed)
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+    )
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=start_date + pd.DateOffset(days=0))
+    assert value_in_resourcefile == sim.modules['HealthSeekingBehaviour'].force_any_symptom_to_lead_to_healthcareseeking
+    assert False is sim.modules['HealthSeekingBehaviour'].force_any_symptom_to_lead_to_healthcareseeking,\
+        "Default behaviour in resourcefile should be 'False'"
+
+    # Editing parameters --> behaviour is as per the edited parameters
+    value_as_edited = not value_in_resourcefile
+    sim = Simulation(start_date=start_date, seed=seed)
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+    )
+    # edit the value:
+    sim.modules['HealthSeekingBehaviour'].parameters['force_any_symptom_to_lead_to_healthcareseeking'] = value_as_edited
+
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=start_date + pd.DateOffset(days=0))
+    assert value_as_edited == sim.modules['HealthSeekingBehaviour'].force_any_symptom_to_lead_to_healthcareseeking
+
+    # Editing parameters *and* with an argument provided to module --> argument over-writes parameter edits
+    value_in_argument = not value_in_resourcefile
+    sim = Simulation(start_date=start_date, seed=seed)
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(
+            resourcefilepath=resourcefilepath,
+            force_any_symptom_to_lead_to_healthcareseeking=value_in_argument),
+    )
+    # edit the value (to nonsense)
+    sim.modules['HealthSeekingBehaviour'].parameters['force_any_symptom_to_lead_to_healthcareseeking'] = 'XXXXXX'
+
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=start_date + pd.DateOffset(days=0))
+    assert value_in_argument == sim.modules['HealthSeekingBehaviour'].force_any_symptom_to_lead_to_healthcareseeking
