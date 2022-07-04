@@ -149,7 +149,7 @@ class BaseScenario:
         """
         return None
 
-    def save_draws(self, **kwargs):
+    def save_draws(self, return_config=False, **kwargs):
         generator = DrawGenerator(self, self.number_of_draws, self.runs_per_draw)
         output_path = self.scenario_path.parent / f"{self.scenario_path.stem}_draws.json"
         # assert not os.path.exists(output_path), f'Cannot save run config to {output_path} - file already exists'
@@ -160,8 +160,11 @@ class BaseScenario:
         if "commit" in config:
             github_url = f"https://github.com/UCL/TLOmodel/blob/{config['commit']}/{config['scenario_script_path']}"
             config["github"] = github_url
-        generator.save_config(config, output_path)
-        return output_path
+        if return_config:
+            return config
+        else:
+            generator.save_config(config, output_path)
+            return output_path
 
     def make_grid(self, ranges: dict) -> pd.DataFrame:
         """Utility method to flatten an n-dimension grid of parameters for use in scenarios
