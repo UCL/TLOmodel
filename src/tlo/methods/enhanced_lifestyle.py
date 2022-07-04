@@ -785,12 +785,15 @@ class Lifestyle(Module):
         :param mother_id: the mother for this child
         :param child_id: the new child
         """
-
         df = self.sim.population.props
 
-        # Determine id from which characteristics that inherited (from mother, or if no mother, from a randomly
-        # selected person.)
-        _id_inherit_from = mother_id if mother_id != -1 else self.rng.choice(df.index[df.is_alive])
+        # Determine id from which characteristics that inherited (from mother, or if no 
+        # mother, from a randomly selected alive person that is not child themself)
+        if mother_id == -1:
+            alive_persons_not_including_child = df.index[df.is_alive].drop(child_id)
+            _id_inherit_from = self.rng.choice(alive_persons_not_including_child)
+        else:
+            _id_inherit_from = mother_id
 
         df.at[child_id, 'li_urban'] = df.at[_id_inherit_from, 'li_urban']
         df.at[child_id, 'li_wealth'] = df.at[_id_inherit_from, 'li_wealth']
