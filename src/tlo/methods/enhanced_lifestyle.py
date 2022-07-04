@@ -787,7 +787,7 @@ class Lifestyle(Module):
         """
         df = self.sim.population.props
 
-        # Determine id from which characteristics that inherited (from mother, or if no 
+        # Determine id from which characteristics that inherited (from mother, or if no
         # mother, from a randomly selected alive person that is not child themself)
         if mother_id == -1:
             alive_persons_not_including_child = df.index[df.is_alive].drop(child_id)
