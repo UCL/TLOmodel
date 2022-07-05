@@ -953,7 +953,7 @@ def generate_hsi_sequence(sim, incident_case_event, age_of_person_under_2_months
         sim.modules['Demography'].parameters['max_age_initial'] = 5
 
     def force_any_symptom_to_lead_to_healthcareseeking(sim):
-        sim.modules['HealthSeekingBehaviour'].force_any_symptom_to_lead_to_healthcareseeking = True
+        sim.modules['HealthSeekingBehaviour'].parameters['force_any_symptom_to_lead_to_healthcareseeking'] = True
 
     make_population_children_only(sim)
     make_hw_assesement_perfect(sim)
