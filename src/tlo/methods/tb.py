@@ -1745,12 +1745,17 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                         dx_tests_to_run="tb_sputum_test_smear_positive", hsi_event=self
                     )
                 else:
-                    # if smear-negative, sputum smear will always return negative
+                    # if smear-negative, sputum smear should always return negative
                     # run the dx test to log the consumable
-                    # may return a false positive
                     test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                         dx_tests_to_run="tb_sputum_test_smear_negative", hsi_event=self
                     )
+                    # if negative, check for presence of all symptoms (clinical diagnosis)
+                    if all(x in self.module.symptom_list for x in persons_symptoms):
+                        test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+                            dx_tests_to_run="tb_clinical", hsi_event=self
+                        )
+
 
             elif test == "xpert":
                 ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
