@@ -662,7 +662,7 @@ class Tb(Module):
                 property='tb_inf',
                 target_categories=["active"],
                 sensitivity=0.0,
-                specificity=0.0,
+                specificity=1.0,
                 item_codes=self.item_codes_for_consumables_required['sputum_test']
             )
         )
@@ -1745,6 +1745,9 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                         dx_tests_to_run="tb_sputum_test_smear_positive", hsi_event=self
                     )
                 else:
+                    # if smear-negative, sputum smear will always return negative
+                    # run the dx test to log the consumable
+                    # may return a false positive
                     test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                         dx_tests_to_run="tb_sputum_test_smear_negative", hsi_event=self
                     )
