@@ -795,6 +795,7 @@ def calibration_plot_by_level(fac_type):
     plt.xlabel('Pr(drug available) as per TLO model')
     plt.ylabel('Pr(drug available) as per HHFA')
 
+
 fig = plt.figure(figsize=(22, 22))
 plt.subplot(421)
 calibration_plot_by_level(calibration_df['fac_type_tlo'].unique()[0])
