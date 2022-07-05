@@ -1713,7 +1713,7 @@ class RTI(Module):
                 hsi_event=HSI_RTI_Acute_Pain_Management(module=self,
                                                         person_id=person_id),
                 priority=0,
-                topen=self.sim.date,
+                topen=self.sim.date + DateOffset(days=1),
                 tclose=self.sim.date + DateOffset(days=15))
 
     def rti_ask_for_suture_kit(self, person_id):
@@ -1743,7 +1743,7 @@ class RTI(Module):
                 hsi_event=HSI_RTI_Suture(module=self,
                                          person_id=person_id),
                 priority=0,
-                topen=self.sim.date,
+                topen=self.sim.date + DateOffset(days=1),
                 tclose=self.sim.date + DateOffset(days=15)
             )
 
@@ -1761,7 +1761,7 @@ class RTI(Module):
                 hsi_event=HSI_RTI_Shock_Treatment(module=self,
                                                   person_id=person_id),
                 priority=0,
-                topen=self.sim.date,
+                topen=self.sim.date + DateOffset(days=1),
                 tclose=self.sim.date + DateOffset(days=15)
             )
 
@@ -1776,7 +1776,7 @@ class RTI(Module):
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_RTI_Imaging_Event(module=self, person_id=person_id),
                 priority=0,
-                topen=self.sim.date,
+                topen=self.sim.date + DateOffset(days=1),
                 tclose=self.sim.date + DateOffset(days=15)
             )
 
@@ -1808,7 +1808,7 @@ class RTI(Module):
                 hsi_event=HSI_RTI_Burn_Management(module=self,
                                                   person_id=person_id),
                 priority=0,
-                topen=self.sim.date,
+                topen=self.sim.date + DateOffset(days=1),
                 tclose=self.sim.date + DateOffset(days=15)
             )
 
@@ -1845,7 +1845,7 @@ class RTI(Module):
                     hsi_event=HSI_RTI_Fracture_Cast(module=self,
                                                     person_id=person_id),
                     priority=0,
-                    topen=self.sim.date,
+                    topen=self.sim.date + DateOffset(days=1),
                     tclose=self.sim.date + DateOffset(days=15)
                 )
             else:
@@ -1917,9 +1917,17 @@ class RTI(Module):
                 hsi_event=HSI_RTI_Tetanus_Vaccine(module=self,
                                                   person_id=person_id),
                 priority=0,
-                topen=self.sim.date,
+                topen=self.sim.date + DateOffset(days=1),
                 tclose=self.sim.date + DateOffset(days=15)
             )
+
+    def schedule_hsi_event_for_tomorrow(self, hsi_event: HSI_Event = None):
+        """
+        A function to reschedule requested events for the following day if they have failed to run
+        :return:
+        """
+        self.sim.modules['HealthSystem'].schedule_hsi_event(hsi_event, topen=self.sim.date + DateOffset(days=1),
+                                                            tclose=self.sim.date + DateOffset(days=15), priority=0)
 
     def rti_find_injury_column(self, person_id, codes):
         """
@@ -3656,21 +3664,21 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         logger.debug(key='rti_general_message',
                      data=f"RTIMedicalInterventionEvent did not run on date {self.sim.date} (end of treatment) for "
                           f"person {person_id}")
-        injurycodes = {'First injury': df.loc[person_id, 'rt_injury_1'],
-                       'Second injury': df.loc[person_id, 'rt_injury_2'],
-                       'Third injury': df.loc[person_id, 'rt_injury_3'],
-                       'Fourth injury': df.loc[person_id, 'rt_injury_4'],
-                       'Fifth injury': df.loc[person_id, 'rt_injury_5'],
-                       'Sixth injury': df.loc[person_id, 'rt_injury_6'],
-                       'Seventh injury': df.loc[person_id, 'rt_injury_7'],
-                       'Eight injury': df.loc[person_id, 'rt_injury_8']}
+        injurycodes = {'First injury': df.at[person_id, 'rt_injury_1'],
+                       'Second injury': df.at[person_id, 'rt_injury_2'],
+                       'Third injury': df.at[person_id, 'rt_injury_3'],
+                       'Fourth injury': df.at[person_id, 'rt_injury_4'],
+                       'Fifth injury': df.at[person_id, 'rt_injury_5'],
+                       'Sixth injury': df.at[person_id, 'rt_injury_6'],
+                       'Seventh injury': df.at[person_id, 'rt_injury_7'],
+                       'Eight injury': df.at[person_id, 'rt_injury_8']}
         logger.debug(key='rti_injury_profile_of_untreated_person', data=injurycodes)
         # reset the treatment plan
-        df.loc[person_id, 'rt_injuries_for_major_surgery'] = []
-        df.loc[person_id, 'rt_injuries_for_minor_surgery'] = []
-        df.loc[person_id, 'rt_injuries_to_cast'] = []
-        df.loc[person_id, 'rt_injuries_to_heal_with_time'] = []
-        df.loc[person_id, 'rt_injuries_for_open_fracture_treatment'] = []
+        df.at[person_id, 'rt_injuries_for_major_surgery'] = []
+        df.at[person_id, 'rt_injuries_for_minor_surgery'] = []
+        df.at[person_id, 'rt_injuries_to_cast'] = []
+        df.at[person_id, 'rt_injuries_to_heal_with_time'] = []
+        df.at[person_id, 'rt_injuries_for_open_fracture_treatment'] = []
 
 
 class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
@@ -3727,13 +3735,15 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
                          data=f"Hypovolemic shock treatment available for person {person_id}")
             df.at[person_id, 'rt_in_shock'] = False
         else:
-            self.module.rti_ask_for_shock_treatment(person_id)
+            self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
             return self.make_appt_footprint({})
 
-    def did_not_run(self, person_id):
+    def did_not_run(self):
         # Assume that untreated shock leads to death for now
         # Schedule the death
         df = self.sim.population.props
+        person_id = self.target
+
         df.at[person_id, 'rt_death_from_shock'] = True
         self.sim.modules['Demography'].do_death(individual_id=person_id, cause="RTI_death_shock",
                                                 originating_module=self.module)
@@ -3871,7 +3881,7 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
             df.loc[person_id, 'rt_injuries_to_cast'].clear()
             df.loc[person_id, 'rt_date_death_no_med'] = pd.NaT
         else:
-            self.module.rti_ask_for_fracture_casts(person_id)
+            self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
             if pd.isnull(df.loc[person_id, 'rt_date_death_no_med']):
                 df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
             logger.debug(key='rti_general_message',
@@ -3879,7 +3889,9 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
                          )
             return self.make_appt_footprint({})
 
-    def did_not_run(self, person_id):
+    def did_not_run(self):
+        person_id = self.target
+
         logger.debug(key='rti_general_message',
                      data=f"Fracture casts unavailable for person {person_id}")
 
@@ -3975,14 +3987,16 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
             if code[0] in df.loc[person_id, 'rt_injuries_for_open_fracture_treatment']:
                 df.loc[person_id, 'rt_injuries_for_open_fracture_treatment'].remove(code[0])
         else:
-            self.module.rti_ask_for_open_fracture_treatment(person_id, counts=1)
+            self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
             if pd.isnull(df.loc[person_id, 'rt_date_death_no_med']):
                 df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
             logger.debug(key='rti_general_message',
                          data=f"Person {person_id}'s has {open_fracture_counts} open fractures without treatment",
                          )
 
-    def did_not_run(self, person_id):
+    def did_not_run(self):
+        person_id = self.target
+
         logger.debug(key='rti_general_message',
                      data=f"Open fracture treatment unavailable for person {person_id}")
 
@@ -4062,14 +4076,16 @@ class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
                     assert df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] > self.sim.date
                 df.loc[person_id, 'rt_date_death_no_med'] = pd.NaT
             else:
-                self.module.rti_ask_for_suture_kit(person_id)
+                self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
                 if pd.isnull(df.loc[person_id, 'rt_date_death_no_med']):
                     df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
                 logger.debug(key='rti_general_message',
                              data="This facility has no treatment for open wounds available.")
                 return self.make_appt_footprint({})
 
-    def did_not_run(self, person_id):
+    def did_not_run(self):
+        person_id = self.target
+
         logger.debug(key='rti_general_message',
                      data=f"Suture kits unavailable for person {person_id}")
 
@@ -4178,13 +4194,15 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
                     'recovery date assigned to past'
                 df.loc[person_id, 'rt_date_death_no_med'] = pd.NaT
             else:
-                self.module.rti_ask_for_burn_treatment(person_id)
+                self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
                 if pd.isnull(df.loc[person_id, 'rt_date_death_no_med']):
                     df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
                 logger.debug(key='rti_general_message',
                              data="This facility has no treatment for burns available.")
 
-    def did_not_run(self, person_id):
+    def did_not_run(self):
+        person_id = self.target
+
         logger.debug(key='rti_general_message',
                      data=f"Burn treatment unavailable for person {person_id}")
 
@@ -4234,12 +4252,14 @@ class HSI_RTI_Tetanus_Vaccine(HSI_Event, IndividualScopeEventMixin):
                 logger.debug(key='rti_general_message',
                              data=f"Tetanus vaccine requested for person {person_id} and given")
             else:
-                self.module.rti_ask_for_tetanus(person_id)
+                self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
                 logger.debug(key='rti_general_message',
                              data=f"Tetanus vaccine requested for person {person_id}, not given")
                 return self.make_appt_footprint({})
 
-    def did_not_run(self, person_id):
+    def did_not_run(self):
+        person_id = self.target
+
         logger.debug(key='rti_general_message',
                      data=f"Tetanus vaccine unavailable for person {person_id}")
 
@@ -4373,7 +4393,7 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
                             data=dict_to_output,
                             description='Pain medicine successfully provided to the person')
             else:
-                self.module.rti_acute_pain_management(person_id)
+                self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
                 logger.debug(key='rti_general_message',
                              data=f"This facility has no pain management available for their mild pain, person "
                                   f"{person_id}.")
@@ -4404,7 +4424,7 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
                             data=dict_to_output,
                             description='Pain medicine successfully provided to the person')
             else:
-                self.module.rti_acute_pain_management(person_id)
+                self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
                 logger.debug(key='rti_general_message',
                              data=f"This facility has no pain management available for moderate pain for person "
                                   f"{person_id}.")
@@ -4436,24 +4456,26 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
                             data=dict_to_output,
                             description='Pain medicine successfully provided to the person')
             else:
-                self.module.rti_acute_pain_management(person_id)
+                self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
                 logger.debug(key='rti_general_message',
                              data=f"This facility has no pain management available for severe pain for person "
                                   f"{person_id}.")
                 return self.make_appt_footprint({})
 
-    def did_not_run(self, person_id):
+    def did_not_run(self):
+        person_id = self.target
+
         df = self.sim.population.props
         logger.debug(key='rti_general_message',
                      data=f"Pain relief unavailable for person {person_id}")
-        injurycodes = {'First injury': df.loc[person_id, 'rt_injury_1'],
-                       'Second injury': df.loc[person_id, 'rt_injury_2'],
-                       'Third injury': df.loc[person_id, 'rt_injury_3'],
-                       'Fourth injury': df.loc[person_id, 'rt_injury_4'],
-                       'Fifth injury': df.loc[person_id, 'rt_injury_5'],
-                       'Sixth injury': df.loc[person_id, 'rt_injury_6'],
-                       'Seventh injury': df.loc[person_id, 'rt_injury_7'],
-                       'Eight injury': df.loc[person_id, 'rt_injury_8']}
+        injurycodes = {'First injury': df.at[person_id, 'rt_injury_1'],
+                       'Second injury': df.at[person_id, 'rt_injury_2'],
+                       'Third injury': df.at[person_id, 'rt_injury_3'],
+                       'Fourth injury': df.at[person_id, 'rt_injury_4'],
+                       'Fifth injury': df.at[person_id, 'rt_injury_5'],
+                       'Sixth injury': df.at[person_id, 'rt_injury_6'],
+                       'Seventh injury': df.at[person_id, 'rt_injury_7'],
+                       'Eight injury': df.at[person_id, 'rt_injury_8']}
         logger.debug(key='rti_general_message',
                      data=f"Injury profile of person {person_id}, {injurycodes}")
 
@@ -4828,24 +4850,25 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
                 ['Treated injury code not removed', self.treated_code]
             df.loc[person_id, 'rt_date_death_no_med'] = pd.NaT
         else:
-            self.module.rti_do_for_major_surgeries(person_id=person_id,
-                                                   count=len(df.loc[person_id, 'rt_injuries_for_major_surgery']))
+            self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
             if pd.isnull(df.loc[person_id, 'rt_date_death_no_med']):
                 df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
             return self.make_appt_footprint({})
 
-    def did_not_run(self, person_id):
+    def did_not_run(self):
+        person_id = self.target
+
         df = self.sim.population.props
         logger.debug(key='rti_general_message',
                      data=f"Major surgery not scheduled for person {person_id}")
-        injurycodes = {'First injury': df.loc[person_id, 'rt_injury_1'],
-                       'Second injury': df.loc[person_id, 'rt_injury_2'],
-                       'Third injury': df.loc[person_id, 'rt_injury_3'],
-                       'Fourth injury': df.loc[person_id, 'rt_injury_4'],
-                       'Fifth injury': df.loc[person_id, 'rt_injury_5'],
-                       'Sixth injury': df.loc[person_id, 'rt_injury_6'],
-                       'Seventh injury': df.loc[person_id, 'rt_injury_7'],
-                       'Eight injury': df.loc[person_id, 'rt_injury_8']}
+        injurycodes = {'First injury': df.at[person_id, 'rt_injury_1'],
+                       'Second injury': df.at[person_id, 'rt_injury_2'],
+                       'Third injury': df.at[person_id, 'rt_injury_3'],
+                       'Fourth injury': df.at[person_id, 'rt_injury_4'],
+                       'Fifth injury': df.at[person_id, 'rt_injury_5'],
+                       'Sixth injury': df.at[person_id, 'rt_injury_6'],
+                       'Seventh injury': df.at[person_id, 'rt_injury_7'],
+                       'Eight injury': df.at[person_id, 'rt_injury_8']}
         logger.debug(key='rti_general_message',
                      data=f"Injury profile of person {person_id}, {injurycodes}")
 
@@ -5006,7 +5029,7 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
                 ['Injury treated not removed', treated_code]
             df.loc[person_id, 'rt_date_death_no_med'] = pd.NaT
         else:
-            self.module.rti_do_for_minor_surgeries(person_id, count=1)
+            self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
             if pd.isnull(df.loc[person_id, 'rt_date_death_no_med']):
                 df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
             logger.debug(key='rti_general_message',
@@ -5014,18 +5037,20 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
                               f"on date {self.sim.date}!!!!!!")
             return self.make_appt_footprint({})
 
-    def did_not_run(self, person_id):
+    def did_not_run(self):
+        person_id = self.target
+
         df = self.sim.population.props
         logger.debug(key='rti_general_message',
                      data=f"Minor surgery not scheduled for person {person_id}")
-        injurycodes = {'First injury': df.loc[person_id, 'rt_injury_1'],
-                       'Second injury': df.loc[person_id, 'rt_injury_2'],
-                       'Third injury': df.loc[person_id, 'rt_injury_3'],
-                       'Fourth injury': df.loc[person_id, 'rt_injury_4'],
-                       'Fifth injury': df.loc[person_id, 'rt_injury_5'],
-                       'Sixth injury': df.loc[person_id, 'rt_injury_6'],
-                       'Seventh injury': df.loc[person_id, 'rt_injury_7'],
-                       'Eight injury': df.loc[person_id, 'rt_injury_8']}
+        injurycodes = {'First injury': df.at[person_id, 'rt_injury_1'],
+                       'Second injury': df.at[person_id, 'rt_injury_2'],
+                       'Third injury': df.at[person_id, 'rt_injury_3'],
+                       'Fourth injury': df.at[person_id, 'rt_injury_4'],
+                       'Fifth injury': df.at[person_id, 'rt_injury_5'],
+                       'Sixth injury': df.at[person_id, 'rt_injury_6'],
+                       'Seventh injury': df.at[person_id, 'rt_injury_7'],
+                       'Eight injury': df.at[person_id, 'rt_injury_8']}
         logger.debug(key='rti_injury_profile_of_untreated_person',
                      data=injurycodes)
 

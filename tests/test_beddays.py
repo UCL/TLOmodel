@@ -949,3 +949,7 @@ def test_in_patient_appt_included_and_logged(tmpdir, seed):
 
     pd.testing.assert_frame_equal(appts_freq_by_date, expectation,
                                   check_dtype=False, check_names=False, check_freq=False)
+
+    # Check that the facility_id is included for each entry in the `HSI_Events` log, including HSI Events for
+    # in-patient appointments.
+    assert not (log_hsi['Facility_ID'] == -99).any()

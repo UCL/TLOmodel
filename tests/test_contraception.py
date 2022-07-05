@@ -571,19 +571,24 @@ def test_outcomes_same_if_using_or_not_using_healthsystem(tmpdir, seed):
 
     # Run basic check, for the case when the model is using the healthsystem and when not and check the logs
     sim_does_not_use_healthsystem = run_sim(run=True, tmpdir=tmpdir, seed=seed, use_healthsystem=False, disable=True,
-                                            max_days_delay_between_decision_to_change_method_and_hsi_scheduled=0)
+                                            max_days_delay_between_decision_to_change_method_and_hsi_scheduled=0,
+                                            consumables_available=True, end_date=Date(2010, 12, 31))
     __check_no_illegal_switches(sim_does_not_use_healthsystem)
     __check_some_starting_switching_and_stopping(sim_does_not_use_healthsystem)
 
     sim_uses_healthsystem = run_sim(run=True, tmpdir=tmpdir, seed=seed, use_healthsystem=True, disable=True,
-                                    max_days_delay_between_decision_to_change_method_and_hsi_scheduled=0)
+                                    max_days_delay_between_decision_to_change_method_and_hsi_scheduled=0,
+                                    consumables_available=True, end_date=Date(2010, 12, 31))
     __check_no_illegal_switches(sim_uses_healthsystem)
     __check_some_starting_switching_and_stopping(sim_uses_healthsystem)
 
-    # Check that the output of these two simulations are the same
+    # Check that the output of these two simulations are the same.
+    # Note that this is a very demanding test, as it requires that the dates of each change are exactly the same. If
+    #  this causes problems in the future, then consider using an 'easier' version of this test whereby we only check
+    #  that the `set` of changes occurring is the same in each case, with no requirement on the dates matching.
     def sort_log(_log):
         """Do some sorting on the logs to enable comparisons."""
-        return _log.sort_values(['date', 'woman_id']).reset_index(drop=True)
+        return _log.sort_values(['date', 'woman_id']).reset_index(drop=True).drop(columns='age_years')
 
     for key in {'pregnancy', 'contraception_change'}:
         pd.testing.assert_frame_equal(

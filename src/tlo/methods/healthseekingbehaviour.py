@@ -41,6 +41,9 @@ class HealthSeekingBehaviour(Module):
 
     # No parameters to declare
     PARAMETERS = {
+        'force_any_symptom_to_lead_to_healthcareseeking': Parameter(
+            Types.BOOL, "Whether every symptom should always lead to healthcare seeking (ignoring the other parameters "
+                        "that determine the probability of seeking care."),
         'baseline_odds_of_healthcareseeking_children': Parameter(Types.REAL, 'odds of health-care seeking (children:'
                                                                              ' 0-14) if male, 0-5 years-old, living in'
                                                                              ' a rural setting in the Northern region,'
@@ -85,7 +88,7 @@ class HealthSeekingBehaviour(Module):
     # No properties to declare
     PROPERTIES = {}
 
-    def __init__(self, name=None, resourcefilepath=None, force_any_symptom_to_lead_to_healthcareseeking=False):
+    def __init__(self, name=None, resourcefilepath=None, force_any_symptom_to_lead_to_healthcareseeking=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
@@ -100,16 +103,22 @@ class HealthSeekingBehaviour(Module):
         self.non_emergency_healthcareseeking_in_adults = set()
 
         # "force_any_symptom_to_lead_to_healthcareseeking"=True will mean that probability of health care seeking is 1.0
-        # for anyone with newly onset symptoms
-        assert isinstance(force_any_symptom_to_lead_to_healthcareseeking, bool)
-        self.force_any_symptom_to_lead_to_healthcareseeking = force_any_symptom_to_lead_to_healthcareseeking
+        # for anyone with newly onset symptoms. Note that if this is not specified, then the value is taken from the
+        # ResourceFile.
+        if force_any_symptom_to_lead_to_healthcareseeking is not None:
+            assert isinstance(force_any_symptom_to_lead_to_healthcareseeking, bool)
+        self.arg_force_any_symptom_to_lead_to_healthcareseeking = force_any_symptom_to_lead_to_healthcareseeking
 
     def read_parameters(self, data_folder):
         """Read in ResourceFile"""
         # Load parameters from resource file:
         self.load_parameters_from_dataframe(
-            pd.DataFrame(pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_HealthSeekingBehaviour.csv'))
+            pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_HealthSeekingBehaviour.csv')
         )
+
+        # Check that force_any_symptom_to_lead_to_healthcareseeking is a bool (this is returned in
+        # `self.force_any_symptom_to_lead_to_healthcareseeking` without any further checking).
+        assert isinstance(self.parameters['force_any_symptom_to_lead_to_healthcareseeking'], bool)
 
     def initialise_population(self, population):
         """Nothing to initialise in the population
@@ -201,6 +210,15 @@ class HealthSeekingBehaviour(Module):
                     for symptom in care_seeking_symptoms
                 )
             )
+
+    @property
+    def force_any_symptom_to_lead_to_healthcareseeking(self):
+        """Returns the parameter value stored for `force_any_symptom_to_lead_to_healthcareseeking` unless this has
+         been over-ridden by an argument to the module."""
+        if self.arg_force_any_symptom_to_lead_to_healthcareseeking is None:
+            return self.parameters['force_any_symptom_to_lead_to_healthcareseeking']
+        else:
+            return self.arg_force_any_symptom_to_lead_to_healthcareseeking
 
 # ---------------------------------------------------------------------------------------------------------
 #   REGULAR POLLING EVENT

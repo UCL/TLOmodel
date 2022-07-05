@@ -1,6 +1,7 @@
 """
 General utility functions for TLO analysis
 """
+import gzip
 import json
 import os
 import pickle
@@ -8,6 +9,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Dict, Optional, TextIO
 
+import git
 import numpy as np
 import pandas as pd
 
@@ -228,86 +230,69 @@ def extract_results(results_folder: Path,
                     custom_generate_series=None,
                     do_scaling: bool = False,
                     ) -> pd.DataFrame:
-    """Utility function to unpack results
+    """Utility function to unpack results.
 
-    Produces a dataframe that summaries one series from the log, with column multi-index for the draw/run. If an 'index'
-    component of the log_element is provided, the dataframe uses that index (but note that this will only work if the
-    index is the same in each run).
-    Optionally, instead of a series that exists in the dataframe already, a function can be provided that, when applied
-    to the dataframe indicated, yields a new pd.Series.
-    Optionally, with `do_scaling`, each element is multiplied by the the scaling_factor recorded in the simulation
-    (if available)
+    Produces a dataframe from extracting information from a log with the column multi-index for the draw/run.
+
+    If the column to be extracted exists in the log, the name of the `column` is provided as `column`. If the resulting
+     dataframe should be based on another column that exists in the log, this can be provided as 'index'.
+
+    If instead, some work must be done to generate a new column from log, then a function can be provided to do this as
+     `custom_generate_series`.
+
+    Optionally, with `do_scaling=True`, each element is multiplied by the scaling_factor recorded in the simulation.
+
+    Note that if runs in the batch have failed (such that logs have not been generated), these are dropped silently.
     """
+
+    def get_multiplier(_draw, _run):
+        """Helper function to get the multiplier from the simulation, if do_scaling=True.
+        Note that if the scaling factor cannot be found a `KeyError` is thrown."""
+        if not do_scaling:
+            return 1.0
+        else:
+            return load_pickled_dataframes(results_folder, _draw, _run, 'tlo.methods.population'
+                                           )['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
+
+    if custom_generate_series is None:
+        # If there is no `custom_generate_series` provided, it implies that function required selects a the specified
+        # column from the dataframe.
+        assert column is not None, "Must specify which column to extract"
+
+        if index is not None:
+            _gen_series = lambda _df: _df.set_index(index)[column]  # noqa: 731
+        else:
+            _gen_series = lambda _df: _df.reset_index(drop=True)[column]  # noqa: 731
+
+    else:
+        assert index is None, "Cannot specify an index if using custom_generate_series"
+        assert column is None, "Cannot specify a column if using custom_generate_series"
+        _gen_series = custom_generate_series
 
     # get number of draws and numbers of runs
     info = get_scenario_info(results_folder)
 
-    cols = pd.MultiIndex.from_product(
-        [range(info['number_of_draws']), range(info['runs_per_draw'])],
-        names=["draw", "run"]
-    )
+    # Collect results from each draw/run
+    res = dict()
+    for draw in range(info['number_of_draws']):
+        for run in range(info['runs_per_draw']):
 
-    def get_multiplier(_draw, _run):
-        """Helper function to get the multiplier from the simulation, if it's specified and do_scaling=True"""
-        if not do_scaling:
-            return 1.0
-        else:
+            draw_run = (draw, run)
+
             try:
-                return load_pickled_dataframes(results_folder, _draw, _run, 'tlo.methods.population'
-                                               )['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
-            except KeyError:
-                return 1.0
-
-    if custom_generate_series is None:
-
-        assert column is not None, "Must specify which column to extract"
-
-        results_index = None
-        if index is not None:
-            # extract the index from the first log, and use this ensure that all other are exactly the same.
-            filename = f"{module}.pickle"
-            df: pd.DataFrame = load_pickled_dataframes(results_folder, draw=0, run=0, name=filename)[module][key]
-            results_index = df[index]
-
-        results = pd.DataFrame(columns=cols)
-        for draw in range(info['number_of_draws']):
-            for run in range(info['runs_per_draw']):
-
-                try:
-                    df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
-                    results[draw, run] = df[column] * get_multiplier(draw, run)
-
-                    if index is not None:
-                        idx = df[index]
-                        assert idx.equals(results_index), "Indexes are not the same between runs"
-
-                except ValueError:
-                    results[draw, run] = np.nan
-
-        # if 'index' is provided, set this to be the index of the results
-        if index is not None:
-            results.index = results_index
-
-        return results
-
-    else:
-        # A custom commaand to generate a series has been provided.
-        # No other arguements should be provided.
-        assert index is None, "Cannot specify an index if using custom_generate_series"
-        assert column is None, "Cannot specify a column if using custom_generate_series"
-
-        # Collect results and then use pd.concat as indicies may be different betweeen runs
-        res = dict()
-        for draw in range(info['number_of_draws']):
-            for run in range(info['runs_per_draw']):
                 df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
-                output_from_eval = custom_generate_series(df)
+                output_from_eval: pd.Series = _gen_series(df)
                 assert pd.Series == type(output_from_eval), 'Custom command does not generate a pd.Series'
-                res[f"{draw}_{run}"] = output_from_eval * get_multiplier(draw, run)
-        results = pd.concat(res.values(), axis=1).fillna(0)
-        results.columns = cols
+                res[draw_run] = output_from_eval * get_multiplier(draw, run)
 
-        return results
+            except KeyError:
+                # Some logs could not be found - probably because this run failed.
+                res[draw_run] = None
+
+    # Use pd.concat to compile results (skips dict items where the values is None)
+    _concat = pd.concat(res, axis=1)
+    _concat.columns.names = ['draw', 'run']  # name the levels of the columns multi-index
+    return _concat
 
 
 def summarize(results: pd.DataFrame, only_mean: bool = False, collapse_columns: bool = False) -> pd.DataFrame:
@@ -378,7 +363,7 @@ def format_gbd(gbd_df: pd.DataFrame):
     return gbd_df
 
 
-def create_pickles_locally(scenario_output_dir):
+def create_pickles_locally(scenario_output_dir, compressed_file_name_prefix=None):
     """For a run from the Batch system that has not resulted in the creation of the pickles, reconstruct the pickles
      locally."""
 
@@ -391,13 +376,29 @@ def create_pickles_locally(scenario_output_dir):
                 with open(logfile.parent / f"{key}.pickle", "wb") as f:
                     pickle.dump(output, f)
 
+    def uncompress_and_save_logfile(compressed_file) -> Path:
+        """Uncompress and save a log file and return its path."""
+        target = compressed_file.parent / str(compressed_file.name[0:-3])
+        with open(target, "wb") as t:
+            with gzip.open(compressed_file, 'rb') as s:
+                t.write(s.read())
+        return target
+
     f: os.DirEntry
     draw_folders = [f for f in os.scandir(scenario_output_dir) if f.is_dir()]
     for draw_folder in draw_folders:
         run_folders = [f for f in os.scandir(draw_folder) if f.is_dir()]
         for run_folder in run_folders:
-            logfile = [x for x in os.listdir(run_folder) if x.endswith('.log')][0]
-            turn_log_into_pickles(Path(run_folder) / logfile)
+            # Find the original log-file written by the simulation
+            if compressed_file_name_prefix is None:
+                logfile = [x for x in os.listdir(run_folder) if x.endswith('.log')][0]
+            else:
+                compressed_file_name = [
+                    x for x in os.listdir(run_folder) if x.startswith(compressed_file_name_prefix)
+                ][0]
+                logfile = uncompress_and_save_logfile(Path(run_folder) / compressed_file_name)
+
+            turn_log_into_pickles(logfile)
 
 
 def compare_number_of_deaths(logfile: Path, resourcefilepath: Path):
@@ -478,21 +479,32 @@ def flatten_multi_index_series_into_dict_for_logging(ser: pd.Series) -> dict:
     return dict(zip(flat_index, ser.values))
 
 
-def unflatten_flattened_multi_index_in_logging(_x: pd.DataFrame) -> pd.DataFrame:
+def unflatten_flattened_multi_index_in_logging(_x: [pd.DataFrame, pd.Index]) -> [pd.DataFrame, pd.Index]:
     """Helper function that recreate the multi-index of logged results from a pd.DataFrame that is generated by
     `parse_log`.
+
     If a pd.DataFrame created by `parse_log` is the result of repeated logging of a pd.Series with a multi-index that
     was transformed before logging using `flatten_multi_index_series_into_dict_for_logging`, then the pd.DataFrame's
     columns will be those flattened labels. This helper function recreates the original multi-index from which the
-    flattened labels were created and applies it to the pd.DataFrame."""
-    cols = _x.columns
-    index_value_list = list()
-    for col in cols.str.split('|'):
-        index_value_list.append(tuple(component.split('=')[1] for component in col))
-    index_name_list = tuple(component.split('=')[0] for component in cols[0].split('|'))
-    _y = _x.copy()
-    _y.columns = pd.MultiIndex.from_tuples(index_value_list, names=index_name_list)
-    return _y
+    flattened labels were created and applies it to the pd.DataFrame.
+
+    Alternatively, if jus the index of the "flattened" labels is provided, then the equivalent multi-index is returned.
+    """
+
+    def gen_mutli_index(_idx: pd.Index):
+        """Returns the multi-index represented by the flattened index."""
+        index_value_list = list()
+        for col in _idx.str.split('|'):
+            index_value_list.append(tuple(component.split('=')[1] for component in col))
+        index_name_list = tuple(component.split('=')[0] for component in _idx[0].split('|'))
+        return pd.MultiIndex.from_tuples(index_value_list, names=index_name_list)
+
+    if isinstance(_x, pd.DataFrame):
+        _y = _x.copy()
+        _y.columns = gen_mutli_index(_x.columns)
+        return _y
+    else:
+        return gen_mutli_index(_x)
 
 
 class LogsDict(Mapping):
@@ -539,7 +551,7 @@ class LogsDict(Mapping):
             return self._results_cache[key]  # return the added results
 
         else:
-            return KeyError
+            raise KeyError
 
     def __contains__(self, k):
         # if key k is a valid logfile entry
@@ -575,3 +587,21 @@ class LogsDict(Mapping):
         for key in self.keys():
             self.__getitem__(key, cache=True)
         return self.__dict__
+
+
+def get_root_path(starter_path: Optional[Path] = None) -> Path:
+    """Returns the absolute path of the top level of the repository. `starter_path` optionally gives a reference
+    location from which to begin search; if omitted the location of this file is used."""
+
+    def get_git_root(path: Path) -> Path:
+        """Return path of git repo. Based on: https://stackoverflow.com/a/41920796"""
+        git_repo = git.Repo(path, search_parent_directories=True)
+        git_root = git_repo.working_dir
+        return Path(git_root)
+
+    if starter_path is None:
+        return get_git_root(__file__)
+    elif Path(starter_path).exists() and Path(starter_path).is_absolute():
+        return get_git_root(starter_path)
+    else:
+        raise OSError("File Not Found")

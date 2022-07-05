@@ -392,7 +392,8 @@ class Demography(Module):
             'sex': person['sex'],
             'cause': cause,
             'label': self.causes_of_death[cause].label,
-            'person_id': individual_id
+            'person_id': individual_id,
+            'li_wealth': person['li_wealth'] if 'li_wealth' in person else -99,
         }
 
         if ('Contraception' in self.sim.modules) or ('SimplifiedBirths' in self.sim.modules):
@@ -619,11 +620,12 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         alive = df.loc[df.is_alive & (df.age_years <= MAX_AGE), ['sex', 'age_years']].copy()
 
         # merge the population dataframe with the parameter dataframe to pick-up the death_rate for each person
+        # (where there is no entry [the person is older than the data provides for] fill this with 1.0)
         length_before_merge = len(alive)
-        alive = alive.reset_index().merge(mort_risk,
-                                          left_on=['age_years', 'sex'],
-                                          right_on=['age_years', 'sex'],
-                                          how='inner').set_index('person')
+        alive = alive.merge(mort_risk,
+                            left_on=['age_years', 'sex'],
+                            right_on=['age_years', 'sex'],
+                            how='left').fillna(1.0)
         assert length_before_merge == len(alive)
 
         # flipping the coin to determine if this person will die
