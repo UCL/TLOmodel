@@ -23,25 +23,10 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2050, 1, 1)
+end_date = Date(2012, 1, 2)
 popsize = 1000
 
-# todo
-# scenario = 3
-# mode_appt_constraints = 0  # HR constraints, 0: no constraints,
-#             # all HSI events run with no squeeze factor, 1: elastic constraints, all HSI
-#             # events run with squeeze factor, 2: hard constraints, only HSI events with
-#             # no squeeze factor run.
-# cons_availability = "all"  # consumable constraints, default=use cons listing, all=everything available
-# ignore_priority = True  # if True, do not use the priority information in HSI event to schedule
-
-# todo set whole sim to use constraints to replicate error
 scenario = 2
-mode_appt_constraints = 2  # HR constraints, 0=no constraints, 2=hard constraints
-cons_availability = "default"  # consumable constraints, default=use cons listing, all=everything available
-ignore_priority = False  # if True, use the priority information in HSI event to schedule
-use_funded_or_actual_staffing = "actual"
-
 
 # set up the log config
 log_config = {
@@ -50,9 +35,9 @@ log_config = {
     "custom_levels": {
         "*": logging.WARNING,
         "tlo.methods.hiv": logging.INFO,
-        "tlo.methods.tb": logging.INFO,
+        "tlo.methods.tb": logging.DEBUG,
         "tlo.methods.demography": logging.INFO,
-        # "tlo.methods.healthsystem.summary": logging.INFO,
+        "tlo.methods.healthsystem.summary": logging.INFO,
     },
 }
 
@@ -64,16 +49,20 @@ sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_p
 sim.register(*fullmodel(
     resourcefilepath=resourcefilepath,
     use_simplified_births=False,
+    symptommanager_spurious_symptoms=True,
     healthsystem_disable=False,
-    healthsystem_mode_appt_constraints=mode_appt_constraints,
-    healthsystem_cons_availability=cons_availability,
-    healthsystem_ignore_priority=ignore_priority,
-    healthsystem_use_funded_or_actual_staffing=use_funded_or_actual_staffing,
-    healthsystem_capabilities_coefficient=1.0,
+    healthsystem_mode_appt_constraints=0,  # no constraints
+    healthsystem_cons_availability="all",  # all cons always available
+    healthsystem_beds_availability="all",  # all beds always available
+    healthsystem_ignore_priority=True,  # ignore priority in HSI scheduling
+    healthsystem_use_funded_or_actual_staffing="funded_plus",  # daily capabilities of staff
+    healthsystem_capabilities_coefficient=None,  # if 'None' set to ratio of init 2010 pop
+    healthsystem_record_hsi_event_details=False
 ))
 
 # set the scenario
 sim.modules["Tb"].parameters["scenario"] = scenario
+sim.modules["Tb"].parameters["scenario_start_date"] = Date(2011, 1, 1)
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
@@ -82,7 +71,14 @@ sim.simulate(end_date=end_date)
 # parse the results
 output = parse_log_file(sim.log_filepath)
 
-# save the results, argument 'wb' means write using binary mode. use 'rb' for reading file
-with open(outputpath / "default_run.pickle", "wb") as f:
-    # Pickle the 'data' dictionary using the highest protocol available.
-    pickle.dump(dict(output), f, pickle.HIGHEST_PROTOCOL)
+# # save the results, argument 'wb' means write using binary mode. use 'rb' for reading file
+# with open(outputpath / "default_run.pickle", "wb") as f:
+#     # Pickle the 'data' dictionary using the highest protocol available.
+#     pickle.dump(dict(output), f, pickle.HIGHEST_PROTOCOL)
+#
+# with open(outputpath / "default_run.pickle", "rb") as f:
+#     output = pickle.load(f)
+tmp=output["tlo.methods.tb"]
+
+hs = output["tlo.methods.healthsystem.summary"]["Consumables"]
+hsi = output["tlo.methods.healthsystem.summary"]["HSI_Event"]

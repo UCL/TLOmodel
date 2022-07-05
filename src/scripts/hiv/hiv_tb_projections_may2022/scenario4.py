@@ -34,9 +34,9 @@ class TestScenario(BaseScenario):
         self.seed = 5
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2035, 12, 31)
-        self.pop_size = 50000
-        self.number_of_draws = 5
-        self.runs_per_draw = 3
+        self.pop_size = 5000
+        self.number_of_draws = 1
+        self.runs_per_draw = 1
 
     def log_configuration(self):
         return {
@@ -62,7 +62,7 @@ class TestScenario(BaseScenario):
                 healthsystem_beds_availability="all",  # all beds always available
                 healthsystem_ignore_priority=True,  # ignore priority in HSI scheduling
                 healthsystem_use_funded_or_actual_staffing="funded_plus",  # daily capabilities of staff
-                healthsystem_capabilities_coefficient=None,  # if 'None' set to ratio of init 2010 pop
+                healthsystem_capabilities_coefficient=1.0,  # if 'None' set to ratio of init 2010 pop
                 healthsystem_record_hsi_event_details=False
             )
 

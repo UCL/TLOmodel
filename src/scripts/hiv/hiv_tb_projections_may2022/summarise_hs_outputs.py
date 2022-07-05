@@ -25,7 +25,7 @@ results0 = get_scenario_outputs("scenario0.py", outputspath)[-1]
 results1 = get_scenario_outputs("scenario1.py", outputspath)[-1]
 results2 = get_scenario_outputs("scenario2.py", outputspath)[-1]
 results3 = get_scenario_outputs("scenario3.py", outputspath)[-1]
-# results4 = get_scenario_outputs("scenario4.py", outputspath)[-1]
+results4 = get_scenario_outputs("scenario4.py", outputspath)[-1]
 
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results0)
@@ -52,18 +52,18 @@ def summarise_frac_hcws(results_folder):
 
 
 hcw0 = summarise_frac_hcws(results0)
-hcw1 = summarise_frac_hcws(results1)
+# hcw1 = summarise_frac_hcws(results1)
 hcw2 = summarise_frac_hcws(results2)
 hcw3 = summarise_frac_hcws(results3)
-# hcw4 = summarise_frac_hcws(results4)
+hcw4 = summarise_frac_hcws(results4)
 
 # Make plot
 fig, ax = plt.subplots()
 ax.plot(hcw0.index, hcw0["median"], "-", color="C3")
 ax.fill_between(hcw0.index, hcw0["lower"], hcw0["upper"], color="C3", alpha=0.2)
 
-ax.plot(hcw1.index, hcw1["median"], "-", color="C0")
-ax.fill_between(hcw1.index, hcw1["lower"], hcw1["upper"], color="C0", alpha=0.2)
+# ax.plot(hcw1.index, hcw1["median"], "-", color="C0")
+# ax.fill_between(hcw1.index, hcw1["lower"], hcw1["upper"], color="C0", alpha=0.2)
 
 ax.plot(hcw2.index, hcw2["median"], "-", color="C2")
 ax.fill_between(hcw2.index, hcw2["lower"], hcw2["upper"], color="C2", alpha=0.2)
@@ -71,10 +71,14 @@ ax.fill_between(hcw2.index, hcw2["lower"], hcw2["upper"], color="C2", alpha=0.2)
 ax.plot(hcw3.index, hcw3["median"], "-", color="C4")
 ax.fill_between(hcw3.index, hcw3["lower"], hcw3["upper"], color="C4", alpha=0.2)
 
+ax.plot(hcw4.index, hcw4["median"], "-", color="C6")
+ax.fill_between(hcw4.index, hcw4["lower"], hcw4["upper"], color="C6", alpha=0.2)
+
 fig.subplots_adjust(left=0.15)
 plt.title("Fraction of overall healthcare worker time")
 plt.ylabel("Fraction of overall healthcare worker time")
-plt.legend(["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3"])
+# plt.legend(["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3"])
+plt.legend(["Scenario 0", "Scenario 2", "Scenario 3", "Scenario 4"])
 
 plt.show()
 
@@ -143,10 +147,10 @@ tx_id0 = treatment_counts(results_folder=results0,
                key="HSI_Event",
                column="TREATMENT_ID")
 
-tx_id1 = treatment_counts(results_folder=results1,
-               module="tlo.methods.healthsystem.summary",
-               key="HSI_Event",
-               column="TREATMENT_ID")
+# tx_id1 = treatment_counts(results_folder=results1,
+#                module="tlo.methods.healthsystem.summary",
+#                key="HSI_Event",
+#                column="TREATMENT_ID")
 
 tx_id2 = treatment_counts(results_folder=results2,
                module="tlo.methods.healthsystem.summary",
@@ -158,25 +162,41 @@ tx_id3 = treatment_counts(results_folder=results3,
                key="HSI_Event",
                column="TREATMENT_ID")
 
-# tx_id4 = treatment_counts(results_folder=results4,
-#                module="tlo.methods.healthsystem.summary",
-#                key="HSI_Event",
-#                column="TREATMENT_ID")
+tx_id4 = treatment_counts(results_folder=results4,
+               module="tlo.methods.healthsystem.summary",
+               key="HSI_Event",
+               column="TREATMENT_ID")
 
 
 # Make plot
 fig, ax = plt.subplots()
 ax.plot(tx_id0.index, tx_id0["Tb_Treatment_median"], "-", color="C3")
 
-ax.plot(tx_id1.index, tx_id1["Tb_Treatment_median"], "-", color="C0")
+# ax.plot(tx_id1.index, tx_id1["Tb_Treatment_median"], "-", color="C0")
 
 ax.plot(tx_id2.index, tx_id2["Tb_Treatment_median"], "-", color="C2")
 
 ax.plot(tx_id3.index, tx_id3["Tb_Treatment_median"], "-", color="C4")
 
+ax.plot(tx_id4.index, tx_id4["Tb_Treatment_median"], "-", color="C6")
+
 fig.subplots_adjust(left=0.15)
 plt.title("Numbers of TB treatment initiation HSI events")
 plt.ylabel("Numbers treated")
-plt.legend(["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3"])
+# plt.legend(["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3"])
+plt.legend(["Scenario 0", "Scenario 2", "Scenario 3", "Scenario 4"])
 
 plt.show()
+
+
+
+
+cons2 = treatment_counts(results_folder=results2,
+               module="tlo.methods.healthsystem.summary",
+               key="Consumables",
+               column="Item_Available")
+
+cons2NA = treatment_counts(results_folder=results2,
+               module="tlo.methods.healthsystem.summary",
+               key="Consumables",
+               column="-Item_NotAvailable")
