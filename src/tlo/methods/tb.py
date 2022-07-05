@@ -1756,7 +1756,6 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                             dx_tests_to_run="tb_clinical", hsi_event=self
                         )
 
-
             elif test == "xpert":
                 ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
                     {"Over5OPD": 1}
