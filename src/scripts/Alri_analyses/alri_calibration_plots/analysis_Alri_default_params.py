@@ -64,7 +64,7 @@ sim.register(
     healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                               service_availability=["*"],  # all treatment allowed
                               mode_appt_constraints=0,  # mode of constraints to do with officer numbers and time
-                              cons_availability="all",  # mode for consumable constraints (if ignored, all consumables available)
+                              cons_availability="none",  # mode for consumable constraints (if ignored, all consumables available)
                               ignore_priority=True,  # do not use the priority information in HSI event to schedule
                               capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
                               disable=True,  # disables the healthsystem (no constraints and no logging) and every HSI runs
@@ -76,6 +76,7 @@ sim.register(
 )
 
 # Run the simulation
+sim.modules['Demography'].parameters['max_age_initial'] = 5
 sim.make_initial_population(n=popsize)
 
 # Assume perfect sensitivity in hw classification
@@ -86,6 +87,7 @@ p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level1'] = 1.0
 p['sensitivity_of_classification_of_severe_pneumonia_facility_level1'] = 1.0
 p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level2'] = 1.0
 p['sensitivity_of_classification_of_severe_pneumonia_facility_level2'] = 1.0
+p['override_po_and_oxygen_to_full_availability'] = True
 
 sim.simulate(end_date=end_date)
 

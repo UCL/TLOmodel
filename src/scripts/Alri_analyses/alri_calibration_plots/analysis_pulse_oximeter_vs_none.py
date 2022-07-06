@@ -38,8 +38,8 @@ output_files = dict()
 
 # %% Run the Simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 12, 31)
-popsize = 20000
+end_date = Date(2012, 12, 31)
+popsize = 50000
 
 for label, oximeter_avail in scenarios.items():
 
@@ -61,12 +61,12 @@ for label, oximeter_avail in scenarios.items():
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath,),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                   service_availability=["*"],  # all treatment allowed
                                   mode_appt_constraints=0,  # mode of constraints to do with officer numbers and time
-                                  cons_availability="default",  # mode for consumable constraints (if ignored, all consumables available)
+                                  cons_availability="all",  # mode for consumable constraints (if ignored, all consumables available)
                                   ignore_priority=True,  # do not use the priority information in HSI event to schedule
                                   capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
                                   disable=True,  # disables the healthsystem (no constraints and no logging) and every HSI runs
@@ -77,6 +77,7 @@ for label, oximeter_avail in scenarios.items():
         alri.AlriPropertiesOfOtherModules()
     )
 
+    sim.modules['Demography'].parameters['max_age_initial'] = 5
     sim.make_initial_population(n=popsize)
 
     # Assume perfect sensitivity in hw classification
@@ -89,11 +90,9 @@ for label, oximeter_avail in scenarios.items():
     p['sensitivity_of_classification_of_severe_pneumonia_facility_level2'] = 1.0
 
     if oximeter_avail:
-        # override item code 127 to availability of 100%
         p['override_po_and_oxygen_availability'] = True
         p['override_po_and_oxygen_to_full_availability'] = True
     else:
-        # override item code 127 to availability of 0%
         p['override_po_and_oxygen_availability'] = True
         p['override_po_and_oxygen_to_full_availability'] = False
 
