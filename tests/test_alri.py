@@ -1151,7 +1151,7 @@ def test_treatment_pathway_if_all_consumables_mild_case(sim_hs_all_consumables):
     assert [
                ('FirstAttendance_NonEmergency', '0'),
                ('Alri_Pneumonia_Treatment_Outpatient', '0'),
-               ('Alri_Pneumonia_Treatment_Outpatient_Followup', '0'),
+               # ('Alri_Pneumonia_Treatment_Outpatient_Followup', '0'),  # no follow-up if no treatment failure
            ] == generate_hsi_sequence(sim=sim_hs_all_consumables,
                                       incident_case_event=AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia)
 
@@ -1166,7 +1166,7 @@ def test_treatment_pathway_if_all_consumables_severe_case(sim_hs_all_consumables
                ('FirstAttendance_Emergency', '1b'),
                ('Alri_Pneumonia_Treatment_Outpatient', '1b'),
                ('Alri_Pneumonia_Treatment_Inpatient', '1b'),
-               ('Alri_Pneumonia_Treatment_Outpatient_Followup', '1b')
+               # ('Alri_Pneumonia_Treatment_Outpatient_Followup', '1b')  # no follow-up if no treatment failure
            ] == generate_hsi_sequence(sim=sim_hs_all_consumables,
                                       incident_case_event=AlriIncidentCase_Lethal_Severe_Pneumonia)
 
@@ -1175,7 +1175,7 @@ def test_treatment_pathway_if_all_consumables_severe_case(sim_hs_all_consumables
                ('FirstAttendance_Emergency', '1b'),
                ('Alri_Pneumonia_Treatment_Outpatient', '1b'),
                ('Alri_Pneumonia_Treatment_Inpatient', '1b'),
-               ('Alri_Pneumonia_Treatment_Outpatient_Followup', '1b')
+               # ('Alri_Pneumonia_Treatment_Outpatient_Followup', '1b')  # no follow-up if no treatment failure
            ] == generate_hsi_sequence(sim=sim_hs_all_consumables,
                                       incident_case_event=AlriIncidentCase_Lethal_Severe_Pneumonia,
                                       age_of_person_under_2_months=True)

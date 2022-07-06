@@ -2201,11 +2201,10 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
 
     def _as_in_patient(self, facility_level):
         """Cast this HSI as an in-patient appointment."""
-        self.TREATMENT_ID = f'{self._treatment_id_stub}_Inpatient'
+        self.TREATMENT_ID = f'{self._treatment_id_stub}_Inpatient{"_Followup" if self.is_followup else ""}'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = facility_level
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 3})
-        assert not self.is_followup, 'A Follow-up appointment cannot be an in-patient appointment.'
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 7})
 
     def _refer_to_next_level_up(self):
         """Schedule a copy of this event to occur again today at the next level-up (if there is a next level-up)."""
@@ -2236,6 +2235,11 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
     def _refer_to_become_inpatient(self):
         """Schedule a copy of this event to occur today at this level as an in-patient appointment, at the higher level
         of the current level and level '1b'."""
+
+        # TODO: BUG - if refer to be inpatient will it still be re-assessed in the
+        #  HSI apply function with _assess_and_treat ??
+        #  This would not be correct as then they re registered as inpatient but having outpatient treatments given.
+        #  I think I have fixed it now
 
         the_higher_level_between_this_level_and_1b = '1b' if self.ACCEPTED_FACILITY_LEVEL in ('0', '1a', '1b') else '2'
 
@@ -2269,7 +2273,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
     @property
     def _is_as_in_patient(self):
         """True if this HSI_Event is cast as an in-patient appointment"""
-        return self.TREATMENT_ID.endswith('Inpatient')
+        return 'Inpatient' in self.TREATMENT_ID
 
     def _get_cons(self, _item_str: str) -> bool:
         """True if all of a group of consumables (identified by a string) is available, (if no group is
@@ -2301,30 +2305,47 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
         """This routine is called when in every HSI. It classifies the disease of the child and commissions treatment
         accordingly."""
 
-        # po_available = self.module.parameters['availability_po_and_oxygen_all_levels']
-
         po_available = self._get_cons('Pulse_oximetry')
+        classification_for_treatment_decision = ''
 
-        classification_for_treatment_decision = self._get_disease_classification(
-            age_exact_years=age_exact_years,
-            symptoms=symptoms,
-            oxygen_saturation=oxygen_saturation,
-            facility_level=self.ACCEPTED_FACILITY_LEVEL,
-            use_oximeter=po_available
-        )
+        # assessment process for first appointments (all start as outpatient) or outpatient referrals
+        if not self._is_as_in_patient and not self.is_followup:
 
-        self._provide_bronchodilator_if_wheeze(
-            facility_level=self.ACCEPTED_FACILITY_LEVEL,
-            symptoms=symptoms
-        )
+            classification_for_treatment_decision = self._get_disease_classification(
+                age_exact_years=age_exact_years,
+                symptoms=symptoms,
+                oxygen_saturation=oxygen_saturation,
+                facility_level=self.ACCEPTED_FACILITY_LEVEL,
+                use_oximeter=po_available
+            )
 
-        self._do_action_given_classification(
-            classification_for_treatment_decision=classification_for_treatment_decision,
-            age_exact_years=age_exact_years,
-            facility_level=self.ACCEPTED_FACILITY_LEVEL,
-            oxygen_saturation=oxygen_saturation,
-            use_oximeter=po_available
-        )
+            self._provide_bronchodilator_if_wheeze(
+                facility_level=self.ACCEPTED_FACILITY_LEVEL,
+                symptoms=symptoms
+            )
+
+            self._do_action_given_classification(
+                classification_for_treatment_decision=classification_for_treatment_decision,
+                age_exact_years=age_exact_years,
+                facility_level=self.ACCEPTED_FACILITY_LEVEL,
+                oxygen_saturation=oxygen_saturation,
+                use_oximeter=po_available
+            )
+
+        # assessment process for follow-ups with treatment failure or urgent referrals (both inpatient)
+        elif self._is_as_in_patient:
+            self._do_action_given_classification(
+                classification_for_treatment_decision='danger_signs_pneumonia',  # assumed for sbi for < 2 months
+                age_exact_years=age_exact_years,
+                facility_level=self.ACCEPTED_FACILITY_LEVEL,
+                oxygen_saturation=oxygen_saturation,
+                use_oximeter=po_available
+            )
+
+        else:
+            raise ValueError(f'Patient with an appointment as inpatient={self._is_as_in_patient}, '
+                             f'follow-up={self.is_followup}, '
+                             f'with given classification={classification_for_treatment_decision} no action taken')
 
     def _has_staph_aureus(self):
         """Returns True if the person has Staph. aureus as either primary or secondary infection"""
@@ -2511,7 +2532,6 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
 
             # check availability of oxygen and use it if oxygen is indicated
             oxygen_available = self._get_cons('Oxygen_Therapy')
-            # oxygen_available = self.module.parameters['availability_po_and_oxygen_all_levels']
 
             oxygen_indicated_and_available_or_oxygen_not_indicated = (oxygen_available and oxygen_indicated) or \
                                                                      (not oxygen_indicated)
@@ -2522,15 +2542,20 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                     antibiotic_provided=antibiotic_indicated,
                     oxygen_provided=(oxygen_available and oxygen_indicated)
                 )
-                if treatment_failed:
+                if treatment_failed and not self.is_followup:  # only 1 possible follow-up appt for an episode
                     self._schedule_follow_up_at_same_facility_as_outpatient()
             else:
-                self._refer_to_next_level_up() if facility_level != '2' \
-                    else self.module.do_effects_of_treatment(
-                    person_id=self.target,
-                    antibiotic_provided=antibiotic_indicated,
-                    oxygen_provided=(oxygen_available and oxygen_indicated))
-                self._schedule_follow_up_at_same_facility_as_outpatient()
+                if facility_level != '2':
+                    self._refer_to_next_level_up()
+
+                else:  # level 2 is the last referral level
+                    treatment_failed = self.module.do_effects_of_treatment(
+                        person_id=self.target,
+                        antibiotic_provided=antibiotic_indicated,
+                        oxygen_provided=(oxygen_available and oxygen_indicated)
+                    )
+                    if treatment_failed and not self.is_followup:
+                        self._schedule_follow_up_at_same_facility_as_outpatient()
 
         def _provide_consumable_and_refer(cons: str) -> None:
             """Provide a consumable (ignoring availability) and refer patient to next level up."""
@@ -2557,9 +2582,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
 
             if facility_level == '0':
                 _provide_consumable_and_refer('First_dose_oral_amoxicillin_for_referral')
-
             else:
-
                 if not self._is_as_in_patient:
                     _ = self._get_cons('First_dose_IM_antibiotics_for_referral')
                     self._refer_to_become_inpatient()
@@ -2570,8 +2593,6 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
 
         def do_if_serious_bacterial_infection(facility_level):
             """What to do if `serious_bacterial_infection`."""
-
-            _ = self._get_cons('Ceftriaxone_therapy_for_severe_pneumonia')
 
             if self._is_as_in_patient and facility_level in ('1b', '2'):
                 _try_treatment(antibiotic_indicated='1st_line_IV_antibiotics',
@@ -2613,9 +2634,9 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         """Assess and attempt to treat the person."""
 
-        # Do nothing if this is a follow-up appointment:
-        if self.is_followup:
-            return
+        # refer follow-up appointments to inpatient care (if follow-up only applies to those with TF)
+        if self.is_followup and not self._is_as_in_patient:
+            self._refer_to_become_inpatient()
 
         # Do nothing if the person is not currently infected and currently experiencing an episode
         person = self.sim.population.props.loc[person_id]
