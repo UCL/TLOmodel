@@ -1385,7 +1385,7 @@ class Alri(Module):
                         _raise_error()
 
                 # danger-signs pneumonia
-                elif imci_symptom_based_classification in ('danger_signs_pneumonia', 'serious_bacterial_infection'):
+                elif imci_symptom_based_classification == 'danger_signs_pneumonia':
                     if antibiotic_provided in ('7day_oral_amoxicillin', '5day_oral_amoxicillin'):
                         return p['tf_oral_amoxicillin_only_for_severe_pneumonia_with_SpO2>=90%'] \
                                > self.rng.random_sample()
@@ -1416,7 +1416,7 @@ class Alri(Module):
                                > self.rng.random_sample()
 
                 # danger-signs pneumonia
-                elif imci_symptom_based_classification in ('danger_signs_pneumonia', 'serious_bacterial_infection'):
+                elif imci_symptom_based_classification == 'danger_signs_pneumonia':
                     # oral antibiotics and no oxygen
                     if antibiotic_provided in ('7day_oral_amoxicillin', '3day_oral_amoxicillin',
                                                '5day_oral_amoxicillin') and (oxygen_provided == False):
@@ -1487,7 +1487,6 @@ class Alri(Module):
     def get_imci_classification_based_on_symptoms(child_is_younger_than_2_months: bool, symptoms: list) -> str:
         """Based on age and symptoms, classify WHO-pneumonia severity. This is regarded as the *TRUE* classification
          based on symptoms. It will return one of: {
-             'serious_bacterial_infection',
              'fast_breathing_pneumonia',
              'danger_signs_pneumonia',
              'chest_indrawing_pneumonia,
@@ -1496,7 +1495,7 @@ class Alri(Module):
 
         if child_is_younger_than_2_months:
             if ('chest_indrawing' in symptoms) or ('danger_signs' in symptoms):
-                return 'serious_bacterial_infection'
+                return 'danger_signs_pneumonia'
             elif 'tachypnoea' in symptoms:
                 return 'fast_breathing_pneumonia'
             else:
@@ -2358,7 +2357,6 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
     def _get_imci_classification_based_on_symptoms(self, child_is_younger_than_2_months: bool, symptoms: list) -> str:
         """Based on age and symptoms, classify WHO-pneumonia severity. This is regarded as the *TRUE* classification
          based on symptoms. It will return one of: {
-             'serious_bacterial_infection',
              'fast_breathing_pneumonia',
              'danger_signs_pneumonia',
              'chest_indrawing_pneumonia,
@@ -2368,19 +2366,14 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
             child_is_younger_than_2_months=child_is_younger_than_2_months, symptoms=symptoms)
 
     @staticmethod
-    def _get_imci_classification_by_SpO2_measure(child_is_younger_than_2_months: bool,
-                                                 oxygen_saturation: bool) -> str:
+    def _get_imci_classification_by_SpO2_measure(oxygen_saturation: bool) -> str:
         """Return classification based on age and oxygen_saturation. It will return one of: {
-             'serious_bacterial_infection',     <-- implies needs oxygen
              'danger_signs_pneumonia',          <-- implies needs oxygen
              ''                                 <-- implies does not need oxygen
         }."""
 
         if oxygen_saturation == '<90%':
-            if child_is_younger_than_2_months:
-                return 'serious_bacterial_infection'
-            else:
-                return 'danger_signs_pneumonia'
+            return 'danger_signs_pneumonia'
         else:
             return ''
 
@@ -2419,8 +2412,9 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                         ]
                     )
             else:
-                # (Perfect diagnosis accuracy for 'cough_or_cold' & 'serious_bacterial_infection')
-                # serious bacterial infections not determined at level 0 - need to refer to facility <2 months old
+                # (Perfect diagnosis accuracy for 'cough_or_cold')
+                # serious bacterial infections (under danger_signs_pneumonia) not determined at level 0 -
+                # need to refer to facility < 2 months old
                 return imci_classification_based_on_symptoms
 
         elif facility_level in ('1a', '1b'):
@@ -2443,7 +2437,8 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                     )
 
             else:
-                # (Perfect diagnosis accuracy for 'cough_or_cold' & 'serious_bacterial_infection')
+                assert imci_classification_based_on_symptoms == 'cough_or_cold'
+                # (Assume perfect diagnosis accuracy for 'cough_or_cold')
                 return imci_classification_based_on_symptoms
 
         else:  # facility_level 2 or above
@@ -2467,14 +2462,13 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                     )
 
             else:
-                # (Perfect diagnosis accuracy for 'cough_or_cold' & 'serious_bacterial_infection')
+                # (Perfect diagnosis accuracy for 'cough_or_cold')
                 return imci_classification_based_on_symptoms
 
     def _get_disease_classification(self, age_exact_years, symptoms, oxygen_saturation, facility_level, use_oximeter
                                     ) -> str:
         """Returns the classification of disease, which may be based on the results of the pulse oximetry (if available)
          or the health worker's own classification. It will be one of: {
-                 'serious_bacterial_infection',     (symptoms-based assessment / spO2 assessment implies needs oxygen)
                  'danger_signs_pneumonia',          (symptoms-based assessment / spO2 assessment implies need oxygen)
                  'fast_breathing_pneumonia',        (symptoms-based assessment)
                  'chest_indrawing_pneumonia,        (symptoms-based assessment)
@@ -2488,7 +2482,6 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
             symptoms=symptoms)
 
         imci_classification_by_SpO2_measure = self._get_imci_classification_by_SpO2_measure(
-            child_is_younger_than_2_months=child_is_younger_than_2_months,
             oxygen_saturation=oxygen_saturation)
 
         hw_assigned_classification = self._get_classification_given_by_health_worker(
@@ -2498,14 +2491,14 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
         _classification = imci_classification_by_SpO2_measure \
             if use_oximeter and (imci_classification_by_SpO2_measure != '') else hw_assigned_classification
 
-        logger.info(
-            key='classification',
-            data={'facility_level': facility_level,
-                  'symptom_classification': imci_classification_based_on_symptoms,
-                  'pulse_ox_classification': imci_classification_by_SpO2_measure,
-                  'hw_classification': hw_assigned_classification,
-                  'final_classification': _classification}
-        )
+        # logger.info(
+        #     key='classification',
+        #     data={'facility_level': facility_level,
+        #           'symptom_classification': imci_classification_based_on_symptoms,
+        #           'pulse_ox_classification': imci_classification_by_SpO2_measure,
+        #           'hw_classification': hw_assigned_classification,
+        #           'final_classification': _classification}
+        # )
 
         return _classification
 
@@ -2591,16 +2584,6 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                     _try_treatment(antibiotic_indicated='1st_line_IV_antibiotics',
                                    oxygen_indicated=oxygen_need_determined)
 
-        def do_if_serious_bacterial_infection(facility_level):
-            """What to do if `serious_bacterial_infection`."""
-
-            if self._is_as_in_patient and facility_level in ('1b', '2'):
-                _try_treatment(antibiotic_indicated='1st_line_IV_antibiotics',
-                               oxygen_indicated=oxygen_need_determined)
-            else:
-                _ = self._get_cons('First_dose_IM_antibiotics_for_referral')
-                self._refer_to_become_inpatient()
-
         def do_if_cough_or_cold(facility_level):
             """What to do if `cough_or_cold`."""
             pass  # Do nothing
@@ -2610,7 +2593,6 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
             'fast_breathing_pneumonia': do_if_fast_breathing_pneumonia,
             'chest_indrawing_pneumonia': do_if_chest_indrawing_pneumonia,
             'danger_signs_pneumonia': do_if_danger_signs_pneumonia,
-            'serious_bacterial_infection': do_if_serious_bacterial_infection,
             'cough_or_cold': do_if_cough_or_cold
         }[classification_for_treatment_decision](facility_level=facility_level)
 
@@ -2897,8 +2879,7 @@ class AlriPropertiesOfOtherModules(Module):
 
 class AlriIncidentCase_Lethal_Severe_Pneumonia(AlriIncidentCase):
     """This Event can be used for testing and is a drop-in replacement of `AlriIncidentCase`. It always produces an
-    infection that will be lethal and should be classified as 'danger_signs_pneumonia' if the person is
-    older than 2 months, and `serious_bacterial_infection` otherwise."""
+    infection that will be lethal and should be classified as 'danger_signs_pneumonia'"""
 
     def __init__(self, module, person_id, pathogen):
         super().__init__(module, person_id=person_id, pathogen=pathogen)
@@ -2951,7 +2932,7 @@ class AlriIncidentCase_Lethal_Severe_Pneumonia(AlriIncidentCase):
         self.sim.schedule_event(AlriDeathEvent(self.module, person_id), date_of_outcome)
 
         age_less_than_2_months = df.at[person_id, 'age_exact_years'] < (2.0 / 12.0)
-        correct_classification = 'serious_bacterial_infection' if age_less_than_2_months else 'danger_signs_pneumonia'
+        correct_classification = 'danger_signs_pneumonia'
         assert correct_classification == \
                self.module.get_imci_classification_based_on_symptoms(
                    child_is_younger_than_2_months=age_less_than_2_months,

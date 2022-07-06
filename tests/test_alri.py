@@ -740,7 +740,7 @@ def test_classification_based_on_symptoms_and_imci(sim_hs_all_consumables):
           'child_is_younger_than_2_months': False}),
 
         # -- Children younger than 2 months
-        ('serious_bacterial_infection',
+        ('danger_signs_pneumonia',
          {'symptoms': ['danger_signs', 'chest_indrawing'],
           'child_is_younger_than_2_months': True}),
         ('fast_breathing_pneumonia',
@@ -749,10 +749,10 @@ def test_classification_based_on_symptoms_and_imci(sim_hs_all_consumables):
         ('cough_or_cold',
          {'symptoms': ['cough'],
           'child_is_younger_than_2_months': True}),
-        ('serious_bacterial_infection',
+        ('danger_signs_pneumonia',
          {'symptoms': ['cough', 'danger_signs', 'difficult_breathing', 'fever', 'chest_indrawing'],
           'child_is_younger_than_2_months': True}),
-        ('serious_bacterial_infection',
+        ('danger_signs_pneumonia',
          {'symptoms': ['cough', 'danger_signs', 'difficult_breathing', 'fever', 'chest_indrawing'],
           'child_is_younger_than_2_months': True}),
     )
@@ -762,16 +762,15 @@ def test_classification_based_on_symptoms_and_imci(sim_hs_all_consumables):
         'chest_indrawing_pneumonia',
         'danger_signs_pneumonia',
         'cough_or_cold',
-        'serious_bacterial_infection',
     }
     assert set([x[0] for x in imci_classification_on_symptoms]).issubset(recognised_classifications)
 
-    _get_disease_classification = hsi_alri_treatment._get_disease_classification
+    _given_disease_classification = hsi_alri_treatment._get_disease_classification
 
     for _correct_imci_classification_on_symptoms, chars in imci_classification_on_symptoms:
         # If no oximeter available and does not need oxygen, and perfect HW assessment: classification should be the
         # IMCI classification
-        assert _correct_imci_classification_on_symptoms == _get_disease_classification(
+        assert _correct_imci_classification_on_symptoms == _given_disease_classification(
             age_exact_years=0.05 if chars['child_is_younger_than_2_months'] else 1.0,
             symptoms=chars['symptoms'],
             oxygen_saturation='>=93%',
@@ -779,9 +778,9 @@ def test_classification_based_on_symptoms_and_imci(sim_hs_all_consumables):
             use_oximeter=False
         )
 
-        # If no oximeter available and does need oxygen, and perfect HW assessment: classification should be the
+        # If no oximeter available and does need oxygen, and perfect HW assessment: classification given should be the
         # IMCI classification
-        assert _correct_imci_classification_on_symptoms == _get_disease_classification(
+        assert _correct_imci_classification_on_symptoms == _given_disease_classification(
             age_exact_years=0.05 if chars['child_is_younger_than_2_months'] else 1.0,
             symptoms=chars['symptoms'],
             oxygen_saturation='<90%',
@@ -789,19 +788,15 @@ def test_classification_based_on_symptoms_and_imci(sim_hs_all_consumables):
             use_oximeter=False
         )
 
-        # If oximeter available and does oxygen, then classification should be the 'danger_signs_pneumonia'
-        _classificiation = 'serious_bacterial_infection' if chars[
-            'child_is_younger_than_2_months'] else 'danger_signs_pneumonia'
-        assert _classificiation == _get_disease_classification(
+        # If oximeter available and does need oxygen, then classification should be the 'danger_signs_pneumonia'
+        _classification = 'danger_signs_pneumonia'
+        assert _classification == _given_disease_classification(
             age_exact_years=0.05 if chars['child_is_younger_than_2_months'] else 1.0,
             symptoms=chars['symptoms'],
             oxygen_saturation='<90%',
             facility_level='1b',
             use_oximeter=True
         ), f"{_correct_imci_classification_on_symptoms=}"
-
-
-# todo: test that imci_classification_based_on_symptoms cough_or_cold cannot have hypoxaemia or other complications
 
 
 def test_imci_classification_for_complications(sim_hs_all_consumables):
@@ -847,12 +842,12 @@ def test_imci_classification_for_complications(sim_hs_all_consumables):
         incidentcase.run()
 
         # get the classification
-        _get_disease_classification = hsi_alri_treatment._get_disease_classification
+        _given_disease_classification = hsi_alri_treatment._get_disease_classification
 
         # get the symptoms
         symptoms = sim.modules['SymptomManager'].has_what(person_id)
 
-        classification = _get_disease_classification(
+        classification = _given_disease_classification(
             age_exact_years=1.0,
             symptoms=symptoms,
             oxygen_saturation=df.at[person_id, 'ri_SpO2_level'],
@@ -872,6 +867,9 @@ def test_imci_classification_for_complications(sim_hs_all_consumables):
         for complication in complications_cols:
             if df.loc[person_id, complication]:
                 assert classification != 'cough_or_cold'
+
+        # TODO: This test might not pass, as the probability of symptoms to compute the pneumonia classification
+        #  are not 1.0 in complications -- need to check the % not picked up as pneumonia
 
 
 def test_do_effects_of_alri_treatment(sim_hs_all_consumables):
@@ -1137,11 +1135,6 @@ def generate_hsi_sequence(sim, incident_case_event, age_of_person_under_2_months
     # Return list of tuples of TREATMENT_ID and Facility_Level
     mask = df.TREATMENT_ID.str.startswith('Alri_') | df.TREATMENT_ID.str.startswith('FirstAttendance_')
     return [r for r in df.loc[mask, ['TREATMENT_ID', 'Facility_Level']].itertuples(index=False, name=None)]
-
-
-# todo @Ines - In the below, we check that the sequence of HSI's is correct under some different circumstances.
-#   We may wish to add more, if there are specific things you want to check. Maybe for `serious_bacterial_infection`
-#   for the "direct referral" thing.
 
 
 def test_treatment_pathway_if_all_consumables_mild_case(sim_hs_all_consumables):
