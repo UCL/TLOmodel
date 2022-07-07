@@ -97,11 +97,8 @@ mean_per_year = counts.sum() / counts.index.value_counts().count()
 fig, ax = plt.subplots()
 labels = mean_per_year.index.values
 ax.bar(labels, mean_per_year)
-
 plt.title('key events')
-plt.xlabel('')
+plt.xticks(rotation=90)
 plt.ylabel('Number of cases')
-
-fig.legend()
 fig.tight_layout()
 plt.show()

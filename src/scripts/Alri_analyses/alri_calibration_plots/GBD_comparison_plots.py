@@ -281,8 +281,8 @@ dalys.set_index(
     drop=True,
     inplace=True
 )
-
-dalys = dalys.groupby('year').sum()
+sf = output['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
+dalys = dalys.groupby('year').sum() * sf
 
 plt.style.use("ggplot")
 plt.figure(1, figsize=(10, 10))

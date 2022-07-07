@@ -189,12 +189,15 @@ for ax_num, pathogen in enumerate(sim.modules['Alri'].all_pathogens):
     ax.hlines(y=calibration_incidence_rate_0_year_olds[pathogen],  # axhlines is to plot horizontal lines at each y
               xmin=min(inc_rate['0y'].index),
               xmax=max(inc_rate['0y'].index),
-              label='calibrating_data'
+              label='calibrating_data',
+              color='r'
               )
     ax.set_title(f'{pathogen}')
     ax.set_xlabel("Year")
     ax.set_ylabel("Incidence Rate <1 year-olds")
+    ax.legend()
 plt.savefig(outputpath / ("ALRI_inc_rate_by_pathogen_and_time_0_year_olds" + datestamp + ".png"), format='png')
+plt.tight_layout()
 plt.show()
 
 # Produce a bar plot for means of incidence rate during the simulation:
@@ -212,7 +215,7 @@ inc_mean['2-4y_calibrating_data'] = pd.Series(data=calibration_incidence_rate_2_
 inc_mean.plot.bar(y=['0y_model_output', '0y_calibrating_data'])
 plt.title('Incidence Rate: 0 year-olds')
 plt.xlabel('Pathogen')
-plt.ylabel('Risk of pathogen causing Alri per year')
+plt.ylabel('Risk of pathogen causing\n Alri per year')
 plt.tight_layout()
 plt.savefig(outputpath / ("ALRI_inc_rate_calibration_0_year_olds" + datestamp + ".png"), format='png')
 plt.show()
@@ -223,7 +226,7 @@ plt.title('Incidence Rate: 1 year-olds')
 plt.xlabel('Pathogen')
 plt.ylabel('Risk of pathogen causing Alri per year')
 plt.xlabel('Pathogen')
-plt.ylabel('Risk of pathogen causing Alri per year')
+plt.ylabel('Risk of pathogen causing\n Alri per year')
 plt.tight_layout()
 plt.savefig(outputpath / ("ALRI_inc_rate_calibration_1_year_olds" + datestamp + ".png"), format='png')
 plt.show()
@@ -232,9 +235,7 @@ plt.show()
 inc_mean.plot.bar(y=['2-4y_model_output', '2-4y_calibrating_data'])
 plt.title('Incidence Rate: 2-4 year-olds')
 plt.xlabel('Pathogen')
-plt.ylabel('Risk of pathogen causing Alri per year')
-plt.xlabel('Pathogen')
-plt.ylabel('Risk of pathogen causing Alri per year')
+plt.ylabel('Risk of pathogen causing\n Alri per year')
 plt.tight_layout()
 plt.savefig(outputpath / ("ALRI_inc_rate_calibration_2-4_year_olds" + datestamp + ".png"), format='png')
 plt.show()
