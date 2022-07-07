@@ -798,7 +798,7 @@ def test_classification_based_on_symptoms_and_imci(sim_hs_all_consumables):
 
 
 # todo - what is needed in a future PR is more tests that establish:
-#  * no deaths among large cohort of infected persons when the effect of treatment is perfect
+#  * no deaths among large cohort of infected persons when the effect of treatment is perfect (as in PR #656)
 #  * the specific effect of oxygen provision on deaths among those types of cases that require treatment
 
 def test_do_effects_of_alri_treatment(sim_hs_all_consumables):
