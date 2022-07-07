@@ -6,6 +6,7 @@ The results of the batchrun were put into the 'outputspath' results_folder
 import datetime
 from pathlib import Path
 
+
 import matplotlib.lines as mlines
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
@@ -28,7 +29,7 @@ outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
 
 # download all files (and get most recent [-1])
 results0 = get_scenario_outputs("scenario0.py", outputspath)[-1]
-# results1 = get_scenario_outputs("scenario1.py", outputspath)[-1]
+results1 = get_scenario_outputs("scenario1.py", outputspath)[-1]
 results2 = get_scenario_outputs("scenario2.py", outputspath)[-1]
 results3 = get_scenario_outputs("scenario3.py", outputspath)[-1]
 results4 = get_scenario_outputs("scenario4.py", outputspath)[-1]
@@ -72,7 +73,7 @@ def hiv_adult_inc(results_folder):
     return inc_summary
 
 inc0 = hiv_adult_inc(results0)
-# inc1 = hiv_adult_inc(results1)
+inc1 = hiv_adult_inc(results1)
 inc2 = hiv_adult_inc(results2)
 inc3 = hiv_adult_inc(results3)
 inc4 = hiv_adult_inc(results4)
@@ -82,8 +83,8 @@ fig, ax = plt.subplots()
 ax.plot(inc0.index, inc0["median"], "-", color="C3")
 ax.fill_between(inc0.index, inc0["lower"], inc0["upper"], color="C3", alpha=0.2)
 
-# ax.plot(inc1.index, inc1["median"], "-", color="C0")
-# ax.fill_between(inc1.index, inc1["lower"], inc1["upper"], color="C0", alpha=0.2)
+ax.plot(inc1.index, inc1["median"], "-", color="C0")
+ax.fill_between(inc1.index, inc1["lower"], inc1["upper"], color="C0", alpha=0.2)
 
 ax.plot(inc2.index, inc2["median"], "-", color="C2")
 ax.fill_between(inc2.index, inc2["lower"], inc2["upper"], color="C2", alpha=0.2)
@@ -97,8 +98,7 @@ ax.fill_between(inc4.index, inc4["lower"], inc4["upper"], color="C6", alpha=0.2)
 fig.subplots_adjust(left=0.15)
 plt.title("HIV incidence in adults 15-49")
 plt.ylabel("HIV incidence")
-# plt.legend(["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3"])
-plt.legend(["Scenario 0", "Scenario 2", "Scenario 3", "Scenario 4"])
+plt.legend(["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4"])
 
 plt.show()
 
@@ -125,7 +125,7 @@ def tb_inc(results_folder):
     return inc_summary
 
 tb_inc0 = tb_inc(results0)
-# tb_inc1 = tb_inc(results1)
+tb_inc1 = tb_inc(results1)
 tb_inc2 = tb_inc(results2)
 tb_inc3 = tb_inc(results3)
 tb_inc4 = tb_inc(results4)
@@ -135,8 +135,8 @@ fig, ax = plt.subplots()
 ax.plot(tb_inc0.index, tb_inc0["median"], "-", color="C3")
 ax.fill_between(tb_inc0.index, tb_inc0["lower"], tb_inc0["upper"], color="C3", alpha=0.2)
 
-# ax.plot(tb_inc1.index, tb_inc1["median"], "-", color="C0")
-# ax.fill_between(tb_inc1.index, tb_inc1["lower"], tb_inc1["upper"], color="C0", alpha=0.2)
+ax.plot(tb_inc1.index, tb_inc1["median"], "-", color="C0")
+ax.fill_between(tb_inc1.index, tb_inc1["lower"], tb_inc1["upper"], color="C0", alpha=0.2)
 
 ax.plot(tb_inc2.index, tb_inc2["median"], "-", color="C2")
 ax.fill_between(tb_inc2.index, tb_inc2["lower"], tb_inc2["upper"], color="C2", alpha=0.2)
@@ -150,8 +150,7 @@ ax.fill_between(tb_inc4.index, tb_inc4["lower"], tb_inc4["upper"], color="C6", a
 fig.subplots_adjust(left=0.15)
 plt.title("Active TB incidence")
 plt.ylabel("Number new active TB cases")
-# plt.legend(["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3"])
-plt.legend(["Scenario 0", "Scenario 2", "Scenario 3", "Scenario 4"])
+plt.legend(["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4"])
 
 plt.show()
 
@@ -178,7 +177,7 @@ def tb_tx_coverage(results_folder):
     return tx_cov_summary
 
 tb_tx0 = tb_tx_coverage(results0)
-# tb_tx1 = tb_tx_coverage(results1)
+tb_tx1 = tb_tx_coverage(results1)
 tb_tx2 = tb_tx_coverage(results2)
 tb_tx3 = tb_tx_coverage(results3)
 tb_tx4 = tb_tx_coverage(results4)
@@ -188,8 +187,8 @@ fig, ax = plt.subplots()
 ax.plot(tb_tx0.index, tb_tx0["median"], "-", color="C3")
 ax.fill_between(tb_tx0.index, tb_tx0["lower"], tb_tx0["upper"], color="C3", alpha=0.2)
 
-# ax.plot(tb_tx1.index, tb_tx1["median"], "-", color="C0")
-# ax.fill_between(tb_tx1.index, tb_tx1["lower"], tb_tx1["upper"], color="C0", alpha=0.2)
+ax.plot(tb_tx1.index, tb_tx1["median"], "-", color="C0")
+ax.fill_between(tb_tx1.index, tb_tx1["lower"], tb_tx1["upper"], color="C0", alpha=0.2)
 
 ax.plot(tb_tx2.index, tb_tx2["median"], "-", color="C2")
 ax.fill_between(tb_tx2.index, tb_tx2["lower"], tb_tx2["upper"], color="C2", alpha=0.2)
@@ -203,75 +202,55 @@ ax.fill_between(tb_tx4.index, tb_tx4["lower"], tb_tx4["upper"], color="C6", alph
 fig.subplots_adjust(left=0.15)
 plt.title("TB treatment coverage")
 plt.ylabel("TB treatment coverage")
-# plt.legend(["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3"])
-plt.legend(["Scenario 0", "Scenario 2", "Scenario 3", "Scenario 4"])
+plt.legend(["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4"])
 
 plt.show()
 
 
 
 
-
-# tb treatment delay
-def tb_tx_delay(results_folder):
-    tx_del = extract_results(
-        results_folder,
-        module="tlo.methods.tb",
-        key="tb_treatment_delays",
-        column="tbTreatmentDelayAdults",
-        index="date",
-        do_scaling=False
-    )
-
-    tx_del.columns = tx_del.columns.get_level_values(0)
-    tx_del_summary = pd.DataFrame(index=tx_del.index, columns=["median", "lower", "upper"])
-    tx_del_summary["median"] = tx_del.median(axis=1)
-    tx_del_summary["lower"] = tx_del.quantile(q=0.025, axis=1)
-    tx_del_summary["upper"] = tx_del.quantile(q=0.975, axis=1)
-
-    return tx_del_summary
+# ---------------------------------- TB TREATMENT DELAY ---------------------------------- #
 
 
-tx_del = extract_results(
-    results0,
-    module="tlo.methods.tb",
-    key="tb_treatment_delays",
-    column="tbTreatmentDelayAdults",
-    index="date",
-    do_scaling=False
-)
+
+def extract_tx_delay(results_folder: Path,
+                    module: str,
+                    key: str,
+                    column: str = None,
+                    ):
+    """Utility function to unpack results
+    edited version for utils.py
+    """
+
+    # get number of draws and numbers of runs
+    info = get_scenario_info(results_folder)
+
+    # Collect results from each draw/run
+    res = dict()
+    for draw in range(info['number_of_draws']):
+        for run in range(info['runs_per_draw']):
+
+            draw_run = (draw, run)
+
+            try:
+                df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
+                test = df[column]
+                test2 = test.apply(pd.to_numeric, errors="coerce")
+                res[draw_run] = test2
+
+            except KeyError:
+                # Some logs could not be found - probably because this run failed.
+                res[draw_run] = None
+
+    return res
 
 
-tb_txdel0 = tb_tx_delay(results0)
-# tb_txdel1 = tb_tx_delay(results1)
-tb_txdel2 = tb_tx_delay(results2)
-tb_txdel3 = tb_tx_delay(results3)
-tb_txdel4 = tb_tx_delay(results4)
+tmp = extract_tx_delay(results_folder=results0,
+                       module="tlo.methods.tb",
+                       key="tb_treatment_delays",
+                       column="tbTreatmentDelayAdults")
 
-# Make plot
-fig, ax = plt.subplots()
-ax.plot(tb_txdel0.index, tb_txdel0["median"], "-", color="C3")
-ax.fill_between(tb_txdel0.index, tb_txdel0["lower"], tb_txdel0["upper"], color="C3", alpha=0.2)
 
-# ax.plot(tb_txdel1.index, tb_txdel1["median"], "-", color="C0")
-# ax.fill_between(tb_txdel1.index, tb_txdel1["lower"], tb_txdel1["upper"], color="C0", alpha=0.2)
-
-ax.plot(tb_txdel2.index, tb_txdel2["median"], "-", color="C2")
-ax.fill_between(tb_txdel2.index, tb_txdel2["lower"], tb_txdel2["upper"], color="C2", alpha=0.2)
-
-ax.plot(tb_txdel3.index, tb_txdel3["median"], "-", color="C4")
-ax.fill_between(tb_txdel3.index, tb_txdel3["lower"], tb_txdel3["upper"], color="C4", alpha=0.2)
-
-ax.plot(tb_txdel4.index, tb_txdel4["median"], "-", color="C6")
-ax.fill_between(tb_txdel4.index, tb_txdel4["lower"], tb_txdel4["upper"], color="C6", alpha=0.2)
-
-fig.subplots_adjust(left=0.15)
-plt.title("TB treatment delay")
-plt.ylabel("TB treatment delay, days")
-# plt.legend(["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3"])
-plt.legend(["Scenario 0", "Scenario 2", "Scenario 3", "Scenario 4"])
-
-plt.show()
 
 
 
