@@ -2,6 +2,7 @@
 
 GitPython
 click
+matplotlib
 numpy
 pandas
 scipy

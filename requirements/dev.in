@@ -1,8 +1,8 @@
 -r base.in
 
 # Plotting
-matplotlib
 pyshp
+squarify
 
 # Running tests
 pytest
