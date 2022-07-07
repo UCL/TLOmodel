@@ -797,6 +797,10 @@ def test_classification_based_on_symptoms_and_imci(sim_hs_all_consumables):
         ), f"{_correct_imci_classification_on_symptoms=}"
 
 
+# todo - what is needed in a future PR is more tests that establish:
+#  * no deaths among large cohort of infected persons when the effect of treatment is perfect
+#  * the specific effect of oxygen provision on deaths among those types of cases that require treatment
+
 def test_do_effects_of_alri_treatment(sim_hs_all_consumables):
     """Check that running `do_alri_treatment` can prevent a death from occurring."""
     sim = sim_hs_all_consumables
