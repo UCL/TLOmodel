@@ -632,7 +632,7 @@ def _define_coarse_appts() -> pd.DataFrame:
     """Define which appointment types fall into which 'coarse appointment' category, the order of the categories and the
     colour of the category.
     Names of colors are selected with reference to: https://i.stack.imgur.com/lFZum.png"""
-    return pd.DataFrame.from_dict(
+    return pd.DataFrame.from_records(
         [
             {
                 'category': 'Outpatient',
