@@ -7,10 +7,6 @@ import os
 import random
 from pathlib import Path
 
-import numpy as np
-import pandas as pd
-from matplotlib import pyplot as plt
-
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
@@ -142,6 +138,12 @@ results = {
 }
 print(results)
 
+
+# ----------------------------
+#
+# import numpy as np
+# import pandas as pd
+# from matplotlib import pyplot as plt
 #
 # def survey(results, category_names):
 #     """
