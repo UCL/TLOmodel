@@ -746,27 +746,25 @@ class Tb(Module):
         )
 
         # 4) -------- Define the treatment options --------
-        # todo these packages all include an x-ray with availability 0.85 (consumables sheet)
-
         # adult treatment - primary
         self.item_codes_for_consumables_required['tb_tx_adult'] = \
-            hs.get_item_codes_from_package_name("First line treatment for new TB cases for adults")
+            hs.get_item_code_from_item_name("Cat. I & III Patient Kit A")
 
         # child treatment - primary
         self.item_codes_for_consumables_required['tb_tx_child'] = \
-            hs.get_item_codes_from_package_name("First line treatment for new TB cases for children")
+            hs.get_item_code_from_item_name("Cat. I & III Patient Kit B")
 
         # child treatment - primary, shorter regimen
         self.item_codes_for_consumables_required['tb_tx_child_shorter'] = \
-            hs.get_item_codes_from_package_name("First line treatment for new TB cases for children shorter regimen")
+            hs.get_item_code_from_item_name("Cat. I & III Patient Kit B")
 
         # adult treatment - secondary
         self.item_codes_for_consumables_required['tb_retx_adult'] = \
-            hs.get_item_codes_from_package_name("First line treatment for retreatment TB cases for adults")
+            hs.get_item_code_from_item_name("Cat. II Patient Kit A1")
 
         # child treatment - secondary
         self.item_codes_for_consumables_required['tb_retx_child'] = \
-            hs.get_item_codes_from_package_name("First line treatment for retreatment TB cases for children")
+            hs.get_item_code_from_item_name("Cat. II Patient Kit A2")
 
         # mdr treatment
         self.item_codes_for_consumables_required['tb_mdrtx'] = {
@@ -1669,6 +1667,9 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         if not person["is_alive"]:
             return
 
+        if person["tb_diagnosed"]:
+            return
+
         logger.debug(
             key="message", data=f"HSI_Tb_ScreeningAndRefer: person {person_id}"
         )
@@ -2032,6 +2033,9 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         if not person["is_alive"]:
             return
 
+        if person["tb_on_treatment"]:
+            return
+
         treatment_regimen = self.select_treatment(person_id)
         treatment_available = self.get_consumables(
             item_codes=self.module.item_codes_for_consumables_required[treatment_regimen]
@@ -2278,10 +2282,12 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Tb_Prevention_Ipt"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.number_of_occurrences = 0
 
     def apply(self, person_id, squeeze_factor):
 
         logger.debug(key="message", data=f"Starting IPT for person {person_id}")
+        self.number_of_occurrences += 1
 
         df = self.sim.population.props  # shortcut to the dataframe
 
@@ -2322,12 +2328,14 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
                     self.sim.date + DateOffset(months=6),
                 )
             else:
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    HSI_Tb_Start_or_Continue_Ipt(person_id=person_id, module=self.module),
-                    topen=self.sim.date,
-                    tclose=self.sim.date + pd.DateOffset(days=14),
-                    priority=0,
-                )
+                # Reschedule this HSI to occur again, up to a 3 times in total
+                if self.number_of_occurrences < 3:
+                    self.sim.modules["HealthSystem"].schedule_hsi_event(
+                        self,
+                        topen=self.sim.date + pd.DateOffset(days=1),
+                        tclose=self.sim.date + pd.DateOffset(days=14),
+                        priority=0,
+                    )
 
 
 class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):

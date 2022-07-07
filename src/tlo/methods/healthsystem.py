@@ -1267,7 +1267,8 @@ class HealthSystem(Module):
         if did_run:
             self._summary_counter.record_hsi_event(
                 treatment_id=treatment_id,
-                appt_footprint=number_by_appt_type_code
+                appt_footprint=number_by_appt_type_code,
+                level=facility_level,
             )
 
     def log_current_capabilities(self, current_capabilities, total_footprint):
@@ -1658,9 +1659,11 @@ class HealthSystemSummaryCounter:
 
         self._treatment_ids = defaultdict(int)  # Running record of the `TREATMENT_ID`s of `HSI_Event`s
         self._appts = defaultdict(int)  # Running record of the Appointments of `HSI_Event`s that have run
+        self._appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
+        # <--Same as `self._appts` but also split by facility_level
         self._frac_time_used_overall = []  # Running record of the usage of the healthcare system
 
-    def record_hsi_event(self, treatment_id: str, appt_footprint: Counter) -> None:
+    def record_hsi_event(self, treatment_id: str, appt_footprint: Counter, level: str) -> None:
         """Add information about an `HSI_Event` to the running summaries."""
 
         # Count the treatment_id:
@@ -1669,6 +1672,7 @@ class HealthSystemSummaryCounter:
         # Count each type of appointment:
         for _appt_type, _number in appt_footprint.items():
             self._appts[_appt_type] += _number
+            self._appts_by_level[level][_appt_type] += _number
 
     def record_hs_status(self, fraction_time_used_across_all_facilities: float) -> None:
         """Record a current status metric of the HealthSystem."""
@@ -1686,6 +1690,7 @@ class HealthSystemSummaryCounter:
             data={
                 "TREATMENT_ID": self._treatment_ids,
                 "Number_By_Appt_Type_Code": self._appts,
+                "Number_By_Appt_Type_Code_And_Level": self._appts_by_level,
             },
         )
 
