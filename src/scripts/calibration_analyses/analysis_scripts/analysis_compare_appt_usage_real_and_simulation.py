@@ -181,4 +181,3 @@ if __name__ == "__main__":
 
     # Run all the calibrations
     apply(results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
-
