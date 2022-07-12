@@ -45,7 +45,7 @@ def get_simulation_usage(results_folder: Path) -> pd.DataFrame:
     """Returns the simulated MEAN USAGE PER YEAR DURING THE TIME_PERIOD, by appointment type and level.
     With reformatting ...
       * to match standardized categories from the DHIS2 data,
-      * to match the districts in the DHIS2 data.
+      * to match the districts in the DHIS2 data.  (see commits in PR616)
     """
 
     # Get model outputs
@@ -136,7 +136,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     real_usage = get_real_usage(resourcefilepath)
 
-    # Plot Relative Difference Between Simulation and Real (Across all levels)
+    # Plot Simulation vs Real usage (Across all levels) (trimmed to 0.1 and 10)
     rel_diff_all_levels = (
         simulation_usage.sum(axis=0) / real_usage.sum(axis=0)
     ).clip(lower=0.1, upper=10.0)
@@ -146,7 +146,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.stem(rel_diff_all_levels.index, rel_diff_all_levels.values, bottom=1.0, label='All levels')
     format_and_save(fig, ax, name_of_plot)
 
-    # Plot Relative Difference Between Simulation and Real (At each level) (trimmed to 0.1 and 10)
+    # Plot Simulation vs Real usage (At each level) (trimmed to 0.1 and 10)
     rel_diff_by_levels = (
         simulation_usage / real_usage
     ).clip(upper=10, lower=0.1).dropna(how='all', axis=0)
