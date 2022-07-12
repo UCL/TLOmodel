@@ -1107,7 +1107,7 @@ def test_compute_squeeze_factor_to_district_level(seed, tmpdir):
                 facility_info=facility_info_for_dcsa_in_district_of_person0,
                 appt_footprint=APPT_FOOTPRINT,
             ).values())
-        minutes_available_in_district_of_person0 =  hs.capabilities_today.loc[
+        minutes_available_in_district_of_person0 = hs.capabilities_today.loc[
             f"FacilityID_{facility_info_for_dcsa_in_district_of_person0.id}_Officer_DCSA"
         ].sum()
         minutes_available_of_dcsa_in_all_districts = hs.capabilities_today.loc[
