@@ -5,8 +5,9 @@ import heapq
 import itertools
 import time
 from collections import OrderedDict
+from enum import Enum
 from pathlib import Path
-from typing import Dict, Union
+from typing import Dict, Optional, Union
 
 import numpy as np
 
@@ -17,6 +18,19 @@ from tlo.progressbar import ProgressBar
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+
+class EventPriority(Enum):
+    """Enumeration for the EventPriority, which is used in sorting the events in the simulation queue."""
+    START_OF_DAY = 0
+    FIRST_HALF_OF_DAY = 25
+    LAST_HALF_OF_DAY = 75
+    END_OF_DAY = 100
+
+    def __lt__(self, other):
+        if self.__class__ is other.__class__:
+            return self.value < other.value
+        return NotImplemented
 
 
 class Simulation:
@@ -249,12 +263,12 @@ class Simulation:
 
         logger.info(key='info', data=f'simulate() {time.time() - start} s')
 
-    def schedule_event(self, event, date, order_in_day=None):
+    def schedule_event(self, event, date, event_priority: Optional[EventPriority] = None):
         """Schedule an event to happen on the given future date.
 
         :param event: the Event to schedule
         :param date: when the event should happen
-        :param order_in_day: controls when during the day the event occurs ["first", "last", "second-to-last",
+        :param event_priority: controls when during the day the event occurs
         None (--> in-between first and second-to-last)]
         """
         assert date >= self.date, 'Cannot schedule events in the past'
@@ -264,8 +278,12 @@ class Simulation:
         assert (event.__str__().find('HSI_') < 0), \
             'This looks like an HSI event. It should be handed to the healthsystem scheduler'
 
-        order_in_day_int = {'first': 0, 'second_to_last': 8, 'last': 9}.get(order_in_day, 1)
-        self.event_queue.schedule(event, date, order_in_day_int)
+        self.event_queue.schedule(event=event,
+                                  date=date,
+                                  event_priority=(event_priority
+                                                  if event_priority is not None else EventPriority.FIRST_HALF_OF_DAY
+                                                  )
+                                  )
 
     def fire_single_event(self, event, date):
         """Fires the event once for the given date
@@ -319,7 +337,7 @@ class EventQueue:
         self.counter = itertools.count()
         self.queue = []
 
-    def schedule(self, event, date, order_in_day_int):
+    def schedule(self, event, date, event_priority):
         """Schedule a new event.
 
         :param event: the event to schedule
@@ -327,7 +345,7 @@ class EventQueue:
         :param order_in_day_int: integer indicating when in the same the event should happen (0, 1, 2)
         """
 
-        entry = (date, order_in_day_int, next(self.counter), event)
+        entry = (date, event_priority, next(self.counter), event)
         heapq.heappush(self.queue, entry)
 
     def next_event(self):
