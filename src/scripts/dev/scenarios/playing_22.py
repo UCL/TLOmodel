@@ -1,5 +1,3 @@
-import numpy as np
-
 from tlo import Date, logging
 from tlo.methods import (
     care_of_women_during_pregnancy,
@@ -25,13 +23,13 @@ class Playing22(BaseScenario):
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2011, 1, 1)
         self.pop_size = 200
-        self.number_of_draws = 2
-        self.runs_per_draw = 2
+        self.number_of_draws = 1
+        self.runs_per_draw = 10
 
     def log_configuration(self):
         return {
             'filename': 'playing_22',
-            'directory': './outputs',
+            'directory': None,
             'custom_levels': {
                 '*': logging.INFO,
             }
@@ -58,10 +56,6 @@ class Playing22(BaseScenario):
             'Lifestyle': {
                 'init_p_urban': rng.randint(10, 20) / 100.0,
                 'init_p_high_sugar': 0.52,
-            },
-            'Labour': {
-                'intercept_parity_lr2010': -10 * rng.exponential(0.1),
-                'effect_age_parity_lr2010': np.linspace(0.1, 1, num=self.number_of_draws)[draw_number]
             },
         }
 

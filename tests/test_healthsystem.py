@@ -748,6 +748,15 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
 
         assert detail_beddays_used == summary_beddays_used
 
+    # Check the count of appointment type (total) matches the count split by level
+    counts_of_appts_by_level = pd.concat(
+        {idx: pd.DataFrame.from_dict(mydict)
+         for idx, mydict in summary_hsi_event['Number_By_Appt_Type_Code_And_Level'].iteritems()
+         }).unstack().fillna(0.0).astype(int)
+
+    assert summary_hsi_event['Number_By_Appt_Type_Code'].apply(pd.Series).sum().to_dict() == \
+           counts_of_appts_by_level.sum(axis=1, level=1).sum(axis=0).to_dict()
+
 
 def test_HealthSystemChangeParameters(seed, tmpdir):
     """Check that the event `HealthSystemChangeParameters` can change the internal parameters of the HealthSystem. And
