@@ -1229,23 +1229,23 @@ class HealthSystem(Module):
                     }
                 )
 
-                if self.record_hsi_event_details:
-                    self.hsi_event_details.add(
-                        HSIEventDetails(
-                            event_name=type(hsi_event).__name__,
-                            module_name=type(hsi_event.module).__name__,
-                            treatment_id=hsi_event.TREATMENT_ID,
-                            facility_level=getattr(
-                                hsi_event, 'ACCEPTED_FACILITY_LEVEL', None
-                            ),
-                            appt_footprint=(
-                                tuple(actual_appt_footprint)
-                                if actual_appt_footprint is not None
-                                else tuple(getattr(hsi_event, 'EXPECTED_APPT_FOOTPRINT', {}))
-                            ),
-                            beddays_footprint=tuple(sorted(hsi_event.BEDDAYS_FOOTPRINT.items()))
-                        )
+            if self.record_hsi_event_details:
+                self.hsi_event_details.add(
+                    HSIEventDetails(
+                        event_name=type(hsi_event).__name__,
+                        module_name=type(hsi_event.module).__name__,
+                        treatment_id=hsi_event.TREATMENT_ID,
+                        facility_level=getattr(
+                            hsi_event, 'ACCEPTED_FACILITY_LEVEL', None
+                        ),
+                        appt_footprint=(
+                            tuple(actual_appt_footprint)
+                            if actual_appt_footprint is not None
+                            else tuple(getattr(hsi_event, 'EXPECTED_APPT_FOOTPRINT', {}))
+                        ),
+                        beddays_footprint=tuple(sorted(hsi_event.BEDDAYS_FOOTPRINT.items()))
                     )
+                )
 
     def write_to_hsi_log(self,
                          treatment_id,
