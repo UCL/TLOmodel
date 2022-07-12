@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from tlo import Date
-from tlo.analysis.utils import extract_results, summarize
+from tlo.analysis.utils import extract_results, get_scenario_outputs, summarize
 
 # Declare period for which the results will be generated (defined inclusively)
 TARGET_PERIOD = (Date(2015, 1, 1), Date(2019, 12, 31))
@@ -45,7 +45,7 @@ def get_simulation_usage(results_folder: Path) -> pd.DataFrame:
     """Returns the simulated MEAN USAGE PER YEAR DURING THE TIME_PERIOD, by appointment type and level.
     With reformatting ...
       * to match standardized categories from the DHIS2 data,
-      * to match the districts in the DHIS2 data.
+      * to match the districts in the DHIS2 data.  (see commits in PR616)
     """
 
     # Get model outputs
@@ -120,13 +120,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _ax.set_ylim(1 / 20, 20)
         _ax.set_yticks([1 / 10, 1.0, 10])
         _ax.set_yticklabels(("<= 1/10", "1.0", ">= 10"))
-        _ax.set_ylabel('[Model - Data] / Data')
+        _ax.set_ylabel('Model / Data')
         _ax.set_xlabel('Appointment Type')
         _ax.tick_params(axis='x', labelrotation=90)
-        _ax.grid(axis='both', which='both')
-        _ax.legend(loc='upper left')
+        _ax.xaxis.grid(True, which='major', linestyle='--')
+        _ax.yaxis.grid(True, which='both', linestyle='--')
+        _ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
         _fig.tight_layout()
-        _fig.savefig(make_graph_file_name(_name_of_plot.replace(' ', '_')))
+        _fig.savefig(make_graph_file_name(_name_of_plot.replace('\n', '_').replace(' ', '_')))
         _fig.show()
 
     make_graph_file_name = lambda stub: output_folder / f"{stub}.png"  # noqa: E731
@@ -135,24 +136,48 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     real_usage = get_real_usage(resourcefilepath)
 
-    # Plot Relative Difference Between Simulation and Real (Across all levels)
+    # Plot Simulation vs Real usage (Across all levels) (trimmed to 0.1 and 10)
     rel_diff_all_levels = (
-        (simulation_usage.sum(axis=0) - real_usage.sum(axis=0)) / real_usage.sum(axis=0)
-    ).clip(lower=0.1, upper=10.0).dropna(how='all')
+        simulation_usage.sum(axis=0) / real_usage.sum(axis=0)
+    ).clip(lower=0.1, upper=10.0)
 
     name_of_plot = 'Model vs Real average annual usage by appt type\n[All Facility Levels]'
     fig, ax = plt.subplots()
     ax.stem(rel_diff_all_levels.index, rel_diff_all_levels.values, bottom=1.0, label='All levels')
     format_and_save(fig, ax, name_of_plot)
 
-    # Plot Relative Difference Between Simulation and Real (At each level) (trimmed to 0.1 and 10)
+    # Plot Simulation vs Real usage (At each level) (trimmed to 0.1 and 10)
     rel_diff_by_levels = (
-        (simulation_usage - real_usage) / real_usage
+        simulation_usage / real_usage
     ).clip(upper=10, lower=0.1).dropna(how='all', axis=0)
 
-    name_of_plot = 'Relative difference of model and real average annual usage by appt type\n[By Facility Level]'
+    name_of_plot = 'Model vs Real average annual usage by appt type\n[By Facility Level]'
     fig, ax = plt.subplots()
+    marker_dict = {'0': 0,
+                   '1a': 4,
+                   '1b': 5,
+                   '2': 6,
+                   '3': 7,
+                   '4': 1}  # Note that level 0/3/4 has very limited data
     for _level, _results in rel_diff_by_levels.iterrows():
-        ax.plot(_results.index, _results.values, label=_level, linestyle='none', marker='*')
+        ax.plot(_results.index, _results.values, label=_level, linestyle='none', marker=marker_dict[_level])
     ax.axhline(1.0, color='r')
     format_and_save(fig, ax, name_of_plot)
+
+
+if __name__ == "__main__":
+    outputspath = Path('./outputs/bshe@ic.ac.uk')
+    rfp = Path('./resources')
+
+    # Find results folder (most recent run generated using that scenario_filename)
+    scenario_filename = 'long_run_all_diseases.py'
+    results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
+
+    # Test dataset:
+    # results_folder = Path('/Users/tbh03/GitHub/TLOmodel/outputs/tbh03@ic.ac.uk/long_run_all_diseases-small')
+
+    # If needed -- in the case that pickles were not created remotely during batch
+    # create_pickles_locally(results_folder)
+
+    # Run all the calibrations
+    apply(results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
