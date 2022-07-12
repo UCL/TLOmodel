@@ -28,6 +28,7 @@ from tlo.methods.consumables import (
     get_item_codes_from_package_name,
 )
 from tlo.methods.dxmanager import DxManager
+from tlo.simulation import EventPriority
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -648,7 +649,7 @@ class HealthSystem(Module):
         # Launch the healthsystem scheduler (a regular event occurring each day) [if not disabled]
         if not (self.disable or self.disable_and_reject_all):
             self.healthsystemscheduler = HealthSystemScheduler(self)
-            sim.schedule_event(self.healthsystemscheduler, sim.date, order_in_day="last")
+            sim.schedule_event(self.healthsystemscheduler, sim.date, event_priority=EventPriority.END_OF_DAY)
 
     def on_birth(self, mother_id, child_id):
         self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
@@ -1538,7 +1539,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module: HealthSystem):
-        super().__init__(module, frequency=DateOffset(days=1), order_in_day="last")
+        super().__init__(module, frequency=DateOffset(days=1), event_priority=EventPriority.END_OF_DAY)
 
     @staticmethod
     def _is_today_last_day_of_the_year(date):
