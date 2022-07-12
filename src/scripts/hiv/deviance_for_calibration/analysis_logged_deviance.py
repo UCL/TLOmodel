@@ -36,8 +36,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
-popsize = 10000
+end_date = Date(2015, 1, 1)
+popsize = 1000
 
 scenario = 0
 
@@ -84,7 +84,6 @@ sim.register(
     epi.Epi(resourcefilepath=resourcefilepath),
     hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False),
     tb.Tb(resourcefilepath=resourcefilepath),
-    rti.RTI(resourcefilepath=resourcefilepath)
     # deviance_measure.Deviance(resourcefilepath=resourcefilepath),
 )
 

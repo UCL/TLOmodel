@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import os
+from tlo import Date
 
 from tlo.analysis.utils import (
     compare_number_of_deaths,
@@ -83,7 +84,7 @@ plt.show()
 
 # ---------------------------------- HSI Events - TREATMENT ID -------------------------------------
 
-years_of_simulation = 25
+years_of_simulation = 26
 
 
 def summarise_treatment_counts(df_list, treatment_id):
@@ -99,7 +100,8 @@ def summarise_treatment_counts(df_list, treatment_id):
     out = pd.DataFrame(columns=column_names)
 
     for i in range(number_runs):
-        number_HSI_by_run.iloc[:,i] = pd.Series(df_list[i].loc[:, treatment_id])
+        if treatment_id in df_list[i].columns:
+            number_HSI_by_run.iloc[:,i] = pd.Series(df_list[i].loc[:, treatment_id])
 
     out.iloc[:,0] = number_HSI_by_run.median(axis=1)
     out.iloc[:,1] = number_HSI_by_run.quantile(q=0.025, axis=1)
@@ -129,7 +131,6 @@ def treatment_counts(results_folder, module, key, column):
     # for column in each df, get median
     # list of treatment IDs
     list_tx_id = list(df_list[0].columns)
-    # results = pd.DataFrame(index=np.arange(len(list_tx_id)))
     results = pd.DataFrame(index=np.arange(years_of_simulation))
 
     for treatment_id in list_tx_id:
@@ -167,7 +168,7 @@ tx_id4 = treatment_counts(results_folder=results4,
                column="TREATMENT_ID")
 
 
-# Make plot
+#] Make plot
 fig, ax = plt.subplots()
 ax.plot(tx_id0.index, tx_id0["Tb_Treatment_median"], "-", color="C3")
 
@@ -187,7 +188,45 @@ plt.legend(["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4"
 plt.show()
 
 
+#---------------------------------------------------------------------------------------------------
 
+def get_annual_num_appts_by_level(results_folder: Path) -> pd.DataFrame:
+    """Return pd.DataFrame gives the (mean) simulated annual number of appointments of each type at each level."""
+
+    TARGET_PERIOD = (Date(2010, 1, 1), Date(2035, 12, 31))
+
+    def get_counts_of_appts(_df):
+        """Get the mean number of appointments of each type being used each year at each level."""
+
+        def unpack_nested_dict_in_series(_raw: pd.Series):
+            return pd.concat(
+                {
+                  idx: pd.DataFrame.from_dict(mydict) for idx, mydict in _raw.iteritems()
+                 }
+             ).unstack().fillna(0.0).astype(int)
+
+        return _df \
+            .loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), 'Number_By_Appt_Type_Code_And_Level'] \
+            .pipe(unpack_nested_dict_in_series) \
+            .mean(axis=0)  # mean over each year (row)
+
+    return summarize(
+        extract_results(
+                results_folder,
+                module='tlo.methods.healthsystem.summary',
+                key='HSI_Event',
+                custom_generate_series=get_counts_of_appts,
+                do_scaling=True
+            ),
+        only_mean=True,
+        collapse_columns=True,
+        ).unstack().astype(int)
+
+
+hsi_0 = get_annual_num_appts_by_level(results_folder=results0)
+
+
+#----------------------------------------------------------------------------------------------------------
 
 cons2 = treatment_counts(results_folder=results2,
                module="tlo.methods.healthsystem.summary",
@@ -214,3 +253,20 @@ plt.ylabel("Numbers of consumables")
 plt.legend(["Cons available", "Cons not available"])
 
 plt.show()
+
+
+# item 2671 "First-line ART regimen: adult"
+fig, ax = plt.subplots()
+ax.plot(cons2.index, cons2["2671_median"], "-", color="C3")
+ax.fill_between(cons2.index, cons2["2671_lower"], cons2["2671_upper"], color="C3", alpha=0.2)
+
+ax.plot(cons2NA.index, cons2NA["2671_median"], "-", color="C0")
+ax.fill_between(cons2NA.index, cons2NA["2671_lower"], cons2NA["2671_upper"], color="C0", alpha=0.2)
+
+fig.subplots_adjust(left=0.15)
+plt.title("Numbers of First-line ART treatment consumables requested - scenario 2")
+plt.ylabel("Numbers of consumables")
+plt.legend(["Cons available", "Cons not available"])
+
+plt.show()
+

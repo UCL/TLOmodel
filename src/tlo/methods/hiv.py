@@ -121,6 +121,7 @@ class Hiv(Module):
         # --- Dates on which things have happened:
         "hv_last_test_date": Property(Types.DATE, "Date of last HIV test"),
         "hv_date_inf": Property(Types.DATE, "Date infected with HIV"),
+        "hv_date_treated": Property(Types.DATE, "date hiv treatment started"),
         "hv_vmmc_counter": Property(Types.INT, "Number of VMMC appointments attended"),
     }
 
@@ -514,6 +515,7 @@ class Hiv(Module):
         # --- Current status
         df.loc[df.is_alive, "hv_inf"] = False
         df.loc[df.is_alive, "hv_art"] = "not"
+        df.loc[df.is_alive, "hv_date_treated"] = pd.NaT
         df.loc[df.is_alive, "hv_is_on_prep"] = False
         df.loc[df.is_alive, "hv_behaviour_change"] = False
         df.loc[df.is_alive, "hv_diagnosed"] = False
@@ -957,6 +959,7 @@ class Hiv(Module):
         # --- Current status
         df.at[child_id, "hv_inf"] = False
         df.at[child_id, "hv_art"] = "not"
+        df.at[child_id, "hv_date_treated"] = pd.NaT
         df.at[child_id, "hv_is_on_prep"] = False
         df.at[child_id, "hv_behaviour_change"] = False
         df.at[child_id, "hv_diagnosed"] = False
@@ -2310,6 +2313,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             )
 
             df.at[person_id, "hv_art"] = vl_status
+            df.at[person_id, "hv_date_treated"] = self.sim.date
 
             # If VL suppressed, remove any symptoms caused by this module
             if vl_status == "on_VL_suppressed":
@@ -2955,6 +2959,34 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 "prop_adults_exposed_to_behav_intv": prop_adults_exposed_to_behav_intv,
                 "prop_fsw_on_prep": prop_fsw_on_prep,
                 "prop_men_circ": prop_men_circ,
+            },
+        )
+
+        # ------------------------------------ TREATMENT DELAYS ------------------------------------
+        # for every person initiated on treatment, record time from onset to treatment
+        # each year a series of intervals in days (treatment date - onset date) are recorded
+        # convert to list
+
+        # adults
+        # get index of adults starting tx in last time-period
+        adult_tx_idx = df.loc[(df.age_years >= 16) &
+                              (df.hv_date_treated >= (now - DateOffset(months=self.repeat)))].index
+        # calculate treatment_date - onset_date for each person in index
+        adult_tx_delays = (df.loc[adult_tx_idx, "hv_date_treated"] - df.loc[adult_tx_idx, "hv_date_inf"]).dt.days
+        adult_tx_delays = adult_tx_delays.tolist()
+
+        # children
+        child_tx_idx = df.loc[(df.age_years < 16) &
+                              (df.hv_date_treated >= (now - DateOffset(months=self.repeat)))].index
+        child_tx_delays = (df.loc[child_tx_idx, "hv_date_treated"] - df.loc[child_tx_idx, "hv_date_inf"]).dt.days
+        child_tx_delays = child_tx_delays.tolist()
+
+        logger.info(
+            key="hiv_treatment_delays",
+            description="HIV time from onset to treatment",
+            data={
+                "HivTreatmentDelayAdults": adult_tx_delays,
+                "HivTreatmentDelayChildren": child_tx_delays,
             },
         )
 

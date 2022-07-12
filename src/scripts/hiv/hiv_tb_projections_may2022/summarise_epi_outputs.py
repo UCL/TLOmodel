@@ -155,6 +155,7 @@ plt.legend(["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4"
 plt.show()
 
 
+# ---------------------------------- TREATMENT COVERAGE ---------------------------------- #
 
 
 # tb treatment coverage
@@ -200,12 +201,66 @@ ax.plot(tb_tx4.index, tb_tx4["median"], "-", color="C6")
 ax.fill_between(tb_tx4.index, tb_tx4["lower"], tb_tx4["upper"], color="C6", alpha=0.2)
 
 fig.subplots_adjust(left=0.15)
+plt.ylim((0, 1.0))
 plt.title("TB treatment coverage")
 plt.ylabel("TB treatment coverage")
 plt.legend(["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4"])
 
 plt.show()
 
+
+
+
+
+# hiv treatment coverage
+def hiv_tx_coverage(results_folder):
+    hiv_cov = extract_results(
+        results_folder,
+        module="tlo.methods.hiv",
+        key="hiv_program_coverage",
+        column="art_coverage_adult",
+        index="date",
+        do_scaling=False
+    )
+
+    hiv_cov.columns = hiv_cov.columns.get_level_values(0)
+    hiv_cov_summary = pd.DataFrame(index=hiv_cov.index, columns=["median", "lower", "upper"])
+    hiv_cov_summary["median"] = hiv_cov.median(axis=1)
+    hiv_cov_summary["lower"] = hiv_cov.quantile(q=0.025, axis=1)
+    hiv_cov_summary["upper"] = hiv_cov.quantile(q=0.975, axis=1)
+
+    return hiv_cov_summary
+
+hiv_tx0 = hiv_tx_coverage(results0)
+hiv_tx1 = hiv_tx_coverage(results1)
+hiv_tx2 = hiv_tx_coverage(results2)
+hiv_tx3 = hiv_tx_coverage(results3)
+hiv_tx4 = hiv_tx_coverage(results4)
+
+# Make plot
+fig, ax = plt.subplots()
+ax.plot(hiv_tx0.index, hiv_tx0["median"], "-", color="C3")
+ax.fill_between(hiv_tx0.index, hiv_tx0["lower"], hiv_tx0["upper"], color="C3", alpha=0.2)
+
+ax.plot(hiv_tx1.index, hiv_tx1["median"], "-", color="C0")
+ax.fill_between(hiv_tx1.index, hiv_tx1["lower"], hiv_tx1["upper"], color="C0", alpha=0.2)
+
+ax.plot(hiv_tx2.index, hiv_tx2["median"], "-", color="C2")
+ax.fill_between(hiv_tx2.index, hiv_tx2["lower"], hiv_tx2["upper"], color="C2", alpha=0.2)
+
+ax.plot(hiv_tx3.index, hiv_tx3["median"], "-", color="C4")
+ax.fill_between(hiv_tx3.index, hiv_tx3["lower"], hiv_tx3["upper"], color="C4", alpha=0.2)
+
+ax.plot(hiv_tx4.index, hiv_tx4["median"], "-", color="C6")
+ax.fill_between(hiv_tx4.index, hiv_tx4["lower"], hiv_tx4["upper"], color="C6", alpha=0.2)
+
+fig.subplots_adjust(left=0.15)
+plt.ylim((0, 1.0))
+plt.title("HIV treatment coverage")
+plt.ylabel("HIV treatment coverage")
+plt.legend(["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4"])
+
+plt.show()
 
 
 
