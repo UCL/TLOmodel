@@ -18,6 +18,7 @@ from tlo.analysis.utils import (
     unflatten_flattened_multi_index_in_logging,
 )
 
+PREFIX_ON_FILENAME = '3'
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Description of the usage of healthcare system resources."""
@@ -26,7 +27,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     TARGET_PERIOD = (Date(2010, 1, 1), Date(2010, 12, 31))
 
     # Declare path for output graphs from this script
-    make_graph_file_name = lambda stub: output_folder / f"{stub}.png"  # noqa: E731
+    make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}.png"  # noqa: E731
 
     # %% Declare helper functions
 
@@ -106,6 +107,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
+    plt.close(fig)
 
     fig, ax = plt.subplots()
     name_of_plot = 'HSI Events by TREATMENT_ID (Short)'
@@ -122,6 +124,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
+    plt.close(fig)
 
     # %% "Figure 2": The Appointments Used
 
@@ -173,6 +176,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
+    plt.close(fig)
 
     # %% "Figure 3": The Fraction of the time of each HCW used by each TREATMENT_ID (Short)
 
@@ -245,6 +249,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.suptitle(name_of_plot, fontproperties={'size': 12})
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
+    plt.close(fig)
 
     # %% "Figure 4": The level of usage of the HealthSystem HR Resources
 
@@ -319,6 +324,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
+    plt.close(fig)
 
     fig, ax = plt.subplots()
     name_of_plot = 'Usage of Healthcare Worker Time (Average)'
@@ -346,6 +352,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
+    plt.close(fig)
 
     fig, ax = plt.subplots()
     name_of_plot = 'Usage of Healthcare Worker Time by Cadre and Facility_Level'
@@ -359,6 +366,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
+    plt.close(fig)
 
     # %% "Figure 5": The level of usage of the Beds in the HealthSystem
 
@@ -392,6 +400,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
+    plt.close(fig)
 
     # %% "Figure 6": Usage of consumables in the HealthSystem
 
@@ -445,6 +454,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
+    plt.close(fig)
 
     fig, ax = plt.subplots()
     name_of_plot = 'Consumables Not Available'
@@ -458,6 +468,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
+    plt.close(fig)
 
     # HSI affected by missing consumables
     def get_treatment_id_affecting_by_missing_consumables(_df):
@@ -493,3 +504,4 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
+    plt.close(fig)

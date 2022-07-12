@@ -24,6 +24,7 @@ from tlo.analysis.utils import (
     summarize,
 )
 
+PREFIX_ON_FILENAME = '2'
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     # Declare path for output graphs from this script
@@ -173,8 +174,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         fig.legend(loc="center right", fontsize=15)
         fig.tight_layout()
-        plt.savefig(make_graph_file_name(f"{what}_{period}_StackedBars_ModelvsGBD"))
+        plt.savefig(make_graph_file_name(f"{PREFIX_ON_FILENAME}_{what}_{period}_StackedBars_ModelvsGBD"))
         plt.show()
+        plt.close(fig)
 
         # %% Plots of age-breakdown of outcomes patten for each cause:
 
@@ -218,8 +220,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     ax[row].legend()
 
                 fig.tight_layout()
-                plt.savefig(make_graph_file_name(f"{what}_{period}_Scatter_Plot_{reformat_cause(cause)}"))
+                plt.savefig(make_graph_file_name(f"{PREFIX_ON_FILENAME}_{what}_{period}_Scatter_Plot_{reformat_cause(cause)}"))
                 plt.show()
+                plt.close(fig)
 
             except KeyError:
                 print(f"Could not produce plot for {what}: {reformat_cause(cause)}")
@@ -270,8 +273,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.set_xlabel('GBD (thousands)')
         ax.set_ylabel('Model (thousands)')
         ax.set_title(f'{what} per year by Cause {period}')
-        plt.savefig(make_graph_file_name(f"{what}_{period}_Scatter_Plot"))
+        plt.savefig(make_graph_file_name(f"{PREFIX_ON_FILENAME}_{what}_{period}_Scatter_Plot"))
         plt.show()
+        plt.close(fig)
 
     # %% Make graphs for each of Deaths and DALYS for a specific period
     make_std_graphs(what='Deaths', period='2010-2014')

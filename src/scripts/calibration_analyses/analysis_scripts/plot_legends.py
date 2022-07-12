@@ -15,6 +15,7 @@ from tlo.analysis.utils import (
     order_of_short_treatment_ids,
 )
 
+PREFIX_ON_FILENAME = '0'
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Plot the legend for (Short) TREATMENT_ID and (Coarse) APPT_TYPE, which are used in the standard plots."""
@@ -26,7 +27,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.legend(fontsize=14, ncol=2, loc='center')
         ax.axis('off')
         ax.set_title(title, fontsize=14)
-        fig.savefig(output_folder / f"{title.replace(' ', '_')}.png")
+        fig.savefig(output_folder / f"{PREFIX_ON_FILENAME}_{title.replace(' ', '_')}.png")
         return fig, ax
 
     # %% Short TREATMENT_ID
@@ -41,6 +42,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     )
     fig.tight_layout()
     fig.show()
+    plt.close(fig)
 
     # %% Coarse Appt Type
     coarse_appt_types = sorted(
@@ -56,6 +58,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         title="Appointment Types (Coarse)",
     )
     fig.show()
+    plt.close(fig)
 
     # %% Cause of Death Labels
     all_labels = _define_cause_of_death_labels()
@@ -66,7 +69,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         title="Cause-of-Death Labels",
     )
     fig.show()
-
+    plt.close(fig)
 
 if __name__ == "__main__":
     apply(
