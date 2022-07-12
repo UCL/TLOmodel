@@ -1037,3 +1037,93 @@ def test_hsi_run_on_same_day_if_scheduled_for_same_day(seed, tmpdir):
         'DummyHSI_To_Run_On_Same_Day_Event',
         'DummyHSI_To_Run_On_Same_Day_HSI',
     ]
+
+
+def test_compute_squeeze_factor_to_district_level(seed, tmpdir):
+    """Check that the argument `compute_squeeze_factor_to_district_level` works as expected.
+    `compute_squeeze_factor_to_district_level` is a Boolean indicating whether the computation of squeeze_factors
+    should be specific to each district (when `True`), or if the computation of squeeze_factors should be on the basis
+    that resources from all districts can be effectively "pooled" (when `False). As such, when there is a small model
+    population and we apply the constraints on the HSI `mode_appt_contraints=2`, HSI will not run when we have
+    `compute_squeeze_factor_to_district_level=True` (as there are insufficient staff at each facility to deliver the
+    appointment), but when `compute_squeeze_factor_to_district_level=False`, the HSI will run (because overall all
+    districts, there would be enough staff.)"""
+
+    APPT_FOOTPRINT = {'ConWithDCSA': 1}
+
+    class DummyHSI(HSI_Event, IndividualScopeEventMixin):
+        """HSI event that will demonstrate it has been run."""
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = f"{self.__class__.__name__ }"
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint(APPT_FOOTPRINT)
+            self.ACCEPTED_FACILITY_LEVEL = '0'
+
+        def apply(self, person_id, squeeze_factor):
+            pass
+
+        def did_not_run(self, *args, **kwargs):
+            return False  # Do not reschedule if it does not run the first time
+
+    class DummyModule(Module):
+        """Schedules an HSI to occur on the first day of the simulation."""
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            sim.modules['HealthSystem'].schedule_hsi_event(
+                DummyHSI(self, person_id=0),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0)
+
+    def does_hsi_run(compute_squeeze_factor_to_district_level):
+        """Returns True if the DummyHSI is run when using this value for the argument to the HealthSystem."""
+        sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
+        sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                     healthsystem.HealthSystem(
+                         resourcefilepath=resourcefilepath,
+                         mode_appt_constraints=2,  # <-- Hard Constraints
+                         cons_availability='all',
+                         compute_squeeze_factor_to_district_level=compute_squeeze_factor_to_district_level,
+                         store_hsi_events_that_have_run=True,
+                     ),
+                     DummyModule(),
+                     check_all_dependencies=False,
+                     )
+        sim.make_initial_population(n=1_000)
+        sim.simulate(end_date=sim.start_date + pd.DateOffset(days=1))
+        hs = sim.modules['HealthSystem']
+
+        # Confirm that the capabilities of the HealthSystem are such that there is not the sufficient staff in the
+        # district of person 0 to deliver the requested Appt, but that there is when all the districts are pooled.
+        district_of_person0 = sim.population.props.at[0, 'district_of_residence']
+        facility_info_for_dcsa_in_district_of_person0 = hs._facilities_for_each_district["0"][district_of_person0]
+
+        minutes_needed_for_dcsa_appt = sum(hs.get_appt_footprint_as_time_request(
+                facility_info=facility_info_for_dcsa_in_district_of_person0,
+                appt_footprint=APPT_FOOTPRINT,
+            ).values())
+
+        caps = hs.capabilities_today
+        minutes_available_in_district_of_person0 = caps.loc[
+            f"FacilityID_{facility_info_for_dcsa_in_district_of_person0.id}_Officer_DCSA"
+        ].sum()
+
+        minutes_available_of_dcsa_in_all_districts = hs.capabilities_today.loc[
+            hs.capabilities_today.index.str.endswith('_Officer_DCSA')].sum()
+
+        assert minutes_needed_for_dcsa_appt > \
+               minutes_available_in_district_of_person0  # Insufficient time in the district
+        assert minutes_needed_for_dcsa_appt <= \
+               minutes_available_of_dcsa_in_all_districts  # Sufficient time when pooled
+
+        # Return `did_run` for the first (and only) HSI event that was processed:
+        return hs.store_of_hsi_events_that_have_run[0]['did_run']
+
+    assert not does_hsi_run(compute_squeeze_factor_to_district_level=True)
+    assert does_hsi_run(compute_squeeze_factor_to_district_level=False)
