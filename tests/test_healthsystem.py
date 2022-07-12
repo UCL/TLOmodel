@@ -1040,13 +1040,13 @@ def test_hsi_run_on_same_day_if_scheduled_for_same_day(seed, tmpdir):
 
 
 def test_compute_squeeze_factor_to_district_level(seed, tmpdir):
-    """Check that the argument `compute_squeeze_factor_to_district_level` works as expected.
+    """Check that the argument to HealthSystem module `compute_squeeze_factor_to_district_level` works as expected.
     `compute_squeeze_factor_to_district_level` is a Boolean indicating whether the computation of squeeze_factors
     should be specific to each district (when `True`), or if the computation of squeeze_factors should be on the basis
     that resources from all districts can be effectively "pooled" (when `False). As such, when there is a small model
-    population and we apply the constraints on the HSI `mode_appt_contraints=2`, HSI will not run when we have
-    `compute_squeeze_factor_to_district_level=True` (as there are insufficient staff at each facility to deliver the
-    appointment), but when `compute_squeeze_factor_to_district_level=False`, the HSI will run (because overall all
+    population, and we apply the constraints on the HSI `mode_appt_contraints=2`, HSI will not run when we have
+    `compute_squeeze_factor_to_district_level=True` (because there are insufficient staff at each facility to deliver
+    the appointment), but when `compute_squeeze_factor_to_district_level=False`, the HSI will run (because overall all
     districts, there would be enough staff.)"""
 
     APPT_FOOTPRINT = {'ConWithDCSA': 1}
@@ -1103,20 +1103,15 @@ def test_compute_squeeze_factor_to_district_level(seed, tmpdir):
         # district of person 0 to deliver the requested Appt, but that there is when all the districts are pooled.
         district_of_person0 = sim.population.props.at[0, 'district_of_residence']
         facility_info_for_dcsa_in_district_of_person0 = hs._facilities_for_each_district["0"][district_of_person0]
-
         minutes_needed_for_dcsa_appt = sum(hs.get_appt_footprint_as_time_request(
                 facility_info=facility_info_for_dcsa_in_district_of_person0,
                 appt_footprint=APPT_FOOTPRINT,
             ).values())
-
-        caps = hs.capabilities_today
-        minutes_available_in_district_of_person0 = caps.loc[
+        minutes_available_in_district_of_person0 =  hs.capabilities_today.loc[
             f"FacilityID_{facility_info_for_dcsa_in_district_of_person0.id}_Officer_DCSA"
         ].sum()
-
         minutes_available_of_dcsa_in_all_districts = hs.capabilities_today.loc[
             hs.capabilities_today.index.str.endswith('_Officer_DCSA')].sum()
-
         assert minutes_needed_for_dcsa_appt > \
                minutes_available_in_district_of_person0  # Insufficient time in the district
         assert minutes_needed_for_dcsa_appt <= \
