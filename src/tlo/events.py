@@ -38,7 +38,7 @@ class Event:
 class RegularEvent(Event):
     """An event that automatically reschedules itself at a fixed frequency."""
 
-    def __init__(self, module, *, frequency, end_date=None, order_in_day=None):
+    def __init__(self, module, *, frequency, end_date=None, event_priority=None):
         """Create a new regular event.
 
         :param module: the module that created this event
@@ -50,13 +50,13 @@ class RegularEvent(Event):
         assert isinstance(frequency, DateOffset)
         self.frequency = frequency
         self.end_date = end_date
-        self.order_in_day = order_in_day
+        self._event_priority = event_priority
 
     def post_apply_hook(self):
         """Schedule the next occurrence of this event."""
         next_apply_date = self.sim.date + self.frequency
         if not self.end_date or next_apply_date <= self.end_date:
-            self.sim.schedule_event(self, next_apply_date, order_in_day=self.order_in_day)
+            self.sim.schedule_event(self, next_apply_date, event_priority=self._event_priority)
 
 
 class PopulationScopeEventMixin:

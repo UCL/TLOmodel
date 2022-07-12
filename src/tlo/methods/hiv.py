@@ -2016,8 +2016,8 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                     df.at[person_id, "hv_diagnosed"] = True
                     self.module.do_when_hiv_diagnosed(person_id=person_id)
 
-                    # also screen for tb
-                    if "Tb" in self.sim.modules:
+                    # Screen for tb if they have not been referred from a Tb HSI
+                    if "Tb" in self.sim.modules and (self.referred_from != 'Tb'):
                         self.sim.modules["HealthSystem"].schedule_hsi_event(
                             tb.HSI_Tb_ScreeningAndRefer(
                                 person_id=person_id, module=self.sim.modules["Tb"]
