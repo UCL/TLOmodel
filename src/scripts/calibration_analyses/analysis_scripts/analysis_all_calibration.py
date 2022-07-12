@@ -28,7 +28,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     plot_legends.apply(
         results_folder=None, output_folder=output_folder, resourcefilepath=rfp)
 
-
     # make html page to present results
     html = "<html><body>"
 
