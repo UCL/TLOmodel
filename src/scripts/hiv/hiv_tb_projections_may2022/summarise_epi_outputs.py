@@ -1,5 +1,7 @@
 """This file uses the results of the batch file to make some summary statistics.
 The results of the batchrun were put into the 'outputspath' results_folder
+plots created:
+4-panel plot HIV and TB incidence and deaths
 
 """
 
@@ -49,6 +51,71 @@ info = get_scenario_info(results0)
 params = extract_params(results0)
 
 # %% extract results
+
+# ---------------------------------- PERSON-YEARS ---------------------------------- #
+# for each scenario, return a df with the person-years logged in each draw/run
+# to be used for calculating tb incidence or mortality rates
+
+
+def get_person_years(_df):
+    """ extract person-years for each draw/run
+    sums across men and women
+    will skip column if particular run has failed
+    """
+    years = pd.to_datetime(_df["date"]).dt.year
+    py = pd.Series(dtype="int64", index=years)
+    for year in years:
+        tot_py = (
+            (_df.loc[pd.to_datetime(_df["date"]).dt.year == year]["M"]).apply(pd.Series) +
+            (_df.loc[pd.to_datetime(_df["date"]).dt.year == year]["F"]).apply(pd.Series)
+        ).transpose()
+        py[year] = tot_py.sum().values[0]
+
+    py.index = pd.to_datetime(years, format="%Y")
+
+    return py
+
+py0 = extract_results(
+    results0,
+    module="tlo.methods.demography",
+    key="person_years",
+    custom_generate_series=get_person_years,
+    do_scaling=False
+)
+
+py1 = extract_results(
+    results1,
+    module="tlo.methods.demography",
+    key="person_years",
+    custom_generate_series=get_person_years,
+    do_scaling=False
+)
+
+py2 = extract_results(
+    results2,
+    module="tlo.methods.demography",
+    key="person_years",
+    custom_generate_series=get_person_years,
+    do_scaling=False
+)
+
+py3 = extract_results(
+    results3,
+    module="tlo.methods.demography",
+    key="person_years",
+    custom_generate_series=get_person_years,
+    do_scaling=False
+)
+
+py4 = extract_results(
+    results4,
+    module="tlo.methods.demography",
+    key="person_years",
+    custom_generate_series=get_person_years,
+    do_scaling=False
+)
+
+
 # Load and format model results (with year as integer):
 # ---------------------------------- HIV ---------------------------------- #
 
@@ -311,42 +378,7 @@ tmp = extract_tx_delay(results_folder=results0,
 
 
 
-# ---------------------------------- PERSON-YEARS ---------------------------------- #
-draw = 0
 
-# todo need mean py for each draw
-# function to extract person-years by year
-# call this for each run and then take the mean to use as denominator for mortality / incidence etc.
-
-def get_person_years(draw, run):
-    log = load_pickled_dataframes(results_folder, draw, run)
-
-    py_ = log["tlo.methods.demography"]["person_years"]
-    years = pd.to_datetime(py_["date"]).dt.year
-    py = pd.Series(dtype="int64", index=years)
-    for year in years:
-        tot_py = (
-            (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["M"]).apply(pd.Series) +
-            (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["F"]).apply(pd.Series)
-        ).transpose()
-        py[year] = tot_py.sum().values[0]
-
-    py.index = pd.to_datetime(years, format="%Y")
-
-    return py
-
-
-# for each draw, get mean py across all runs
-py_summary = pd.DataFrame(data=None, columns=range(0, info["number_of_draws"]))
-
-# draw number (default = 0) is specified above
-for draw in range(0, info["number_of_draws"]):
-    tmp = pd.DataFrame(data=None, columns=range(0, info["runs_per_draw"]))
-
-    for run in range(0, info["runs_per_draw"]):
-        tmp.iloc[:, run] = get_person_years(draw, run)
-
-    py_summary.iloc[:, draw] = tmp.mean(axis=1)
 
 # ---------------------------------- TB ---------------------------------- #
 
