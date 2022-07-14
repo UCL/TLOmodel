@@ -37,7 +37,7 @@ resourcefilepath = Path("./resources")
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
-popsize = 1000
+popsize = 5000
 
 scenario = 0
 
@@ -101,3 +101,7 @@ output = parse_log_file(sim.log_filepath)
 with open(outputpath / "default_run.pickle", "wb") as f:
     # Pickle the 'data' dictionary using the highest protocol available.
     pickle.dump(dict(output), f, pickle.HIGHEST_PROTOCOL)
+
+# load the results
+with open(outputpath / "default_run.pickle", "rb") as f:
+    output = pickle.load(f)

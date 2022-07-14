@@ -75,51 +75,51 @@ def get_person_years(_df):
 
     return py
 
-py0 = extract_results(
-    results0,
-    module="tlo.methods.demography",
-    key="person_years",
-    custom_generate_series=get_person_years,
-    do_scaling=False
-)
 
-py1 = extract_results(
-    results1,
-    module="tlo.methods.demography",
-    key="person_years",
-    custom_generate_series=get_person_years,
-    do_scaling=False
-)
+# py0 = extract_results(
+#     results0,
+#     module="tlo.methods.demography",
+#     key="person_years",
+#     custom_generate_series=get_person_years,
+#     do_scaling=False
+# )
+#
+# py1 = extract_results(
+#     results1,
+#     module="tlo.methods.demography",
+#     key="person_years",
+#     custom_generate_series=get_person_years,
+#     do_scaling=False
+# )
+#
+# py2 = extract_results(
+#     results2,
+#     module="tlo.methods.demography",
+#     key="person_years",
+#     custom_generate_series=get_person_years,
+#     do_scaling=False
+# )
+#
+# py3 = extract_results(
+#     results3,
+#     module="tlo.methods.demography",
+#     key="person_years",
+#     custom_generate_series=get_person_years,
+#     do_scaling=False
+# )
+#
+# py4 = extract_results(
+#     results4,
+#     module="tlo.methods.demography",
+#     key="person_years",
+#     custom_generate_series=get_person_years,
+#     do_scaling=False
+# )
 
-py2 = extract_results(
-    results2,
-    module="tlo.methods.demography",
-    key="person_years",
-    custom_generate_series=get_person_years,
-    do_scaling=False
-)
 
-py3 = extract_results(
-    results3,
-    module="tlo.methods.demography",
-    key="person_years",
-    custom_generate_series=get_person_years,
-    do_scaling=False
-)
-
-py4 = extract_results(
-    results4,
-    module="tlo.methods.demography",
-    key="person_years",
-    custom_generate_series=get_person_years,
-    do_scaling=False
-)
-
-
-# Load and format model results (with year as integer):
 # ---------------------------------- HIV ---------------------------------- #
 
-########## HIV incidence ############################
+# HIV incidence
 
 def hiv_adult_inc(results_folder):
     inc = extract_results(
@@ -184,10 +184,23 @@ def tb_inc(results_folder):
     )
 
     inc.columns = inc.columns.get_level_values(0)
+
+    # divide each run of tb incidence by py from that run
+    # tb logger starts at 2011-01-01, demog starts at 2010-01-01
+    py = extract_results(
+        results_folder,
+        module="tlo.methods.demography",
+        key="person_years",
+        custom_generate_series=get_person_years,
+        do_scaling=False
+    )
+    py.columns = py.columns.get_level_values(0)
+
+    inc_py = inc / py.iloc[:, 1:26]
     inc_summary = pd.DataFrame(index=inc.index, columns=["median", "lower", "upper"])
-    inc_summary["median"] = inc.median(axis=1)
-    inc_summary["lower"] = inc.quantile(q=0.025, axis=1)
-    inc_summary["upper"] = inc.quantile(q=0.975, axis=1)
+    inc_summary["median"] = inc_py.median(axis=1)
+    inc_summary["lower"] = inc_py.quantile(q=0.025, axis=1)
+    inc_summary["upper"] = inc_py.quantile(q=0.975, axis=1)
 
     return inc_summary
 
@@ -216,10 +229,24 @@ ax.fill_between(tb_inc4.index, tb_inc4["lower"], tb_inc4["upper"], color="C6", a
 
 fig.subplots_adjust(left=0.15)
 plt.title("Active TB incidence")
-plt.ylabel("Number new active TB cases")
+plt.ylabel("Active TB cases per 100,000 population")
 plt.legend(["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4"])
 
 plt.show()
+
+
+# ---------------------------------- HIV deaths ---------------------------------- #
+
+
+
+
+
+
+# ---------------------------------- TB deaths ---------------------------------- #
+
+
+
+
 
 
 # ---------------------------------- TREATMENT COVERAGE ---------------------------------- #

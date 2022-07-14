@@ -829,21 +829,22 @@ class Tb(Module):
     def initialise_simulation(self, sim):
         """
         * 1) Schedule the regular TB events
-        * 2) Schedule the Logging Event
+        * 2) Schedule the scenario change
         * 3) Define the DxTests and treatment options
         """
 
         # 1) Regular events
         sim.schedule_event(TbActiveEvent(self), sim.date + DateOffset(days=0))
-        sim.schedule_event(TbActiveCasePoll(self), sim.date + DateOffset(years=1))
 
         sim.schedule_event(TbTreatmentAndRelapseEvents(self), sim.date + DateOffset(months=1))
         sim.schedule_event(TbSelfCureEvent(self), sim.date + DateOffset(months=1))
 
+        sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(years=1))
+        sim.schedule_event(TbActiveCasePoll(self), sim.date + DateOffset(years=1))
+
+        # 2) Scenario change
         sim.schedule_event(ScenarioSetupEvent(self), self.parameters["scenario_start_date"])
 
-        # 2) Logging
-        sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(years=1))
 
         # 3) Define the DxTests and get the consumables required
         self.get_consumables_for_dx_and_tx()
@@ -2466,18 +2467,18 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # number of new active cases
         new_tb_cases = len(
-            df[(df.tb_date_active > (now - DateOffset(months=self.repeat)))]
+            df[(df.tb_date_active >= (now - DateOffset(months=self.repeat)))]
         )
 
         # number of latent cases
         new_latent_cases = len(
-            df[(df.tb_date_latent > (now - DateOffset(months=self.repeat)))]
+            df[(df.tb_date_latent >= (now - DateOffset(months=self.repeat)))]
         )
 
         # number of new active cases in HIV+
         inc_active_hiv = len(
             df[
-                (df.tb_date_active > (now - DateOffset(months=self.repeat)))
+                (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
                 & df.hv_inf
                 ]
         )
@@ -2580,7 +2581,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         new_mdr_cases = len(
             df[
                 (df.tb_strain == "mdr")
-                & (df.tb_date_active > (now - DateOffset(months=self.repeat)))
+                & (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
                 ]
         )
 
@@ -2601,15 +2602,15 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # ------------------------------------ CASE NOTIFICATIONS ------------------------------------
         # number diagnoses (new, relapse, reinfection) in last timeperiod
         new_tb_diagnosis = len(
-            df[(df.tb_date_diagnosed > (now - DateOffset(months=self.repeat)))]
+            df[(df.tb_date_diagnosed >= (now - DateOffset(months=self.repeat)))]
         )
 
         # ------------------------------------ TREATMENT ------------------------------------
         # number of tb cases who became active in last timeperiod and initiated treatment
         new_tb_tx = len(
             df[
-                (df.tb_date_active > (now - DateOffset(months=self.repeat)))
-                & (df.tb_date_treated > (now - DateOffset(months=self.repeat)))
+                (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
+                & (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
                 ]
         )
 
@@ -2623,7 +2624,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # ipt coverage
         new_tb_ipt = len(
             df[
-                (df.tb_date_ipt > (now - DateOffset(months=self.repeat)))
+                (df.tb_date_ipt >= (now - DateOffset(months=self.repeat)))
             ]
         )
 
