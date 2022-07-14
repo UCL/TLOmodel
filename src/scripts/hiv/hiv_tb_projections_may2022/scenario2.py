@@ -33,7 +33,7 @@ class TestScenario(BaseScenario):
         self.seed = 5
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2036, 1, 1)
-        self.pop_size = 100000
+        self.pop_size = 50000
         self.number_of_draws = 5
         self.runs_per_draw = 3
 
