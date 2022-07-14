@@ -625,13 +625,17 @@ class LifestyleModels:
                 'update': self.update_bmi_categories_linear_model()
             },
             'li_is_circ': {
-                'init': self.male_circumsision_property_linear_model()
+                'init': self.male_circumsision_property_linear_model(),
+                'update': self.male_circumsision_property_linear_model()
             },
             'li_is_sexworker': {
                 'init': self.female_sex_workers(),
                 'update': self.female_sex_workers()
             }
         }
+    def get_lm_keys(self):
+        """ a function to return all linear model keys as defined in models dictionary"""
+        return self.models.keys()
 
     def initialise_all_properties(self, df):
         """initialise population properties using linear models defined in LifestyleModels class.
@@ -649,7 +653,7 @@ class LifestyleModels:
         :param df: The population dataframe """
         # loop through linear models dictionary and initialise each property in the population dataframe
         for _property_name, _model in self.models.items():
-            if _property_name in ['li_wealth', 'li_is_circ']:
+            if _property_name in ['li_wealth']:
                 pass
             else:
                 df.loc[df.is_alive, _property_name] = _model['update'].predict(
@@ -1248,8 +1252,8 @@ class LifestyleModels:
 
             # start tobacco use
             eff_p_tob = pd.Series(p['r_tob'], index=adults_not_tob)
-            eff_p_tob.loc[(df.age_years >= 20) & (df.age_years < 40)] *= p['rr_tob_age2039']
-            eff_p_tob.loc[df.age_years >= 40] *= p['rr_tob_agege40']
+            eff_p_tob.loc[(df.sex == 'M') & (df.age_years >= 20) & (df.age_years < 40)] *= p['rr_tob_age2039']
+            eff_p_tob.loc[(df.sex == 'M') & df.age_years >= 40] *= p['rr_tob_agege40']
             eff_p_tob.loc[df.sex == 'F'] *= p['rr_tob_f']
             eff_p_tob *= p['rr_tob_wealth'] ** (pd.to_numeric(df.loc[adults_not_tob, 'li_wealth']) - 1)
 
@@ -1877,16 +1881,42 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         """
         # get some summary statistics
         df = population.props
-        all_lm_dict = self.module.models.models
+        all_lm_keys = self.module.models.get_lm_keys()
 
         # log summary of each lifestyle property
-        for _property in all_lm_dict.keys():
+        for _property in all_lm_keys:
             if _property in ['li_wealth', 'li_mar_stat', 'li_bmi', 'li_ed_lev']:
-                print(f'ignoring property {_property} for now')
-                pass
-            else:
+                # log all other remaining properties
+                data = df.loc[df.is_alive].groupby(by=[
+                    df.loc[df.is_alive, 'sex'],
+                    df.loc[df.is_alive, _property],
+                    df.loc[df.is_alive, 'age_range'],
+                ]).size()
                 logger.info(
                     key=_property,
-                    data=flatten_multi_index_series_into_dict_for_logging(df.loc[df.is_alive & df[_property]].groupby(
-                        ['sex', 'age_range']).size())
+                    data=flatten_multi_index_series_into_dict_for_logging(data)
                 )
+
+            else:
+                # log proportion of men who are circumcised
+                if _property == 'li_is_circ':
+                    logger.info(
+                        key=_property,
+                        data=[df.loc[df.is_alive & (df.sex == 'M') & (df.age_years >= 15)].li_is_circ.mean()]
+                    )
+                # log propotion of women sex workers
+                elif _property == 'li_is_sexworker':
+                    women_1549 = df.is_alive & (df.sex == "F") & df.age_years.between(15, 49)
+
+                    if sum(women_1549) > 0:
+                        logger.info(
+                            key=_property,
+                            data=[sum(women_1549 & df.li_is_sexworker) / sum(women_1549)]
+                        )
+                else:
+                    data = df.loc[df.is_alive & df[_property]].groupby(['sex', 'age_range']).size()
+                    logger.info(
+                        key=_property,
+                        data=flatten_multi_index_series_into_dict_for_logging(data)
+                    )
+
