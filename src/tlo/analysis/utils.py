@@ -10,8 +10,10 @@ from pathlib import Path
 from typing import Callable, Dict, Iterable, List, Optional, TextIO, Union
 
 import git
+import matplotlib.colors as mcolors
 import numpy as np
 import pandas as pd
+import squarify
 
 from tlo import logging, util
 from tlo.logging.reader import LogData
@@ -619,7 +621,6 @@ def get_filtered_treatment_ids(depth: Optional[int] = None) -> List[str]:
 
 def colors_in_matplotlib() -> tuple:
     """Return tuple of the strings for all the colours defined in Matplotlib."""
-    import matplotlib.colors as mcolors
     return tuple(
         set().union(
             mcolors.BASE_COLORS.keys(),
@@ -834,8 +835,6 @@ def squarify_neat(sizes: np.array, label: np.array, colormap: Callable, numlabel
      * Only give label a selection of the segments
      N.B. The package `squarify` is required.
     """
-    import squarify
-
     # Suppress labels for all but the `numlabels` largest entries.
     to_label = set(pd.Series(index=label, data=sizes).sort_values(ascending=False).iloc[0:numlabels].index)
 
