@@ -142,7 +142,7 @@ def test_colormap_coarse_appts():
     """Check the function that allocates a unique colour to each coarse appointment type."""
     coarse_appt_types = pd.read_csv(
             resourcefilepath / 'healthsystem' / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Types_Table.csv'
-        )['Appt_Type_Code'].map(get_corase_appt_type).drop_duplicates().values
+        )['Appt_Type_Code'].map(get_coarse_appt_type).drop_duplicates().values
 
     coarse_appt_types = sorted(coarse_appt_types, key=order_of_coarse_appt)
 
