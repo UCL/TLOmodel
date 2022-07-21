@@ -508,10 +508,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
 
 if __name__ == "__main__":
-    outputspath = Path('./outputs/tbh03@ic.ac.uk')
+    outputspath = Path('./outputs')
     rfp = Path('./resources')
 
-    results_folder = outputspath / 'long_run_all_diseases-2022-05-31T094220Z'
+    # results_folder = outputspath / 'tbh03@ic.ac.uk' / 'long_run_all_diseases-2022-07-21T090406Z'  # <-- small run created for test purposes (on Azure)
+    results_folder = outputspath / 'long_run-2022-07-21T101707Z'  # <-- small run created for test purposes (locally)
 
     # Run all the calibrations
     apply(results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
