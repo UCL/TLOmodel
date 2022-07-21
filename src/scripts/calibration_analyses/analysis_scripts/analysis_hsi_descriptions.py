@@ -505,3 +505,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
     plt.close(fig)
+
+
+if __name__ == "__main__":
+    outputspath = Path('./outputs/tbh03@ic.ac.uk')
+    rfp = Path('./resources')
+
+    results_folder = outputspath / 'long_run_all_diseases-2022-05-31T094220Z'
+
+    # Run all the calibrations
+    apply(results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
