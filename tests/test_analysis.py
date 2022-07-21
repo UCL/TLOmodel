@@ -12,7 +12,7 @@ from tlo.analysis.utils import (
     get_color_cause_of_death_label,
     get_color_coarse_appt,
     get_color_short_treatment_id,
-    get_corase_appt_type,
+    get_coarse_appt_type,
     get_filtered_treatment_ids,
     get_root_path,
     order_of_coarse_appt,
