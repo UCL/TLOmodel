@@ -603,7 +603,7 @@ def get_filtered_treatment_ids(depth: Optional[int] = None) -> List[str]:
         The TREATMENT_ID is defined with each increasing level of specification separated by a `_`. """
         return sorted(list(set(
             [
-                "".join(f"{x}_" for i, x in enumerate(t.split('_')) if i < depth).rstrip('_') + '*'
+                "".join(f"{x}_" for i, x in enumerate(t.split('_')) if i < depth).rstrip('_') + '_*'
                 for t in set(_treatments)
             ]
         )))
