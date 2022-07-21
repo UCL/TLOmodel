@@ -691,7 +691,7 @@ def _define_coarse_appts() -> pd.DataFrame:
     ).set_index('category')
 
 
-def get_corase_appt_type(appt_type: str) -> str:
+def get_coarse_appt_type(appt_type: str) -> str:
     """Return the `coarser` categorization of appt_types for a given appt_type. """
     for coarse_appt_types, row in _define_coarse_appts().iterrows():
         if appt_type in row['appt_types']:
