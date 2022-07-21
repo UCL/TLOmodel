@@ -126,7 +126,7 @@ def test_corase_appt_type():
 
     appts = pd.DataFrame({
             "original": pd.Series(appt_types),
-            "coarse": pd.Series(appt_types).map(get_corase_appt_type)
+            "coarse": pd.Series(appt_types).map(get_coarse_appt_type)
     })
 
     coarse_appts = appts['coarse'].drop_duplicates()
