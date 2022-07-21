@@ -17,6 +17,7 @@ from tlo.analysis.utils import (
 
 PREFIX_ON_FILENAME = '0'
 
+
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Plot the legend for (Short) TREATMENT_ID and (Coarse) APPT_TYPE, which are used in the standard plots."""
 
@@ -70,6 +71,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     )
     fig.show()
     plt.close(fig)
+
 
 if __name__ == "__main__":
     apply(

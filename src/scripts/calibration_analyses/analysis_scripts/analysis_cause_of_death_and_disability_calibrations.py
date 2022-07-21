@@ -26,6 +26,7 @@ from tlo.analysis.utils import (
 
 PREFIX_ON_FILENAME = '2'
 
+
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     # Declare path for output graphs from this script
     make_graph_file_name = lambda stub: output_folder / f"{stub}.png"  # noqa: E731
@@ -220,7 +221,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     ax[row].legend()
 
                 fig.tight_layout()
-                plt.savefig(make_graph_file_name(f"{PREFIX_ON_FILENAME}_{what}_{period}_Scatter_Plot_{reformat_cause(cause)}"))
+                plt.savefig(make_graph_file_name(
+                    f"{PREFIX_ON_FILENAME}_{what}_{period}_Scatter_Plot_{reformat_cause(cause)}")
+                )
                 plt.show()
                 plt.close(fig)
 

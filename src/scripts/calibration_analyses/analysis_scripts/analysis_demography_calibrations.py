@@ -31,6 +31,7 @@ from tlo.analysis.utils import (
 
 PREFIX_ON_FILENAME = '1'
 
+
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
 
     # Declare path for output graphs from this script
