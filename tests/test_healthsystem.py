@@ -863,20 +863,52 @@ def test_is_treatment_id_allowed():
     """Check the pattern matching in `is_treatment_id_allowed`."""
     hs = HealthSystem(resourcefilepath=resourcefilepath)
 
-    assert hs.is_treatment_id_allowed('Hiv', ['*'])
+    # An empty list means nothing is allowed
     assert not hs.is_treatment_id_allowed('Hiv', [])
-    assert not hs.is_treatment_id_allowed('Hiv', ['A', 'B', 'C'])
-    assert hs.is_treatment_id_allowed('Hiv_X', ['A*', 'Hiv*'])
-    assert hs.is_treatment_id_allowed('Hiv_Y', ['A', 'Hiv*'])
-    assert hs.is_treatment_id_allowed('Hiv_A_B_C', ['A', 'Hiv_A_B*'])
-    assert not hs.is_treatment_id_allowed('Hiv_A_B_C', ['A', 'Hiv_X*'])
-    assert hs.is_treatment_id_allowed('Hiv_X_B_C_1_2_3', ['A', 'Hiv_X*'])
-    assert not hs.is_treatment_id_allowed('Hiv_A_B', ['A', 'Hiv_A_B_C_D_E_F*'])
 
-    # First Attendance appointments are always allowed, if anything else is allowed (but not if nothing is allowed).
-    assert hs.is_treatment_id_allowed('FirstAttendance*', ["*"])
-    assert hs.is_treatment_id_allowed('FirstAttendance*', ["A"])
-    assert not hs.is_treatment_id_allowed('FirstAttendance*', [])
+    # A list that contains only an asteriks ['*'] means run anything
+    assert hs.is_treatment_id_allowed('Hiv', ['*'])
+
+    # If the list is not empty, then a treatment_id with a first part "FirstAttendance" is also allowed
+    assert hs.is_treatment_id_allowed('FirstAttendance_*', ["A_B_C_D_E"])
+    assert not hs.is_treatment_id_allowed('FirstAttendance_*', [])
+
+    # An entry in the list of the form "A_B_C" means a treatment_id that matches exactly is allowed
+    assert hs.is_treatment_id_allowed('A', ['A', 'B_C_D', 'E_F_G_H'])
+    assert hs.is_treatment_id_allowed('B_C_D', ['A', 'B_C_D', 'E_F_G_H'])
+    assert hs.is_treatment_id_allowed('E_F_G_H', ['A', 'B_C_D', 'E_F_G_H'])
+
+    assert not hs.is_treatment_id_allowed('A_1', ['A', 'B_C_D', 'E_F_G_H'])
+    assert not hs.is_treatment_id_allowed('E_F_G', ['E', 'E_F', 'E_F_G_H'])
+
+    # An entry in the list of the form "A_B_*" means that a treatment_id that begins "A_B_" or "A_B" is allowed
+    assert hs.is_treatment_id_allowed('Hiv_X', ['Hiv_*'])
+    assert hs.is_treatment_id_allowed('Hiv_Y', ['Hiv_*'])
+    assert hs.is_treatment_id_allowed('Hiv_A_B_C', ['Hiv_A_B_*'])
+    assert hs.is_treatment_id_allowed('Hiv_A_B', ['Hiv_A_B_*'])
+    assert hs.is_treatment_id_allowed('Hiv_A_B_C_D', ['Hiv_A_B_C_*'])
+    assert hs.is_treatment_id_allowed('Hiv_A_B_C', ['Hiv_A_B_C_*'])
+    assert hs.is_treatment_id_allowed('Hiv_X_1_2_3_4', ['Hiv_X_*'])
+    assert hs.is_treatment_id_allowed('Hiv_X_1_2_3_4', ['Hiv_*'])
+
+    assert not hs.is_treatment_id_allowed('Hiv_X', ['Hiv_A_*'])
+    assert not hs.is_treatment_id_allowed('Hiv_Y', ['Y_*'])
+    assert not hs.is_treatment_id_allowed('Hiv_A_B_C', ['Hiv_X_B_C_*'])
+    assert not hs.is_treatment_id_allowed('Hiv_A_B_C', ['Hiv1_A_B_C_*'])
+    assert not hs.is_treatment_id_allowed('Hiv_X_1_2_3_4', ['Hiv_Y_*'])
+    assert not hs.is_treatment_id_allowed('A', ['A_B_C_*'])
+
+    # (An asteriks that is not preceded by an "_" has no effect is allowing treatment_ids).
+    assert not hs.is_treatment_id_allowed('Hiv_A_B', ['Hiv*'])
+    assert not hs.is_treatment_id_allowed('Hiv', ['Hiv*'])
+
+    # (And no confusion about stubs that are similar...)
+    assert hs.is_treatment_id_allowed('Epi', ['Epi_*'])
+    assert not hs.is_treatment_id_allowed('Epilepsy', ['Epi_*'])
+    assert not hs.is_treatment_id_allowed('Epi', ['Epilepsy_*'])
+    assert hs.is_treatment_id_allowed('Epilepsy', ['Epilepsy_*'])
+    assert hs.is_treatment_id_allowed('Epi', ['Epi', 'Epilepsy_*'])
+    assert hs.is_treatment_id_allowed('Epilepsy', ['Epi', 'Epilepsy_*'])
 
 
 def test_manipulation_of_service_availability(seed, tmpdir):
