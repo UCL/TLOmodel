@@ -29,7 +29,7 @@ PREFIX_ON_FILENAME = '2'
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     # Declare path for output graphs from this script
-    make_graph_file_name = lambda stub: output_folder / f"{stub}.png"  # noqa: E731
+    make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}.png"  # noqa: E731
 
     # Define colours to use:
     colors = {
@@ -175,7 +175,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         fig.legend(loc="center right", fontsize=15)
         fig.tight_layout()
-        plt.savefig(make_graph_file_name(f"{PREFIX_ON_FILENAME}_{what}_{period}_StackedBars_ModelvsGBD"))
+        plt.savefig(make_graph_file_name(f"{what}_{period}_StackedBars_ModelvsGBD"))
         plt.show()
         plt.close(fig)
 
@@ -222,7 +222,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
                 fig.tight_layout()
                 plt.savefig(make_graph_file_name(
-                    f"{PREFIX_ON_FILENAME}_{what}_{period}_Scatter_Plot_{reformat_cause(cause)}")
+                    f"{what}_{period}_Scatter_Plot_{reformat_cause(cause)}")
                 )
                 plt.show()
                 plt.close(fig)
@@ -276,7 +276,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.set_xlabel('GBD (thousands)')
         ax.set_ylabel('Model (thousands)')
         ax.set_title(f'{what} per year by Cause {period}')
-        plt.savefig(make_graph_file_name(f"{PREFIX_ON_FILENAME}_{what}_{period}_Scatter_Plot"))
+        plt.savefig(make_graph_file_name(f"{what}_{period}_Scatter_Plot"))
         plt.show()
         plt.close(fig)
 
