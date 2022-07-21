@@ -5,7 +5,6 @@
 # - let the logger give times of each hcw
 # """
 import datetime
-import fnmatch
 import heapq as hp
 import itertools
 from collections import Counter, defaultdict
@@ -1003,7 +1002,7 @@ class HealthSystem(Module):
          treatments, given by `self.service_availability`. The rules are as follows:
           * An empty list means nothing is allowed
           * A list that contains only an asteriks ['*'] means run anything
-          * If the list is not empty, then a treatment_id with a first part "FirstAttendance" is also allowed
+          * If the list is not empty, then a treatment_id with a first part "FirstAttendance_" is also allowed
           * An entry in the list of the form "A_B_C" means a treatment_id that matches exactly is allowed
           * An entry in the list of the form "A_B_*" means that a treatment_id that begins "A_B_" or "A_B" is allowed
         """
@@ -1017,8 +1016,7 @@ class HealthSystem(Module):
                     _s_split = _s.split('_')  # split the matching pattern at '_' knowing that the last component is '*'
                     _treatment_id_split = _treatment_id.split('_', len(_s_split) - 1)  # split treatment_id at '_' into
                     # as many component as there as non-asteriks component of _s.
-
-                    # Check if all the components (that are not asteriks) are the same
+                    # Check if all the components (that are not asteriks) are the same:
                     return all(
                         [(a == b) or (b == "*") for a, b in itertools.zip_longest(_treatment_id_split, _s_split)]
                     )

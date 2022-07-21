@@ -860,7 +860,7 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
 
 
 def test_is_treatment_id_allowed():
-    """Check the pattern matching in `is_treatment_id_allowed`."""
+    """Check the pattern matching in `is_treatment_id_allowed` works as expected."""
     hs = HealthSystem(resourcefilepath=resourcefilepath)
 
     # An empty list means nothing is allowed
@@ -869,16 +869,15 @@ def test_is_treatment_id_allowed():
     # A list that contains only an asteriks ['*'] means run anything
     assert hs.is_treatment_id_allowed('Hiv', ['*'])
 
-    # If the list is not empty, then a treatment_id with a first part "FirstAttendance" is also allowed
-    assert hs.is_treatment_id_allowed('FirstAttendance_*', ["A_B_C_D_E"])
-    assert not hs.is_treatment_id_allowed('FirstAttendance_*', [])
+    # If the list is not empty, then a treatment_id with a first part "FirstAttendance_" is also allowed
+    assert hs.is_treatment_id_allowed('FirstAttendance_Em', ["A_B_C_D_E"])
+    assert not hs.is_treatment_id_allowed('FirstAttendance_Em', [])
 
     # An entry in the list of the form "A_B_C" means a treatment_id that matches exactly is allowed
     assert hs.is_treatment_id_allowed('A', ['A', 'B_C_D', 'E_F_G_H'])
     assert hs.is_treatment_id_allowed('B_C_D', ['A', 'B_C_D', 'E_F_G_H'])
-    assert hs.is_treatment_id_allowed('E_F_G_H', ['A', 'B_C_D', 'E_F_G_H'])
 
-    assert not hs.is_treatment_id_allowed('A_1', ['A', 'B_C_D', 'E_F_G_H'])
+    assert not hs.is_treatment_id_allowed('A_', ['A', 'B_C_D', 'E_F_G_H'])
     assert not hs.is_treatment_id_allowed('E_F_G', ['E', 'E_F', 'E_F_G_H'])
 
     # An entry in the list of the form "A_B_*" means that a treatment_id that begins "A_B_" or "A_B" is allowed
