@@ -118,7 +118,7 @@ def test_get_root_path():
         assert is_correct_absolute_path(get_root_path(test_dir)), f"Failed on {test_dir=}"
 
 
-def test_corase_appt_type():
+def test_coarse_appt_type():
     """Check the function that maps each appt_types to a coarser definition."""
     appt_types = pd.read_csv(
         resourcefilepath / 'healthsystem' / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Types_Table.csv'
