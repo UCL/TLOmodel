@@ -77,7 +77,7 @@ def get_details_of_defined_hsi_events(
     excluded_modules: Optional[Set[str]] = None,
     zero_module_class_map: Optional[Mapping[str, Module]] = None,
     multiple_module_class_map: Optional[Mapping[str, Module]] = None,
-    init_population : int = 10,
+    init_population: int = 10,
     resource_file_path: Optional[Union[str, Path]] = None,
 ) -> Set[HSIEventDetails]:
     """Get details of all HSI events defined in `tlo.methods`.

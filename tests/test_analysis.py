@@ -9,10 +9,10 @@ from tlo import Date, Module, Simulation, logging
 from tlo.analysis.utils import (
     colors_in_matplotlib,
     flatten_multi_index_series_into_dict_for_logging,
+    get_coarse_appt_type,
     get_color_cause_of_death_label,
     get_color_coarse_appt,
     get_color_short_treatment_id,
-    get_coarse_appt_type,
     get_filtered_treatment_ids,
     get_root_path,
     order_of_coarse_appt,
