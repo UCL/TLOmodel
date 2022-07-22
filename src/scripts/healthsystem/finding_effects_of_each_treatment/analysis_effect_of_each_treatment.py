@@ -271,8 +271,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     def get_total_num_death_by_wealth_and_label(_df):
         """Return the total number of deaths in the TARGET_PERIOD by wealth and cause label."""
-        wealth_group = pd.Series(index=_df.index, data=np.random.choice(range(5), len(_df)))
-        #                                               todo <-- UPDATE WHEN WE HAVE A RUN WHERE `li_wealth` is there
+        wealth_group = pd.Series(
+            index=_df.index,
+            # TODO: UPDATE WHEN WE HAVE A RUN WHERE `li_wealth` is there
+            data=np.random.default_rng(seed=0).choice(range(5), len(_df)),
+        )                                         
         return _df \
             .loc[_df['date'].between(*TARGET_PERIOD)] \
             .groupby([wealth_group, 'label'])['person_id'].size()
