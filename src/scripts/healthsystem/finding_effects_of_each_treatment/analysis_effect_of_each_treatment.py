@@ -1,5 +1,7 @@
 """Produce plots to show the impact each set of treatments."""
 
+import argparse
+import glob
 from pathlib import Path
 from typing import Tuple
 
@@ -423,22 +425,62 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
 
 if __name__ == "__main__":
-    # Declare usual paths:
-    outputspath = Path('./outputs/tbh03@ic.ac.uk')
-    rfp = Path('./resources')
-
-    # Find results folder (the results should have arisne from running `scenario_effect_of_each_treatment.py`.)
-
-    # Most Recent:
-    # results_folder = get_scenario_outputs('scenario_effect_of_each_treatment.py', outputspath)[-1]
-
-    # TREATMENT_IDs split by module; consumables not always available
-    # results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_effect_of_each_treatment-2022-06-13T181214Z')
-
-    # TREATMENT_IDs split by module: consumables always available and healthsystem in mode 0
-    results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_effect_of_each_treatment-2022-06-14T133746Z')
-
-    # VERSION WITH WEALTH LEVEL RECORDED
-    # <<running ...>>
-
-    apply(results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
+    parser = argparse.ArgumentParser(
+        description="Produce plots to show the impact each set of treatments",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument(
+        "--output-path",
+        help=(
+            "Directory to write outputs to. If not specified (set to None) outputs "
+            "will be written to value of --results-path argument."
+        ),
+        type=Path,
+        default=None,
+        required=False,
+    )
+    parser.add_argument(
+        "--resources-path",
+        help="Directory containing resource files",
+        type=Path,
+        default=Path('resources'),
+        required=False,
+    )
+    parser.add_argument(
+        "--results-path",
+        type=Path,
+        help=(
+            "Directory containing results from running src/scripts/healthsystem/"
+            "finding_effects_of_each_treatment/scenario_effect_of_each_treatment.py "
+            "script. If not specified (set to None) the last (sorting in alphabetical "
+            "order) directory matching either of the glob patterns outputs/"
+            "effect_of_each_treatment-* and outputs/*/effect_of_each_treatment-* will "
+            "be used if any, or an error raised if there are no matches."
+        ),
+        default=None,
+        required=False
+    )
+    args = parser.parse_args()
+    if args.results_path is None:
+        candidate_paths = glob.glob(
+            str(Path("outputs") / "effect_of_each_treatment-*"), recursive=True
+        )
+        candidate_paths += glob.glob(
+            str(Path("outputs") / "*/effect_of_each_treatment-*"), recursive=True
+        )
+        if len(candidate_paths) == 0:
+            raise FileNotFoundError(
+                "Could not find any directories matching pattern outputs/[*/]"
+                "effect_of_each_treatment-* to use as results path, directory "
+                "to use should be specified explicitly using --results-path argument."
+            )
+        else:
+            results_path = Path(sorted(candidate_paths)[-1])
+    else:
+        results_path = args.results_path
+    output_path = results_path if args.output_path is None else args.output_path
+    apply(
+        results_folder=results_path,
+        output_folder=output_path,
+        resourcefilepath=args.resources_path
+    )
