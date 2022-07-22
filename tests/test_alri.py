@@ -799,6 +799,11 @@ def test_classification_based_on_symptoms_and_imci(sim_hs_all_consumables):
         ), f"{_correct_imci_classification_on_symptoms=}"
 
 
+# todo - what is needed in a future PR is more tests that establish:
+#  * no deaths among large cohort of infected persons when the effect of treatment is perfect (as in PR #656)
+#  * the specific effect of oxygen provision on deaths among those types of cases that require treatment
+
+# todo this is a new test introduced by Ines
 def test_imci_classification_for_complications(sim_hs_all_consumables):
     """Check that IMCI classification match the underlying condition (complications)"""
 
@@ -1089,7 +1094,7 @@ def generate_hsi_sequence(sim, incident_case_event, age_of_person_under_2_months
         sim.modules['Demography'].parameters['max_age_initial'] = 5
 
     def force_any_symptom_to_lead_to_healthcareseeking(sim):
-        sim.modules['HealthSeekingBehaviour'].force_any_symptom_to_lead_to_healthcareseeking = True
+        sim.modules['HealthSeekingBehaviour'].parameters['force_any_symptom_to_lead_to_healthcareseeking'] = True
 
     make_population_children_only(sim)
     make_hw_assesement_perfect(sim)
@@ -1137,6 +1142,11 @@ def generate_hsi_sequence(sim, incident_case_event, age_of_person_under_2_months
     return [r for r in df.loc[mask, ['TREATMENT_ID', 'Facility_Level']].itertuples(index=False, name=None)]
 
 
+# todo @Ines - In the below, we check that the sequence of HSI's is correct under some different circumstances.
+#   We may wish to add more, if there are specific things you want to check. Maybe for `serious_bacterial_infection`
+#   for the "direct referral" thing.
+
+
 def test_treatment_pathway_if_all_consumables_mild_case(sim_hs_all_consumables):
     """Examine the treatment pathway for a person with a particular category of disease if consumables are available."""
     # Mild case (fast_breathing_pneumonia) and available consumables --> treatment at level 0, following non-emergency
@@ -1144,7 +1154,7 @@ def test_treatment_pathway_if_all_consumables_mild_case(sim_hs_all_consumables):
     assert [
                ('FirstAttendance_NonEmergency', '0'),
                ('Alri_Pneumonia_Treatment_Outpatient', '0'),
-               # ('Alri_Pneumonia_Treatment_Outpatient_Followup', '0'),  # no follow-up if no treatment failure
+               # ('Alri_Pneumonia_Treatment_Outpatient_Followup', '0'),  # no follow-up if no treatment failure todo th ???
            ] == generate_hsi_sequence(sim=sim_hs_all_consumables,
                                       incident_case_event=AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia)
 
@@ -1159,7 +1169,7 @@ def test_treatment_pathway_if_all_consumables_severe_case(sim_hs_all_consumables
                ('FirstAttendance_Emergency', '1b'),
                ('Alri_Pneumonia_Treatment_Outpatient', '1b'),
                ('Alri_Pneumonia_Treatment_Inpatient', '1b'),
-               # ('Alri_Pneumonia_Treatment_Outpatient_Followup', '1b')  # no follow-up if no treatment failure
+               # ('Alri_Pneumonia_Treatment_Outpatient_Followup', '1b')  # no follow-up if no treatment failure todo th ???
            ] == generate_hsi_sequence(sim=sim_hs_all_consumables,
                                       incident_case_event=AlriIncidentCase_Lethal_Severe_Pneumonia)
 
@@ -1168,7 +1178,7 @@ def test_treatment_pathway_if_all_consumables_severe_case(sim_hs_all_consumables
                ('FirstAttendance_Emergency', '1b'),
                ('Alri_Pneumonia_Treatment_Outpatient', '1b'),
                ('Alri_Pneumonia_Treatment_Inpatient', '1b'),
-               # ('Alri_Pneumonia_Treatment_Outpatient_Followup', '1b')  # no follow-up if no treatment failure
+               # ('Alri_Pneumonia_Treatment_Outpatient_Followup', '1b')  # no follow-up if no treatment failure todo th ???
            ] == generate_hsi_sequence(sim=sim_hs_all_consumables,
                                       incident_case_event=AlriIncidentCase_Lethal_Severe_Pneumonia,
                                       age_of_person_under_2_months=True)

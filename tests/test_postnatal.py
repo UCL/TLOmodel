@@ -205,6 +205,9 @@ def test_application_of_neonatal_complications_and_care_seeking_postnatal_week_o
     params['prob_early_onset_neonatal_sepsis_week_1'] = 1.0
     params['prob_care_seeking_postnatal_emergency_neonate'] = 1.0
 
+    nb_params = sim.modules['PostnatalSupervisor'].current_parameters
+    nb_params['prob_breastfeeding_type'] = [1, 0, 0]
+
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
     # Get id number of mother
@@ -218,6 +221,9 @@ def test_application_of_neonatal_complications_and_care_seeking_postnatal_week_o
     child_id = sim.do_birth(mother_id)
     sim.modules['NewbornOutcomes'].on_birth(mother_id, child_id)
     sim.modules['NewbornOutcomes'].newborn_care_info[child_id]['will_receive_pnc'] = 'late'
+
+    # ensure breastfeeding is none so that effect doesnt prevent sepsis onset
+    sim.population.props.at[child_id, 'nb_early_init_breastfeeding'] = False
 
     # define and run the event using the mother_id as this is how its coded
     postnatal_week_one = postnatal_supervisor.PostnatalWeekOneNeonatalEvent(

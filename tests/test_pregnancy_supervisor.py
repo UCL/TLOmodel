@@ -4,7 +4,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
-from pandas.tseries.offsets import DateOffset
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
@@ -31,6 +30,7 @@ from tlo.methods import (
     pregnancy_supervisor,
     stunting,
     symptommanager,
+    tb,
     wasting,
 )
 
@@ -206,8 +206,9 @@ def test_run_with_all_referenced_modules_registered(seed, tmpdir):
                  stunting.Stunting(resourcefilepath=resourcefilepath),
                  wasting.Wasting(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
-                 epi.Epi(resourcefilepath=resourcefilepath)
-                 )  # todo: add TB once in master
+                 epi.Epi(resourcefilepath=resourcefilepath),
+                 tb.Tb(resourcefilepath=resourcefilepath),
+                 )
 
     sim.make_initial_population(n=5000)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)  # keep high volume of pregnancy to increase risk of error
@@ -509,6 +510,11 @@ def test_abortion_complications(seed):
         params['prob_ectopic_pregnancy'] = 0.0
         params['treatment_effect_post_abortion_care'] = 0.0
 
+        lab_params = sim.modules['Labour'].current_parameters
+        lab_params['mean_hcw_competence_hc'] = [1, 1]
+        lab_params['mean_hcw_competence_hp'] = [1, 1]
+        lab_params['prob_hcw_avail_retained_prod'] = 1
+
         df = sim.population.props
         pregnant_women = df.loc[df.is_alive & df.is_pregnant]
         for woman in pregnant_women.index:
@@ -560,6 +566,8 @@ def test_abortion_complications(seed):
         pac = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(
             person_id=mother_id, module=sim.modules['CareOfWomenDuringPregnancy'])
         pac.apply(person_id=mother_id, squeeze_factor=0.0)
+
+        assert sim.population.props.at[mother_id, 'ac_received_post_abortion_care']
 
         # Define and run event, check woman has correctly died
         death_event = pregnancy_supervisor.EarlyPregnancyLossDeathEvent(module=sim.modules['PregnancySupervisor'],
@@ -1163,11 +1171,8 @@ def test_pregnancy_supervisor_chorio_and_prom(seed):
     params['prob_seek_care_pregnancy_complication'] = 0.0
     params['prob_antenatal_sepsis_death'] = 1.0
 
-    # If any pregnancies due on current simulation date push back one day so individuals
-    # will still seek care
-    df.loc[
-        df.la_due_date_current_pregnancy == sim.date, 'la_due_date_current_pregnancy'
-    ] += DateOffset(days=1)
+    # prevent preterm birth which can effect care seeking by updating la_due_date_current_pregnancy
+    params['baseline_prob_early_labour_onset'] = [0.0, 0.0, 0.0, 0.0]
 
     pregnancy_sup.apply(sim.population)
 

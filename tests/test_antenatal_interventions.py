@@ -23,6 +23,7 @@ from tlo.methods import (
     pregnancy_helper_functions,
     pregnancy_supervisor,
     symptommanager,
+    tb,
 )
 
 # The resource files
@@ -137,6 +138,7 @@ def test_perfect_run_of_anc_contacts_no_constraints(seed):
                  depression.Depression(resourcefilepath=resourcefilepath),
                  malaria.Malaria(resourcefilepath=resourcefilepath),
                  epi.Epi(resourcefilepath=resourcefilepath),
+                 tb.Tb(resourcefilepath=resourcefilepath),
                  hiv.Hiv(resourcefilepath=resourcefilepath))
 
     sim.make_initial_population(n=100)
@@ -665,8 +667,8 @@ def test_initiation_of_treatment_for_hypertensive_disorder_during_antenatal_inpa
 
     # set key parameters
     params = sim.modules['Labour'].current_parameters
-    params['mean_hcw_competence_hc'] = 1
-    params['mean_hcw_competence_hp'] = 1
+    params['mean_hcw_competence_hc'] = [1, 1]
+    params['mean_hcw_competence_hp'] = [1, 1]
     params['prob_hcw_avail_anticonvulsant'] = 1
 
     # set key pregnancy characteristics
@@ -801,8 +803,8 @@ def test_initiation_of_treatment_for_prom_with_or_without_chorioamnionitis_durin
 
     # set key parameters
     params = sim.modules['Labour'].current_parameters
-    params['mean_hcw_competence_hc'] = 1
-    params['mean_hcw_competence_hp'] = 1
+    params['mean_hcw_competence_hc'] = [1, 1]
+    params['mean_hcw_competence_hp'] = [1, 1]
     params['prob_hcw_avail_iv_abx'] = 1
 
     # set key pregnancy characteristics
@@ -942,8 +944,8 @@ def test_scheduling_and_treatment_effect_of_post_abortion_care(seed):
 
     # set key parameters
     params = sim.modules['Labour'].current_parameters
-    params['mean_hcw_competence_hc'] = 1
-    params['mean_hcw_competence_hp'] = 1
+    params['mean_hcw_competence_hc'] = [1, 1]
+    params['mean_hcw_competence_hp'] = [1, 1]
     params['prob_hcw_avail_retained_prod'] = 1
 
     # set complications

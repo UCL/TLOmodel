@@ -7,6 +7,7 @@ import pandas as pd
 from tlo import Date, Module, Simulation, logging
 from tlo.analysis.utils import (
     flatten_multi_index_series_into_dict_for_logging,
+    get_root_path,
     parse_log_file,
     unflatten_flattened_multi_index_in_logging,
 )
@@ -83,3 +84,25 @@ def test_flattening_and_unflattening_multiindex(tmpdir):
 
         # Check equal
         pd.testing.assert_series_equal(original, series_unflattened.rename(None))
+
+
+def test_get_root_path():
+    """Check that `get_root_path` works as expected."""
+
+    ROOT_PATH = Path(os.path.abspath(
+        Path(os.path.dirname(__file__)) / '../'
+    ))
+
+    def is_correct_absolute_path(_path):
+        return (ROOT_PATH == _path) and _path.is_absolute() and isinstance(_path, Path)
+
+    assert is_correct_absolute_path(get_root_path())
+
+    for test_dir in [
+        os.path.abspath(Path(os.path.dirname(__file__)) / '../src/'),
+        os.path.abspath(Path(os.path.dirname(__file__)) / '../resources/'),
+        os.path.abspath(Path(os.path.dirname(__file__)) / '../tests/'),
+        os.path.abspath(Path(os.path.dirname(__file__)) / '../'),
+        os.path.abspath(Path(os.path.dirname(__file__))),
+    ]:
+        assert is_correct_absolute_path(get_root_path(test_dir)), f"Failed on {test_dir=}"

@@ -38,8 +38,8 @@ output_files = dict()
 
 # %% Run the Simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 12, 31)
-popsize = 10000
+end_date = Date(2019, 12, 31)
+popsize = 5000
 
 for label, service_avail in scenarios.items():
 
@@ -56,11 +56,9 @@ for label, service_avail in scenarios.items():
     if service_avail == []:
         _disable = False
         _disable_and_reject_all = True
-        _cons_availability = 'none'
     else:
         _disable = True
         _disable_and_reject_all = False
-        _cons_availability = 'all'
 
     # add file handler for the purpose of logging
     sim = Simulation(start_date=start_date, log_config=log_config, show_progress_bar=True)
@@ -75,8 +73,7 @@ for label, service_avail in scenarios.items():
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                   disable=_disable,
-                                  disable_and_reject_all=_disable_and_reject_all,
-                                  cons_availability=_cons_availability),
+                                  disable_and_reject_all=_disable_and_reject_all),
 
         alri.Alri(resourcefilepath=resourcefilepath),
         alri.AlriPropertiesOfOtherModules()
@@ -97,9 +94,6 @@ for label, service_avail in scenarios.items():
 
     # Save the full set of results:
     output_files[label] = sim.log_filepath
-
-# output_files['No_Treatment'] = outputpath / 'alri_with_treatment_and_without_treatment__2022-06-22T142842.log'
-# output_files['Treatment'] = outputpath / 'alri_with_treatment__2022-06-30T100457.log'
 
 
 # %% Extract the relevant outputs and make a graph:
@@ -166,7 +160,7 @@ def plot_for_column_of_interest(results, column_of_interest):
     data.plot.bar()
     plt.title(f'Incidence rate (/100 py): {column_of_interest}')
     plt.tight_layout()
-    # plt.savefig(outputpath / ("ALRI_inc_rate_by_scenario" + datestamp + ".pdf"), format='pdf')
+    plt.savefig(outputpath / ("ALRI_inc_rate_by_scenario" + datestamp + ".pdf"), format='pdf')
     plt.show()
 
 
@@ -181,4 +175,6 @@ for label in deaths.keys():
 
 plt.bar(data.keys(), data.values(), align='center')
 plt.title(f'Mean number of deaths from {start_date.year} to {end_date.year}')
+plt.tight_layout()
+plt.savefig(outputpath / ("ALRI_deaths_by_scenario" + datestamp + ".pdf"), format='pdf')
 plt.show()

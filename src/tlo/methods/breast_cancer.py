@@ -645,7 +645,7 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
 
         self.TREATMENT_ID = "BreastCancer_Investigation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1, "Mammography": 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.ACCEPTED_FACILITY_LEVEL = '3'  # Mammography only available at level 3 and above.
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -733,7 +733,23 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
 
-        # Check that the person has cancer, not in stage4, has been diagnosed and is not on treatment
+        # If the status is already in `stage4`, start palliative care (instead of treatment)
+        if df.at[person_id, "brc_status"] == 'stage4':
+            logger.warning(key="warning", data="Cancer is in stage 4 - aborting HSI_breastCancer_StartTreatment,"
+                                               "scheduling HSI_BreastCancer_PalliativeCare")
+
+            hs.schedule_hsi_event(
+                hsi_event=HSI_BreastCancer_PalliativeCare(
+                     module=self.module,
+                     person_id=person_id,
+                ),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0
+            )
+            return self.make_appt_footprint({})
+
+        # Check that the person has been diagnosed and is not on treatment
         assert not df.at[person_id, "brc_status"] == 'none'
         assert not df.at[person_id, "brc_status"] == 'stage4'
         assert not pd.isnull(df.at[person_id, "brc_date_diagnosis"])
