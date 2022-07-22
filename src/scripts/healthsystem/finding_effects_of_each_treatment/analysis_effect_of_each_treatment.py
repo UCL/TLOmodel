@@ -10,10 +10,10 @@ from matplotlib import pyplot as plt
 from tlo import Date
 from tlo.analysis.utils import (
     extract_results,
+    get_coarse_appt_type,
     get_color_cause_of_death_label,
     get_color_coarse_appt,
     get_color_short_treatment_id,
-    get_corase_appt_type,
     make_age_grp_lookup,
     make_age_grp_types,
     order_of_cause_of_death_label,
@@ -401,7 +401,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig, ax = plt.subplots()
     name_of_plot = f'Additional Appointments [Coarse] With Intervention, {target_period()}'
     delta_appts_coarse = delta_appts\
-        .groupby(axis=0, by=delta_appts.index.map(get_corase_appt_type))\
+        .groupby(axis=0, by=delta_appts.index.map(get_coarse_appt_type))\
         .sum()\
         .sort_index(key=order_of_coarse_appt)
     delta_appts_coarse = delta_appts_coarse[order_of_short_treatment_ids(delta_appts_coarse.columns)]
