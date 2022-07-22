@@ -454,7 +454,7 @@ if __name__ == "__main__":
             "finding_effects_of_each_treatment/scenario_effect_of_each_treatment.py "
             "script. If not specified (set to None) the last (sorting in alphabetical "
             "order) directory matching either of the glob patterns outputs/"
-            "effect_of_each_treatment-* and outputs/*/effect_of_each_treatment-* will "
+            "*effect_of_each_treatment* and outputs/*/*effect_of_each_treatment* will "
             "be used if any, or an error raised if there are no matches."
         ),
         default=None,
@@ -463,15 +463,15 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if args.results_path is None:
         candidate_paths = glob.glob(
-            str(Path("outputs") / "effect_of_each_treatment-*"), recursive=True
+            str(Path("outputs") / "*effect_of_each_treatment*"), recursive=True
         )
         candidate_paths += glob.glob(
-            str(Path("outputs") / "*/effect_of_each_treatment-*"), recursive=True
+            str(Path("outputs") / "*" / "*effect_of_each_treatment*"), recursive=True
         )
         if len(candidate_paths) == 0:
             raise FileNotFoundError(
                 "Could not find any directories matching pattern outputs/[*/]"
-                "effect_of_each_treatment-* to use as results path, directory "
+                "*effect_of_each_treatment* to use as results path, directory "
                 "to use should be specified explicitly using --results-path argument."
             )
         else:
