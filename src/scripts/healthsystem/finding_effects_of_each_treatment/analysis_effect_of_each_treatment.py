@@ -275,7 +275,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             index=_df.index,
             # TODO: UPDATE WHEN WE HAVE A RUN WHERE `li_wealth` is there
             data=np.random.RandomState(seed=0).choice(range(5), len(_df)),
-        )                                         
+        )
         return _df \
             .loc[_df['date'].between(*TARGET_PERIOD)] \
             .groupby([wealth_group, 'label'])['person_id'].size()
