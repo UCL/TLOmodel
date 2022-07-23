@@ -368,7 +368,7 @@ def test_alri_polling(sim_hs_all_consumables):
     # Run polling event: check that an incident case is produced:
     polling = AlriPollingEvent(sim.modules['Alri'])
     polling.run()
-    assert len([q for q in sim.event_queue.queue if isinstance(q[2], AlriIncidentCase)]) > 0
+    assert len([q for q in sim.event_queue.queue if isinstance(q[3], AlriIncidentCase)]) > 0
 
 
 def test_nat_hist_recovery(sim_hs_all_consumables):

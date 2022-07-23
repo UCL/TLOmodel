@@ -18,10 +18,10 @@ from tlo.methods.hsi_generic_first_appts import (
     HSI_GenericEmergencyFirstApptAtFacilityLevel1,
     HSI_GenericFirstApptAtFacilityLevel0,
 )
-
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
+from tlo.simulation import EventPriority
 
 
 class HealthSeekingBehaviour(Module):
@@ -137,7 +137,7 @@ class HealthSeekingBehaviour(Module):
 
         # Schedule the HealthSeekingBehaviourPoll
         self.theHealthSeekingBehaviourPoll = HealthSeekingBehaviourPoll(self)
-        sim.schedule_event(self.theHealthSeekingBehaviourPoll, sim.date)
+        sim.schedule_event(self.theHealthSeekingBehaviourPoll, sim.date, event_priority=EventPriority.LAST_HALF_OF_DAY)
 
         # Assemble the health-care seeking information from the registered symptoms
         for symptom in self.sim.modules['SymptomManager'].all_registered_symptoms:
@@ -232,7 +232,7 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         """Initialise the HealthSeekingBehaviourPoll
         :param module: the module that created this event
         """
-        super().__init__(module, frequency=DateOffset(days=1))
+        super().__init__(module, frequency=DateOffset(days=1), event_priority=EventPriority.LAST_HALF_OF_DAY)
         assert isinstance(module, HealthSeekingBehaviour)
 
     @staticmethod
@@ -245,7 +245,9 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         ]
 
     def apply(self, population):
-        """Determine if persons with newly onset acute generic symptoms will seek care.
+        """Determine if persons with newly onset acute generic symptoms will seek care. This event runs second-to-last
+        every day (i.e., just before the `HealthSystemScheduler`) in order that symptoms arising this day can lead to
+        FirstAttendance on the same day.
 
         :param population: the current population
         """
