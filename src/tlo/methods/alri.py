@@ -11,30 +11,13 @@ The disease is manifested as either pneumonia or other alri (including bronchiol
 During an episode (prior to recovery - either naturally or cured with treatment), symptoms are manifested
 and there may be complications (e.g. local pulmonary complication: pleural effusion, empyema, lung abscess,
 pneumothorax; and/or systemic complications: sepsis; and/or complications regarding oxygen exchange: hypoxaemia.
-The complications onset at the time of disease onset.
+The complications are onset at the time of disease onset.
 
 The individual may recover naturally or die. The risk of death depends on the type of disease and the presence of some
 of the complications.
 
 Health care seeking is prompted by the onset of the symptom. The individual can be treated; if successful the risk of
-death is lowered and they are cured (symptom resolved) some days later.
-
-Outstanding issues
-------------------
-* All HSI events
-* Follow-up appointments for initial HSI events.
-* Double check parameters and consumables codes for the HSI events.
-* Duration of Alri Event is not informed by data
-
-Following PRs:
----------------
-PR3: Achieve a basic calibration of the model for incidence and deaths,
-adjusting healthcare seeking behaviour and efficacy of treatment accordingly.
-
-PR4: Achieve a basic calibration of the HSI outputs
-
-Issue #438
-
+death is lowered and the person is "cured" (symptom resolved) some days later.
 """
 
 import types
@@ -325,7 +308,7 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'relative rate of acquiring Alri for infants with low birth weight'
                       ),
-        'rr_ALRI_wasting':
+        'rr_ALRI_wasting':  # todo - @ines - this parameter is not used: I will delete it.
             Parameter(Types.REAL,
                       'relative rate of acquiring Alri for infants with WASTING (whz<2sd)'
                       ),
@@ -562,6 +545,7 @@ class Alri(Module):
             Parameter(Types.INT, 'number of days between any treatment being given in an HSI and the cure occurring.'
                       ),
 
+        # todo - @ines --- what is meaning of "tmp param"???
         'tf_1st_line_antibiotic_for_severe_pneumonia':
             Parameter(Types.REAL,
                       'tmp param'
@@ -684,35 +668,34 @@ class Alri(Module):
                       'given treatment for non-severe pneumonia ( fast-breathing or chest-indrawing) '
                       'at facility level 1a/1b/2'
                       ),
+
+        # todo - @ines - what are these? Can we delete them??
         # extra
-        'prob_cyanosis_in_other_alri':
+        'prob_cyanosis_in_other_alri':  # todo - NOT USED
             Parameter(Types.REAL,
                       'probability of cyanosis in bronchiolitis or other alri'
                       ),
-        'prob_cyanosis_in_pneumonia':
+        'prob_cyanosis_in_pneumonia':     # todo - NOT USED
             Parameter(Types.REAL,
                       'probability of cyanosis in pneumonia'
                       ),
 
-        'prob_cyanosis_in_SpO2<90%':
+        'prob_cyanosis_in_SpO2<90%':    # todo - it is used
             Parameter(Types.REAL,
                       'tmp param'
                       ),
-        'override_po_and_oxygen_availability':
+        'override_po_and_oxygen_availability': # todo - is used in testing but no need for it (can be done from test)
             Parameter(Types.BOOL,
                       'tmp param'
                       ),
-        'override_po_and_oxygen_to_full_availability':
+        'override_po_and_oxygen_to_full_availability':   # todo - doesn't do anything
             Parameter(Types.BOOL,
                       'tmp param'
                       ),
-        'or_care_seeking_perceived_severe_illness':
+        'or_care_seeking_perceived_severe_illness':   # todo - not used.
             Parameter(Types.BOOL,
                       'tmp param'
                       ),
-
-
-
     }
 
     PROPERTIES = {
@@ -817,8 +800,6 @@ class Alri(Module):
 
     def define_symptoms(self):
         """Define the symptoms that this module will use"""
-        p = self.parameters
-
         all_symptoms = {
             'cough', 'difficult_breathing', 'cyanosis', 'fever', 'tachypnoea', 'chest_indrawing', 'danger_signs'
         }
@@ -833,11 +814,9 @@ class Alri(Module):
                     self.sim.modules['SymptomManager'].register_symptom(
                         Symptom(name=symptom_name,
                                 odds_ratio_health_seeking_in_children=2.4))
-
                 else:
                     self.sim.modules['SymptomManager'].register_symptom(
                         Symptom(name=symptom_name))
-
                     # (associates the symptom with the 'average' healthcare seeking,
                     # part from "danger_signs", which is an emergency symptom in children,  and "chest_indrawing",
 
@@ -910,6 +889,7 @@ class Alri(Module):
         self.look_up_consumables()
 
         # override consumables availability
+        # todo - Tim - do this directly in a function not an event
         if p['override_po_and_oxygen_availability']:
             sim.schedule_event(OverrideAvailabilityEvent(self), sim.date)
 
@@ -1106,7 +1086,7 @@ class Alri(Module):
         # Oxygen for hypoxaemia
         self.consumables_used_in_hsi['Oxygen_Therapy'] = {
             get_item_code(item='Oxygen, 1000 liters, primarily with oxygen cylinders'): 1,
-            # get_item_code(item='Nasal prongs'): 1
+            # get_item_code(item='Nasal prongs'): 1  # todo @Ines - can this be deleted (why just commented out?)
         }
 
         # Pulse oximetry
@@ -1278,12 +1258,21 @@ class Alri(Module):
             disease_module=self,
         )
 
-    def _treatment_fails(self, person_id, imci_symptom_based_classification: str, needs_oxygen: bool,
-                         antibiotic_provided: str, oxygen_provided: bool) -> bool:
+    def _treatment_fails(self,
+                         person_id: int,
+                         imci_symptom_based_classification: str,
+                         needs_oxygen: bool,
+                         antibiotic_provided: str,
+                         oxygen_provided: bool
+                         ) -> bool:
         """ Determine whether a treatment fails or not.
         Treatment failures are dependent on the underlying IMCI classification by symptom,
         the need for oxygen (if SpO< 90%), and the type of antibiotic therapy (oral vs. IV/IM)
-        Returns True if the treatment specified will prevent death."""
+        """
+        # todo @Ines - add commment ... to determine whether True means 'fails' (presumably) or 'success'
+        # todo @Ines -- don't look up the person_id.... let the things be specified to the function, so that we can see what it needs to know.
+        # todo -- e.g. cyanosis
+        # todo --- CHECK THAT PARAMETERS ARE DEFINED CORRECTlY AND EFFICIENTLY AND IMPROVE LOGICAL FLOW
 
         def _raise_error():
             raise ValueError(f"No treatment effectiveness defined: {imci_symptom_based_classification=}, "
@@ -1297,6 +1286,8 @@ class Alri(Module):
         any_complications = person[[f'ri_complication_{c}' for c in self.complications]].any()
 
         if antibiotic_provided == '' or None:
+            #todo - just use _raise_error()
+            #todo - can antibiotic provided by '' or None and which?
             raise ValueError(f'{antibiotic_provided} is not recognised, get effectiveness value for '
                              f'classification = {imci_symptom_based_classification=}, '
                              f'oxygen need = {needs_oxygen=}')
@@ -1309,11 +1300,11 @@ class Alri(Module):
             risk_tf_1st_line_antibiotics = p['tf_1st_line_antibiotic_for_severe_pneumonia']
 
             # The effect of central cyanosis
-            symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
-            if {'cyanosis'}.intersection(symptoms):
+            if 'cyanosis' in self.sim.modules['SymptomManager'].has_what(person_id):
                 risk_tf_1st_line_antibiotics *= p['rr_tf_1st_line_antibiotics_if_cyanosis']
 
             # The effect of low oxygen saturation level
+            # todo @ines - this should just be "needs_oxygen" rather than referencing back to the person
             if person.ri_SpO2_level == '<90%':
                 risk_tf_1st_line_antibiotics *= p['rr_tf_1st_line_antibiotics_if_SpO2<90%']
 
@@ -1334,6 +1325,7 @@ class Alri(Module):
                 risk_tf_1st_line_antibiotics *= p['rr_tf_1st_line_antibiotics_if_SAM']
 
             # if oxygen is needed (SpO2< 90%) and not provided
+            #todo - check this maths!
             if needs_oxygen and not oxygen_provided:
                 # convert to odds
                 risk_tf_1st_line_antibiotics = risk_tf_1st_line_antibiotics / (1 - risk_tf_1st_line_antibiotics)
@@ -1345,6 +1337,7 @@ class Alri(Module):
             first_line_failed = risk_tf_1st_line_antibiotics > self.rng.random_sample()
 
             # get second line antibiotic if first line failed
+            # todo @Ines - what is this doing in here? provision of second line should not be within a function that looks at failure
             second_line_provided = HSI_Alri_Treatment(
                 module=self, person_id=person_id).provide_2nd_line_antibiotics(
                 antibiotic_provided=antibiotic_provided, first_line_failed=first_line_failed)
@@ -1405,13 +1398,14 @@ class Alri(Module):
 
             else:
                 # For hypoxaemia (SpO2 < 90%) -----
+                # todo @ Ines is this comment right?
 
                 # non-severe pneumonia
                 if imci_symptom_based_classification in ('fast_breathing_pneumonia', 'chest_indrawing_pneumonia',
                                                          'cough_or_cold'):
                     # no oxygen given
                     if antibiotic_provided in ('3day_oral_amoxicillin', '5day_oral_amoxicillin',
-                                               '7day_oral_amoxicillin') and (oxygen_provided == False):
+                                               '7day_oral_amoxicillin') and (oxygen_provided is False):
                         return p['tf_oral_amoxicillin_only_for_non_severe_pneumonia_with_SpO2<90%'] \
                                > self.rng.random_sample()
 
@@ -1419,7 +1413,7 @@ class Alri(Module):
                 elif imci_symptom_based_classification == 'danger_signs_pneumonia':
                     # oral antibiotics and no oxygen
                     if antibiotic_provided in ('7day_oral_amoxicillin', '3day_oral_amoxicillin',
-                                               '5day_oral_amoxicillin') and (oxygen_provided == False):
+                                               '5day_oral_amoxicillin') and (oxygen_provided is False):
                         return p['tf_oral_amoxicillin_only_for_severe_pneumonia_with_SpO2<90%'] \
                                > self.rng.random_sample()
                 # Note: Oral antibiotic with oxygen is not a treatment package in the model
@@ -1431,7 +1425,7 @@ class Alri(Module):
         """Helper function that enacts the effects of a treatment to Alri caused by a pathogen.
         It will only do something if the Alri is caused by a pathogen (this module).
         * Prevent any death event that may be scheduled from occurring
-        * Returns True for failed treatment to further schedule
+        * Returns True for failed treatment to further schedule    # todo - the return thing seems weird -- sometimes None, T/F wrong way around?
         a follow-up appointment if condition not improving (by day 6 or by day 14)
         """
         df = self.sim.population.props
@@ -1462,7 +1456,7 @@ class Alri(Module):
         if not treatment_fails:
             self.cancel_death_and_schedule_cure(person_id)
         else:
-            return treatment_fails
+            return treatment_fails   # todo ??!!??!??!!
 
     def on_presentation(self, person_id, hsi_event):
         """Action taken when a child (under 5 years old) presents at a generic appointment (emergency or non-emergency)
@@ -1512,6 +1506,7 @@ class Alri(Module):
                 return 'cough_or_cold'
 
 
+# todo remove this :-)
 class OverrideAvailabilityEvent(Event, PopulationScopeEventMixin):
     """
     This is OverrideAvailabilityEvent for analysis of interventions.
@@ -1715,6 +1710,10 @@ class Models:
             if prob_pulmonary_complications > self.rng.random_sample():
                 for c in ['pneumothorax', 'pleural_effusion', 'lung_abscess', 'empyema']:
                     probs[c] += p[f'prob_{c}_in_pulmonary_complicated_pneumonia']
+                    # TODO: @Ines - turn this into an issue - lung abscess, empyema should only apply to
+                    #  (primary or secondary) bacteria ALRIs. Requires two sets of parameters for the prob
+                    #  that a complication is one of possible types for those with and without bacterial infection
+                    #  (i.e. the vector of probabilities must sum to 1.0 in either case).
 
             # probabilities for systemic complications
             if primary_path_is_bacterial or has_secondary_bacterial_inf:
@@ -1797,6 +1796,8 @@ class Models:
         any_complications = person[[f'ri_complication_{c}' for c in self.module.complications]].any()
         disease_type = person['ri_disease_type']
 
+        # todo - @ines - should we choose between two section of this run based on the age?
+
         # get the classification based on symptoms/ or get danger-signs
         symptoms = self.module.sim.modules['SymptomManager'].has_what(person_id)
 
@@ -1808,7 +1809,7 @@ class Models:
             odds_death_age_lt2mo *= p['or_death_ALRI_age<2mo_by_month_increase_in_age']
 
         # The effect of disease severity
-        if {'danger_signs'}.intersection(symptoms):
+        if 'danger_signs' in symptoms:
             odds_death_age_lt2mo *= p['or_death_ALRI_age<2mo_very_severe_pneumonia']
 
         # The effect of P.jirovecii infection:
@@ -1977,8 +1978,7 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
             va_hib_all_doses=person.va_hib_all_doses, va_pneumo_all_doses=person.va_pneumo_all_doses)
 
         # ----------------------- Duration of the Alri event -----------------------
-        duration_in_days_of_alri = rng.randint(1, p['max_alri_duration_in_days_without_treatment'])
-        # assumes uniform interval around mean duration of 7 days, with range 14 days
+        duration_in_days_of_alri = rng.randint(3, p['max_alri_duration_in_days_without_treatment'])
 
         # Date for outcome (either recovery or death) with uncomplicated Alri
         date_of_outcome = m.sim.date + DateOffset(days=duration_in_days_of_alri)
@@ -2003,11 +2003,13 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
 
         # ----------------------------------- Clinical Symptoms -----------------------------------
         # impose clinical symptoms for new uncomplicated Alri
-        self.impose_symptoms_for_uncomplicated_disease(person_id=person_id, disease_type=disease_type,
+        self.impose_symptoms_for_uncomplicated_disease(person_id=person_id,
+                                                       disease_type=disease_type,
                                                        duration_in_days=duration_in_days_of_alri)
 
         # ----------------------------------- Complications  -----------------------------------
-        self.impose_complications(person_id=person_id, duration_in_days=duration_in_days_of_alri)
+        self.impose_complications(person_id=person_id,
+                                  duration_in_days=duration_in_days_of_alri)
 
         # ----------------------------------- Outcome  -----------------------------------
         if models.will_die_of_alri(person_id=person_id):
@@ -2064,6 +2066,7 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
                                                )
 
         # log the complications to the tracker
+        # todo - Simplify this logic
         if any(x in ['pneumothorax', 'pleural_effusion', 'empyema', 'lung_abscess']
                for x in sorted(complications_that_onset)):
             self.module.logging_event.new_pulmonary_complication_case()
@@ -2200,10 +2203,11 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
 
     def _as_in_patient(self, facility_level):
         """Cast this HSI as an in-patient appointment."""
-        self.TREATMENT_ID = f'{self._treatment_id_stub}_Inpatient{"_Followup" if self.is_followup else ""}'
+        self.TREATMENT_ID = f'{self._treatment_id_stub}_Inpatient{"_Followup" if self.is_followup else ""}'  # todo - Follow-up as inpatient!??!??!
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = facility_level
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 7})
+        # assert not self.is_followup, 'A Follow-up appointment cannot be an in-patient appointment.' todo - this removeed? bring back!?
 
     def _refer_to_next_level_up(self):
         """Schedule a copy of this event to occur again today at the next level-up (if there is a next level-up)."""
@@ -2276,7 +2280,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
 
     def _get_cons(self, _item_str: str) -> bool:
         """True if all of a group of consumables (identified by a string) is available, (if no group is
-        identified raise ValueError)"""
+        provided, then raise ValueError)"""
         if _item_str is not None:
             return self.get_consumables(
                 item_codes={
@@ -2284,11 +2288,11 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                     for k, v in self.module.consumables_used_in_hsi[_item_str].items()
                 })
         else:
-            raise ValueError(f'Consumable pack not recognised {_item_str}')
+            raise ValueError(f'Consumable pack not provided')
 
     def _get_any_cons(self, _item_str: str) -> bool:
         """True if any of a group of consumables (identified by a string) is available, (if no group is
-        identified raise ValueError)"""
+        provided, then raise ValueError)"""
         if _item_str is not None:
             return any(self.get_consumables(
                 item_codes={
@@ -2298,10 +2302,10 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                 return_individual_results=True
             ).values())
         else:
-            raise ValueError(f'Consumable pack not recognised {_item_str}')
+            raise ValueError(f'Consumable pack not provided')
 
     def _assess_and_treat(self, age_exact_years, oxygen_saturation, symptoms):
-        """This routine is called when in every HSI. It classifies the disease of the child and commissions treatment
+        """This routine is called in every HSI. It classifies the disease of the child and commissions treatment
         accordingly."""
 
         po_available = self._get_cons('Pulse_oximetry')
@@ -2324,6 +2328,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
             )
 
             self._do_action_given_classification(
+                # todo - no longer depends on having staph_aureus!?
                 classification_for_treatment_decision=classification_for_treatment_decision,
                 age_exact_years=age_exact_years,
                 facility_level=self.ACCEPTED_FACILITY_LEVEL,
@@ -2332,6 +2337,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
             )
 
         # assessment process for follow-ups with treatment failure or urgent referrals (both inpatient)
+        # todo - new logic that says assume its danger_signs_pneumonia if there person is already an in-patient.
         elif self._is_as_in_patient:
             self._do_action_given_classification(
                 classification_for_treatment_decision='danger_signs_pneumonia',  # assumed for sbi for < 2 months
@@ -2388,7 +2394,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
              'chest_indrawing_pneumonia'
 
         }."""
-
+        # todo logic could be simplified a bit here (collecting up all the else)
         rand = self.module.rng.random_sample
         rand_choice = self.module.rng.choice
         p = self.module.parameters
@@ -2502,16 +2508,23 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
 
         return _classification
 
-    def _do_action_given_classification(self, classification_for_treatment_decision, age_exact_years,
-                                        facility_level, use_oximeter, oxygen_saturation):
+    def _do_action_given_classification(self,
+                                        classification_for_treatment_decision,
+                                        age_exact_years,
+                                        facility_level,
+                                        use_oximeter,
+                                        oxygen_saturation,
+                                        ):
         """Do the actions that are required given a particular classification"""
 
         # Check if pulse oximeter was available/ used to determine the need to provide oxygen (SpO<90%)
         oxygen_need_determined = use_oximeter and (oxygen_saturation == '<90%')
+        # todo check if repeated checking on the availability of oximeter is necccessary
 
         def _try_treatment(antibiotic_indicated: str, oxygen_indicated: bool) -> None:
             """Try to provide a `treatment_indicated` and refer to next level if the consumables are not available."""
 
+            # todo tidy this up! ;-)
             antibiotic_consumables_available = self._get_any_cons('Amoxicillin_tablet_or_suspension_5days') \
                 if antibiotic_indicated == '5day_oral_amoxicillin' \
                 else (self._get_any_cons('Amoxicillin_tablet_or_suspension_7days')
@@ -2535,6 +2548,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                     antibiotic_provided=antibiotic_indicated,
                     oxygen_provided=(oxygen_available and oxygen_indicated)
                 )
+                # todo -- what is the logic she wants!?!??!?!?
                 if treatment_failed and not self.is_followup:  # only 1 possible follow-up appt for an episode
                     self._schedule_follow_up_at_same_facility_as_outpatient()
             else:
@@ -2558,10 +2572,11 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
 
         def do_if_fast_breathing_pneumonia(facility_level):
             """What to do if classification is `fast_breathing`."""
-            if age_exact_years < 1.0 / 6.0:
-                _try_treatment(antibiotic_indicated='7day_oral_amoxicillin', oxygen_indicated=False)
-            else:
-                _try_treatment(antibiotic_indicated='3day_oral_amoxicillin', oxygen_indicated=False)
+            _try_treatment(
+                antibiotic_indicated=(
+                    '7day_oral_amoxicillin' if age_exact_years < 2.0 / 12.0 else '3day_oral_amoxicillin'),
+                oxygen_indicated=False
+            )
 
         def do_if_chest_indrawing_pneumonia(facility_level):
             """What to do if classification is `chest_indrawing_pneumonia`."""
@@ -2606,8 +2621,8 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
 
     def provide_2nd_line_antibiotics(self, antibiotic_provided, first_line_failed):
         """Provide 2nd line of antibiotics when the 1st line are not working"""
-
-        if first_line_failed and antibiotic_provided == '1st_line_IV_antibiotics':
+        # todo !?!?!?!?!?!?!!?!!!?!!? Get rid of this :-)
+        if first_line_failed and (antibiotic_provided == '1st_line_IV_antibiotics'):
             if self._has_staph_aureus():
                 return self._get_cons('2nd_line_Antibiotic_therapy_for_severe_staph_pneumonia')
             else:
@@ -2617,6 +2632,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
         """Assess and attempt to treat the person."""
 
         # refer follow-up appointments to inpatient care (if follow-up only applies to those with TF)
+        # todo- tim - is the logic now that follow-up is only in the case of treatment failure!!!??
         if self.is_followup and not self._is_as_in_patient:
             self._refer_to_become_inpatient()
 
@@ -2996,5 +3012,3 @@ class AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia(AlriIncidentCase):
                self.module.get_imci_classification_based_on_symptoms(
                    child_is_younger_than_2_months=False, symptoms=self.sim.modules['SymptomManager'].has_what(person_id)
                )
-
-

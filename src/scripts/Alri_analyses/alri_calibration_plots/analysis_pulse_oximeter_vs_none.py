@@ -64,14 +64,7 @@ for label, oximeter_avail in scenarios.items():
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath,),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                  service_availability=["*"],  # all treatment allowed
-                                  mode_appt_constraints=0,  # mode of constraints to do with officer numbers and time
-                                  cons_availability="all",  # mode for consumable constraints (if ignored, all consumables available)
-                                  ignore_priority=True,  # do not use the priority information in HSI event to schedule
-                                  capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
-                                  disable=True,  # disables the healthsystem (no constraints and no logging) and every HSI runs
-                                  disable_and_reject_all=False,  # disable healthsystem and no HSI runs
-                                  store_hsi_events_that_have_run=False,  # convenience function for debugging
+                                  disable=True,
                                   ),
         alri.Alri(resourcefilepath=resourcefilepath),
         alri.AlriPropertiesOfOtherModules()
@@ -89,6 +82,7 @@ for label, oximeter_avail in scenarios.items():
     p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level2'] = 1.0
     p['sensitivity_of_classification_of_severe_pneumonia_facility_level2'] = 1.0
 
+    # todo --- change this to use the new system!
     if oximeter_avail:
         p['override_po_and_oxygen_availability'] = True
         p['override_po_and_oxygen_to_full_availability'] = True
@@ -157,6 +151,7 @@ def get_CFR_from_logfile(logfile):
     )
 
     # using the tracker to get the number of cases per year
+    # todo --- should there be a SUM HERE???
     number_of_cases = counts.incident_cases
 
     # using the tracker to get the number of deaths per year

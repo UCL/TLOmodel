@@ -139,7 +139,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
     if 'Schisto' in sim.modules:
         sim.modules['Schisto'].do_on_presentation_with_symptoms(person_id=person_id, symptoms=symptoms)
 
-    if age < 5:
+    if age <= 5:
         # ----------------------------------- CHILD < 5 -----------------------------------
         if 'Diarrhoea' in sim.modules:
             if 'diarrhoea' in symptoms:
@@ -435,5 +435,5 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
             sim.modules['RTI'].do_rti_diagnosis_and_treatment(person_id=person_id)
 
     if 'Alri' in sim.modules:
-        if (age < 5) and (('cough' in symptoms) or ('difficult_breathing' in symptoms)):
+        if (age <= 5) and (('cough' in symptoms) or ('difficult_breathing' in symptoms)):
             sim.modules['Alri'].on_presentation(person_id=person_id, hsi_event=hsi_event)

@@ -1,5 +1,5 @@
 """Test file for the Alri module"""
-
+import itertools
 import os
 from pathlib import Path
 
@@ -9,7 +9,7 @@ import pytest
 from pandas import DateOffset
 import datetime
 
-from tlo import Date, Simulation, logging
+from tlo import Date, Simulation, logging, Module
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     alri,
@@ -19,7 +19,7 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     simplified_births,
-    symptommanager,
+    symptommanager, Metadata,
 )
 from tlo.methods.alri import (
     AlriCureEvent,
@@ -49,6 +49,41 @@ def _get_person_id(df, age_bounds: tuple = (0.0, np.inf)) -> int:
     return df.loc[
         df.is_alive & ~df['ri_current_infection_status'] & df['age_exact_years'].between(*age_bounds)
         ].index[0]
+
+
+def _make_treatment_perfect(alri_module):
+    """Modify the parameters of an instance of the Alri module so that treatment is perfect."""
+    p = alri_module.parameters
+
+    # Sensitivity of all diagnosis steps to be perfect
+    p['sensitivity_of_classification_of_fast_breathing_pneumonia_facility_level0'] = 1.0
+    p['sensitivity_of_classification_of_danger_signs_pneumonia_facility_level0'] = 1.0
+    p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level1'] = 1.0
+    p['sensitivity_of_classification_of_severe_pneumonia_facility_level1'] = 1.0
+    p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level2'] = 1.0
+    p['sensitivity_of_classification_of_severe_pneumonia_facility_level2'] = 1.0
+
+    # The probability of treatment failure to be 0.0
+    p['tf_1st_line_antibiotic_for_severe_pneumonia'] = 0.0
+    p['tf_2nd_line_antibiotic_for_severe_pneumonia'] = 0.0
+
+    p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%'] = 0.0
+
+    p['tf_3day_amoxicillin_for_chest_indrawing_with_SpO2>=90%'] = 0.0
+    p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%'] = 0.0
+
+    p['tf_7day_amoxicillin_for_fast_breathing_pneumonia_in_young_infants'] = 0.0
+
+    p['tf_oral_amoxicillin_only_for_severe_pneumonia_with_SpO2>=90%'] = 0.0
+    p['tf_oral_amoxicillin_only_for_severe_pneumonia_with_SpO2<90%'] = 0.0
+
+
+def _make_high_risk_of_death(alri_module):
+    """Modify the parameters of an instance of the Alri module so that the risk of death is high."""
+    params = alri_module.parameters
+    params['base_odds_death_ALRI_age<2mo'] *= 5.0
+    params['base_odds_death_ALRI_age2_59mo'] *= 5.0
+
 
 
 @pytest.fixture
@@ -293,9 +328,7 @@ def test_basic_run_lasting_two_years(sim_hs_all_consumables):
     sim.make_initial_population(n=popsize)
 
     # increase death risk
-    params = sim.modules['Alri'].parameters
-    params['base_odds_death_ALRI_age<2mo'] *= 5.0
-    params['base_odds_death_ALRI_age2_59mo'] *= 5.0
+    _make_high_risk_of_death(sim.modules['Alri'])
 
     sim.simulate(end_date=start_date + dur)
 
@@ -789,92 +822,13 @@ def test_classification_based_on_symptoms_and_imci(sim_hs_all_consumables):
         )
 
         # If oximeter available and does need oxygen, then classification should be the 'danger_signs_pneumonia'
-        _classification = 'danger_signs_pneumonia'
-        assert _classification == _given_disease_classification(
+        assert 'danger_signs_pneumonia' == _given_disease_classification(
             age_exact_years=0.05 if chars['child_is_younger_than_2_months'] else 1.0,
             symptoms=chars['symptoms'],
             oxygen_saturation='<90%',
             facility_level='1b',
             use_oximeter=True
         ), f"{_correct_imci_classification_on_symptoms=}"
-
-
-# todo - what is needed in a future PR is more tests that establish:
-#  * no deaths among large cohort of infected persons when the effect of treatment is perfect (as in PR #656)
-#  * the specific effect of oxygen provision on deaths among those types of cases that require treatment
-
-# todo this is a new test introduced by Ines
-def test_imci_classification_for_complications(sim_hs_all_consumables):
-    """Check that IMCI classification match the underlying condition (complications)"""
-
-    sim = sim_hs_all_consumables
-
-    def make_hw_assesement_perfect(sim):
-        p = sim.modules['Alri'].parameters
-        p['sensitivity_of_classification_of_fast_breathing_pneumonia_facility_level0'] = 1.0
-        p['sensitivity_of_classification_of_danger_signs_pneumonia_facility_level0'] = 1.0
-        p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level1'] = 1.0
-        p['sensitivity_of_classification_of_severe_pneumonia_facility_level1'] = 1.0
-        p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level2'] = 1.0
-        p['sensitivity_of_classification_of_severe_pneumonia_facility_level2'] = 1.0
-
-    # make risk of immediate onset complications be 100% (so that person has all the complications)
-    params = sim.modules['Alri'].parameters
-    params['prob_pulmonary_complications_in_pneumonia'] = 1.0
-    params['prob_bacteraemia_in_pneumonia'] = 1.0
-    params['prob_progression_to_sepsis_with_bacteraemia'] = 1.0
-    for p in params:
-        if any([p.startswith(f'prob_{c}') for c in sim.modules['Alri'].complications]):
-            params[p] = 1.0
-
-        make_hw_assesement_perfect(sim)
-        sim.make_initial_population(n=1000)
-        hsi_alri_treatment = HSI_Alri_Treatment(sim.modules['Alri'], 0)
-
-        # start simulation
-        sim.simulate(end_date=start_date)
-        sim.event_queue.queue = []  # clear the queue
-
-        # Get person to use:
-        df = sim.population.props
-        under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
-        person_id = under5s.index[0]
-        assert not df.loc[person_id, 'ri_current_infection_status']
-
-        # Run incident case for a viral pathogen:
-        pathogen = 'RSV'
-        incidentcase = AlriIncidentCase(module=sim.modules['Alri'], person_id=person_id, pathogen=pathogen)
-        incidentcase.run()
-
-        # get the classification
-        _given_disease_classification = hsi_alri_treatment._get_disease_classification
-
-        # get the symptoms
-        symptoms = sim.modules['SymptomManager'].has_what(person_id)
-
-        classification = _given_disease_classification(
-            age_exact_years=1.0,
-            symptoms=symptoms,
-            oxygen_saturation=df.at[person_id, 'ri_SpO2_level'],
-            facility_level='1b',
-            use_oximeter=True
-        )
-
-        complications_cols = [
-            f"ri_complication_{complication}" for complication in
-            ['pneumothorax',
-             'pleural_effusion',
-             'empyema',
-             'lung_abscess',
-             'sepsis',
-             'hypoxaemia']]
-
-        for complication in complications_cols:
-            if df.loc[person_id, complication]:
-                assert classification != 'cough_or_cold'
-
-        # TODO: This test might not pass, as the probability of symptoms to compute the pneumonia classification
-        #  are not 1.0 in complications -- need to check the % not picked up as pneumonia
 
 
 def test_do_effects_of_alri_treatment(sim_hs_all_consumables):
@@ -958,63 +912,6 @@ def test_do_effects_of_alri_treatment(sim_hs_all_consumables):
     assert 0 == sim.modules['Alri'].logging_event.trackers['recovered_cases'].report_current_total()
     assert 0 == sim.modules['Alri'].logging_event.trackers['deaths'].report_current_total()
     assert 1 == sim.modules['Alri'].logging_event.trackers['cured_cases'].report_current_total()
-
-
-def test_po_oxygen_availability_override(sim_hs_all_consumables):
-    """Check that pulse oximeter and oxygen availability override to 0% no treatment occurs"""
-    sim = sim_hs_all_consumables
-    popsize = 2000
-
-    # make pop of children only
-    sim.modules['Demography'].parameters['max_age_initial'] = 5
-    sim.make_initial_population(n=popsize)
-
-    # start simulation
-    sim.simulate(end_date=start_date)
-    df = sim.population.props
-
-    # Get person to use (not currently infected) aged between 2 months and 5 years and not infected:
-    person_id = _get_person_id(df, (2.0/12.0, 5.0))
-
-    # Give this person severe pneumonia:
-    pathogen = list(sim.modules['Alri'].all_pathogens)[0]
-    incidentcase = AlriIncidentCase_Lethal_Severe_Pneumonia(person_id=int(person_id),
-                                                            pathogen=pathogen, module=sim.modules['Alri'])
-    incidentcase.run()
-
-    # Check infected and not on treatment:
-    assert not df.at[person_id, 'ri_on_treatment']
-
-    # Run the healthcare seeking behaviour poll
-    sim.modules['HealthSeekingBehaviour'].theHealthSeekingBehaviourPoll.run()
-
-    # Check that person 0 has an Emergency Generic HSI scheduled
-    generic_appt = [event_tuple[1] for event_tuple in sim.modules['HealthSystem'].find_events_for_person(person_id)
-                    if isinstance(event_tuple[1], HSI_GenericEmergencyFirstApptAtFacilityLevel1)][0]
-
-    # Override the availability of the consumables within the health system. set to 0.
-    m = sim.modules['Alri']
-    po_and_oxygen = m.consumables_used_in_hsi['Oxygen_Therapy']
-
-    for k, v in po_and_oxygen.items():
-        sim.modules['HealthSystem'].override_availability_of_consumables({k: 0.0})
-
-    # refresh the consumables
-    sim.modules['HealthSystem'].consumables._refresh_availability_of_consumables(date=sim.date)
-
-    # Run generic appt and check that there is an Outpatient `HSI_Alri_Treatment` scheduled
-    generic_appt.run(squeeze_factor=0.0)
-    hsi = [event_tuple[1] for event_tuple in sim.modules['HealthSystem'].find_events_for_person(person_id)
-           if isinstance(event_tuple[1], HSI_Alri_Treatment)][0]
-    assert hsi.TREATMENT_ID == 'Alri_Pneumonia_Treatment_Outpatient'
-
-    # check that none of the consumables are available
-    for k, v in po_and_oxygen.items():
-        available = hsi.get_consumables(item_codes=k)
-        assert not available
-
-    # Check not on treatment:
-    assert not df.at[person_id, 'ri_on_treatment']
 
 
 def test_severe_pneumonia_referral_from_hsi_first_appts(sim_hs_all_consumables):
@@ -1142,11 +1039,6 @@ def generate_hsi_sequence(sim, incident_case_event, age_of_person_under_2_months
     return [r for r in df.loc[mask, ['TREATMENT_ID', 'Facility_Level']].itertuples(index=False, name=None)]
 
 
-# todo @Ines - In the below, we check that the sequence of HSI's is correct under some different circumstances.
-#   We may wish to add more, if there are specific things you want to check. Maybe for `serious_bacterial_infection`
-#   for the "direct referral" thing.
-
-
 def test_treatment_pathway_if_all_consumables_mild_case(sim_hs_all_consumables):
     """Examine the treatment pathway for a person with a particular category of disease if consumables are available."""
     # Mild case (fast_breathing_pneumonia) and available consumables --> treatment at level 0, following non-emergency
@@ -1211,3 +1103,244 @@ def test_treatment_pathway_if_no_consumables_severe_case(sim_hs_no_consumables):
                # (No follow-up appointment because treatment is never provided, due to lack of consumables).
            ] == generate_hsi_sequence(sim=sim_hs_no_consumables,
                                       incident_case_event=AlriIncidentCase_Lethal_Severe_Pneumonia)
+
+
+# todo - **** THIS TEST ****
+@pytest.mark.slow
+def test_impact_of_all_hsi(seed, tmpdir):
+    """Test that when there are no HSI for ALRI allowed, or there is no healthcare seeking, that there are deaths to
+    Alri; but also that hen when HSI are allowed and treatment is perfect, that there are ZERO deaths among large
+    cohort of infected persons."""
+
+    def get_number_of_deaths_from_cohort_of_children_with_alri(
+        force_any_symptom_to_lead_to_healthcareseeking=False,
+        do_make_treatment_perfect=False,
+        disable_and_reject_all=False
+    ) -> int:
+        """Run a cohort of children all with newly onset Alri and return number of them that die from Alri."""
+
+        class DummyModule(Module):
+            """Dummy module that will cause everyone to have Alri from the first day of the simulation"""
+            METADATA = {Metadata.DISEASE_MODULE}
+
+            def read_parameters(self, data_folder):
+                pass
+
+            def initialise_population(self, population):
+                pass
+
+            def initialise_simulation(self, sim):
+                alri_module = sim.modules['Alri']
+                pathogens = list(itertools.chain.from_iterable(alri_module.pathogens.values()))
+                df = sim.population.props
+                for idx in df[df.is_alive].index:
+                    sim.schedule_event(
+                        event=AlriIncidentCase(module=alri_module,
+                                               person_id=idx,
+                                               pathogen=self.rng.choice(pathogens)
+                                               ),
+                        date=sim.date
+                    )
+
+        start_date = Date(2010, 1, 1)
+        popsize = 1_000
+        sim = Simulation(start_date=start_date, seed=seed)
+
+        sim.register(
+            demography.Demography(resourcefilepath=resourcefilepath),
+            simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+            enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+            symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+            healthseekingbehaviour.HealthSeekingBehaviour(
+                resourcefilepath=resourcefilepath,
+                force_any_symptom_to_lead_to_healthcareseeking=force_any_symptom_to_lead_to_healthcareseeking,
+            ),
+            healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+            healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                      disable_and_reject_all=disable_and_reject_all,
+                                      cons_availability='all',
+                                      ),
+            alri.Alri(resourcefilepath=resourcefilepath),
+            AlriPropertiesOfOtherModules(),
+            DummyModule(),
+        )
+
+        # Make entire population under five years old
+        sim.modules['Demography'].parameters['max_age_initial'] = 5
+
+        # Set high risk of death and perfect treatment
+        _make_high_risk_of_death(sim.modules['Alri'])
+
+        if do_make_treatment_perfect:
+            _make_treatment_perfect(sim.modules['Alri'])
+
+        sim.make_initial_population(n=popsize)
+        sim.simulate(end_date=start_date + pd.DateOffset(months=1))
+
+        df = sim.population.props
+
+        # Return number of children who have died with a cause of Alri
+        died_of_alri = df.loc[~df.is_alive & df['cause_of_death'].str.startswith('ALRI')].index
+        print(died_of_alri)
+        return len(died_of_alri)
+
+    # # Some deaths when all HSI are disallowed
+    # assert 0 < get_number_of_deaths_from_cohort_of_children_with_alri(
+    #     disable_and_reject_all=True,
+    # )
+    #
+    # # Some deaths with imperfect treatment and default healthcare seeking
+    # assert 0 < get_number_of_deaths_from_cohort_of_children_with_alri(
+    #     force_any_symptom_to_lead_to_healthcareseeking=False,
+    #     do_make_treatment_perfect=False,
+    # )
+    #
+    # # Some deaths with imperfect treatment and perfect healthcare seeking
+    # assert 0 < get_number_of_deaths_from_cohort_of_children_with_alri(
+    #     force_any_symptom_to_lead_to_healthcareseeking=True,
+    #     do_make_treatment_perfect=False,
+    # )
+
+    # No deaths with perfect healthcare seeking and perfect treatment
+    assert 0 == get_number_of_deaths_from_cohort_of_children_with_alri(
+        force_any_symptom_to_lead_to_healthcareseeking=True,
+        do_make_treatment_perfect=True,
+    )
+
+
+# todo this another new test by Ines
+def test_po_oxygen_availability_override(sim_hs_all_consumables):
+    """Check that pulse oximeter and oxygen availability override to 0% no treatment occurs
+    SHOULD BE: the specific effect of oxygen provision on deaths among those types of cases that require treatment
+    """
+
+    sim = sim_hs_all_consumables
+    popsize = 2000
+
+    # make pop of children only
+    sim.modules['Demography'].parameters['max_age_initial'] = 5
+    sim.make_initial_population(n=popsize)
+
+    # start simulation
+    sim.simulate(end_date=start_date)
+    df = sim.population.props
+
+    # Get person to use (not currently infected) aged between 2 months and 5 years and not infected:
+    person_id = _get_person_id(df, (2.0/12.0, 5.0))
+
+    # Give this person severe pneumonia:
+    pathogen = list(sim.modules['Alri'].all_pathogens)[0]
+    incidentcase = AlriIncidentCase_Lethal_Severe_Pneumonia(person_id=int(person_id),
+                                                            pathogen=pathogen, module=sim.modules['Alri'])
+    incidentcase.run()
+
+    # Check infected and not on treatment:
+    assert not df.at[person_id, 'ri_on_treatment']
+
+    # Run the healthcare seeking behaviour poll
+    sim.modules['HealthSeekingBehaviour'].theHealthSeekingBehaviourPoll.run()
+
+    # Check that person 0 has an Emergency Generic HSI scheduled
+    generic_appt = [event_tuple[1] for event_tuple in sim.modules['HealthSystem'].find_events_for_person(person_id)
+                    if isinstance(event_tuple[1], HSI_GenericEmergencyFirstApptAtFacilityLevel1)][0]
+
+    # Override the availability of the consumables within the health system. set to 0.
+    m = sim.modules['Alri']
+    po_and_oxygen = m.consumables_used_in_hsi['Oxygen_Therapy']
+
+    for k, v in po_and_oxygen.items():
+        sim.modules['HealthSystem'].override_availability_of_consumables({k: 0.0})
+
+    # refresh the consumables
+    sim.modules['HealthSystem'].consumables._refresh_availability_of_consumables(date=sim.date)
+
+    # Run generic appt and check that there is an Outpatient `HSI_Alri_Treatment` scheduled
+    generic_appt.run(squeeze_factor=0.0)
+    hsi = [event_tuple[1] for event_tuple in sim.modules['HealthSystem'].find_events_for_person(person_id)
+           if isinstance(event_tuple[1], HSI_Alri_Treatment)][0]
+    assert hsi.TREATMENT_ID == 'Alri_Pneumonia_Treatment_Outpatient'
+
+    # check that none of the consumables are available
+    for k, v in po_and_oxygen.items():
+        available = hsi.get_consumables(item_codes=k)
+        assert not available
+
+    # Check not on treatment:
+    assert not df.at[person_id, 'ri_on_treatment']
+
+
+
+
+# The below test was added by Ines - but the intention is not clear and it contains a comment that it may not work.
+# We will delete it.
+# def test_imci_classification_for_complications(sim_hs_all_consumables):
+#     """Check that IMCI classification match the underlying condition (complications)"""
+#
+#     sim = sim_hs_all_consumables
+#
+#     def make_hw_assesement_perfect(sim):
+#         p = sim.modules['Alri'].parameters
+#         p['sensitivity_of_classification_of_fast_breathing_pneumonia_facility_level0'] = 1.0
+#         p['sensitivity_of_classification_of_danger_signs_pneumonia_facility_level0'] = 1.0
+#         p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level1'] = 1.0
+#         p['sensitivity_of_classification_of_severe_pneumonia_facility_level1'] = 1.0
+#         p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level2'] = 1.0
+#         p['sensitivity_of_classification_of_severe_pneumonia_facility_level2'] = 1.0
+#
+#     # make risk of immediate onset complications be 100% (so that person has all the complications)
+#     params = sim.modules['Alri'].parameters
+#     params['prob_pulmonary_complications_in_pneumonia'] = 1.0
+#     params['prob_bacteraemia_in_pneumonia'] = 1.0
+#     params['prob_progression_to_sepsis_with_bacteraemia'] = 1.0
+#     for p in params:
+#         if any([p.startswith(f'prob_{c}') for c in sim.modules['Alri'].complications]):
+#             params[p] = 1.0
+#
+#         make_hw_assesement_perfect(sim)
+#         sim.make_initial_population(n=1000)
+#         hsi_alri_treatment = HSI_Alri_Treatment(sim.modules['Alri'], 0)
+#
+#         # start simulation
+#         sim.simulate(end_date=start_date)
+#         sim.event_queue.queue = []  # clear the queue
+#
+#         # Get person to use:
+#         df = sim.population.props
+#         under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
+#         person_id = under5s.index[0]
+#         assert not df.loc[person_id, 'ri_current_infection_status']
+#
+#         # Run incident case for a viral pathogen:
+#         pathogen = 'RSV'
+#         incidentcase = AlriIncidentCase(module=sim.modules['Alri'], person_id=person_id, pathogen=pathogen)
+#         incidentcase.run()
+#
+#         # get the classification
+#         _given_disease_classification = hsi_alri_treatment._get_disease_classification
+#
+#         # get the symptoms
+#         symptoms = sim.modules['SymptomManager'].has_what(person_id)
+#
+#         classification = _given_disease_classification(
+#             age_exact_years=1.0,
+#             symptoms=symptoms,
+#             oxygen_saturation=df.at[person_id, 'ri_SpO2_level'],
+#             facility_level='1b',
+#             use_oximeter=True
+#         )
+#
+#         complications_cols = [
+#             f"ri_complication_{complication}" for complication in
+#             ['pneumothorax',
+#              'pleural_effusion',
+#              'empyema',
+#              'lung_abscess',
+#              'sepsis',
+#              'hypoxaemia']]
+#
+#         for complication in complications_cols:
+#             if df.loc[person_id, complication]:
+#                 assert classification != 'cough_or_cold'
+#
+#         # TODO: This test might not pass, as the probability of symptoms to compute the pneumonia classification
+#         #  are not 1.0 in complications -- need to check the % not picked up as pneumonia
