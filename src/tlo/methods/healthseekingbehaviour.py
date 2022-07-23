@@ -137,7 +137,7 @@ class HealthSeekingBehaviour(Module):
 
         # Schedule the HealthSeekingBehaviourPoll
         self.theHealthSeekingBehaviourPoll = HealthSeekingBehaviourPoll(self)
-        sim.schedule_event(self.theHealthSeekingBehaviourPoll, sim.date, order_in_day=EventPriority.LAST_HALF_OF_DAY)
+        sim.schedule_event(self.theHealthSeekingBehaviourPoll, sim.date, event_priority=EventPriority.LAST_HALF_OF_DAY)
 
         # Assemble the health-care seeking information from the registered symptoms
         for symptom in self.sim.modules['SymptomManager'].all_registered_symptoms:
@@ -232,7 +232,7 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         """Initialise the HealthSeekingBehaviourPoll
         :param module: the module that created this event
         """
-        super().__init__(module, frequency=DateOffset(days=1), order_in_day=EventPriority.LAST_HALF_OF_DAY)
+        super().__init__(module, frequency=DateOffset(days=1), event_priority=EventPriority.LAST_HALF_OF_DAY)
         assert isinstance(module, HealthSeekingBehaviour)
 
     @staticmethod
