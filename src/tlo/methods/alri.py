@@ -684,17 +684,16 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'tmp param'
                       ),
-        'override_po_and_oxygen_availability': # todo - is used in testing but no need for it (can be done from test)
-            Parameter(Types.BOOL,
-                      'tmp param'
-                      ),
-        'override_po_and_oxygen_to_full_availability':   # todo - doesn't do anything
-            Parameter(Types.BOOL,
-                      'tmp param'
-                      ),
         'or_care_seeking_perceived_severe_illness':   # todo - not used.
             Parameter(Types.BOOL,
                       'tmp param'
+                      ),
+
+        'pulse_oximeter_and_oxygen_is_available':
+            Parameter(Types.CATEGORICAL,
+                      'Control the availability of the pulse oximeter and oxygen. "Default" does not over-ride '
+                      'availability; "Yes" forces them to be available; "No" forces them to not be available',
+                      categories=['Yes', 'No', 'Default']
                       ),
     }
 
@@ -889,9 +888,8 @@ class Alri(Module):
         self.look_up_consumables()
 
         # override consumables availability
-        # todo - Tim - do this directly in a function not an event
-        if p['override_po_and_oxygen_availability']:
-            sim.schedule_event(OverrideAvailabilityEvent(self), sim.date)
+        self.over_ride_availability_of_certain_consumables()
+
 
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual.
@@ -947,6 +945,21 @@ class Alri(Module):
         # add prefix to label according to the name of the causes of disability declared
         daly_values_by_pathogen = daly_values_by_pathogen.add_prefix('ALRI_')
         return daly_values_by_pathogen
+
+    def over_ride_availability_of_certain_consumables(self):
+        """Over-ride the availability of certain consumables, according the parameter values provided."""
+        p = self.parameters
+        item_code_pulse_oximeter = list(self.consumables_used_in_hsi['Pulse_oximetry'].keys())
+        item_code_oxygen = list(self.consumables_used_in_hsi['Oxygen_Therapy'].keys())
+        all_item_codes = list(set(item_code_pulse_oximeter + item_code_oxygen))
+
+        if p['pulse_oximeter_and_oxygen_is_available'] in ('Yes', 'No'):
+            over_ride = {
+                _item: (1.0 if p['pulse_oximeter_and_oxygen_is_available'] == "Yes" else 0.0)
+                for _item in all_item_codes
+            }
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(over_ride)
+
 
     def look_up_consumables(self):
         """Look up and store the consumables item codes used in each of the HSI."""
@@ -1090,10 +1103,10 @@ class Alri(Module):
         }
 
         # Pulse oximetry
+        # todo - @Ines: just noting that this is looking-up oxygen rather than pulse oximeter.
         self.consumables_used_in_hsi['Pulse_oximetry'] = {
             get_item_code(item='Oxygen, 1000 liters, primarily with oxygen cylinders'): 1
         }
-        # use oxygen code to fill in consumable availability for pulse oximetry
 
         # X-ray scan
         self.consumables_used_in_hsi['X_ray_scan'] = {
@@ -1504,27 +1517,6 @@ class Alri(Module):
                 return 'fast_breathing_pneumonia'
             else:
                 return 'cough_or_cold'
-
-
-# todo remove this :-)
-class OverrideAvailabilityEvent(Event, PopulationScopeEventMixin):
-    """
-    This is OverrideAvailabilityEvent for analysis of interventions.
-    This event is scheduled in initialise_simulation and allows for a parameter values to be overridden
-    at a set time point within a simulation run.
-    """
-    def __init__(self, module):
-        super().__init__(module)
-
-    def apply(self, population):
-
-        df = self.sim.population.props
-        p = self.module.parameters
-
-        if p['override_po_and_oxygen_to_full_availability']:
-            self.sim.modules['HealthSystem'].override_availability_of_consumables({127: 1.0})
-        else:
-            self.sim.modules['HealthSystem'].override_availability_of_consumables({127: 0.0})
 
 
 class Models:

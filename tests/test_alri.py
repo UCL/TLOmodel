@@ -1212,8 +1212,125 @@ def test_impact_of_all_hsi(seed, tmpdir):
     )
 
 
-def test_specific_effect_of_po_and_oxyegn():
-    ...
+def test_specific_effect_of_pulse_oximeter_and_oxyegn(seed, tmpdir):
+    """Check that there are fewer deaths overall when pulse-oximeter and oxygen are available."""
+
+    def get_number_of_deaths_from_cohort_of_children_with_alri(
+        pulse_oximeter_and_oxygen_is_available=False,
+        do_make_treatment_perfect=False,
+    ) -> int:
+        """Run a cohort of children all with newly onset Alri and return number of them that die from Alri (excluding
+        those with hypoxaemia 90-92%, which is never treated according to this module). All HSI run and there is perfect
+        healthcare seeking, all consumables are available, except for the pulse_oximter/oxygen for which the
+        availability is determined by these parameters."""
+
+        class DummyModule(Module):
+            """Dummy module that will cause everyone to have Alri from the first day of the simulation"""
+            METADATA = {Metadata.DISEASE_MODULE}
+
+            def read_parameters(self, data_folder):
+                pass
+
+            def initialise_population(self, population):
+                pass
+
+            def initialise_simulation(self, sim):
+                alri_module = sim.modules['Alri']
+                pathogens = list(itertools.chain.from_iterable(alri_module.pathogens.values()))
+                df = sim.population.props
+                for idx in df[df.is_alive].index:
+                    sim.schedule_event(
+                        event=AlriIncidentCase(module=alri_module,
+                                               person_id=idx,
+                                               pathogen=self.rng.choice(pathogens)
+                                               ),
+                        date=sim.date
+                    )
+
+        start_date = Date(2010, 1, 1)
+        popsize = 1_000
+        sim = Simulation(start_date=start_date, seed=seed)
+
+        sim.register(
+            demography.Demography(resourcefilepath=resourcefilepath),
+            simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+            enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+            symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+            healthseekingbehaviour.HealthSeekingBehaviour(
+                resourcefilepath=resourcefilepath,
+                force_any_symptom_to_lead_to_healthcareseeking=True,
+            ),
+            healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+            healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                      cons_availability='all',
+                                      ),
+            alri.Alri(resourcefilepath=resourcefilepath),
+            AlriPropertiesOfOtherModules(),
+            DummyModule(),
+        )
+
+        # Make entire population under five years old
+        sim.modules['Demography'].parameters['max_age_initial'] = 5
+
+        # Set high risk of death and perfect treatment
+        _make_high_risk_of_death(sim.modules['Alri'])
+
+        if do_make_treatment_perfect:
+            _make_treatment_perfect(sim.modules['Alri'])
+
+        if pulse_oximeter_and_oxygen_is_available:
+            sim.modules['Alri'].parameters['pulse_oximeter_and_oxygen_is_available'] = 'Yes'
+        else:
+            sim.modules['Alri'].parameters['pulse_oximeter_and_oxygen_is_available'] = 'No'
+
+        sim.make_initial_population(n=popsize)
+        sim.simulate(end_date=start_date + pd.DateOffset(months=1))
+        df = sim.population.props
+
+        # Check that over-riding of consumables works (looking at specifically the code 127)
+        item_codes_oxygen_therapy = set(sim.modules['Alri'].consumables_used_in_hsi['Oxygen_Therapy'].keys())
+        if pulse_oximeter_and_oxygen_is_available:
+            assert item_codes_oxygen_therapy.intersection(sim.modules['HealthSystem'].consumables._summary_counter._items['Available'].keys())
+            assert not item_codes_oxygen_therapy.intersection(sim.modules['HealthSystem'].consumables._summary_counter._items['Not_Available'].keys())
+        else:
+            assert not item_codes_oxygen_therapy.intersection(sim.modules['HealthSystem'].consumables._summary_counter._items['Available'].keys())
+            assert item_codes_oxygen_therapy.intersection(sim.modules['HealthSystem'].consumables._summary_counter._items['Not_Available'].keys())
+
+        # Return number of children who have died with a cause of Alri, excluding those who die with oxygen saturation
+        # 90-92% for which there is no treatment provided.
+        total_deaths_to_alri = sim.modules['Alri'].logging_event.trackers['deaths'].report_current_total()
+        assert total_deaths_to_alri == len(df.loc[~df.is_alive & df['cause_of_death'].str.startswith('ALRI')].index)
+        total_deaths_to_alri_with_untreated_hypoxaemia = sim.modules['Alri'].logging_event.trackers[
+            'deaths_due_to_untreated_hypoaxaemia'].report_current_total()
+
+        return total_deaths_to_alri - total_deaths_to_alri_with_untreated_hypoxaemia
+
+
+    def compare_deaths_with_and_without_pulse_oximeter_and_oxygen(do_make_treatment_perfect):
+        """Check that the number of deaths when the pulse oximeter and oxyegn are not available is GREATER than when
+         they are are available."""
+        num_deaths_no_po_or_ox = get_number_of_deaths_from_cohort_of_children_with_alri(
+            pulse_oximeter_and_oxygen_is_available=False,
+            do_make_treatment_perfect=do_make_treatment_perfect,
+        )
+
+        num_deaths_with_po_and_ox = get_number_of_deaths_from_cohort_of_children_with_alri(
+            pulse_oximeter_and_oxygen_is_available=True,
+            do_make_treatment_perfect=do_make_treatment_perfect,
+        )
+
+        assert num_deaths_no_po_or_ox > num_deaths_with_po_and_ox, \
+            f"There were not fewer deaths when the oximeter and oxygen were available, assuming" \
+            f" {do_make_treatment_perfect=}"
+
+    compare_deaths_with_and_without_pulse_oximeter_and_oxygen(do_make_treatment_perfect=False)
+    compare_deaths_with_and_without_pulse_oximeter_and_oxygen(do_make_treatment_perfect=True)
+
+
+
+
+
+
 
 #
 # # todo this another new test by Ines
