@@ -303,7 +303,7 @@ def test_integrity_of_linear_models(sim_hs_all_consumables):
             'SAM',
             'low_birth_weight'
         )
-        res = models.will_die_of_alri(person_id)
+        res = models.will_die_of_alri(person_id, disease_type=disease_type, bacterial_coinfection=np.nan)
         assert isinstance(res, (bool, np.bool_))
 
 
@@ -382,10 +382,10 @@ def test_nat_hist_recovery(sim_hs_all_consumables):
     sim.event_queue.queue = []  # clear the queue
 
     # make probability of death 0% (not using a lambda function because code uses the keyword argument for clarity)
-    def death(person_id):
+    def __will_die_of_alri(**kwargs):
         return False
 
-    sim.modules['Alri'].models.will_die_of_alri = death
+    sim.modules['Alri'].models.will_die_of_alri = __will_die_of_alri
 
     # make probability of symptoms very high
     params = sim.modules['Alri'].parameters
@@ -461,7 +461,7 @@ def test_nat_hist_death(sim_hs_all_consumables):
     sim.event_queue.queue = []  # clear the queue
 
     # make probability of death 100% (not using a lambda function because code uses the keyword argument for clarity)
-    def __will_die_of_alri(person_id):
+    def __will_die_of_alri(**kwargs):
         return True
 
     sim.modules['Alri'].models.will_die_of_alri = __will_die_of_alri
@@ -520,7 +520,7 @@ def test_nat_hist_cure_if_recovery_scheduled(sim_hs_all_consumables):
     sim.event_queue.queue = []  # clear the queue
 
     # make probability of death 0% (not using a lambda function because code uses the keyword argument for clarity)
-    def death(person_id):
+    def death(**kwargs):
         return False
 
     sim.modules['Alri'].models.will_die_of_alri = death
@@ -594,7 +594,7 @@ def test_nat_hist_cure_if_death_scheduled(sim_hs_all_consumables):
     sim.event_queue.queue = []  # clear the queue
 
     # make probability of death 100% (not using a lambda function because code uses the keyword argument for clarity)
-    def death(person_id):
+    def death(**kwargs):
         return True
 
     sim.modules['Alri'].models.will_die_of_alri = death
@@ -1287,14 +1287,14 @@ def test_specific_effect_of_pulse_oximeter_and_oxyegn(seed, tmpdir):
         sim.simulate(end_date=start_date + pd.DateOffset(months=1))
         df = sim.population.props
 
-        # Check that over-riding of consumables works (looking at specifically the code 127)
+        # Check that over-riding of consumables works (looking only at oxygen_therapy)
         item_codes_oxygen_therapy = set(sim.modules['Alri'].consumables_used_in_hsi['Oxygen_Therapy'].keys())
         if pulse_oximeter_and_oxygen_is_available:
             assert item_codes_oxygen_therapy.intersection(sim.modules['HealthSystem'].consumables._summary_counter._items['Available'].keys())
-            assert not item_codes_oxygen_therapy.intersection(sim.modules['HealthSystem'].consumables._summary_counter._items['Not_Available'].keys())
+            assert not item_codes_oxygen_therapy.intersection(sim.modules['HealthSystem'].consumables._summary_counter._items['NotAvailable'].keys())
         else:
             assert not item_codes_oxygen_therapy.intersection(sim.modules['HealthSystem'].consumables._summary_counter._items['Available'].keys())
-            assert item_codes_oxygen_therapy.intersection(sim.modules['HealthSystem'].consumables._summary_counter._items['Not_Available'].keys())
+            assert item_codes_oxygen_therapy.intersection(sim.modules['HealthSystem'].consumables._summary_counter._items['NotAvailable'].keys())
 
         # Return number of children who have died with a cause of Alri, excluding those who die with oxygen saturation
         # 90-92% for which there is no treatment provided.

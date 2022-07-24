@@ -1779,7 +1779,8 @@ class Models:
 
         return symptoms
 
-    def will_die_of_alri(self, person_id,
+    def will_die_of_alri(self,
+                         person_id,
                          disease_type,
                          bacterial_coinfection,
                          ):
@@ -1799,9 +1800,6 @@ class Models:
         any_complications = person[[f'ri_complication_{c}' for c in self.module.complications]].any()
         if not any_complications:
             return False
-
-
-
 
         # todo - @ines - should we choose between two section of this run based on the age?
 
