@@ -1787,14 +1787,29 @@ class Models:
 
         return symptoms
 
-    def will_die_of_alri(self, person_id):
+    def will_die_of_alri(self, person_id,
+                         disease_type,
+                         bacterial_coinfection,
+                         ):
         """Determine if person will die from Alri. Returns True/False"""
+
+        # todo --- make this based on the characteristics rather than using person_id
+
         p = self.p
         df = self.module.sim.population.props
         person = df.loc[person_id]
-        # check if any complications - death occurs only if a complication is present, or it's Pneumonia (CXR+)
+
+        # Check if the disease_type is "other_alri". If it is, then there is zero risk of death
+        if disease_type == "other_alri":
+            return False
+
+        # Check if any complications - death occurs only if a complication is present, or it's Pneumonia (CXR+)   # todo - I have made edits that enforces this
         any_complications = person[[f'ri_complication_{c}' for c in self.module.complications]].any()
-        disease_type = person['ri_disease_type']
+        if not any_complications:
+            return False
+
+
+
 
         # todo - @ines - should we choose between two section of this run based on the age?
 
@@ -1824,6 +1839,7 @@ class Models:
         age_range_in_months = range(3, 60)
         one_month_in_a_year = 1.0 / 12.0
 
+        # todo sort this out !!!!! ;-)
         for i in age_range_in_months:
             if (i * one_month_in_a_year) <= person['age_exact_years'] < ((i + 1) * one_month_in_a_year):
                 odds_death_age2_59mo *= (p['or_death_ALRI_age2_59mo_by_month_increase_in_age'] ** i)
@@ -1852,28 +1868,21 @@ class Models:
         if person['ri_SpO2_level'] == '90-92%':
             odds_death_age_lt2mo *= p['or_death_ALRI_SpO2_90_92%']
             odds_death_age2_59mo *= p['or_death_ALRI_SpO2_90_92%']
+        # todo @ ines --- if this level of saturation does not indicate for oxygen then it doesn't make sense that it increase risk of death. So, have made it so such persons can reach treatment....
 
         if person['ri_complication_sepsis']:
-            odds_death_age_lt2mo *= 151.9
-            odds_death_age2_59mo *= 151.9
+            odds_death_age_lt2mo *= 151.9   # todo --- this seems VERY HIGH and why is it hardcoded?
+            odds_death_age2_59mo *= 151.9   # todo --- this seems VERY HIGH and why is it hardcoded?
 
         if person['ri_complication_pneumothorax']:
-            odds_death_age_lt2mo *= 77.4
-            odds_death_age2_59mo *= 77.4
+            odds_death_age_lt2mo *= 77.4   # todo --- this seems VERY HIGH and why is it hardcoded?
+            odds_death_age2_59mo *= 77.4   # todo --- this seems VERY HIGH and why is it hardcoded?
 
         # Convert odds to probability
         risk_death_age_lt2mo = odds_death_age_lt2mo / (1 + odds_death_age_lt2mo)
         risk_death_age2_59mo = odds_death_age2_59mo / (1 + odds_death_age2_59mo)
 
-        # if any_complications or (disease_type == 'pneumonia'):
-        #     if person['age_exact_years'] < 1.0 / 6.0:
-        #         return risk_death_age_lt2mo > self.rng.random_sample()
-        #     else:
-        #         return risk_death_age2_59mo > self.rng.random_sample()
-        # else:
-        #     return False
-
-        if person['age_exact_years'] < 1.0 / 6.0:
+        if person['age_exact_years'] < 2.0 / 12.0:
             return risk_death_age_lt2mo > self.rng.random_sample()
         else:
             return risk_death_age2_59mo > self.rng.random_sample()
@@ -1973,12 +1982,16 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
         self.module.logging_event.new_case(age=person.age_years, pathogen=self.pathogen)
 
         # ----------------- Determine the Alri disease type and bacterial coinfection for this case -----------------
-        disease_type, bacterial_coinfection = models.determine_disease_type_and_secondary_bacterial_coinfection(
-            age=person.age_years, pathogen=self.pathogen,
-            va_hib_all_doses=person.va_hib_all_doses, va_pneumo_all_doses=person.va_pneumo_all_doses)
+        disease_type, bacterial_coinfection = \
+            models.determine_disease_type_and_secondary_bacterial_coinfection(
+                age=person.age_years,
+                pathogen=self.pathogen,
+                va_hib_all_doses=person.va_hib_all_doses,
+                va_pneumo_all_doses=person.va_pneumo_all_doses,
+            )
 
         # ----------------------- Duration of the Alri event -----------------------
-        duration_in_days_of_alri = rng.randint(3, p['max_alri_duration_in_days_without_treatment'])
+        duration_in_days_of_alri = rng.randint(3, p['max_alri_duration_in_days_without_treatment'])  # todo changed this 1-->3 to help with problems about timeliness of healthcare seeking
 
         # Date for outcome (either recovery or death) with uncomplicated Alri
         date_of_outcome = m.sim.date + DateOffset(days=duration_in_days_of_alri)
@@ -2012,7 +2025,11 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
                                   duration_in_days=duration_in_days_of_alri)
 
         # ----------------------------------- Outcome  -----------------------------------
-        if models.will_die_of_alri(person_id=person_id):
+        if models.will_die_of_alri(
+            person_id=person_id,
+            disease_type=disease_type,
+            bacterial_coinfection=bacterial_coinfection,
+        ):
             self.sim.schedule_event(AlriDeathEvent(self.module, person_id), date_of_outcome)
             df.loc[person_id, ['ri_scheduled_death_date', 'ri_scheduled_recovery_date']] = [date_of_outcome, pd.NaT]
         else:
@@ -2157,6 +2174,7 @@ class AlriDeathEvent(Event, IndividualScopeEventMixin):
         ):
             # Do the death:
             pathogen = person.ri_primary_pathogen
+
             self.module.sim.modules['Demography'].do_death(
                 individual_id=person_id,
                 cause='ALRI_' + pathogen,
@@ -2166,7 +2184,8 @@ class AlriDeathEvent(Event, IndividualScopeEventMixin):
             # Log the death in the Alri logging system
             self.module.logging_event.new_death(
                 age=person.age_years,
-                pathogen=pathogen
+                pathogen=pathogen,
+                sp02_level=person.ri_SpO2_level
             )
 
 
@@ -2367,7 +2386,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
              'danger_signs_pneumonia',
              'chest_indrawing_pneumonia,
              'cough_or_cold'
-        }."""
+        }."""  # todo --- what is this indirection for!?!?!?
         return self.module.get_imci_classification_based_on_symptoms(
             child_is_younger_than_2_months=child_is_younger_than_2_months, symptoms=symptoms)
 
@@ -2471,7 +2490,12 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                 # (Perfect diagnosis accuracy for 'cough_or_cold')
                 return imci_classification_based_on_symptoms
 
-    def _get_disease_classification(self, age_exact_years, symptoms, oxygen_saturation, facility_level, use_oximeter
+    def _get_disease_classification(self,
+                                    age_exact_years,
+                                    symptoms,
+                                    oxygen_saturation,
+                                    facility_level,
+                                    use_oximeter,
                                     ) -> str:
         """Returns the classification of disease, which may be based on the results of the pulse oximetry (if available)
          or the health worker's own classification. It will be one of: {
@@ -2519,7 +2543,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
 
         # Check if pulse oximeter was available/ used to determine the need to provide oxygen (SpO<90%)
         oxygen_need_determined = use_oximeter and (oxygen_saturation == '<90%')
-        # todo check if repeated checking on the availability of oximeter is necccessary
+        # todo check if repeated checking on the availability of oximeter is necccessary -- looks like so, maybe rename some elements to make the logic clear
 
         def _try_treatment(antibiotic_indicated: str, oxygen_indicated: bool) -> None:
             """Try to provide a `treatment_indicated` and refer to next level if the consumables are not available."""
@@ -2601,7 +2625,11 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
 
         def do_if_cough_or_cold(facility_level):
             """What to do if `cough_or_cold`."""
-            pass  # Do nothing
+            pass
+            # todo - delete the below
+            # raise NotImplementedError
+            # _try_treatment(antibiotic_indicated='', oxygen_indicated=oxygen_need_determined)
+
 
         # Do the appropriate action
         {
@@ -2646,11 +2674,11 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
         # Do nothing if the persons does not have indicating symptoms
         symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
         if not {'cough', 'difficult_breathing'}.intersection(symptoms):
-            return
+            return self.make_appt_footprint({})
 
         # Do nothing if the person is already on treatment
         if person.ri_on_treatment:
-            return
+            return self.make_appt_footprint({})
 
         # If the HSI is at level 0 and is for a child aged less than 2 months, refer to the next level.
         if (self.ACCEPTED_FACILITY_LEVEL == '0') and (person.age_exact_years < 2.0 / 12.0):
@@ -2688,6 +2716,7 @@ class AlriLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.trackers['recovered_cases'] = Tracker(age_grps=age_grps, pathogens=self.module.all_pathogens)
         self.trackers['cured_cases'] = Tracker(age_grps=age_grps, pathogens=self.module.all_pathogens)
         self.trackers['deaths'] = Tracker(age_grps=age_grps, pathogens=self.module.all_pathogens)
+        self.trackers['deaths_due_to_untreated_hypoaxaemia'] = Tracker()
         self.trackers['seeking_care'] = Tracker()
         self.trackers['treated'] = Tracker()
         self.trackers['pulmonary_complication_cases'] = Tracker()
@@ -2704,7 +2733,9 @@ class AlriLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.trackers['cured_cases'].add_one(**kwargs)
 
     def new_death(self, **kwargs):
-        self.trackers['deaths'].add_one(**kwargs)
+        self.trackers['deaths'].add_one(age=kwargs['age'], pathogen=kwargs['pathogen'])
+        if kwargs['sp02_level'] == '90-92%':
+            self.trackers['deaths_due_to_untreated_hypoaxaemia'].add_one()
 
     def new_seeking_care(self, **kwargs):
         self.trackers['seeking_care'].add_one(**kwargs)
@@ -2751,7 +2782,7 @@ class Tracker:
     """Helper class to be a counter for number of events occurring by age-group and by pathogen."""
 
     def __init__(self, age_grps: dict = {}, pathogens: list = []):
-        """Create and initalise tracker"""
+        """Create and initialise tracker"""
 
         # Check and store parameters
         self.pathogens = pathogens

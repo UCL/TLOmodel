@@ -1105,7 +1105,6 @@ def test_treatment_pathway_if_no_consumables_severe_case(sim_hs_no_consumables):
                                       incident_case_event=AlriIncidentCase_Lethal_Severe_Pneumonia)
 
 
-# todo - **** THIS TEST ****
 @pytest.mark.slow
 def test_impact_of_all_hsi(seed, tmpdir):
     """Test that when there are no HSI for ALRI allowed, or there is no healthcare seeking, that there are deaths to
@@ -1117,7 +1116,8 @@ def test_impact_of_all_hsi(seed, tmpdir):
         do_make_treatment_perfect=False,
         disable_and_reject_all=False
     ) -> int:
-        """Run a cohort of children all with newly onset Alri and return number of them that die from Alri."""
+        """Run a cohort of children all with newly onset Alri and return number of them that die from Alri (excluding
+        those with hypoxaemia 90-92%, which is never treated according to this module)."""
 
         class DummyModule(Module):
             """Dummy module that will cause everyone to have Alri from the first day of the simulation"""
@@ -1179,27 +1179,31 @@ def test_impact_of_all_hsi(seed, tmpdir):
 
         df = sim.population.props
 
-        # Return number of children who have died with a cause of Alri
-        died_of_alri = df.loc[~df.is_alive & df['cause_of_death'].str.startswith('ALRI')].index
-        print(died_of_alri)
-        return len(died_of_alri)
+        # Return number of children who have died with a cause of Alri, excluding those who die with oxygen saturation
+        # 90-92% for which there is no treatment provided.
+        total_deaths_to_alri = sim.modules['Alri'].logging_event.trackers['deaths'].report_current_total()
+        assert total_deaths_to_alri == len(df.loc[~df.is_alive & df['cause_of_death'].str.startswith('ALRI')].index)
+        total_deaths_to_alri_with_untreated_hypoxaemia = sim.modules['Alri'].logging_event.trackers[
+            'deaths_due_to_untreated_hypoaxaemia'].report_current_total()
 
-    # # Some deaths when all HSI are disallowed
-    # assert 0 < get_number_of_deaths_from_cohort_of_children_with_alri(
-    #     disable_and_reject_all=True,
-    # )
-    #
-    # # Some deaths with imperfect treatment and default healthcare seeking
-    # assert 0 < get_number_of_deaths_from_cohort_of_children_with_alri(
-    #     force_any_symptom_to_lead_to_healthcareseeking=False,
-    #     do_make_treatment_perfect=False,
-    # )
-    #
-    # # Some deaths with imperfect treatment and perfect healthcare seeking
-    # assert 0 < get_number_of_deaths_from_cohort_of_children_with_alri(
-    #     force_any_symptom_to_lead_to_healthcareseeking=True,
-    #     do_make_treatment_perfect=False,
-    # )
+        return total_deaths_to_alri - total_deaths_to_alri_with_untreated_hypoxaemia
+
+    # Some deaths when all HSI are disallowed
+    assert 0 < get_number_of_deaths_from_cohort_of_children_with_alri(
+        disable_and_reject_all=True,
+    )
+
+    # Some deaths with imperfect treatment and default healthcare seeking
+    assert 0 < get_number_of_deaths_from_cohort_of_children_with_alri(
+        force_any_symptom_to_lead_to_healthcareseeking=False,
+        do_make_treatment_perfect=False,
+    )
+
+    # Some deaths with imperfect treatment and perfect healthcare seeking
+    assert 0 < get_number_of_deaths_from_cohort_of_children_with_alri(
+        force_any_symptom_to_lead_to_healthcareseeking=True,
+        do_make_treatment_perfect=False,
+    )
 
     # No deaths with perfect healthcare seeking and perfect treatment
     assert 0 == get_number_of_deaths_from_cohort_of_children_with_alri(
@@ -1208,65 +1212,69 @@ def test_impact_of_all_hsi(seed, tmpdir):
     )
 
 
-# todo this another new test by Ines
-def test_po_oxygen_availability_override(sim_hs_all_consumables):
-    """Check that pulse oximeter and oxygen availability override to 0% no treatment occurs
-    SHOULD BE: the specific effect of oxygen provision on deaths among those types of cases that require treatment
-    """
+def test_specific_effect_of_po_and_oxyegn():
+    ...
 
-    sim = sim_hs_all_consumables
-    popsize = 2000
-
-    # make pop of children only
-    sim.modules['Demography'].parameters['max_age_initial'] = 5
-    sim.make_initial_population(n=popsize)
-
-    # start simulation
-    sim.simulate(end_date=start_date)
-    df = sim.population.props
-
-    # Get person to use (not currently infected) aged between 2 months and 5 years and not infected:
-    person_id = _get_person_id(df, (2.0/12.0, 5.0))
-
-    # Give this person severe pneumonia:
-    pathogen = list(sim.modules['Alri'].all_pathogens)[0]
-    incidentcase = AlriIncidentCase_Lethal_Severe_Pneumonia(person_id=int(person_id),
-                                                            pathogen=pathogen, module=sim.modules['Alri'])
-    incidentcase.run()
-
-    # Check infected and not on treatment:
-    assert not df.at[person_id, 'ri_on_treatment']
-
-    # Run the healthcare seeking behaviour poll
-    sim.modules['HealthSeekingBehaviour'].theHealthSeekingBehaviourPoll.run()
-
-    # Check that person 0 has an Emergency Generic HSI scheduled
-    generic_appt = [event_tuple[1] for event_tuple in sim.modules['HealthSystem'].find_events_for_person(person_id)
-                    if isinstance(event_tuple[1], HSI_GenericEmergencyFirstApptAtFacilityLevel1)][0]
-
-    # Override the availability of the consumables within the health system. set to 0.
-    m = sim.modules['Alri']
-    po_and_oxygen = m.consumables_used_in_hsi['Oxygen_Therapy']
-
-    for k, v in po_and_oxygen.items():
-        sim.modules['HealthSystem'].override_availability_of_consumables({k: 0.0})
-
-    # refresh the consumables
-    sim.modules['HealthSystem'].consumables._refresh_availability_of_consumables(date=sim.date)
-
-    # Run generic appt and check that there is an Outpatient `HSI_Alri_Treatment` scheduled
-    generic_appt.run(squeeze_factor=0.0)
-    hsi = [event_tuple[1] for event_tuple in sim.modules['HealthSystem'].find_events_for_person(person_id)
-           if isinstance(event_tuple[1], HSI_Alri_Treatment)][0]
-    assert hsi.TREATMENT_ID == 'Alri_Pneumonia_Treatment_Outpatient'
-
-    # check that none of the consumables are available
-    for k, v in po_and_oxygen.items():
-        available = hsi.get_consumables(item_codes=k)
-        assert not available
-
-    # Check not on treatment:
-    assert not df.at[person_id, 'ri_on_treatment']
+#
+# # todo this another new test by Ines
+# def test_po_oxygen_availability_override(sim_hs_all_consumables):
+#     """Check that pulse oximeter and oxygen availability override to 0% no treatment occurs
+#     SHOULD BE: the specific effect of oxygen provision on deaths among those types of cases that require treatment
+#     """
+#
+#     sim = sim_hs_all_consumables
+#     popsize = 2000
+#
+#     # make pop of children only
+#     sim.modules['Demography'].parameters['max_age_initial'] = 5
+#     sim.make_initial_population(n=popsize)
+#
+#     # start simulation
+#     sim.simulate(end_date=start_date)
+#     df = sim.population.props
+#
+#     # Get person to use (not currently infected) aged between 2 months and 5 years and not infected:
+#     person_id = _get_person_id(df, (2.0/12.0, 5.0))
+#
+#     # Give this person severe pneumonia:
+#     pathogen = list(sim.modules['Alri'].all_pathogens)[0]
+#     incidentcase = AlriIncidentCase_Lethal_Severe_Pneumonia(person_id=int(person_id),
+#                                                             pathogen=pathogen, module=sim.modules['Alri'])
+#     incidentcase.run()
+#
+#     # Check infected and not on treatment:
+#     assert not df.at[person_id, 'ri_on_treatment']
+#
+#     # Run the healthcare seeking behaviour poll
+#     sim.modules['HealthSeekingBehaviour'].theHealthSeekingBehaviourPoll.run()
+#
+#     # Check that person 0 has an Emergency Generic HSI scheduled
+#     generic_appt = [event_tuple[1] for event_tuple in sim.modules['HealthSystem'].find_events_for_person(person_id)
+#                     if isinstance(event_tuple[1], HSI_GenericEmergencyFirstApptAtFacilityLevel1)][0]
+#
+#     # Override the availability of the consumables within the health system. set to 0.
+#     m = sim.modules['Alri']
+#     po_and_oxygen = m.consumables_used_in_hsi['Oxygen_Therapy']
+#
+#     for k, v in po_and_oxygen.items():
+#         sim.modules['HealthSystem'].override_availability_of_consumables({k: 0.0})
+#
+#     # refresh the consumables
+#     sim.modules['HealthSystem'].consumables._refresh_availability_of_consumables(date=sim.date)
+#
+#     # Run generic appt and check that there is an Outpatient `HSI_Alri_Treatment` scheduled
+#     generic_appt.run(squeeze_factor=0.0)
+#     hsi = [event_tuple[1] for event_tuple in sim.modules['HealthSystem'].find_events_for_person(person_id)
+#            if isinstance(event_tuple[1], HSI_Alri_Treatment)][0]
+#     assert hsi.TREATMENT_ID == 'Alri_Pneumonia_Treatment_Outpatient'
+#
+#     # check that none of the consumables are available
+#     for k, v in po_and_oxygen.items():
+#         available = hsi.get_consumables(item_codes=k)
+#         assert not available
+#
+#     # Check not on treatment:
+#     assert not df.at[person_id, 'ri_on_treatment']
 
 
 
