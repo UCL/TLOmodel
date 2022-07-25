@@ -1148,7 +1148,7 @@ def test_impact_of_all_hsi(seed, tmpdir):
         total_deaths_to_alri = sim.modules['Alri'].logging_event.trackers['deaths'].report_current_total()
         assert total_deaths_to_alri == len(df.loc[~df.is_alive & df['cause_of_death'].str.startswith('ALRI')].index)
         total_deaths_to_alri_with_untreated_hypoxaemia = sim.modules['Alri'].logging_event.trackers[
-            'deaths_due_to_untreated_hypoaxaemia'].report_current_total()
+            'deaths_due_to_untreated_hypoxaemia'].report_current_total()
 
         return total_deaths_to_alri - total_deaths_to_alri_with_untreated_hypoxaemia
 
@@ -1265,7 +1265,7 @@ def test_specific_effect_of_pulse_oximeter_and_oxyegn(seed, tmpdir):
         total_deaths_to_alri = sim.modules['Alri'].logging_event.trackers['deaths'].report_current_total()
         assert total_deaths_to_alri == len(df.loc[~df.is_alive & df['cause_of_death'].str.startswith('ALRI')].index)
         total_deaths_to_alri_with_untreated_hypoxaemia = sim.modules['Alri'].logging_event.trackers[
-            'deaths_due_to_untreated_hypoaxaemia'].report_current_total()
+            'deaths_due_to_untreated_hypoxaemia'].report_current_total()
 
         return total_deaths_to_alri - total_deaths_to_alri_with_untreated_hypoxaemia
 
