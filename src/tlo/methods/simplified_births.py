@@ -4,9 +4,9 @@
  is that every pregnancy results in a birth."""
 
 import json
+from pathlib import Path
 
 import pandas as pd
-from pathlib import Path
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
