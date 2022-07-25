@@ -76,45 +76,45 @@ def get_person_years(_df):
     return py
 
 
-# py0 = extract_results(
-#     results0,
-#     module="tlo.methods.demography",
-#     key="person_years",
-#     custom_generate_series=get_person_years,
-#     do_scaling=False
-# )
-#
-# py1 = extract_results(
-#     results1,
-#     module="tlo.methods.demography",
-#     key="person_years",
-#     custom_generate_series=get_person_years,
-#     do_scaling=False
-# )
-#
-# py2 = extract_results(
-#     results2,
-#     module="tlo.methods.demography",
-#     key="person_years",
-#     custom_generate_series=get_person_years,
-#     do_scaling=False
-# )
-#
-# py3 = extract_results(
-#     results3,
-#     module="tlo.methods.demography",
-#     key="person_years",
-#     custom_generate_series=get_person_years,
-#     do_scaling=False
-# )
-#
-# py4 = extract_results(
-#     results4,
-#     module="tlo.methods.demography",
-#     key="person_years",
-#     custom_generate_series=get_person_years,
-#     do_scaling=False
-# )
+py0 = extract_results(
+    results0,
+    module="tlo.methods.demography",
+    key="person_years",
+    custom_generate_series=get_person_years,
+    do_scaling=False
+)
+
+py1 = extract_results(
+    results1,
+    module="tlo.methods.demography",
+    key="person_years",
+    custom_generate_series=get_person_years,
+    do_scaling=False
+)
+
+py2 = extract_results(
+    results2,
+    module="tlo.methods.demography",
+    key="person_years",
+    custom_generate_series=get_person_years,
+    do_scaling=False
+)
+
+py3 = extract_results(
+    results3,
+    module="tlo.methods.demography",
+    key="person_years",
+    custom_generate_series=get_person_years,
+    do_scaling=False
+)
+
+py4 = extract_results(
+    results4,
+    module="tlo.methods.demography",
+    key="person_years",
+    custom_generate_series=get_person_years,
+    do_scaling=False
+)
 
 
 # ---------------------------------- HIV ---------------------------------- #
@@ -145,29 +145,29 @@ inc2 = hiv_adult_inc(results2)
 inc3 = hiv_adult_inc(results3)
 inc4 = hiv_adult_inc(results4)
 
-# Make plot
-fig, ax = plt.subplots()
-ax.plot(inc0.index, inc0["median"], "-", color="C3")
-ax.fill_between(inc0.index, inc0["lower"], inc0["upper"], color="C3", alpha=0.2)
-
-ax.plot(inc1.index, inc1["median"], "-", color="C0")
-ax.fill_between(inc1.index, inc1["lower"], inc1["upper"], color="C0", alpha=0.2)
-
-ax.plot(inc2.index, inc2["median"], "-", color="C2")
-ax.fill_between(inc2.index, inc2["lower"], inc2["upper"], color="C2", alpha=0.2)
-
-ax.plot(inc3.index, inc3["median"], "-", color="C4")
-ax.fill_between(inc3.index, inc3["lower"], inc3["upper"], color="C4", alpha=0.2)
-
-ax.plot(inc4.index, inc4["median"], "-", color="C6")
-ax.fill_between(inc4.index, inc4["lower"], inc4["upper"], color="C6", alpha=0.2)
-
-fig.subplots_adjust(left=0.15)
-plt.title("HIV incidence in adults 15-49")
-plt.ylabel("HIV incidence")
-plt.legend(["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4"])
-
-plt.show()
+# # Make plot
+# fig, ax = plt.subplots()
+# ax.plot(inc0.index, inc0["median"], "-", color="C3")
+# ax.fill_between(inc0.index, inc0["lower"], inc0["upper"], color="C3", alpha=0.2)
+#
+# ax.plot(inc1.index, inc1["median"], "-", color="C0")
+# ax.fill_between(inc1.index, inc1["lower"], inc1["upper"], color="C0", alpha=0.2)
+#
+# ax.plot(inc2.index, inc2["median"], "-", color="C2")
+# ax.fill_between(inc2.index, inc2["lower"], inc2["upper"], color="C2", alpha=0.2)
+#
+# ax.plot(inc3.index, inc3["median"], "-", color="C4")
+# ax.fill_between(inc3.index, inc3["lower"], inc3["upper"], color="C4", alpha=0.2)
+#
+# ax.plot(inc4.index, inc4["median"], "-", color="C6")
+# ax.fill_between(inc4.index, inc4["lower"], inc4["upper"], color="C6", alpha=0.2)
+#
+# fig.subplots_adjust(left=0.15)
+# plt.title("HIV incidence in adults 15-49")
+# plt.ylabel("HIV incidence")
+# plt.legend(["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4"])
+#
+# plt.show()
 
 
 # ---------------------------------- TB ---------------------------------- #
@@ -187,6 +187,7 @@ def tb_inc(results_folder):
 
     # divide each run of tb incidence by py from that run
     # tb logger starts at 2011-01-01, demog starts at 2010-01-01
+    # extract py log from 2011-2035
     py = extract_results(
         results_folder,
         module="tlo.methods.demography",
@@ -210,39 +211,246 @@ tb_inc2 = tb_inc(results2)
 tb_inc3 = tb_inc(results3)
 tb_inc4 = tb_inc(results4)
 
-# Make plot
-fig, ax = plt.subplots()
-ax.plot(tb_inc0.index, tb_inc0["median"], "-", color="C3")
-ax.fill_between(tb_inc0.index, tb_inc0["lower"], tb_inc0["upper"], color="C3", alpha=0.2)
-
-ax.plot(tb_inc1.index, tb_inc1["median"], "-", color="C0")
-ax.fill_between(tb_inc1.index, tb_inc1["lower"], tb_inc1["upper"], color="C0", alpha=0.2)
-
-ax.plot(tb_inc2.index, tb_inc2["median"], "-", color="C2")
-ax.fill_between(tb_inc2.index, tb_inc2["lower"], tb_inc2["upper"], color="C2", alpha=0.2)
-
-ax.plot(tb_inc3.index, tb_inc3["median"], "-", color="C4")
-ax.fill_between(tb_inc3.index, tb_inc3["lower"], tb_inc3["upper"], color="C4", alpha=0.2)
-
-ax.plot(tb_inc4.index, tb_inc4["median"], "-", color="C6")
-ax.fill_between(tb_inc4.index, tb_inc4["lower"], tb_inc4["upper"], color="C6", alpha=0.2)
-
-fig.subplots_adjust(left=0.15)
-plt.title("Active TB incidence")
-plt.ylabel("Active TB cases per 100,000 population")
-plt.legend(["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4"])
-
-plt.show()
+# # Make plot
+# fig, ax = plt.subplots()
+# ax.plot(tb_inc0.index, tb_inc0["median"], "-", color="C3")
+# ax.fill_between(tb_inc0.index, tb_inc0["lower"], tb_inc0["upper"], color="C3", alpha=0.2)
+#
+# ax.plot(tb_inc1.index, tb_inc1["median"], "-", color="C0")
+# ax.fill_between(tb_inc1.index, tb_inc1["lower"], tb_inc1["upper"], color="C0", alpha=0.2)
+#
+# ax.plot(tb_inc2.index, tb_inc2["median"], "-", color="C2")
+# ax.fill_between(tb_inc2.index, tb_inc2["lower"], tb_inc2["upper"], color="C2", alpha=0.2)
+#
+# ax.plot(tb_inc3.index, tb_inc3["median"], "-", color="C4")
+# ax.fill_between(tb_inc3.index, tb_inc3["lower"], tb_inc3["upper"], color="C4", alpha=0.2)
+#
+# ax.plot(tb_inc4.index, tb_inc4["median"], "-", color="C6")
+# ax.fill_between(tb_inc4.index, tb_inc4["lower"], tb_inc4["upper"], color="C6", alpha=0.2)
+#
+# fig.subplots_adjust(left=0.15)
+# plt.title("Active TB incidence")
+# plt.ylabel("Active TB cases per 100,000 population")
+# plt.legend(["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4"])
+#
+# plt.show()
 
 
 # ---------------------------------- HIV deaths ---------------------------------- #
 
+# AIDS deaths
+
+def summarise_aids_deaths(results_folder, person_years):
+    results_deaths = extract_results(
+        results_folder,
+        module="tlo.methods.demography",
+        key="death",
+        custom_generate_series=(
+            lambda df: df.assign(year=df["date"].dt.year).groupby(
+                ["year", "cause"])["person_id"].count()
+        ),
+        do_scaling=False,
+    )
+    # removes multi-index
+    results_deaths = results_deaths.reset_index()
+
+    # select only cause AIDS_TB and AIDS_non_TB
+    tmp = results_deaths.loc[
+        (results_deaths.cause == "AIDS_TB") | (results_deaths.cause == "AIDS_non_TB")
+        ]
+
+    # group deaths by year
+    tmp2 = pd.DataFrame(tmp.groupby(["year"]).sum())
+
+    # divide each draw/run by the respective person-years from that run
+    # need to reset index as they don't match exactly (date format)
+    tmp3 = tmp2.reset_index(drop=True) / (person_years.reset_index(drop=True))
+
+    aids_deaths = {}  # empty dict
+
+    aids_deaths["median_aids_deaths_rate_100kpy"] = (
+        tmp3.astype(float).quantile(0.5, axis=1)
+    ) * 100000
+    aids_deaths["lower_aids_deaths_rate_100kpy"] = (
+        tmp3.astype(float).quantile(0.025, axis=1)
+    ) * 100000
+    aids_deaths["upper_aids_deaths_rate_100kpy"] = (
+        tmp3.astype(float).quantile(0.975, axis=1)
+    ) * 100000
+
+    return aids_deaths
 
 
-
-
+aids_deaths0 = summarise_aids_deaths(results0, py0)
+aids_deaths1 = summarise_aids_deaths(results1, py1)
+aids_deaths2 = summarise_aids_deaths(results2, py2)
+aids_deaths3 = summarise_aids_deaths(results3, py3)
+aids_deaths4 = summarise_aids_deaths(results4, py4)
 
 # ---------------------------------- TB deaths ---------------------------------- #
+
+
+# deaths due to TB (not including TB-HIV)
+def summarise_tb_deaths(results_folder, person_years):
+    results_deaths = extract_results(
+        results_folder,
+        module="tlo.methods.demography",
+        key="death",
+        custom_generate_series=(
+            lambda df: df.assign(year=df["date"].dt.year).groupby(
+                ["year", "cause"])["person_id"].count()
+        ),
+        do_scaling=False,
+    )
+    # removes multi-index
+    results_deaths = results_deaths.reset_index()
+
+    # select only cause AIDS_TB and AIDS_non_TB
+    tmp = results_deaths.loc[results_deaths.cause == "TB"]
+
+    # group deaths by year
+    tmp2 = pd.DataFrame(tmp.groupby(["year"]).sum())
+
+    # divide each draw/run by the respective person-years from that run
+    # need to reset index as they don't match exactly (date format)
+    tmp3 = tmp2.reset_index(drop=True) / (person_years.reset_index(drop=True))
+
+    tb_deaths = {}  # empty dict
+
+    tb_deaths["median_tb_deaths_rate_100kpy"] = (
+        tmp3.astype(float).quantile(0.5, axis=1)
+    ) * 100000
+    tb_deaths["lower_tb_deaths_rate_100kpy"] = (
+        tmp3.astype(float).quantile(0.025, axis=1)
+    ) * 100000
+    tb_deaths["upper_tb_deaths_rate_100kpy"] = (
+        tmp3.astype(float).quantile(0.975, axis=1)
+    ) * 100000
+
+    return tb_deaths
+
+
+tb_deaths0 = summarise_tb_deaths(results0, py0)
+tb_deaths1 = summarise_tb_deaths(results1, py1)
+tb_deaths2 = summarise_tb_deaths(results2, py2)
+tb_deaths3 = summarise_tb_deaths(results3, py3)
+tb_deaths4 = summarise_tb_deaths(results4, py4)
+
+
+# ---------------------------------- PLOTS ---------------------------------- #
+
+fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=2, ncols=2, sharex=True, sharey=True)
+fig.suptitle('Epi outputs')
+
+# HIV incidence
+ax1.plot(inc0.index, inc0["median"], "-", color="C3")
+ax1.fill_between(inc0.index, inc0["lower"], inc0["upper"], color="C3", alpha=0.2)
+
+ax1.plot(inc1.index, inc1["median"], "-", color="C0")
+ax1.fill_between(inc1.index, inc1["lower"], inc1["upper"], color="C0", alpha=0.2)
+
+ax1.plot(inc2.index, inc2["median"], "-", color="C2")
+ax1.fill_between(inc2.index, inc2["lower"], inc2["upper"], color="C2", alpha=0.2)
+
+ax1.plot(inc3.index, inc3["median"], "-", color="C4")
+ax1.fill_between(inc3.index, inc3["lower"], inc3["upper"], color="C4", alpha=0.2)
+
+ax1.plot(inc4.index, inc4["median"], "-", color="C6")
+ax1.fill_between(inc4.index, inc4["lower"], inc4["upper"], color="C6", alpha=0.2)
+
+ax1.set(title='HIV incidence in adults 15-49',
+       ylabel='HIV incidence')
+
+# TB incidence
+ax2.plot(tb_inc0.index, tb_inc0["median"], "-", color="C3")
+ax2.fill_between(tb_inc0.index, tb_inc0["lower"], tb_inc0["upper"], color="C3", alpha=0.2)
+
+ax2.plot(tb_inc1.index, tb_inc1["median"], "-", color="C0")
+ax2.fill_between(tb_inc1.index, tb_inc1["lower"], tb_inc1["upper"], color="C0", alpha=0.2)
+
+ax2.plot(tb_inc2.index, tb_inc2["median"], "-", color="C2")
+ax2.fill_between(tb_inc2.index, tb_inc2["lower"], tb_inc2["upper"], color="C2", alpha=0.2)
+
+ax2.plot(tb_inc3.index, tb_inc3["median"], "-", color="C4")
+ax2.fill_between(tb_inc3.index, tb_inc3["lower"], tb_inc3["upper"], color="C4", alpha=0.2)
+
+ax2.plot(tb_inc4.index, tb_inc4["median"], "-", color="C6")
+ax2.fill_between(tb_inc4.index, tb_inc4["lower"], tb_inc4["upper"], color="C6", alpha=0.2)
+
+ax2.set(title='Active TB incidence',
+       ylabel='Active TB cases per 100,000 population')
+
+# HIV deaths
+ax3.plot(tb_inc0.index, aids_deaths0["median_aids_deaths_rate_100kpy"], "-", color="C3")
+ax3.fill_between(tb_inc0.index, aids_deaths0["lower_aids_deaths_rate_100kpy"],
+                 aids_deaths0["upper_aids_deaths_rate_100kpy"], color="C3", alpha=0.2)
+
+ax3.plot(tb_inc0.index, aids_deaths1["median_aids_deaths_rate_100kpy"], "-", color="C0")
+ax3.fill_between(tb_inc0.index, aids_deaths1["lower_aids_deaths_rate_100kpy"],
+                 aids_deaths1["upper_aids_deaths_rate_100kpy"], color="C0", alpha=0.2)
+
+ax3.plot(tb_inc0.index, aids_deaths2["median_aids_deaths_rate_100kpy"], "-", color="C2")
+ax3.fill_between(tb_inc0.index, aids_deaths2["lower_aids_deaths_rate_100kpy"],
+                 aids_deaths2["upper_aids_deaths_rate_100kpy"], color="C2", alpha=0.2)
+
+ax3.plot(tb_inc0.index, aids_deaths3["median_aids_deaths_rate_100kpy"], "-", color="C4")
+ax3.fill_between(tb_inc0.index, aids_deaths3["lower_aids_deaths_rate_100kpy"],
+                 aids_deaths3["upper_aids_deaths_rate_100kpy"], color="C4", alpha=0.2)
+
+ax3.plot(tb_inc0.index, aids_deaths4["median_aids_deaths_rate_100kpy"], "-", color="C6")
+ax3.fill_between(tb_inc0.index, aids_deaths4["lower_aids_deaths_rate_100kpy"],
+                 aids_deaths4["upper_aids_deaths_rate_100kpy"], color="C6", alpha=0.2)
+
+ax3.set(title='Mortality due to AIDS (inc TB)',
+       ylabel='Mortality rate per 100,000 population')
+
+# TB deaths
+ax4.plot(tb_inc0.index, tb_deaths0["median_tb_deaths_rate_100kpy"], "-", color="C3")
+ax4.fill_between(tb_inc0.index, tb_deaths0["lower_tb_deaths_rate_100kpy"],
+                 tb_deaths0["upper_tb_deaths_rate_100kpy"], color="C3", alpha=0.2)
+
+ax4.plot(tb_inc0.index, tb_deaths1["median_tb_deaths_rate_100kpy"], "-", color="C0")
+ax4.fill_between(tb_inc0.index, tb_deaths1["lower_tb_deaths_rate_100kpy"],
+                 tb_deaths1["upper_tb_deaths_rate_100kpy"], color="C0", alpha=0.2)
+
+ax4.plot(tb_inc0.index, tb_deaths2["median_tb_deaths_rate_100kpy"], "-", color="C2")
+ax4.fill_between(tb_inc0.index, tb_deaths2["lower_tb_deaths_rate_100kpy"],
+                 tb_deaths2["upper_tb_deaths_rate_100kpy"], color="C2", alpha=0.2)
+
+ax4.plot(tb_inc0.index, tb_deaths3["median_tb_deaths_rate_100kpy"], "-", color="C4")
+ax4.fill_between(tb_inc0.index, tb_deaths3["lower_tb_deaths_rate_100kpy"],
+                 tb_deaths3["upper_tb_deaths_rate_100kpy"], color="C4", alpha=0.2)
+
+ax4.plot(tb_inc0.index, tb_deaths4["median_tb_deaths_rate_100kpy"], "-", color="C6")
+ax4.fill_between(tb_inc0.index, tb_deaths4["lower_tb_deaths_rate_100kpy"],
+                 tb_deaths4["upper_tb_deaths_rate_100kpy"], color="C6", alpha=0.2)
+
+ax4.set(title='Mortality due to TB',
+       ylabel='Mortality rate per 100,000 population')
+
+for ax in fig.get_axes():
+    ax.label_outer()
+
+plt.legend(labels=["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4"])
+plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
