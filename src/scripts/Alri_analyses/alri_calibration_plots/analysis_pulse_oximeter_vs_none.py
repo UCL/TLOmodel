@@ -1,6 +1,5 @@
-"""
-This will demonstrate the effect of pulse oximetry and oxygen.
-"""
+"""This will demonstrate the effect of pulse oximetry and oxygen being available versus not available, among a
+population of children under 5 years old."""
 
 # %% Import Statements and initial declarations
 import datetime
@@ -22,30 +21,20 @@ from tlo.methods import (
     symptommanager,
 )
 
-# %%
 resourcefilepath = Path("./resources")
-outputpath = Path("./outputs")  # folder for convenience of storing outputs
-datestamp = datetime.date.today().strftime("__%Y_%m_%d")
+outputpath = Path("./outputs")
 
-# Scenarios Definitions:
-# Define the 'service_availability' parameter for two sceanrios (without treatment, with treatment)
-scenarios = dict()
-scenarios['No_oximeter_and_oxygen'] = False
-scenarios['With_oximeter_and_oxygen'] = True
 
-# Create dict to capture the outputs
-output_files = dict()
+def run_scenario(**kwargs):
+    """Run the scenario and return the log file"""
 
-# %% Run the Simulation
-start_date = Date(2010, 1, 1)
-end_date = Date(2012, 12, 31)
-popsize = 50000
-
-for label, oximeter_avail in scenarios.items():
+    start_date = Date(2010, 1, 1)
+    end_date = start_date + pd.DateOffset(years=1)
+    popsize = 50_000
 
     log_config = {
-        "filename": f"alri_{label}",
-        "directory": "./outputs",
+        "filename": f"alri",
+        "directory": Path("./outputs"),
         "custom_levels": {
             "*": logging.WARNING,
             "tlo.methods.alri": logging.INFO,
@@ -53,7 +42,6 @@ for label, oximeter_avail in scenarios.items():
         }
     }
 
-    # add file handler for the purpose of logging
     sim = Simulation(start_date=start_date, log_config=log_config, show_progress_bar=True)
 
     sim.register(
@@ -71,108 +59,86 @@ for label, oximeter_avail in scenarios.items():
     )
 
     sim.modules['Demography'].parameters['max_age_initial'] = 5
-    sim.make_initial_population(n=popsize)
 
-    # Assume perfect sensitivity in hw classification
-    p = sim.modules['Alri'].parameters
-    p['sensitivity_of_classification_of_fast_breathing_pneumonia_facility_level0'] = 1.0
-    p['sensitivity_of_classification_of_danger_signs_pneumonia_facility_level0'] = 1.0
-    p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level1'] = 1.0
-    p['sensitivity_of_classification_of_severe_pneumonia_facility_level1'] = 1.0
-    p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level2'] = 1.0
-    p['sensitivity_of_classification_of_severe_pneumonia_facility_level2'] = 1.0
+    if kwargs['do_make_treatment_perfect']:
+        alri._make_treatment_perfect(sim.modules['Alri'])
 
-    # todo --- change this to use the new system!
-    if oximeter_avail:
-        p['override_po_and_oxygen_availability'] = True
-        p['override_po_and_oxygen_to_full_availability'] = True
+    if kwargs['pulse_oximeter_and_oxygen_is_available']:
+        sim.modules['Alri'].parameters['pulse_oximeter_and_oxygen_is_available'] = 'Yes'
     else:
-        p['override_po_and_oxygen_availability'] = True
-        p['override_po_and_oxygen_to_full_availability'] = False
+        sim.modules['Alri'].parameters['pulse_oximeter_and_oxygen_is_available'] = 'No'
 
+    sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    # Save the full set of results:
-    output_files[label] = sim.log_filepath
+    return sim.log_filepath
 
 
-# output_files['No_oximeter_and_oxygen'] = outputpath / 'alri_with_treatment__2022-06-30T124146.log'
-# output_files['With_oximeter_and_oxygen'] = outputpath / 'alri_with_treatment__2022-06-30T114728.log'
-
-
-# %% Extract the relevant outputs and make a graph:
 def get_death_numbers_from_logfile(logfile):
-    # parse the simulation logfile to get the output dataframes
+    """Extract the number of deaths (total and due to untreated hypoxaemia) to Alri from the logfile, over the entire
+     period of the simulation"""
     output = parse_log_file(logfile)
+    alri_event_counts = output['tlo.methods.alri']['event_counts'].sum()
 
-    # calculate death rate
-    deaths_df = output['tlo.methods.demography']['death']
-    deaths_df['year'] = pd.to_datetime(deaths_df['date']).dt.year
-    deaths = deaths_df.loc[deaths_df['cause'].str.startswith('ALRI')].groupby('year').size()
-    # breakdown by age group
-    # deaths = deaths_df.loc[deaths_df['cause'].str.startswith('ALRI')].groupby('age').size()
-
-    return deaths
+    return {
+        'deaths': alri_event_counts['deaths'],
+        'deaths_due_to_untreated_hypoxaemia': alri_event_counts['deaths_due_to_untreated_hypoaxaemia']  # todo <--- correct spelling
+    }
 
 
-deaths = dict()
-for label, file in output_files.items():
-    deaths[label] = \
-        get_death_numbers_from_logfile(file)
-
-# Plot death rates by year: across the scenarios
-data = {}
-for label in deaths.keys():
-    data.update({label: deaths[label].mean()})
-
-plt.bar(data.keys(), data.values(), align='center')
-# pd.concat(data, axis=1).plot.bar()
-plt.title(f'Mean deaths due to ALRI from {start_date.year} to {end_date.year}')
-# plt.savefig(outputpath / ("ALRI_deaths_by_availability_of_PO_and_Ox" + datestamp + ".pdf"), format='pdf')
-plt.show()
-
-
-# -----------------------------------------------------------------------------------------------
-# check the case fatality rates (CFR)
-
-# %% Extract the relevant outputs and make a graph:
-def get_CFR_from_logfile(logfile):
-    # parse the simulation logfile to get the output dataframes
+def get_cfr_from_logfile(logfile):
+    """Extract the Case Fatality Ratio (Deaths:Cases) to Alri from the logfile, over the entire period of the
+    simulation."""
     output = parse_log_file(logfile)
+    alri_event_counts = output['tlo.methods.alri']['event_counts'].sum()
 
-    # calculate CFR
-    counts = output['tlo.methods.alri']['event_counts']
-    counts['year'] = pd.to_datetime(counts['date']).dt.year
-    counts.drop(columns='date', inplace=True)
-    counts.set_index(
-        'year',
-        drop=True,
-        inplace=True
-    )
-
-    # using the tracker to get the number of cases per year
-    # todo --- should there be a SUM HERE???
-    number_of_cases = counts.incident_cases
-
-    # using the tracker to get the number of deaths per year
-    number_of_deaths = counts.deaths
-
-    # calculate CFR
-    CFR_in_percentage = (number_of_deaths / number_of_cases) * 100
-
-    return CFR_in_percentage
+    return alri_event_counts['deaths'] / alri_event_counts['incident_cases']
 
 
-cfr = dict()
-for label, file in output_files.items():
-    cfr[label] = \
-        get_CFR_from_logfile(file)
 
-# Plot death rates by year: across the scenarios
-data2 = {}
-for label in cfr.keys():
-    data2.update({label: cfr[label].mean()})
 
-plt.bar(data2.keys(), data2.values(), align='center')
-plt.title(f'Mean CFR from {start_date.year} to {end_date.year}')
-plt.show()
+# %% Run the Scenarios
+scenarios = {
+    'No_oximeter/oxygen_Perfect_treatment_effectiveness': {
+        'pulse_oximeter_and_oxygen_is_available': False,
+        'do_make_treatment_perfect': True,
+    },
+    'With_oximeter/oxygen_Perfect_treatment_effectiveness': {
+        'pulse_oximeter_and_oxygen_is_available': True,
+        'do_make_treatment_perfect': True,
+    },
+    'No_oximeter/oxygen_Default_treatment_effectiveness': {
+        'pulse_oximeter_and_oxygen_is_available': False,
+        'do_make_treatment_perfect': False,
+    },
+    'With_oximeter/oxygen_Default_treatment_effectiveness': {
+        'pulse_oximeter_and_oxygen_is_available': True,
+        'do_make_treatment_perfect': False,
+    },
+}
+outputfiles = {_name: run_scenario(**_params) for _name, _params in scenarios.items()}
+
+
+# %% Extract the number of deaths:
+num_deaths = {_name: get_death_numbers_from_logfile(_logfile) for _name, _logfile in outputfiles.items()}
+cfr = {_name: get_cfr_from_logfile(_logfile) for _name, _logfile in outputfiles.items()}
+
+# %% Plot results
+
+df_num_deaths = pd.DataFrame(num_deaths)
+df_num_deaths.loc['deaths_not_due_to_untreated_hypoxaemia'] = df_num_deaths.loc['deaths'] - df_num_deaths.loc['deaths_due_to_untreated_hypoxaemia']
+
+fig, ax = plt.subplots()
+df_num_deaths.loc[
+    ['deaths_due_to_untreated_hypoxaemia', 'deaths_not_due_to_untreated_hypoxaemia']
+].T.plot.barh(ax=ax, stacked=True)
+fig.tight_layout()
+fig.show()
+
+
+fig, ax = plt.subplots()
+(100_000 * pd.Series(cfr)).T.plot.barh(ax=ax, stacked=True)
+ax.set_title('Case:Fatality Ratio')
+ax.set_xlabel('C Deaths per 100k cases')
+fig.tight_layout()
+fig.show()

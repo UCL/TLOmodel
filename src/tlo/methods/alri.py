@@ -1981,7 +1981,7 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
             )
 
         # ----------------------- Duration of the Alri event -----------------------
-        duration_in_days_of_alri = rng.randint(3, p['max_alri_duration_in_days_without_treatment'])  # todo changed this 1-->3 to help with problems about timeliness of healthcare seeking
+        duration_in_days_of_alri = rng.randint(3, p['max_alri_duration_in_days_without_treatment'])  # todo changed this 1-->3 to help with problems about timeliness of healthcare seeking; could chnage it back now that we have instant healthcare seeking
 
         # Date for outcome (either recovery or death) with uncomplicated Alri
         date_of_outcome = m.sim.date + DateOffset(days=duration_in_days_of_alri)
@@ -2706,7 +2706,7 @@ class AlriLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.trackers['recovered_cases'] = Tracker(age_grps=age_grps, pathogens=self.module.all_pathogens)
         self.trackers['cured_cases'] = Tracker(age_grps=age_grps, pathogens=self.module.all_pathogens)
         self.trackers['deaths'] = Tracker(age_grps=age_grps, pathogens=self.module.all_pathogens)
-        self.trackers['deaths_due_to_untreated_hypoaxaemia'] = Tracker()
+        self.trackers['deaths_due_to_untreated_hypoxaemia'] = Tracker()
         self.trackers['seeking_care'] = Tracker()
         self.trackers['treated'] = Tracker()
         self.trackers['pulmonary_complication_cases'] = Tracker()
@@ -2725,7 +2725,7 @@ class AlriLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def new_death(self, **kwargs):
         self.trackers['deaths'].add_one(age=kwargs['age'], pathogen=kwargs['pathogen'])
         if kwargs['sp02_level'] == '90-92%':
-            self.trackers['deaths_due_to_untreated_hypoaxaemia'].add_one()
+            self.trackers['deaths_due_to_untreated_hypoxaemia'].add_one()
 
     def new_seeking_care(self, **kwargs):
         self.trackers['seeking_care'].add_one(**kwargs)
@@ -3033,3 +3033,37 @@ class AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia(AlriIncidentCase):
                self.module.get_imci_classification_based_on_symptoms(
                    child_is_younger_than_2_months=False, symptoms=self.sim.modules['SymptomManager'].has_what(person_id)
                )
+
+
+def _make_treatment_perfect(alri_module):
+    """Modify the parameters of an instance of the Alri module so that treatment is perfect."""
+    p = alri_module.parameters
+
+    # Sensitivity of all diagnosis steps to be perfect
+    p['sensitivity_of_classification_of_fast_breathing_pneumonia_facility_level0'] = 1.0
+    p['sensitivity_of_classification_of_danger_signs_pneumonia_facility_level0'] = 1.0
+    p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level1'] = 1.0
+    p['sensitivity_of_classification_of_severe_pneumonia_facility_level1'] = 1.0
+    p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level2'] = 1.0
+    p['sensitivity_of_classification_of_severe_pneumonia_facility_level2'] = 1.0
+
+    # The probability of treatment failure to be 0.0
+    p['tf_1st_line_antibiotic_for_severe_pneumonia'] = 0.0
+    p['tf_2nd_line_antibiotic_for_severe_pneumonia'] = 0.0
+
+    p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%'] = 0.0
+
+    p['tf_3day_amoxicillin_for_chest_indrawing_with_SpO2>=90%'] = 0.0
+    p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%'] = 0.0
+
+    p['tf_7day_amoxicillin_for_fast_breathing_pneumonia_in_young_infants'] = 0.0
+
+    p['tf_oral_amoxicillin_only_for_severe_pneumonia_with_SpO2>=90%'] = 0.0
+    p['tf_oral_amoxicillin_only_for_severe_pneumonia_with_SpO2<90%'] = 0.0
+
+
+def _make_high_risk_of_death(alri_module):
+    """Modify the parameters of an instance of the Alri module so that the risk of death is high."""
+    params = alri_module.parameters
+    params['base_odds_death_ALRI_age<2mo'] *= 5.0
+    params['base_odds_death_ALRI_age2_59mo'] *= 5.0
