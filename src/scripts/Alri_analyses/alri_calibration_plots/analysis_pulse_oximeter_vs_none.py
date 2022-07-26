@@ -61,7 +61,7 @@ def run_scenario(**kwargs):
     sim.modules['Demography'].parameters['max_age_initial'] = 5
 
     if kwargs['do_make_treatment_perfect']:
-        alri._make_treatment_perfect(sim.modules['Alri'])
+        alri._make_treatment_and_diagnosis_perfect(sim.modules['Alri'])
 
     if kwargs['pulse_oximeter_and_oxygen_is_available']:
         sim.modules['Alri'].parameters['pulse_oximeter_and_oxygen_is_available'] = 'Yes'
@@ -82,7 +82,7 @@ def get_death_numbers_from_logfile(logfile):
 
     return {
         'deaths': alri_event_counts['deaths'],
-        'deaths_due_to_untreated_hypoxaemia': alri_event_counts['deaths_due_to_untreated_hypoaxaemia']  # todo <--- correct spelling
+        'deaths_due_to_untreated_hypoxaemia': alri_event_counts['deaths_due_to_untreated_hypoxaemia']
     }
 
 
