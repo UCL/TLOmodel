@@ -58,27 +58,32 @@ hcw2 = summarise_frac_hcws(results2)
 hcw3 = summarise_frac_hcws(results3)
 hcw4 = summarise_frac_hcws(results4)
 
+# percentage change in HCW time used from baseline (scenario 0)
+hcw_diff1 = ((hcw1["median"] - hcw0["median"]) / hcw0["median"]) * 100
+hcw_diff2 = ((hcw2["median"] - hcw0["median"]) / hcw0["median"]) * 100
+hcw_diff3 = ((hcw3["median"] - hcw0["median"]) / hcw0["median"]) * 100
+hcw_diff4 = ((hcw4["median"] - hcw0["median"]) / hcw0["median"]) * 100
+
+
 # Make plot
 fig, ax = plt.subplots()
-ax.plot(hcw0.index, hcw0["median"], "-", color="C3")
-ax.fill_between(hcw0.index, hcw0["lower"], hcw0["upper"], color="C3", alpha=0.2)
 
-ax.plot(hcw1.index, hcw1["median"], "-", color="C0")
-ax.fill_between(hcw1.index, hcw1["lower"], hcw1["upper"], color="C0", alpha=0.2)
+ax.plot(hcw1.index, hcw_diff1, "-", color="C0")
+# ax.fill_between(hcw1.index, hcw_diff1["lower"], hcw_diff1["upper"], color="C0", alpha=0.2)
 
-ax.plot(hcw2.index, hcw2["median"], "-", color="C2")
-ax.fill_between(hcw2.index, hcw2["lower"], hcw2["upper"], color="C2", alpha=0.2)
+ax.plot(hcw2.index, hcw_diff2, "-", color="C2")
+# ax.fill_between(hcw2.index, hcw_diff2["lower"], hcw_diff2["upper"], color="C2", alpha=0.2)
 
-ax.plot(hcw3.index, hcw3["median"], "-", color="C4")
-ax.fill_between(hcw3.index, hcw3["lower"], hcw3["upper"], color="C4", alpha=0.2)
+ax.plot(hcw3.index, hcw_diff3, "-", color="C4")
+# ax.fill_between(hcw3.index, hcw_diff3["lower"], hcw_diff3["upper"], color="C4", alpha=0.2)
 
-ax.plot(hcw4.index, hcw4["median"], "-", color="C6")
-ax.fill_between(hcw4.index, hcw4["lower"], hcw4["upper"], color="C6", alpha=0.2)
+ax.plot(hcw4.index, hcw_diff4, "-", color="C6")
+# ax.fill_between(hcw4.index, hcw_diff4["lower"], hcw_diff4["upper"], color="C6", alpha=0.2)
 
 fig.subplots_adjust(left=0.15)
-plt.title("Fraction of overall healthcare worker time")
-plt.ylabel("Fraction of overall healthcare worker time")
-plt.legend(["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4"])
+plt.title("Percentage difference in healthcare worker time")
+plt.ylabel("% difference in healthcare worker time")
+plt.legend(["Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4"])
 
 plt.show()
 
@@ -168,23 +173,71 @@ tx_id4 = treatment_counts(results_folder=results4,
                column="TREATMENT_ID")
 
 
-#] Make plot
-fig, ax = plt.subplots()
-ax.plot(tx_id0.index, tx_id0["Tb_Treatment_median"], "-", color="C3")
+# Make plot
+# tb test, x-ray, start tx, follow-up
+fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=2, ncols=2, sharex=True)
+fig.suptitle('Epi outputs')
 
-ax.plot(tx_id1.index, tx_id1["Tb_Treatment_median"], "-", color="C0")
+# TB tests
+ax1.plot(tx_id0.index, tx_id0["Tb_Treatment_median"], "-", color="C3")
 
-ax.plot(tx_id2.index, tx_id2["Tb_Treatment_median"], "-", color="C2")
+ax1.plot(tx_id1.index, tx_id1["Tb_Treatment_median"], "-", color="C0")
 
-ax.plot(tx_id3.index, tx_id3["Tb_Treatment_median"], "-", color="C4")
+ax1.plot(tx_id2.index, tx_id2["Tb_Treatment_median"], "-", color="C2")
 
-ax.plot(tx_id4.index, tx_id4["Tb_Treatment_median"], "-", color="C6")
+ax1.plot(tx_id3.index, tx_id3["Tb_Treatment_median"], "-", color="C4")
 
-fig.subplots_adjust(left=0.15)
-plt.title("Numbers of TB treatment initiation HSI events")
-plt.ylabel("Numbers treated")
-plt.legend(["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4"])
+ax1.plot(tx_id4.index, tx_id4["Tb_Treatment_median"], "-", color="C6")
 
+ax1.set(title='Numbers of TB tests',
+       ylabel='Numbers of TB tests')
+
+# TB x-ray
+ax2.plot(tx_id0.index, tx_id0["Tb_Test_Xray_median"], "-", color="C3")
+
+ax2.plot(tx_id1.index, tx_id1["Tb_Test_Xray_median"], "-", color="C0")
+
+ax2.plot(tx_id2.index, tx_id2["Tb_Test_Xray_median"], "-", color="C2")
+
+ax2.plot(tx_id3.index, tx_id3["Tb_Test_Xray_median"], "-", color="C4")
+
+ax2.plot(tx_id4.index, tx_id4["Tb_Test_Xray_median"], "-", color="C6")
+
+ax2.set(title='Numbers of X-rays for TB',
+       ylabel='Numbers of X-rays')
+
+# TB start treatment
+ax3.plot(tx_id0.index, tx_id0["Tb_Treatment_median"], "-", color="C3")
+
+ax3.plot(tx_id1.index, tx_id1["Tb_Treatment_median"], "-", color="C0")
+
+ax3.plot(tx_id2.index, tx_id2["Tb_Treatment_median"], "-", color="C2")
+
+ax3.plot(tx_id3.index, tx_id3["Tb_Treatment_median"], "-", color="C4")
+
+ax3.plot(tx_id4.index, tx_id4["Tb_Treatment_median"], "-", color="C6")
+
+ax3.set(title='Numbers starting treatment',
+       ylabel='Numbers starting treatment')
+
+# TB treatment follow-up
+ax4.plot(tx_id0.index, tx_id0["Tb_Test_FollowUp_median"], "-", color="C3")
+
+ax4.plot(tx_id1.index, tx_id1["Tb_Test_FollowUp_median"], "-", color="C0")
+
+ax4.plot(tx_id2.index, tx_id2["Tb_Test_FollowUp_median"], "-", color="C2")
+
+ax4.plot(tx_id3.index, tx_id3["Tb_Test_FollowUp_median"], "-", color="C4")
+
+ax4.plot(tx_id4.index, tx_id4["Tb_Test_FollowUp_median"], "-", color="C6")
+
+ax4.set(title='Numbers of follow-up appointments',
+       ylabel='Numbers of appointments')
+
+for ax in fig.get_axes():
+    ax.label_outer()
+
+plt.legend(labels=["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4"])
 plt.show()
 
 

@@ -339,7 +339,7 @@ tb_deaths4 = summarise_tb_deaths(results4, py4)
 
 # ---------------------------------- PLOTS ---------------------------------- #
 
-fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=2, ncols=2, sharex=True, sharey=True)
+fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=2, ncols=2, sharex=True)
 fig.suptitle('Epi outputs')
 
 # HIV incidence
@@ -381,48 +381,48 @@ ax2.set(title='Active TB incidence',
        ylabel='Active TB cases per 100,000 population')
 
 # HIV deaths
-ax3.plot(tb_inc0.index, aids_deaths0["median_aids_deaths_rate_100kpy"], "-", color="C3")
-ax3.fill_between(tb_inc0.index, aids_deaths0["lower_aids_deaths_rate_100kpy"],
+ax3.plot(py0.index, aids_deaths0["median_aids_deaths_rate_100kpy"], "-", color="C3")
+ax3.fill_between(py0.index, aids_deaths0["lower_aids_deaths_rate_100kpy"],
                  aids_deaths0["upper_aids_deaths_rate_100kpy"], color="C3", alpha=0.2)
 
-ax3.plot(tb_inc0.index, aids_deaths1["median_aids_deaths_rate_100kpy"], "-", color="C0")
-ax3.fill_between(tb_inc0.index, aids_deaths1["lower_aids_deaths_rate_100kpy"],
+ax3.plot(py0.index, aids_deaths1["median_aids_deaths_rate_100kpy"], "-", color="C0")
+ax3.fill_between(py0.index, aids_deaths1["lower_aids_deaths_rate_100kpy"],
                  aids_deaths1["upper_aids_deaths_rate_100kpy"], color="C0", alpha=0.2)
 
-ax3.plot(tb_inc0.index, aids_deaths2["median_aids_deaths_rate_100kpy"], "-", color="C2")
-ax3.fill_between(tb_inc0.index, aids_deaths2["lower_aids_deaths_rate_100kpy"],
+ax3.plot(py0.index, aids_deaths2["median_aids_deaths_rate_100kpy"], "-", color="C2")
+ax3.fill_between(py0.index, aids_deaths2["lower_aids_deaths_rate_100kpy"],
                  aids_deaths2["upper_aids_deaths_rate_100kpy"], color="C2", alpha=0.2)
 
-ax3.plot(tb_inc0.index, aids_deaths3["median_aids_deaths_rate_100kpy"], "-", color="C4")
-ax3.fill_between(tb_inc0.index, aids_deaths3["lower_aids_deaths_rate_100kpy"],
+ax3.plot(py0.index, aids_deaths3["median_aids_deaths_rate_100kpy"], "-", color="C4")
+ax3.fill_between(py0.index, aids_deaths3["lower_aids_deaths_rate_100kpy"],
                  aids_deaths3["upper_aids_deaths_rate_100kpy"], color="C4", alpha=0.2)
 
-ax3.plot(tb_inc0.index, aids_deaths4["median_aids_deaths_rate_100kpy"], "-", color="C6")
-ax3.fill_between(tb_inc0.index, aids_deaths4["lower_aids_deaths_rate_100kpy"],
+ax3.plot(py0.index, aids_deaths4["median_aids_deaths_rate_100kpy"], "-", color="C6")
+ax3.fill_between(py0.index, aids_deaths4["lower_aids_deaths_rate_100kpy"],
                  aids_deaths4["upper_aids_deaths_rate_100kpy"], color="C6", alpha=0.2)
 
 ax3.set(title='Mortality due to AIDS (inc TB)',
        ylabel='Mortality rate per 100,000 population')
 
 # TB deaths
-ax4.plot(tb_inc0.index, tb_deaths0["median_tb_deaths_rate_100kpy"], "-", color="C3")
-ax4.fill_between(tb_inc0.index, tb_deaths0["lower_tb_deaths_rate_100kpy"],
+ax4.plot(py0.index, tb_deaths0["median_tb_deaths_rate_100kpy"], "-", color="C3")
+ax4.fill_between(py0.index, tb_deaths0["lower_tb_deaths_rate_100kpy"],
                  tb_deaths0["upper_tb_deaths_rate_100kpy"], color="C3", alpha=0.2)
 
-ax4.plot(tb_inc0.index, tb_deaths1["median_tb_deaths_rate_100kpy"], "-", color="C0")
-ax4.fill_between(tb_inc0.index, tb_deaths1["lower_tb_deaths_rate_100kpy"],
+ax4.plot(py0.index, tb_deaths1["median_tb_deaths_rate_100kpy"], "-", color="C0")
+ax4.fill_between(py0.index, tb_deaths1["lower_tb_deaths_rate_100kpy"],
                  tb_deaths1["upper_tb_deaths_rate_100kpy"], color="C0", alpha=0.2)
 
-ax4.plot(tb_inc0.index, tb_deaths2["median_tb_deaths_rate_100kpy"], "-", color="C2")
-ax4.fill_between(tb_inc0.index, tb_deaths2["lower_tb_deaths_rate_100kpy"],
+ax4.plot(py0.index, tb_deaths2["median_tb_deaths_rate_100kpy"], "-", color="C2")
+ax4.fill_between(py0.index, tb_deaths2["lower_tb_deaths_rate_100kpy"],
                  tb_deaths2["upper_tb_deaths_rate_100kpy"], color="C2", alpha=0.2)
 
-ax4.plot(tb_inc0.index, tb_deaths3["median_tb_deaths_rate_100kpy"], "-", color="C4")
-ax4.fill_between(tb_inc0.index, tb_deaths3["lower_tb_deaths_rate_100kpy"],
+ax4.plot(py0.index, tb_deaths3["median_tb_deaths_rate_100kpy"], "-", color="C4")
+ax4.fill_between(py0.index, tb_deaths3["lower_tb_deaths_rate_100kpy"],
                  tb_deaths3["upper_tb_deaths_rate_100kpy"], color="C4", alpha=0.2)
 
-ax4.plot(tb_inc0.index, tb_deaths4["median_tb_deaths_rate_100kpy"], "-", color="C6")
-ax4.fill_between(tb_inc0.index, tb_deaths4["lower_tb_deaths_rate_100kpy"],
+ax4.plot(py0.index, tb_deaths4["median_tb_deaths_rate_100kpy"], "-", color="C6")
+ax4.fill_between(py0.index, tb_deaths4["lower_tb_deaths_rate_100kpy"],
                  tb_deaths4["upper_tb_deaths_rate_100kpy"], color="C6", alpha=0.2)
 
 ax4.set(title='Mortality due to TB',
