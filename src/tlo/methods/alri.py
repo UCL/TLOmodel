@@ -121,6 +121,7 @@ class Alri(Module):
 
     # todo add imci classifications
     # todo - what is associated between disease type and different classifications?
+
     all_symptoms = {
         'cough', 'difficult_breathing', 'cyanosis', 'fever', 'tachypnoea', 'chest_indrawing', 'danger_signs'
     }
@@ -822,12 +823,13 @@ class Alri(Module):
                 elif symptom_name == 'chest_indrawing':
                     self.sim.modules['SymptomManager'].register_symptom(
                         Symptom(name=symptom_name,
-                                odds_ratio_health_seeking_in_children=2.4))
+                                odds_ratio_health_seeking_in_children=2.4))  # <-- todo do not harcode!
                 else:
                     self.sim.modules['SymptomManager'].register_symptom(
                         Symptom(name=symptom_name))
-                    # (associates the symptom with the 'average' healthcare seeking,
-                    # part from "danger_signs", which is an emergency symptom in children,  and "chest_indrawing",
+                    # (Associates the symptoms with the 'average' healthcare seeking, apart from "danger_signs", which
+                    # is an emergency symptom in children, and "chest_indrawing" which does have increased healthcare
+                    # seeking.)
 
     def pre_initialise_population(self):
         """Define columns for complications at run-time"""
@@ -1793,6 +1795,7 @@ class Models:
             if (i * one_month_in_a_year) <= age_exact_years < ((i + 1) * one_month_in_a_year):
                 odds_death_age2_59mo *= (p['or_death_ALRI_age2_59mo_by_month_increase_in_age'] ** i)
 
+
         # The effect of disease severity
         if danger_signs:
             odds_death_age_lt2mo *= p['or_death_ALRI_age<2mo_very_severe_pneumonia']
@@ -2281,6 +2284,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
     def _schedule_follow_up_at_same_facility_as_outpatient(self):
         """Schedule a copy of this event to occur in 5 days time as a 'follow-up' appointment at this level as an
         out-patient."""
+        # todo - make inpatient?
 
         self.sim.modules['HealthSystem'].schedule_hsi_event(
             HSI_Alri_Treatment(
@@ -2314,6 +2318,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
     def _get_any_cons(self, _item_str: str) -> bool:
         """True if any of a group of consumables (identified by a string) is available, (if no group is
         provided, then raise ValueError)"""
+        # todo - could accept list of stings, to accomodate the availability of other antibiotics
         if _item_str is not None:
             return any(self.get_consumables(
                 item_codes={
@@ -2560,7 +2565,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                                         facility_level,
                                         ):
         """Do the actions that are required given a particular classification and the current facility level. This
-        entails referrals upwards and/or admission at in-patient, and when at the appropriate level, trying to provice
+        entails referrals upwards and/or admission at in-patient, and when at the appropriate level, trying to provide
         the ideal treatment."""
 
         def _provide_consumable_and_refer(cons: str) -> None:
@@ -3036,6 +3041,7 @@ def _make_treatment_and_diagnosis_perfect(alri_module):
     p['tf_oral_amoxicillin_only_for_severe_pneumonia_with_SpO2<90%'] = 0.0
 
     p['tf_oral_amoxicillin_only_for_non_severe_pneumonia_with_SpO2<90%'] = 0.0
+
 
 def _make_high_risk_of_death(alri_module):
     """Modify the parameters of an instance of the Alri module so that the risk of death is high."""

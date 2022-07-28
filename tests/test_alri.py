@@ -275,7 +275,7 @@ def test_integrity_of_linear_models(sim_hs_all_consumables):
                                       pathogen=pathogen,
                                       disease_type=disease_type,
                                       SpO2_level=SpO2_level,
-                                      complications=complications,
+                                      complications=[complications],
                                       danger_signs=danger_signs,
                                       un_clinical_acute_malnutrition=un_clinical_acute_malnutrition
                                       )
@@ -1218,7 +1218,7 @@ def test_impact_of_all_hsi(seed, tmpdir):
     )
 
 
-def test_specific_effect_of_pulse_oximeter_and_oxyegn(seed, tmpdir):
+def test_specific_effect_of_pulse_oximeter_and_oxgen_for_danger_signs_pneumonia(seed, tmpdir):
     """Check that there are fewer deaths to those that have AlriIncidentCase_Lethal_DangerSigns_Pneumonia overall when
      pulse-oximeter and oxygen are available."""
 
