@@ -30,7 +30,7 @@ def run_scenario(**kwargs):
 
     start_date = Date(2010, 1, 1)
     end_date = start_date + pd.DateOffset(years=1)
-    popsize = 50_000
+    popsize = 100_000
 
     log_config = {
         "filename": f"alri",
@@ -139,6 +139,6 @@ fig.show()
 fig, ax = plt.subplots()
 (100_000 * pd.Series(cfr)).T.plot.barh(ax=ax, stacked=True)
 ax.set_title('Case:Fatality Ratio')
-ax.set_xlabel('C Deaths per 100k cases')
+ax.set_xlabel('Deaths per 100k cases')
 fig.tight_layout()
 fig.show()

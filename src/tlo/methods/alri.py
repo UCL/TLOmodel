@@ -690,16 +690,16 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'probability of cyanosis in bronchiolitis or other alri'
                       ),
-        'prob_cyanosis_in_pneumonia':     # todo - NOT USED
+        'prob_cyanosis_in_pneumonia':  # todo - NOT USED
             Parameter(Types.REAL,
                       'probability of cyanosis in pneumonia'
                       ),
 
-        'prob_cyanosis_in_SpO2<90%':    # todo - it is used
+        'prob_cyanosis_in_SpO2<90%':  # todo - it is used
             Parameter(Types.REAL,
                       'tmp param'
                       ),
-        'or_care_seeking_perceived_severe_illness':   # todo - not used.
+        'or_care_seeking_perceived_severe_illness':  # todo - not used.
             Parameter(Types.BOOL,
                       'tmp param'
                       ),
@@ -1287,7 +1287,7 @@ class Alri(Module):
         classification by symptom, the need for oxygen (if SpO2 < 90%), and the type of antibiotic therapy (oral vs.
          IV/IM)."""
 
-        assert (antibiotic_provided in self.antibiotics) or (antibiotic_provided == ''),\
+        assert (antibiotic_provided in self.antibiotics) or (antibiotic_provided == ''), \
             f"Not recognised {antibiotic_provided=}"
 
         p = self.parameters
@@ -1358,7 +1358,8 @@ class Alri(Module):
                     elif antibiotic_provided == 'Amoxicillin_tablet_or_suspension_3days':
                         return p['tf_3day_amoxicillin_for_chest_indrawing_with_SpO2>=90%']
                     else:
-                        return min(p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%'], p['tf_3day_amoxicillin_for_chest_indrawing_with_SpO2>=90%'] )
+                        return min(p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%'],
+                                   p['tf_3day_amoxicillin_for_chest_indrawing_with_SpO2>=90%'])
                         # todo Need an else (in case they are something else) For now, I've put in the lower of the two others
 
                 elif imci_symptom_based_classification == 'fast_breathing_pneumonia':
@@ -1367,7 +1368,8 @@ class Alri(Module):
                     elif antibiotic_provided == 'Amoxicillin_tablet_or_suspension_7days':
                         return p['tf_7day_amoxicillin_for_fast_breathing_pneumonia_in_young_infants']
                     else:
-                        return min(p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%'], p['tf_7day_amoxicillin_for_fast_breathing_pneumonia_in_young_infants'])
+                        return min(p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%'],
+                                   p['tf_7day_amoxicillin_for_fast_breathing_pneumonia_in_young_infants'])
                         # todo Need an else (in case they are something else) For now, I've put in the lower of the two others
 
                 # No pneumonia (by IMCI classification)
@@ -1384,7 +1386,6 @@ class Alri(Module):
                     return p['tf_oral_amoxicillin_only_for_non_severe_pneumonia_with_SpO2<90%']
                 else:
                     return min(1.0, 2.0 * p['tf_oral_amoxicillin_only_for_non_severe_pneumonia_with_SpO2<90%'])
-
 
     def do_effects_of_treatment(self, person_id, antibiotic_provided: str, oxygen_provided: bool):
         """Helper function that enacts the effects of a treatment to Alri caused by a pathogen.
@@ -1532,11 +1533,11 @@ class Models:
                         'age_years',
                         conditions_are_mutually_exclusive=True,
                         conditions_are_exhaustive=True).when(0, age_effects[0])
-                                                       .when(1, age_effects[1])
-                                                       .when(2, age_effects[2])
-                                                       .when(3, age_effects[3])
-                                                       .when(4, age_effects[4])
-                                                       .when('>= 5', 0.0),
+                        .when(1, age_effects[1])
+                        .when(2, age_effects[2])
+                        .when(3, age_effects[3])
+                        .when(4, age_effects[4])
+                        .when('>= 5', 0.0),
                     Predictor('li_wood_burn_stove').when(False, p['rr_ALRI_indoor_air_pollution']),
                     Predictor().when('(va_measles_all_doses == False) & (age_years >= 1)',
                                      p['rr_ALRI_incomplete_measles_immunisation']),
@@ -1605,7 +1606,8 @@ class Models:
         if (
             (age_exact_years < 1.0) and (p[f'proportion_pneumonia_in_{pathogen}_ALRI'][0] > self.rng.random_sample())
         ) or (
-            (1.0 <= age_exact_years < 5.0) and (p[f'proportion_pneumonia_in_{pathogen}_ALRI'][1] > self.rng.random_sample())
+            (1.0 <= age_exact_years < 5.0) and (
+            p[f'proportion_pneumonia_in_{pathogen}_ALRI'][1] > self.rng.random_sample())
         ):
             disease_type = 'pneumonia'
         else:
@@ -1795,7 +1797,6 @@ class Models:
             if (i * one_month_in_a_year) <= age_exact_years < ((i + 1) * one_month_in_a_year):
                 odds_death_age2_59mo *= (p['or_death_ALRI_age2_59mo_by_month_increase_in_age'] ** i)
 
-
         # The effect of disease severity
         if danger_signs:
             odds_death_age_lt2mo *= p['or_death_ALRI_age<2mo_very_severe_pneumonia']
@@ -1832,12 +1833,12 @@ class Models:
 
         # todo - check this works!
         if 'sepsis' in complications:
-            odds_death_age_lt2mo *= 151.9   # todo --- this seems VERY HIGH and why is it hardcoded?
-            odds_death_age2_59mo *= 151.9   # todo --- this seems VERY HIGH and why is it hardcoded?
+            odds_death_age_lt2mo *= 151.9  # todo --- this seems VERY HIGH and why is it hardcoded?
+            odds_death_age2_59mo *= 151.9  # todo --- this seems VERY HIGH and why is it hardcoded?
 
         if 'pneumothorax' in complications:
-            odds_death_age_lt2mo *= 77.4   # todo --- this seems VERY HIGH and why is it hardcoded?
-            odds_death_age2_59mo *= 77.4   # todo --- this seems VERY HIGH and why is it hardcoded?
+            odds_death_age_lt2mo *= 77.4  # todo --- this seems VERY HIGH and why is it hardcoded?
+            odds_death_age2_59mo *= 77.4  # todo --- this seems VERY HIGH and why is it hardcoded?
 
         # Convert odds to probability
         risk_death_age_lt2mo = odds_death_age_lt2mo / (1 + odds_death_age_lt2mo)
@@ -1966,7 +1967,8 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
             )
 
         # ----------------------- Duration of the Alri event and episode -----------------------
-        duration_in_days_of_alri = rng.randint(3, params['max_alri_duration_in_days_without_treatment'])  # todo changed this 1-->3 to help with problems about timeliness of healthcare seeking; could chnage it back now that we have instant healthcare seeking
+        duration_in_days_of_alri = rng.randint(3, params[
+            'max_alri_duration_in_days_without_treatment'])  # todo changed this 1-->3 to help with problems about timeliness of healthcare seeking; could chnage it back now that we have instant healthcare seeking
 
         # Date for outcome (either recovery or death) with uncomplicated Alri
         date_of_outcome = date + DateOffset(days=duration_in_days_of_alri)
@@ -2008,7 +2010,8 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
             disease_type=disease_type,
             SpO2_level=oxygen_saturation,
             complications=complications,
-            danger_signs=('danger_signs' in all_symptoms),  # todo <--- is this right? # turn danger_signs into a property??
+            danger_signs=('danger_signs' in all_symptoms),
+            # todo <--- is this right? # turn danger_signs into a property??
             un_clinical_acute_malnutrition=un_clinical_acute_malnutrition,
         )
 
@@ -2073,6 +2076,14 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
             self.module.logging_event.new_systemic_complication_case()
         if 'hypoxaemia' in chars['complications']:
             self.module.logging_event.new_hypoxaemic_case()
+        if (
+            ("danger_signs_pneumonia" == self.module.get_imci_classification_based_on_symptoms(
+                symptoms=chars['symptoms'],
+                child_is_younger_than_2_months=df.at[person_id, "age_years"] < 2)
+            ) and (
+            chars['oxygen_saturation'] == "<90%")
+        ):
+            self.module.logging_event.new_danger_signs_pneumonia_case()
 
     def apply(self, person_id):
         """Determines and enacts all the characteristics of the case (symotoms, complications, outcome)"""
@@ -2524,13 +2535,12 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
 
         return _classification
 
-
     @staticmethod
-    def _ultimate_treatment_indicated_for_patient(classification_for_treatment_decision, age_exact_years,):
+    def _ultimate_treatment_indicated_for_patient(classification_for_treatment_decision, age_exact_years, ):
         """Return a Dict of the form {'antibiotic_indicated': <>, 'oxygen_indicated': <>} which expresses what the
          treatment is that the patient should be provided with ideally and ultimately, if consumables are available (and
          following an admission to in-patient, if required)."""
-        #todo assert that classification_for_treatment_decision is in the set of allowable valyes
+        # todo assert that classification_for_treatment_decision is in the set of allowable valyes
 
         if classification_for_treatment_decision == 'fast_breathing_pneumonia':
             return {
@@ -2557,7 +2567,6 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                 'antibiotic_indicated': '',
                 'oxygen_indicated': False
             }
-
 
     def _do_action_given_classification(self,
                                         classification_for_treatment_decision,
@@ -2604,7 +2613,6 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                 )
                 # if treatment_failed and not self.is_followup:
                 #     self._schedule_follow_up_at_same_facility_as_outpatient()
-
 
         def _do_if_fast_breathing_pneumonia():
             """What to do if classification is `fast_breathing`."""
@@ -2656,7 +2664,6 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
             'danger_signs_pneumonia': _do_if_danger_signs_pneumonia,
             'cough_or_cold': _do_if_cough_or_cold
         }[classification_for_treatment_decision]()
-
 
     def _provide_bronchodilator_if_wheeze(self, facility_level, symptoms):
         """Provide bronchodilator if wheeze is among the symptoms"""

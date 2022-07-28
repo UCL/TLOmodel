@@ -1186,7 +1186,7 @@ def test_impact_of_all_hsi(seed, tmpdir):
         df = sim.population.props
 
         # Return number of children who have died with a cause of Alri, excluding those who die with oxygen saturation
-        # 90-92% for which there is no treatment provided.
+        # 90-92% for which there is no oxygen provided.
         total_deaths_to_alri = sim.modules['Alri'].logging_event.trackers['deaths'].report_current_total()
         print(f"persons_that_die_of_alri = {df.loc[~df.is_alive & df['cause_of_death'].str.startswith('ALRI')].index.values}")
         total_deaths_to_alri_with_untreated_hypoxaemia = sim.modules['Alri'].logging_event.trackers[
