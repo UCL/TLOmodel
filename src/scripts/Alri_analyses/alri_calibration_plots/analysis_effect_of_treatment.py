@@ -23,8 +23,8 @@ from tlo.methods.alri import (
     AlriPollingEvent,
     AlriPropertiesOfOtherModules,
     HSI_Alri_Treatment,
-    _make_treatment_and_diagnosis_perfect,
     _make_hw_diagnosis_perfect,
+    _make_treatment_and_diagnosis_perfect,
 )
 from tlo.util import sample_outcome
 
@@ -67,7 +67,8 @@ def get_sim(popsize):
 # Alri module with default values
 sim0 = get_sim(popsize=MODEL_POPSIZE)
 alri_module_with_imperfect_diagnosis_and_imperfect_treatment = sim0.modules['Alri']
-hsi_with_imperfect_diagnosis_and_imperfect_treatment = HSI_Alri_Treatment(module=alri_module_with_imperfect_diagnosis_and_imperfect_treatment, person_id=None)
+hsi_with_imperfect_diagnosis_and_imperfect_treatment = HSI_Alri_Treatment(
+    module=alri_module_with_imperfect_diagnosis_and_imperfect_treatment, person_id=None)
 
 # Alri module with perfect diagnosis (and imperfect treatment)
 sim1 = get_sim(popsize=MODEL_POPSIZE)
@@ -79,7 +80,6 @@ hsi_with_perfect_diagnosis = HSI_Alri_Treatment(module=alri_module_with_perfect_
 sim2 = get_sim(popsize=MODEL_POPSIZE)
 alri_module_with_perfect_treatment_and_diagnosis = sim2.modules['Alri']
 _make_treatment_and_diagnosis_perfect(alri_module_with_perfect_treatment_and_diagnosis)
-
 
 
 def generate_case_mix() -> pd.DataFrame:
@@ -98,14 +98,15 @@ def generate_case_mix() -> pd.DataFrame:
         new_alri = []
         while len(new_alri) < MIN_SAMPLE_OF_NEW_CASES:
             new_alri.extend(
-                [(k, v) for k, v in sample_outcome(probs=probs_of_acquiring_pathogen, rng=alri_module_with_perfect_diagnosis.rng).items()]
+                [(k, v) for k, v in
+                 sample_outcome(probs=probs_of_acquiring_pathogen, rng=alri_module_with_perfect_diagnosis.rng).items()]
             )
 
         # Return dataframe in which person_id is replaced with age and sex (ignoring variation in vaccine /
         # under-nutrition).
-        return pd.DataFrame(columns=['person_id', 'pathogen'], data=new_alri)\
+        return pd.DataFrame(columns=['person_id', 'pathogen'], data=new_alri) \
             .merge(sim1.population.props[['age_exact_years', 'sex']],
-                   right_index=True, left_on=['person_id'], how='left')\
+                   right_index=True, left_on=['person_id'], how='left') \
             .drop(columns=['person_id'])
 
     def char_of_incident_case(sex,
@@ -121,15 +122,14 @@ def generate_case_mix() -> pd.DataFrame:
 
         samples = []
         for _ in range(NUM_REPS_FOR_EACH_CASE):
-
             nature_of_char = incident_case.determine_nature_of_the_case(
-                    age_exact_years=age_exact_years,
-                    sex=sex,
-                    pathogen=pathogen,
-                    va_hib_all_doses=va_hib_all_doses,
-                    va_pneumo_all_doses=va_pneumo_all_doses,
-                    un_clinical_acute_malnutrition=un_clinical_acute_malnutrition,
-                )
+                age_exact_years=age_exact_years,
+                sex=sex,
+                pathogen=pathogen,
+                va_hib_all_doses=va_hib_all_doses,
+                va_pneumo_all_doses=va_pneumo_all_doses,
+                un_clinical_acute_malnutrition=un_clinical_acute_malnutrition,
+            )
 
             samples.append({**nature_of_char, **{'sex': sex,
                                                  'age_exact_years': age_exact_years,
@@ -142,9 +142,9 @@ def generate_case_mix() -> pd.DataFrame:
 
         return samples
 
-
     incident_case_mix = get_incident_case_mix()
-    overall_case_mix = []   # This will be the mix of cases, represeting the characterists of the case as well as the pathogen and who they are incident to
+    overall_case_mix = []  # This will be the mix of cases, representing the characteristics of the case as well as the
+    #                        pathogen and who they are incident to.
 
     for x in incident_case_mix.itertuples():
         overall_case_mix.extend(
@@ -197,7 +197,6 @@ def treatment_efficacy(
         alri_module = alri_module_with_perfect_treatment_and_diagnosis
     else:
         alri_module = alri_module_with_imperfect_diagnosis_and_imperfect_treatment
-
 
     # "Treatment Fails" is the probability that a death is averted (if one is schedule)
     treatment_fails = alri_module._prob_treatment_fails(
@@ -284,129 +283,138 @@ def generate_table():
                 hw_dx_perfect=True,
             ),
 
-            'treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx': treatment_efficacy(
-                # Information about the patient:
-                age_exact_years=x.age_exact_years,
-                symptoms=x.symptoms,
-                oxygen_saturation=x.oxygen_saturation,
-                disease_type=x.disease_type,
-                complications=x.complications,
+            'treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx':
+                treatment_efficacy(
+                    # Information about the patient:
+                    age_exact_years=x.age_exact_years,
+                    symptoms=x.symptoms,
+                    oxygen_saturation=x.oxygen_saturation,
+                    disease_type=x.disease_type,
+                    complications=x.complications,
 
-                # Information about the care that can be provided:
-                oximeter_available=True,
-                oxygen_available=False,
-                treatment_perfect=False,
-                hw_dx_perfect=True,
+                    # Information about the care that can be provided:
+                    oximeter_available=True,
+                    oxygen_available=False,
+                    treatment_perfect=False,
+                    hw_dx_perfect=True,
             ),
 
-            'treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_perfect_hw_dx': treatment_efficacy(
-                # Information about the patient:
-                age_exact_years=x.age_exact_years,
-                symptoms=x.symptoms,
-                oxygen_saturation=x.oxygen_saturation,
-                disease_type=x.disease_type,
-                complications=x.complications,
+            'treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_perfect_hw_dx':
+                treatment_efficacy(
+                    # Information about the patient:
+                    age_exact_years=x.age_exact_years,
+                    symptoms=x.symptoms,
+                    oxygen_saturation=x.oxygen_saturation,
+                    disease_type=x.disease_type,
+                    complications=x.complications,
 
-                # Information about the care that can be provided:
-                oximeter_available=False,
-                oxygen_available=True,
-                treatment_perfect=False,
-                hw_dx_perfect=True,
+                    # Information about the care that can be provided:
+                    oximeter_available=False,
+                    oxygen_available=True,
+                    treatment_perfect=False,
+                    hw_dx_perfect=True,
             ),
 
             # Treatment Efficacy with * IMPERFECT HW Diangosis *
-            'treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_imperfect_hw_dx': treatment_efficacy(
-                # Information about the patient:
-                age_exact_years=x.age_exact_years,
-                symptoms=x.symptoms,
-                oxygen_saturation=x.oxygen_saturation,
-                disease_type=x.disease_type,
-                complications=x.complications,
+            'treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_imperfect_hw_dx':
+                treatment_efficacy(
+                    # Information about the patient:
+                    age_exact_years=x.age_exact_years,
+                    symptoms=x.symptoms,
+                    oxygen_saturation=x.oxygen_saturation,
+                    disease_type=x.disease_type,
+                    complications=x.complications,
 
-                # Information about the care that can be provided:
-                oximeter_available=True,
-                oxygen_available=True,
-                treatment_perfect=False,
-                hw_dx_perfect=False,
+                    # Information about the care that can be provided:
+                    oximeter_available=True,
+                    oxygen_available=True,
+                    treatment_perfect=False,
+                    hw_dx_perfect=False,
             ),
 
-            'treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_imperfect_hw_dx': treatment_efficacy(
-                # Information about the patient:
-                age_exact_years=x.age_exact_years,
-                symptoms=x.symptoms,
-                oxygen_saturation=x.oxygen_saturation,
-                disease_type=x.disease_type,
-                complications=x.complications,
+            'treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_imperfect_hw_dx':
+                treatment_efficacy(
+                    # Information about the patient:
+                    age_exact_years=x.age_exact_years,
+                    symptoms=x.symptoms,
+                    oxygen_saturation=x.oxygen_saturation,
+                    disease_type=x.disease_type,
+                    complications=x.complications,
 
-                # Information about the care that can be provided:
-                oximeter_available=False,
-                oxygen_available=False,
-                treatment_perfect=False,
-                hw_dx_perfect=False,
+                    # Information about the care that can be provided:
+                    oximeter_available=False,
+                    oxygen_available=False,
+                    treatment_perfect=False,
+                    hw_dx_perfect=False,
             ),
 
-            'treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_imperfect_hw_dx': treatment_efficacy(
-                # Information about the patient:
-                age_exact_years=x.age_exact_years,
-                symptoms=x.symptoms,
-                oxygen_saturation=x.oxygen_saturation,
-                disease_type=x.disease_type,
-                complications=x.complications,
+            'treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_imperfect_hw_dx':
+                treatment_efficacy(
+                    # Information about the patient:
+                    age_exact_years=x.age_exact_years,
+                    symptoms=x.symptoms,
+                    oxygen_saturation=x.oxygen_saturation,
+                    disease_type=x.disease_type,
+                    complications=x.complications,
 
-                # Information about the care that can be provided:
-                oximeter_available=True,
-                oxygen_available=False,
-                treatment_perfect=False,
-                hw_dx_perfect=False,
+                    # Information about the care that can be provided:
+                    oximeter_available=True,
+                    oxygen_available=False,
+                    treatment_perfect=False,
+                    hw_dx_perfect=False,
             ),
 
-            'treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_imperfect_hw_dx': treatment_efficacy(
-                # Information about the patient:
-                age_exact_years=x.age_exact_years,
-                symptoms=x.symptoms,
-                oxygen_saturation=x.oxygen_saturation,
-                disease_type=x.disease_type,
-                complications=x.complications,
+            'treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_imperfect_hw_dx':
+                treatment_efficacy(
+                    # Information about the patient:
+                    age_exact_years=x.age_exact_years,
+                    symptoms=x.symptoms,
+                    oxygen_saturation=x.oxygen_saturation,
+                    disease_type=x.disease_type,
+                    complications=x.complications,
 
-                # Information about the care that can be provided:
-                oximeter_available=False,
-                oxygen_available=True,
-                treatment_perfect=False,
-                hw_dx_perfect=False,
+                    # Information about the care that can be provided:
+                    oximeter_available=False,
+                    oxygen_available=True,
+                    treatment_perfect=False,
+                    hw_dx_perfect=False,
             ),
-
 
             # Classifications
-            'classification_for_treatment_decision_with_oximeter_perfect_accuracy': hsi_with_perfect_diagnosis._get_disease_classification_for_treatment_decision(
-                age_exact_years=x.age_exact_years,
-                symptoms=x.symptoms,
-                oxygen_saturation=x.oxygen_saturation,
-                facility_level='2',  # <-- assumes that the diagnosis occurs at level '2'
-                use_oximeter=True,
+            'classification_for_treatment_decision_with_oximeter_perfect_accuracy':
+                hsi_with_perfect_diagnosis._get_disease_classification_for_treatment_decision(
+                    age_exact_years=x.age_exact_years,
+                    symptoms=x.symptoms,
+                    oxygen_saturation=x.oxygen_saturation,
+                    facility_level='2',  # <-- assumes that the diagnosis occurs at level '2'
+                    use_oximeter=True,
             ),
 
-            'classification_for_treatment_decision_without_oximeter_perfect_accuracy': hsi_with_perfect_diagnosis._get_disease_classification_for_treatment_decision(
-                age_exact_years=x.age_exact_years,
-                symptoms=x.symptoms,
-                oxygen_saturation=x.oxygen_saturation,
-                facility_level='2',  # <-- assumes that the diagnosis occurs at level '2'
-                use_oximeter=False,
+            'classification_for_treatment_decision_without_oximeter_perfect_accuracy':
+                hsi_with_perfect_diagnosis._get_disease_classification_for_treatment_decision(
+                    age_exact_years=x.age_exact_years,
+                    symptoms=x.symptoms,
+                    oxygen_saturation=x.oxygen_saturation,
+                    facility_level='2',  # <-- assumes that the diagnosis occurs at level '2'
+                    use_oximeter=False,
             ),
 
-            'classification_for_treatment_decision_with_oximeter_imperfect_accuracy': hsi_with_imperfect_diagnosis_and_imperfect_treatment._get_disease_classification_for_treatment_decision(
-                age_exact_years=x.age_exact_years,
-                symptoms=x.symptoms,
-                oxygen_saturation=x.oxygen_saturation,
-                facility_level='2',  # <-- assumes that the diagnosis occurs at level '2'
-                use_oximeter=True,
+            'classification_for_treatment_decision_with_oximeter_imperfect_accuracy':
+                hsi_with_imperfect_diagnosis_and_imperfect_treatment._get_disease_classification_for_treatment_decision(
+                    age_exact_years=x.age_exact_years,
+                    symptoms=x.symptoms,
+                    oxygen_saturation=x.oxygen_saturation,
+                    facility_level='2',  # <-- assumes that the diagnosis occurs at level '2'
+                    use_oximeter=True,
             ),
 
-            'classification_for_treatment_decision_without_oximeter_imperfect_accuracy': hsi_with_imperfect_diagnosis_and_imperfect_treatment._get_disease_classification_for_treatment_decision(
-                age_exact_years=x.age_exact_years,
-                symptoms=x.symptoms,
-                oxygen_saturation=x.oxygen_saturation,
-                facility_level='2',  # <-- assumes that the diagnosis occurs at level '2'
-                use_oximeter=False,
+            'classification_for_treatment_decision_without_oximeter_imperfect_accuracy':
+                hsi_with_imperfect_diagnosis_and_imperfect_treatment._get_disease_classification_for_treatment_decision(
+                    age_exact_years=x.age_exact_years,
+                    symptoms=x.symptoms,
+                    oxygen_saturation=x.oxygen_saturation,
+                    facility_level='2',  # <-- assumes that the diagnosis occurs at level '2'
+                    use_oximeter=False,
             ),
 
         })
@@ -423,73 +431,86 @@ def main():
     def summarize_by(df: pd.DataFrame, by: List[str], columns: [List[str]]) -> pd.DataFrame:
         """Helper function returns dataframe that summarizes the dataframe provided using groupby, with by arguements,
         and provides columns as follows: [size-of-the-group, mean-of-column-1, mean-of-column-2, ...]"""
-        return pd.DataFrame({'fraction': df.groupby(by=by).size()}).apply(lambda x: x/x.sum(), axis=0)\
+        return pd.DataFrame({'fraction': df.groupby(by=by).size()}).apply(lambda x: x / x.sum(), axis=0) \
             .join(df.groupby(by=by)[columns].mean())
 
     # Examine case mix
-    y = summarize_by(table,
-                     by=['disease_type', 'pathogen'],
-                     columns=['has_danger_signs', 'needs_oxygen', 'prob_die_if_no_treatment']
-                     ).reset_index()
+    case_mix_by_disease_and_pathogen = summarize_by(table,
+                                                    by=['disease_type', 'pathogen'],
+                                                    columns=['has_danger_signs', 'needs_oxygen',
+                                                             'prob_die_if_no_treatment']
+                                                    ).reset_index()
+    print(f"{case_mix_by_disease_and_pathogen=}")
 
     # Examine danger_signs as a predictor of SpO2 < 90%
-    y = pd.crosstab(
+    print(pd.crosstab(
         pd.Series(table['oxygen_saturation'] == "<90%", name='SpO2<90%'),
         table['has_danger_signs'],
         normalize="index", margins=True
-    )
+    ))
 
     # Look at diagnosis errors (assuming that the "truth" is
     # "classification_for_treatment_decision_with_oximeter_perfect_accuracy")
 
     def cross_tab(truth: pd.Series, dx: pd.Series):
         """Return cross-tab between truth and dx and count number of incongruent rows."""
-        print(f"% cases mis-classified is {100*(truth != dx).mean()}%")
+        print(f"% cases mis-classified is {100 * (truth != dx).mean()}%")
         return pd.crosstab(truth, dx, normalize='index')
 
-
-    # THEORETICAL "total error" that occurs without oximeter: TRUTH versus 'Classification without an oximeter' (under perfect HW accuracy)
-    y = cross_tab(
-            truth=table["classification_for_treatment_decision_with_oximeter_perfect_accuracy"],
-            dx=table['classification_for_treatment_decision_without_oximeter_perfect_accuracy'],
+    # THEORETICAL "total error" that occurs without oximeter: TRUTH versus 'Classification without an oximeter'
+    # (under perfect HW accuracy)
+    truth = table["classification_for_treatment_decision_with_oximeter_perfect_accuracy"]
+    xtab_vs_without_oximeter_perfect__hw_dx = cross_tab(
+        truth=truth, dx=table['classification_for_treatment_decision_without_oximeter_perfect_accuracy'],
     )
     # 5%
 
-    # REAL "total error" that occurs without oximeter: TRUTH versus 'Classification without an oximeter' (under actual HW accuracy)
-    y = cross_tab(
-            truth=table["classification_for_treatment_decision_with_oximeter_perfect_accuracy"],
-            dx=table['classification_for_treatment_decision_without_oximeter_imperfect_accuracy'],
+    # REAL "total error" that occurs without oximeter: TRUTH versus 'Classification without an oximeter'
+    # (under actual HW accuracy)
+    xtab_vs_without_oximeter_imperfect_hw_dx = cross_tab(
+        truth=truth, dx=table['classification_for_treatment_decision_without_oximeter_imperfect_accuracy'],
     )
     # 32%
 
+    # REAL "total error" that occurs with oximeter: TRUTH versus 'Classification with an oximeter'
+    # (under actual HW accuracy)
+    xtab_vs_with_oximeter_imperfect_hw_dx = cross_tab(
+        truth=truth, dx=table["classification_for_treatment_decision_with_oximeter_imperfect_accuracy"],
+    )  # 24%
 
-    # REAL "total error" that occurs with oximeter: TRUTH versus 'Classification with an oximeter' (under actual HW accuracy)
-    y = cross_tab(
-        truth=table["classification_for_treatment_decision_with_oximeter_perfect_accuracy"],
-        dx=table["classification_for_treatment_decision_with_oximeter_imperfect_accuracy"],
-    )
-    # 24%
+    print(f"\n{xtab_vs_without_oximeter_perfect__hw_dx=}"
+          f"\n{xtab_vs_without_oximeter_imperfect_hw_dx=}"
+          f"\n{xtab_vs_with_oximeter_imperfect_hw_dx=}"
+          )
 
-    truth_danger_signs_pneumonia = table["classification_for_treatment_decision_with_oximeter_perfect_accuracy"] == "danger_signs_pneumonia"
+    truth_danger_signs_pneumonia = \
+        table["classification_for_treatment_decision_with_oximeter_perfect_accuracy"] == "danger_signs_pneumonia"
+
     correctly_dx_with_po_when_misdiagnosed_without_imperfect_accuracy = len(
-        table.loc[truth_danger_signs_pneumonia &
-                  (table["classification_for_treatment_decision_with_oximeter_imperfect_accuracy"] == "danger_signs_pneumonia") &
-                  (table["classification_for_treatment_decision_without_oximeter_imperfect_accuracy"] != "danger_signs_pneumonia")
+        table.loc[truth_danger_signs_pneumonia
+                  & (table["classification_for_treatment_decision_with_oximeter_imperfect_accuracy"]
+                     == "danger_signs_pneumonia")
+                  & (table["classification_for_treatment_decision_without_oximeter_imperfect_accuracy"]
+                     != "danger_signs_pneumonia")
                   ]
     ) / len(table.loc[truth_danger_signs_pneumonia])  # 32%
 
     correctly_dx_with_po_when_misdiagnosed_without_perfect_accuracy = len(
-        table.loc[truth_danger_signs_pneumonia &
-                  (table["classification_for_treatment_decision_with_oximeter_perfect_accuracy"] == "danger_signs_pneumonia") &
-                  (table["classification_for_treatment_decision_without_oximeter_perfect_accuracy"] != "danger_signs_pneumonia")
+        table.loc[truth_danger_signs_pneumonia
+                  & (table["classification_for_treatment_decision_with_oximeter_perfect_accuracy"]
+                     == "danger_signs_pneumonia")
+                  & (table["classification_for_treatment_decision_without_oximeter_perfect_accuracy"]
+                     != "danger_signs_pneumonia")
                   ]
     ) / len(table.loc[truth_danger_signs_pneumonia])  # 12%
 
+    print(f"\n{correctly_dx_with_po_when_misdiagnosed_without_imperfect_accuracy}"
+          f"\n{correctly_dx_with_po_when_misdiagnosed_without_perfect_accuracy}")
 
     # Examine risk of death and treatment effectiveness by disease classification and oxygen saturation
     # And include estimate of % of deaths by scaling using "prob_die_if_no_treatment".
     # UNDER PERFECT HW DX
-    y = summarize_by(
+    risk_of_death = summarize_by(
         df=table,
         by=['oxygen_saturation', 'classification_for_treatment_decision_with_oximeter_perfect_accuracy'],
         columns=[
@@ -502,9 +523,10 @@ def main():
             (df.fraction * df.prob_die_if_no_treatment) / (df.fraction * df.prob_die_if_no_treatment).sum()
         )
     )
+    print(f"{risk_of_death=}")
 
     # Examine risk of death and treatment effectiveness for "danger_signs_pneumonia" & SpO2<90%
-    y = summarize_by(
+    treatment_effectiveness = summarize_by(
         df=table,
         by=['oxygen_saturation', 'classification_for_treatment_decision_with_oximeter_perfect_accuracy'],
         columns=[
@@ -516,6 +538,7 @@ def main():
             'treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_perfect_hw_dx',
         ]
     ).loc[("<90%", "danger_signs_pneumonia")]
+    print(f"{treatment_effectiveness}")
 
     # ------
     # Look at where a person would receive a different diagnoses with/without oximeter and also (therefore) a
@@ -527,24 +550,25 @@ def main():
         & (
             table['treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_perfect_hw_dx']
             != table['treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx']
-        )
-        , [
+        ), [
             'age_exact_years',
-             'symptoms',
-             'classification_for_treatment_decision_with_oximeter_perfect_accuracy',
-             'classification_for_treatment_decision_without_oximeter_perfect_accuracy',
-             'treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_perfect_hw_dx',
-             'treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx',
-         ]
+            'symptoms',
+            'classification_for_treatment_decision_with_oximeter_perfect_accuracy',
+            'classification_for_treatment_decision_without_oximeter_perfect_accuracy',
+            'treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_perfect_hw_dx',
+            'treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx',
+        ]
     ]
 
     # Show that all these cases are when SpO2<90% but no danger signs or other serious symptoms, and so the person is
     # classified as "cough_or_cold" without an oximeter.
     assert set(x.index) == set(table.loc[
-                                   (table.oxygen_saturation == "<90%") &
-                                   (~table.has_danger_signs) &
-                                   (table['classification_for_treatment_decision_without_oximeter_perfect_accuracy'] == "cough_or_cold")
-                                   ].index)
+                                   (table.oxygen_saturation == "<90%")
+                                   & (~table.has_danger_signs)
+                                   & (table['classification_for_treatment_decision_without_oximeter_perfect_accuracy']
+                                      == "cough_or_cold")
+                                   ].index
+                               )
 
     # What percent of cases is this?
     100 * len(x) / len(table)
@@ -555,7 +579,8 @@ def main():
     # * Treatment antibiotics only (no oxygen, no oximeter)
     # * Treatment with antibiotics and oxygen (no oximeter)
     # * Treatment with antibiotics and oxygen and use of oximeter
-    # ... under assumptions of (i) normal treatment and normal dx accuracy; (ii) normal treatment and perfect dx accuracy
+    # ... under assumptions of (i) normal treatment and normal dx accuracy; (ii) normal treatment and perfect dx
+    # accuracy
 
     disease_classification = table["classification_for_treatment_decision_with_oximeter_perfect_accuracy"]
     low_oxygen = (table["oxygen_saturation"] == "<90%").replace({True: 'SpO2<90%', False: "SpO2>=90%"})
@@ -563,35 +588,46 @@ def main():
         "Perfect HW Dx Accuracy": {
             "No Treatment": table['prob_die_if_no_treatment'].groupby(by=[disease_classification, low_oxygen]).sum(),
             "Antiobiotics only": (
-                table['prob_die_if_no_treatment'] * (1.0 - table['treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_perfect_hw_dx'] / 100.0)
-            ).groupby(by=[disease_classification, low_oxygen]).sum(),
+                table['prob_die_if_no_treatment'] *
+                (1.0 -
+                 table['treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_perfect_hw_dx'] / 100.0
+                 )).groupby(by=[disease_classification, low_oxygen]).sum(),
             "+ oxygen": (
-                table['prob_die_if_no_treatment'] * (1.0 - table['treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_perfect_hw_dx'] / 100.0)
-            ).groupby(by=[disease_classification, low_oxygen]).sum(),
+                table['prob_die_if_no_treatment'] *
+                (1.0 -
+                 table['treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_perfect_hw_dx']
+                 / 100.0
+                 )).groupby(by=[disease_classification, low_oxygen]).sum(),
             "+ oximeter": (
-                table['prob_die_if_no_treatment'] * (1.0 - table['treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx'] / 100.0)
-            ).groupby(by=[disease_classification, low_oxygen]).sum(),
+                table['prob_die_if_no_treatment'] *
+                (1.0 -
+                 table['treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx'] / 100.0
+                 )).groupby(by=[disease_classification, low_oxygen]).sum(),
         },
 
         "Normal HW Dx Accuracy": {
             "No Treatment": table['prob_die_if_no_treatment'].groupby(by=[disease_classification, low_oxygen]).sum(),
             "Antiobiotics only": (
-                table['prob_die_if_no_treatment'] * (
-                    1.0 - table['treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_imperfect_hw_dx'] / 100.0)
-            ).groupby(by=[disease_classification, low_oxygen]).sum(),
+                table['prob_die_if_no_treatment'] *
+                (1.0 -
+                 table['treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_imperfect_hw_dx'] / 100.0
+                 )).groupby(by=[disease_classification, low_oxygen]).sum(),
             "+ oxygen": (
-                table['prob_die_if_no_treatment'] * (
-                    1.0 - table['treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_imperfect_hw_dx'] / 100.0)
-            ).groupby(by=[disease_classification, low_oxygen]).sum(),
+                table['prob_die_if_no_treatment'] *
+                (1.0 -
+                 table['treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_imperfect_hw_dx']
+                 / 100.0
+                 )).groupby(by=[disease_classification, low_oxygen]).sum(),
             "+ oximeter": (
-                table['prob_die_if_no_treatment'] * (
-                    1.0 - table['treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_imperfect_hw_dx'] / 100.0)
-            ).groupby(by=[disease_classification, low_oxygen]).sum(),
+                table['prob_die_if_no_treatment'] *
+                (1.0 -
+                 table['treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_imperfect_hw_dx'] / 100.0
+                 )).groupby(by=[disease_classification, low_oxygen]).sum(),
         }
     }
 
     results = (100_000 / len(table)) * pd.concat({k: pd.DataFrame(v) for k, v in res.items()}, axis=1)
-    fig, axs = plt.subplots(ncols=2, nrows=1, sharey=True,)
+    fig, axs = plt.subplots(ncols=2, nrows=1, sharey=True, )
     for i, ix in enumerate(results.columns.levels[0]):
         ax = axs[i]
         results.loc[:, (ix, slice(None))].T.plot.bar(stacked=True, ax=ax, legend=False)
@@ -606,7 +642,6 @@ def main():
     fig.tight_layout()
     fig.show()
     plt.close(fig)
-
 
 
 if __name__ == "__main__":

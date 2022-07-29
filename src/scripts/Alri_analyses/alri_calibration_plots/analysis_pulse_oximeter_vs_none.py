@@ -2,14 +2,13 @@
 population of children under 5 years old."""
 
 # %% Import Statements and initial declarations
-import datetime
 from pathlib import Path
-from tlo.analysis.utils import parse_log_file
 
 import pandas as pd
 from matplotlib import pyplot as plt
 
 from tlo import Date, Simulation, logging
+from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     alri,
     demography,
@@ -33,7 +32,7 @@ def run_scenario(**kwargs):
     popsize = 100_000
 
     log_config = {
-        "filename": f"alri",
+        "filename": "alri",
         "directory": Path("./outputs"),
         "custom_levels": {
             "*": logging.WARNING,
@@ -49,7 +48,7 @@ def run_scenario(**kwargs):
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath,),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath, ),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                   disable=True,
@@ -95,8 +94,6 @@ def get_cfr_from_logfile(logfile):
     return alri_event_counts['deaths'] / alri_event_counts['incident_cases']
 
 
-
-
 # %% Run the Scenarios
 scenarios = {
     'No_oximeter/oxygen_Perfect_treatment_effectiveness': {
@@ -118,7 +115,6 @@ scenarios = {
 }
 outputfiles = {_name: run_scenario(**_params) for _name, _params in scenarios.items()}
 
-
 # %% Extract the number of deaths:
 num_deaths = {_name: get_death_numbers_from_logfile(_logfile) for _name, _logfile in outputfiles.items()}
 cfr = {_name: get_cfr_from_logfile(_logfile) for _name, _logfile in outputfiles.items()}
@@ -126,7 +122,8 @@ cfr = {_name: get_cfr_from_logfile(_logfile) for _name, _logfile in outputfiles.
 # %% Plot results
 
 df_num_deaths = pd.DataFrame(num_deaths)
-df_num_deaths.loc['deaths_not_due_to_untreated_hypoxaemia'] = df_num_deaths.loc['deaths'] - df_num_deaths.loc['deaths_due_to_untreated_hypoxaemia']
+df_num_deaths.loc['deaths_not_due_to_untreated_hypoxaemia'] = df_num_deaths.loc['deaths'] - df_num_deaths.loc[
+    'deaths_due_to_untreated_hypoxaemia']
 
 fig, ax = plt.subplots()
 df_num_deaths.loc[
@@ -134,7 +131,6 @@ df_num_deaths.loc[
 ].T.plot.barh(ax=ax, stacked=True)
 fig.tight_layout()
 fig.show()
-
 
 fig, ax = plt.subplots()
 (100_000 * pd.Series(cfr)).T.plot.barh(ax=ax, stacked=True)

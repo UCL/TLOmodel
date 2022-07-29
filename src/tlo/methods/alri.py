@@ -1330,15 +1330,16 @@ class Alri(Module):
                 if needs_oxygen and not oxygen_provided:
                     # Elevate risk, according to odds ratio "or_if_no_oxygen"
                     or_if_no_oxygen = 1.0 / p['or_mortality_improved_oxygen_systems']
-                    to_odds = lambda pr: pr / (1.0 - pr)
-                    to_prob = lambda odds: odds / (1.0 + odds)
+                    to_odds = lambda pr: pr / (1.0 - pr)  # noqa: E731
+                    to_prob = lambda odds: odds / (1.0 + odds)  # noqa: E731
                     risk_tf_1st_line_antibiotics = to_prob(to_odds(risk_tf_1st_line_antibiotics) * or_if_no_oxygen)
 
                 return min(1.0, risk_tf_1st_line_antibiotics)
 
             else:
                 # danger_signs_pneumonia given oral antibiotics (probably due to misdiagnosis)
-                # todo - Should this depend on oxygen receive or not (should it used the same parameter value as above) - have put something in so that it makes sense; perhaps this should be the parameter from above?
+                # todo - Should this depend on oxygen receive or not (should it used the same parameter value as above)
+                #  - have put something in so that it makes sense; perhaps this should be the parameter from above?
                 if needs_oxygen:
                     if oxygen_provided:
                         return p['tf_oral_amoxicillin_only_for_severe_pneumonia_with_SpO2<90%']
@@ -1360,7 +1361,8 @@ class Alri(Module):
                     else:
                         return min(p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%'],
                                    p['tf_3day_amoxicillin_for_chest_indrawing_with_SpO2>=90%'])
-                        # todo Need an else (in case they are something else) For now, I've put in the lower of the two others
+                        # todo Need an else (in case they are something else) For now, I've put in the lower of the two
+                        #  others
 
                 elif imci_symptom_based_classification == 'fast_breathing_pneumonia':
                     if antibiotic_provided == 'Amoxicillin_tablet_or_suspension_3days':
@@ -1370,11 +1372,13 @@ class Alri(Module):
                     else:
                         return min(p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%'],
                                    p['tf_7day_amoxicillin_for_fast_breathing_pneumonia_in_young_infants'])
-                        # todo Need an else (in case they are something else) For now, I've put in the lower of the two others
+                        # todo Need an else (in case they are something else) For now, I've put in the lower of the two
+                        #  others
 
                 # No pneumonia (by IMCI classification)
                 elif imci_symptom_based_classification == "cough_or_cold" and not any_complications:
-                    return 0.0  # Treatment cannot 'fail' for a cough_or_cold without complications and no need of oxygen
+                    return 0.0  # Treatment cannot 'fail' for a cough_or_cold without complications and no need of
+                    #             eisoroxygen
 
                 elif imci_symptom_based_classification == "cough_or_cold" and any_complications:
                     return p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%']
@@ -1391,7 +1395,8 @@ class Alri(Module):
         """Helper function that enacts the effects of a treatment to Alri caused by a pathogen.
         It will only do something if the Alri is caused by a pathogen (this module).
         * Prevent any death event that may be scheduled from occurring
-        * Returns True for failed treatment to further schedule    # todo - the return thing seems weird -- sometimes None, T/F wrong way around?
+        * Returns True for failed treatment to further schedule
+        # todo - the return thing seems weird -- sometimes None, T/F wrong way around?
         a follow-up appointment if condition not improving (by day 6 or by day 14)
         """
         # todo rewrite the docstring above
@@ -1533,11 +1538,11 @@ class Models:
                         'age_years',
                         conditions_are_mutually_exclusive=True,
                         conditions_are_exhaustive=True).when(0, age_effects[0])
-                        .when(1, age_effects[1])
-                        .when(2, age_effects[2])
-                        .when(3, age_effects[3])
-                        .when(4, age_effects[4])
-                        .when('>= 5', 0.0),
+                                                       .when(1, age_effects[1])
+                                                       .when(2, age_effects[2])
+                                                       .when(3, age_effects[3])
+                                                       .when(4, age_effects[4])
+                                                       .when('>= 5', 0.0),
                     Predictor('li_wood_burn_stove').when(False, p['rr_ALRI_indoor_air_pollution']),
                     Predictor().when('(va_measles_all_doses == False) & (age_years >= 1)',
                                      p['rr_ALRI_incomplete_measles_immunisation']),
@@ -1603,12 +1608,10 @@ class Models:
         p = self.p
 
         # Determine the disease type - pneumonia or other_alri
-        if (
-            (age_exact_years < 1.0) and (p[f'proportion_pneumonia_in_{pathogen}_ALRI'][0] > self.rng.random_sample())
-        ) or (
-            (1.0 <= age_exact_years < 5.0) and (
-            p[f'proportion_pneumonia_in_{pathogen}_ALRI'][1] > self.rng.random_sample())
-        ):
+        col = 0 if age_exact_years < 1.0 else 1
+        prob_is_pneumonia = p[f'proportion_pneumonia_in_{pathogen}_ALRI'][col]
+
+        if prob_is_pneumonia > self.rng.random_sample():
             disease_type = 'pneumonia'
         else:
             disease_type = 'other_alri'
@@ -1829,7 +1832,8 @@ class Models:
         if SpO2_level == '90-92%':
             odds_death_age_lt2mo *= p['or_death_ALRI_SpO2_90_92%']
             odds_death_age2_59mo *= p['or_death_ALRI_SpO2_90_92%']
-        # todo @ ines --- if this level of saturation does not indicate for oxygen then it doesn't make sense that it increase risk of death. So, have made it so such persons can reach treatment....
+        # todo @ ines --- if this level of saturation does not indicate for oxygen then it doesn't make sense that it
+        #  increase risk of death. So, have made it so such persons can reach treatment....
 
         # todo - check this works!
         if 'sepsis' in complications:
@@ -1968,7 +1972,9 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
 
         # ----------------------- Duration of the Alri event and episode -----------------------
         duration_in_days_of_alri = rng.randint(3, params[
-            'max_alri_duration_in_days_without_treatment'])  # todo changed this 1-->3 to help with problems about timeliness of healthcare seeking; could chnage it back now that we have instant healthcare seeking
+            'max_alri_duration_in_days_without_treatment'])
+        # todo changed this 1-->3 to help with problems about timeliness of healthcare seeking; could chnage it back
+        #  now that we have instant healthcare seeking
 
         # Date for outcome (either recovery or death) with uncomplicated Alri
         date_of_outcome = date + DateOffset(days=duration_in_days_of_alri)
@@ -2076,14 +2082,6 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
             self.module.logging_event.new_systemic_complication_case()
         if 'hypoxaemia' in chars['complications']:
             self.module.logging_event.new_hypoxaemic_case()
-        if (
-            ("danger_signs_pneumonia" == self.module.get_imci_classification_based_on_symptoms(
-                symptoms=chars['symptoms'],
-                child_is_younger_than_2_months=df.at[person_id, "age_years"] < 2)
-            ) and (
-            chars['oxygen_saturation'] == "<90%")
-        ):
-            self.module.logging_event.new_danger_signs_pneumonia_case()
 
     def apply(self, person_id):
         """Determines and enacts all the characteristics of the case (symotoms, complications, outcome)"""
@@ -2238,11 +2236,13 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
 
     def _as_in_patient(self, facility_level):
         """Cast this HSI as an in-patient appointment."""
-        self.TREATMENT_ID = f'{self._treatment_id_stub}_Inpatient{"_Followup" if self.is_followup else ""}'  # todo - Follow-up as inpatient!??!??!
+        self.TREATMENT_ID = f'{self._treatment_id_stub}_Inpatient{"_Followup" if self.is_followup else ""}'
+        # todo - Follow-up as inpatient!??!??!
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = facility_level
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 7})
-        # assert not self.is_followup, 'A Follow-up appointment cannot be an in-patient appointment.' todo - this removeed? bring back!?
+        # assert not self.is_followup, 'A Follow-up appointment cannot be an in-patient appointment.'
+        # todo - this removeed? bring back!?
 
     def _refer_to_next_level_up(self):
         """Schedule a copy of this event to occur again today at the next level-up (if there is a next level-up)."""
@@ -2324,7 +2324,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                     for k, v in self.module.consumables_used_in_hsi[_item_str].items()
                 })
         else:
-            raise ValueError(f'Consumable pack not provided')
+            raise ValueError('Consumable pack not provided')
 
     def _get_any_cons(self, _item_str: str) -> bool:
         """True if any of a group of consumables (identified by a string) is available, (if no group is
@@ -2339,7 +2339,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                 return_individual_results=True
             ).values())
         else:
-            raise ValueError(f'Consumable pack not provided')
+            raise ValueError('Consumable pack not provided')
 
     def _assess_and_treat(self, age_exact_years, oxygen_saturation, symptoms):
         """This routine is called in every HSI. It classifies the disease of the child and commissions treatment
@@ -2370,7 +2370,8 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
             )
 
         # assessment process for follow-ups with treatment failure or urgent referrals (both inpatient)
-        # todo - seem that Ines' new logic that says assume its danger_signs_pneumonia if there person is already an in-patient?????
+        # todo - seem that Ines' new logic that says assume its danger_signs_pneumonia if there person is
+        #  already an in-patient?????
         elif self._is_as_in_patient:
             self._do_action_given_classification(
                 classification_for_treatment_decision='danger_signs_pneumonia',  # assumed for sbi for < 2 months

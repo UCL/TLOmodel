@@ -8,9 +8,10 @@ import pandas as pd
 import pytest
 from pandas import DateOffset
 
-from tlo import Date, Simulation, logging, Module
+from tlo import Date, Module, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
+    Metadata,
     alri,
     demography,
     enhanced_lifestyle,
@@ -18,7 +19,7 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     simplified_births,
-    symptommanager, Metadata,
+    symptommanager,
 )
 from tlo.methods.alri import (
     AlriCureEvent,
@@ -31,7 +32,9 @@ from tlo.methods.alri import (
     AlriPollingEvent,
     AlriPropertiesOfOtherModules,
     HSI_Alri_Treatment,
-    Models, _make_treatment_and_diagnosis_perfect, _make_high_risk_of_death,
+    Models,
+    _make_high_risk_of_death,
+    _make_treatment_and_diagnosis_perfect,
 )
 from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
 
@@ -155,7 +158,6 @@ def test_integrity_of_linear_models(sim_hs_all_consumables):
     sim.make_initial_population(n=5000)
     alri = sim.modules['Alri']
     df = sim.population.props
-    person_id = 0
 
     # make the models
     models = Models(alri)
@@ -860,7 +862,7 @@ def test_do_effects_of_alri_treatment(sim_hs_all_consumables):
     df = sim.population.props
 
     # Get person to use (not currently infected) aged between 2 months and 5 years and not infected:
-    person_id = _get_person_id(df, (2.0/12.0, 5.0))
+    person_id = _get_person_id(df, (2.0 / 12.0, 5.0))
     assert not df.loc[person_id, 'ri_current_infection_status']
 
     # Make the incident case one that should cause 'severe_pneumonia' to need to be provided
@@ -933,7 +935,7 @@ def test_severe_pneumonia_referral_from_hsi_first_appts(sim_hs_all_consumables):
     df = sim.population.props
 
     # Get person to use (not currently infected) aged between 2 months and 5 years and not infected:
-    person_id = _get_person_id(df, (2.0/12.0, 5.0))
+    person_id = _get_person_id(df, (2.0 / 12.0, 5.0))
 
     # Give this person severe pneumonia:
     pathogen = list(sim.modules['Alri'].all_pathogens)[0]
@@ -1052,7 +1054,8 @@ def test_treatment_pathway_if_all_consumables_mild_case(sim_hs_all_consumables):
     assert [
                ('FirstAttendance_NonEmergency', '0'),
                ('Alri_Pneumonia_Treatment_Outpatient', '0'),
-               # ('Alri_Pneumonia_Treatment_Outpatient_Followup', '0'),  # no follow-up if no treatment failure todo th ???
+               # ('Alri_Pneumonia_Treatment_Outpatient_Followup', '0'),  # no follow-up if no treatment failure
+               # todo th ???
            ] == generate_hsi_sequence(sim=sim_hs_all_consumables,
                                       incident_case_event=AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia)
 
@@ -1067,7 +1070,8 @@ def test_treatment_pathway_if_all_consumables_severe_case(sim_hs_all_consumables
                ('FirstAttendance_Emergency', '1b'),
                ('Alri_Pneumonia_Treatment_Outpatient', '1b'),
                ('Alri_Pneumonia_Treatment_Inpatient', '1b'),
-               # ('Alri_Pneumonia_Treatment_Outpatient_Followup', '1b')  # no follow-up if no treatment failure todo th ???
+               # ('Alri_Pneumonia_Treatment_Outpatient_Followup', '1b')  # no follow-up if no treatment failure
+               # todo th ???
            ] == generate_hsi_sequence(sim=sim_hs_all_consumables,
                                       incident_case_event=AlriIncidentCase_Lethal_DangerSigns_Pneumonia)
 
@@ -1076,7 +1080,8 @@ def test_treatment_pathway_if_all_consumables_severe_case(sim_hs_all_consumables
                ('FirstAttendance_Emergency', '1b'),
                ('Alri_Pneumonia_Treatment_Outpatient', '1b'),
                ('Alri_Pneumonia_Treatment_Inpatient', '1b'),
-               # ('Alri_Pneumonia_Treatment_Outpatient_Followup', '1b')  # no follow-up if no treatment failure todo th ???
+               # ('Alri_Pneumonia_Treatment_Outpatient_Followup', '1b')  # no follow-up if no treatment failure
+               # todo th ???
            ] == generate_hsi_sequence(sim=sim_hs_all_consumables,
                                       incident_case_event=AlriIncidentCase_Lethal_DangerSigns_Pneumonia,
                                       age_of_person_under_2_months=True)
@@ -1091,7 +1096,7 @@ def test_treatment_pathway_if_no_consumables_mild_case(sim_hs_no_consumables):
                ('Alri_Pneumonia_Treatment_Outpatient', '0'),
                ('Alri_Pneumonia_Treatment_Outpatient', '1a'),  # <-- referral due to lack of consumables
                ('Alri_Pneumonia_Treatment_Outpatient', '1b'),  # <-- referral due to lack of consumables
-               ('Alri_Pneumonia_Treatment_Outpatient', '2'),   # <-- referral due to lack of consumables
+               ('Alri_Pneumonia_Treatment_Outpatient', '2'),  # <-- referral due to lack of consumables
                # (No follow-up appointment because treatment is never provided, due to lack of consumables).
            ] == generate_hsi_sequence(sim=sim_hs_no_consumables,
                                       incident_case_event=AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia)
@@ -1188,7 +1193,8 @@ def test_impact_of_all_hsi(seed, tmpdir):
         # Return number of children who have died with a cause of Alri, excluding those who die with oxygen saturation
         # 90-92% for which there is no oxygen provided.
         total_deaths_to_alri = sim.modules['Alri'].logging_event.trackers['deaths'].report_current_total()
-        print(f"persons_that_die_of_alri = {df.loc[~df.is_alive & df['cause_of_death'].str.startswith('ALRI')].index.values}")
+        print(f"persons_that_die_of_alri = "
+              f"{df.loc[~df.is_alive & df['cause_of_death'].str.startswith('ALRI')].index.values}")
         total_deaths_to_alri_with_untreated_hypoxaemia = sim.modules['Alri'].logging_event.trackers[
             'deaths_due_to_untreated_hypoxaemia'].report_current_total()
 
@@ -1291,11 +1297,15 @@ def test_specific_effect_of_pulse_oximeter_and_oxgen_for_danger_signs_pneumonia(
         # Check that over-riding of consumables works (looking only at oxygen_therapy)
         item_codes_oxygen_therapy = set(sim.modules['Alri'].consumables_used_in_hsi['Oxygen_Therapy'].keys())
         if pulse_oximeter_and_oxygen_is_available:
-            assert item_codes_oxygen_therapy.intersection(sim.modules['HealthSystem'].consumables._summary_counter._items['Available'].keys())
-            assert not item_codes_oxygen_therapy.intersection(sim.modules['HealthSystem'].consumables._summary_counter._items['NotAvailable'].keys())
+            assert item_codes_oxygen_therapy.intersection(
+                sim.modules['HealthSystem'].consumables._summary_counter._items['Available'].keys())
+            assert not item_codes_oxygen_therapy.intersection(
+                sim.modules['HealthSystem'].consumables._summary_counter._items['NotAvailable'].keys())
         else:
-            assert not item_codes_oxygen_therapy.intersection(sim.modules['HealthSystem'].consumables._summary_counter._items['Available'].keys())
-            assert item_codes_oxygen_therapy.intersection(sim.modules['HealthSystem'].consumables._summary_counter._items['NotAvailable'].keys())
+            assert not item_codes_oxygen_therapy.intersection(
+                sim.modules['HealthSystem'].consumables._summary_counter._items['Available'].keys())
+            assert item_codes_oxygen_therapy.intersection(
+                sim.modules['HealthSystem'].consumables._summary_counter._items['NotAvailable'].keys())
 
         # Return number of children who have died with a cause of Alri
         total_deaths_to_alri = sim.modules['Alri'].logging_event.trackers['deaths'].report_current_total()
@@ -1321,12 +1331,3 @@ def test_specific_effect_of_pulse_oximeter_and_oxgen_for_danger_signs_pneumonia(
     compare_deaths_with_and_without_pulse_oximeter_and_oxygen(do_make_treatment_perfect=False)
     # N.B. The comparison with treatment being perfect would not make sense, as there would be zero deaths even without
     # oxygen.
-
-
-
-
-
-
-
-
-
