@@ -49,6 +49,7 @@ to_prob = lambda odds: odds / (1.0 + odds)  # noqa: E731
 #   MODULE DEFINITION
 # ---------------------------------------------------------------------------------------------------------
 
+
 class Alri(Module):
     """This is the disease module for Acute Lower Respiratory Infections."""
 
@@ -563,7 +564,7 @@ class Alri(Module):
             Parameter(Types.INT, 'number of days between any treatment being given in an HSI and the cure occurring.'
                       ),
 
-        # todo - @ines --- what is meaning of "tmp param"???
+        # todo - @ines --- Remove unused parameters and fill-in meanings of "tmp param"
         'tf_1st_line_antibiotic_for_severe_pneumonia':
             Parameter(Types.REAL,
                       'tmp param'
@@ -826,7 +827,7 @@ class Alri(Module):
                 elif symptom_name == 'chest_indrawing':
                     self.sim.modules['SymptomManager'].register_symptom(
                         Symptom(name=symptom_name,
-                                odds_ratio_health_seeking_in_children=2.4))  # <-- todo @Tim - add to parameters
+                                odds_ratio_health_seeking_in_children=2.4))  # <-- todo @Ines - add to parameters
                 else:
                     self.sim.modules['SymptomManager'].register_symptom(
                         Symptom(name=symptom_name))
@@ -1055,33 +1056,33 @@ class Alri(Module):
         #     get_item_code(item='Syringe, Autodisable SoloShot IX '): 1
         # }
 
-        # # Second line of antibiotics for severe pneumonia
-        # self.consumables_used_in_hsi['Ceftriaxone_therapy_for_severe_pneumonia'] = {
-        #     get_item_code(item='Ceftriaxone 1g, PFR_each_CMST'):
-        #         lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
-        #                                                   {4: 1.5, 12: 3, 36: 5, np.inf: 7}
-        #                                                   ),
-        #     get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
-        #     get_item_code(item='Syringe, Autodisable SoloShot IX '): 1
-        # }
-        #
-        # # Second line of antibiotics for severe pneumonia, if Staph is suspected
-        # self.consumables_used_in_hsi['2nd_line_Antibiotic_therapy_for_severe_staph_pneumonia'] = {
-        #     get_item_code(item='Flucloxacillin 250mg, vial, PFR_each_CMST'):
-        #         lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
-        #                                                   {2: 21, 4: 22.4, 12: 37.3, 36: 67.2, 60: 93.3, np.inf: 140}
-        #                                                   ),
-        #     get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST'):
-        #         lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
-        #                                                   {4: 2.81, 12: 4.69, 36: 7.03, 60: 9.37, np.inf: 13.6}
-        #                                                   ),
-        #     get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
-        #     get_item_code(item='Syringe, Autodisable SoloShot IX '): 1,
-        #     get_item_code(item='Flucloxacillin 250mg_100_CMST'):
-        #         lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
-        #                                                   {4: 0.42, 36: 0.84, 60: 1.68, np.inf: 1.68}
-        #                                                   ),
-        # }
+        # Second line of antibiotics for severe pneumonia, if Staph not suspected
+        self.consumables_used_in_hsi['Ceftriaxone_therapy_for_severe_pneumonia'] = {
+            get_item_code(item='Ceftriaxone 1g, PFR_each_CMST'):
+                lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
+                                                          {4: 1.5, 12: 3, 36: 5, np.inf: 7}
+                                                          ),
+            get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
+            get_item_code(item='Syringe, Autodisable SoloShot IX '): 1
+        }
+
+        # Second line of antibiotics for severe pneumonia, if Staph is suspected
+        self.consumables_used_in_hsi['2nd_line_Antibiotic_therapy_for_severe_staph_pneumonia'] = {
+            get_item_code(item='Flucloxacillin 250mg, vial, PFR_each_CMST'):
+                lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
+                                                          {2: 21, 4: 22.4, 12: 37.3, 36: 67.2, 60: 93.3, np.inf: 140}
+                                                          ),
+            get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST'):
+                lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
+                                                          {4: 2.81, 12: 4.69, 36: 7.03, 60: 9.37, np.inf: 13.6}
+                                                          ),
+            get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST'): 1,
+            get_item_code(item='Syringe, Autodisable SoloShot IX '): 1,
+            get_item_code(item='Flucloxacillin 250mg_100_CMST'):
+                lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
+                                                          {4: 0.42, 36: 0.84, 60: 1.68, np.inf: 1.68}
+                                                          ),
+        }
 
         # First dose of antibiotic before referral -------------------
 
@@ -1339,8 +1340,8 @@ class Alri(Module):
 
             else:
                 # danger_signs_pneumonia given oral antibiotics (probably due to misdiagnosis)
-                # todo - ??? Should this depend on oxygen receive or not (should it used the same parameter value as above)
-                #  - have put something in so that it makes sense; perhaps this should be the parameter from above?
+                # todo - @Tim/@Ines Should this depend on oxygen receive or not (should it used the same parameter value
+                #  as above)? I have put something in so that it makes sense; perhaps this should be the parameter from above?
                 if needs_oxygen:
                     if oxygen_provided:
                         return p['tf_oral_amoxicillin_only_for_severe_pneumonia_with_SpO2<90%']
@@ -1392,16 +1393,12 @@ class Alri(Module):
                 else:
                     return min(1.0, 2.0 * p['tf_oral_amoxicillin_only_for_non_severe_pneumonia_with_SpO2<90%'])
 
-    def do_effects_of_treatment(self, person_id, antibiotic_provided: str, oxygen_provided: bool):
+    def do_effects_of_treatment_and_return_outcome(self, person_id, antibiotic_provided: str, oxygen_provided: bool):
         """Helper function that enacts the effects of a treatment to Alri caused by a pathogen.
         It will only do something if the Alri is caused by a pathogen (this module).
         * Prevent any death event that may be scheduled from occurring
-        * Returns True for failed treatment to further schedule
-        a follow-up appointment if condition not improving (by day 6 or by day 14)
-        """
-        # todo - the return thing seems weird -- sometimes None, T/F wrong way around?
-        # todo rewrite the docstring above
-        # todo nb that antibiotic_provided = '' means no antibiotic provided.
+        * Returns 'success' if the treatment is successful and 'failure' is it is not successful."""
+        # todo @Tim nb that antibiotic_provided = '' means no antibiotic provided.
 
         df = self.sim.population.props
         person = df.loc[person_id]
@@ -1438,11 +1435,13 @@ class Alri(Module):
             oxygen_provided=oxygen_provided,
         )
 
-        # Cancel death (if there is one) if the treatment does not fail (i.e. it works).
+        # Cancel death (if there is one) if the treatment does not fail (i.e. it works) and return indication of
+        # sucesss of failure.
         if not treatment_fails:
             self.cancel_death_and_schedule_cure(person_id)
-        # else:
-        #     return treatment_fails   # todo ??!!??!??!!
+            return 'success'
+        else:
+            return 'failure'
 
     def on_presentation(self, person_id, hsi_event):
         """Action taken when a child (under 5 years old) presents at a generic appointment (emergency or non-emergency)
@@ -1828,7 +1827,6 @@ class Models:
         return to_prob(odds_death)  # Return the probability of death
 
 
-
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
 # ---------------------------------------------------------------------------------------------------------
@@ -2182,13 +2180,12 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
     interactions with the healthcare system at all the levels."""
 
     def __init__(self, module: Module, person_id: int, facility_level: str = "0", inpatient: bool = False,
-                 is_followup: bool = False):
+                 is_followup_following_treatment_failure: bool = False):
         super().__init__(module, person_id=person_id)
         self._treatment_id_stub = 'Alri_Pneumonia_Treatment'
         self._facility_levels = ("0", "1a", "1b", "2")  # Health facility levels at which care may be provided
         assert facility_level in self._facility_levels
-
-        self.is_followup = is_followup  # (if True, then HSI has no effect and is not rescheduled if never ran).
+        self.is_followup_following_treatment_failure = is_followup_following_treatment_failure
 
         if not inpatient:
             self._as_out_patient(facility_level)
@@ -2200,20 +2197,19 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
 
     def _as_out_patient(self, facility_level):
         """Cast this HSI as an out-patient appointment."""
-        self.TREATMENT_ID = f'{self._treatment_id_stub}_Outpatient{"_Followup" if self.is_followup else ""}'
+        self.TREATMENT_ID = f'{self._treatment_id_stub}_Outpatient'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
             ('ConWithDCSA' if facility_level == '0' else 'Under5OPD'): 1})
         self.ACCEPTED_FACILITY_LEVEL = facility_level
+        assert not self.is_followup_following_treatment_failure, 'Follow-up appointment cannot be an outpatient appt.'
 
     def _as_in_patient(self, facility_level):
         """Cast this HSI as an in-patient appointment."""
-        self.TREATMENT_ID = f'{self._treatment_id_stub}_Inpatient{"_Followup" if self.is_followup else ""}'
-        # todo - Follow-up as inpatient!??!??!
+        self.TREATMENT_ID = \
+            f'{self._treatment_id_stub}_Inpatient{"_Followup" if self.is_followup_following_treatment_failure else ""}'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = facility_level
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 7})
-        # assert not self.is_followup, 'A Follow-up appointment cannot be an in-patient appointment.'
-        # todo - this removeed? bring back!?
 
     def _refer_to_next_level_up(self):
         """Schedule this event to occur again today at the next level-up (if there is a next level-up)."""
@@ -2257,16 +2253,16 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
             tclose=self.sim.date + pd.DateOffset(days=1),
             priority=0)
 
-    def _schedule_follow_up_at_same_facility_as_inpatient(self):
-        """Schedule a copy of this event to occur in 5 days time as a 'follow-up' appointment at this level as an
-        in-patient."""
+    def _schedule_follow_up_following_treatment_failure(self):
+        """Schedule a copy of this event to occur in 5 days time as a 'follow-up' appointment at this level
+        (if above "0") and as an in-patient."""
         self.sim.modules['HealthSystem'].schedule_hsi_event(
             HSI_Alri_Treatment(
                 module=self.module,
                 person_id=self.target,
-                inpatient=False,
-                facility_level=self.ACCEPTED_FACILITY_LEVEL,
-                is_followup=True
+                inpatient=True,
+                facility_level=self.ACCEPTED_FACILITY_LEVEL if self.ACCEPTED_FACILITY_LEVEL != "0" else "1a",
+                is_followup_following_treatment_failure=True,
             ),
             topen=self.sim.date + pd.DateOffset(days=5),
             tclose=None,
@@ -2311,7 +2307,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
         use_oximeter = self._get_cons('Pulse_oximetry')
 
         # Assessment process for first appointments (all start as outpatient) or outpatient referrals
-        if not self._is_as_in_patient and not self.is_followup:
+        if not self._is_as_in_patient and not self.is_followup_following_treatment_failure:
 
             classification_for_treatment_decision = self._get_disease_classification_for_treatment_decision(
                 age_exact_years=age_exact_years,
@@ -2478,7 +2474,6 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
         assert classification in self.module.classifications
         return classification
 
-
     def _get_disease_classification_for_treatment_decision(self,
                                                            age_exact_years,
                                                            symptoms,
@@ -2575,26 +2570,27 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
 
             if antibiotic_available and oxygen_indicated_and_available_or_oxygen_not_indicated:
                 # Everything indicated is available --> do effects of this treatment
-                self.module.do_effects_of_treatment(
+                treatment_outcome = self.module.do_effects_of_treatment_and_return_outcome(
                     person_id=self.target,
                     antibiotic_provided=antibiotic_indicated,
                     oxygen_provided=(oxygen_available and oxygen_indicated)
                 )
-                # todo - something to do with follow-up not sure?
-                # if treatment_failed and not self.is_followup:  # only 1 possible follow-up appt for an episode
-                #     self._schedule_follow_up_at_same_facility_as_outpatient()
+                if treatment_outcome == 'failure':
+                    self._schedule_follow_up_following_treatment_failure()
+
             elif facility_level != '2':
                 # Something that is needed is not available -> Refer up if possible.
                 self._refer_to_next_level_up()
+
             else:
                 # Something is not available, but no referral up is possible. Do Treatment with what is available.
-                self.module.do_effects_of_treatment(
+                treatment_outcome = self.module.do_effects_of_treatment_and_return_outcome(
                     person_id=self.target,
                     antibiotic_provided=antibiotic_indicated if antibiotic_available else '',
                     oxygen_provided=(oxygen_available and oxygen_indicated)
                 )
-                # if treatment_failed and not self.is_followup:
-                #     self._schedule_follow_up_at_same_facility_as_outpatient()
+                if treatment_outcome == 'failure':
+                    self._schedule_follow_up_following_treatment_failure()
 
         def _do_if_fast_breathing_pneumonia():
             """What to do if classification is `fast_breathing`."""
@@ -2655,53 +2651,52 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
             else:
                 _ = self._get_cons('Brochodilator_and_Steroids')
 
-    def provide_2nd_line_antibiotics(self, antibiotic_provided, first_line_failed):
-        """Provide 2nd line of antibiotics when the 1st line are not working"""
-        # todo !?!?!?!?!?!?!!?!!!?!!? Get rid of this :-)
-        if first_line_failed and (antibiotic_provided == '1st_line_IV_antibiotics'):
-            if self._has_staph_aureus():
-                return self._get_cons('2nd_line_Antibiotic_therapy_for_severe_staph_pneumonia')
-            else:
-                return self._get_cons('Ceftriaxone_therapy_for_severe_pneumonia')
+    def do_on_follow_up_following_treatment_failure(self):
+        """Things to do for a patient who is having this HSI following a failure of an earlier treatment.
+        A further drug will be used but this will have no effect on the chance of the person dying."""
+
+        if self._has_staph_aureus():
+            _ = self._get_cons('2nd_line_Antibiotic_therapy_for_severe_staph_pneumonia')
+        else:
+            _ = self._get_cons('Ceftriaxone_therapy_for_severe_pneumonia')
 
     def apply(self, person_id, squeeze_factor):
         """Assess and attempt to treat the person."""
 
-        # refer follow-up appointments to inpatient care (if follow-up only applies to those with TF)
-        # todo- tim - is the logic now that follow-up is only in the case of treatment failure!!!??
-        if self.is_followup and not self._is_as_in_patient:
-            self._refer_to_become_inpatient()
+        if not self.is_followup_following_treatment_failure:
 
-        # Do nothing if the person is not currently infected and currently experiencing an episode
-        person = self.sim.population.props.loc[person_id]
-        if not person.ri_current_infection_status and (
-            person.ri_start_of_current_episode <= self.sim.date <= person.ri_end_of_current_episode
-        ):
-            return
+            # Do nothing if the person is not currently infected and currently experiencing an episode
+            person = self.sim.population.props.loc[person_id]
+            if not person.ri_current_infection_status and (
+                person.ri_start_of_current_episode <= self.sim.date <= person.ri_end_of_current_episode
+            ):
+                return
 
-        # Do nothing if the persons does not have indicating symptoms
-        symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
-        if not {'cough', 'difficult_breathing'}.intersection(symptoms):
-            return self.make_appt_footprint({})
+            # Do nothing if the persons does not have indicating symptoms
+            symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
+            if not {'cough', 'difficult_breathing'}.intersection(symptoms):
+                return self.make_appt_footprint({})
 
-        # Do nothing if the person is already on treatment
-        if person.ri_on_treatment:
-            return self.make_appt_footprint({})
+            # Do nothing if the person is already on treatment
+            if person.ri_on_treatment:
+                return self.make_appt_footprint({})
 
-        # If the HSI is at level 0 and is for a child aged less than 2 months, refer to the next level.
-        if (self.ACCEPTED_FACILITY_LEVEL == '0') and (person.age_exact_years < 2.0 / 12.0):
-            self._refer_to_next_level_up()
+            # If the HSI is at level 0 and is for a child aged less than 2 months, refer to the next level.
+            if (self.ACCEPTED_FACILITY_LEVEL == '0') and (person.age_exact_years < 2.0 / 12.0):
+                self._refer_to_next_level_up()
 
-        # Attempt treatment:
-        self._assess_and_treat(age_exact_years=person.age_exact_years,
-                               symptoms=symptoms,
-                               oxygen_saturation=person.ri_SpO2_level,
-                               )
+            # Attempt treatment:
+            self._assess_and_treat(age_exact_years=person.age_exact_years,
+                                   symptoms=symptoms,
+                                   oxygen_saturation=person.ri_SpO2_level,
+                                   )
+
+        else:
+            self.do_on_follow_up_following_treatment_failure()
 
     def never_ran(self):
-        """If this event never ran (and is not a follow-up appointment), refer to next level up."""
-        if not self.is_followup:
-            self._refer_to_next_level_up()
+        """If this event never ran, refer to next level up."""
+        self._refer_to_next_level_up()
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -3007,29 +3002,44 @@ def _make_hw_diagnosis_perfect(alri_module):
     p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level2'] = 1.0
     p['sensitivity_of_classification_of_severe_pneumonia_facility_level2'] = 1.0
 
-
-def _make_treatment_and_diagnosis_perfect(alri_module):
-    """Modify the parameters of an instance of the Alri module so that treatment and diagnosis is perfect."""
-
-    _make_hw_diagnosis_perfect(alri_module)
-
+def _make_treatment_perfect(alri_module):
+    """Modify the parameters of an instance of the Alri module so that treatment is perfectly effective."""
     p = alri_module.parameters
 
     # The probability of treatment failure to be 0.0
     p['tf_1st_line_antibiotic_for_severe_pneumonia'] = 0.0
     p['tf_2nd_line_antibiotic_for_severe_pneumonia'] = 0.0
-
     p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%'] = 0.0
-
     p['tf_3day_amoxicillin_for_chest_indrawing_with_SpO2>=90%'] = 0.0
     p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%'] = 0.0
-
     p['tf_7day_amoxicillin_for_fast_breathing_pneumonia_in_young_infants'] = 0.0
-
     p['tf_oral_amoxicillin_only_for_severe_pneumonia_with_SpO2>=90%'] = 0.0
     p['tf_oral_amoxicillin_only_for_severe_pneumonia_with_SpO2<90%'] = 0.0
-
     p['tf_oral_amoxicillin_only_for_non_severe_pneumonia_with_SpO2<90%'] = 0.0
+
+
+def _make_treatment_ineffective(alri_module):
+    """Modify the parameters of an instance of the Alri module so that treatment is completely ineffective."""
+    p = alri_module.parameters
+
+    # The probability of treatment failure to be 1.0
+    p['tf_1st_line_antibiotic_for_severe_pneumonia'] = 1.0
+    p['tf_2nd_line_antibiotic_for_severe_pneumonia'] = 1.0
+    p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%'] = 1.0
+    p['tf_3day_amoxicillin_for_chest_indrawing_with_SpO2>=90%'] = 1.0
+    p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%'] = 1.0
+    p['tf_7day_amoxicillin_for_fast_breathing_pneumonia_in_young_infants'] = 1.0
+    p['tf_oral_amoxicillin_only_for_severe_pneumonia_with_SpO2>=90%'] = 1.0
+    p['tf_oral_amoxicillin_only_for_severe_pneumonia_with_SpO2<90%'] = 1.0
+    p['tf_oral_amoxicillin_only_for_non_severe_pneumonia_with_SpO2<90%'] = 1.0
+
+
+def _make_treatment_and_diagnosis_perfect(alri_module):
+    """Modify the parameters of an instance of the Alri module so that treatment and diagnosis is perfect."""
+
+    _make_hw_diagnosis_perfect(alri_module)
+    _make_treatment_perfect(alri_module)
+
 
 
 def _make_high_risk_of_death(alri_module):

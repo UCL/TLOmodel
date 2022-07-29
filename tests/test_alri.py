@@ -34,7 +34,7 @@ from tlo.methods.alri import (
     HSI_Alri_Treatment,
     Models,
     _make_high_risk_of_death,
-    _make_treatment_and_diagnosis_perfect,
+    _make_treatment_and_diagnosis_perfect, _make_treatment_perfect, _make_treatment_ineffective,
 )
 from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
 
@@ -888,9 +888,9 @@ def test_do_effects_of_alri_treatment(sim_hs_all_consumables):
     assert date_of_scheduled_death > sim.date
 
     # Run the 'do_alri_treatment' function (as if from the HSI)
-    sim.modules['Alri'].do_effects_of_treatment(person_id=person_id,
-                                                antibiotic_provided='1st_line_IV_antibiotics',
-                                                oxygen_provided=True)
+    sim.modules['Alri'].do_effects_of_treatment_and_return_outcome(person_id=person_id,
+                                                                   antibiotic_provided='1st_line_IV_antibiotics',
+                                                                   oxygen_provided=True)
 
     # Run the death event that was originally scheduled) - this should have no effect and the person should not die
     sim.date = date_of_scheduled_death
@@ -977,7 +977,7 @@ def test_severe_pneumonia_referral_from_hsi_first_appts(sim_hs_all_consumables):
     assert df.at[person_id, 'ri_on_treatment']
 
 
-def generate_hsi_sequence(sim, incident_case_event, age_of_person_under_2_months=False):
+def generate_hsi_sequence(sim, incident_case_event, age_of_person_under_2_months=False, treatment_effect='perfectly_effective'):
     """For a given simulation, let one person be affected by Alri, and record all the HSI that they have."""
 
     def make_hw_assesement_perfect(sim):
@@ -1005,6 +1005,13 @@ def generate_hsi_sequence(sim, incident_case_event, age_of_person_under_2_months
     make_hw_assesement_perfect(sim)
     make_non_emergency_hsi_happen_immediately(sim)
     force_any_symptom_to_lead_to_healthcareseeking(sim)
+
+    # Control effectiveness of treatment:
+    if treatment_effect == "perfectly_effective":
+        _make_treatment_perfect(sim.modules['Alri'])
+    elif treatment_effect == "perfectly_ineffective":
+        _make_treatment_ineffective(sim.modules['Alri'])
+
     sim.make_initial_population(n=5000)
 
     def _initialise_simulation_other_jobs(sim, **kwargs):
@@ -1050,32 +1057,58 @@ def generate_hsi_sequence(sim, incident_case_event, age_of_person_under_2_months
 def test_treatment_pathway_if_all_consumables_mild_case(sim_hs_all_consumables):
     """Examine the treatment pathway for a person with a particular category of disease if consumables are available."""
     # Mild case (fast_breathing_pneumonia) and available consumables --> treatment at level 0, following non-emergency
-    # appointment.
+    # appointment. If treatment is perfect there will be no follow-up, but if treatment is completely ineffective there
+    # will be a follow-up appointment.
+
+    # - If Treatments Works --> No follow-up
     assert [
                ('FirstAttendance_NonEmergency', '0'),
                ('Alri_Pneumonia_Treatment_Outpatient', '0'),
-               # ('Alri_Pneumonia_Treatment_Outpatient_Followup', '0'),  # no follow-up if no treatment failure
-               # todo th ???
            ] == generate_hsi_sequence(sim=sim_hs_all_consumables,
-                                      incident_case_event=AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia)
+                                      incident_case_event=AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia,
+                                      treatment_effect='perfectly_effective')
+
+    # - If Treatment Does Not Work --> One follow-up as an inpatient.
+    assert [
+               ('FirstAttendance_NonEmergency', '0'),
+               ('Alri_Pneumonia_Treatment_Outpatient', '0'),
+               ('Alri_Pneumonia_Treatment_Inpatient_Followup', '1a'),  # follow-up as in-patient at next level up.
+           ] == generate_hsi_sequence(sim=sim_hs_all_consumables,
+                                      incident_case_event=AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia,
+                                      treatment_effect='perfectly_ineffective')
 
 
 def test_treatment_pathway_if_all_consumables_severe_case(sim_hs_all_consumables):
     """Examine the treatment pathway for a person with a particular category of disease if consumables are available."""
     # Severe case and available consumables --> treatment as in-patient at level 1b, following emergency appointment
-    # and referral.
+    # and referral. If treatment is perfect there will be no follow-up, but if treatment is completely ineffective
+    # there will be a follow-up appointment.
 
     # If the child is older than 2 months (classification will be `danger_signs_pneumonia`).
+    # - If Treatments Works --> No follow-up
     assert [
                ('FirstAttendance_Emergency', '1b'),
                ('Alri_Pneumonia_Treatment_Outpatient', '1b'),
                ('Alri_Pneumonia_Treatment_Inpatient', '1b'),
-               # ('Alri_Pneumonia_Treatment_Outpatient_Followup', '1b')  # no follow-up if no treatment failure
-               # todo th ???
            ] == generate_hsi_sequence(sim=sim_hs_all_consumables,
-                                      incident_case_event=AlriIncidentCase_Lethal_DangerSigns_Pneumonia)
+                                      incident_case_event=AlriIncidentCase_Lethal_DangerSigns_Pneumonia,
+                                      treatment_effect='perfectly_effective',
+                                      )
+
+    # - If Treatment Does Not Work --> One follow-up as an inpatient.
+    assert [
+               ('FirstAttendance_Emergency', '1b'),
+               ('Alri_Pneumonia_Treatment_Outpatient', '1b'),
+               ('Alri_Pneumonia_Treatment_Inpatient', '1b'),
+               ('Alri_Pneumonia_Treatment_Inpatient_Followup', '1b')
+           ] == generate_hsi_sequence(sim=sim_hs_all_consumables,
+                                      incident_case_event=AlriIncidentCase_Lethal_DangerSigns_Pneumonia,
+                                      treatment_effect='perfectly_ineffective',
+                                      )
+
 
     # If the child is younger than 2 months (classification will be `serious_bacterial_infection`)
+    # - If Treatments Works --> No follow-up
     assert [
                ('FirstAttendance_Emergency', '1b'),
                ('Alri_Pneumonia_Treatment_Outpatient', '1b'),
@@ -1084,13 +1117,27 @@ def test_treatment_pathway_if_all_consumables_severe_case(sim_hs_all_consumables
                # todo th ???
            ] == generate_hsi_sequence(sim=sim_hs_all_consumables,
                                       incident_case_event=AlriIncidentCase_Lethal_DangerSigns_Pneumonia,
-                                      age_of_person_under_2_months=True)
+                                      age_of_person_under_2_months=True,
+                                      treatment_effect='perfectly_effective',)
+
+    # - If Treatment Does Not Work --> One follow-up as an inpatient.
+    assert [
+               ('FirstAttendance_Emergency', '1b'),
+               ('Alri_Pneumonia_Treatment_Outpatient', '1b'),
+               ('Alri_Pneumonia_Treatment_Inpatient', '1b'),
+               ('Alri_Pneumonia_Treatment_Inpatient_Followup', '1b'),
+           ] == generate_hsi_sequence(sim=sim_hs_all_consumables,
+                                      incident_case_event=AlriIncidentCase_Lethal_DangerSigns_Pneumonia,
+                                      age_of_person_under_2_months=True,
+                                      treatment_effect='perfectly_ineffective',)
 
 
 def test_treatment_pathway_if_no_consumables_mild_case(sim_hs_no_consumables):
     """Examine the treatment pathway for a person with a particular category of disease if consumables are available."""
     # Mild case (fast_breathing_pneumonia) and not available consumables --> successive referrals up to level 2,
-    # following non-emergency appointment.
+    # following non-emergency appointment. But no follow-up appointment ever, because treatment is never given (and so
+    # does not "fail").
+
     assert [
                ('FirstAttendance_NonEmergency', '0'),
                ('Alri_Pneumonia_Treatment_Outpatient', '0'),
@@ -1099,7 +1146,8 @@ def test_treatment_pathway_if_no_consumables_mild_case(sim_hs_no_consumables):
                ('Alri_Pneumonia_Treatment_Outpatient', '2'),  # <-- referral due to lack of consumables
                # (No follow-up appointment because treatment is never provided, due to lack of consumables).
            ] == generate_hsi_sequence(sim=sim_hs_no_consumables,
-                                      incident_case_event=AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia)
+                                      incident_case_event=AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia,
+                                      treatment_effect='perfectly_ineffective')
 
 
 def test_treatment_pathway_if_no_consumables_severe_case(sim_hs_no_consumables):
