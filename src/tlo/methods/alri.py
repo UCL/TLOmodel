@@ -41,6 +41,9 @@ from tlo.util import random_date, sample_outcome
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+# Helper function for conversion between odds and probabilities
+to_odds = lambda pr: pr / (1.0 - pr)  # noqa: E731
+to_prob = lambda odds: odds / (1.0 + odds)  # noqa: E731
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITION
@@ -119,8 +122,8 @@ class Alri(Module):
         'other_alri'
     })
 
-    # todo add imci classifications
-    # todo - what is associated between disease type and different classifications?
+    classifications = {'danger_signs_pneumonia', 'fast_breathing_pneumonia', 'chest_indrawing_pneumonia',
+                       'cough_or_cold'}
 
     all_symptoms = {
         'cough', 'difficult_breathing', 'cyanosis', 'fever', 'tachypnoea', 'chest_indrawing', 'danger_signs'
@@ -686,20 +689,20 @@ class Alri(Module):
 
         # todo - @ines - what are these? Can we delete them??
         # extra
-        'prob_cyanosis_in_other_alri':  # todo - NOT USED
+        'prob_cyanosis_in_other_alri':  # todo @ Ines- this is not used, remove?
             Parameter(Types.REAL,
                       'probability of cyanosis in bronchiolitis or other alri'
                       ),
-        'prob_cyanosis_in_pneumonia':  # todo - NOT USED
+        'prob_cyanosis_in_pneumonia':  # todo @ Ines- this is not used, remove?
             Parameter(Types.REAL,
                       'probability of cyanosis in pneumonia'
                       ),
 
-        'prob_cyanosis_in_SpO2<90%':  # todo - it is used
+        'prob_cyanosis_in_SpO2<90%':
             Parameter(Types.REAL,
-                      'tmp param'
+                      'tmp param'  # todo @ Ines- fill in
                       ),
-        'or_care_seeking_perceived_severe_illness':  # todo - not used.
+        'or_care_seeking_perceived_severe_illness':  # todo @ Ines- this is not used, remove?
             Parameter(Types.BOOL,
                       'tmp param'
                       ),
@@ -823,7 +826,7 @@ class Alri(Module):
                 elif symptom_name == 'chest_indrawing':
                     self.sim.modules['SymptomManager'].register_symptom(
                         Symptom(name=symptom_name,
-                                odds_ratio_health_seeking_in_children=2.4))  # <-- todo do not harcode!
+                                odds_ratio_health_seeking_in_children=2.4))  # <-- todo @Tim - add to parameters
                 else:
                     self.sim.modules['SymptomManager'].register_symptom(
                         Symptom(name=symptom_name))
@@ -1109,11 +1112,11 @@ class Alri(Module):
         # Oxygen for hypoxaemia
         self.consumables_used_in_hsi['Oxygen_Therapy'] = {
             get_item_code(item='Oxygen, 1000 liters, primarily with oxygen cylinders'): 1,
-            # get_item_code(item='Nasal prongs'): 1  # todo @Ines - can this be deleted (why just commented out?)
+            # get_item_code(item='Nasal prongs'): 1  # todo @Ines - can this be deleted? (why just commented out?)
         }
 
         # Pulse oximetry
-        # todo - @Ines: just noting that this is looking-up oxygen rather than pulse oximeter.
+        # todo - @Ines just noting that this is looking-up oxygen rather than pulse oximeter; is that right?
         self.consumables_used_in_hsi['Pulse_oximetry'] = {
             get_item_code(item='Oxygen, 1000 liters, primarily with oxygen cylinders'): 1
         }
@@ -1124,7 +1127,6 @@ class Alri(Module):
         }
 
         # Optional consumables -------------------
-
         # Paracetamol
         self.consumables_used_in_hsi['Paracetamol_tablet'] = {
             get_item_code(item='Paracetamol, tablet, 100 mg'):
@@ -1138,13 +1140,12 @@ class Alri(Module):
             get_item_code(item='Tube, nasogastric CH 8_each_CMST'): 1
         }
 
-        # Bronchodilator
-        # inhaled
+        # Bronchodilator - inhaled
         self.consumables_used_in_hsi['Inhaled_Brochodilator'] = {
             get_item_code(item='Salbutamol sulphate 1mg/ml, 5ml_each_CMST'): 2
         }
 
-        # oral
+        # Bronchodilator - oral
         self.consumables_used_in_hsi['Oral_Brochodilator'] = {
             get_item_code(item='Salbutamol, syrup, 2 mg/5 ml'): 1,
             get_item_code(item='Salbutamol, tablet, 4 mg'): 1
@@ -1264,6 +1265,7 @@ class Alri(Module):
         assert (df.loc[df.is_alive & df['ri_complication_hypoxaemia'], 'ri_SpO2_level'] != '>=93%').all()
         assert (df.loc[df.is_alive & ~df['ri_complication_hypoxaemia'], 'ri_SpO2_level'] == '>=93%').all()
 
+    # todo @Tim - refactor to put in Models
     def _treatment_fails(self, **kwargs) -> bool:
         """ Determine whether a treatment fails or not: Returns `True` if the treatment fails.
         Treatment failures are dependent on the underlying IMCI classification by symptom, the need for oxygen (if
@@ -1272,6 +1274,7 @@ class Alri(Module):
         assert p_fail is not None, f"no probability of failure is recorded, {kwargs=}"
         return p_fail > self.rng.random_sample()
 
+    # todo @Tim - refactor to put in Models
     def _prob_treatment_fails(self,
                               imci_symptom_based_classification: str,
                               SpO2_level: str,
@@ -1330,15 +1333,13 @@ class Alri(Module):
                 if needs_oxygen and not oxygen_provided:
                     # Elevate risk, according to odds ratio "or_if_no_oxygen"
                     or_if_no_oxygen = 1.0 / p['or_mortality_improved_oxygen_systems']
-                    to_odds = lambda pr: pr / (1.0 - pr)  # noqa: E731
-                    to_prob = lambda odds: odds / (1.0 + odds)  # noqa: E731
                     risk_tf_1st_line_antibiotics = to_prob(to_odds(risk_tf_1st_line_antibiotics) * or_if_no_oxygen)
 
                 return min(1.0, risk_tf_1st_line_antibiotics)
 
             else:
                 # danger_signs_pneumonia given oral antibiotics (probably due to misdiagnosis)
-                # todo - Should this depend on oxygen receive or not (should it used the same parameter value as above)
+                # todo - ??? Should this depend on oxygen receive or not (should it used the same parameter value as above)
                 #  - have put something in so that it makes sense; perhaps this should be the parameter from above?
                 if needs_oxygen:
                     if oxygen_provided:
@@ -1378,7 +1379,7 @@ class Alri(Module):
                 # No pneumonia (by IMCI classification)
                 elif imci_symptom_based_classification == "cough_or_cold" and not any_complications:
                     return 0.0  # Treatment cannot 'fail' for a cough_or_cold without complications and no need of
-                    #             eisoroxygen
+                    #             oxygen
 
                 elif imci_symptom_based_classification == "cough_or_cold" and any_complications:
                     return p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%']
@@ -1396,11 +1397,10 @@ class Alri(Module):
         It will only do something if the Alri is caused by a pathogen (this module).
         * Prevent any death event that may be scheduled from occurring
         * Returns True for failed treatment to further schedule
-        # todo - the return thing seems weird -- sometimes None, T/F wrong way around?
         a follow-up appointment if condition not improving (by day 6 or by day 14)
         """
+        # todo - the return thing seems weird -- sometimes None, T/F wrong way around?
         # todo rewrite the docstring above
-        # todo refactor so that it's based on the characteristics of the person directly
         # todo nb that antibiotic_provided = '' means no antibiotic provided.
 
         df = self.sim.population.props
@@ -1438,7 +1438,7 @@ class Alri(Module):
             oxygen_provided=oxygen_provided,
         )
 
-        # Cancel death (if there is one) if the treatment does not fail:
+        # Cancel death (if there is one) if the treatment does not fail (i.e. it works).
         if not treatment_fails:
             self.cancel_death_and_schedule_cure(person_id)
         # else:
@@ -1680,6 +1680,7 @@ class Models:
                     #  (primary or secondary) bacteria ALRIs. Requires two sets of parameters for the prob
                     #  that a complication is one of possible types for those with and without bacterial infection
                     #  (i.e. the vector of probabilities must sum to 1.0 in either case).
+                    # todo @Ines -- Is this a "note to self"? Is is fixed now?
 
             # probabilities for systemic complications
             if primary_path_is_bacterial or has_secondary_bacterial_inf:
@@ -1767,9 +1768,7 @@ class Models:
                          danger_signs: bool,
                          un_clinical_acute_malnutrition: str,
                          ) -> float:
-        """Returns the probability that someone will die of ALRI"""
-        # todo - this needs radical tidying up!
-
+        """Returns the probability that such a case of ALRI will be lethal (if untreated)."""
         p = self.p
 
         # Death does not occur if the disease_type is "other_alri"
@@ -1780,78 +1779,54 @@ class Models:
         if 0 == len(complications):
             return 0.0
 
-        # Baseline risk for young infants aged less than 2 months:
-        odds_death_age_lt2mo = p['base_odds_death_ALRI_age<2mo']
+        def get_odds_of_death(age_in_whole_months):
+            """Returns odds of death given age in whole months."""
+            def get_odds_of_death_for_under_two_month_old(age_in_whole_months):
+                return p[f'base_odds_death_ALRI_{_age_}'] * \
+                       (p[f'or_death_ALRI_{_age_}_by_month_increase_in_age'] ** age_in_whole_months)
 
-        # The effect of age increase by 1 month:
-        if 1.0 / 12.0 < age_exact_years < 1.0 / 6.0:
-            odds_death_age_lt2mo *= p['or_death_ALRI_age<2mo_by_month_increase_in_age']
+            def get_odds_of_death_for_over_two_month_old(age_in_whole_months):
+                return p[f'base_odds_death_ALRI_{_age_}'] * \
+                       (p[f'or_death_ALRI_{_age_}_by_month_increase_in_age'] ** (age_in_whole_months - 2))
 
-        # Baseline risk for children aged 2 to 59 months:
-        odds_death_age2_59mo = p['base_odds_death_ALRI_age2_59mo']
+            return get_odds_of_death_for_under_two_month_old(age_in_whole_months=age_in_whole_months) \
+                if age_in_whole_months < 2 \
+                else get_odds_of_death_for_over_two_month_old(age_in_whole_months=age_in_whole_months)
 
-        # The effect of age by 1 month increase in age:
-        # age range for the 3 to 59 months (2 month old as baseline)
-        age_range_in_months = range(3, 60)
-        one_month_in_a_year = 1.0 / 12.0
+        age_in_whole_months = int(np.floor(age_exact_years * 12.0))
+        is_under_two_months_old = age_in_whole_months < 2
+        _age_ = "age<2mo" if is_under_two_months_old else "age2_59mo"
 
-        # todo sort this out !!!!! ;-)
-        for i in age_range_in_months:
-            if (i * one_month_in_a_year) <= age_exact_years < ((i + 1) * one_month_in_a_year):
-                odds_death_age2_59mo *= (p['or_death_ALRI_age2_59mo_by_month_increase_in_age'] ** i)
+        # Get baseline odds of death given age
+        odds_death = get_odds_of_death(age_in_whole_months=age_in_whole_months)
 
-        # The effect of disease severity
+        # Modify odds of death based on other factors:
         if danger_signs:
-            odds_death_age_lt2mo *= p['or_death_ALRI_age<2mo_very_severe_pneumonia']
+            odds_death *= p[f'or_death_ALRI_{_age_}_very_severe_pneumonia']
 
-        # The effect of P.jirovecii infection:
         if pathogen == 'P.jirovecii':
-            odds_death_age_lt2mo *= p['or_death_ALRI_age<2mo_P.jirovecii']
+            odds_death *= p[f'or_death_ALRI_{_age_}_P.jirovecii']
 
-        # The effect of gender:
-        if sex == 'F':
-            odds_death_age2_59mo *= p['or_death_ALRI_age2_59mo_female']
+        if not is_under_two_months_old:
+            if sex == 'F':
+                odds_death *= p[f'or_death_ALRI_{_age_}_female']
 
-        # The effect of disease severity
-        if danger_signs:
-            odds_death_age2_59mo *= p['or_death_ALRI_age2_59mo_very_severe_pneumonia']
+            if un_clinical_acute_malnutrition == 'SAM':
+                odds_death *= p[f'or_death_ALRI_{_age_}_SAM']
 
-        # The effect of P.jirovecii infection:
-        if pathogen == 'P.jirovecii':
-            odds_death_age2_59mo *= p['or_death_ALRI_age2_59mo_P.jirovecii']
-
-        # The effect of factors defined in other modules:
-        # malnutrition:
-        if un_clinical_acute_malnutrition == 'SAM':
-            odds_death_age2_59mo *= p['or_death_ALRI_age2_59mo_SAM']
-
-        # The effect of hypoxaemia for all ages:
         if SpO2_level == '<90%':
-            odds_death_age_lt2mo *= p['or_death_ALRI_SpO2<90%']
-            odds_death_age2_59mo *= p['or_death_ALRI_SpO2<90%']
-        if SpO2_level == '90-92%':
-            odds_death_age_lt2mo *= p['or_death_ALRI_SpO2_90_92%']
-            odds_death_age2_59mo *= p['or_death_ALRI_SpO2_90_92%']
-        # todo @ ines --- if this level of saturation does not indicate for oxygen then it doesn't make sense that it
-        #  increase risk of death. So, have made it so such persons can reach treatment....
+            odds_death *= p['or_death_ALRI_SpO2<90%']
+        elif SpO2_level == '90-92%':
+            odds_death *= p['or_death_ALRI_SpO2_90_92%']
 
-        # todo - check this works!
         if 'sepsis' in complications:
-            odds_death_age_lt2mo *= 151.9  # todo --- this seems VERY HIGH and why is it hardcoded?
-            odds_death_age2_59mo *= 151.9  # todo --- this seems VERY HIGH and why is it hardcoded?
+            odds_death *= 151.9  # todo @Ines this seems VERY HIGH, correct? And, add to parameters
 
         if 'pneumothorax' in complications:
-            odds_death_age_lt2mo *= 77.4  # todo --- this seems VERY HIGH and why is it hardcoded?
-            odds_death_age2_59mo *= 77.4  # todo --- this seems VERY HIGH and why is it hardcoded?
+            odds_death *= 77.4  # todo @Ines this seems VERY HIGH, correct? And, add to parameters
 
-        # Convert odds to probability
-        risk_death_age_lt2mo = odds_death_age_lt2mo / (1 + odds_death_age_lt2mo)
-        risk_death_age2_59mo = odds_death_age2_59mo / (1 + odds_death_age2_59mo)
+        return to_prob(odds_death)  # Return the probability of death
 
-        if age_exact_years < 2.0 / 12.0:
-            return risk_death_age_lt2mo
-        else:
-            return risk_death_age2_59mo
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -1971,10 +1946,7 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
             )
 
         # ----------------------- Duration of the Alri event and episode -----------------------
-        duration_in_days_of_alri = rng.randint(3, params[
-            'max_alri_duration_in_days_without_treatment'])
-        # todo changed this 1-->3 to help with problems about timeliness of healthcare seeking; could chnage it back
-        #  now that we have instant healthcare seeking
+        duration_in_days_of_alri = rng.randint(1, params['max_alri_duration_in_days_without_treatment'])
 
         # Date for outcome (either recovery or death) with uncomplicated Alri
         date_of_outcome = date + DateOffset(days=duration_in_days_of_alri)
@@ -2017,7 +1989,6 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
             SpO2_level=oxygen_saturation,
             complications=complications,
             danger_signs=('danger_signs' in all_symptoms),
-            # todo <--- is this right? # turn danger_signs into a property??
             un_clinical_acute_malnutrition=un_clinical_acute_malnutrition,
         )
 
@@ -2245,7 +2216,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
         # todo - this removeed? bring back!?
 
     def _refer_to_next_level_up(self):
-        """Schedule a copy of this event to occur again today at the next level-up (if there is a next level-up)."""
+        """Schedule this event to occur again today at the next level-up (if there is a next level-up)."""
 
         def _next_in_sequence(seq: tuple, x: str):
             """Return next value in a sequence of strings, or None if at end of sequence."""
@@ -2273,12 +2244,6 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
     def _refer_to_become_inpatient(self):
         """Schedule a copy of this event to occur today at this level as an in-patient appointment, at the higher level
         of the current level and level '1b'."""
-
-        # TODO: BUG - if refer to be inpatient will it still be re-assessed in the
-        #  HSI apply function with _assess_and_treat ??
-        #  This would not be correct as then they re registered as inpatient but having outpatient treatments given.
-        #  I think I have fixed it now
-
         the_higher_level_between_this_level_and_1b = '1b' if self.ACCEPTED_FACILITY_LEVEL in ('0', '1a', '1b') else '2'
 
         self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -2292,11 +2257,9 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
             tclose=self.sim.date + pd.DateOffset(days=1),
             priority=0)
 
-    def _schedule_follow_up_at_same_facility_as_outpatient(self):
+    def _schedule_follow_up_at_same_facility_as_inpatient(self):
         """Schedule a copy of this event to occur in 5 days time as a 'follow-up' appointment at this level as an
-        out-patient."""
-        # todo - make inpatient?
-
+        in-patient."""
         self.sim.modules['HealthSystem'].schedule_hsi_event(
             HSI_Alri_Treatment(
                 module=self.module,
@@ -2395,7 +2358,6 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
              'chest_indrawing_pneumonia,
              'cough_or_cold'
         }."""
-        # todo --- what is this indirection for!?!?!?
         return self.module.get_imci_classification_based_on_symptoms(
             child_is_younger_than_2_months=child_is_younger_than_2_months, symptoms=symptoms)
 
@@ -2420,21 +2382,15 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
              'cough_or_cold',
              'fast_breathing_pneumonia',
              'chest_indrawing_pneumonia'
-
         }."""
-        # todo logic could be simplified a bit here (collecting up all the else)
+
         rand = self.module.rng.random_sample
         rand_choice = self.module.rng.choice
         p = self.module.parameters
 
-        if facility_level == '0':
-            if imci_classification_based_on_symptoms == 'fast_breathing_pneumonia':
-                if rand() < p['sensitivity_of_classification_of_fast_breathing_pneumonia_facility_level0']:
-                    return imci_classification_based_on_symptoms
-                else:
-                    return 'cough_or_cold'
-
-            elif imci_classification_based_on_symptoms in ('chest_indrawing_pneumonia', 'danger_signs_pneumonia'):
+        def _classification_at_facility_level_0(imci_classification_based_on_symptoms):
+            """Return classification if it does at facility level 0"""
+            if imci_classification_based_on_symptoms in ('chest_indrawing_pneumonia', 'danger_signs_pneumonia'):
                 if rand() < p['sensitivity_of_classification_of_danger_signs_pneumonia_facility_level0']:
                     return imci_classification_based_on_symptoms
                 else:
@@ -2445,20 +2401,22 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                             1.0 - p['prob_iCCM_severe_pneumonia_treated_as_fast_breathing_pneumonia']
                         ]
                     )
-            else:
-                # (Perfect diagnosis accuracy for 'cough_or_cold')
-                # serious bacterial infections (under danger_signs_pneumonia) not determined at level 0 -
-                # need to refer to facility < 2 months old
-                return imci_classification_based_on_symptoms
 
-        elif facility_level in ('1a', '1b'):
-            if imci_classification_based_on_symptoms in ('fast_breathing_pneumonia', 'chest_indrawing_pneumonia'):
-                if rand() < p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level1']:
+            elif imci_classification_based_on_symptoms == 'fast_breathing_pneumonia':
+                if rand() < p['sensitivity_of_classification_of_fast_breathing_pneumonia_facility_level0']:
                     return imci_classification_based_on_symptoms
                 else:
                     return 'cough_or_cold'
 
-            elif imci_classification_based_on_symptoms == 'danger_signs_pneumonia':
+            elif imci_classification_based_on_symptoms == "cough_or_cold":
+                return "cough_or_cold"
+
+            else:
+                raise ValueError(f'Classification not recognised: {imci_classification_based_on_symptoms}')
+
+        def _classification_at_facility_level_1(imci_classification_based_on_symptoms):
+            """Return classification if it does at facility level 1"""
+            if imci_classification_based_on_symptoms == 'danger_signs_pneumonia':
                 if rand() < p['sensitivity_of_classification_of_severe_pneumonia_facility_level1']:
                     return imci_classification_based_on_symptoms
                 else:
@@ -2470,20 +2428,21 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                         ]
                     )
 
-            else:
-                assert imci_classification_based_on_symptoms == 'cough_or_cold'
-                # (Assume perfect diagnosis accuracy for 'cough_or_cold')
-                return imci_classification_based_on_symptoms
-
-        else:  # facility_level 2 or above
-            if imci_classification_based_on_symptoms in ('fast_breathing_pneumonia', 'chest_indrawing_pneumonia'):
-                if rand() < p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level2']:
+            elif imci_classification_based_on_symptoms in ('fast_breathing_pneumonia', 'chest_indrawing_pneumonia'):
+                if rand() < p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level1']:
                     return imci_classification_based_on_symptoms
                 else:
                     return 'cough_or_cold'
 
-            elif imci_classification_based_on_symptoms == 'danger_signs_pneumonia':
+            elif imci_classification_based_on_symptoms == "cough_or_cold":
+                return "cough_or_cold"
 
+            else:
+                raise ValueError(f'Classification not recognised: {imci_classification_based_on_symptoms}')
+
+        def _classification_at_facility_level_2(imci_classification_based_on_symptoms):
+            """Return classification if it does at facility level 2"""
+            if imci_classification_based_on_symptoms == 'danger_signs_pneumonia':
                 if rand() < p['sensitivity_of_classification_of_severe_pneumonia_facility_level2']:
                     return imci_classification_based_on_symptoms
                 else:
@@ -2495,9 +2454,30 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                         ]
                     )
 
+            elif imci_classification_based_on_symptoms in ('fast_breathing_pneumonia', 'chest_indrawing_pneumonia'):
+                if rand() < p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level2']:
+                    return imci_classification_based_on_symptoms
+                else:
+                    return 'cough_or_cold'
+
+            elif imci_classification_based_on_symptoms == "cough_or_cold":
+                return "cough_or_cold"
+
             else:
-                # (Perfect diagnosis accuracy for 'cough_or_cold')
-                return imci_classification_based_on_symptoms
+                raise ValueError(f'Classification not recognised: {imci_classification_based_on_symptoms}')
+
+        if facility_level == "0":
+            classification = _classification_at_facility_level_0(imci_classification_based_on_symptoms)
+        elif facility_level in ("1a", "1b"):
+            classification = _classification_at_facility_level_1(imci_classification_based_on_symptoms)
+        elif facility_level in ("2"):
+            classification = _classification_at_facility_level_2(imci_classification_based_on_symptoms)
+        else:
+            raise ValueError(f"Facility Level not recognised: {facility_level}")
+
+        assert classification in self.module.classifications
+        return classification
+
 
     def _get_disease_classification_for_treatment_decision(self,
                                                            age_exact_years,
@@ -2531,8 +2511,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
         _classification = imci_classification_by_SpO2_measure \
             if (use_oximeter and (imci_classification_by_SpO2_measure != '')) else hw_assigned_classification
 
-        assert _classification in ('danger_signs_pneumonia', 'fast_breathing_pneumonia', 'chest_indrawing_pneumonia',
-                                   'cough_or_cold')
+        assert _classification in self.module.classifications
 
         return _classification
 
@@ -2541,7 +2520,6 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
         """Return a Dict of the form {'antibiotic_indicated': <>, 'oxygen_indicated': <>} which expresses what the
          treatment is that the patient should be provided with ideally and ultimately, if consumables are available (and
          following an admission to in-patient, if required)."""
-        # todo assert that classification_for_treatment_decision is in the set of allowable valyes
 
         if classification_for_treatment_decision == 'fast_breathing_pneumonia':
             return {
@@ -2568,6 +2546,9 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                 'antibiotic_indicated': '',
                 'oxygen_indicated': False
             }
+
+        else:
+            raise ValueError(f'Classification not recognised: {classification_for_treatment_decision}')
 
     def _do_action_given_classification(self,
                                         classification_for_treatment_decision,
@@ -2599,7 +2580,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                     antibiotic_provided=antibiotic_indicated,
                     oxygen_provided=(oxygen_available and oxygen_indicated)
                 )
-                # # todo -- what is the logic she wants!?!??!?!?
+                # todo - something to do with follow-up not sure?
                 # if treatment_failed and not self.is_followup:  # only 1 possible follow-up appt for an episode
                 #     self._schedule_follow_up_at_same_facility_as_outpatient()
             elif facility_level != '2':
