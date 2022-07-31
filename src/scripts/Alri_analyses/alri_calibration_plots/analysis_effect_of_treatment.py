@@ -199,8 +199,8 @@ def treatment_efficacy(
         alri_module = alri_module_with_imperfect_diagnosis_and_imperfect_treatment
 
     # "Treatment Fails" is the probability that a death is averted (if one is schedule)
-    treatment_fails = alri_module._prob_treatment_fails(
-        antibiotic_provided=ultimate_treatment['antibiotic_indicated'],
+    treatment_fails = alri_module.models._prob_treatment_fails(
+        antibiotic_provided=ultimate_treatment['antibiotic_indicated'][0],
         oxygen_provided=ultimate_treatment['oxygen_indicated'] if oxygen_available else False,
         imci_symptom_based_classification=imci_symptom_based_classification,
         SpO2_level=oxygen_saturation,

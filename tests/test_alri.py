@@ -138,11 +138,11 @@ def test_integrity_of_linear_models(sim_hs_all_consumables):
     """Run the models to make sure that is specified correctly and can run."""
     sim = sim_hs_all_consumables
     sim.make_initial_population(n=5000)
-    alri = sim.modules['Alri']
+    alri_module = sim.modules['Alri']
     df = sim.population.props
 
     # make the models
-    models = Models(alri)
+    models = Models(alri_module)
 
     # --- compute_risk_of_acquisition & incidence_equations_by_pathogen:
     # 1) if no vaccine:
@@ -150,7 +150,7 @@ def test_integrity_of_linear_models(sim_hs_all_consumables):
     df['va_hib_all_doses'] = False
     models.make_model_for_acquisition_risk()
 
-    for pathogen in alri.all_pathogens:
+    for pathogen in alri_module.all_pathogens:
         res = models.compute_risk_of_acquisition(
             pathogen=pathogen,
             df=df.loc[df.is_alive & (df.age_years < 5)]
@@ -183,7 +183,7 @@ def test_integrity_of_linear_models(sim_hs_all_consumables):
     # set efficacy of pneumococcal vaccine to be 100% (i.e. 0 relative risk of infection)
     models.p['rr_Strep_pneum_VT_ALRI_with_PCV13_age<2y'] = 0.0
     models.p['rr_Strep_pneum_VT_ALRI_with_PCV13_age2to5y'] = 0.0
-    for patho in alri.all_pathogens:
+    for patho in alri_module.all_pathogens:
         for age in range(0, 100):
             for va_pneumo_all_doses in [True, False]:
                 disease_type, bacterial_coinfection = \
@@ -195,24 +195,24 @@ def test_integrity_of_linear_models(sim_hs_all_consumables):
                         va_pneumo_all_doses=va_pneumo_all_doses
                     )
 
-                assert disease_type in alri.disease_types
+                assert disease_type in alri_module.disease_types
 
-                if patho in alri.pathogens['bacterial']:
+                if patho in alri_module.pathogens['bacterial']:
                     assert pd.isnull(bacterial_coinfection)
-                elif patho in alri.pathogens['fungal/other']:
+                elif patho in alri_module.pathogens['fungal/other']:
                     assert pd.isnull(bacterial_coinfection)
                 else:
                     # viral primary infection- may have a bacterial coinfection or may not:
                     assert pd.isnull(bacterial_coinfection) or \
-                           bacterial_coinfection in alri.pathogens['bacterial']
+                           bacterial_coinfection in alri_module.pathogens['bacterial']
                     # check that if has had pneumococcal vaccine they are not coinfected with `Strep_pneumoniae_PCV13`
                     if va_pneumo_all_doses:
                         assert bacterial_coinfection != 'Strep_pneumoniae_PCV13'
 
     # --- complications
-    for patho in alri.all_pathogens:
-        for coinf in (alri.pathogens['bacterial'] + [np.nan]):
-            for disease_type in alri.disease_types:
+    for patho in alri_module.all_pathogens:
+        for coinf in (alri_module.pathogens['bacterial'] + [np.nan]):
+            for disease_type in alri_module.disease_types:
                 res = models.get_complications_that_onset(disease_type=disease_type,
                                                           primary_path_is_bacterial=(
                                                               patho in sim.modules['Alri'].pathogens['bacterial']
@@ -220,16 +220,16 @@ def test_integrity_of_linear_models(sim_hs_all_consumables):
                                                           has_secondary_bacterial_inf=pd.notnull(coinf)
                                                           )
                 assert isinstance(res, set)
-                assert all([c in alri.complications for c in res])
+                assert all([c in alri_module.complications for c in res])
 
     # --- symptoms_for_disease
-    for disease_type in alri.disease_types:
+    for disease_type in alri_module.disease_types:
         res = models.symptoms_for_disease(disease_type)
         assert isinstance(res, set)
         assert all([s in sim.modules['SymptomManager'].symptom_names for s in res])
 
     # --- symptoms_for_complication
-    for complication in alri.complications:
+    for complication in alri_module.complications:
         res = models.symptoms_for_complication(complication, oxygen_saturation='<90%')
         assert isinstance(res, set)
         assert all([s in sim.modules['SymptomManager'].symptom_names for s in res])
@@ -247,10 +247,10 @@ def test_integrity_of_linear_models(sim_hs_all_consumables):
     ) in itertools.product(
         range(0, 5, 1),
         ('F', 'M'),
-        alri.all_pathogens,
-        alri.disease_types,
+        alri_module.all_pathogens,
+        alri_module.disease_types,
         ['<90%', '90-92%', '>=93%'],
-        alri.complications,
+        alri_module.complications,
         [False, True],
         ['MAM', 'SAM', 'well']
     ):
@@ -264,6 +264,43 @@ def test_integrity_of_linear_models(sim_hs_all_consumables):
                                       un_clinical_acute_malnutrition=un_clinical_acute_malnutrition
                                       )
         assert isinstance(res, (bool, np.bool_))
+
+    # Treatment failure:
+    """Check that `_prob_treatment_fails` returns a sensible value for all permutations of its arguments."""
+    for (
+        imci_symptom_based_classification,
+        SpO2_level,
+        disease_type,
+        complications,
+        symptoms,
+        hiv_infected_and_not_on_art,
+        un_clinical_acute_malnutrition,
+        antibiotic_provided,
+        oxygen_provided,
+    ) in itertools.product(
+        ('fast_breathing_pneumonia', 'danger_signs_pneumonia', 'chest_indrawing_pneumonia', 'cough_or_cold'),
+        ('<90%', '90-92%', '>=93%'),
+        alri_module.disease_types,
+        [[_c] for _c in alri_module.complications] + [[]],
+        [[_s] for _s in alri_module.all_symptoms],
+        (False, True),
+        ('MAM', 'SAM', 'well'),
+        alri_module.antibiotics,
+        (False, True),
+    ):
+        kwargs = {
+            'imci_symptom_based_classification': imci_symptom_based_classification,
+            'SpO2_level': SpO2_level,
+            'disease_type': disease_type,
+            'complications': complications,
+            'symptoms': symptoms,
+            'hiv_infected_and_not_on_art': hiv_infected_and_not_on_art,
+            'un_clinical_acute_malnutrition': un_clinical_acute_malnutrition,
+            'antibiotic_provided': antibiotic_provided,
+            'oxygen_provided': oxygen_provided,
+        }
+        res = models._prob_treatment_fails(**kwargs)
+        assert isinstance(res, float) and (res is not None) and (0.0 <= res <= 1.0), f"Problem with: {kwargs=}"
 
 
 def test_basic_run(sim_hs_all_consumables):
@@ -788,45 +825,6 @@ def test_classification_based_on_symptoms_and_imci(sim_hs_all_consumables):
             facility_level='1b',
             use_oximeter=True
         ), f"{_correct_imci_classification_on_symptoms=}"
-
-
-def test_prob_treatment_fails(sim_hs_all_consumables):
-    """Check that `_prob_treatment_fails` returns a sensible value for all permutations of its arguments."""
-    alri_module = sim_hs_all_consumables.modules['Alri']
-    for (
-        imci_symptom_based_classification,
-        SpO2_level,
-        disease_type,
-        complications,
-        symptoms,
-        hiv_infected_and_not_on_art,
-        un_clinical_acute_malnutrition,
-        antibiotic_provided,
-        oxygen_provided,
-    ) in itertools.product(
-        ('fast_breathing_pneumonia', 'danger_signs_pneumonia', 'chest_indrawing_pneumonia', 'cough_or_cold'),
-        ('<90%', '90-92%', '>=93%'),
-        alri_module.disease_types,
-        [[_c] for _c in alri_module.complications] + [[]],
-        [[_s] for _s in alri_module.all_symptoms],
-        (False, True),
-        ('MAM', 'SAM', 'well'),
-        alri_module.antibiotics,
-        (False, True),
-    ):
-        kwargs = {
-            'imci_symptom_based_classification': imci_symptom_based_classification,
-            'SpO2_level': SpO2_level,
-            'disease_type': disease_type,
-            'complications': complications,
-            'symptoms': symptoms,
-            'hiv_infected_and_not_on_art': hiv_infected_and_not_on_art,
-            'un_clinical_acute_malnutrition': un_clinical_acute_malnutrition,
-            'antibiotic_provided': antibiotic_provided,
-            'oxygen_provided': oxygen_provided,
-        }
-        res = alri_module._prob_treatment_fails(**kwargs)
-        assert isinstance(res, float) and (res is not None) and (0.0 <= res <= 1.0), f"Problem with: {kwargs=}"
 
 
 def test_do_effects_of_alri_treatment(sim_hs_all_consumables):
