@@ -761,7 +761,7 @@ def order_of_short_treatment_ids(_short_treatment_id: Union[str, pd.Index]) -> U
     """Define a standard order for short treatment_ids."""
     order = _define_short_treatment_ids().index
     if isinstance(_short_treatment_id, str):
-        return tuple(order).index(_short_treatment_id)
+        return tuple(order).index(_short_treatment_id.replace('_*', '*'))
     else:
         return order[order.isin(_short_treatment_id)]
 
@@ -770,8 +770,9 @@ def get_color_short_treatment_id(short_treatment_id: str) -> str:
     """Return the colour (as matplotlib string) assigned to this shorted TREATMENT_ID. Returns `np.nan` if treatment_id
     is not recognised."""
     colors = _define_short_treatment_ids()
-    if short_treatment_id in colors.index:
-        return colors.loc[short_treatment_id]
+    _short_treatment_ids_with_trailing_asterix = short_treatment_id.replace('_*', '*')
+    if _short_treatment_ids_with_trailing_asterix in colors.index:
+        return colors.loc[_short_treatment_ids_with_trailing_asterix]
     else:
         return np.nan
 

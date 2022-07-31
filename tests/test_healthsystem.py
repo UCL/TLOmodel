@@ -916,7 +916,7 @@ def test_manipulation_of_service_availability(seed, tmpdir):
 
     generic_first_appts = {'FirstAttendance_NonEmergency', 'FirstAttendance_Emergency'}
 
-    def run_sim(service_availability) -> Set[str]:
+    def get_set_of_treatment_ids_that_run(service_availability) -> Set[str]:
         """Return set of TREATMENT_IDs that occur when running the simulation with the `service_availability`."""
         sim = Simulation(start_date=start_date, seed=seed, log_config={
             'filename': 'tmpfile',
@@ -938,35 +938,40 @@ def test_manipulation_of_service_availability(seed, tmpdir):
             return set()
 
     # Run model with everything available by default using "*"
-    everything = run_sim(service_availability=["*"])
+    everything = get_set_of_treatment_ids_that_run(service_availability=["*"])
 
     # Run model with everything specified individually
-    assert everything == run_sim(service_availability=list(everything))
+    assert everything == get_set_of_treatment_ids_that_run(service_availability=list(everything))
 
     # Run model with nothing available
-    assert set() == run_sim(service_availability=[])
+    assert set() == get_set_of_treatment_ids_that_run(service_availability=[])
 
     # Only allow 'Hiv_Test' (Not `Hiv_Treatment`)
-    assert set({'Hiv_Test'}) == run_sim(service_availability=["Hiv_Test*"]) - generic_first_appts
+    assert set({'Hiv_Test'}) == \
+           get_set_of_treatment_ids_that_run(service_availability=["Hiv_Test_*"]) - generic_first_appts
 
     # Allow all `Hiv` things (but nothing else)
-    assert set({'Hiv_Test', 'Hiv_Treatment'}) == run_sim(service_availability=["Hiv*"]) - generic_first_appts
+    assert set({'Hiv_Test', 'Hiv_Treatment'}) == \
+           get_set_of_treatment_ids_that_run(service_availability=["Hiv_*"]) - generic_first_appts
 
     # Allow all except `Hiv_Test`
     everything_except_hiv_test = everything - set({'Hiv_Test'})
-    run_everything_except_hiv_test = run_sim(service_availability=list(everything_except_hiv_test))
+    run_everything_except_hiv_test = \
+        get_set_of_treatment_ids_that_run(service_availability=list(everything_except_hiv_test))
     assert 'Hiv_Test' not in run_everything_except_hiv_test
     assert len(run_everything_except_hiv_test.union(everything))
 
     # Allow all except `Hiv_Treatment`
     everything_except_hiv_treatment = everything - set({'Hiv_Treatment'})
-    run_everything_except_hiv_treatment = run_sim(service_availability=list(everything_except_hiv_treatment))
+    run_everything_except_hiv_treatment = \
+        get_set_of_treatment_ids_that_run(service_availability=list(everything_except_hiv_treatment))
     assert 'Hiv_Treatment' not in run_everything_except_hiv_treatment
     assert len(run_everything_except_hiv_treatment.union(everything))
 
     # Allow all except `HIV*`
     everything_except_hiv_anything = {x for x in everything if not x.startswith('Hiv')}
-    run_everything_except_hiv_anything = run_sim(service_availability=list(everything_except_hiv_anything))
+    run_everything_except_hiv_anything = \
+        get_set_of_treatment_ids_that_run(service_availability=list(everything_except_hiv_anything))
     assert 'Hiv_Treatment' not in run_everything_except_hiv_anything
     assert 'Hiv_Test' not in run_everything_except_hiv_anything
     assert len(run_everything_except_hiv_anything.union(everything))
