@@ -1268,9 +1268,7 @@ class Alri(Module):
 
     # todo @Tim - refactor to put in Models
     def _treatment_fails(self, **kwargs) -> bool:
-        """ Determine whether a treatment fails or not: Returns `True` if the treatment fails.
-        Treatment failures are dependent on the underlying IMCI classification by symptom, the need for oxygen (if
-        SpO2 < 90%), and the type of antibiotic therapy (oral vs. IV/IM)."""
+        """Determine whether a treatment fails or not: Returns `True` if the treatment fails."""
         p_fail = self._prob_treatment_fails(**kwargs)
         assert p_fail is not None, f"no probability of failure is recorded, {kwargs=}"
         return p_fail > self.rng.random_sample()
@@ -1289,15 +1287,19 @@ class Alri(Module):
                               ) -> float:
         """Returns the probability of treatment failure. Treatment failures are dependent on the underlying IMCI
         classification by symptom, the need for oxygen (if SpO2 < 90%), and the type of antibiotic therapy (oral vs.
-         IV/IM)."""
+         IV/IM). NB. antibiotic_provided = '' means no antibiotic provided."""
 
-        assert (antibiotic_provided in self.antibiotics) or (antibiotic_provided == ''), \
+        assert antibiotic_provided in self.antibiotics + [''], \
             f"Not recognised {antibiotic_provided=}"
 
         p = self.parameters
 
         needs_oxygen = SpO2_level == "<90%"
         any_complications = len(complications) > 0
+
+        # If nothing is provided (neither an antibiotic nor oxygen), the treatment fails:
+        if antibiotic_provided == '' and not oxygen_provided:
+            return 1.0
 
         if (antibiotic_provided == '') and (imci_symptom_based_classification == "cough_or_cold"):
             # If no antibiotic is provided, the treatment definitely fails, as it cannot have any effect!
@@ -1341,7 +1343,8 @@ class Alri(Module):
             else:
                 # danger_signs_pneumonia given oral antibiotics (probably due to misdiagnosis)
                 # todo - @Tim/@Ines Should this depend on oxygen receive or not (should it used the same parameter value
-                #  as above)? I have put something in so that it makes sense; perhaps this should be the parameter from above?
+                #  as above)? I have put something in so that it makes sense; perhaps this should be the parameter from
+                #  above?
                 if needs_oxygen:
                     if oxygen_provided:
                         return p['tf_oral_amoxicillin_only_for_severe_pneumonia_with_SpO2<90%']
@@ -1398,11 +1401,9 @@ class Alri(Module):
         It will only do something if the Alri is caused by a pathogen (this module).
         * Prevent any death event that may be scheduled from occurring
         * Returns 'success' if the treatment is successful and 'failure' is it is not successful."""
-        # todo @Tim nb that antibiotic_provided = '' means no antibiotic provided.
 
         df = self.sim.population.props
         person = df.loc[person_id]
-
         if not person.ri_current_infection_status:
             return
 
@@ -2328,9 +2329,9 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                 facility_level=self.ACCEPTED_FACILITY_LEVEL,
             )
 
-        # assessment process for follow-ups with treatment failure or urgent referrals (both inpatient)
-        # todo - seem that Ines' new logic that says assume its danger_signs_pneumonia if there person is
-        #  already an in-patient?????
+        # todo @Ines' comment: Assessment process for follow-ups with treatment failure or urgent referrals
+        #  (both inpatient)
+        # todo - @Ines -- not sure why this would be the case? # todo - @Tim - remove
         elif self._is_as_in_patient:
             self._do_action_given_classification(
                 classification_for_treatment_decision='danger_signs_pneumonia',  # assumed for sbi for < 2 months
@@ -3002,6 +3003,7 @@ def _make_hw_diagnosis_perfect(alri_module):
     p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level2'] = 1.0
     p['sensitivity_of_classification_of_severe_pneumonia_facility_level2'] = 1.0
 
+
 def _make_treatment_perfect(alri_module):
     """Modify the parameters of an instance of the Alri module so that treatment is perfectly effective."""
     p = alri_module.parameters
@@ -3039,7 +3041,6 @@ def _make_treatment_and_diagnosis_perfect(alri_module):
 
     _make_hw_diagnosis_perfect(alri_module)
     _make_treatment_perfect(alri_module)
-
 
 
 def _make_high_risk_of_death(alri_module):

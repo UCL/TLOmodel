@@ -53,10 +53,8 @@ def _get_person_id(df, age_bounds: tuple = (0.0, np.inf)) -> int:
         ].index[0]
 
 
-@pytest.fixture
-def sim_hs_all_consumables(tmpdir, seed):
-    """Return simulation objection with Alri and other necessary modules registered.
-    All consumables available"""
+def get_sim(tmpdir, seed, cons_available):
+    """Return simulation objection with Alri and other necessary modules registered."""
     sim = Simulation(
         start_date=start_date,
         seed=seed,
@@ -77,42 +75,26 @@ def sim_hs_all_consumables(tmpdir, seed):
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, cons_availability='all'),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                  cons_availability=cons_available),
         alri.Alri(resourcefilepath=resourcefilepath, log_indivdual=0, do_checks=True),
         AlriPropertiesOfOtherModules(),
     )
     return sim
+
+
+@pytest.fixture
+def sim_hs_all_consumables(tmpdir, seed):
+    """Return simulation objection with Alri and other necessary modules registered.
+    All consumables available"""
+    return get_sim(tmpdir=tmpdir, seed=seed, cons_available='all')
 
 
 @pytest.fixture
 def sim_hs_no_consumables(tmpdir, seed):
     """Return simulation objection with Alri and other necessary modules registered.
     No consumable available"""
-    sim = Simulation(
-        start_date=start_date,
-        seed=seed,
-        log_config={
-            'filename': 'tmp',
-            'directory': tmpdir,
-            'custom_levels': {
-                "*": logging.WARNING,
-                "tlo.methods.alri": logging.INFO,
-                "tlo.methods.healthsystem": logging.INFO
-            }
-        }
-    )
-    sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, cons_availability='none'),
-        alri.Alri(resourcefilepath=resourcefilepath, log_indivdual=0, do_checks=True),
-        AlriPropertiesOfOtherModules(),
-    )
-    return sim
+    return get_sim(tmpdir=tmpdir, seed=seed, cons_available='none')
 
 
 @pytest.fixture
@@ -977,7 +959,8 @@ def test_severe_pneumonia_referral_from_hsi_first_appts(sim_hs_all_consumables):
     assert df.at[person_id, 'ri_on_treatment']
 
 
-def generate_hsi_sequence(sim, incident_case_event, age_of_person_under_2_months=False, treatment_effect='perfectly_effective'):
+def generate_hsi_sequence(sim, incident_case_event, age_of_person_under_2_months=False,
+                          treatment_effect='perfectly_effective'):
     """For a given simulation, let one person be affected by Alri, and record all the HSI that they have."""
 
     def make_hw_assesement_perfect(sim):
@@ -1054,7 +1037,8 @@ def generate_hsi_sequence(sim, incident_case_event, age_of_person_under_2_months
     return [r for r in df.loc[mask, ['TREATMENT_ID', 'Facility_Level']].itertuples(index=False, name=None)]
 
 
-def test_treatment_pathway_if_all_consumables_mild_case(sim_hs_all_consumables):
+@pytest.mark.slow
+def test_treatment_pathway_if_all_consumables_mild_case(tmpdir, seed):
     """Examine the treatment pathway for a person with a particular category of disease if consumables are available."""
     # Mild case (fast_breathing_pneumonia) and available consumables --> treatment at level 0, following non-emergency
     # appointment. If treatment is perfect there will be no follow-up, but if treatment is completely ineffective there
@@ -1064,7 +1048,7 @@ def test_treatment_pathway_if_all_consumables_mild_case(sim_hs_all_consumables):
     assert [
                ('FirstAttendance_NonEmergency', '0'),
                ('Alri_Pneumonia_Treatment_Outpatient', '0'),
-           ] == generate_hsi_sequence(sim=sim_hs_all_consumables,
+           ] == generate_hsi_sequence(sim=get_sim(seed=seed, tmpdir=tmpdir, cons_available='all'),
                                       incident_case_event=AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia,
                                       treatment_effect='perfectly_effective')
 
@@ -1073,12 +1057,13 @@ def test_treatment_pathway_if_all_consumables_mild_case(sim_hs_all_consumables):
                ('FirstAttendance_NonEmergency', '0'),
                ('Alri_Pneumonia_Treatment_Outpatient', '0'),
                ('Alri_Pneumonia_Treatment_Inpatient_Followup', '1a'),  # follow-up as in-patient at next level up.
-           ] == generate_hsi_sequence(sim=sim_hs_all_consumables,
+           ] == generate_hsi_sequence(sim=get_sim(seed=seed, tmpdir=tmpdir, cons_available='all'),
                                       incident_case_event=AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia,
                                       treatment_effect='perfectly_ineffective')
 
 
-def test_treatment_pathway_if_all_consumables_severe_case(sim_hs_all_consumables):
+@pytest.mark.slow
+def test_treatment_pathway_if_all_consumables_severe_case(seed, tmpdir):
     """Examine the treatment pathway for a person with a particular category of disease if consumables are available."""
     # Severe case and available consumables --> treatment as in-patient at level 1b, following emergency appointment
     # and referral. If treatment is perfect there will be no follow-up, but if treatment is completely ineffective
@@ -1090,10 +1075,11 @@ def test_treatment_pathway_if_all_consumables_severe_case(sim_hs_all_consumables
                ('FirstAttendance_Emergency', '1b'),
                ('Alri_Pneumonia_Treatment_Outpatient', '1b'),
                ('Alri_Pneumonia_Treatment_Inpatient', '1b'),
-           ] == generate_hsi_sequence(sim=sim_hs_all_consumables,
+           ] == generate_hsi_sequence(sim=get_sim(seed=seed, tmpdir=tmpdir, cons_available='all'),
                                       incident_case_event=AlriIncidentCase_Lethal_DangerSigns_Pneumonia,
                                       treatment_effect='perfectly_effective',
-                                      )
+                                      ), \
+        "Problem when child is younger than 2months old and treatment does work"
 
     # - If Treatment Does Not Work --> One follow-up as an inpatient.
     assert [
@@ -1101,24 +1087,23 @@ def test_treatment_pathway_if_all_consumables_severe_case(sim_hs_all_consumables
                ('Alri_Pneumonia_Treatment_Outpatient', '1b'),
                ('Alri_Pneumonia_Treatment_Inpatient', '1b'),
                ('Alri_Pneumonia_Treatment_Inpatient_Followup', '1b')
-           ] == generate_hsi_sequence(sim=sim_hs_all_consumables,
+           ] == generate_hsi_sequence(sim=get_sim(seed=seed, tmpdir=tmpdir, cons_available='all'),
                                       incident_case_event=AlriIncidentCase_Lethal_DangerSigns_Pneumonia,
                                       treatment_effect='perfectly_ineffective',
-                                      )
+                                      ),\
+        "Problem when child is younger than 2months old and treatment does not work"
 
-
-    # If the child is younger than 2 months (classification will be `serious_bacterial_infection`)
+    # If the child is younger than 2 months
     # - If Treatments Works --> No follow-up
     assert [
                ('FirstAttendance_Emergency', '1b'),
                ('Alri_Pneumonia_Treatment_Outpatient', '1b'),
                ('Alri_Pneumonia_Treatment_Inpatient', '1b'),
-               # ('Alri_Pneumonia_Treatment_Outpatient_Followup', '1b')  # no follow-up if no treatment failure
-               # todo th ???
-           ] == generate_hsi_sequence(sim=sim_hs_all_consumables,
+           ] == generate_hsi_sequence(sim=get_sim(seed=seed, tmpdir=tmpdir, cons_available='all'),
                                       incident_case_event=AlriIncidentCase_Lethal_DangerSigns_Pneumonia,
                                       age_of_person_under_2_months=True,
-                                      treatment_effect='perfectly_effective',)
+                                      treatment_effect='perfectly_effective',), \
+        "Problem when child is older than 2months old and treatment does work"
 
     # - If Treatment Does Not Work --> One follow-up as an inpatient.
     assert [
@@ -1126,41 +1111,42 @@ def test_treatment_pathway_if_all_consumables_severe_case(sim_hs_all_consumables
                ('Alri_Pneumonia_Treatment_Outpatient', '1b'),
                ('Alri_Pneumonia_Treatment_Inpatient', '1b'),
                ('Alri_Pneumonia_Treatment_Inpatient_Followup', '1b'),
-           ] == generate_hsi_sequence(sim=sim_hs_all_consumables,
+           ] == generate_hsi_sequence(sim=get_sim(seed=seed, tmpdir=tmpdir, cons_available='all'),
                                       incident_case_event=AlriIncidentCase_Lethal_DangerSigns_Pneumonia,
                                       age_of_person_under_2_months=True,
-                                      treatment_effect='perfectly_ineffective',)
+                                      treatment_effect='perfectly_ineffective',), \
+        "Problem when child is older than 2months old and treatment does not work"
 
 
-def test_treatment_pathway_if_no_consumables_mild_case(sim_hs_no_consumables):
+@pytest.mark.slow
+def test_treatment_pathway_if_no_consumables_mild_case(seed, tmpdir):
     """Examine the treatment pathway for a person with a particular category of disease if consumables are available."""
     # Mild case (fast_breathing_pneumonia) and not available consumables --> successive referrals up to level 2,
-    # following non-emergency appointment. But no follow-up appointment ever, because treatment is never given (and so
-    # does not "fail").
-
+    # following non-emergency appointment, plus follow-up appointment because treatment was not successful.
     assert [
                ('FirstAttendance_NonEmergency', '0'),
                ('Alri_Pneumonia_Treatment_Outpatient', '0'),
                ('Alri_Pneumonia_Treatment_Outpatient', '1a'),  # <-- referral due to lack of consumables
                ('Alri_Pneumonia_Treatment_Outpatient', '1b'),  # <-- referral due to lack of consumables
                ('Alri_Pneumonia_Treatment_Outpatient', '2'),  # <-- referral due to lack of consumables
-               # (No follow-up appointment because treatment is never provided, due to lack of consumables).
-           ] == generate_hsi_sequence(sim=sim_hs_no_consumables,
+               ('Alri_Pneumonia_Treatment_Inpatient_Followup', '2'),  # <-- follow-up because treatment not successful
+           ] == generate_hsi_sequence(sim=get_sim(seed=seed, tmpdir=tmpdir, cons_available='none'),
                                       incident_case_event=AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia,
                                       treatment_effect='perfectly_ineffective')
 
 
-def test_treatment_pathway_if_no_consumables_severe_case(sim_hs_no_consumables):
+@pytest.mark.slow
+def test_treatment_pathway_if_no_consumables_severe_case(seed, tmpdir):
     """Examine the treatment pathway for a person with a particular category of disease if consumables are available."""
     # Severe case and not available consumables --> successive referrals up to level 2, following emergency
-    # appointment.
+    # appointment, plus follow-up appointment because treatment was not successful.
     assert [
                ('FirstAttendance_Emergency', '1b'),
                ('Alri_Pneumonia_Treatment_Outpatient', '1b'),
                ('Alri_Pneumonia_Treatment_Inpatient', '1b'),
                ('Alri_Pneumonia_Treatment_Inpatient', '2'),  # <-- referral due to lack of consumables
-               # (No follow-up appointment because treatment is never provided, due to lack of consumables).
-           ] == generate_hsi_sequence(sim=sim_hs_no_consumables,
+               ('Alri_Pneumonia_Treatment_Inpatient_Followup', '2'),  # <-- follow-up because treatment not successful
+           ] == generate_hsi_sequence(sim=get_sim(seed=seed, tmpdir=tmpdir, cons_available='none'),
                                       incident_case_event=AlriIncidentCase_Lethal_DangerSigns_Pneumonia)
 
 
@@ -1272,6 +1258,7 @@ def test_impact_of_all_hsi(seed, tmpdir):
     )
 
 
+@pytest.mark.slow
 def test_specific_effect_of_pulse_oximeter_and_oxgen_for_danger_signs_pneumonia(seed, tmpdir):
     """Check that there are fewer deaths to those that have AlriIncidentCase_Lethal_DangerSigns_Pneumonia overall when
      pulse-oximeter and oxygen are available."""
