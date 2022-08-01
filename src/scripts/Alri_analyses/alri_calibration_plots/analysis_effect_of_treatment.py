@@ -187,7 +187,7 @@ def treatment_efficacy(
         symptoms=symptoms,
     )
 
-    ultimate_treatment = hsi._ultimate_treatment_indicated_for_patient(
+    ultimate_treatment = alri_module_with_perfect_treatment_and_diagnosis._ultimate_treatment_indicated_for_patient(
         classification_for_treatment_decision=classification_for_treatment_decision,
         age_exact_years=age_exact_years
     )
@@ -237,7 +237,7 @@ def generate_table():
                 un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
             ),
 
-            # Treatment Efficacy with * PERFECT HW Diangosis *
+            # Treatment Efficacy with * PERFECT HW Diagnosis *
             'treatment_efficacy_if_perfect_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx': treatment_efficacy(
                 # Information about the patient:
                 age_exact_years=x.age_exact_years,
@@ -460,7 +460,7 @@ def main():
     # THEORETICAL "total error" that occurs without oximeter: TRUTH versus 'Classification without an oximeter'
     # (under perfect HW accuracy)
     truth = table["classification_for_treatment_decision_with_oximeter_perfect_accuracy"]
-    xtab_vs_without_oximeter_perfect__hw_dx = cross_tab(
+    xtab_vs_without_oximeter_perfect_hw_dx = cross_tab(
         truth=truth, dx=table['classification_for_treatment_decision_without_oximeter_perfect_accuracy'],
     )
     # 5%
@@ -478,7 +478,7 @@ def main():
         truth=truth, dx=table["classification_for_treatment_decision_with_oximeter_imperfect_accuracy"],
     )  # 24%
 
-    print(f"\n{xtab_vs_without_oximeter_perfect__hw_dx=}"
+    print(f"\n{xtab_vs_without_oximeter_perfect_hw_dx=}"
           f"\n{xtab_vs_without_oximeter_imperfect_hw_dx=}"
           f"\n{xtab_vs_with_oximeter_imperfect_hw_dx=}"
           )
@@ -571,7 +571,7 @@ def main():
                                )
 
     # What percent of cases is this?
-    100 * len(x) / len(table)
+    1
     # ------
 
     # Overall summary figure: Number of deaths in the cohort Deaths broken down by ( disease / oxygen_saturation) when

@@ -34,11 +34,12 @@ from tlo.methods.alri import (
     HSI_Alri_Treatment,
     Models,
     _make_high_risk_of_death,
-    _make_treatment_and_diagnosis_perfect, _make_treatment_perfect, _make_treatment_ineffective,
+    _make_treatment_and_diagnosis_perfect,
+    _make_treatment_ineffective,
+    _make_treatment_perfect,
 )
 from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
 
-# Path to the resource files used by the disease and intervention methods
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
 # Default date for the start of simulations
@@ -265,8 +266,26 @@ def test_integrity_of_linear_models(sim_hs_all_consumables):
                                       )
         assert isinstance(res, (bool, np.bool_))
 
+    # Ultimate treatment:
+    # Check that the classification for ultimate treatment is recognised:
+    for (
+        classification_for_treatment_decision,
+        age_exact_years
+    ) in itertools.product(
+        alri_module.classifications,
+        np.arange(0, 2, 0.05)
+    ):
+        _ultimate_treatment = alri_module._ultimate_treatment_indicated_for_patient(
+            classification_for_treatment_decision=classification_for_treatment_decision,
+            age_exact_years=age_exact_years)
+        print(f"{_ultimate_treatment=}")
+        assert isinstance(_ultimate_treatment['antibiotic_indicated'], tuple)
+        assert len(_ultimate_treatment['antibiotic_indicated'])
+        assert _ultimate_treatment['antibiotic_indicated'][0] in (alri_module.antibiotics + [''])
+        assert isinstance(_ultimate_treatment['oxygen_indicated'], bool)
+
     # Treatment failure:
-    """Check that `_prob_treatment_fails` returns a sensible value for all permutations of its arguments."""
+    # Check that `_prob_treatment_fails` returns a sensible value for all permutations of its arguments."""
     for (
         imci_symptom_based_classification,
         SpO2_level,
