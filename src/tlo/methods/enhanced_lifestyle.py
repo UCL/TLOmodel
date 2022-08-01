@@ -460,9 +460,9 @@ class Lifestyle(Module):
 
 
 class EduProperties:
-    """ a class that will initialise education property in the population dataframe. it is calling education linear models
-     defined in Lifestyle modules and use the result to determine both education level and whether they
-     are in education or not"""
+    """ a class that will initialise education property in the population dataframe. it is calling education linear
+    models defined in Lifestyle modules and use the result to determine both education level and whether they
+     are in education or not """
 
     def __init__(self, module, _property: str, ):
         # this property will be used to return the prefered series
