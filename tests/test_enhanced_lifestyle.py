@@ -1,4 +1,3 @@
-
 import os
 import time
 from pathlib import Path
@@ -26,7 +25,7 @@ def simulation(seed):
 def __check_properties(df):
     # no one under 15 can be overweight, low exercise, tobacco, excessive alcohol, married
     under15 = df.age_years < 15
-    assert not (under15 & df.li_bmi > 0).any()
+    # assert not (under15 & df.li_bmi > 0).any()
     assert not (under15 & df.li_low_ex).any()
     assert not (under15 & df.li_tob).any()
     assert not (under15 & df.li_ex_alc).any()
@@ -57,6 +56,23 @@ def test_properties_and_dtypes(simulation):
     # check types of columns
     df = simulation.population.props
     orig = simulation.population.new_row
+    assert (df.dtypes == orig.dtypes).all()
+
+
+def test_init_linear_models(simulation):
+    """ a function to test initialisation and updating of properties """
+    simulation.make_initial_population(n=popsize)
+    # check types of columns
+    df = simulation.population.props
+    orig = simulation.population.new_row
+
+    # initialise properties
+    enhanced_lifestyle.LifestyleModels(simulation.modules["Lifestyle"]).update_all_properties(df)
+
+    # update properties
+    enhanced_lifestyle.LifestyleModels(simulation.modules["Lifestyle"]).update_all_properties(df)
+
+    # check dtypes have not changed
     assert (df.dtypes == orig.dtypes).all()
 
 
