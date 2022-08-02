@@ -32,7 +32,7 @@ def run_scenario(**kwargs):
 
     start_date = Date(2010, 1, 1)
     end_date = start_date + pd.DateOffset(years=1)
-    popsize = 1_000
+    popsize = 100_000
 
     log_config = {
         "filename": "alri",
@@ -101,14 +101,14 @@ def get_cfr_from_logfile(logfile):
 
 # %% Run the Scenarios
 scenarios = {
-    'No_oximeter/oxygen_Perfect_treatment_effectiveness': {
-        'pulse_oximeter_and_oxygen_is_available': False,
-        'do_make_treatment_and_diagnosis_perfect': True,
-    },
-    'With_oximeter/oxygen_Perfect_treatment_effectiveness': {
-        'pulse_oximeter_and_oxygen_is_available': True,
-        'do_make_treatment_and_diagnosis_perfect': True,
-    },
+    # 'No_oximeter/oxygen_Perfect_treatment_effectiveness': {
+    #     'pulse_oximeter_and_oxygen_is_available': False,
+    #     'do_make_treatment_and_diagnosis_perfect': True,
+    # },
+    # 'With_oximeter/oxygen_Perfect_treatment_effectiveness': {
+    #     'pulse_oximeter_and_oxygen_is_available': True,
+    #     'do_make_treatment_and_diagnosis_perfect': True,
+    # },
     'No_oximeter/oxygen_Default_treatment_effectiveness': {
         'pulse_oximeter_and_oxygen_is_available': False,
         'do_make_treatment_and_diagnosis_perfect': False,
