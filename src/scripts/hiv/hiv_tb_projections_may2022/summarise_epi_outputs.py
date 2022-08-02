@@ -8,10 +8,10 @@ plots created:
 import datetime
 from pathlib import Path
 
-
 import matplotlib.lines as mlines
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
 from tlo.analysis.utils import (
@@ -49,6 +49,7 @@ info = get_scenario_info(results0)
 
 # 1) Extract the parameters that have varied over the set of simulations
 params = extract_params(results0)
+
 
 # %% extract results
 
@@ -139,11 +140,13 @@ def hiv_adult_inc(results_folder):
 
     return inc_summary
 
+
 inc0 = hiv_adult_inc(results0)
 inc1 = hiv_adult_inc(results1)
 inc2 = hiv_adult_inc(results2)
 inc3 = hiv_adult_inc(results3)
 inc4 = hiv_adult_inc(results4)
+
 
 # # Make plot
 # fig, ax = plt.subplots()
@@ -205,11 +208,13 @@ def tb_inc(results_folder):
 
     return inc_summary
 
+
 tb_inc0 = tb_inc(results0)
 tb_inc1 = tb_inc(results1)
 tb_inc2 = tb_inc(results2)
 tb_inc3 = tb_inc(results3)
 tb_inc4 = tb_inc(results4)
+
 
 # # Make plot
 # fig, ax = plt.subplots()
@@ -269,14 +274,14 @@ def summarise_aids_deaths(results_folder, person_years):
     aids_deaths = {}  # empty dict
 
     aids_deaths["median_aids_deaths_rate_100kpy"] = (
-        tmp3.astype(float).quantile(0.5, axis=1)
-    ) * 100000
+                                                        tmp3.astype(float).quantile(0.5, axis=1)
+                                                    ) * 100000
     aids_deaths["lower_aids_deaths_rate_100kpy"] = (
-        tmp3.astype(float).quantile(0.025, axis=1)
-    ) * 100000
+                                                       tmp3.astype(float).quantile(0.025, axis=1)
+                                                   ) * 100000
     aids_deaths["upper_aids_deaths_rate_100kpy"] = (
-        tmp3.astype(float).quantile(0.975, axis=1)
-    ) * 100000
+                                                       tmp3.astype(float).quantile(0.975, axis=1)
+                                                   ) * 100000
 
     return aids_deaths
 
@@ -286,6 +291,7 @@ aids_deaths1 = summarise_aids_deaths(results1, py1)
 aids_deaths2 = summarise_aids_deaths(results2, py2)
 aids_deaths3 = summarise_aids_deaths(results3, py3)
 aids_deaths4 = summarise_aids_deaths(results4, py4)
+
 
 # ---------------------------------- TB deaths ---------------------------------- #
 
@@ -318,14 +324,14 @@ def summarise_tb_deaths(results_folder, person_years):
     tb_deaths = {}  # empty dict
 
     tb_deaths["median_tb_deaths_rate_100kpy"] = (
-        tmp3.astype(float).quantile(0.5, axis=1)
-    ) * 100000
+                                                    tmp3.astype(float).quantile(0.5, axis=1)
+                                                ) * 100000
     tb_deaths["lower_tb_deaths_rate_100kpy"] = (
-        tmp3.astype(float).quantile(0.025, axis=1)
-    ) * 100000
+                                                   tmp3.astype(float).quantile(0.025, axis=1)
+                                               ) * 100000
     tb_deaths["upper_tb_deaths_rate_100kpy"] = (
-        tmp3.astype(float).quantile(0.975, axis=1)
-    ) * 100000
+                                                   tmp3.astype(float).quantile(0.975, axis=1)
+                                               ) * 100000
 
     return tb_deaths
 
@@ -336,11 +342,13 @@ tb_deaths2 = summarise_tb_deaths(results2, py2)
 tb_deaths3 = summarise_tb_deaths(results3, py3)
 tb_deaths4 = summarise_tb_deaths(results4, py4)
 
-
 # ---------------------------------- PLOTS ---------------------------------- #
 
-fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=2, ncols=2, sharex=True)
-fig.suptitle('Epi outputs')
+fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=2, ncols=2,
+                                             sharex=True,
+                                             constrained_layout=True,
+                                             figsize=(9, 8))
+fig.suptitle('')
 
 # HIV incidence
 ax1.plot(inc0.index, inc0["median"], "-", color="C3")
@@ -359,7 +367,7 @@ ax1.plot(inc4.index, inc4["median"], "-", color="C6")
 ax1.fill_between(inc4.index, inc4["lower"], inc4["upper"], color="C6", alpha=0.2)
 
 ax1.set(title='HIV incidence in adults 15-49',
-       ylabel='HIV incidence')
+        ylabel='HIV incidence')
 
 # TB incidence
 ax2.plot(tb_inc0.index, tb_inc0["median"], "-", color="C3")
@@ -378,7 +386,7 @@ ax2.plot(tb_inc4.index, tb_inc4["median"], "-", color="C6")
 ax2.fill_between(tb_inc4.index, tb_inc4["lower"], tb_inc4["upper"], color="C6", alpha=0.2)
 
 ax2.set(title='Active TB incidence',
-       ylabel='Active TB cases per 100,000 population')
+        ylabel='Active TB/100k')
 
 # HIV deaths
 ax3.plot(py0.index, aids_deaths0["median_aids_deaths_rate_100kpy"], "-", color="C3")
@@ -402,7 +410,7 @@ ax3.fill_between(py0.index, aids_deaths4["lower_aids_deaths_rate_100kpy"],
                  aids_deaths4["upper_aids_deaths_rate_100kpy"], color="C6", alpha=0.2)
 
 ax3.set(title='Mortality due to AIDS (inc TB)',
-       ylabel='Mortality rate per 100,000 population')
+        ylabel='Mortality/100k')
 
 # TB deaths
 ax4.plot(py0.index, tb_deaths0["median_tb_deaths_rate_100kpy"], "-", color="C3")
@@ -426,93 +434,16 @@ ax4.fill_between(py0.index, tb_deaths4["lower_tb_deaths_rate_100kpy"],
                  tb_deaths4["upper_tb_deaths_rate_100kpy"], color="C6", alpha=0.2)
 
 ax4.set(title='Mortality due to TB',
-       ylabel='Mortality rate per 100,000 population')
+        ylabel='Mortality/100k')
 
-for ax in fig.get_axes():
-    ax.label_outer()
+plt.tick_params(axis="both", which="major", labelsize=10)
 
 plt.legend(labels=["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4"])
 plt.show()
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# ----------------------------------------------------------------------------
 # ---------------------------------- TREATMENT COVERAGE ---------------------------------- #
-
-
-# tb treatment coverage
-def tb_tx_coverage(results_folder):
-    tx_cov = extract_results(
-        results_folder,
-        module="tlo.methods.tb",
-        key="tb_treatment",
-        column="tbTreatmentCoverage",
-        index="date",
-        do_scaling=False
-    )
-
-    tx_cov.columns = tx_cov.columns.get_level_values(0)
-    tx_cov_summary = pd.DataFrame(index=tx_cov.index, columns=["median", "lower", "upper"])
-    tx_cov_summary["median"] = tx_cov.median(axis=1)
-    tx_cov_summary["lower"] = tx_cov.quantile(q=0.025, axis=1)
-    tx_cov_summary["upper"] = tx_cov.quantile(q=0.975, axis=1)
-
-    return tx_cov_summary
-
-tb_tx0 = tb_tx_coverage(results0)
-tb_tx1 = tb_tx_coverage(results1)
-tb_tx2 = tb_tx_coverage(results2)
-tb_tx3 = tb_tx_coverage(results3)
-tb_tx4 = tb_tx_coverage(results4)
-
-# Make plot
-fig, ax = plt.subplots()
-ax.plot(tb_tx0.index, tb_tx0["median"], "-", color="C3")
-ax.fill_between(tb_tx0.index, tb_tx0["lower"], tb_tx0["upper"], color="C3", alpha=0.2)
-
-ax.plot(tb_tx1.index, tb_tx1["median"], "-", color="C0")
-ax.fill_between(tb_tx1.index, tb_tx1["lower"], tb_tx1["upper"], color="C0", alpha=0.2)
-
-ax.plot(tb_tx2.index, tb_tx2["median"], "-", color="C2")
-ax.fill_between(tb_tx2.index, tb_tx2["lower"], tb_tx2["upper"], color="C2", alpha=0.2)
-
-ax.plot(tb_tx3.index, tb_tx3["median"], "-", color="C4")
-ax.fill_between(tb_tx3.index, tb_tx3["lower"], tb_tx3["upper"], color="C4", alpha=0.2)
-
-ax.plot(tb_tx4.index, tb_tx4["median"], "-", color="C6")
-ax.fill_between(tb_tx4.index, tb_tx4["lower"], tb_tx4["upper"], color="C6", alpha=0.2)
-
-fig.subplots_adjust(left=0.15)
-plt.ylim((0, 1.0))
-plt.title("TB treatment coverage")
-plt.ylabel("TB treatment coverage")
-plt.legend(["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4"])
-
-plt.show()
-
-
-
-
 
 # hiv treatment coverage
 def hiv_tx_coverage(results_folder):
@@ -532,6 +463,7 @@ def hiv_tx_coverage(results_folder):
     hiv_cov_summary["upper"] = hiv_cov.quantile(q=0.975, axis=1)
 
     return hiv_cov_summary
+
 
 hiv_tx0 = hiv_tx_coverage(results0)
 hiv_tx1 = hiv_tx_coverage(results1)
@@ -565,16 +497,14 @@ plt.legend(["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4"
 plt.show()
 
 
-
 # ---------------------------------- TB TREATMENT DELAY ---------------------------------- #
 
 
-
 def extract_tx_delay(results_folder: Path,
-                    module: str,
-                    key: str,
-                    column: str = None,
-                    ):
+                     module: str,
+                     key: str,
+                     column: str = None,
+                     ):
     """Utility function to unpack results
     edited version for utils.py
     """
@@ -602,116 +532,130 @@ def extract_tx_delay(results_folder: Path,
     return res
 
 
-tmp = extract_tx_delay(results_folder=results0,
-                       module="tlo.methods.tb",
-                       key="tb_treatment_delays",
-                       column="tbTreatmentDelayAdults")
+tb_tx_delay_adult_sc0_dict = extract_tx_delay(results_folder=results0,
+                                              module="tlo.methods.tb",
+                                              key="tb_treatment_delays",
+                                              column="tbTreatmentDelayAdults")
+
+tb_tx_delay_adult_sc1_dict = extract_tx_delay(results_folder=results1,
+                                              module="tlo.methods.tb",
+                                              key="tb_treatment_delays",
+                                              column="tbTreatmentDelayAdults")
+
+tb_tx_delay_adult_sc2_dict = extract_tx_delay(results_folder=results2,
+                                              module="tlo.methods.tb",
+                                              key="tb_treatment_delays",
+                                              column="tbTreatmentDelayAdults")
+
+tb_tx_delay_adult_sc3_dict = extract_tx_delay(results_folder=results3,
+                                              module="tlo.methods.tb",
+                                              key="tb_treatment_delays",
+                                              column="tbTreatmentDelayAdults")
+
+tb_tx_delay_adult_sc4_dict = extract_tx_delay(results_folder=results4,
+                                              module="tlo.methods.tb",
+                                              key="tb_treatment_delays",
+                                              column="tbTreatmentDelayAdults")
+
+# convert dict to dataframe
+tb_tx_delay_adult_sc0 = pd.DataFrame(tb_tx_delay_adult_sc0_dict.items())
+tb_tx_delay_adult_sc1 = pd.DataFrame(tb_tx_delay_adult_sc1_dict.items())
+tb_tx_delay_adult_sc2 = pd.DataFrame(tb_tx_delay_adult_sc2_dict.items())
+tb_tx_delay_adult_sc3 = pd.DataFrame(tb_tx_delay_adult_sc3_dict.items())
+tb_tx_delay_adult_sc4 = pd.DataFrame(tb_tx_delay_adult_sc4_dict.items())
+
+# need to collapse all draws/runs together
+# set up empty list with columns for each year
+# values will be variable length lists of delays
+years = list((range(2010, 2035, 1)))
 
 
+def summarise_tx_delay(treatment_delay_df):
+    """
+    extract all treatment delays from all draws/runs
+    for each scenario and collapse into lists, with
+    one list per year
+    """
+    list_delays = [[] for i in range(25)]
+
+    # for each row of tb_tx_delay_adult_sc0 0-14 [draws, runs]:
+    for i in range(treatment_delay_df.shape[0]):
+
+        # separate each row into its arrays 0-25 [years]
+        tmp = treatment_delay_df.loc[i, 1]
+
+        # combine them into a list, with items separated from array
+        # e.g. tmp[0] has values for 2010
+        for j in range(25):
+            tmp2 = tmp[j]
+
+            list_delays[j] = [*list_delays[j], *tmp2]
+
+    return list_delays
 
 
+list_tx_delay0 = summarise_tx_delay(tb_tx_delay_adult_sc0)
+list_tx_delay1 = summarise_tx_delay(tb_tx_delay_adult_sc1)
+list_tx_delay2 = summarise_tx_delay(tb_tx_delay_adult_sc2)
+list_tx_delay3 = summarise_tx_delay(tb_tx_delay_adult_sc3)
+list_tx_delay4 = summarise_tx_delay(tb_tx_delay_adult_sc4)
+
+# convert lists to df
+# todo note nans are both false positive and fillers for dataframe
+delay0 = pd.DataFrame(list_tx_delay0).T
+delay0.columns = years
+# convert wide to long format
+delay0 = delay0.reset_index()
+delay0_scatter = pd.melt(delay0, id_vars='index', value_vars=years)
+
+delay1 = pd.DataFrame(list_tx_delay1).T
+delay1.columns = years
+# convert wide to long format
+delay1 = delay1.reset_index()
+delay1_scatter = pd.melt(delay1, id_vars='index', value_vars=years)
+
+delay2 = pd.DataFrame(list_tx_delay2).T
+delay2.columns = years
+# convert wide to long format
+delay2 = delay2.reset_index()
+delay2_scatter = pd.melt(delay2, id_vars='index', value_vars=years)
+
+delay3 = pd.DataFrame(list_tx_delay3).T
+delay3.columns = years
+# convert wide to long format
+delay3 = delay3.reset_index()
+delay3_scatter = pd.melt(delay3, id_vars='index', value_vars=years)
 
 
+## plots
+plt.scatter(delay1_scatter.variable, delay1_scatter.value, s=10, alpha=0.4)
 
-
-
-# ---------------------------------- TB ---------------------------------- #
-
-
-tb_inc = summarize(extract_results(
-    results_folder,
-    module="tlo.methods.tb",
-    key="tb_incidence",
-    column="num_new_active_tb",
-    index="date",
-    do_scaling=False
-),
-    only_mean=False,
-    collapse_columns=True
-)
-
-# active tb incidence rates
-activeTB_inc_rate0 = pd.Series(
-    (tb_inc[(0, 'mean')].values / py_summary[0].values[1:41]) * 100000
-)
-activeTB_inc_rate0_lower = pd.Series(
-    (tb_inc[(0, 'lower')].values / py_summary[0].values[1:41]) * 100000
-)
-activeTB_inc_rate0_upper = pd.Series(
-    (tb_inc[(0, 'upper')].values / py_summary[0].values[1:41]) * 100000
-)
-
-activeTB_inc_rate1 = pd.Series(
-    (tb_inc[(1, 'mean')].values / py_summary[1].values[1:41]) * 100000
-)
-activeTB_inc_rate1_lower = pd.Series(
-    (tb_inc[(1, 'lower')].values / py_summary[1].values[1:41]) * 100000
-)
-activeTB_inc_rate1_upper = pd.Series(
-    (tb_inc[(1, 'upper')].values / py_summary[1].values[1:41]) * 100000
-)
-
-activeTB_inc_rate2 = pd.Series(
-    (tb_inc[(2, 'mean')].values / py_summary[2].values[1:41]) * 100000
-)
-activeTB_inc_rate2_lower = pd.Series(
-    (tb_inc[(2, 'lower')].values / py_summary[2].values[1:41]) * 100000
-)
-activeTB_inc_rate2_upper = pd.Series(
-    (tb_inc[(2, 'upper')].values / py_summary[2].values[1:41]) * 100000
-)
-
-activeTB_inc_rate3 = pd.Series(
-    (tb_inc[(3, 'mean')].values / py_summary[3].values[1:41]) * 100000
-)
-activeTB_inc_rate3_lower = pd.Series(
-    (tb_inc[(3, 'lower')].values / py_summary[3].values[1:41]) * 100000
-)
-activeTB_inc_rate3_upper = pd.Series(
-    (tb_inc[(3, 'upper')].values / py_summary[3].values[1:41]) * 100000
-)
-
-# Make plot
-fig, ax = plt.subplots()
-# baseline
-ax.plot(tb_inc.index, activeTB_inc_rate0, "-", color="C0")
-ax.fill_between(tb_inc.index, activeTB_inc_rate0_lower, activeTB_inc_rate0_upper, color="C0", alpha=0.2)
-# sc1
-ax.plot(tb_inc.index, activeTB_inc_rate1, "-", color="C1")
-ax.fill_between(tb_inc.index, activeTB_inc_rate1_lower, activeTB_inc_rate1_upper, color="C0", alpha=0.2)
-# sc2
-ax.plot(tb_inc.index, activeTB_inc_rate2, "-", color="C2")
-ax.fill_between(tb_inc.index, activeTB_inc_rate2_lower, activeTB_inc_rate2_upper, color="C0", alpha=0.2)
-# sc3
-ax.plot(tb_inc.index, activeTB_inc_rate3, "-", color="C3")
-ax.fill_between(tb_inc.index, activeTB_inc_rate3_lower, activeTB_inc_rate3_upper, color="C0", alpha=0.2)
-
-fig.subplots_adjust(left=0.15)
-plt.ylim((0, 500))
-plt.title("Active TB incidence")
-plt.ylabel("TB incidence")
-plt.legend(["Baseline", "Scenario 1", "Scenario 2", "Scenario 3"])
+plt.scatter(delay2_scatter.variable, delay2_scatter.value, s=10, alpha=0.4)
+# plt.ylim((0, 1095))
+plt.title("TB treatment delays")
+plt.ylabel("Days from diagnosis to treatment")
+plt.legend(["Scenario 1", "Scenario 2"])
 
 plt.show()
 
 
-# ---------------------------------- DEATHS ---------------------------------- #
+# scenario 1 delays 2030
+delay1_hist = delay1_scatter.loc[delay1_scatter['variable'] == 2030]
+delay1_hist = delay1_hist.loc[(delay1_hist['value'] <= 365) & (delay1_hist['value'] >= 0)]
 
-results_deaths = summarize(extract_results(
-    results_folder,
-    module="tlo.methods.demography",
-    key="death",
-    custom_generate_series=(
-        lambda df: df.assign(year=df["date"].dt.year).groupby(
-            ["year", "cause"])["person_id"].count()
-    ),
-    do_scaling=False,
-),
-    only_mean=False,
-    collapse_columns=True
-)
+delay2_hist = delay2_scatter.loc[delay2_scatter['variable'] == 2030]
+delay2_hist = delay2_hist.loc[(delay2_hist['value'] <= 365) & (delay2_hist['value'] >= 0)]
 
-# make year and cause of death into column
-results_deaths = results_deaths.reset_index()
-tmp = results_deaths.drop(results_deaths[results_deaths.cause == "Other"].index)
 
+plt.hist(delay1_hist.value, range=[0, 50], bins=60, alpha=0.3)
+plt.hist(delay2_hist.value, range=[0, 50], bins=60, alpha=0.3)
+plt.ylabel("Frequency")
+plt.title("TB treatment delays 2030")
+plt.legend(["Scenario 1", "Scenario 2"])
+plt.show()
+
+
+plt.hist2d(delay2_scatter.value, delay2_scatter.variable, bins=10, cmap='Blues')
+cb = plt.colorbar()
+cb.set_label('counts in bin')
+plt.show()

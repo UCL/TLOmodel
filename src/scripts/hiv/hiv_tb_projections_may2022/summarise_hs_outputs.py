@@ -176,7 +176,7 @@ tx_id4 = treatment_counts(results_folder=results4,
 # Make plot
 # tb test, x-ray, start tx, follow-up
 fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=2, ncols=2, sharex=True)
-fig.suptitle('Epi outputs')
+fig.suptitle('HS outputs')
 
 # TB tests
 ax1.plot(tx_id0.index, tx_id0["Tb_Treatment_median"], "-", color="C3")
@@ -234,59 +234,271 @@ ax4.plot(tx_id4.index, tx_id4["Tb_Test_FollowUp_median"], "-", color="C6")
 ax4.set(title='Numbers of follow-up appointments',
        ylabel='Numbers of appointments')
 
-for ax in fig.get_axes():
-    ax.label_outer()
+fig.tight_layout()
 
 plt.legend(labels=["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4"])
 plt.show()
 
 
-#---------------------------------------------------------------------------------------------------
-
-def get_annual_num_appts_by_level(results_folder: Path) -> pd.DataFrame:
-    """Return pd.DataFrame gives the (mean) simulated annual number of appointments of each type at each level."""
-
-    TARGET_PERIOD = (Date(2010, 1, 1), Date(2035, 12, 31))
-
-    def get_counts_of_appts(_df):
-        """Get the mean number of appointments of each type being used each year at each level."""
-
-        def unpack_nested_dict_in_series(_raw: pd.Series):
-            return pd.concat(
-                {
-                  idx: pd.DataFrame.from_dict(mydict) for idx, mydict in _raw.iteritems()
-                 }
-             ).unstack().fillna(0.0).astype(int)
-
-        return _df \
-            .loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), 'Number_By_Appt_Type_Code_And_Level'] \
-            .pipe(unpack_nested_dict_in_series) \
-            .mean(axis=0)  # mean over each year (row)
-
-    return summarize(
-        extract_results(
-                results_folder,
-                module='tlo.methods.healthsystem.summary',
-                key='HSI_Event',
-                custom_generate_series=get_counts_of_appts,
-                do_scaling=True
-            ),
-        only_mean=True,
-        collapse_columns=True,
-        ).unstack().astype(int)
+# ----------------------------------------------------------------------------------------
+## PREVENTIVE MEASURES
 
 
-hsi_0 = get_annual_num_appts_by_level(results_folder=results0)
+# Make plot
+# tb test, x-ray, start tx, follow-up
+fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=2, ncols=2, sharex=True)
+fig.suptitle('HS outputs')
+
+# VMMC
+ax1.plot(tx_id0.index, tx_id0["Hiv_Prevention_Circumcision_median"], "-", color="C3")
+
+ax1.plot(tx_id1.index, tx_id1["Hiv_Prevention_Circumcision_median"], "-", color="C0")
+
+ax1.plot(tx_id2.index, tx_id2["Hiv_Prevention_Circumcision_median"], "-", color="C2")
+
+ax1.plot(tx_id3.index, tx_id3["Hiv_Prevention_Circumcision_median"], "-", color="C4")
+
+ax1.plot(tx_id4.index, tx_id4["Hiv_Prevention_Circumcision_median"], "-", color="C6")
+
+ax1.set(title='VMMC',
+       ylabel='Numbers of circumcisions')
+
+# PrEP
+ax2.plot(tx_id0.index, tx_id0["Hiv_Prevention_Prep_median"], "-", color="C3")
+
+ax2.plot(tx_id1.index, tx_id1["Hiv_Prevention_Prep_median"], "-", color="C0")
+
+ax2.plot(tx_id2.index, tx_id2["Hiv_Prevention_Prep_median"], "-", color="C2")
+
+ax2.plot(tx_id3.index, tx_id3["Hiv_Prevention_Prep_median"], "-", color="C4")
+
+ax2.plot(tx_id4.index, tx_id4["Hiv_Prevention_Prep_median"], "-", color="C6")
+
+ax2.set(title='PrEP',
+       ylabel='Numbers initiating PrEP')
+
+# IPT
+ax3.plot(tx_id0.index, tx_id0["Tb_Prevention_Ipt_median"], "-", color="C3")
+
+ax3.plot(tx_id1.index, tx_id1["Tb_Prevention_Ipt_median"], "-", color="C0")
+
+ax3.plot(tx_id2.index, tx_id2["Tb_Prevention_Ipt_median"], "-", color="C2")
+
+ax3.plot(tx_id3.index, tx_id3["Tb_Prevention_Ipt_median"], "-", color="C4")
+
+ax3.plot(tx_id4.index, tx_id4["Tb_Prevention_Ipt_median"], "-", color="C6")
+
+ax3.set(title='IPT',
+       ylabel='Numbers starting IPT')
+
+fig.delaxes(ax4)
+
+fig.tight_layout()
+
+plt.legend(labels=["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4"])
+plt.show()
 
 
-#----------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------
+# HEATMAP of TREATMENTS OCCURRING
+
+# select treatments relating to TB and HIV
+tx0 = tx_id0[tx_id0.columns[pd.Series(tx_id0.columns).str.startswith(('Hiv', 'Tb'))]]
+# drop lower and upper columns - keep only median
+tx0 = tx0.loc[:,~tx0.columns.str.contains('lower')]
+tx0 = tx0.loc[:,~tx0.columns.str.contains('upper')]
+tx0 = tx0.T  # transpose for plotting heatmap
+tx0 = tx0.fillna(1)  # replce nan with 0
+tx0_norm = tx0.divide(tx0.iloc[:, 0].values, axis=0)  # calculate diff from baseline
+# for prevention (diff start dates), calculate diff from first introduction
+tx0_norm.loc["Tb_Prevention_Ipt_median"] = tx0_norm.loc["Tb_Prevention_Ipt_median"] / tx0_norm.loc["Tb_Prevention_Ipt_median", 4]
+tx0_norm.loc["Hiv_Prevention_Prep_median"] = tx0_norm.loc["Hiv_Prevention_Prep_median"] / tx0_norm.loc["Hiv_Prevention_Prep_median", 13]
+
+tx1 = tx_id1[tx_id1.columns[pd.Series(tx_id1.columns).str.startswith(('Hiv', 'Tb'))]]
+tx1 = tx1.loc[:,~tx1.columns.str.contains('lower')]
+tx1 = tx1.loc[:,~tx1.columns.str.contains('upper')]
+tx1 = tx1.T  # transpose for plotting heatmap
+tx1 = tx1.fillna(1)  # replce nan with 0
+tx1_norm = tx1.divide(tx1.iloc[:, 0].values, axis=0)  # calculate diff from baseline
+# for prevention (diff start dates), calculate diff from first introduction
+tx1_norm.loc["Tb_Prevention_Ipt_median"] = tx1_norm.loc["Tb_Prevention_Ipt_median"] / tx1_norm.loc["Tb_Prevention_Ipt_median", 4]
+tx1_norm.loc["Hiv_Prevention_Prep_median"] = tx1_norm.loc["Hiv_Prevention_Prep_median"] / tx1_norm.loc["Hiv_Prevention_Prep_median", 13]
+
+tx2 = tx_id2[tx_id2.columns[pd.Series(tx_id1.columns).str.startswith(('Hiv', 'Tb'))]]
+tx2 = tx2.loc[:,~tx2.columns.str.contains('lower')]
+tx2 = tx2.loc[:,~tx2.columns.str.contains('upper')]
+tx2 = tx2.T  # transpose for plotting heatmap
+tx2 = tx2.fillna(1)  # replce nan with 0
+tx2_norm = tx2.divide(tx2.iloc[:, 0].values, axis=0)  # calculate diff from baseline
+# for prevention (diff start dates), calculate diff from first introduction
+tx2_norm.loc["Tb_Prevention_Ipt_median"] = tx2_norm.loc["Tb_Prevention_Ipt_median"] / tx2_norm.loc["Tb_Prevention_Ipt_median", 4]
+tx2_norm.loc["Hiv_Prevention_Prep_median"] = tx2_norm.loc["Hiv_Prevention_Prep_median"] / tx2_norm.loc["Hiv_Prevention_Prep_median", 13]
+
+tx3 = tx_id3[tx_id3.columns[pd.Series(tx_id1.columns).str.startswith(('Hiv', 'Tb'))]]
+tx3 = tx3.loc[:,~tx3.columns.str.contains('lower')]
+tx3 = tx3.loc[:,~tx3.columns.str.contains('upper')]
+tx3 = tx3.T  # transpose for plotting heatmap
+tx3 = tx3.fillna(1)  # replce nan with 0
+tx3_norm = tx3.divide(tx3.iloc[:, 0].values, axis=0)  # calculate diff from baseline
+# for prevention (diff start dates), calculate diff from first introduction
+tx3_norm.loc["Tb_Prevention_Ipt_median"] = tx3_norm.loc["Tb_Prevention_Ipt_median"] / tx3_norm.loc["Tb_Prevention_Ipt_median", 4]
+tx3_norm.loc["Hiv_Prevention_Prep_median"] = tx3_norm.loc["Hiv_Prevention_Prep_median"] / tx3_norm.loc["Hiv_Prevention_Prep_median", 13]
+
+tx4 = tx_id4[tx_id4.columns[pd.Series(tx_id1.columns).str.startswith(('Hiv', 'Tb'))]]
+tx4 = tx4.loc[:,~tx4.columns.str.contains('lower')]
+tx4 = tx4.loc[:,~tx4.columns.str.contains('upper')]
+tx4 = tx4.T  # transpose for plotting heatmap
+tx4 = tx4.fillna(1)  # replce nan with 0
+tx4_norm = tx4.divide(tx4.iloc[:, 0].values, axis=0)  # calculate diff from baseline
+# for prevention (diff start dates), calculate diff from first introduction
+tx4_norm.loc["Tb_Prevention_Ipt_median"] = tx4_norm.loc["Tb_Prevention_Ipt_median"] / tx4_norm.loc["Tb_Prevention_Ipt_median", 4]
+tx4_norm.loc["Hiv_Prevention_Prep_median"] = tx4_norm.loc["Hiv_Prevention_Prep_median"] / tx4_norm.loc["Hiv_Prevention_Prep_median", 13]
+
+# rename treatment IDs
+appt_types = ["TB test", "HIV test", "TB X-ray", "HIV tx", "VMMC",
+              "TB tx", "TB follow-up", "TB IPT", "PrEP"]
+tx0_norm.index = appt_types
+tx1_norm.index = appt_types
+tx2_norm.index = appt_types
+tx3_norm.index = appt_types
+tx4_norm.index = appt_types
+
+years = list((range(2010, 2036, 1)))
+
+tx0_norm.columns = years
+tx1_norm.columns = years
+tx2_norm.columns = years
+tx3_norm.columns = years
+tx4_norm.columns = years
+
+cmap = sns.cm.rocket_r
+
+
+fig, axs = plt.subplots(ncols=4, nrows=2,
+                        # sharex=True,
+                        # sharey=True,
+                        constrained_layout=True,
+                        figsize=(10, 5),
+                        gridspec_kw=dict(width_ratios=[4,4,4,0.2]))
+sns.heatmap(tx0_norm,
+                 xticklabels=False,
+                 yticklabels=1,
+                 vmax=3,
+                 linewidth=0.5,
+                 cmap=cmap,
+            cbar=False,
+            ax=axs[0,0]
+            )
+axs[0,0].set_title("Scenario 0", size=10)
+
+sns.heatmap(tx1_norm,
+                 xticklabels=False,
+                 yticklabels=False,
+                 vmax=3,
+                 linewidth=0.5,
+                 cmap=cmap,
+            cbar=False,
+            ax=axs[0,1]
+            )
+axs[0,1].set_title("Scenario 1", size=10)
+
+sns.heatmap(tx2_norm,
+                 xticklabels=5,
+                 yticklabels=False,
+                 vmax=3,
+                 linewidth=0.5,
+                 cmap=cmap,
+            cbar=False,
+            ax=axs[0,2]
+            )
+axs[0,2].set_title("Scenario 2", size=10)
+
+cb = fig.colorbar(axs[0, 0].collections[0],
+                  cax=axs[0, 3],
+                  # ticks=[0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0],
+                  drawedges=False)
+cb.set_ticks([0.05, 0.5, 1.0, 1.5, 2.0, 2.5, 2.95])
+cb.set_ticklabels([0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0])
+cb.ax.tick_params(labelsize=9)
+cb.outline.set_edgecolor('white')
+
+sns.heatmap(tx3_norm,
+                 xticklabels=5,
+                 # yticklabels=False,
+                 vmax=3,
+                 linewidth=0.5,
+                 cmap=cmap,
+            cbar=False,
+            ax=axs[1,0]
+            )
+axs[1,0].set_title("Scenario 3", size=10)
+
+sns.heatmap(tx4_norm,
+                 xticklabels=5,
+                 yticklabels=False,
+                 vmax=3,
+                 linewidth=0.5,
+                 cmap=cmap,
+            cbar=False,
+            ax=axs[1,1]
+            )
+axs[1,1].set_title("Scenario 4", size=10)
+
+axs[1,2].axis("off")
+axs[1,3].axis("off")
+
+plt.tick_params(axis="both", which="major", labelsize=9)
+plt.show()
+
+
+#---------------------------------- CONSUMABLES NOT AVAILABLE -----------------------------------------------
+
+cons0 = treatment_counts(results_folder=results0,
+                         module="tlo.methods.healthsystem.summary",
+                         key="Consumables",
+                         column="Item_Available")
+
+cons1 = treatment_counts(results_folder=results1,
+                         module="tlo.methods.healthsystem.summary",
+                         key="Consumables",
+                         column="Item_Available")
 
 cons2 = treatment_counts(results_folder=results2,
+                         module="tlo.methods.healthsystem.summary",
+                         key="Consumables",
+                         column="Item_Available")
+
+cons3 = treatment_counts(results_folder=results3,
+                         module="tlo.methods.healthsystem.summary",
+                         key="Consumables",
+                         column="Item_Available")
+
+cons4 = treatment_counts(results_folder=results4,
                module="tlo.methods.healthsystem.summary",
                key="Consumables",
                column="Item_Available")
 
+cons0NA = treatment_counts(results_folder=results0,
+                           module="tlo.methods.healthsystem.summary",
+                           key="Consumables",
+                           column="Item_NotAvailable")
+
+cons1NA = treatment_counts(results_folder=results1,
+                           module="tlo.methods.healthsystem.summary",
+                           key="Consumables",
+                           column="Item_NotAvailable")
+
 cons2NA = treatment_counts(results_folder=results2,
+               module="tlo.methods.healthsystem.summary",
+               key="Consumables",
+               column="Item_NotAvailable")
+
+cons3NA = treatment_counts(results_folder=results3,
+               module="tlo.methods.healthsystem.summary",
+               key="Consumables",
+               column="Item_NotAvailable")
+
+cons4NA = treatment_counts(results_folder=results4,
                module="tlo.methods.healthsystem.summary",
                key="Consumables",
                column="Item_NotAvailable")
@@ -322,4 +534,141 @@ plt.ylabel("Numbers of consumables")
 plt.legend(["Cons available", "Cons not available"])
 
 plt.show()
+
+
+# ---------------------------------- TREATMENT COVERAGE ---------------------------------- #
+
+
+# tb treatment coverage
+def tb_tx_coverage(results_folder):
+    tx_cov = extract_results(
+        results_folder,
+        module="tlo.methods.tb",
+        key="tb_treatment",
+        column="tbTreatmentCoverage",
+        index="date",
+        do_scaling=False
+    )
+
+    tx_cov.columns = tx_cov.columns.get_level_values(0)
+    tx_cov_summary = pd.DataFrame(index=tx_cov.index, columns=["median", "lower", "upper"])
+    tx_cov_summary["median"] = tx_cov.median(axis=1)
+    tx_cov_summary["lower"] = tx_cov.quantile(q=0.025, axis=1)
+    tx_cov_summary["upper"] = tx_cov.quantile(q=0.975, axis=1)
+
+    return tx_cov_summary
+
+
+tb_tx0 = tb_tx_coverage(results0)
+tb_tx1 = tb_tx_coverage(results1)
+tb_tx2 = tb_tx_coverage(results2)
+tb_tx3 = tb_tx_coverage(results3)
+tb_tx4 = tb_tx_coverage(results4)
+
+# Make plot
+fig, ax = plt.subplots()
+ax.plot(tb_tx0.index, tb_tx0["median"], "-", color="C3")
+ax.fill_between(tb_tx0.index, tb_tx0["lower"], tb_tx0["upper"], color="C3", alpha=0.2)
+
+ax.plot(tb_tx1.index, tb_tx1["median"], "-", color="C0")
+ax.fill_between(tb_tx1.index, tb_tx1["lower"], tb_tx1["upper"], color="C0", alpha=0.2)
+
+ax.plot(tb_tx2.index, tb_tx2["median"], "-", color="C2")
+ax.fill_between(tb_tx2.index, tb_tx2["lower"], tb_tx2["upper"], color="C2", alpha=0.2)
+
+ax.plot(tb_tx3.index, tb_tx3["median"], "-", color="C4")
+ax.fill_between(tb_tx3.index, tb_tx3["lower"], tb_tx3["upper"], color="C4", alpha=0.2)
+
+ax.plot(tb_tx4.index, tb_tx4["median"], "-", color="C6")
+ax.fill_between(tb_tx4.index, tb_tx4["lower"], tb_tx4["upper"], color="C6", alpha=0.2)
+
+fig.subplots_adjust(left=0.15)
+plt.ylim((0, 1.0))
+plt.title("TB treatment coverage")
+plt.ylabel("TB treatment coverage")
+plt.legend(["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4"])
+
+plt.show()
+
+
+# ---------------------------------------------------------------------------------------------------------------
+
+
+# ------------------------------- TB HSI vs TREATMENT COVERAGE ----------------------------------------------
+
+propTBtx2 = cons2NA["175_median"] / (cons2["175_median"] + cons2NA["175_median"])
+propTBtx2_lower = cons2NA["175_lower"] / (cons2["175_lower"] + cons2NA["175_lower"])
+propTBtx2_upper = cons2NA["175_upper"] / (cons2["175_upper"] + cons2NA["175_upper"])
+
+propTBtx3 = cons3NA["175_median"] / (cons3["175_median"] + cons3NA["175_median"])
+propTBtx3_lower = cons3NA["175_lower"] / (cons3["175_lower"] + cons3NA["175_lower"])
+propTBtx3_upper = cons3NA["175_upper"] / (cons3["175_upper"] + cons3NA["175_upper"])
+
+years = list((range(2010, 2036, 1)))
+
+
+# Make plot
+# tb test, x-ray, start tx, follow-up
+fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3,
+                                    constrained_layout=True,
+                                    figsize=(16,5))
+fig.suptitle('')
+
+# TB tests
+ax1.plot(years, tx_id0["Tb_Treatment_median"], "-", color="C3")
+ax1.fill_between(years, tx_id0["Tb_Treatment_lower"], tx_id0["Tb_Treatment_upper"], color="C3", alpha=0.2)
+
+ax1.plot(years, tx_id1["Tb_Treatment_median"], "-", color="C0")
+ax1.fill_between(years, tx_id1["Tb_Treatment_lower"], tx_id1["Tb_Treatment_upper"], color="C0", alpha=0.2)
+
+ax1.plot(years, tx_id2["Tb_Treatment_median"], "-", color="C2")
+ax1.fill_between(years, tx_id2["Tb_Treatment_lower"], tx_id2["Tb_Treatment_upper"], color="C2", alpha=0.2)
+
+ax1.plot(years, tx_id3["Tb_Treatment_median"], "-", color="C4")
+ax1.fill_between(years, tx_id3["Tb_Treatment_lower"], tx_id3["Tb_Treatment_upper"], color="C4", alpha=0.2)
+
+ax1.plot(years, tx_id4["Tb_Treatment_median"], "-", color="C6")
+ax1.fill_between(years, tx_id4["Tb_Treatment_lower"], tx_id4["Tb_Treatment_upper"], color="C6", alpha=0.2)
+
+ax1.set(title='',
+       ylabel='Numbers of TB tests requested')
+
+# prop cons not available
+ax2.plot(years, propTBtx2, "-", color="C2")
+ax2.fill_between(years, propTBtx2_lower, propTBtx2_upper, color="C2", alpha=0.2)
+
+ax2.plot(years, propTBtx3, "-", color="C4")
+ax2.fill_between(years, propTBtx3_lower, propTBtx3_upper, color="C4", alpha=0.2)
+
+ax2.set(title='',
+       ylabel='Proportion TB treatment not available',
+        ylim=(0, 1.0))
+
+# tb tx coverage
+ax3.plot(tb_tx0.index, tb_tx0["median"], "-", color="C3")
+ax3.fill_between(tb_tx0.index, tb_tx0["lower"], tb_tx0["upper"], color="C3", alpha=0.2)
+
+ax3.plot(tb_tx1.index, tb_tx1["median"], "-", color="C0")
+ax3.fill_between(tb_tx1.index, tb_tx1["lower"], tb_tx1["upper"], color="C0", alpha=0.2)
+
+ax3.plot(tb_tx2.index, tb_tx2["median"], "-", color="C2")
+ax3.fill_between(tb_tx2.index, tb_tx2["lower"], tb_tx2["upper"], color="C2", alpha=0.2)
+
+ax3.plot(tb_tx3.index, tb_tx3["median"], "-", color="C4")
+ax3.fill_between(tb_tx3.index, tb_tx3["lower"], tb_tx3["upper"], color="C4", alpha=0.2)
+
+ax3.plot(tb_tx4.index, tb_tx4["median"], "-", color="C6")
+ax3.fill_between(tb_tx4.index, tb_tx4["lower"], tb_tx4["upper"], color="C6", alpha=0.2)
+
+ax3.set(title='',
+       ylabel='TB treatment coverage',
+        ylim=(0, 1.0))
+
+plt.tick_params(axis="both", which="major", labelsize=10)
+plt.legend(labels=["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4"])
+
+plt.show()
+
+
+#---------------------------------------------------------------------------------------------------
 
