@@ -1307,7 +1307,7 @@ class Alri(Module):
             imci_symptom_based_classification=imci_symptom_based_classification,
             SpO2_level=SpO2_level,
             disease_type=disease_type,
-            complications=complications,
+            any_complications=len(complications) > 0,
             symptoms=symptoms,
             hiv_infected_and_not_on_art=hiv_infected_and_not_on_art,
             un_clinical_acute_malnutrition=un_clinical_acute_malnutrition,
@@ -1754,7 +1754,7 @@ class Models:
                               imci_symptom_based_classification: str,
                               SpO2_level: str,
                               disease_type: str,
-                              complications: List[str],
+                              any_complications: bool,
                               symptoms: List[str],
                               hiv_infected_and_not_on_art: bool,
                               un_clinical_acute_malnutrition: str,
@@ -1770,11 +1770,6 @@ class Models:
         p = self.p
 
         needs_oxygen = SpO2_level == "<90%"
-        any_complications = len(complications) > 0
-
-        # If no antibiotic is provided the treatment fails, whatever the underlying cause and additional treatments.
-        if antibiotic_provided == '':
-            return 1.0
 
         def modify_failure_risk_when_does_not_get_oxygen_but_needs_oxygen(_risk):
             """Define the effect size for the increase in the risk of treatment failure if a person need oxygen but does
@@ -1785,7 +1780,10 @@ class Models:
 
         def _prob_treatment_fails_when_danger_signs_pneumonia():
             """Return probability treatment fails when the true classification is danger_signs_pneumonia."""
-            if antibiotic_provided == '1st_line_IV_antibiotics':
+            if antibiotic_provided == '':
+                return 1.0  # If no antibiotic is provided the treatment fails
+
+            elif antibiotic_provided == '1st_line_IV_antibiotics':
                 # danger_signs_pneumonia given 1st line IV antibiotic:
 
                 # Baseline risk of treatment failure (... if oxygen is also provided)
@@ -1835,6 +1833,9 @@ class Models:
 
         def _prob_treatment_fails_when_fast_breathing_pneumonia():
             """Return probability treatment fails when the true classification is fast_breathing_pneumonia."""
+            if antibiotic_provided == '':
+                return 1.0  # If no antibiotic is provided the treatment fails
+
             if not needs_oxygen:
                 if antibiotic_provided == 'Amoxicillin_tablet_or_suspension_3days':
                     return p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%']
@@ -1855,6 +1856,9 @@ class Models:
 
         def _prob_treatment_fails_when_chest_indrawing_pneumonia():
             """Return probability treatment fails when the true classification is chest_indrawing_pneumonia."""
+            if antibiotic_provided == '':
+                return 1.0  # If no antibiotic is provided the treatment fails
+
             if not needs_oxygen:
                 if antibiotic_provided == 'Amoxicillin_tablet_or_suspension_5days':
                     return p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%']
@@ -1875,8 +1879,9 @@ class Models:
 
         def _prob_treatment_fails_when_cough_or_cold():
             """Return probability treatment fails when the true classification is "cough_or_cold."""
+            # todo - antibiotics never provided - so should just recover anyway!
+
             if not needs_oxygen:
-                # No pneumonia (by IMCI classification)
                 if not any_complications:
                     return 0.0  # Treatment cannot 'fail' for a cough_or_cold without complications and no need of
                     #             oxygen

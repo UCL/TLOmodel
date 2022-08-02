@@ -205,7 +205,7 @@ def treatment_efficacy(
         imci_symptom_based_classification=imci_symptom_based_classification,
         SpO2_level=oxygen_saturation,
         disease_type=disease_type,
-        complications=list(complications),
+        any_complications=len(complications) > 0,
         symptoms=symptoms,
         hiv_infected_and_not_on_art=False,
         un_clinical_acute_malnutrition='well',
@@ -442,6 +442,10 @@ def main():
                                                     ).reset_index()
     print(f"{case_mix_by_disease_and_pathogen=}")
 
+    # Average risk of death by disease type
+    table.groupby(by=['disease_type'])['prob_die_if_no_treatment'].mean()
+
+
     # Examine danger_signs as a predictor of SpO2 < 90%
     print(pd.crosstab(
         pd.Series(table['oxygen_saturation'] == "<90%", name='SpO2<90%'),
@@ -540,39 +544,39 @@ def main():
     ).loc[("<90%", "danger_signs_pneumonia")]
     print(f"{treatment_effectiveness}")
 
+
+    # Look at cough_or_cold
+    y = table.loc[table['classification_for_treatment_decision_with_oximeter_perfect_accuracy'] == "cough_or_cold"]
+
     # ------
-    # Look at where a person would receive a different diagnoses with/without oximeter and also (therefore) a
-    # different treatment effectiveness, even if oxygen is not available.
-    x = table.loc[
-        (
-            table['classification_for_treatment_decision_with_oximeter_perfect_accuracy']
-            != table['classification_for_treatment_decision_without_oximeter_perfect_accuracy'])
-        & (
-            table['treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_perfect_hw_dx']
-            != table['treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx']
-        ), [
+    # Look at where a person would receive a different diagnoses with/without oximeter
+    diff_classification = table.loc[
+        (table['classification_for_treatment_decision_with_oximeter_perfect_accuracy']
+         != table['classification_for_treatment_decision_without_oximeter_perfect_accuracy']),
+        [
             'age_exact_years',
             'symptoms',
             'classification_for_treatment_decision_with_oximeter_perfect_accuracy',
             'classification_for_treatment_decision_without_oximeter_perfect_accuracy',
             'treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_perfect_hw_dx',
             'treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx',
+            'treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx',
         ]
     ]
 
-    # Show that all these cases are when SpO2<90% but no danger signs or other serious symptoms, and so the person is
-    # classified as "cough_or_cold" without an oximeter.
-    assert set(x.index) == set(table.loc[
-                                   (table.oxygen_saturation == "<90%")
-                                   & (~table.has_danger_signs)
-                                   & (table['classification_for_treatment_decision_without_oximeter_perfect_accuracy']
-                                      == "cough_or_cold")
-                                   ].index
-                               )
+    # In all cases, confirm they have exactly the same treatment effectiveness when no oxygen is available.
+    assert (
+        diff_classification['treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_perfect_hw_dx']
+        == diff_classification['treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx']
+    ).all()
 
-    # What percent of cases is this?
-    1
-    # ------
+    # ... but that the availability of oxygen improves treatment effectiveness
+    assert (
+        diff_classification['treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx']
+        > diff_classification['treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx']
+    ).all()
+
+
 
     # Overall summary figure: Number of deaths in the cohort Deaths broken down by ( disease / oxygen_saturation) when
     # * No Treatment
