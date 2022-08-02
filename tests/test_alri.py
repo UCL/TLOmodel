@@ -1179,7 +1179,7 @@ def test_impact_of_all_hsi(seed, tmpdir):
         disable_and_reject_all=False
     ) -> int:
         """Run a cohort of children all with newly onset Alri and return number of them that die from Alri (excluding
-        those with hypoxaemia 90-92%, which is never treated according to this module)."""
+        those with oxygen saturation of 90-92% or >=93%, which is never treated according to this module)."""
 
         class DummyModule(Module):
             """Dummy module that will cause everyone to have Alri from the first day of the simulation"""
@@ -1205,7 +1205,7 @@ def test_impact_of_all_hsi(seed, tmpdir):
                     )
 
         start_date = Date(2010, 1, 1)
-        popsize = 1_000
+        popsize = 10_000
         sim = Simulation(start_date=start_date, seed=seed)
 
         sim.register(
@@ -1230,7 +1230,7 @@ def test_impact_of_all_hsi(seed, tmpdir):
         # Make entire population under five years old
         sim.modules['Demography'].parameters['max_age_initial'] = 5
 
-        # Set high risk of death and perfect treatment
+        # Set high risk of death
         _make_high_risk_of_death(sim.modules['Alri'])
 
         if do_make_treatment_perfect:
@@ -1241,15 +1241,14 @@ def test_impact_of_all_hsi(seed, tmpdir):
 
         df = sim.population.props
 
-        # Return number of children who have died with a cause of Alri, excluding those who die with oxygen saturation
-        # 90-92% for which there is no oxygen provided.
-        total_deaths_to_alri = sim.modules['Alri'].logging_event.trackers['deaths'].report_current_total()
+        # Return number of children who have died with a cause of Alri (excluding those who die with oxygen saturation
+        # 90-92%, or >=93% for which there is no oxygen provided, and so die even if treatment is perfect).
         print(f"persons_that_die_of_alri = "
               f"{df.loc[~df.is_alive & df['cause_of_death'].str.startswith('ALRI')].index.values}")
-        total_deaths_to_alri_with_untreated_hypoxaemia = sim.modules['Alri'].logging_event.trackers[
-            'deaths_due_to_untreated_hypoxaemia'].report_current_total()
+        total_deaths_to_alri_with_severe_hypoxaemia = sim.modules['Alri'].logging_event.trackers[
+            'deaths_among_persons_with_SpO2<90%'].report_current_total()
 
-        return total_deaths_to_alri - total_deaths_to_alri_with_untreated_hypoxaemia
+        return total_deaths_to_alri_with_severe_hypoxaemia
 
     # Some deaths when all HSI are disallowed
     assert 0 < get_number_of_deaths_from_cohort_of_children_with_alri(

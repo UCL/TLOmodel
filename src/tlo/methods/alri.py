@@ -2753,7 +2753,7 @@ class AlriLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.trackers['recovered_cases'] = Tracker(age_grps=age_grps, pathogens=self.module.all_pathogens)
         self.trackers['cured_cases'] = Tracker(age_grps=age_grps, pathogens=self.module.all_pathogens)
         self.trackers['deaths'] = Tracker(age_grps=age_grps, pathogens=self.module.all_pathogens)
-        self.trackers['deaths_due_to_untreated_hypoxaemia'] = Tracker()
+        self.trackers['deaths_among_persons_with_SpO2<90%'] = Tracker()
         self.trackers['seeking_care'] = Tracker()
         self.trackers['treated'] = Tracker()
         self.trackers['pulmonary_complication_cases'] = Tracker()
@@ -2771,8 +2771,8 @@ class AlriLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
     def new_death(self, **kwargs):
         self.trackers['deaths'].add_one(age=kwargs['age'], pathogen=kwargs['pathogen'])
-        if kwargs['sp02_level'] == '90-92%':
-            self.trackers['deaths_due_to_untreated_hypoxaemia'].add_one()
+        if kwargs['sp02_level'] == '<90%':
+            self.trackers['deaths_among_persons_with_SpO2<90%'].add_one()
 
     def new_seeking_care(self, **kwargs):
         self.trackers['seeking_care'].add_one(**kwargs)

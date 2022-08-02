@@ -1,5 +1,8 @@
 """This will demonstrate the effect of pulse oximetry and oxygen being available versus not available, among a
-population of children under 5 years old."""
+population of children under 5 years old.
+* All consumables available
+* With forced healthcare seeking
+"""
 
 # %% Import Statements and initial declarations
 from pathlib import Path
@@ -29,7 +32,7 @@ def run_scenario(**kwargs):
 
     start_date = Date(2010, 1, 1)
     end_date = start_date + pd.DateOffset(years=1)
-    popsize = 100_000
+    popsize = 1_000
 
     log_config = {
         "filename": "alri",
@@ -48,10 +51,12 @@ def run_scenario(**kwargs):
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath, ),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath,
+                                                      force_any_symptom_to_lead_to_healthcareseeking=True),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                   disable=True,
+                                  cons_availability='all',
                                   ),
         alri.Alri(resourcefilepath=resourcefilepath),
         alri.AlriPropertiesOfOtherModules()
@@ -59,7 +64,7 @@ def run_scenario(**kwargs):
 
     sim.modules['Demography'].parameters['max_age_initial'] = 5
 
-    if kwargs['do_make_treatment_perfect']:
+    if kwargs['do_make_treatment_and_diagnosis_perfect']:
         alri._make_treatment_and_diagnosis_perfect(sim.modules['Alri'])
 
     if kwargs['pulse_oximeter_and_oxygen_is_available']:
@@ -74,14 +79,14 @@ def run_scenario(**kwargs):
 
 
 def get_death_numbers_from_logfile(logfile):
-    """Extract the number of deaths (total and due to untreated hypoxaemia) to Alri from the logfile, over the entire
-     period of the simulation"""
+    """Extract the number of deaths (total and deaths among those with untreated hypoxaemia) to Alri from the logfile,
+    over the entire period of the simulation"""
     output = parse_log_file(logfile)
     alri_event_counts = output['tlo.methods.alri']['event_counts'].sum()
 
     return {
         'deaths': alri_event_counts['deaths'],
-        'deaths_due_to_untreated_hypoxaemia': alri_event_counts['deaths_due_to_untreated_hypoxaemia']
+        'deaths_among_persons_with_SpO2<90%': alri_event_counts['deaths_among_persons_with_SpO2<90%']
     }
 
 
@@ -98,19 +103,19 @@ def get_cfr_from_logfile(logfile):
 scenarios = {
     'No_oximeter/oxygen_Perfect_treatment_effectiveness': {
         'pulse_oximeter_and_oxygen_is_available': False,
-        'do_make_treatment_perfect': True,
+        'do_make_treatment_and_diagnosis_perfect': True,
     },
     'With_oximeter/oxygen_Perfect_treatment_effectiveness': {
         'pulse_oximeter_and_oxygen_is_available': True,
-        'do_make_treatment_perfect': True,
+        'do_make_treatment_and_diagnosis_perfect': True,
     },
     'No_oximeter/oxygen_Default_treatment_effectiveness': {
         'pulse_oximeter_and_oxygen_is_available': False,
-        'do_make_treatment_perfect': False,
+        'do_make_treatment_and_diagnosis_perfect': False,
     },
     'With_oximeter/oxygen_Default_treatment_effectiveness': {
         'pulse_oximeter_and_oxygen_is_available': True,
-        'do_make_treatment_perfect': False,
+        'do_make_treatment_and_diagnosis_perfect': False,
     },
 }
 outputfiles = {_name: run_scenario(**_params) for _name, _params in scenarios.items()}
@@ -122,12 +127,12 @@ cfr = {_name: get_cfr_from_logfile(_logfile) for _name, _logfile in outputfiles.
 # %% Plot results
 
 df_num_deaths = pd.DataFrame(num_deaths)
-df_num_deaths.loc['deaths_not_due_to_untreated_hypoxaemia'] = df_num_deaths.loc['deaths'] - df_num_deaths.loc[
-    'deaths_due_to_untreated_hypoxaemia']
+df_num_deaths.loc['deaths_not_among_persons_with_SpO2<90%'] = \
+    df_num_deaths.loc['deaths'] - df_num_deaths.loc['deaths_among_persons_with_SpO2<90%']
 
 fig, ax = plt.subplots()
 df_num_deaths.loc[
-    ['deaths_due_to_untreated_hypoxaemia', 'deaths_not_due_to_untreated_hypoxaemia']
+    ['deaths_among_persons_with_SpO2<90%', 'deaths_not_among_persons_with_SpO2<90%']
 ].T.plot.barh(ax=ax, stacked=True)
 fig.tight_layout()
 fig.show()
