@@ -37,8 +37,8 @@ output_files = dict()
 
 # %% Run the Simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2019, 12, 31)
-popsize = 10000
+end_date = start_date + pd.DateOffset(years=10)
+popsize = 10_000
 
 log_config = {
     "filename": "alri_with_treatment",
@@ -61,10 +61,8 @@ sim.register(
     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
     healthburden.HealthBurden(resourcefilepath=resourcefilepath),
     simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-
     healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
-
-    alri.Alri(resourcefilepath=resourcefilepath, log_indivdual=22),  # choose to log an individual
+    alri.Alri(resourcefilepath=resourcefilepath),
     alri.AlriPropertiesOfOtherModules()
 )
 

@@ -1833,45 +1833,55 @@ class Models:
             else:
                 raise ValueError('Unrecognised antibiotic.')
 
-        def _prob_treatment_fails_when_other():
-            """Return probability treatment fails when the true classification is one of non-severe classifications
-            ('fast_breathing_pneumonia', 'chest_indrawing_pneumonia, 'cough_or_cold')..."""
-
+        def _prob_treatment_fails_when_fast_breathing_pneumonia():
+            """Return probability treatment fails when the true classification is fast_breathing_pneumonia."""
             if not needs_oxygen:
-                # Non-severe classifications antibiotics that do not need oxygen
+                if antibiotic_provided == 'Amoxicillin_tablet_or_suspension_3days':
+                    return p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%']
+                elif antibiotic_provided == 'Amoxicillin_tablet_or_suspension_7days':
+                    return p['tf_7day_amoxicillin_for_fast_breathing_pneumonia_in_young_infants']
+                elif antibiotic_provided in self.module.antibiotics:
+                    return min(p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%'],
+                               p['tf_7day_amoxicillin_for_fast_breathing_pneumonia_in_young_infants'])
+                else:
+                    raise ValueError('Unrecognised antibiotic.')
 
-                if imci_symptom_based_classification == 'chest_indrawing_pneumonia':
-                    if antibiotic_provided == 'Amoxicillin_tablet_or_suspension_5days':
-                        return p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%']
-                    elif antibiotic_provided == 'Amoxicillin_tablet_or_suspension_3days':
-                        return p['tf_3day_amoxicillin_for_chest_indrawing_with_SpO2>=90%']
-                    elif antibiotic_provided in self.module.antibiotics:
-                        return min(p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%'],
-                                   p['tf_3day_amoxicillin_for_chest_indrawing_with_SpO2>=90%'])
-                    else:
-                        raise ValueError('Unrecognised antibiotic.')
+            else:
+                if oxygen_provided:
+                    return p['tf_oral_amoxicillin_only_for_non_severe_pneumonia_with_SpO2<90%']
+                else:
+                    return modify_failure_risk_when_does_not_get_oxygen_but_needs_oxygen(
+                        p['tf_oral_amoxicillin_only_for_non_severe_pneumonia_with_SpO2<90%'])
 
-                elif imci_symptom_based_classification == 'fast_breathing_pneumonia':
-                    if antibiotic_provided == 'Amoxicillin_tablet_or_suspension_3days':
-                        return p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%']
-                    elif antibiotic_provided == 'Amoxicillin_tablet_or_suspension_7days':
-                        return p['tf_7day_amoxicillin_for_fast_breathing_pneumonia_in_young_infants']
-                    elif antibiotic_provided in self.module.antibiotics:
-                        return min(p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%'],
-                                   p['tf_7day_amoxicillin_for_fast_breathing_pneumonia_in_young_infants'])
-                    else:
-                        raise ValueError('Unrecognised antibiotic.')
+        def _prob_treatment_fails_when_chest_indrawing_pneumonia():
+            """Return probability treatment fails when the true classification is chest_indrawing_pneumonia."""
+            if not needs_oxygen:
+                if antibiotic_provided == 'Amoxicillin_tablet_or_suspension_5days':
+                    return p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%']
+                elif antibiotic_provided == 'Amoxicillin_tablet_or_suspension_3days':
+                    return p['tf_3day_amoxicillin_for_chest_indrawing_with_SpO2>=90%']
+                elif antibiotic_provided in self.module.antibiotics:
+                    return min(p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%'],
+                               p['tf_3day_amoxicillin_for_chest_indrawing_with_SpO2>=90%'])
+                else:
+                    raise ValueError('Unrecognised antibiotic.')
 
+            else:
+                if oxygen_provided:
+                    return p['tf_oral_amoxicillin_only_for_non_severe_pneumonia_with_SpO2<90%']
+                else:
+                    return modify_failure_risk_when_does_not_get_oxygen_but_needs_oxygen(
+                        p['tf_oral_amoxicillin_only_for_non_severe_pneumonia_with_SpO2<90%'])
+
+        def _prob_treatment_fails_when_cough_or_cold():
+            """Return probability treatment fails when the true classification is "cough_or_cold."""
+            if not needs_oxygen:
                 # No pneumonia (by IMCI classification)
-                elif imci_symptom_based_classification == "cough_or_cold" and not any_complications:
+                if not any_complications:
                     return 0.0  # Treatment cannot 'fail' for a cough_or_cold without complications and no need of
                     #             oxygen
-
-                elif imci_symptom_based_classification == "cough_or_cold" and any_complications:
-                    return p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%']
-
                 else:
-                    raise ValueError('Unrecognised imci_symptom_based_classification.')
+                    return p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%']
 
             else:
                 # Non-severe classifications given oral antibiotics that do need oxygen -----
@@ -1881,11 +1891,21 @@ class Models:
                     return modify_failure_risk_when_does_not_get_oxygen_but_needs_oxygen(
                         p['tf_oral_amoxicillin_only_for_non_severe_pneumonia_with_SpO2<90%'])
 
+
         if imci_symptom_based_classification == 'danger_signs_pneumonia':
             return min(1.0, _prob_treatment_fails_when_danger_signs_pneumonia())
-        else:
-            return min(1.0, _prob_treatment_fails_when_other())
 
+        elif imci_symptom_based_classification == 'fast_breathing_pneumonia':
+            return min(1.0, _prob_treatment_fails_when_fast_breathing_pneumonia())
+
+        elif imci_symptom_based_classification == 'chest_indrawing_pneumonia':
+            return min(1.0, _prob_treatment_fails_when_chest_indrawing_pneumonia())
+
+        elif imci_symptom_based_classification == 'cough_or_cold':
+            return min(1.0, _prob_treatment_fails_when_cough_or_cold())
+
+        else:
+            raise ValueError('Unrecognised imci_symptom_based_classification.')
 
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
