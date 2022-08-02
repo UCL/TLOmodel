@@ -1780,12 +1780,9 @@ class Models:
 
         def _prob_treatment_fails_when_danger_signs_pneumonia():
             """Return probability treatment fails when the true classification is danger_signs_pneumonia."""
-            if antibiotic_provided == '':
-                return 1.0  # If no antibiotic is provided the treatment fails
 
-            elif antibiotic_provided == '1st_line_IV_antibiotics':
-                # danger_signs_pneumonia given 1st line IV antibiotic:
-
+            def _prob_when_iv_antibiotic_used():
+                """Using 1st line IV antibiotic"""
                 # Baseline risk of treatment failure (... if oxygen is also provided)
                 risk_tf_1st_line_antibiotics = p['tf_1st_line_antibiotic_for_severe_pneumonia']
 
@@ -1816,8 +1813,8 @@ class Models:
 
                 return min(1.0, risk_tf_1st_line_antibiotics)
 
-            elif antibiotic_provided in self.module.antibiotics:
-                # danger_signs_pneumonia given oral antibiotics (probably due to misdiagnosis)
+            def _prob_when_oral_antibiotic_used():
+                """Oral antibiotics due to mis-diagnosis"""
                 if needs_oxygen:
                     if oxygen_provided:
                         return p['tf_oral_amoxicillin_only_for_severe_pneumonia_with_SpO2<90%']
@@ -1828,6 +1825,18 @@ class Models:
                 else:
                     return p['tf_oral_amoxicillin_only_for_severe_pneumonia_with_SpO2>=90%']
 
+            def _prob_when_no_antibiotic_used():
+                """ If no antibiotic is provided --> the treatment fails"""
+                return 1.0
+
+            # The following piece of logic ensure that the treatment with the wrong antibiotic (i.e., oral antibiotic)
+            # is never more beneficial than treatment with the right one (i.e., i.v. antibiotic).
+            if antibiotic_provided == '1st_line_IV_antibiotics':
+                return _prob_when_iv_antibiotic_used()
+            elif antibiotic_provided in self.module.antibiotics:
+                return max(_prob_when_oral_antibiotic_used(), _prob_when_iv_antibiotic_used())
+            elif antibiotic_provided == '':
+                return _prob_when_no_antibiotic_used()
             else:
                 raise ValueError('Unrecognised antibiotic.')
 
@@ -1837,15 +1846,12 @@ class Models:
                 return 1.0  # If no antibiotic is provided the treatment fails
 
             if not needs_oxygen:
-                if antibiotic_provided == 'Amoxicillin_tablet_or_suspension_3days':
+                if antibiotic_provided in ('Amoxicillin_tablet_or_suspension_3days', '1st_line_IV_antibiotics'):  # Inclusion of `1st_line_IV_antibiotics` allows for possibility of over-treating.
                     return p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%']
-                elif antibiotic_provided == 'Amoxicillin_tablet_or_suspension_7days':
+                elif antibiotic_provided in ('Amoxicillin_tablet_or_suspension_7days', '1st_line_IV_antibiotics'):
                     return p['tf_7day_amoxicillin_for_fast_breathing_pneumonia_in_young_infants']
-                elif antibiotic_provided in self.module.antibiotics:
-                    return min(p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%'],
-                               p['tf_7day_amoxicillin_for_fast_breathing_pneumonia_in_young_infants'])
                 else:
-                    raise ValueError('Unrecognised antibiotic.')
+                    return p['tf_7day_amoxicillin_for_fast_breathing_pneumonia_in_young_infants']
 
             else:
                 if oxygen_provided:
@@ -1860,15 +1866,12 @@ class Models:
                 return 1.0  # If no antibiotic is provided the treatment fails
 
             if not needs_oxygen:
-                if antibiotic_provided == 'Amoxicillin_tablet_or_suspension_5days':
+                if antibiotic_provided in ('Amoxicillin_tablet_or_suspension_5days', '1st_line_IV_antibiotics'): # Inclusion of `1st_line_IV_antibiotics` allows for possibility of over-treating.
                     return p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%']
-                elif antibiotic_provided == 'Amoxicillin_tablet_or_suspension_3days':
+                elif antibiotic_provided in ('Amoxicillin_tablet_or_suspension_3days', '1st_line_IV_antibiotics'):
                     return p['tf_3day_amoxicillin_for_chest_indrawing_with_SpO2>=90%']
-                elif antibiotic_provided in self.module.antibiotics:
-                    return min(p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%'],
-                               p['tf_3day_amoxicillin_for_chest_indrawing_with_SpO2>=90%'])
                 else:
-                    raise ValueError('Unrecognised antibiotic.')
+                    return p['tf_3day_amoxicillin_for_chest_indrawing_with_SpO2>=90%']
 
             else:
                 if oxygen_provided:
@@ -1878,24 +1881,8 @@ class Models:
                         p['tf_oral_amoxicillin_only_for_non_severe_pneumonia_with_SpO2<90%'])
 
         def _prob_treatment_fails_when_cough_or_cold():
-            """Return probability treatment fails when the true classification is "cough_or_cold."""
-            # todo - antibiotics never provided - so should just recover anyway!
-
-            if not needs_oxygen:
-                if not any_complications:
-                    return 0.0  # Treatment cannot 'fail' for a cough_or_cold without complications and no need of
-                    #             oxygen
-                else:
-                    return p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%']
-
-            else:
-                # Non-severe classifications given oral antibiotics that do need oxygen -----
-                if oxygen_provided:
-                    return p['tf_oral_amoxicillin_only_for_non_severe_pneumonia_with_SpO2<90%']
-                else:
-                    return modify_failure_risk_when_does_not_get_oxygen_but_needs_oxygen(
-                        p['tf_oral_amoxicillin_only_for_non_severe_pneumonia_with_SpO2<90%'])
-
+            """Return probability treatment fails when the true classification is cough_or_cold."""
+            return 0.0  # Treatment cannot 'fail' for a cough_or_cold
 
         if imci_symptom_based_classification == 'danger_signs_pneumonia':
             return min(1.0, _prob_treatment_fails_when_danger_signs_pneumonia())
@@ -1915,6 +1902,7 @@ class Models:
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
 # ---------------------------------------------------------------------------------------------------------
+
 
 class AlriPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """This is the main event that runs the acquisition of pathogens that cause Alri.

@@ -64,8 +64,8 @@ def run_scenario(**kwargs):
 
     sim.modules['Demography'].parameters['max_age_initial'] = 5
 
-    if kwargs['do_make_treatment_and_diagnosis_perfect']:
-        alri._make_treatment_and_diagnosis_perfect(sim.modules['Alri'])
+    if kwargs['do_make_hw_diagnosis_perfect']:
+        alri._make_hw_diagnosis_perfect(sim.modules['Alri'])
 
     if kwargs['pulse_oximeter_and_oxygen_is_available']:
         sim.modules['Alri'].parameters['pulse_oximeter_and_oxygen_is_available'] = 'Yes'
@@ -100,22 +100,25 @@ def get_cfr_from_logfile(logfile):
 
 
 # %% Run the Scenarios
+
+# - Do make diagnosis perfect!
+
 scenarios = {
-    # 'No_oximeter/oxygen_Perfect_treatment_effectiveness': {
-    #     'pulse_oximeter_and_oxygen_is_available': False,
-    #     'do_make_treatment_and_diagnosis_perfect': True,
-    # },
-    # 'With_oximeter/oxygen_Perfect_treatment_effectiveness': {
-    #     'pulse_oximeter_and_oxygen_is_available': True,
-    #     'do_make_treatment_and_diagnosis_perfect': True,
-    # },
-    'No_oximeter/oxygen_Default_treatment_effectiveness': {
+    'No_oximeter_or_oxygen / Perfect HW diagnosis': {
         'pulse_oximeter_and_oxygen_is_available': False,
-        'do_make_treatment_and_diagnosis_perfect': False,
+        'do_make_hw_diagnosis_perfect': True,
     },
-    'With_oximeter/oxygen_Default_treatment_effectiveness': {
+    'With_oximeter_and_oxygen / Perfect HW diagnosis': {
         'pulse_oximeter_and_oxygen_is_available': True,
-        'do_make_treatment_and_diagnosis_perfect': False,
+        'do_make_hw_diagnosis_perfect': True,
+    },
+    'No_oximeter_or_oxygen / Not Perfect HW diagnosis': {
+        'pulse_oximeter_and_oxygen_is_available': False,
+        'do_make_hw_diagnosis_perfect': False,
+    },
+    'With_oximeter_and_oxygen / Not Perfect HW diagnosis': {
+        'pulse_oximeter_and_oxygen_is_available': True,
+        'do_make_hw_diagnosis_perfect': False,
     },
 }
 outputfiles = {_name: run_scenario(**_params) for _name, _params in scenarios.items()}

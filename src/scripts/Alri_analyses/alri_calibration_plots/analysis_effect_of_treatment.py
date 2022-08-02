@@ -165,7 +165,8 @@ def treatment_efficacy(
     treatment_perfect,
     hw_dx_perfect,
 ):
-    """Return the percentage by which the treatment reduce the risk of death"""
+    """Return the percentage by which the treatment reduce the risk of death.
+    """
 
     # Decide which hsi configuration to use:
     if hw_dx_perfect:
@@ -445,7 +446,6 @@ def main():
     # Average risk of death by disease type
     table.groupby(by=['disease_type'])['prob_die_if_no_treatment'].mean()
 
-
     # Examine danger_signs as a predictor of SpO2 < 90%
     print(pd.crosstab(
         pd.Series(table['oxygen_saturation'] == "<90%", name='SpO2<90%'),
@@ -529,7 +529,7 @@ def main():
     )
     print(f"{risk_of_death=}")
 
-    # Examine risk of death and treatment effectiveness for "danger_signs_pneumonia" & SpO2<90%
+    # Examine risk of death and treatment effectiveness for all types of case
     treatment_effectiveness = summarize_by(
         df=table,
         by=['oxygen_saturation', 'classification_for_treatment_decision_with_oximeter_perfect_accuracy'],
@@ -541,12 +541,23 @@ def main():
             'treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx',
             'treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_perfect_hw_dx',
         ]
-    ).loc[("<90%", "danger_signs_pneumonia")]
+    ).assign(fraction_of_deaths=lambda df: (df['fraction'] * df['prob_die_if_no_treatment']) / (df['fraction'] * df['prob_die_if_no_treatment']).sum())
     print(f"{treatment_effectiveness}")
 
-
-    # Look at cough_or_cold
-    y = table.loc[table['classification_for_treatment_decision_with_oximeter_perfect_accuracy'] == "cough_or_cold"]
+    # Examine risk of death and treatment effectiveness for "danger_signs_pneumonia" & SpO2<90%
+    treatment_effectiveness_danger_signs_pneumonia = summarize_by(
+        df=table,
+        by=['oxygen_saturation', 'classification_for_treatment_decision_with_oximeter_perfect_accuracy'],
+        columns=[
+            'prob_die_if_no_treatment',
+            'treatment_efficacy_if_perfect_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx',
+            'treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx',
+            'treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_perfect_hw_dx',
+            'treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx',
+            'treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_perfect_hw_dx',
+        ]
+    ).loc[("<90%", "danger_signs_pneumonia")]
+    print(f"{treatment_effectiveness_danger_signs_pneumonia}")
 
     # ------
     # Look at where a person would receive a different diagnoses with/without oximeter
@@ -561,22 +572,39 @@ def main():
             'treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_perfect_hw_dx',
             'treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx',
             'treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx',
+            'treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_imperfect_hw_dx',
         ]
     ]
 
     # In all cases, confirm they have exactly the same treatment effectiveness when no oxygen is available.
     assert (
         diff_classification['treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_perfect_hw_dx']
-        == diff_classification['treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx']
+        ==
+        diff_classification['treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx']
     ).all()
 
     # ... but that the availability of oxygen improves treatment effectiveness
     assert (
         diff_classification['treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx']
-        > diff_classification['treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx']
+        >
+        diff_classification['treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx']
     ).all()
 
+    # ... and treatment with the correct diagnosis is always the highest probability of success
+    assert (
+        table['treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx']
+        >= table['treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_imperfect_hw_dx']
+    ).all()
 
+    assert (
+        table['treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx']
+        >= table['treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_imperfect_hw_dx']
+    ).all()
+
+    assert (
+        table['treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx']
+        >= table['treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_perfect_hw_dx']
+    ).all()
 
     # Overall summary figure: Number of deaths in the cohort Deaths broken down by ( disease / oxygen_saturation) when
     # * No Treatment

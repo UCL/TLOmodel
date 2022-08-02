@@ -34,6 +34,7 @@ from tlo.methods.alri import (
     HSI_Alri_Treatment,
     Models,
     _make_high_risk_of_death,
+    _make_hw_diagnosis_perfect,
     _make_treatment_and_diagnosis_perfect,
     _make_treatment_ineffective,
     _make_treatment_perfect,
@@ -1281,7 +1282,7 @@ def test_specific_effect_of_pulse_oximeter_and_oxgen_for_danger_signs_pneumonia(
 
     def get_number_of_deaths_from_cohort_of_children_with_alri(
         pulse_oximeter_and_oxygen_is_available=False,
-        do_make_treatment_perfect=False,
+        do_make_hw_dx_perfect=False,
     ) -> int:
         """Run a cohort of children all with newly onset lethal danger_signs pneumonia Alri and return number of them
          that die from Alri. All HSI run and there is perfect healthcare seeking, all consumables are available,
@@ -1334,8 +1335,8 @@ def test_specific_effect_of_pulse_oximeter_and_oxgen_for_danger_signs_pneumonia(
         # Make entire population under five years old
         sim.modules['Demography'].parameters['max_age_initial'] = 5
 
-        if do_make_treatment_perfect:
-            _make_treatment_and_diagnosis_perfect(sim.modules['Alri'])
+        if do_make_hw_dx_perfect:
+            _make_hw_diagnosis_perfect(sim.modules['Alri'])
 
         if pulse_oximeter_and_oxygen_is_available:
             sim.modules['Alri'].parameters['pulse_oximeter_and_oxygen_is_available'] = 'Yes'
@@ -1362,23 +1363,233 @@ def test_specific_effect_of_pulse_oximeter_and_oxgen_for_danger_signs_pneumonia(
         total_deaths_to_alri = sim.modules['Alri'].logging_event.trackers['deaths'].report_current_total()
         return total_deaths_to_alri
 
-    def compare_deaths_with_and_without_pulse_oximeter_and_oxygen(do_make_treatment_perfect):
+    def compare_deaths_with_and_without_pulse_oximeter_and_oxygen(do_make_hw_dx_perfect):
         """Check that the number of deaths when the pulse oximeter and oxygen are not available is GREATER than when
          they are available."""
         num_deaths_no_po_or_ox = get_number_of_deaths_from_cohort_of_children_with_alri(
             pulse_oximeter_and_oxygen_is_available=False,
-            do_make_treatment_perfect=do_make_treatment_perfect,
+            do_make_hw_dx_perfect=do_make_hw_dx_perfect,
         )
 
         num_deaths_with_po_and_ox = get_number_of_deaths_from_cohort_of_children_with_alri(
             pulse_oximeter_and_oxygen_is_available=True,
-            do_make_treatment_perfect=do_make_treatment_perfect,
+            do_make_hw_dx_perfect=do_make_hw_dx_perfect,
         )
 
         assert num_deaths_no_po_or_ox > num_deaths_with_po_and_ox, \
             f"There were not fewer deaths when the oximeter and oxygen were available, assuming" \
-            f" {do_make_treatment_perfect=}"
+            f" {do_make_hw_dx_perfect=}"
 
-    compare_deaths_with_and_without_pulse_oximeter_and_oxygen(do_make_treatment_perfect=False)
-    # N.B. The comparison with treatment being perfect would not make sense, as there would be zero deaths even without
-    # oxygen.
+    compare_deaths_with_and_without_pulse_oximeter_and_oxygen(do_make_hw_dx_perfect=True)
+    compare_deaths_with_and_without_pulse_oximeter_and_oxygen(do_make_hw_dx_perfect=False)
+
+
+def test_treatment_effect_when_misdiagnosis(sim_hs_all_consumables):
+    """Check that:
+      * under-diagnosis is never advantageous: i.e., that when the true severity of a case is not recognised
+        it leads to a greater chance of treatment failure then the ideal treatment under the correct diagnosis.
+      * over-diagnosis is never disadvantageous: i.e., that when the true severity of a case is over-estimated,
+        it leads to a lesser chance of treatment failure then the ideal treatment under the correct diagnosis.
+    """
+
+    sim = sim_hs_all_consumables
+    sim.make_initial_population(n=5000)
+    alri_module = sim.modules['Alri']
+    models = Models(alri_module)
+
+    # Order of classifications, ascending severity:
+    classifications = [
+        'cough_or_cold', 'fast_breathing_pneumonia', 'chest_indrawing_pneumonia', 'danger_signs_pneumonia'
+    ]
+
+    def find_higher_classification(c):
+        """Return the classifications that are more severe than the classification argument."""
+        for i, _c in enumerate(classifications):
+            if c == _c:
+                return classifications[(i+1):]
+
+    def find_lower_classification(c):
+        """Return the classifications that are less severe than the classification argument."""
+        for i, _c in enumerate(reversed(classifications)):
+            if c == _c:
+                return list(reversed(classifications))[(i+1):]
+
+    for (
+        imci_symptom_based_classification,
+        SpO2_level,
+        disease_type,
+        any_complications,
+        symptoms,
+        hiv_infected_and_not_on_art,
+        un_clinical_acute_malnutrition,
+        age_exact_years,
+        oxygen_is_available,
+    ) in itertools.product(
+        classifications,
+        ('<90%', '90-92%', '>=93%'),
+        alri_module.disease_types,
+        (False, True),
+        [[_s] for _s in alri_module.all_symptoms],
+        (False, True),
+        ('MAM', 'SAM', 'well'),
+        np.arange(0, 2, 0.05),
+        (True, False)
+    ):
+        chars = {
+            'imci_symptom_based_classification': imci_symptom_based_classification,
+            'SpO2_level': SpO2_level,
+            'disease_type': disease_type,
+            'any_complications': any_complications,
+            'symptoms': symptoms,
+            'hiv_infected_and_not_on_art': hiv_infected_and_not_on_art,
+            'un_clinical_acute_malnutrition': un_clinical_acute_malnutrition,
+        }
+
+
+        true_classification = chars['imci_symptom_based_classification']
+        true_treatment = alri_module._ultimate_treatment_indicated_for_patient(
+            classification_for_treatment_decision=true_classification, age_exact_years=age_exact_years
+        )
+        true_treatment_prob_treatment_success = 1.0 - models._prob_treatment_fails(
+                **{
+                    **chars,
+                    **{
+                        'antibiotic_provided': true_treatment['antibiotic_indicated'][0],
+                        'oxygen_provided': oxygen_is_available,  # <-- controls the comparison so that oxygen is always/not-used in both true and wrong treatments (the effect of treatment is considered below)
+                    }
+                }
+            )
+
+        # * Under-diagnosis
+        # Get wrong classification that would be considered an "under-diangnosis", i.e. the mistake is to not recognise
+        # how serious the case is --> the mistake should lead to low rates of treatment success than the ideal treatment
+        # for the correct diagnosis.
+        under_diagnosed_classifications = find_lower_classification(true_classification)
+        for wrong_classification in under_diagnosed_classifications:
+            wrong_treatment = alri_module._ultimate_treatment_indicated_for_patient(
+                classification_for_treatment_decision=wrong_classification, age_exact_years=age_exact_years
+            )
+            wrong_treatment_prob_treatment_success = 1.0 - models._prob_treatment_fails(
+                **{
+                    **chars,
+                    **{
+                        'antibiotic_provided': wrong_treatment['antibiotic_indicated'][0],
+                        'oxygen_provided': oxygen_is_available,
+                    }
+                }
+            )
+
+            assert wrong_treatment_prob_treatment_success <= true_treatment_prob_treatment_success, \
+                f"When {true_classification} is under-diagnosed as {wrong_classification}, the treatment is better " \
+                f"than under a correct diagnosis." \
+                f"\n{chars=}\n{true_treatment=}\n{wrong_treatment=}\n{oxygen_is_available=}\n{age_exact_years=}"
+
+        # * Over-diagnosis
+        # Get wrong classification that would be considered an "over-diagnosis", i.e. the mistake is to over-estimate
+        # how serious the case is --> the mistake should not lead to lower rates of treatment success than the ideal
+        # treatment for the correct diagnosis.
+        over_diagnosed_classifications = find_higher_classification(true_classification)
+        for wrong_classification in over_diagnosed_classifications:
+            wrong_treatment = alri_module._ultimate_treatment_indicated_for_patient(
+                classification_for_treatment_decision=wrong_classification, age_exact_years=age_exact_years
+            )
+            wrong_treatment_prob_treatment_success = 1.0 - models._prob_treatment_fails(
+                **{
+                    **chars,
+                    **{
+                        'antibiotic_provided': wrong_treatment['antibiotic_indicated'][0],
+                        'oxygen_provided': oxygen_is_available,
+                    }
+                }
+            )
+
+            assert wrong_treatment_prob_treatment_success == true_treatment_prob_treatment_success, \
+                f"When {true_classification} is over-diagnosed as {wrong_classification}, the treatment is better " \
+                f"than under a correct diagnosis." \
+                f"\n{chars=}\n{true_treatment=}\n{wrong_treatment=}\n{oxygen_is_available=}\n{age_exact_years=}"
+
+
+def test_treatment_effect_of_oxygen(sim_hs_all_consumables):
+    """Check that the provision of oxygen...
+        * makes no effect when oxygen is not needed
+        * increases chance of treatment success whe oxygen is needed and provided compared to needed and not provided
+        * That this holds irrespective of any mis-diagnosis.
+    """
+
+    sim = sim_hs_all_consumables
+    sim.make_initial_population(n=5000)
+    alri_module = sim.modules['Alri']
+    models = Models(alri_module)
+
+    # Order of classifications, ascending severity:
+    classifications = [
+        'cough_or_cold', 'fast_breathing_pneumonia', 'chest_indrawing_pneumonia', 'danger_signs_pneumonia'
+    ]
+
+    for (
+        imci_symptom_based_classification,
+        SpO2_level,
+        disease_type,
+        any_complications,
+        symptoms,
+        hiv_infected_and_not_on_art,
+        un_clinical_acute_malnutrition,
+        age_exact_years
+    ) in itertools.product(
+        classifications,
+        ('<90%', '90-92%', '>=93%'),
+        alri_module.disease_types,
+        (False, True),
+        [[_s] for _s in alri_module.all_symptoms],
+        (False, True),
+        ('MAM', 'SAM', 'well'),
+        np.arange(0, 2, 0.05)
+    ):
+        chars = {
+            'imci_symptom_based_classification': imci_symptom_based_classification,
+            'SpO2_level': SpO2_level,
+            'disease_type': disease_type,
+            'any_complications': any_complications,
+            'symptoms': symptoms,
+            'hiv_infected_and_not_on_art': hiv_infected_and_not_on_art,
+            'un_clinical_acute_malnutrition': un_clinical_acute_malnutrition,
+        }
+
+        for classification in set(classifications) - set({chars['imci_symptom_based_classification']}):
+            treatment = alri_module._ultimate_treatment_indicated_for_patient(
+                classification_for_treatment_decision=classification, age_exact_years=age_exact_years
+            )
+            prob_treatment_success_with_oxygen = 1.0 - models._prob_treatment_fails(
+                **{
+                    **chars,
+                    **{
+                        'antibiotic_provided': treatment['antibiotic_indicated'][0],
+                        'oxygen_provided': True,
+                    }
+                }
+            )
+
+            prob_treatment_success_without_oxygen = 1.0 - models._prob_treatment_fails(
+                **{
+                    **chars,
+                    **{
+                        'antibiotic_provided': treatment['antibiotic_indicated'][0],
+                        'oxygen_provided': False,
+                    }
+                }
+            )
+
+            if chars['SpO2_level'] == '<90%':
+                # Oxygen is needed --> provision should increase success of treatment
+                assert (prob_treatment_success_with_oxygen > prob_treatment_success_without_oxygen) \
+                       or (0.0 == prob_treatment_success_with_oxygen == prob_treatment_success_without_oxygen) \
+                       or (1.0 == prob_treatment_success_with_oxygen == prob_treatment_success_without_oxygen), \
+                    f"When {imci_symptom_based_classification} is diagnosed as {classification}, and SpO2=" \
+                    f"{chars['SpO2_level']}, provision of oxygen does not have expected effect." \
+                    f"\n{chars=}\n{prob_treatment_success_with_oxygen=}\n{prob_treatment_success_without_oxygen=}"
+            else:
+                # Oxygen is not needed --> provision should have no effect on success of treatment
+                assert prob_treatment_success_with_oxygen == prob_treatment_success_without_oxygen, \
+                    f"When {imci_symptom_based_classification} is diagnosed as {classification}, and SpO2=" \
+                    f"{chars['SpO2_level']}, provision of oxygen has an effect but it should not." \
+                    f"\n{chars=}\n{prob_treatment_success_with_oxygen=}\n{prob_treatment_success_without_oxygen=}"
