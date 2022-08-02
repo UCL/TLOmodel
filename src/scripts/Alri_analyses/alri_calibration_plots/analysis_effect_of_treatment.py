@@ -445,7 +445,6 @@ def main():
     # Average risk of death by disease type
     table.groupby(by=['disease_type'])['prob_die_if_no_treatment'].mean()
 
-
     # Examine danger_signs as a predictor of SpO2 < 90%
     print(pd.crosstab(
         pd.Series(table['oxygen_saturation'] == "<90%", name='SpO2<90%'),
@@ -544,10 +543,6 @@ def main():
     ).loc[("<90%", "danger_signs_pneumonia")]
     print(f"{treatment_effectiveness}")
 
-
-    # Look at cough_or_cold
-    y = table.loc[table['classification_for_treatment_decision_with_oximeter_perfect_accuracy'] == "cough_or_cold"]
-
     # ------
     # Look at where a person would receive a different diagnoses with/without oximeter
     diff_classification = table.loc[
@@ -567,16 +562,16 @@ def main():
     # In all cases, confirm they have exactly the same treatment effectiveness when no oxygen is available.
     assert (
         diff_classification['treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_perfect_hw_dx']
-        == diff_classification['treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx']
+        ==
+        diff_classification['treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx']
     ).all()
 
     # ... but that the availability of oxygen improves treatment effectiveness
     assert (
         diff_classification['treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx']
-        > diff_classification['treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx']
+        >
+        diff_classification['treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx']
     ).all()
-
-
 
     # Overall summary figure: Number of deaths in the cohort Deaths broken down by ( disease / oxygen_saturation) when
     # * No Treatment

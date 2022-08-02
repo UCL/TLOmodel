@@ -1896,7 +1896,6 @@ class Models:
                     return modify_failure_risk_when_does_not_get_oxygen_but_needs_oxygen(
                         p['tf_oral_amoxicillin_only_for_non_severe_pneumonia_with_SpO2<90%'])
 
-
         if imci_symptom_based_classification == 'danger_signs_pneumonia':
             return min(1.0, _prob_treatment_fails_when_danger_signs_pneumonia())
 
@@ -1915,6 +1914,7 @@ class Models:
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
 # ---------------------------------------------------------------------------------------------------------
+
 
 class AlriPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """This is the main event that runs the acquisition of pathogens that cause Alri.
