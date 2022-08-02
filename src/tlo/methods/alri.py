@@ -401,6 +401,10 @@ class Alri(Module):
                       ),
 
         # Risk of death parameters -----
+        'scaler_on_risk_of_death':
+            Parameter(Types.REAL,
+                      "Multiplicative scaler on the overall risk of death, for the purpose of calibration."
+                      ),
         'base_odds_death_ALRI_age<2mo':
             Parameter(Types.REAL,
                       'baseline odds of death from ALRI for young infants aged 0 month and severe pneumonia '
@@ -1687,10 +1691,6 @@ class Models:
         """Returns the probability that such a case of ALRI will be lethal (if untreated)."""
         p = self.p
 
-        # Death does not occur if the disease_type is "other_alri"
-        if disease_type == "other_alri":
-            return 0.0
-
         # Death does not occur if there are no complications
         if 0 == len(complications):
             return 0.0
@@ -1741,7 +1741,8 @@ class Models:
         if 'pneumothorax' in complications:
             odds_death *= p['or_death_ALRI_pneumothorax']
 
-        return to_prob(odds_death)  # Return the probability of death
+        return min(1.0, p['scaler_on_risk_of_death'] * to_prob(odds_death))  # Return the probability of death,
+        #                                                                      with scaling.
 
     def treatment_fails(self, **kwargs) -> bool:
         """Determine whether a treatment fails or not: Returns `True` if the treatment fails."""
