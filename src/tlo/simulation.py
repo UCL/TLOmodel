@@ -7,7 +7,7 @@ import time
 from collections import OrderedDict
 from enum import Enum
 from pathlib import Path
-from typing import Dict, Optional, Union
+from typing import Dict, Union
 
 import numpy as np
 
@@ -263,7 +263,7 @@ class Simulation:
 
         logger.info(key='info', data=f'simulate() {time.time() - start} s')
 
-    def schedule_event(self, event, date, event_priority: Optional[EventPriority] = None):
+    def schedule_event(self, event, date, event_priority: EventPriority = EventPriority.FIRST_HALF_OF_DAY):
         """Schedule an event to happen on the given future date.
 
         :param event: the Event to schedule
@@ -280,10 +280,7 @@ class Simulation:
 
         self.event_queue.schedule(event=event,
                                   date=date,
-                                  event_priority=(event_priority
-                                                  if event_priority is not None else EventPriority.FIRST_HALF_OF_DAY
-                                                  )
-                                  )
+                                  event_priority=event_priority)
 
     def fire_single_event(self, event, date):
         """Fires the event once for the given date
@@ -342,7 +339,7 @@ class EventQueue:
 
         :param event: the event to schedule
         :param date: when it should happen
-        :param order_in_day_int: integer indicating when in the same the event should happen (0, 1, 2)
+        :param event_priority: indicating when in the same the day events should happen
         """
 
         entry = (date, event_priority, next(self.counter), event)
