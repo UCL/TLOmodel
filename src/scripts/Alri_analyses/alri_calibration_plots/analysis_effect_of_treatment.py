@@ -28,9 +28,9 @@ from tlo.methods.alri import (
 )
 from tlo.util import sample_outcome
 
-MODEL_POPSIZE = 10_000
-MIN_SAMPLE_OF_NEW_CASES = 100
-NUM_REPS_FOR_EACH_CASE = 10
+MODEL_POPSIZE = 15_000
+MIN_SAMPLE_OF_NEW_CASES = 200
+NUM_REPS_FOR_EACH_CASE = 20
 
 
 def get_sim(popsize):
