@@ -12,7 +12,7 @@ import numpy as np
 
 from tlo import Date, Population, logging
 from tlo.dependencies import check_dependencies_present, topologically_sort_modules
-from tlo.events import IndividualScopeEventMixin, EventPriority, Event
+from tlo.events import Event, IndividualScopeEventMixin
 from tlo.progressbar import ProgressBar
 
 logger = logging.getLogger(__name__)
