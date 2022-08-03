@@ -1879,8 +1879,6 @@ class Models:
 
         def _prob_treatment_fails_when_cough_or_cold():
             """Return probability treatment fails when the true classification is "cough_or_cold."""
-            # todo - antibiotics never provided - so should just recover anyway!
-
             if not needs_oxygen:
                 if not any_complications:
                     return 0.0  # Treatment cannot 'fail' for a cough_or_cold without complications and no need of
