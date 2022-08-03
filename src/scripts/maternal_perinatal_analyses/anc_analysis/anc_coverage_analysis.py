@@ -91,7 +91,7 @@ def get_anc_4_coverage(folder):
         anc4_lqs.append((f_lqs / anc_total) * 100)
         anc4_uqs.append((f_uqs / anc_total) * 100)
 
-    return[yearly_anc4_rates, anc4_lqs, anc4_uqs]
+    return [yearly_anc4_rates, anc4_lqs, anc4_uqs]
 
 
 baseline_anc4_coverage = get_anc_4_coverage(baseline_results_folder)

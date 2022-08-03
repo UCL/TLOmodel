@@ -2,6 +2,9 @@
 
 GitPython
 click
+matplotlib
+pyshp
+squarify
 numpy
 pandas
 scipy
