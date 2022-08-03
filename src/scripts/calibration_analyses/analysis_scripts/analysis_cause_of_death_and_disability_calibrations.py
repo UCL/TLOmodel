@@ -108,6 +108,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # groupby, sum and divide by five to give the average number of deaths per year within the five year period:
         results = results.groupby(['period', 'sex', 'age_grp', 'label']).sum().div(5.0)
 
+        # todo - the grouping should be inside the function for the extraction like done in
+        #  `analysis_effect_of_each_treatment`...?
+        # todo - factorize this.
+        # todo - use colormap
+
         # %% Load the cause-of-deaths mappers and use them to populate the 'label' for gbd outputs
         if what == 'Deaths':
             demoglog = load_pickled_dataframes(results_folder)['tlo.methods.demography']

@@ -823,8 +823,8 @@ class HealthSystem(Module):
         return capabilities_ex['Total_Minutes_Per_Day']
 
     def get_service_availability(self) -> List[str]:
-        """Returns service availability. (Should be equal to what is specified by the parameter, but overwrite with what was
-         provided in argument if an argument was specified -- provided for backward compatibility/debugging.)"""
+        """Returns service availability. (Should be equal to what is specified by the parameter, but overwrite with what
+        was provided in argument if an argument was specified -- provided for backward compatibility/debugging.)"""
 
         if self.arg_service_availabily is None:
             service_availability = self.parameters['Service_Availability']
