@@ -1,6 +1,3 @@
-"""Description of the HSI that run.
-N.B. This script uses the package `squarify`: so run, `pip install squarify` first.
-"""
 from collections import defaultdict
 from pathlib import Path
 
@@ -12,16 +9,19 @@ from matplotlib import pyplot as plt
 from tlo import Date
 from tlo.analysis.utils import (
     extract_results,
+    get_coarse_appt_type,
+    get_color_coarse_appt,
+    get_color_short_treatment_id,
+    order_of_coarse_appt,
+    squarify_neat,
     summarize,
     unflatten_flattened_multi_index_in_logging,
 )
 
-# todo - ** PLOTTING AESTHETICS **
-#  * define a colormap for TREATMENT_ID short and use this in Figure 1 and 3
-#  * selective labelling of only the biggest blocks.
-
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
+    """Description of the usage of healthcare system resources."""
+
     # Declare period for which the results will be generated (defined inclusively)
     TARGET_PERIOD = (Date(2010, 1, 1), Date(2010, 12, 31))
 
@@ -36,54 +36,60 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     def formatting_hsi_df(_df):
         """Standard formatting for the HSI_Event log."""
-
-        # Remove entries for those HSI that did not run
-        _df = drop_outside_period(_df) \
-            .drop(_df.index[~_df.did_run]) \
-            .reset_index(drop=True) \
-            .drop(columns=['Person_ID', 'Squeeze_Factor', 'Facility_ID', 'did_run'])
+        _df = _df.pipe(drop_outside_period) \
+                 .drop(_df.index[~_df.did_run]) \
+                 .reset_index(drop=True) \
+                 .drop(columns=['Person_ID', 'Squeeze_Factor', 'Facility_ID', 'did_run'])
 
         # Unpack the dictionary in `Number_By_Appt_Type_Code`.
         _df = _df.join(_df['Number_By_Appt_Type_Code'].apply(pd.Series).fillna(0.0)).drop(
             columns='Number_By_Appt_Type_Code')
 
-        # Produce course version of TREATMENT_ID (just first level, which is the module)
+        # Produce coarse version of TREATMENT_ID (just first level, which is the module)
         _df['TREATMENT_ID_SHORT'] = _df['TREATMENT_ID'].str.split('_').apply(lambda x: x[0])
 
         return _df
 
-    def get_colors(x):
-        cmap = plt.cm.get_cmap('jet')
-        return [cmap(i) for i in np.arange(0, 1, 1.0 / len(x))]
-
     # %% "Figure 1": The Distribution of HSI_Events that occur by TREATMENT_ID
+    # N.B. This uses the summary logger for speed. All other figures use the full logger as that is necessary.
 
     def get_counts_of_hsi_by_treatment_id(_df):
-        return formatting_hsi_df(_df).groupby(by='TREATMENT_ID').size()
+        """Get the counts of the short TREATMENT_IDs occurring"""
+        _counts_by_treatment_id = _df \
+            .loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), 'TREATMENT_ID'] \
+            .apply(pd.Series) \
+            .sum() \
+            .astype(int)
+        return _counts_by_treatment_id.groupby(level=0).sum()
 
-    def get_counts_of_hsi_by_treatment_id_short(_df):
-        return formatting_hsi_df(_df).groupby(by='TREATMENT_ID_SHORT').size()
+    def get_counts_of_hsi_by_short_treatment_id(_df):
+        """Get the counts of the short TREATMENT_IDs occurring (shortened, up to first underscore)"""
+        _counts_by_treatment_id = get_counts_of_hsi_by_treatment_id(_df)
+        _short_treatment_id = _counts_by_treatment_id.index.map(lambda x: x.split('_')[0] + "*")
+        return _counts_by_treatment_id.groupby(by=_short_treatment_id).sum()
 
     counts_of_hsi_by_treatment_id = summarize(
         extract_results(
             results_folder,
-            module='tlo.methods.healthsystem',
+            module='tlo.methods.healthsystem.summary',
             key='HSI_Event',
             custom_generate_series=get_counts_of_hsi_by_treatment_id,
             do_scaling=True
         ),
-        only_mean=True
+        only_mean=True,
+        collapse_columns=True,
     )
 
     counts_of_hsi_by_treatment_id_short = summarize(
         extract_results(
             results_folder,
-            module='tlo.methods.healthsystem',
+            module='tlo.methods.healthsystem.summary',
             key='HSI_Event',
-            custom_generate_series=get_counts_of_hsi_by_treatment_id_short,
+            custom_generate_series=get_counts_of_hsi_by_short_treatment_id,
             do_scaling=True
         ),
-        only_mean=True
+        only_mean=True,
+        collapse_columns=True,
     )
 
     fig, ax = plt.subplots()
@@ -91,7 +97,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     squarify.plot(
         sizes=counts_of_hsi_by_treatment_id.values,
         label=counts_of_hsi_by_treatment_id.index,
-        color=get_colors(counts_of_hsi_by_treatment_id_short.values),
         alpha=1,
         pad=True,
         ax=ax,
@@ -104,10 +109,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     fig, ax = plt.subplots()
     name_of_plot = 'HSI Events by TREATMENT_ID (Short)'
-    squarify.plot(
+    squarify_neat(
         sizes=counts_of_hsi_by_treatment_id_short.values,
         label=counts_of_hsi_by_treatment_id_short.index,
-        color=get_colors(counts_of_hsi_by_treatment_id_short.values),
+        colormap=get_color_short_treatment_id,
         alpha=1,
         pad=True,
         ax=ax,
@@ -119,6 +124,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
 
     # %% "Figure 2": The Appointments Used
+
+    # USING LONG LOGGER
 
     def get_counts_of_appt_type_by_treatment_id_short(_df):
         return formatting_hsi_df(_df) \
@@ -138,12 +145,27 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         collapse_columns=True,
     )
 
+    # PLOT TOTALS BY COARSE APPT_TYPE
+    counts_of_coarse_appt_by_treatment_id_short = \
+        counts_of_appt_by_treatment_id_short \
+        .unstack() \
+        .groupby(axis=1, by=counts_of_appt_by_treatment_id_short.index.levels[1].map(get_coarse_appt_type)).sum()
+
+    counts_of_coarse_appt_by_treatment_id_short = counts_of_coarse_appt_by_treatment_id_short[
+        sorted(counts_of_coarse_appt_by_treatment_id_short.columns, key=order_of_coarse_appt)
+    ]
+
     fig, ax = plt.subplots()
     name_of_plot = 'Appointment Types Used'
-    (counts_of_appt_by_treatment_id_short / 1e6).unstack().plot.bar(ax=ax, stacked=True)
+    (
+        counts_of_coarse_appt_by_treatment_id_short / 1e6
+    ).plot.bar(
+        ax=ax, stacked=True,
+        color=[get_color_coarse_appt(_appt) for _appt in counts_of_coarse_appt_by_treatment_id_short.columns]
+    )
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
-    ax.legend(ncol=3, prop={'size': 6}, loc='upper left')
+    ax.legend(ncol=2, prop={'size': 8}, loc='upper left')
     ax.set_ylabel('Number of appointments (millions)')
     ax.set_xlabel('TREATMENT_ID (Short)')
     ax.set_ylim(0, 80)
@@ -161,7 +183,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             .groupby(by=['TREATMENT_ID_SHORT', 'Facility_Level', 'Appt_Type'])['Num'].sum() \
             .reset_index()
 
-        # Find the time of each HealthCareWorker (HCW) for each appointment at eahc level
+        # Find the time of each HealthCareWorker (HCW) for each appointment at each level
         att = pd.pivot_table(
             pd.read_csv(
                 resourcefilepath / 'healthsystem' / 'human_resources' / 'definitions' /
@@ -208,10 +230,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     name_of_plot = 'Proportion of Time Used For Selected Cadre by TREATMENT_ID (Short)'
     for _cadre, _ax in zip(cadres_to_plot, ax.reshape(-1)):
         _x = drop_zero_rows(share_of_time_for_hw_by_short_treatment_id.loc[(slice(None), _cadre)])
-        squarify.plot(
+        squarify_neat(
             sizes=_x.values,
             label=_x.index,
-            color=get_colors(_x),
+            colormap=get_color_short_treatment_id,
+            numlabels=4,
             alpha=1,
             pad=True,
             ax=_ax,
@@ -407,7 +430,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         resourcefilepath / 'healthsystem' / 'consumables' / 'ResourceFile_Consumables_Items_and_Packages.csv'
     )[['Item_Code', 'Items']].set_index('Item_Code').drop_duplicates()
     cons = cons.merge(cons_names, left_index=True, right_index=True, how='left').set_index('Items').astype(int)
-    cons = cons.assign(total=cons.sum(1)).sort_values('total', ascending=False).drop(columns='total')
+    cons = cons.assign(total=cons.sum(1)).sort_values('total').drop(columns='total')
 
     fig, ax = plt.subplots()
     name_of_plot = 'Demand For Consumables'
@@ -425,7 +448,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     fig, ax = plt.subplots()
     name_of_plot = 'Consumables Not Available'
-    (cons['Not_Available'] / 1e6).sort_values(ascending=False).head(20).plot.barh(ax=ax)
+    (cons['Not_Available'] / 1e6).sort_values().head(20).plot.barh(ax=ax)
     ax.set_title(name_of_plot)
     ax.set_ylabel('Item (20 most frequently not available when requested)')
     ax.set_xlabel('Number of requests (Millions)')
@@ -437,12 +460,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
 
     # HSI affected by missing consumables
-
     def get_treatment_id_affecting_by_missing_consumables(_df):
-        """Return frequency that a TREATMENT_ID suffers from consumables not being available."""
+        """Return frequency that a (short) TREATMENT_ID suffers from consumables not being available."""
         _df = drop_outside_period(_df)
         _df = _df.loc[(_df['Item_NotAvailable'] != '{}'), ['TREATMENT_ID', 'Item_NotAvailable']]
-        return _df['TREATMENT_ID'].value_counts()
+        _df['TREATMENT_ID_SHORT'] = _df['TREATMENT_ID'].map(lambda x: x.split('_')[0])
+        return _df['TREATMENT_ID_SHORT'].value_counts()
 
     treatment_id_affecting_by_missing_consumables = summarize(
         extract_results(
@@ -457,13 +480,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     )
 
     fig, ax = plt.subplots()
-    name_of_plot = 'HSI Affected by Unavailable Consumables (by TREATMENT_ID)'
-    squarify.plot(
+    name_of_plot = 'HSI Affected by Unavailable Consumables\n(by Short TREATMENT_ID)'
+    squarify_neat(
         sizes=treatment_id_affecting_by_missing_consumables.values,
         label=treatment_id_affecting_by_missing_consumables.index,
+        colormap=get_color_short_treatment_id,
         alpha=1,
         ax=ax,
-        text_kwargs={'color': 'black', 'size': 4}
+        text_kwargs={'color': 'black', 'size': 8}
     )
     ax.set_axis_off()
     ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})

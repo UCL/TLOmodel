@@ -1,10 +1,12 @@
+import glob
+import os.path
+import zipfile
 from pathlib import Path
 
-from scripts.calibration_analyses.analysis_scripts import (
-    analysis_cause_of_death_and_disability_calibrations,
-    analysis_demography_calibrations,
-    analysis_hsi_descriptions,
-)
+import analysis_cause_of_death_and_disability_calibrations
+import analysis_demography_calibrations
+import analysis_hsi_descriptions
+
 from tlo.analysis.utils import get_scenario_outputs
 
 
@@ -13,13 +15,33 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     the results of running `long_run_all_diseases.py`."""
 
     analysis_demography_calibrations.apply(
-        results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath)
 
     analysis_cause_of_death_and_disability_calibrations.apply(
-        results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath)
 
     analysis_hsi_descriptions.apply(
-        results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath)
+
+    # make html page to present results
+    html = "<html><body>"
+
+    for filename in sorted(glob.glob(str(output_folder / "*.png"))):
+        basename = os.path.basename(filename)
+        html += f"<p style='text-align: center; font-size: 130%'><a href='{basename}'>{basename}</a></p>"
+        html += f"<img style='max-width:100%; display:block; margin-left:auto; margin-right:auto' src='{basename}'/>"
+        html += "<br><br>"
+
+    with zipfile.ZipFile(output_folder / "images.zip", mode="w") as archive:
+        for filename in sorted(glob.glob(str(output_folder / "*.png"))):
+            archive.write(filename, os.path.basename(filename))
+
+    html += """<hr><p><a href='images.zip'>images.zip</a> <a href='stdout.txt'>stdout.txt</a>
+            <a href='stderr.txt'>stderr.txt</a> <a href='task.txt'>task.txt</a></p>"""
+    html += "</body></html>"
+
+    with open(output_folder / "index.html", "w") as output_file:
+        output_file.write(html)
 
 
 if __name__ == "__main__":
