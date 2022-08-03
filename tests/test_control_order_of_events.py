@@ -5,8 +5,7 @@ import pandas as pd
 
 from tlo import Date, Module, Simulation, logging
 from tlo.analysis.utils import parse_log_file
-from tlo.events import PopulationScopeEventMixin, RegularEvent
-from tlo.simulation import EventPriority
+from tlo.events import EventPriority, PopulationScopeEventMixin, RegularEvent
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 start_date = Date(2010, 1, 1)
@@ -29,47 +28,33 @@ def test_control_of_ordering_in_the_day(seed, tmpdir):
      * Examine order in which the events actually ran on each day
     """
 
-    class Event_For_Start_Of_Day(RegularEvent, PopulationScopeEventMixin):
-
-        def __init__(self, module):
-            super().__init__(module, frequency=pd.DateOffset(days=1), event_priority=EventPriority.START_OF_DAY)
-
+    class EventForStartOfDay(RegularEvent, PopulationScopeEventMixin):
         def apply(self, population):
             logger = logging.getLogger('tlo.simulation')
             logger.info(key='event', data={'id': self.__class__.__name__})
-            assert self._event_priority == EventPriority.START_OF_DAY
+            assert self.event_priority == EventPriority.START_OF_DAY
 
-    class Event_For_Middle_Of_Day(RegularEvent, PopulationScopeEventMixin):
-
-        def __init__(self, module):
-            super().__init__(module, frequency=pd.DateOffset(days=1))  # order_in_day argument not given
-
+    class EventForMiddleOfDay(RegularEvent, PopulationScopeEventMixin):
         def apply(self, population):
             logger = logging.getLogger('tlo.simulation')
             logger.info(key='event', data={'id': self.__class__.__name__})
-            assert self._event_priority is None
+            assert self.event_priority is EventPriority.FIRST_HALF_OF_DAY
 
-    class Event_For_Second_to_Last_At_End_Of_Day(RegularEvent, PopulationScopeEventMixin):
-
-        def __init__(self, module):
-            super().__init__(module, frequency=pd.DateOffset(days=1), event_priority=EventPriority.LAST_HALF_OF_DAY)
-
+    class EventForSecondToLastAtEndOfDay(RegularEvent, PopulationScopeEventMixin):
         def apply(self, population):
             logger = logging.getLogger('tlo.simulation')
             logger.info(key='event', data={'id': self.__class__.__name__})
-            assert self._event_priority == EventPriority.LAST_HALF_OF_DAY
+            assert self.event_priority == EventPriority.LAST_HALF_OF_DAY
 
-    class Event_For_End_Of_Day(RegularEvent, PopulationScopeEventMixin):
-
-        def __init__(self, module):
-            super().__init__(module, frequency=pd.DateOffset(days=1), event_priority=EventPriority.END_OF_DAY)
-
+    class EventForEndOfDay(RegularEvent, PopulationScopeEventMixin):
         def apply(self, population):
             logger = logging.getLogger('tlo.simulation')
             logger.info(key='event', data={'id': self.__class__.__name__})
-            assert self._event_priority == EventPriority.END_OF_DAY
+            assert self.event_priority == EventPriority.END_OF_DAY
 
     class DummyModule(Module):
+        def on_birth(self, mother, child):
+            pass
 
         def read_parameters(self, data_folder):
             pass
@@ -78,11 +63,18 @@ def test_control_of_ordering_in_the_day(seed, tmpdir):
             pass
 
         def initialise_simulation(self, sim):
-            sim.schedule_event(Event_For_Second_to_Last_At_End_Of_Day(self), sim.date,
-                               event_priority=EventPriority.LAST_HALF_OF_DAY)
-            sim.schedule_event(Event_For_Middle_Of_Day(self), sim.date)  # No `event_priority` argument provided
-            sim.schedule_event(Event_For_End_Of_Day(self), sim.date, event_priority=EventPriority.END_OF_DAY)
-            sim.schedule_event(Event_For_Start_Of_Day(self), sim.date, event_priority=EventPriority.START_OF_DAY)
+            one_day = pd.DateOffset(days=1)
+            # No `event_priority` argument provided
+            sim.schedule_event(EventForMiddleOfDay(self, frequency=one_day), sim.date)
+            sim.schedule_event(EventForSecondToLastAtEndOfDay(self,
+                                                              frequency=one_day,
+                                                              event_priority=EventPriority.LAST_HALF_OF_DAY), sim.date)
+            sim.schedule_event(EventForEndOfDay(self,
+                                                frequency=one_day,
+                                                event_priority=EventPriority.END_OF_DAY), sim.date)
+            sim.schedule_event(EventForStartOfDay(self,
+                                                  frequency=one_day,
+                                                  event_priority=EventPriority.START_OF_DAY), sim.date)
 
     log_config = {
         'filename': 'tmpfile',
@@ -102,10 +94,10 @@ def test_control_of_ordering_in_the_day(seed, tmpdir):
     # Check that order is as expected: Start -> Middle --> End
     events['date'] = pd.to_datetime(events['date']).dt.date
     order_on_day_one = tuple(events.loc[events['date'] == Date(2010, 1, 1), 'id'])
-    assert order_on_day_one == ("Event_For_Start_Of_Day",
-                                "Event_For_Middle_Of_Day",
-                                "Event_For_Second_to_Last_At_End_Of_Day",
-                                "Event_For_End_Of_Day")
+    assert order_on_day_one == ("EventForStartOfDay",
+                                "EventForMiddleOfDay",
+                                "EventForSecondToLastAtEndOfDay",
+                                "EventForEndOfDay")
 
     # Check order is the same every day
     dates = pd.to_datetime(events['date']).dt.date.drop_duplicates()
