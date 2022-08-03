@@ -60,7 +60,7 @@ class EffectOfEachTreatment(BaseScenario):
     def _get_scenarios(self) -> Dict[str, List[str]]:
         """Return the Dict with values for the parameter `Service_Availability` keyed by a name for the scenario.
         The sequences of scenarios systematically omits one of the TREATMENT_ID's that is defined in the model. The
-        complete list of TREATMENT_ID's is found by running `tlo_hsi_events.py`."""
+        complete list of TREATMENT_ID's is found by running `hsi_events.py`."""
 
         # Generate list of TREATMENT_IDs and filter to the resolution needed
         treatments = get_filtered_treatment_ids(depth=1)
