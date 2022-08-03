@@ -19,7 +19,7 @@ import pandas as pd
 import tlo
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
-from tlo.events import Event, PopulationScopeEventMixin, RegularEvent, Priority
+from tlo.events import Event, PopulationScopeEventMixin, Priority, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.bed_days import BedDays
 from tlo.methods.consumables import (
