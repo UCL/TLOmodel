@@ -4,7 +4,7 @@ from enum import Enum
 from tlo import DateOffset
 
 
-class EventPriority(Enum):
+class Priority(Enum):
     """Enumeration for the EventPriority, which is used in sorting the events in the simulation queue."""
     START_OF_DAY = 0
     FIRST_HALF_OF_DAY = 25
@@ -24,7 +24,7 @@ class Event:
     defined below, and implement at least an `apply` method.
     """
 
-    def __init__(self, module, *args, event_priority=EventPriority.FIRST_HALF_OF_DAY, **kwargs):
+    def __init__(self, module, *args, priority=Priority.FIRST_HALF_OF_DAY, **kwargs):
         """Create a new event.
 
         Note that just creating an event does not schedule it to happen; that
@@ -33,10 +33,12 @@ class Event:
         :param module: the module that created this event.
             All subclasses of Event take this as the first argument in their
             constructor, but may also take further keyword arguments.
+        :param priority: a keyword-argument to set the priority (see Priority enum)
         """
+        assert isinstance(priority, Priority), "priority argument should be a value from Priority enum"
         self.module = module
         self.sim = module.sim
-        self.event_priority = event_priority
+        self.priority = priority
         # This is needed so mixin constructors are called
         super().__init__(*args, **kwargs)
 

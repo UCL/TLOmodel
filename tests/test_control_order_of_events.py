@@ -5,19 +5,19 @@ import pandas as pd
 
 from tlo import Date, Module, Simulation, logging
 from tlo.analysis.utils import parse_log_file
-from tlo.events import EventPriority, PopulationScopeEventMixin, RegularEvent
+from tlo.events import PopulationScopeEventMixin, Priority, RegularEvent
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 start_date = Date(2010, 1, 1)
 
 
-def test_enum_event_priority():
+def test_priority_enum():
     """Check that the EventPriority Enumeration works can be used and have an identified order (and so can be used to
      determine ordering in the heapq)."""
-    assert EventPriority.START_OF_DAY \
-           < EventPriority.FIRST_HALF_OF_DAY \
-           < EventPriority.LAST_HALF_OF_DAY \
-           < EventPriority.END_OF_DAY
+    assert Priority.START_OF_DAY \
+           < Priority.FIRST_HALF_OF_DAY \
+           < Priority.LAST_HALF_OF_DAY \
+           < Priority.END_OF_DAY
 
 
 def test_control_of_ordering_in_the_day(seed, tmpdir):
@@ -32,25 +32,25 @@ def test_control_of_ordering_in_the_day(seed, tmpdir):
         def apply(self, population):
             logger = logging.getLogger('tlo.simulation')
             logger.info(key='event', data={'id': self.__class__.__name__})
-            assert self.event_priority == EventPriority.START_OF_DAY
+            assert self.priority == Priority.START_OF_DAY
 
     class EventForMiddleOfDay(RegularEvent, PopulationScopeEventMixin):
         def apply(self, population):
             logger = logging.getLogger('tlo.simulation')
             logger.info(key='event', data={'id': self.__class__.__name__})
-            assert self.event_priority is EventPriority.FIRST_HALF_OF_DAY
+            assert self.priority is Priority.FIRST_HALF_OF_DAY
 
     class EventForSecondToLastAtEndOfDay(RegularEvent, PopulationScopeEventMixin):
         def apply(self, population):
             logger = logging.getLogger('tlo.simulation')
             logger.info(key='event', data={'id': self.__class__.__name__})
-            assert self.event_priority == EventPriority.LAST_HALF_OF_DAY
+            assert self.priority == Priority.LAST_HALF_OF_DAY
 
     class EventForEndOfDay(RegularEvent, PopulationScopeEventMixin):
         def apply(self, population):
             logger = logging.getLogger('tlo.simulation')
             logger.info(key='event', data={'id': self.__class__.__name__})
-            assert self.event_priority == EventPriority.END_OF_DAY
+            assert self.priority == Priority.END_OF_DAY
 
     class DummyModule(Module):
         def on_birth(self, mother, child):
@@ -68,13 +68,9 @@ def test_control_of_ordering_in_the_day(seed, tmpdir):
             sim.schedule_event(EventForMiddleOfDay(self, frequency=one_day), sim.date)
             sim.schedule_event(EventForSecondToLastAtEndOfDay(self,
                                                               frequency=one_day,
-                                                              event_priority=EventPriority.LAST_HALF_OF_DAY), sim.date)
-            sim.schedule_event(EventForEndOfDay(self,
-                                                frequency=one_day,
-                                                event_priority=EventPriority.END_OF_DAY), sim.date)
-            sim.schedule_event(EventForStartOfDay(self,
-                                                  frequency=one_day,
-                                                  event_priority=EventPriority.START_OF_DAY), sim.date)
+                                                              priority=Priority.LAST_HALF_OF_DAY), sim.date)
+            sim.schedule_event(EventForEndOfDay(self, frequency=one_day, priority=Priority.END_OF_DAY), sim.date)
+            sim.schedule_event(EventForStartOfDay(self, frequency=one_day, priority=Priority.START_OF_DAY), sim.date)
 
     log_config = {
         'filename': 'tmpfile',

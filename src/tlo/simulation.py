@@ -254,7 +254,6 @@ class Simulation:
 
         :param event: the Event to schedule
         :param date: when the event should happen
-        None (--> in-between first and second-to-last)]
         """
         assert date >= self.date, 'Cannot schedule events in the past'
 
@@ -262,7 +261,6 @@ class Simulation:
             'This looks like an HSI event. It should be handed to the healthsystem scheduler'
         assert (event.__str__().find('HSI_') < 0), \
             'This looks like an HSI event. It should be handed to the healthsystem scheduler'
-
         assert isinstance(event, Event)
 
         self.event_queue.schedule(event=event, date=date)
@@ -325,7 +323,7 @@ class EventQueue:
         :param event: the event to schedule
         :param date: when it should happen
         """
-        entry = (date, event.event_priority, next(self.counter), event)
+        entry = (date, event.priority, next(self.counter), event)
         heapq.heappush(self.queue, entry)
 
     def next_event(self):
