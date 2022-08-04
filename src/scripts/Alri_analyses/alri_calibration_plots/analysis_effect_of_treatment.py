@@ -34,6 +34,7 @@ NUM_REPS_FOR_EACH_CASE = 20
 
 _facility_level = '2'  # <-- assumes that the diagnosis/treatment occurs at this level
 
+
 def get_sim(popsize):
     """Return a simulation (composed of only <5 years old) that has run for 0 days."""
     resourcefilepath = Path('./resources')
@@ -641,4 +642,3 @@ if __name__ == "__main__":
     fig.tight_layout()
     fig.show()
     plt.close(fig)
-
