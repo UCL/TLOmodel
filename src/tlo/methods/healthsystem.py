@@ -473,6 +473,8 @@ class HealthSystem(Module):
             events run
         :param store_hsi_events_that_have_run: Convenience flag for debugging.
         :param record_hsi_event_details: Whether to record details of HSI events used.
+        :param compute_squeeze_factor_to_district_level: Whether to compute squeeze_factors to the district level, or
+            the national level (which effectively pools the resources across all districts).
         """
 
         super().__init__(name)
