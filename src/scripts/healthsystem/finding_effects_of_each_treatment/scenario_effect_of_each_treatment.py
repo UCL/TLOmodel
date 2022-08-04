@@ -13,13 +13,11 @@ or locally using:
     ```
 
 """
-import os
 from pathlib import Path
-from typing import Dict, Iterable, List
-
-import pandas as pd
+from typing import Dict, List
 
 from tlo import Date, logging
+from tlo.analysis.utils import get_filtered_treatment_ids
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
 
@@ -62,27 +60,10 @@ class EffectOfEachTreatment(BaseScenario):
     def _get_scenarios(self) -> Dict[str, List[str]]:
         """Return the Dict with values for the parameter `Service_Availability` keyed by a name for the scenario.
         The sequences of scenarios systematically omits one of the TREATMENT_ID's that is defined in the model. The
-        complete list of TREATMENT_ID's is found by running `tlo_hsi_events.py`."""
-
-        def filter_treatments(_treatments: Iterable[str], depth: int = 1) -> List[str]:
-            """Reduce an iterable of `TREATMENT_IDs` by ignoring difference beyond a certain depth of specification.
-            The TREATMENT_ID is defined with each increasing level of specification separated by a `_`. """
-            return sorted(list(set(
-                [
-                    "".join(f"{x}_" for i, x in enumerate(t.split('_')) if i < depth).rstrip('_') + '*'
-                    for t in set(_treatments)
-                ]
-            )))
-
-        # Generate table of defined HSI
-        tempfile_output_location = self.log_configuration()['directory'] / 'defined_hsi.csv'
-        os.system(f'python docs/tlo_hsi_events.py --output-file {tempfile_output_location} --output-format csv')
-        defined_hsi = pd.read_csv(tempfile_output_location)
-        # todo - Could do some refactoring on `tlo_hsi_events.py` to enable this to be returned directly without saving
-        #  to a file.
+        complete list of TREATMENT_ID's is found by running `hsi_events.py`."""
 
         # Generate list of TREATMENT_IDs and filter to the resolution needed
-        treatments = filter_treatments(defined_hsi['Treatment'], depth=1)
+        treatments = get_filtered_treatment_ids(depth=1)
 
         # Return 'Service_Availability' values, with scenarios for everything, nothing, and ones for which each
         # treatment is omitted

@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import Date, DateOffset, Module, Parameter, Types
-from tlo.events import PopulationScopeEventMixin, RegularEvent
+from tlo.events import PopulationScopeEventMixin, Priority, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods.hsi_generic_first_appts import (
@@ -232,7 +232,7 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         """Initialise the HealthSeekingBehaviourPoll
         :param module: the module that created this event
         """
-        super().__init__(module, frequency=DateOffset(days=1))
+        super().__init__(module, frequency=DateOffset(days=1), priority=Priority.LAST_HALF_OF_DAY)
         assert isinstance(module, HealthSeekingBehaviour)
 
     @staticmethod
@@ -245,7 +245,9 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         ]
 
     def apply(self, population):
-        """Determine if persons with newly onset acute generic symptoms will seek care.
+        """Determine if persons with newly onset acute generic symptoms will seek care. This event runs second-to-last
+        every day (i.e., just before the `HealthSystemScheduler`) in order that symptoms arising this day can lead to
+        FirstAttendance on the same day.
 
         :param population: the current population
         """

@@ -12,7 +12,7 @@ import numpy as np
 
 from tlo import Date, Population, logging
 from tlo.dependencies import check_dependencies_present, topologically_sort_modules
-from tlo.events import IndividualScopeEventMixin
+from tlo.events import Event, IndividualScopeEventMixin
 from tlo.progressbar import ProgressBar
 
 logger = logging.getLogger(__name__)
@@ -249,13 +249,11 @@ class Simulation:
 
         logger.info(key='info', data=f'simulate() {time.time() - start} s')
 
-    def schedule_event(self, event, date, order_in_day=None):
+    def schedule_event(self, event, date):
         """Schedule an event to happen on the given future date.
 
         :param event: the Event to schedule
         :param date: when the event should happen
-        :param order_in_day: controls when during the day the event occurs ["first", "last", "second-to-last",
-        None (--> in-between first and second-to-last)]
         """
         assert date >= self.date, 'Cannot schedule events in the past'
 
@@ -263,9 +261,9 @@ class Simulation:
             'This looks like an HSI event. It should be handed to the healthsystem scheduler'
         assert (event.__str__().find('HSI_') < 0), \
             'This looks like an HSI event. It should be handed to the healthsystem scheduler'
+        assert isinstance(event, Event)
 
-        order_in_day_int = {'first': 0, 'second_to_last': 8, 'last': 9}.get(order_in_day, 1)
-        self.event_queue.schedule(event, date, order_in_day_int)
+        self.event_queue.schedule(event=event, date=date)
 
     def fire_single_event(self, event, date):
         """Fires the event once for the given date
@@ -319,15 +317,13 @@ class EventQueue:
         self.counter = itertools.count()
         self.queue = []
 
-    def schedule(self, event, date, order_in_day_int):
+    def schedule(self, event, date):
         """Schedule a new event.
 
         :param event: the event to schedule
         :param date: when it should happen
-        :param order_in_day_int: integer indicating when in the same the event should happen (0, 1, 2)
         """
-
-        entry = (date, order_in_day_int, next(self.counter), event)
+        entry = (date, event.priority, next(self.counter), event)
         heapq.heappush(self.queue, entry)
 
     def next_event(self):
