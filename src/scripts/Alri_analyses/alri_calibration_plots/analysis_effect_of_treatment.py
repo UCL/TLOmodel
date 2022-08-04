@@ -32,6 +32,7 @@ MODEL_POPSIZE = 15_000
 MIN_SAMPLE_OF_NEW_CASES = 200
 NUM_REPS_FOR_EACH_CASE = 20
 
+_facility_level = '2'  # <-- assumes that the diagnosis/treatment occurs at this level
 
 def get_sim(popsize):
     """Return a simulation (composed of only <5 years old) that has run for 0 days."""
@@ -166,7 +167,6 @@ def treatment_efficacy(
     hw_dx_perfect,
 ):
     """Return the percentage by which the treatment reduce the risk of death"""
-
     # Decide which hsi configuration to use:
     if hw_dx_perfect:
         hsi = hsi_with_perfect_diagnosis
@@ -178,7 +178,7 @@ def treatment_efficacy(
         age_exact_years=age_exact_years,
         symptoms=symptoms,
         oxygen_saturation=oxygen_saturation,
-        facility_level='2',  # <-- assumes that the diagnosis occurs at level '2'
+        facility_level=_facility_level,
         use_oximeter=oximeter_available,
     )
 
@@ -386,7 +386,7 @@ def generate_table():
                     age_exact_years=x.age_exact_years,
                     symptoms=x.symptoms,
                     oxygen_saturation=x.oxygen_saturation,
-                    facility_level='2',  # <-- assumes that the diagnosis occurs at level '2'
+                    facility_level=_facility_level,
                     use_oximeter=True,
             ),
 
@@ -395,7 +395,7 @@ def generate_table():
                     age_exact_years=x.age_exact_years,
                     symptoms=x.symptoms,
                     oxygen_saturation=x.oxygen_saturation,
-                    facility_level='2',  # <-- assumes that the diagnosis occurs at level '2'
+                    facility_level=_facility_level,
                     use_oximeter=False,
             ),
 
@@ -404,7 +404,7 @@ def generate_table():
                     age_exact_years=x.age_exact_years,
                     symptoms=x.symptoms,
                     oxygen_saturation=x.oxygen_saturation,
-                    facility_level='2',  # <-- assumes that the diagnosis occurs at level '2'
+                    facility_level=_facility_level,
                     use_oximeter=True,
             ),
 
@@ -413,7 +413,7 @@ def generate_table():
                     age_exact_years=x.age_exact_years,
                     symptoms=x.symptoms,
                     oxygen_saturation=x.oxygen_saturation,
-                    facility_level='2',  # <-- assumes that the diagnosis occurs at level '2'
+                    facility_level=_facility_level,
                     use_oximeter=False,
             ),
 
@@ -421,7 +421,7 @@ def generate_table():
     return df.join(pd.DataFrame(risk_of_death))
 
 
-def main():
+if __name__ == "__main__":
     table = generate_table()
     table = table.assign(
         has_danger_signs=lambda df: df['symptoms'].apply(lambda x: 'danger_signs' in x),
@@ -454,6 +454,7 @@ def main():
 
     # Look at diagnosis errors (assuming that the "truth" is
     # "classification_for_treatment_decision_with_oximeter_perfect_accuracy")
+    truth = table["classification_for_treatment_decision_with_oximeter_perfect_accuracy"]
 
     def cross_tab(truth: pd.Series, dx: pd.Series):
         """Return cross-tab between truth and dx and count number of incongruent rows."""
@@ -462,7 +463,6 @@ def main():
 
     # THEORETICAL "total error" that occurs without oximeter: TRUTH versus 'Classification without an oximeter'
     # (under perfect HW accuracy)
-    truth = table["classification_for_treatment_decision_with_oximeter_perfect_accuracy"]
     xtab_vs_without_oximeter_perfect_hw_dx = cross_tab(
         truth=truth, dx=table['classification_for_treatment_decision_without_oximeter_perfect_accuracy'],
     )
@@ -566,7 +566,7 @@ def main():
         diff_classification['treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx']
     ).all()
 
-    # ... but that the availability of oxygen improves treatment effectiveness
+    # ... but that the availability of oxygen improves treatment effectiveness when there is a diff in diagnosis.
     assert (
         diff_classification['treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx']
         >
@@ -642,6 +642,3 @@ def main():
     fig.show()
     plt.close(fig)
 
-
-if __name__ == "__main__":
-    main()

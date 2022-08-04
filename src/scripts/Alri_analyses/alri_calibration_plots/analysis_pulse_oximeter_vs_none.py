@@ -32,7 +32,7 @@ def run_scenario(**kwargs):
 
     start_date = Date(2010, 1, 1)
     end_date = start_date + pd.DateOffset(years=1)
-    popsize = 50_000
+    popsize = 100_000
 
     log_config = {
         "filename": "alri",
