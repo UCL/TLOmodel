@@ -19,7 +19,7 @@ import pandas as pd
 import tlo
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
-from tlo.events import Event, PopulationScopeEventMixin, RegularEvent
+from tlo.events import Event, PopulationScopeEventMixin, Priority, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.bed_days import BedDays
 from tlo.methods.consumables import (
@@ -28,7 +28,6 @@ from tlo.methods.consumables import (
     get_item_codes_from_package_name,
 )
 from tlo.methods.dxmanager import DxManager
-from tlo.simulation import EventPriority
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -649,7 +648,7 @@ class HealthSystem(Module):
         # Launch the healthsystem scheduler (a regular event occurring each day) [if not disabled]
         if not (self.disable or self.disable_and_reject_all):
             self.healthsystemscheduler = HealthSystemScheduler(self)
-            sim.schedule_event(self.healthsystemscheduler, sim.date, event_priority=EventPriority.END_OF_DAY)
+            sim.schedule_event(self.healthsystemscheduler, sim.date)
 
     def on_birth(self, mother_id, child_id):
         self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
@@ -827,8 +826,8 @@ class HealthSystem(Module):
         return capabilities_ex['Total_Minutes_Per_Day']
 
     def get_service_availability(self) -> List[str]:
-        """Returns service availability. (Should be equal to what is specified by the parameter, but overwrite with what was
-         provided in argument if an argument was specified -- provided for backward compatibility/debugging.)"""
+        """Returns service availability. (Should be equal to what is specified by the parameter, but overwrite with what
+        was provided in argument if an argument was specified -- provided for backward compatibility/debugging.)"""
 
         if self.arg_service_availabily is None:
             service_availability = self.parameters['Service_Availability']
@@ -1540,7 +1539,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module: HealthSystem):
-        super().__init__(module, frequency=DateOffset(days=1), event_priority=EventPriority.END_OF_DAY)
+        super().__init__(module, frequency=DateOffset(days=1), priority=Priority.END_OF_DAY)
 
     @staticmethod
     def _is_today_last_day_of_the_year(date):
