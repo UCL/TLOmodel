@@ -11,17 +11,17 @@ import numpy as np
 import pandas as pd
 
 from tlo import Date, DateOffset, Module, Parameter, Types
-from tlo.events import PopulationScopeEventMixin, RegularEvent
+from tlo.events import PopulationScopeEventMixin, Priority, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods.hsi_generic_first_appts import (
     HSI_GenericEmergencyFirstApptAtFacilityLevel1,
     HSI_GenericFirstApptAtFacilityLevel0,
 )
+
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
-from tlo.simulation import EventPriority
 
 
 class HealthSeekingBehaviour(Module):
@@ -137,7 +137,7 @@ class HealthSeekingBehaviour(Module):
 
         # Schedule the HealthSeekingBehaviourPoll
         self.theHealthSeekingBehaviourPoll = HealthSeekingBehaviourPoll(self)
-        sim.schedule_event(self.theHealthSeekingBehaviourPoll, sim.date, event_priority=EventPriority.LAST_HALF_OF_DAY)
+        sim.schedule_event(self.theHealthSeekingBehaviourPoll, sim.date)
 
         # Assemble the health-care seeking information from the registered symptoms
         for symptom in self.sim.modules['SymptomManager'].all_registered_symptoms:
@@ -232,7 +232,7 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         """Initialise the HealthSeekingBehaviourPoll
         :param module: the module that created this event
         """
-        super().__init__(module, frequency=DateOffset(days=1), event_priority=EventPriority.LAST_HALF_OF_DAY)
+        super().__init__(module, frequency=DateOffset(days=1), priority=Priority.LAST_HALF_OF_DAY)
         assert isinstance(module, HealthSeekingBehaviour)
 
     @staticmethod
@@ -347,13 +347,12 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                 for care_seeking_ids in (
                     care_seeking_inpatients.index, care_seeking_non_inpatients.index
                 ):
-                    # Schedule generic non-emergency appointments after a delay
-                    _delay = module.rng.randint(0, max_delay, size=len(care_seeking_ids)) \
-                        if max_delay != 0 else np.array([0] * len(care_seeking_ids), dtype='int')
+                    # Schedule generic non-emergency appointments after a random delay
                     care_seeking_dates = (
                         # Create NumPy datetime with day unit to allow directly adding
-                        # array of generated integer delays
-                        np.array(self.sim.date, dtype='datetime64[D]') + _delay
+                        # array of generated integer delays in [0, max_delay]
+                        np.array(self.sim.date, dtype='datetime64[D]')
+                        + module.rng.randint(0, max_delay, size=len(care_seeking_ids))
                     )
                     health_system.schedule_batch_of_individual_hsi_events(
                         hsi_event_class=routine_hsi_event_class,

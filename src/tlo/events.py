@@ -1,6 +1,20 @@
 """Support for creating different kinds of events."""
+from enum import Enum
 
 from tlo import DateOffset
+
+
+class Priority(Enum):
+    """Enumeration for the Priority, which is used in sorting the events in the simulation queue."""
+    START_OF_DAY = 0
+    FIRST_HALF_OF_DAY = 25
+    LAST_HALF_OF_DAY = 75
+    END_OF_DAY = 100
+
+    def __lt__(self, other):
+        if self.__class__ is other.__class__:
+            return self.value < other.value
+        return NotImplemented
 
 
 class Event:
@@ -10,7 +24,7 @@ class Event:
     defined below, and implement at least an `apply` method.
     """
 
-    def __init__(self, module, *args, **kwargs):
+    def __init__(self, module, *args, priority=Priority.FIRST_HALF_OF_DAY, **kwargs):
         """Create a new event.
 
         Note that just creating an event does not schedule it to happen; that
@@ -19,9 +33,12 @@ class Event:
         :param module: the module that created this event.
             All subclasses of Event take this as the first argument in their
             constructor, but may also take further keyword arguments.
+        :param priority: a keyword-argument to set the priority (see Priority enum)
         """
+        assert isinstance(priority, Priority), "priority argument should be a value from Priority enum"
         self.module = module
         self.sim = module.sim
+        self.priority = priority
         # This is needed so mixin constructors are called
         super().__init__(*args, **kwargs)
 
@@ -38,7 +55,7 @@ class Event:
 class RegularEvent(Event):
     """An event that automatically reschedules itself at a fixed frequency."""
 
-    def __init__(self, module, *, frequency, end_date=None, event_priority=None):
+    def __init__(self, module, *, frequency, end_date=None, **kwargs):
         """Create a new regular event.
 
         :param module: the module that created this event
@@ -46,17 +63,16 @@ class RegularEvent(Event):
             (must be supplied as a keyword argument)
         :type frequency: pandas.tseries.offsets.DateOffset
         """
-        super().__init__(module)
+        super().__init__(module, **kwargs)
         assert isinstance(frequency, DateOffset)
         self.frequency = frequency
         self.end_date = end_date
-        self._event_priority = event_priority
 
     def post_apply_hook(self):
         """Schedule the next occurrence of this event."""
         next_apply_date = self.sim.date + self.frequency
         if not self.end_date or next_apply_date <= self.end_date:
-            self.sim.schedule_event(self, next_apply_date, event_priority=self._event_priority)
+            self.sim.schedule_event(self, next_apply_date)
 
 
 class PopulationScopeEventMixin:
