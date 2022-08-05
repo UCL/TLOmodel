@@ -59,7 +59,7 @@ sim.register(
     enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
     symptommanager.SymptomManager(resourcefilepath=resources),
     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
-    healthsystem.HealthSystem(resourcefilepath=resources, disable=False, ignore_cons_constraints=True),
+    healthsystem.HealthSystem(resourcefilepath=resources, disable=False),
     # <-- HealthSystem functioning
 
     contraception.Contraception(resourcefilepath=resources, use_healthsystem=True),  # <-- using HealthSystem
