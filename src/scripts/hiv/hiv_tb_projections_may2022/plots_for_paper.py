@@ -907,6 +907,124 @@ tb_tx_full3 = tb_tx_coverage_full(results3)
 tb_tx_full4 = tb_tx_coverage_full(results4)
 
 # ---------------------------------- PLOTS ---------------------------------- #
+
+scale = sf[0][0].values[0]
+
+
+# Make plot
+fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=2, ncols=2,
+                                             sharex=True,
+                                             constrained_layout=True,
+                                             figsize=(9, 8))
+fig.suptitle('')
+
+# TB tests
+ax1.plot(tb_dx0.index, tx_id0["Tb_Test_Screening_median"][1:26] * sf[0][0].values[0], "-", color=berry[5])
+ax1.fill_between(tb_dx0.index, tx_id0["Tb_Test_Screening_lower"][1:26] * sf[0][0].values[0],
+                 tx_id0["Tb_Test_Screening_upper"][1:26] * sf[0][0].values[0], color=berry[5], alpha=0.2)
+
+ax1.plot(tb_dx0.index, tx_id1["Tb_Test_Screening_median"][1:26] * sf[0][0].values[0], "-", color=berry[4])
+ax1.fill_between(tb_dx0.index, tx_id1["Tb_Test_Screening_lower"][1:26] * sf[0][0].values[0],
+                 tx_id1["Tb_Test_Screening_upper"][1:26] * sf[0][0].values[0], color=berry[4], alpha=0.2)
+
+ax1.plot(tb_dx0.index, tx_id2["Tb_Test_Screening_median"][1:26] * sf[0][0].values[0], "-", color=berry[3])
+ax1.fill_between(tb_dx0.index, tx_id2["Tb_Test_Screening_lower"][1:26] * sf[0][0].values[0],
+                 tx_id2["Tb_Test_Screening_upper"][1:26] * sf[0][0].values[0], color=berry[3], alpha=0.2)
+
+ax1.plot(tb_dx0.index, tx_id3["Tb_Test_Screening_median"][1:26] * sf[0][0].values[0], "-", color=berry[2])
+ax1.fill_between(tb_dx0.index, tx_id3["Tb_Test_Screening_lower"][1:26] * sf[0][0].values[0],
+                 tx_id3["Tb_Test_Screening_upper"][1:26] * sf[0][0].values[0], color=berry[2], alpha=0.2)
+
+ax1.plot(tb_dx0.index, tx_id4["Tb_Test_Screening_median"][1:26] * sf[0][0].values[0], "-", color=berry[1])
+ax1.fill_between(tb_dx0.index, tx_id4["Tb_Test_Screening_lower"][1:26] * sf[0][0].values[0],
+                 tx_id4["Tb_Test_Screening_upper"][1:26] * sf[0][0].values[0], color=berry[1], alpha=0.2)
+ax1.set_ylim([5000000, 10000000])
+
+ax1.set(title='',
+       ylabel='No. test appts')
+
+ax1.legend(labels=["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4"])
+
+# TB start treatment
+ax2.plot(tb_dx0.index, tx_id0["Tb_Treatment_median"][1:26] * sf[0][0].values[0], "-", color=berry[5])
+ax2.fill_between(tb_dx0.index, tx_id0["Tb_Treatment_lower"][1:26] * sf[0][0].values[0],
+                 tx_id0["Tb_Treatment_upper"][1:26] * sf[0][0].values[0], color=berry[5], alpha=0.2)
+
+ax2.plot(tb_dx0.index, tx_id1["Tb_Treatment_median"][1:26] * sf[0][0].values[0], "-", color=berry[4])
+ax2.fill_between(tb_dx0.index, tx_id1["Tb_Treatment_lower"][1:26] * sf[0][0].values[0],
+                 tx_id1["Tb_Treatment_upper"][1:26] * sf[0][0].values[0], color=berry[4], alpha=0.2)
+
+ax2.plot(tb_dx0.index, tx_id2["Tb_Treatment_median"][1:26] * sf[0][0].values[0], "-", color=berry[3])
+ax2.fill_between(tb_dx0.index, tx_id2["Tb_Treatment_lower"][1:26] * sf[0][0].values[0],
+                 tx_id2["Tb_Treatment_upper"][1:26] * sf[0][0].values[0], color=berry[3], alpha=0.2)
+
+ax2.plot(tb_dx0.index, tx_id3["Tb_Treatment_median"][1:26] * sf[0][0].values[0], "-", color=berry[2])
+ax2.fill_between(tb_dx0.index, tx_id3["Tb_Treatment_lower"][1:26] * sf[0][0].values[0],
+                 tx_id3["Tb_Treatment_upper"][1:26] * sf[0][0].values[0], color=berry[2], alpha=0.2)
+
+ax2.plot(tb_dx0.index, tx_id4["Tb_Treatment_median"][1:26] * sf[0][0].values[0], "-", color=berry[1])
+ax2.fill_between(tb_dx0.index, tx_id4["Tb_Treatment_lower"][1:26] * sf[0][0].values[0],
+                 tx_id4["Tb_Treatment_upper"][1:26] * sf[0][0].values[0], color=berry[1], alpha=0.2)
+
+ax2.set_ylim([10000, 60000])
+
+ax2.set(title='',
+       ylabel='No. treatment appts')
+ax2.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+
+# TB proportion diagnosed
+ax3.plot(tb_dx0.index, tb_dx0["median"], "-", color=berry[5])
+ax3.fill_between(tb_dx0.index, tb_dx0["lower"], tb_dx0["upper"], color=berry[5], alpha=0.2)
+
+ax3.plot(tb_dx1.index, tb_dx1["median"], "-", color=berry[4])
+ax3.fill_between(tb_dx1.index, tb_dx1["lower"], tb_dx1["upper"], color=berry[4], alpha=0.2)
+
+ax3.plot(tb_dx2.index, tb_dx2["median"], "-", color=berry[3])
+ax3.fill_between(tb_dx2.index, tb_dx2["lower"], tb_dx2["upper"], color=berry[3], alpha=0.2)
+
+ax3.plot(tb_dx3.index, tb_dx3["median"], "-", color=berry[2])
+ax3.fill_between(tb_dx3.index, tb_dx3["lower"], tb_dx3["upper"], color=berry[2], alpha=0.2)
+
+ax3.plot(tb_dx4.index, tb_dx4["median"], "-", color=berry[1])
+ax3.fill_between(tb_dx4.index, tb_dx4["lower"], tb_dx4["upper"], color=berry[1], alpha=0.2)
+
+ax3.set_ylim([0, 1.1])
+ax3.set(title='',
+       ylabel='Proportion diagnosed')
+
+
+# TB treatment coverage
+ax4.plot(tb_tx0.index, tb_tx0["median"], "-", color=berry[5])
+ax4.fill_between(tb_tx0.index, tb_tx0["lower"], tb_tx0["upper"], color=berry[5], alpha=0.2)
+
+ax4.plot(tb_tx1.index, tb_tx1["median"], "-", color=berry[4])
+ax4.fill_between(tb_tx1.index, tb_tx1["lower"], tb_tx1["upper"], color=berry[4], alpha=0.2)
+
+ax4.plot(tb_tx2.index, tb_tx2["median"], "-", color=berry[3])
+ax4.fill_between(tb_tx2.index, tb_tx2["lower"], tb_tx2["upper"], color=berry[3], alpha=0.2)
+
+ax4.plot(tb_tx3.index, tb_tx3["median"], "-", color=berry[2])
+ax4.fill_between(tb_tx3.index, tb_tx3["lower"], tb_tx3["upper"], color=berry[2], alpha=0.2)
+
+ax4.plot(tb_tx4.index, tb_tx4["median"], "-", color=berry[1])
+ax4.fill_between(tb_tx4.index, tb_tx4["lower"], tb_tx4["upper"], color=berry[1], alpha=0.2)
+
+ax4.set_ylim([0, 1.1])
+
+ax4.set(title='',
+       ylabel='Proportion treated')
+
+plt.tick_params(axis="both", which="major", labelsize=10)
+fig.savefig(outputspath / "TBtreatment_cascade_4panel.png")
+
+plt.show()
+
+
+
+
+
+# ---------------------------- 3d-plots ------------------------------------
+
 # TB test appts and TB proportion diagnosed
 
 x0 = tx_id0["Tb_Test_Screening_median"].values[1:26]
@@ -964,7 +1082,7 @@ plt.legend(bbox_to_anchor=(-0.4,0.4), loc="center left", facecolor="white")
 plt.show()
 
 #--------------------------------------------
-# TB test appts and TB proportion diagnosed
+# TB treatment appts and TB proportion treated
 
 x0 = tx_id0["Tb_Treatment_median"].values[1:26]
 x1 = tx_id1["Tb_Treatment_median"].values[1:26]
@@ -1016,6 +1134,6 @@ ax.set_ylim3d(150, 400)
 
 plt.legend(bbox_to_anchor=(-0.4,0.4), loc="center left", facecolor="white")
 
-# fig.savefig(outputspath / "Tb_treated.png")
+fig.savefig(outputspath / "Tb_treated.png")
 
 plt.show()
