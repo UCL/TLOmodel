@@ -139,6 +139,33 @@ def treatment_counts(results_folder, module, key, column):
     return results
 
 
+def treatment_counts_full(results_folder, module, key, column, treatment_id):
+    info = get_scenario_info(results_folder)
+
+    df_list = list()
+    for draw in range(info['number_of_draws']):
+        for run in range(info['runs_per_draw']):
+
+            # check if anything contained in folder (some runs failed)
+            folder = results_folder / str(draw) / str(run)
+            p: os.DirEntry
+            pickles = [p for p in os.scandir(folder) if p.name.endswith('.pickle')]
+            if pickles:
+                df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
+
+                new = df[['date', column]].copy()
+                df_list.append(pd.DataFrame(new[column].to_list()))
+
+    # join all treatment_id outputs from every draw/run
+    results = pd.DataFrame(index=np.arange(years_of_simulation))
+    for i in range(len(df_list)):
+        tmp = df_list[i][treatment_id]
+        # append output to dataframe
+        results.loc[:, i] = tmp
+
+    return results
+
+
 tx_id0 = treatment_counts(results_folder=results0,
                           module="tlo.methods.healthsystem.summary",
                           key="HSI_Event",
@@ -163,6 +190,69 @@ tx_id4 = treatment_counts(results_folder=results4,
                           module="tlo.methods.healthsystem.summary",
                           key="HSI_Event",
                           column="TREATMENT_ID")
+
+# get full treatment counts for each draw
+tb_test_counts0 = treatment_counts_full(results_folder=results0,
+                                        module="tlo.methods.healthsystem.summary",
+                                        key="HSI_Event",
+                                        column="TREATMENT_ID",
+                                        treatment_id="Tb_Test_Screening")
+
+tb_test_counts1 = treatment_counts_full(results_folder=results1,
+                                        module="tlo.methods.healthsystem.summary",
+                                        key="HSI_Event",
+                                        column="TREATMENT_ID",
+                                        treatment_id="Tb_Test_Screening")
+
+tb_test_counts2 = treatment_counts_full(results_folder=results2,
+                          module="tlo.methods.healthsystem.summary",
+                          key="HSI_Event",
+                          column="TREATMENT_ID",
+                          treatment_id="Tb_Test_Screening")
+
+tb_test_counts3 = treatment_counts_full(results_folder=results3,
+                          module="tlo.methods.healthsystem.summary",
+                          key="HSI_Event",
+                          column="TREATMENT_ID",
+                          treatment_id="Tb_Test_Screening")
+
+tb_test_counts4 = treatment_counts_full(results_folder=results4,
+                          module="tlo.methods.healthsystem.summary",
+                          key="HSI_Event",
+                          column="TREATMENT_ID",
+                          treatment_id="Tb_Test_Screening")
+
+# tb treatment
+tb_tx_counts0 = treatment_counts_full(results_folder=results0,
+                                        module="tlo.methods.healthsystem.summary",
+                                        key="HSI_Event",
+                                        column="TREATMENT_ID",
+                                        treatment_id="Tb_Treatment")
+
+tb_tx_counts1 = treatment_counts_full(results_folder=results1,
+                                        module="tlo.methods.healthsystem.summary",
+                                        key="HSI_Event",
+                                        column="TREATMENT_ID",
+                                        treatment_id="Tb_Treatment")
+
+tb_tx_counts2 = treatment_counts_full(results_folder=results2,
+                          module="tlo.methods.healthsystem.summary",
+                          key="HSI_Event",
+                          column="TREATMENT_ID",
+                          treatment_id="Tb_Treatment")
+
+tb_tx_counts3 = treatment_counts_full(results_folder=results3,
+                          module="tlo.methods.healthsystem.summary",
+                          key="HSI_Event",
+                          column="TREATMENT_ID",
+                          treatment_id="Tb_Treatment")
+
+tb_tx_counts4 = treatment_counts_full(results_folder=results4,
+                          module="tlo.methods.healthsystem.summary",
+                          key="HSI_Event",
+                          column="TREATMENT_ID",
+                          treatment_id="Tb_Treatment")
+
 
 # select treatments relating to TB and HIV
 tx0 = tx_id0[tx_id0.columns[pd.Series(tx_id0.columns).str.startswith(('Hiv', 'Tb'))]]
@@ -667,5 +757,265 @@ plt.tick_params(axis="both", which="major", labelsize=10)
 plt.legend(labels=["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4"])
 
 fig.savefig(outputspath / "Epi_outputs.png")
+
+plt.show()
+
+
+# -----------------------------------------------------------------------------------------
+# %% TB treatment cascade
+# -----------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+# ---------------------------------- TREATMENT COVERAGE ---------------------------------- #
+
+# get scaling factor for numbers of tests performed and treatments requested
+# scaling factor 145.39609
+sf = extract_results(
+    results0,
+    module="tlo.methods.population",
+    key="scaling_factor",
+    column="scaling_factor",
+    index="date",
+    do_scaling=False)
+
+
+# tb proportion diagnosed
+# todo note this will include false positives and cases from previous year
+def tb_proportion_diagnosed(results_folder):
+
+    tb_case = extract_results(
+        results_folder,
+        module="tlo.methods.tb",
+        key="tb_incidence",
+        column="num_new_active_tb",
+        index="date",
+        do_scaling=False
+    )
+
+    tb_dx = extract_results(
+        results_folder,
+        module="tlo.methods.tb",
+        key="tb_treatment",
+        column="tbNewDiagnosis",
+        index="date",
+        do_scaling=False
+    )
+
+    prop_dx = tb_dx.divide(tb_case, axis='columns')
+    prop_dx_out = pd.DataFrame(index=prop_dx.index, columns=["median", "lower", "upper"])
+    prop_dx_out["median"] = prop_dx.median(axis=1)
+    prop_dx_out["lower"] = prop_dx.quantile(q=0.025, axis=1)
+    prop_dx_out["upper"] = prop_dx.quantile(q=0.975, axis=1)
+
+    # replace values >1 with 1
+    prop_dx_out[prop_dx_out > 1] = 1
+
+    return prop_dx_out
+
+
+def tb_proportion_diagnosed_full(results_folder):
+
+    tb_case = extract_results(
+        results_folder,
+        module="tlo.methods.tb",
+        key="tb_incidence",
+        column="num_new_active_tb",
+        index="date",
+        do_scaling=False
+    )
+
+    tb_dx = extract_results(
+        results_folder,
+        module="tlo.methods.tb",
+        key="tb_treatment",
+        column="tbNewDiagnosis",
+        index="date",
+        do_scaling=False
+    )
+
+    prop_dx = tb_dx.divide(tb_case, axis='columns')
+    prop_dx = prop_dx.T.reset_index(drop=True).T
+    # replace values >1 with 1
+    prop_dx[prop_dx > 1] = 1
+
+    return prop_dx
+
+
+tb_dx0 = tb_proportion_diagnosed(results0)
+tb_dx1 = tb_proportion_diagnosed(results1)
+tb_dx2 = tb_proportion_diagnosed(results2)
+tb_dx3 = tb_proportion_diagnosed(results3)
+tb_dx4 = tb_proportion_diagnosed(results4)
+
+tb_dx_full0 = tb_proportion_diagnosed_full(results0)
+tb_dx_full1 = tb_proportion_diagnosed_full(results1)
+tb_dx_full2 = tb_proportion_diagnosed_full(results2)
+tb_dx_full3 = tb_proportion_diagnosed_full(results3)
+tb_dx_full4 = tb_proportion_diagnosed_full(results4)
+
+
+# tb treatment coverage
+def tb_tx_coverage(results_folder):
+    tx_cov = extract_results(
+        results_folder,
+        module="tlo.methods.tb",
+        key="tb_treatment",
+        column="tbTreatmentCoverage",
+        index="date",
+        do_scaling=False
+    )
+
+    tx_cov.columns = tx_cov.columns.get_level_values(0)
+    tx_cov_summary = pd.DataFrame(index=tx_cov.index, columns=["median", "lower", "upper"])
+    tx_cov_summary["median"] = tx_cov.median(axis=1)
+    tx_cov_summary["lower"] = tx_cov.quantile(q=0.025, axis=1)
+    tx_cov_summary["upper"] = tx_cov.quantile(q=0.975, axis=1)
+
+    return tx_cov_summary
+
+def tb_tx_coverage_full(results_folder):
+    tx_cov = extract_results(
+        results_folder,
+        module="tlo.methods.tb",
+        key="tb_treatment",
+        column="tbTreatmentCoverage",
+        index="date",
+        do_scaling=False
+    )
+
+    tx_cov.columns = tx_cov.columns.get_level_values(0)
+
+    return tx_cov
+
+
+tb_tx0 = tb_tx_coverage(results0)
+tb_tx1 = tb_tx_coverage(results1)
+tb_tx2 = tb_tx_coverage(results2)
+tb_tx3 = tb_tx_coverage(results3)
+tb_tx4 = tb_tx_coverage(results4)
+
+tb_tx_full0 = tb_tx_coverage_full(results0)
+tb_tx_full1 = tb_tx_coverage_full(results1)
+tb_tx_full2 = tb_tx_coverage_full(results2)
+tb_tx_full3 = tb_tx_coverage_full(results3)
+tb_tx_full4 = tb_tx_coverage_full(results4)
+
+# ---------------------------------- PLOTS ---------------------------------- #
+# TB test appts and TB proportion diagnosed
+
+x0 = tx_id0["Tb_Test_Screening_median"].values[1:26]
+x1 = tx_id1["Tb_Test_Screening_median"].values[1:26]
+x2 = tx_id2["Tb_Test_Screening_median"].values[1:26]
+x3 = tx_id3["Tb_Test_Screening_median"].values[1:26]
+x4 = tx_id4["Tb_Test_Screening_median"].values[1:26]
+
+y = years_num.values[1:26]
+
+z0 = tb_dx0["median"].values
+z1 = tb_dx1["median"].values
+z2 = tb_dx2["median"].values
+z3 = tb_dx3["median"].values
+z4 = tb_dx4["median"].values
+
+
+plt.style.use('ggplot')
+
+
+fig = plt.figure()
+fig.tight_layout()
+ax = plt.axes(projection='3d')
+
+ax.plot(y, x0, z0, color=berry[5], label="Scenario 0");
+for i in range(len(tb_dx_full0.columns)):
+    ax.plot(y, tb_test_counts0.iloc[1:26, i], tb_dx_full0.iloc[:, i], color=berry[5], alpha=0.1);
+
+ax.plot(y, x1, z1, color=berry[4], label="Scenario 1");
+for i in range(len(tb_dx_full0.columns)):
+    ax.plot(y, tb_test_counts1.iloc[1:26, i], tb_dx_full1.iloc[:, i], color=berry[4], alpha=0.1);
+
+ax.plot(y, x2, z2, color=berry[3], label="Scenario 2");
+for i in range(len(tb_dx_full0.columns)):
+    ax.plot(y, tb_test_counts2.iloc[1:26, i], tb_dx_full2.iloc[:, i], color=berry[3], alpha=0.1);
+
+ax.plot(y, x3, z3, color=berry[2], label="Scenario 3");
+for i in range(len(tb_dx_full0.columns)):
+    ax.plot(y, tb_test_counts3.iloc[1:26, i], tb_dx_full3.iloc[:, i], color=berry[2], alpha=0.1);
+
+ax.plot(y, x4, z4, color=berry[1], label="Scenario 4");
+for i in range(len(tb_dx_full0.columns)):
+    ax.plot(y, tb_test_counts4.iloc[1:26, i], tb_dx_full4.iloc[:, i], color=berry[1], alpha=0.1);
+
+ax.set(facecolor='w')
+
+xLabel = ax.set_xlabel('\nYear', linespacing=1.5)
+yLabel = ax.set_ylabel('\nNo. treatment appts', linespacing=2.1)
+zLabel = ax.set_zlabel('\nProportion treated', linespacing=1.4)
+
+plt.legend(bbox_to_anchor=(-0.4,0.4), loc="center left", facecolor="white")
+
+# fig.savefig(outputspath / "Tb_diagnosed.png")
+
+plt.show()
+
+#--------------------------------------------
+# TB test appts and TB proportion diagnosed
+
+x0 = tx_id0["Tb_Treatment_median"].values[1:26]
+x1 = tx_id1["Tb_Treatment_median"].values[1:26]
+x2 = tx_id2["Tb_Treatment_median"].values[1:26]
+x3 = tx_id3["Tb_Treatment_median"].values[1:26]
+x4 = tx_id4["Tb_Treatment_median"].values[1:26]
+
+y = years_num.values[1:26]
+
+z0 = tb_tx0["median"].values
+z1 = tb_tx1["median"].values
+z2 = tb_tx2["median"].values
+z3 = tb_tx3["median"].values
+z4 = tb_tx4["median"].values
+
+
+fig = plt.figure()
+fig.tight_layout()
+ax = plt.axes(projection='3d')
+
+ax.plot(y, x0, z0, color=berry[5], label="Scenario 0");
+for i in range(len(tb_tx_full0.columns)):
+    ax.plot(y, tb_tx_counts0.iloc[1:26, i], tb_tx_full0.iloc[:, i], color=berry[5], alpha=0.1);
+
+ax.plot(y, x1, z1, color=berry[4], label="Scenario 1");
+for i in range(len(tb_tx_full1.columns)):
+    ax.plot(y, tb_tx_counts1.iloc[1:26, i], tb_tx_full1.iloc[:, i], color=berry[4], alpha=0.1);
+
+ax.plot(y, x2, z2, color=berry[3], label="Scenario 2");
+for i in range(len(tb_tx_full2.columns)):
+    ax.plot(y, tb_tx_counts2.iloc[1:26, i], tb_tx_full2.iloc[:, i], color=berry[3], alpha=0.1);
+
+ax.plot(y, x3, z3, color=berry[2], label="Scenario 3");
+for i in range(len(tb_tx_full3.columns)):
+    ax.plot(y, tb_tx_counts3.iloc[1:26, i], tb_tx_full3.iloc[:, i], color=berry[2], alpha=0.1);
+
+ax.plot(y, x4, z4, color=berry[1], label="Scenario 4");
+for i in range(len(tb_tx_full4.columns)):
+    ax.plot(y, tb_tx_counts4.iloc[1:26, i], tb_tx_full4.iloc[:, i], color=berry[1], alpha=0.1);
+
+ax.set(facecolor='w')
+
+xLabel = ax.set_xlabel('\nYear', linespacing=1.5)
+yLabel = ax.set_ylabel('\nNo. treatment appts', linespacing=2.1)
+zLabel = ax.set_zlabel('\nProportion treated', linespacing=1.4)
+
+ax.set_zlim3d(0.3, 0.8)
+ax.set_ylim3d(150, 400)
+
+plt.legend(bbox_to_anchor=(-0.4,0.4), loc="center left", facecolor="white")
+
+# fig.savefig(outputspath / "Tb_treated.png")
 
 plt.show()
