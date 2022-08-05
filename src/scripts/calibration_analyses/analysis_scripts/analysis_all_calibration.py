@@ -45,7 +45,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
 
 if __name__ == "__main__":
-    outputspath = Path('./outputs/sejjtec@ucl.ac.uk')
+    outputspath = Path('./outputs/sejjtec@ucl.ac.uk/')
     rfp = Path('./resources')
 
     # Find results folder (most recent run generated using that scenario_filename)
@@ -53,7 +53,7 @@ if __name__ == "__main__":
     results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
 
     # Test dataset:
-    # results_folder = Path('/Users/tbh03/GitHub/TLOmodel/outputs/tbh03@ic.ac.uk/long_run_all_diseases-small')
+    # results_folder = Path('/Users/timothycolbourn/PycharmProjects/TLOmodel/outputs/sejjtec@ucl.ac.uk/long_run_no_diseases-2022-08-04T195703Z')
 
     # If needed -- in the case that pickles were not created remotely during batch
     # create_pickles_locally(results_folder)
