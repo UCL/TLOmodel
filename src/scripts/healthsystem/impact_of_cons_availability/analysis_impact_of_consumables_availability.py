@@ -19,7 +19,7 @@ from tlo.analysis.utils import (
     summarize,
 )
 
-outputspath = Path('./outputs/tbh03@ic.ac.uk')
+outputspath = Path('./outputs/sejjtec@ucl.ac.uk')
 
 
 # %% Gathering basic information
