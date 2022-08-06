@@ -372,7 +372,7 @@ class Contraception(Module):
 
             _init_over_time = np.exp(+0.05 * np.minimum(2020 - 2010, (_years - 2010))) * np.maximum(1.0, np.exp(
                 +0.01 * (_years - 2020)))
-            _init_over_time_modification_by_age = 1.0 / expand_to_age_years([1.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5], _ages)
+            _init_over_time_modification_by_age = 1.0 / expand_to_age_years([1.0, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6], _ages)
             _init = np.outer(_init_over_time, _init_over_time_modification_by_age)
 
             return pd.DataFrame(index=_years, columns=_ages, data=_init)
