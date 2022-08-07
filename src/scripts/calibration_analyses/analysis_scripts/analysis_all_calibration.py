@@ -63,7 +63,7 @@ if __name__ == "__main__":
     outputspath = Path('./outputs/sejjtec@ucl.ac.uk/')
 
     # Find results folder (most recent run generated using that scenario_filename)
-    scenario_filename = 'long_run_no_diseases.py'
+    scenario_filename = 'long_run_all_diseases.py'
     results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
 
     # Test dataset:
