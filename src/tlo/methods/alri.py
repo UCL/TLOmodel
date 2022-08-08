@@ -2858,12 +2858,14 @@ class Tracker:
     def reset(self):
         """Produce a dict of the form: { <Age-Grp>: {<Pathogen>: <Count>} } if age-groups and pathogens are specified;
         otherwise the tracker is an integer."""
+
+        # if collections are not empty
         if self.unique_age_grps and self.pathogens:
-            self.tracker = 0
-        else:
             self.tracker = {
                 age: dict(zip(self.pathogens, [0] * len(self.pathogens))) for age in self.unique_age_grps
             }
+        else:
+            self.tracker = 0
 
     def add_one(self, age=None, pathogen=None):
         """Increment counter by one for a specific age and pathogen"""
