@@ -292,14 +292,9 @@ class Lifestyle(Module):
     PROPERTIES = {
         'li_urban': Property(Types.BOOL, 'Currently urban'),
         'li_wealth': Property(Types.CATEGORICAL, 'wealth level: 1 (high) to 5 (low)', categories=[1, 2, 3, 4, 5]),
-        # todo make BMI property categorical
-        # 'li_bmi': Property(
-        #     Types.CATEGORICAL, 'bmi: 1 (<18/80-100%) 2 (18-24.9/60-79%)  3 (25-29.9/40-59%) 4 (30-34.9/20-39%)'
-        #                        ' 5 (35+/0-19%)' 'bmi is np.nan until age 15', categories=[0, 1, 2, 3, 4, 5]
-        # ),
         'li_bmi': Property(
-            Types.INT, 'bmi: 1 (<18/80-100%) 2 (18-24.9/60-79%)  3 (25-29.9/40-59%) 4 (30-34.9/20-39%)'
-                       ' 5 (35+/0-19%)' 'bmi is np.nan until age 15'
+            Types.CATEGORICAL, 'bmi: 1 (<18/80-100%) 2 (18-24.9/60-79%)  3 (25-29.9/40-59%) 4 (30-34.9/20-39%)'
+                               ' 5 (35+/0-19%)' 'bmi is np.nan until age 15', categories=[0, 1, 2, 3, 4, 5], optional=True
         ),
         'li_exposed_to_campaign_weight_reduction': Property(
             Types.BOOL, 'currently exposed to population campaign for ' 'weight reduction if BMI >= 25'
@@ -1828,7 +1823,7 @@ class LifestyleModels:
             trans_bmi.loc[age15_idx] = 3
 
             # possible increase in category of bmi
-            bmi_cat_1_to_4_idx = df.index[df.is_alive & (df.age_years >= 15) & df.li_bmi.between(1, 4)]
+            bmi_cat_1_to_4_idx = df.index[df.is_alive & (df.age_years >= 15) & df.li_bmi.isin(range(1, 5))]
             eff_rate_higher_bmi = pd.Series(p['r_higher_bmi'], index=bmi_cat_1_to_4_idx)
             eff_rate_higher_bmi[df.li_urban] *= p['rr_higher_bmi_urban']
             eff_rate_higher_bmi[df.sex == 'F'] *= p['rr_higher_bmi_f']
@@ -1843,17 +1838,16 @@ class LifestyleModels:
 
             random_draw = rng.random_sample(len(bmi_cat_1_to_4_idx))
             newly_increase_bmi_cat_idx = bmi_cat_1_to_4_idx[random_draw < eff_rate_higher_bmi]
-            trans_bmi.loc[newly_increase_bmi_cat_idx] = df['li_bmi'] + 1
+            trans_bmi.loc[newly_increase_bmi_cat_idx] = df['li_bmi'].astype('int64') + 1
 
             # possible decrease in category of bmi
-
-            bmi_cat_3_to_5_idx = df.index[df.is_alive & df.li_bmi.between(3, 5) & (df.age_years >= 15)]
+            bmi_cat_3_to_5_idx = df.index[df.is_alive & df.li_bmi.isin(range(3, 6)) & (df.age_years >= 15)]
             eff_rate_lower_bmi = pd.Series(p['r_lower_bmi'], index=bmi_cat_3_to_5_idx)
             eff_rate_lower_bmi[df.li_urban] *= p['rr_lower_bmi_tob']
             eff_rate_lower_bmi.loc[df.li_exposed_to_campaign_weight_reduction] *= p['rr_lower_bmi_pop_advice_weight']
             random_draw = rng.random_sample(len(bmi_cat_3_to_5_idx))
             newly_decrease_bmi_cat_idx = bmi_cat_3_to_5_idx[random_draw < eff_rate_lower_bmi]
-            trans_bmi.loc[newly_decrease_bmi_cat_idx] = df['li_bmi'] - 1
+            trans_bmi.loc[newly_decrease_bmi_cat_idx] = df['li_bmi'].astype('int64') - 1
 
             # make exposed to campaing weigh reduction reflect individuals who have decreased their bmi category.
             # setting `li_exposed_to_campaign_weight_reduction` directly here, perhaps we can do better?
