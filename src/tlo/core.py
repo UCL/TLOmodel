@@ -143,7 +143,8 @@ class Property(Specifiable):
             s = pd.Series(
                 pd.Categorical(
                     values=np.repeat(np.nan, repeats=size),
-                    categories=self.categories
+                    categories=self.categories,
+                    ordered=self.optional
                 ),
                 name=name,
                 index=range(size),
