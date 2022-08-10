@@ -224,10 +224,16 @@ class Simulation:
 
             if self.show_progress_bar:
                 simulation_day = (date - start_date).days
-                progress_bar.update(
-                    simulation_day,
-                    stats_dict={"date": str(date.date())}
-                )
+                stats_dict = {
+                    "date": str(date.date()),
+                    "dataframe size": str(len(self.population.props)),
+                    "queued events": str(len(self.event_queue)),
+                }
+                if "HealthSystem" in self.modules:
+                    stats_dict["queued HSI events"] = str(
+                        len(self.modules["HealthSystem"].HSI_EVENT_QUEUE)
+                    )
+                progress_bar.update(simulation_day, stats_dict=stats_dict)
 
             if date >= end_date:
                 self.date = end_date
