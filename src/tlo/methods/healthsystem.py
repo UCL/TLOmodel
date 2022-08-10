@@ -220,7 +220,7 @@ class HSI_Event:
         # Return result in expected format:
         if not return_individual_results:
             # Determine if all results for all the `item_codes` are True (discarding results from optional_item_codes).
-            return all([v for k, v in rtn.items() if k in _item_codes])
+            return all(v for k, v in rtn.items() if k in _item_codes)
         else:
             return rtn
 
@@ -1013,23 +1013,28 @@ class HealthSystem(Module):
         if not service_availability:
             # Empty list --> nothing is allowable
             return False
-        elif service_availability == ['*']:
+
+        if service_availability == ['*']:
             # Wildcard --> everything is allowed
             return True
-        elif treatment_id is None:
+
+        if treatment_id is None:
             # Treatment_id is None --> allowed
             return True
-        elif treatment_id in service_availability:
+
+        if treatment_id in service_availability:
             # Explicit inclusion of this treatment_id --> allowed
             return True
-        elif treatment_id.startswith('FirstAttendance'):
+
+        if treatment_id.startswith('FirstAttendance'):
             # FirstAttendance* --> allowable
             return True
-        else:
-            # Check if treatment_id matches any services specified with wildcard * patterns
-            for service_pattern in service_availability:
-                if fnmatch.fnmatch(treatment_id, service_pattern):
-                    return True
+
+        # Check if treatment_id matches any services specified with wildcard * patterns
+        for service_pattern in service_availability:
+            if fnmatch.fnmatch(treatment_id, service_pattern):
+                return True
+
         return False
 
     def schedule_batch_of_individual_hsi_events(
@@ -1207,9 +1212,7 @@ class HealthSystem(Module):
                 _match(_officer, facility_ids=facilities_of_same_level_in_all_district, officer_type=officer_type)
             ]
 
-            return sum(
-                [current_capabilities.get(_o) for _o in officers_in_the_same_level_in_all_districts]
-            )
+            return sum(current_capabilities.get(_o) for _o in officers_in_the_same_level_in_all_districts)
 
         # 1) Compute the load factors for each officer type at each facility that is
         # called-upon in this list of HSIs
@@ -1480,8 +1483,8 @@ class HealthSystem(Module):
                 )
 
             # For each event, determine to run or not, and run if so.
-            for ev_num, _ in enumerate(_list_of_individual_hsi_event_tuples):
-                event = _list_of_individual_hsi_event_tuples[ev_num].hsi_event
+            for ev_num, event in enumerate(_list_of_individual_hsi_event_tuples):
+                event = event.hsi_event
                 squeeze_factor = squeeze_factor_per_hsi_event[ev_num]                  # todo use zip here!
 
                 ok_to_run = (
