@@ -35,6 +35,7 @@
         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
         <script src="../../../_static/jquery.js"></script>
         <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
@@ -433,7 +434,7 @@
         <span class="s1">&#39;rr_pph_ua_macrosomia&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
             <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;relative risk risk of pph after secondary to uterine atony in women with macrosomic foetus&#39;</span><span class="p">),</span>
         <span class="s1">&#39;rr_pph_ua_diabetes&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
-             <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;risk of pph after experiencing uterine atony&#39;</span><span class="p">),</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;risk of pph after experiencing uterine atony&#39;</span><span class="p">),</span>
         <span class="s1">&#39;prob_pph_retained_placenta&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
             <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;risk of pph after experiencing retained placenta&#39;</span><span class="p">),</span>
         <span class="s1">&#39;prob_pph_other_causes&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
@@ -835,13 +836,13 @@
                                      <span class="s1">&#39;Disposables gloves, powder free, 100 pieces per box&#39;</span><span class="p">])</span>
 
         <span class="c1"># ---------------------------------- BLOOD TEST EQUIPMENT ---------------------------------------------------</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;blood_test_equipment&#39;</span><span class="p">]</span> <span class="o">=</span>\
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;blood_test_equipment&#39;</span><span class="p">]</span> <span class="o">=</span> \
             <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Disposables gloves, powder free, 100 pieces per box&#39;</span><span class="p">])</span>
         <span class="c1"># todo: remove entirely</span>
 
         <span class="c1"># -------------------------------------------- DELIVERY ------------------------------------------------------</span>
         <span class="c1"># assuming CDK has blade, soap, cord tie</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;delivery_core&#39;</span><span class="p">]</span> <span class="o">=</span>\
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;delivery_core&#39;</span><span class="p">]</span> <span class="o">=</span> \
             <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Clean delivery kit&#39;</span><span class="p">,</span>
                                      <span class="s1">&#39;Chlorhexidine 1.5</span><span class="si">% s</span><span class="s1">olution_5_CMST&#39;</span><span class="p">])</span>
 
@@ -854,12 +855,12 @@
         <span class="c1"># -------------------------------------------- CAESAREAN DELIVERY ------------------------------------------</span>
         <span class="c1"># TODO: this package is incomplete?</span>
         <span class="c1"># todo: replace- halothane with thiopental</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;caesarean_delivery_core&#39;</span><span class="p">]</span> <span class="o">=</span>\
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;caesarean_delivery_core&#39;</span><span class="p">]</span> <span class="o">=</span> \
             <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Halothane (fluothane)_250ml_CMST&#39;</span><span class="p">,</span>
                                      <span class="s1">&#39;Ceftriaxone 1g, PFR_each_CMST&#39;</span><span class="p">,</span>
                                      <span class="s1">&#39;Metronidazole 200mg_1000_CMST&#39;</span><span class="p">])</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;caesarean_delivery_optional&#39;</span><span class="p">]</span> <span class="o">=</span>\
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;caesarean_delivery_optional&#39;</span><span class="p">]</span> <span class="o">=</span> \
             <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">,</span>
                                      <span class="s1">&#39;Paracetamol, tablet, 500 mg&#39;</span><span class="p">,</span>
                                      <span class="s1">&#39;Declofenac injection_each_CMST&#39;</span><span class="p">,</span>
@@ -943,7 +944,7 @@
 
         <span class="c1"># -------------------------------------  MATERNAL SEPSIS  -----------------------------------------------------</span>
         <span class="c1"># todo: helen allott recommended clindamycin but not available as IV</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;maternal_sepsis_core&#39;</span><span class="p">]</span> <span class="o">=</span>\
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;maternal_sepsis_core&#39;</span><span class="p">]</span> <span class="o">=</span> \
             <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Benzylpenicillin 3g (5MU), PFR_each_CMST&#39;</span><span class="p">,</span>
                                      <span class="s1">&#39;Gentamycin, injection, 40 mg/ml in 2 ml vial&#39;</span><span class="p">])</span>
         <span class="c1"># &#39;Metronidazole, injection, 500 mg in 100 ml vial&#39;])</span>
@@ -1004,7 +1005,7 @@
         <span class="c1"># assert functions as a test</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">possible_intrapartum_complications</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;obstruction_cpd&#39;</span><span class="p">,</span> <span class="s1">&#39;obstruction_malpos_malpres&#39;</span><span class="p">,</span> <span class="s1">&#39;obstruction_other&#39;</span><span class="p">,</span>
                                                    <span class="s1">&#39;placental_abruption&#39;</span><span class="p">,</span> <span class="s1">&#39;antepartum_haem&#39;</span><span class="p">,</span> <span class="s1">&#39;sepsis&#39;</span><span class="p">,</span>
-                                                   <span class="s1">&#39;sepsis_chorioamnionitis&#39;</span><span class="p">,</span> <span class="s1">&#39;uterine_rupture&#39;</span><span class="p">,</span>  <span class="s1">&#39;severe_pre_eclamp&#39;</span><span class="p">,</span>
+                                                   <span class="s1">&#39;sepsis_chorioamnionitis&#39;</span><span class="p">,</span> <span class="s1">&#39;uterine_rupture&#39;</span><span class="p">,</span> <span class="s1">&#39;severe_pre_eclamp&#39;</span><span class="p">,</span>
                                                    <span class="s1">&#39;eclampsia&#39;</span><span class="p">]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">possible_postpartum_complications</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;sepsis_endometritis&#39;</span><span class="p">,</span> <span class="s1">&#39;sepsis_skin_soft_tissue&#39;</span><span class="p">,</span>
@@ -1057,7 +1058,6 @@
             <span class="c1"># by treatment</span>
             <span class="s1">&#39;intrapartum_sepsis_death&#39;</span><span class="p">:</span> <span class="n">LinearModel</span><span class="o">.</span><span class="n">custom</span><span class="p">(</span><span class="n">labour_lm</span><span class="o">.</span><span class="n">predict_sepsis_death</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="n">params</span><span class="p">),</span>
             <span class="s1">&#39;postpartum_sepsis_death&#39;</span><span class="p">:</span> <span class="n">LinearModel</span><span class="o">.</span><span class="n">custom</span><span class="p">(</span><span class="n">labour_lm</span><span class="o">.</span><span class="n">predict_sepsis_death</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="n">params</span><span class="p">),</span>
-
 
             <span class="c1"># This equation is used to calculate a womans risk of death following eclampsia and is mitigated</span>
             <span class="c1"># by treatment delivered either immediately prior to admission for delivery or during labour</span>
@@ -1310,7 +1310,7 @@
 
         <span class="c1"># If she is alive, pregnant, not in labour AND her due date is today then the event will run</span>
         <span class="k">if</span> <span class="n">person</span><span class="o">.</span><span class="n">is_alive</span> <span class="ow">and</span> <span class="n">person</span><span class="o">.</span><span class="n">is_pregnant</span> <span class="ow">and</span> <span class="p">(</span><span class="n">person</span><span class="o">.</span><span class="n">la_due_date_current_pregnancy</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span> \
-                <span class="ow">and</span> <span class="ow">not</span> <span class="n">person</span><span class="o">.</span><span class="n">la_currently_in_labour</span><span class="p">:</span>
+           <span class="ow">and</span> <span class="ow">not</span> <span class="n">person</span><span class="o">.</span><span class="n">la_currently_in_labour</span><span class="p">:</span>
 
             <span class="c1"># If the woman in not currently an inpatient then we assume this is her normal labour</span>
             <span class="k">if</span> <span class="n">person</span><span class="o">.</span><span class="n">ac_admitted_for_immediate_delivery</span> <span class="o">==</span> <span class="s1">&#39;none&#39;</span><span class="p">:</span>
@@ -1333,7 +1333,6 @@
         <span class="k">if</span> <span class="n">person</span><span class="o">.</span><span class="n">is_alive</span> <span class="ow">and</span> <span class="n">person</span><span class="o">.</span><span class="n">is_pregnant</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">person</span><span class="o">.</span><span class="n">la_currently_in_labour</span> <span class="ow">and</span> \
             <span class="p">(</span><span class="n">person</span><span class="o">.</span><span class="n">la_due_date_current_pregnancy</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">person</span><span class="o">.</span><span class="n">ac_admitted_for_immediate_delivery</span> <span class="o">!=</span>
                                                                          <span class="s1">&#39;none&#39;</span><span class="p">):</span>
-
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;person </span><span class="si">{</span><span class="n">individual_id</span><span class="si">}</span><span class="s1"> has just reached LabourOnsetEvent on &#39;</span>
                                              <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="si">}</span><span class="s1">- they have been admitted for delivery due to &#39;</span>
                                              <span class="sa">f</span><span class="s1">&#39;complications in the antenatal period and will now progress into the &#39;</span>
@@ -1731,7 +1730,7 @@
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">mother</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">individual_id</span><span class="p">]</span>
 
-        <span class="k">if</span><span class="p">(</span>
+        <span class="k">if</span> <span class="p">(</span>
             <span class="n">individual_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">women_in_labour</span> <span class="ow">or</span>
             <span class="n">mother</span><span class="o">.</span><span class="n">sex</span> <span class="o">!=</span> <span class="s1">&#39;F&#39;</span> <span class="ow">or</span>
             <span class="n">mother</span><span class="o">.</span><span class="n">age_years</span> <span class="o">&lt;</span> <span class="mi">14</span> <span class="ow">or</span>
@@ -1739,7 +1738,7 @@
             <span class="ow">not</span> <span class="n">mother</span><span class="o">.</span><span class="n">la_currently_in_labour</span> <span class="ow">or</span>
             <span class="n">mother</span><span class="o">.</span><span class="n">ps_gestational_age_in_weeks</span> <span class="o">&lt;</span> <span class="mi">22</span> <span class="ow">or</span>
             <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">mother</span><span class="o">.</span><span class="n">la_due_date_current_pregnancy</span><span class="p">)</span>
-          <span class="p">):</span>
+        <span class="p">):</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Person </span><span class="si">{</span><span class="n">individual_id</span><span class="si">}</span><span class="s1"> has characteristics that mean they should&#39;</span>
                                            <span class="sa">f</span><span class="s1">&#39; not be in labour &#39;</span><span class="p">)</span></div>
 
@@ -2226,7 +2225,7 @@
         <span class="k">if</span> <span class="p">(</span>
             <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;la_postpartum_haem&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;retained_placenta&#39;</span><span class="p">])</span> <span class="ow">or</span>
             <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;pn_postpartum_haem_secondary&#39;</span><span class="p">]</span>
-             <span class="p">):</span>
+        <span class="p">):</span>
 
             <span class="c1"># Log the consumables but dont condition the treatment on their availability - the primary mechanism of this</span>
             <span class="c1"># intervention doesnt require consumables</span>
@@ -2356,7 +2355,6 @@
                     <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;la_iron_folic_acid_postnatal&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;effect_of_ifa_for_resolving_anaemia&#39;</span><span class="p">]:</span>
-
                         <span class="c1"># Store date of resolution for daly calculations</span>
                         <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">store_dalys_in_mni</span><span class="p">(</span>
                             <span class="n">person_id</span><span class="p">,</span> <span class="n">mni</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;pn_anaemia_following_pregnancy&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">_anaemia_resolution&#39;</span><span class="p">,</span>
@@ -2364,7 +2362,7 @@
 
                         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;pn_anaemia_following_pregnancy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;none&#39;</span>
 
-        <span class="c1"># Severe anaemia would require treatment via blood transfusion</span>
+            <span class="c1"># Severe anaemia would require treatment via blood transfusion</span>
             <span class="k">if</span> <span class="n">mother</span><span class="o">.</span><span class="n">pn_anaemia_following_pregnancy</span> <span class="o">==</span> <span class="s1">&#39;severe&#39;</span><span class="p">:</span>
                 <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;referred_for_blood&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span></div>
 
@@ -2689,6 +2687,7 @@
 <span class="sd">     Additionally this event applies a probability that women who develop complications during a home birth may choose</span>
 <span class="sd">     to seek care from at a health facility. In that case the appropriate HSI is scheduled.</span>
 <span class="sd">     &quot;&quot;&quot;</span>
+
 <div class="viewcode-block" id="LabourAtHomeEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.LabourAtHomeEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">individual_id</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">individual_id</span><span class="p">)</span></div>
 
@@ -2737,7 +2736,6 @@
                  <span class="n">mni</span><span class="p">[</span><span class="n">individual_id</span><span class="p">][</span><span class="s1">&#39;new_onset_spe&#39;</span><span class="p">])</span> <span class="ow">or</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">individual_id</span><span class="p">,</span> <span class="s1">&#39;la_uterine_rupture&#39;</span><span class="p">]:</span>
 
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_careseeking_for_complication&#39;</span><span class="p">]:</span>
-
                     <span class="n">mni</span><span class="p">[</span><span class="n">individual_id</span><span class="p">][</span><span class="s1">&#39;sought_care_for_complication&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
                     <span class="n">mni</span><span class="p">[</span><span class="n">individual_id</span><span class="p">][</span><span class="s1">&#39;sought_care_labour_phase&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;intrapartum&#39;</span>
 
@@ -2766,6 +2764,7 @@
 <span class="sd">     OR in a facility . This event determines if women who have experienced complications in labour will die or</span>
 <span class="sd">     experience an intrapartum stillbirth.</span>
 <span class="sd">     &quot;&quot;&quot;</span>
+
 <div class="viewcode-block" id="LabourDeathAndStillBirthEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.LabourDeathAndStillBirthEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">individual_id</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">individual_id</span><span class="p">)</span></div>
 
@@ -2850,6 +2849,7 @@
 <span class="sd">    Additionally this event applies the incidence of complications immediately following birth and determines if each</span>
 <span class="sd">    woman will receive a full postnatal check-up and when.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
 <div class="viewcode-block" id="BirthAndPostnatalOutcomesEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.BirthAndPostnatalOutcomesEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">mother_id</span><span class="p">)</span></div>
 
@@ -2926,7 +2926,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">progression_of_hypertensive_disorders</span><span class="p">(</span><span class="n">mother_id</span><span class="p">,</span> <span class="n">property_prefix</span><span class="o">=</span><span class="s1">&#39;pn&#39;</span><span class="p">)</span>
 
             <span class="c1"># Following this we determine if this woman will receive/seek care for postnatal care after delivery</span>
-            <span class="k">if</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">mother_id</span><span class="p">,</span> <span class="s1">&#39;la_sepsis_pp&#39;</span><span class="p">]</span> <span class="ow">or</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">mother_id</span><span class="p">,</span> <span class="s1">&#39;la_sepsis_pp&#39;</span><span class="p">]</span> <span class="ow">or</span>
                 <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">mother_id</span><span class="p">,</span> <span class="s1">&#39;la_postpartum_haem&#39;</span><span class="p">]</span> <span class="ow">or</span>
                 <span class="p">((</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">mother_id</span><span class="p">,</span> <span class="s1">&#39;pn_htn_disorders&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;severe_pre_eclamp&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">mni</span><span class="p">[</span><span class="n">mother_id</span><span class="p">][</span><span class="s1">&#39;new_onset_spe&#39;</span><span class="p">])</span> <span class="ow">or</span>
                <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">mother_id</span><span class="p">,</span> <span class="s1">&#39;pn_htn_disorders&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;eclampsia&#39;</span><span class="p">)):</span>
@@ -2989,6 +2989,7 @@
 <span class="sd">    factor of the HSI is below a predetermined threshold of each intervention. CEmONC level interventions are managed</span>
 <span class="sd">    within HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
 <div class="viewcode-block" id="HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">facility_level_of_this_hsi</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">Labour</span><span class="p">)</span>
@@ -3022,7 +3023,7 @@
         <span class="c1"># Here we ensure that women who were admitted via the antenatal ward for assisted/caesarean delivery have the</span>
         <span class="c1"># correct variables updated leading to referral for delivery</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ac_admitted_for_immediate_delivery&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;caesarean_now&#39;</span><span class="p">)</span> <span class="ow">or</span> \
-                <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ac_admitted_for_immediate_delivery&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;caesarean_future&#39;</span><span class="p">):</span>
+           <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ac_admitted_for_immediate_delivery&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;caesarean_future&#39;</span><span class="p">):</span>
             <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;referred_for_cs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
         <span class="k">elif</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ac_admitted_for_immediate_delivery&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;avd_now&#39;</span><span class="p">:</span>
@@ -3036,7 +3037,7 @@
         <span class="c1"># LOG CONSUMABLES FOR DELIVERY...</span>
         <span class="c1"># We assume all deliveries require this basic package of consumables</span>
         <span class="n">avail</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span><span class="n">cons</span><span class="p">[</span><span class="s1">&#39;delivery_core&#39;</span><span class="p">],</span>
-                                     <span class="n">optional_item_codes</span><span class="o">=</span><span class="n">cons</span><span class="p">[</span><span class="s1">&#39;delivery_optional&#39;</span><span class="p">],)</span>
+                                     <span class="n">optional_item_codes</span><span class="o">=</span><span class="n">cons</span><span class="p">[</span><span class="s1">&#39;delivery_optional&#39;</span><span class="p">],</span> <span class="p">)</span>
 
         <span class="c1"># If the clean delivery kit consumable is available, we assume women benefit from clean delivery</span>
         <span class="k">if</span> <span class="n">avail</span><span class="p">:</span>
@@ -3062,7 +3063,6 @@
             <span class="k">for</span> <span class="n">complication</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;obstruction_cpd&#39;</span><span class="p">,</span> <span class="s1">&#39;obstruction_malpos_malpres&#39;</span><span class="p">,</span> <span class="s1">&#39;obstruction_other&#39;</span><span class="p">,</span>
                                  <span class="s1">&#39;placental_abruption&#39;</span><span class="p">,</span> <span class="s1">&#39;antepartum_haem&#39;</span><span class="p">,</span> <span class="s1">&#39;sepsis_chorioamnionitis&#39;</span><span class="p">,</span>
                                  <span class="s1">&#39;uterine_rupture&#39;</span><span class="p">]:</span>
-
                 <span class="c1"># Uterine rupture is the only complication we dont apply the risk of here due to the causal link</span>
                 <span class="c1"># between obstructed labour and uterine rupture. Therefore we want interventions for obstructed labour</span>
                 <span class="c1"># to reduce the risk of uterine rupture</span>
@@ -3112,7 +3112,6 @@
         <span class="k">if</span> <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;referred_for_cs&#39;</span><span class="p">]</span> <span class="ow">or</span> \
             <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;referred_for_surgery&#39;</span><span class="p">]</span> <span class="ow">or</span> \
            <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;referred_for_blood&#39;</span><span class="p">]:</span>
-
             <span class="n">surgical_management</span> <span class="o">=</span> <span class="n">HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">timing</span><span class="o">=</span><span class="s1">&#39;intrapartum&#39;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span><span class="n">surgical_management</span><span class="p">,</span>
@@ -3150,6 +3149,7 @@
 <span class="sd">    delivery and includes assessment and treatment of severe pre-eclampsia, hypertension, sepsis and postpartum</span>
 <span class="sd">    bleeding. In addition woman are scheduled HIV screening if appropriate and started on postnatal iron tablets</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
 <div class="viewcode-block" id="HSI_Labour_ReceivesPostnatalCheck.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.HSI_Labour_ReceivesPostnatalCheck.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">Labour</span><span class="p">)</span>
@@ -3188,8 +3188,8 @@
         <span class="c1"># log the PNC visit</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;postnatal_check&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;person_id&#39;</span><span class="p">:</span> <span class="n">person_id</span><span class="p">,</span>
                                                  <span class="s1">&#39;delivery_setting&#39;</span><span class="p">:</span> <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;delivery_setting&#39;</span><span class="p">],</span>
-                                                 <span class="s1">&#39;visit_number&#39;</span><span class="p">:</span>  <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;la_pn_checks_maternal&#39;</span><span class="p">],</span>
-                                                 <span class="s1">&#39;timing&#39;</span><span class="p">:</span>  <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;will_receive_pnc&#39;</span><span class="p">]})</span>
+                                                 <span class="s1">&#39;visit_number&#39;</span><span class="p">:</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;la_pn_checks_maternal&#39;</span><span class="p">],</span>
+                                                 <span class="s1">&#39;timing&#39;</span><span class="p">:</span> <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;will_receive_pnc&#39;</span><span class="p">]})</span>
 
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;la_pn_checks_maternal&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
 
@@ -3272,6 +3272,7 @@
 <span class="sd">    during or following labour Currently we assume that if this even runs and the consumables are available then the</span>
 <span class="sd">    intervention is delivered i.e. we dont apply squeeze factor threshold.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
 <div class="viewcode-block" id="HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">timing</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">Labour</span><span class="p">)</span>
@@ -3367,24 +3368,24 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">timing</span> <span class="o">==</span> <span class="s1">&#39;postpartum&#39;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">apply_risk_of_early_postpartum_death</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span>
 
-        <span class="n">actual_appt_footprint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span>
-
-        <span class="c1"># Here we edit the appointment footprint so only women receiving surgery require the surgical footprint</span>
-        <span class="k">if</span> <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;referred_for_cs&#39;</span><span class="p">]:</span>
-            <span class="n">actual_appt_footprint</span><span class="p">[</span><span class="s1">&#39;MajorSurg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">actual_appt_footprint</span><span class="p">[</span><span class="s1">&#39;Csection&#39;</span><span class="p">]</span>
-
-        <span class="k">elif</span> <span class="p">(</span><span class="ow">not</span> <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;referred_for_surgery&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;referred_for_cs&#39;</span><span class="p">])</span> <span class="ow">and</span>\
-                <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;referred_for_blood&#39;</span><span class="p">]:</span>
-            <span class="n">actual_appt_footprint</span><span class="p">[</span><span class="s1">&#39;MajorSurg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">actual_appt_footprint</span><span class="p">[</span><span class="s1">&#39;InpatientDays&#39;</span><span class="p">]</span>
-
         <span class="c1"># Schedule HSI that captures inpatient days</span>
         <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;is_alive&#39;</span><span class="p">]:</span>
             <span class="n">postnatal_inpatient</span> <span class="o">=</span> <span class="n">HSI_Labour_PostnatalWardInpatientCare</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span><span class="n">postnatal_inpatient</span><span class="p">,</span>
                                                                 <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                                                                 <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
-                                                                <span class="n">tclose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span></div>
+                                                                <span class="n">tclose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+
+        <span class="c1"># Women who delivered via caesarean have the appropriate footprint applied</span>
+        <span class="k">if</span> <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;mode_of_delivery&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;caesarean_section&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;Csection&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+
+        <span class="c1"># And those who didnt have surgery had the expected footprint overwritten</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;la_uterine_rupture_treatment&#39;</span><span class="p">]</span> <span class="ow">and</span> \
+            <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;la_has_had_hysterectomy&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">pph_treatment</span><span class="o">.</span><span class="n">has_all</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span>
+                                                                                                      <span class="s1">&#39;surgery&#39;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;InpatientDays&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span></div>
 
 <div class="viewcode-block" id="HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare.never_ran"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare.never_ran">[docs]</a>    <span class="k">def</span> <span class="nf">never_ran</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">run_if_receives_comprehensive_emergency_obstetric_care_cant_run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
@@ -3403,6 +3404,7 @@
 <span class="sd">    require treatment as inpatients after delivery. The primary function of this event is to capture inpatient bed</span>
 <span class="sd">    days</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
 <div class="viewcode-block" id="HSI_Labour_PostnatalWardInpatientCare.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.HSI_Labour_PostnatalWardInpatientCare.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">Labour</span><span class="p">)</span>
@@ -3413,7 +3415,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">BEDDAYS_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_beddays_footprint</span><span class="p">({</span><span class="s1">&#39;maternity_bed&#39;</span><span class="p">:</span> <span class="mi">5</span><span class="p">})</span></div>
 
 <div class="viewcode-block" id="HSI_Labour_PostnatalWardInpatientCare.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.HSI_Labour_PostnatalWardInpatientCare.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
-
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;HSI_Labour_PostnatalWardInpatientCare now running to capture &#39;</span>
                                          <span class="s1">&#39;inpatient time for an unwell postnatal woman&#39;</span><span class="p">)</span></div>
 
@@ -3468,7 +3469,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on May 31, 2022.
+        Last updated on Aug 10, 2022.
       </span>
 
     </p>

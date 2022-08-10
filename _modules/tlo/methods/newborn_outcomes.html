@@ -35,6 +35,7 @@
         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
         <script src="../../../_static/jquery.js"></script>
         <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
@@ -1551,8 +1552,9 @@
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;NewbornOutcomes_CareOfTheNewbornBySkilledAttendant did not run for &#39;</span>
                                          <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">nci</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;will_receive_pnc&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;early&#39;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">set_death_status</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span></div>
+        <span class="k">if</span> <span class="n">person_id</span> <span class="ow">in</span> <span class="n">nci</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">nci</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;will_receive_pnc&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;early&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">set_death_status</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="NewbornOutcomes.run_if_care_of_the_receives_postnatal_check_cant_run"><a class="viewcode-back" href="../../../reference/tlo.methods.newborn_outcomes.html#tlo.methods.newborn_outcomes.NewbornOutcomes.run_if_care_of_the_receives_postnatal_check_cant_run">[docs]</a>    <span class="k">def</span> <span class="nf">run_if_care_of_the_receives_postnatal_check_cant_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -1803,7 +1805,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on May 31, 2022.
+        Last updated on Aug 10, 2022.
       </span>
 
     </p>

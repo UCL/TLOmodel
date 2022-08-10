@@ -18,6 +18,9 @@ tlo.methods.healthseekingbehaviour module
         * - Item
           - Type
           - Description
+        * - force_any_symptom_to_lead_to_healthcareseeking
+          - BOOL
+          - Whether every symptom should always lead to healthcare seeking (ignoring the other parameters that determine the probability of seeking care.
         * - baseline_odds_of_healthcareseeking_children
           - REAL
           - odds of health-care seeking (children: 0-14) if male, 0-5 years-old, living in a rural setting in the Northern region, and not in the wealth categories 4 or 5
@@ -73,9 +76,11 @@ tlo.methods.healthseekingbehaviour module
 
      ADDITIONAL_DEPENDENCIES : {'Lifestyle'}
 
-     INIT_DEPENDENCIES : {'Demography', 'HealthSystem', 'SymptomManager'}
+     INIT_DEPENDENCIES : {'Demography', 'SymptomManager', 'HealthSystem'}
 
      METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>}
+
+     force_any_symptom_to_lead_to_healthcareseeking : <property object at 0x7feb910e2450>
 
      **Functions (defined or overridden in class HealthSeekingBehaviour):**
 

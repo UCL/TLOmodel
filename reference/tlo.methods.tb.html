@@ -35,6 +35,7 @@
         <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
@@ -177,7 +178,7 @@
            <div itemprop="articleBody">
             
   <div class="section" id="module-tlo.methods.tb">
-<span id="tlo-methods-tb-module"></span><h1>tlo.methods.tb module<a class="headerlink" href="#module-tlo.methods.tb" title="Permalink to this headline">¶</a></h1>
+<span id="tlo-methods-tb-module"></span><h1>tlo.methods.tb module<a class="headerlink" href="#module-tlo.methods.tb" title="Permalink to this heading">¶</a></h1>
 <p>This module schedules TB infection and natural history
 It schedules TB treatment and follow-up appointments along with preventive therapy
 for eligible people (HIV+ and paediatric contacts of active TB cases</p>
@@ -567,11 +568,11 @@ for eligible people (HIV+ and paediatric contacts of active TB cases</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>CAUSES_OF_DEATH : {‘TB’: &lt;tlo.methods.causes.Cause object at 0x7fb99999e070&gt;, ‘AIDS_TB’: &lt;tlo.methods.causes.Cause object at 0x7fb99999e100&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘TB’: &lt;tlo.methods.causes.Cause object at 0x7fb99999e160&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘Lifestyle’, ‘Epi’, ‘Demography’, ‘HealthSystem’, ‘SymptomManager’}</p>
-<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;}</p>
-<p>OPTIONAL_INIT_DEPENDENCIES : {‘Hiv’, ‘HealthBurden’}</p>
+<p>CAUSES_OF_DEATH : {‘TB’: &lt;tlo.methods.causes.Cause object at 0x7feb91146ee0&gt;, ‘AIDS_TB’: &lt;tlo.methods.causes.Cause object at 0x7feb91146f70&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘TB’: &lt;tlo.methods.causes.Cause object at 0x7feb91146fd0&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘Lifestyle’, ‘HealthSystem’, ‘Demography’, ‘SymptomManager’, ‘Epi’}</p>
+<p>METADATA : {&lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;}</p>
+<p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’, ‘Hiv’}</p>
 <p>SYMPTOMS : {‘night_sweats’, ‘fatigue’}</p>
 <p><strong>Functions (defined or overridden in class Tb):</strong></p>
 <dl class="py method">
@@ -1163,9 +1164,12 @@ This event is scheduled by ‘HSI_Tb_Start_or_Continue_Ipt’ after 6 months</p>
 must be done by calling Simulation.schedule_event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
 All subclasses of Event take this as the first argument in their
-constructor, but may also take further keyword arguments.</p>
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -1200,9 +1204,12 @@ will depend on treatment status, smear status and age</p>
 must be done by calling Simulation.schedule_event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
 All subclasses of Event take this as the first argument in their
-constructor, but may also take further keyword arguments.</p>
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -1398,7 +1405,7 @@ It is a good place to add initial events to the event queue.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on May 31, 2022.
+        Last updated on Aug 10, 2022.
       </span>
 
     </p>

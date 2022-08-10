@@ -35,6 +35,7 @@
         <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
         <script src="../../_static/jquery.js"></script>
         <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../../_static/js/theme.js"></script>
@@ -173,6 +174,7 @@
 <span class="kn">import</span> <span class="nn">json</span>
 <span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">tempfile</span>
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span>
@@ -195,7 +197,7 @@
 
 
 <span class="nd">@click</span><span class="o">.</span><span class="n">group</span><span class="p">()</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--config-file&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">click</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">exists</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;tlo.conf&quot;</span><span class="p">,</span> <span class="n">hidden</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--config-file&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">click</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">exists</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;tlo.conf&quot;</span><span class="p">,</span> <span class="n">hidden</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--verbose&quot;</span><span class="p">,</span> <span class="s2">&quot;-v&quot;</span><span class="p">,</span> <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">pass_context</span>
 <span class="k">def</span> <span class="nf">cli</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">config_file</span><span class="p">,</span> <span class="n">verbose</span><span class="p">):</span>
@@ -215,21 +217,28 @@
 <span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;scenario_file&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">click</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">exists</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--draw-only&quot;</span><span class="p">,</span> <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Only generate draws; do not run the simulation&quot;</span><span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--draw&quot;</span><span class="p">,</span> <span class="s2">&quot;-d&quot;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">scenario_run</span><span class="p">(</span><span class="n">scenario_file</span><span class="p">,</span> <span class="n">draw_only</span><span class="p">,</span> <span class="n">draw</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">):</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--output-dir&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">scenario_run</span><span class="p">(</span><span class="n">scenario_file</span><span class="p">,</span> <span class="n">draw_only</span><span class="p">,</span> <span class="n">draw</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Run the specified scenario locally.</span>
 
 <span class="sd">    SCENARIO_FILE is path to file containing a scenario class</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">scenario</span> <span class="o">=</span> <span class="n">load_scenario</span><span class="p">(</span><span class="n">scenario_file</span><span class="p">)</span>
-    <span class="n">run_json</span> <span class="o">=</span> <span class="n">scenario</span><span class="o">.</span><span class="n">save_draws</span><span class="p">()</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">scenario</span><span class="o">.</span><span class="n">save_draws</span><span class="p">(</span><span class="n">return_config</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">json_string</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
     <span class="k">if</span> <span class="n">draw_only</span><span class="p">:</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">run_json</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+        <span class="c1"># pretty-print json</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">json_string</span><span class="p">)</span>
         <span class="k">return</span>
 
-    <span class="n">runner</span> <span class="o">=</span> <span class="n">SampleRunner</span><span class="p">(</span><span class="n">run_json</span><span class="p">)</span>
+    <span class="n">tmp</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">NamedTemporaryFile</span><span class="p">()</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">tmp</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">json_string</span><span class="p">)</span>
+    <span class="n">runner</span> <span class="o">=</span> <span class="n">SampleRunner</span><span class="p">(</span><span class="n">tmp</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
     <span class="k">if</span> <span class="n">draw</span><span class="p">:</span>
-        <span class="n">runner</span><span class="o">.</span><span class="n">run_sample_by_number</span><span class="p">(</span><span class="n">output_directory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">draw_number</span><span class="o">=</span><span class="n">draw</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">sample_number</span><span class="o">=</span><span class="n">draw</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">runner</span><span class="o">.</span><span class="n">run_sample_by_number</span><span class="p">(</span><span class="n">output_directory</span><span class="o">=</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">draw_number</span><span class="o">=</span><span class="n">draw</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">sample_number</span><span class="o">=</span><span class="n">draw</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">runner</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 
@@ -463,10 +472,8 @@
 
 <span class="nd">@cli</span><span class="o">.</span><span class="n">command</span><span class="p">()</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--find&quot;</span><span class="p">,</span> <span class="s2">&quot;-f&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Show jobs where identifier contains supplied string&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--completed&quot;</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">,</span> <span class="n">flag_value</span><span class="o">=</span><span class="s2">&quot;completed&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">multiple</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-              <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Only display completed jobs&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--active&quot;</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">,</span> <span class="n">flag_value</span><span class="o">=</span><span class="s2">&quot;active&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">multiple</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-              <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Only display active jobs&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--completed&quot;</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">,</span> <span class="n">flag_value</span><span class="o">=</span><span class="s2">&quot;completed&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Only display completed jobs&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--active&quot;</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">,</span> <span class="n">flag_value</span><span class="o">=</span><span class="s2">&quot;active&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Only display active jobs&quot;</span><span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;-n&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Maximum number of jobs to list (default is 5)&quot;</span><span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">pass_context</span>
 <span class="k">def</span> <span class="nf">batch_list</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">status</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">find</span><span class="p">):</span>
@@ -854,7 +861,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on May 31, 2022.
+        Last updated on Aug 10, 2022.
       </span>
 
     </p>

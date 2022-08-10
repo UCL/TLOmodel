@@ -35,6 +35,7 @@
         <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
@@ -177,7 +178,7 @@
            <div itemprop="articleBody">
             
   <div class="section" id="module-tlo.test.random_birth">
-<span id="tlo-test-random-birth-module"></span><h1>tlo.test.random_birth module<a class="headerlink" href="#module-tlo.test.random_birth" title="Permalink to this headline">¶</a></h1>
+<span id="tlo-test-random-birth-module"></span><h1>tlo.test.random_birth module<a class="headerlink" href="#module-tlo.test.random_birth" title="Permalink to this heading">¶</a></h1>
 <p>A simple test module for demonstration purposes.</p>
 <p>It polls the population each month, randomly making non-pregnant people pregnant with
 a fixed probability, set as a module parameter. Nine months after becoming pregnant
@@ -187,7 +188,7 @@ become pregnant!</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.test.random_birth.RandomBirth">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RandomBirth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/test/random_birth.html#RandomBirth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.test.random_birth.RandomBirth" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.core.Module</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></a></p>
 <p>Randomly become pregnant with fixed probability.</p>
 <p>All disease modules need to be implemented as a class inheriting from Module.
 They need to provide several methods which will be called by the simulation
@@ -268,7 +269,7 @@ It is a good place to add initial events to the event queue.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.test.random_birth.RandomPregnancyEvent">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RandomPregnancyEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pregnancy_probability</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/test/random_birth.html#RandomPregnancyEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.test.random_birth.RandomPregnancyEvent" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">PopulationScopeEventMixin</span></code></a></p>
 <p>The regular event that actually makes people pregnant.</p>
 <p>Regular events automatically reschedule themselves at a fixed frequency,
 and thus implement discrete timestep type behaviour. The frequency is
@@ -291,7 +292,7 @@ and initiate pregnancies at random.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.test.random_birth.DelayedBirthEvent">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DelayedBirthEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/test/random_birth.html#DelayedBirthEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.test.random_birth.DelayedBirthEvent" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">IndividualScopeEventMixin</span></code></a></p>
 <p>A one-off event in which a pregnant mother gives birth.</p>
 <p>For an individual-scoped event we need to specify the person it applies to in
 the constructor.</p>
@@ -326,7 +327,7 @@ the constructor.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on May 31, 2022.
+        Last updated on Aug 10, 2022.
       </span>
 
     </p>

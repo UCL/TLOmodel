@@ -1,0 +1,7 @@
+tlo.analysis.hsi\_events module
+===============================
+
+.. automodule:: tlo.analysis.hsi_events
+   :members:
+   :undoc-members:
+   :show-inheritance:

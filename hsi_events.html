@@ -35,6 +35,7 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
@@ -176,7 +177,7 @@
            <div itemprop="articleBody">
             
   <div class="section" id="health-system-interaction-events">
-<h1>Health system interaction events<a class="headerlink" href="#health-system-interaction-events" title="Permalink to this headline">¶</a></h1>
+<h1>Health system interaction events<a class="headerlink" href="#health-system-interaction-events" title="Permalink to this heading">¶</a></h1>
 <p>The <em>health system interaction</em> (HSI) events defined in the model are listed here,
 for each event a description of the associated treatment is given along with the
 facility level the event can occur at and the corresponding <em>appointment footprint</em>
@@ -186,13 +187,13 @@ type codes).</p>
 dynamically when running the model.</p>
 <p>This information can also be downloaded as a <a class="reference download internal" download="" href="_downloads/d259ee2478d4ac9e09a19cb71e63d1a9/hsi_events.csv"><code class="xref download docutils literal notranslate"><span class="pre">CSV</span> <span class="pre">file</span></code></a>.</p>
 <div class="section" id="alri">
-<h2>Alri<a class="headerlink" href="#alri" title="Permalink to this headline">¶</a></h2>
+<h2>Alri<a class="headerlink" href="#alri" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">GenericTreatment</span></code> at facility level 1a with appointment footprint: <code class="docutils literal notranslate"><span class="pre">Over5OPD</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Pneumonia_Treatment_Outpatient</span></code> at facility level 0 with appointment footprint: <code class="docutils literal notranslate"><span class="pre">ConWithDCSA</span></code>.</p></li>
 </ul>
 </div>
 <div class="section" id="bladdercancer">
-<h2>BladderCancer<a class="headerlink" href="#bladdercancer" title="Permalink to this headline">¶</a></h2>
+<h2>BladderCancer<a class="headerlink" href="#bladdercancer" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">Investigation</span></code> at facility level 1b with appointment footprint: <code class="docutils literal notranslate"><span class="pre">Over5OPD</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">Investigation</span></code> at facility level 1b with appointment footprint: <code class="docutils literal notranslate"><span class="pre">Over5OPD</span></code>.</p></li>
@@ -202,7 +203,7 @@ dynamically when running the model.</p>
 </ul>
 </div>
 <div class="section" id="breastcancer">
-<h2>BreastCancer<a class="headerlink" href="#breastcancer" title="Permalink to this headline">¶</a></h2>
+<h2>BreastCancer<a class="headerlink" href="#breastcancer" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">Investigation</span></code> at facility level 3 with appointment footprint: <code class="docutils literal notranslate"><span class="pre">Over5OPD</span></code>, <code class="docutils literal notranslate"><span class="pre">Mammography</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">PalliativeCare</span></code> at facility level 2 with appointment footprint:  and bed days footprint: <code class="docutils literal notranslate"><span class="pre">general_bed</span></code> (15 days).</p></li>
@@ -211,7 +212,7 @@ dynamically when running the model.</p>
 </ul>
 </div>
 <div class="section" id="cardiometabolicdisorders">
-<h2>CardioMetabolicDisorders<a class="headerlink" href="#cardiometabolicdisorders" title="Permalink to this headline">¶</a></h2>
+<h2>CardioMetabolicDisorders<a class="headerlink" href="#cardiometabolicdisorders" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">Investigation</span></code> at facility level 1b with appointment footprint: <code class="docutils literal notranslate"><span class="pre">Over5OPD</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">Investigation</span></code> at facility level 1b with appointment footprint: <code class="docutils literal notranslate"><span class="pre">Over5OPD</span></code>.</p></li>
@@ -222,7 +223,7 @@ dynamically when running the model.</p>
 </ul>
 </div>
 <div class="section" id="careofwomenduringpregnancy">
-<h2>CareOfWomenDuringPregnancy<a class="headerlink" href="#careofwomenduringpregnancy" title="Permalink to this headline">¶</a></h2>
+<h2>CareOfWomenDuringPregnancy<a class="headerlink" href="#careofwomenduringpregnancy" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">AntenatalCare_FollowUp</span></code> at facility level 1a with appointment footprint: <code class="docutils literal notranslate"><span class="pre">Over5OPD</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">AntenatalCare_FollowUp</span></code> at facility level 1a with appointment footprint: <code class="docutils literal notranslate"><span class="pre">Over5OPD</span></code>.</p></li>
@@ -243,13 +244,13 @@ dynamically when running the model.</p>
 </ul>
 </div>
 <div class="section" id="contraception">
-<h2>Contraception<a class="headerlink" href="#contraception" title="Permalink to this headline">¶</a></h2>
+<h2>Contraception<a class="headerlink" href="#contraception" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">Routine</span></code> at facility level 1a with appointment footprint: <code class="docutils literal notranslate"><span class="pre">FamPlan</span></code>.</p></li>
 </ul>
 </div>
 <div class="section" id="depression">
-<h2>Depression<a class="headerlink" href="#depression" title="Permalink to this headline">¶</a></h2>
+<h2>Depression<a class="headerlink" href="#depression" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">TalkingTherapy</span></code> at facility level 1b with appointment footprint: <code class="docutils literal notranslate"><span class="pre">MentOPD</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">Treatment</span></code> at facility level 1a with appointment footprint: <code class="docutils literal notranslate"><span class="pre">Over5OPD</span></code>.</p></li>
@@ -257,14 +258,14 @@ dynamically when running the model.</p>
 </ul>
 </div>
 <div class="section" id="diarrhoea">
-<h2>Diarrhoea<a class="headerlink" href="#diarrhoea" title="Permalink to this headline">¶</a></h2>
+<h2>Diarrhoea<a class="headerlink" href="#diarrhoea" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">Treatment_Inpatient</span></code> at facility level 1a with appointment footprint:  and bed days footprint: <code class="docutils literal notranslate"><span class="pre">general_bed</span></code> (2 days).</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">Treatment_Outpatient</span></code> at facility level 1a with appointment footprint: <code class="docutils literal notranslate"><span class="pre">Under5OPD</span></code>.</p></li>
 </ul>
 </div>
 <div class="section" id="epi">
-<h2>Epi<a class="headerlink" href="#epi" title="Permalink to this headline">¶</a></h2>
+<h2>Epi<a class="headerlink" href="#epi" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">Adolescent_Hpv</span></code> at facility level 1a with appointment footprint: <code class="docutils literal notranslate"><span class="pre">EPI</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">Childhood_Bcg</span></code> at facility level 1a with appointment footprint: <code class="docutils literal notranslate"><span class="pre">EPI</span></code>.</p></li>
@@ -277,20 +278,20 @@ dynamically when running the model.</p>
 </ul>
 </div>
 <div class="section" id="epilepsy">
-<h2>Epilepsy<a class="headerlink" href="#epilepsy" title="Permalink to this headline">¶</a></h2>
+<h2>Epilepsy<a class="headerlink" href="#epilepsy" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">Treatment</span></code> at facility level 1b with appointment footprint: <code class="docutils literal notranslate"><span class="pre">Over5OPD</span></code>.</p></li>
 </ul>
 </div>
 <div class="section" id="healthseekingbehaviour">
-<h2>HealthSeekingBehaviour<a class="headerlink" href="#healthseekingbehaviour" title="Permalink to this headline">¶</a></h2>
+<h2>HealthSeekingBehaviour<a class="headerlink" href="#healthseekingbehaviour" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">FirstAttendance_Emergency</span></code> at facility level 1b with appointment footprint: <code class="docutils literal notranslate"><span class="pre">AccidentsandEmerg</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">FirstAttendance_NonEmergency</span></code> at facility level 0 with appointment footprint: <code class="docutils literal notranslate"><span class="pre">ConWithDCSA</span></code>.</p></li>
 </ul>
 </div>
 <div class="section" id="hiv">
-<h2>Hiv<a class="headerlink" href="#hiv" title="Permalink to this headline">¶</a></h2>
+<h2>Hiv<a class="headerlink" href="#hiv" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">Prevention_Circumcision</span></code> at facility level 1a with appointment footprint: <code class="docutils literal notranslate"><span class="pre">MaleCirc</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">Prevention_Prep</span></code> at facility level 1a with appointment footprint: <code class="docutils literal notranslate"><span class="pre">Over5OPD</span></code>, <code class="docutils literal notranslate"><span class="pre">VCTNegative</span></code>.</p></li>
@@ -299,7 +300,7 @@ dynamically when running the model.</p>
 </ul>
 </div>
 <div class="section" id="labour">
-<h2>Labour<a class="headerlink" href="#labour" title="Permalink to this headline">¶</a></h2>
+<h2>Labour<a class="headerlink" href="#labour" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">DeliveryCare_Basic</span></code> at facility level ? with appointment footprint: <code class="docutils literal notranslate"><span class="pre">NormalDelivery</span></code> and bed days footprint: <code class="docutils literal notranslate"><span class="pre">maternity_bed</span></code> (2 days).</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">DeliveryCare_Comprehensive</span></code> at facility level 1b with appointment footprint: <code class="docutils literal notranslate"><span class="pre">MajorSurg</span></code>.</p></li>
@@ -308,7 +309,7 @@ dynamically when running the model.</p>
 </ul>
 </div>
 <div class="section" id="malaria">
-<h2>Malaria<a class="headerlink" href="#malaria" title="Permalink to this headline">¶</a></h2>
+<h2>Malaria<a class="headerlink" href="#malaria" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">Prevention_Iptp</span></code> at facility level 1a with appointment footprint: <code class="docutils literal notranslate"><span class="pre">Over5OPD</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">Test</span></code> at facility level 0 with appointment footprint: <code class="docutils literal notranslate"><span class="pre">ConWithDCSA</span></code>.</p></li>
@@ -320,13 +321,13 @@ dynamically when running the model.</p>
 </ul>
 </div>
 <div class="section" id="measles">
-<h2>Measles<a class="headerlink" href="#measles" title="Permalink to this headline">¶</a></h2>
+<h2>Measles<a class="headerlink" href="#measles" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">Treatment</span></code> at facility level 1a with appointment footprint: <code class="docutils literal notranslate"><span class="pre">Over5OPD</span></code>.</p></li>
 </ul>
 </div>
 <div class="section" id="newbornoutcomes">
-<h2>NewbornOutcomes<a class="headerlink" href="#newbornoutcomes" title="Permalink to this headline">¶</a></h2>
+<h2>NewbornOutcomes<a class="headerlink" href="#newbornoutcomes" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">DeliveryCare_Neonatal</span></code> at facility level ? with appointment footprint:  and bed days footprint: <code class="docutils literal notranslate"><span class="pre">general_bed</span></code> (1 days).</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">PostnatalCare_Neonatal</span></code> at facility level 1a with appointment footprint: <code class="docutils literal notranslate"><span class="pre">Under5OPD</span></code>.</p></li>
@@ -334,7 +335,7 @@ dynamically when running the model.</p>
 </ul>
 </div>
 <div class="section" id="oesophagealcancer">
-<h2>OesophagealCancer<a class="headerlink" href="#oesophagealcancer" title="Permalink to this headline">¶</a></h2>
+<h2>OesophagealCancer<a class="headerlink" href="#oesophagealcancer" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">Investigation</span></code> at facility level 1b with appointment footprint: <code class="docutils literal notranslate"><span class="pre">Over5OPD</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">PalliativeCare</span></code> at facility level 2 with appointment footprint:  and bed days footprint: <code class="docutils literal notranslate"><span class="pre">general_bed</span></code> (15 days).</p></li>
@@ -343,7 +344,7 @@ dynamically when running the model.</p>
 </ul>
 </div>
 <div class="section" id="otheradultcancer">
-<h2>OtherAdultCancer<a class="headerlink" href="#otheradultcancer" title="Permalink to this headline">¶</a></h2>
+<h2>OtherAdultCancer<a class="headerlink" href="#otheradultcancer" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">Investigation</span></code> at facility level 1b with appointment footprint: <code class="docutils literal notranslate"><span class="pre">Over5OPD</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">PalliativeCare</span></code> at facility level 2 with appointment footprint:  and bed days footprint: <code class="docutils literal notranslate"><span class="pre">general_bed</span></code> (15 days).</p></li>
@@ -352,13 +353,13 @@ dynamically when running the model.</p>
 </ul>
 </div>
 <div class="section" id="postnatalsupervisor">
-<h2>PostnatalSupervisor<a class="headerlink" href="#postnatalsupervisor" title="Permalink to this headline">¶</a></h2>
+<h2>PostnatalSupervisor<a class="headerlink" href="#postnatalsupervisor" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">TreatmentForObstetricFistula</span></code> at facility level 1b with appointment footprint: <code class="docutils literal notranslate"><span class="pre">MajorSurg</span></code> and bed days footprint: <code class="docutils literal notranslate"><span class="pre">general_bed</span></code> (5 days).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PostnatalCare_TreatmentForObstetricFistula</span></code> at facility level 1b with appointment footprint: <code class="docutils literal notranslate"><span class="pre">MajorSurg</span></code> and bed days footprint: <code class="docutils literal notranslate"><span class="pre">general_bed</span></code> (5 days).</p></li>
 </ul>
 </div>
 <div class="section" id="prostatecancer">
-<h2>ProstateCancer<a class="headerlink" href="#prostatecancer" title="Permalink to this headline">¶</a></h2>
+<h2>ProstateCancer<a class="headerlink" href="#prostatecancer" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">Investigation</span></code> at facility level 1b with appointment footprint: <code class="docutils literal notranslate"><span class="pre">Over5OPD</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">Investigation</span></code> at facility level 1b with appointment footprint: <code class="docutils literal notranslate"><span class="pre">Over5OPD</span></code>.</p></li>
@@ -369,7 +370,7 @@ dynamically when running the model.</p>
 </ul>
 </div>
 <div class="section" id="rti">
-<h2>RTI<a class="headerlink" href="#rti" title="Permalink to this headline">¶</a></h2>
+<h2>RTI<a class="headerlink" href="#rti" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">Rti_AcutePainManagement</span></code> at facility level 1b with appointment footprint: <code class="docutils literal notranslate"><span class="pre">Over5OPD</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">Rti_BurnManagement</span></code> at facility level 1b with appointment footprint: <code class="docutils literal notranslate"><span class="pre">MinorSurg</span></code> and bed days footprint: <code class="docutils literal notranslate"><span class="pre">general_bed</span></code> (1 days).</p></li>
@@ -385,7 +386,7 @@ dynamically when running the model.</p>
 </ul>
 </div>
 <div class="section" id="schisto">
-<h2>Schisto<a class="headerlink" href="#schisto" title="Permalink to this headline">¶</a></h2>
+<h2>Schisto<a class="headerlink" href="#schisto" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">MDA</span></code> at facility level 1a with appointment footprint: <code class="docutils literal notranslate"><span class="pre">EPI</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">Treatment</span></code> at facility level 1a with appointment footprint: <code class="docutils literal notranslate"><span class="pre">Over5OPD</span></code>.</p></li>
@@ -393,13 +394,13 @@ dynamically when running the model.</p>
 </ul>
 </div>
 <div class="section" id="stunting">
-<h2>Stunting<a class="headerlink" href="#stunting" title="Permalink to this headline">¶</a></h2>
+<h2>Stunting<a class="headerlink" href="#stunting" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">Undernutrition_Feeding</span></code> at facility level 1a with appointment footprint: <code class="docutils literal notranslate"><span class="pre">U5Malnutr</span></code>.</p></li>
 </ul>
 </div>
 <div class="section" id="tb">
-<h2>Tb<a class="headerlink" href="#tb" title="Permalink to this headline">¶</a></h2>
+<h2>Tb<a class="headerlink" href="#tb" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">Prevention_Ipt</span></code> at facility level 1a with appointment footprint: <code class="docutils literal notranslate"><span class="pre">Over5OPD</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">Test_Screening</span></code> at facility level 1a with appointment footprint: <code class="docutils literal notranslate"><span class="pre">Over5OPD</span></code>.</p></li>
@@ -426,7 +427,7 @@ dynamically when running the model.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on May 31, 2022.
+        Last updated on Aug 10, 2022.
       </span>
 
     </p>

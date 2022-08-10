@@ -35,6 +35,7 @@
         <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
@@ -177,7 +178,7 @@
            <div itemprop="articleBody">
             
   <div class="section" id="module-tlo.methods.chronicsyndrome">
-<span id="tlo-methods-chronicsyndrome-module"></span><h1>tlo.methods.chronicsyndrome module<a class="headerlink" href="#module-tlo.methods.chronicsyndrome" title="Permalink to this headline">¶</a></h1>
+<span id="tlo-methods-chronicsyndrome-module"></span><h1>tlo.methods.chronicsyndrome module<a class="headerlink" href="#module-tlo.methods.chronicsyndrome" title="Permalink to this heading">¶</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.chronicsyndrome.ChronicSyndrome">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ChronicSyndrome</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/chronicsyndrome.html#ChronicSyndrome"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.chronicsyndrome.ChronicSyndrome" title="Permalink to this definition">¶</a></dt>
@@ -280,10 +281,10 @@ It demonstrates the following behaviours in respect of the healthsystem module:<
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>CAUSES_OF_DEATH : {‘ChronicSyndrome’: &lt;tlo.methods.causes.Cause object at 0x7fb9998892b0&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘ChronicSyndrome’: &lt;tlo.methods.causes.Cause object at 0x7fb999889ac0&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘Demography’, ‘HealthSystem’, ‘SymptomManager’}</p>
-<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;}</p>
+<p>CAUSES_OF_DEATH : {‘ChronicSyndrome’: &lt;tlo.methods.causes.Cause object at 0x7feb91001550&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘ChronicSyndrome’: &lt;tlo.methods.causes.Cause object at 0x7feb91001fa0&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘Demography’, ‘SymptomManager’, ‘HealthSystem’}</p>
+<p>METADATA : {&lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’}</p>
 <p><strong>Functions (defined or overridden in class ChronicSyndrome):</strong></p>
 <dl class="py method">
@@ -405,9 +406,12 @@ It is a good place to add initial events to the event queue.</p>
 must be done by calling Simulation.schedule_event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
 All subclasses of Event take this as the first argument in their
-constructor, but may also take further keyword arguments.</p>
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -442,9 +446,12 @@ It will now submit the individual HSI events that occur when each individual is 
 must be done by calling Simulation.schedule_event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
 All subclasses of Event take this as the first argument in their
-constructor, but may also take further keyword arguments.</p>
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -614,7 +621,7 @@ constructor, but may also take further keyword arguments.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on May 31, 2022.
+        Last updated on Aug 10, 2022.
       </span>
 
     </p>

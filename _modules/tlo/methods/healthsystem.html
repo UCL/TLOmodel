@@ -35,6 +35,7 @@
         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
         <script src="../../../_static/jquery.js"></script>
         <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
@@ -182,14 +183,15 @@
 <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Iterable</span>
 <span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">repeat</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">NamedTuple</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">NamedTuple</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
 <span class="kn">import</span> <span class="nn">tlo</span>
 <span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">Date</span><span class="p">,</span> <span class="n">DateOffset</span><span class="p">,</span> <span class="n">Module</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">Property</span><span class="p">,</span> <span class="n">Types</span><span class="p">,</span> <span class="n">logging</span>
-<span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">,</span> <span class="n">RegularEvent</span>
+<span class="kn">from</span> <span class="nn">tlo.analysis.utils</span> <span class="kn">import</span> <span class="n">flatten_multi_index_series_into_dict_for_logging</span>
+<span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">,</span> <span class="n">Priority</span><span class="p">,</span> <span class="n">RegularEvent</span>
 <span class="kn">from</span> <span class="nn">tlo.methods</span> <span class="kn">import</span> <span class="n">Metadata</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.bed_days</span> <span class="kn">import</span> <span class="n">BedDays</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.consumables</span> <span class="kn">import</span> <span class="p">(</span>
@@ -716,7 +718,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">healthsystemscheduler</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="c1"># Create pointer to the `HealthSystemSummaryCounter` helper class</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_summary_counter</span> <span class="o">=</span> <span class="n">HealthSystemSummaryCounter</span><span class="p">()</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_summary_counter</span> <span class="o">=</span> <span class="n">HealthSystemSummaryCounter</span><span class="p">()</span>
+
+        <span class="c1"># Create counter for the running total of footprint of all the HSIs being run today</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">running_total_footprint</span><span class="p">:</span> <span class="n">Counter</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="HealthSystem.read_parameters"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
 
@@ -763,6 +768,10 @@
 
 <div class="viewcode-block" id="HealthSystem.pre_initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.pre_initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">pre_initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Generate the accessory classes used by the HealthSystem and pass to them the data that has been read.&quot;&quot;&quot;</span>
+
+        <span class="c1"># Determine service_availability</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">service_availability</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_service_availability</span><span class="p">()</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">process_human_resources_files</span><span class="p">()</span>
 
         <span class="c1"># Initialise the BedDays class</span>
@@ -811,10 +820,7 @@
         <span class="c1"># Launch the healthsystem scheduler (a regular event occurring each day) [if not disabled]</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">disable</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">disable_and_reject_all</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">healthsystemscheduler</span> <span class="o">=</span> <span class="n">HealthSystemScheduler</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-            <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">healthsystemscheduler</span><span class="p">,</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
-
-        <span class="c1"># Determine service_availability</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">set_service_availability</span><span class="p">()</span></div>
+            <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">healthsystemscheduler</span><span class="p">,</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="HealthSystem.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bed_days</span><span class="o">.</span><span class="n">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">)</span></div>
@@ -991,9 +997,9 @@
         <span class="c1"># return the pd.Series of `Total_Minutes_Per_Day&#39; indexed for each type of officer at each facility</span>
         <span class="k">return</span> <span class="n">capabilities_ex</span><span class="p">[</span><span class="s1">&#39;Total_Minutes_Per_Day&#39;</span><span class="p">]</span></div>
 
-<div class="viewcode-block" id="HealthSystem.set_service_availability"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.set_service_availability">[docs]</a>    <span class="k">def</span> <span class="nf">set_service_availability</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Set service availability. (Should be equal to what is specified by the parameter, but overwrite with what was</span>
-<span class="sd">         provided in argument if an argument was specified -- provided for backward compatibility/debugging.)&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="HealthSystem.get_service_availability"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_service_availability">[docs]</a>    <span class="k">def</span> <span class="nf">get_service_availability</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Returns service availability. (Should be equal to what is specified by the parameter, but overwrite with what</span>
+<span class="sd">        was provided in argument if an argument was specified -- provided for backward compatibility/debugging.)&quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">arg_service_availabily</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">service_availability</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Service_Availability&#39;</span><span class="p">]</span>
@@ -1001,13 +1007,13 @@
             <span class="n">service_availability</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">arg_service_availabily</span>
 
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">service_availability</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">service_availability</span> <span class="o">=</span> <span class="n">service_availability</span>
 
         <span class="c1"># Log the service_availability</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">,</span>
                     <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Running Health System With the Following Service Availability: &quot;</span>
                          <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">service_availability</span><span class="si">}</span><span class="s2">&quot;</span>
-                    <span class="p">)</span></div>
+                    <span class="p">)</span>
+        <span class="k">return</span> <span class="n">service_availability</span></div>
 
 <div class="viewcode-block" id="HealthSystem.get_cons_availability"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_cons_availability">[docs]</a>    <span class="k">def</span> <span class="nf">get_cons_availability</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Set consumables availability. (Should be equal to what is specified by the parameter, but overwrite with</span>
@@ -1104,25 +1110,28 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">check_hsi_event_is_valid</span><span class="p">(</span><span class="n">hsi_event</span><span class="p">)</span>
 
         <span class="c1"># Check that this request is allowable under current policy (i.e. included in service_availability).</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_treatment_id_allowed</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">TREATMENT_ID</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_treatment_id_allowed</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">TREATMENT_ID</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">service_availability</span><span class="p">):</span>
             <span class="c1"># HSI is not allowable under the services_available parameter: run the HSI&#39;s &#39;never_ran&#39; method on the date</span>
             <span class="c1"># of tclose.</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">HSIEventWrapper</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">,</span> <span class="n">run_hsi</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span> <span class="n">tclose</span><span class="p">)</span>
 
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># The HSI is allowed and will be added to the HSI_EVENT_QUEUE.</span>
-
-            <span class="c1"># Let the HSI gather information about itself (facility_id and appt-footprint time requirements)</span>
+            <span class="c1"># Let the HSI gather information about itself (facility_id and appt-footprint time requirements):</span>
             <span class="n">hsi_event</span><span class="o">.</span><span class="n">initialise</span><span class="p">()</span>
+            <span class="c1"># Add the event to the queue:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_add_hsi_event_queue_item_to_hsi_event_queue</span><span class="p">(</span>
+                <span class="n">priority</span><span class="o">=</span><span class="n">priority</span><span class="p">,</span> <span class="n">topen</span><span class="o">=</span><span class="n">topen</span><span class="p">,</span> <span class="n">tclose</span><span class="o">=</span><span class="n">tclose</span><span class="p">,</span> <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">)</span></div>
 
-            <span class="c1"># Create a tuple to go into the heapq</span>
-            <span class="c1"># (NB. the sorting is done ascending and by the order of the items in the tuple)</span>
-            <span class="n">new_request</span> <span class="o">=</span> <span class="n">HSIEventQueueItem</span><span class="p">(</span>
-                <span class="n">priority</span><span class="p">,</span> <span class="n">topen</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hsi_event_queue_counter</span><span class="p">,</span> <span class="n">tclose</span><span class="p">,</span> <span class="n">hsi_event</span>
-            <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">hsi_event_queue_counter</span> <span class="o">+=</span> <span class="mi">1</span>
-
-            <span class="n">hp</span><span class="o">.</span><span class="n">heappush</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">HSI_EVENT_QUEUE</span><span class="p">,</span> <span class="n">new_request</span><span class="p">)</span></div>
+<div class="viewcode-block" id="HealthSystem._add_hsi_event_queue_item_to_hsi_event_queue"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem._add_hsi_event_queue_item_to_hsi_event_queue">[docs]</a>    <span class="k">def</span> <span class="nf">_add_hsi_event_queue_item_to_hsi_event_queue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">priority</span><span class="p">,</span> <span class="n">topen</span><span class="p">,</span> <span class="n">tclose</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Add an event to the HSI_EVENT_QUEUE.&quot;&quot;&quot;</span>
+        <span class="c1"># Create HSIEventQueue Item, including a counter for the number of HSI_Events, to assist with sorting in the</span>
+        <span class="c1"># queue (NB. the sorting is done ascending and by the order of the items in the tuple).</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hsi_event_queue_counter</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">_new_item</span><span class="p">:</span> <span class="n">HSIEventQueueItem</span> <span class="o">=</span> <span class="n">HSIEventQueueItem</span><span class="p">(</span>
+            <span class="n">priority</span><span class="p">,</span> <span class="n">topen</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hsi_event_queue_counter</span><span class="p">,</span> <span class="n">tclose</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">)</span>
+        <span class="c1"># Add to queue:</span>
+        <span class="n">hp</span><span class="o">.</span><span class="n">heappush</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">HSI_EVENT_QUEUE</span><span class="p">,</span> <span class="n">_new_item</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="HealthSystem.check_hsi_event_is_valid"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.check_hsi_event_is_valid">[docs]</a>    <span class="k">def</span> <span class="nf">check_hsi_event_is_valid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Check the integrity of an HSI_Event.&quot;&quot;&quot;</span>
@@ -1159,28 +1168,29 @@
                 <span class="sa">f</span><span class="s2">&quot;which it is not possible: TREATMENT_ID=</span><span class="si">{</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">TREATMENT_ID</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span></div>
 
-<div class="viewcode-block" id="HealthSystem.is_treatment_id_allowed"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.is_treatment_id_allowed">[docs]</a>    <span class="k">def</span> <span class="nf">is_treatment_id_allowed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">treatment_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<div class="viewcode-block" id="HealthSystem.is_treatment_id_allowed"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.is_treatment_id_allowed">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">is_treatment_id_allowed</span><span class="p">(</span><span class="n">treatment_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">service_availability</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Determine if a treatment_id (specified as a string) can be run (i.e., is within the allowable set of</span>
 <span class="sd">         treatments, given by `self.service_availability`.&quot;&quot;&quot;</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">service_availability</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">service_availability</span><span class="p">:</span>
             <span class="c1"># Empty list --&gt; nothing is allowable</span>
             <span class="k">return</span> <span class="kc">False</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">service_availability</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;*&#39;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">service_availability</span> <span class="o">==</span> <span class="p">[</span><span class="s1">&#39;*&#39;</span><span class="p">]:</span>
             <span class="c1"># Wildcard --&gt; everything is allowed</span>
             <span class="k">return</span> <span class="kc">True</span>
         <span class="k">elif</span> <span class="n">treatment_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># Treatment_id is None --&gt; allowed</span>
             <span class="k">return</span> <span class="kc">True</span>
-        <span class="k">elif</span> <span class="n">treatment_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">service_availability</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">treatment_id</span> <span class="ow">in</span> <span class="n">service_availability</span><span class="p">:</span>
             <span class="c1"># Explicit inclusion of this treatment_id --&gt; allowed</span>
             <span class="k">return</span> <span class="kc">True</span>
-        <span class="k">elif</span> <span class="n">treatment_id</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;GenericFirstAppt&#39;</span><span class="p">):</span>
-            <span class="c1"># GenericAppts --&gt; allowable</span>
+        <span class="k">elif</span> <span class="n">treatment_id</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;FirstAttendance&#39;</span><span class="p">):</span>
+            <span class="c1"># FirstAttendance* --&gt; allowable</span>
             <span class="k">return</span> <span class="kc">True</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># Check if treatment_id matches any services specified with wildcard * patterns</span>
-            <span class="k">for</span> <span class="n">service_pattern</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">service_availability</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">service_pattern</span> <span class="ow">in</span> <span class="n">service_availability</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="n">treatment_id</span><span class="p">,</span> <span class="n">service_pattern</span><span class="p">):</span>
                     <span class="k">return</span> <span class="kc">True</span>
         <span class="k">return</span> <span class="kc">False</span></div>
@@ -1236,9 +1246,10 @@
             <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">appt_footprint</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
         <span class="p">)</span></div>
 
-<div class="viewcode-block" id="HealthSystem.get_capabilities_today"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_capabilities_today">[docs]</a>    <span class="k">def</span> <span class="nf">get_capabilities_today</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">capabilities_today</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Get the capabilities of the health system today.</span>
+<span class="sd">        Returns the capabilities of the health system today.</span>
 <span class="sd">        returns: pd.Series giving minutes available for each officer type in each facility type</span>
 
 <span class="sd">        Functions can go in here in the future that could expand the time available,</span>
@@ -1248,7 +1259,7 @@
 <span class="sd">        For now this method only multiplies the estimated minutes available by the `capabilities_coefficient` scale</span>
 <span class="sd">        factor.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_daily_capabilities</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">capabilities_coefficient</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_daily_capabilities</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">capabilities_coefficient</span>
 
 <div class="viewcode-block" id="HealthSystem.get_blank_appt_footprint"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_blank_appt_footprint">[docs]</a>    <span class="k">def</span> <span class="nf">get_blank_appt_footprint</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -1372,7 +1383,8 @@
                 <span class="n">person_id</span><span class="o">=</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">target</span><span class="p">,</span>
                 <span class="n">squeeze_factor</span><span class="o">=</span><span class="n">_squeeze_factor</span><span class="p">,</span>
                 <span class="n">did_run</span><span class="o">=</span><span class="n">did_run</span><span class="p">,</span>
-                <span class="n">facility_level</span><span class="o">=</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span>
+                <span class="n">facility_level</span><span class="o">=</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span><span class="p">,</span>
+                <span class="n">facility_id</span><span class="o">=</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">facility_info</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
             <span class="p">)</span>
 
             <span class="c1"># Storage for the purpose of testing / documentation</span>
@@ -1413,9 +1425,11 @@
                          <span class="n">person_id</span><span class="p">,</span>
                          <span class="n">squeeze_factor</span><span class="p">,</span>
                          <span class="n">did_run</span><span class="p">,</span>
-                         <span class="n">facility_level</span>
+                         <span class="n">facility_level</span><span class="p">,</span>
+                         <span class="n">facility_id</span><span class="p">,</span>
                          <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Write the log `HSI_Event` and add to the summary counter.&quot;&quot;&quot;</span>
+
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;HSI_Event&quot;</span><span class="p">,</span>
                     <span class="n">data</span><span class="o">=</span><span class="p">{</span>
                         <span class="s1">&#39;TREATMENT_ID&#39;</span><span class="p">:</span> <span class="n">treatment_id</span><span class="p">,</span>
@@ -1423,7 +1437,8 @@
                         <span class="s1">&#39;Person_ID&#39;</span><span class="p">:</span> <span class="n">person_id</span><span class="p">,</span>
                         <span class="s1">&#39;Squeeze_Factor&#39;</span><span class="p">:</span> <span class="n">squeeze_factor</span><span class="p">,</span>
                         <span class="s1">&#39;did_run&#39;</span><span class="p">:</span> <span class="n">did_run</span><span class="p">,</span>
-                        <span class="s1">&#39;Facility_Level&#39;</span><span class="p">:</span> <span class="n">facility_level</span> <span class="k">if</span> <span class="n">facility_level</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="o">-</span><span class="mi">99</span>
+                        <span class="s1">&#39;Facility_Level&#39;</span><span class="p">:</span> <span class="n">facility_level</span> <span class="k">if</span> <span class="n">facility_level</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="o">-</span><span class="mi">99</span><span class="p">,</span>
+                        <span class="s1">&#39;Facility_ID&#39;</span><span class="p">:</span> <span class="n">facility_id</span> <span class="k">if</span> <span class="n">facility_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="o">-</span><span class="mi">99</span><span class="p">,</span>
                     <span class="p">},</span>
                     <span class="n">description</span><span class="o">=</span><span class="s2">&quot;record of each HSI event&quot;</span>
                     <span class="p">)</span>
@@ -1431,16 +1446,17 @@
         <span class="k">if</span> <span class="n">did_run</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_summary_counter</span><span class="o">.</span><span class="n">record_hsi_event</span><span class="p">(</span>
                 <span class="n">treatment_id</span><span class="o">=</span><span class="n">treatment_id</span><span class="p">,</span>
-                <span class="n">appt_footprint</span><span class="o">=</span><span class="n">number_by_appt_type_code</span>
+                <span class="n">appt_footprint</span><span class="o">=</span><span class="n">number_by_appt_type_code</span><span class="p">,</span>
+                <span class="n">level</span><span class="o">=</span><span class="n">facility_level</span><span class="p">,</span>
             <span class="p">)</span></div>
 
-<div class="viewcode-block" id="HealthSystem.log_current_capabilities"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.log_current_capabilities">[docs]</a>    <span class="k">def</span> <span class="nf">log_current_capabilities</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">current_capabilities</span><span class="p">,</span> <span class="n">total_footprint</span><span class="p">):</span>
+<div class="viewcode-block" id="HealthSystem.log_current_capabilities_and_usage"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.log_current_capabilities_and_usage">[docs]</a>    <span class="k">def</span> <span class="nf">log_current_capabilities_and_usage</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        This will log the percentage of the current capabilities that is used at each Facility Type</span>
-<span class="sd">        NB. To get this per Officer_Type_Code, it would be possible to simply log the entire current_capabilities df.</span>
-<span class="sd">        :param current_capabilities: the current_capabilities of the health system.</span>
-<span class="sd">        :param total_footprint: Per-officer totals of footprints of all the HSI events that ran</span>
+<span class="sd">        This will log the percentage of the current capabilities that is used at each Facility Type, according the</span>
+<span class="sd">        `runnning_total_footprint`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">current_capabilities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">capabilities_today</span>
+        <span class="n">total_footprint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">running_total_footprint</span>
 
         <span class="c1"># Combine the current_capabilities and total_footprint per-officer totals</span>
         <span class="n">comparison</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">current_capabilities</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
@@ -1449,30 +1465,40 @@
         <span class="n">comparison</span><span class="p">[</span><span class="s1">&#39;Minutes_Used&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">comparison</span><span class="p">[</span><span class="s1">&#39;Minutes_Used&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">comparison</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">current_capabilities</span><span class="p">)</span>
 
-        <span class="c1"># Sum within each Facility_ID</span>
-        <span class="n">facility_id</span> <span class="o">=</span> <span class="p">[</span><span class="n">_f</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">_f</span> <span class="ow">in</span> <span class="n">comparison</span><span class="o">.</span><span class="n">index</span><span class="p">]</span>
-        <span class="n">summary</span> <span class="o">=</span> <span class="n">comparison</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="n">facility_id</span><span class="p">)[[</span><span class="s1">&#39;Total_Minutes_Per_Day&#39;</span><span class="p">,</span> <span class="s1">&#39;Minutes_Used&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-
-        <span class="c1"># Compute Fraction of Time Used Across All Facilities</span>
-        <span class="n">total_available</span> <span class="o">=</span> <span class="n">summary</span><span class="p">[</span><span class="s1">&#39;Total_Minutes_Per_Day&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-        <span class="n">fraction_time_used_across_all_facilities</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">summary</span><span class="p">[</span><span class="s1">&#39;Minutes_Used&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">total_available</span> <span class="k">if</span> <span class="n">total_available</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="c1"># Compute Fraction of Time Used Overall</span>
+        <span class="n">total_available</span> <span class="o">=</span> <span class="n">comparison</span><span class="p">[</span><span class="s1">&#39;Total_Minutes_Per_Day&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">fraction_time_used_overall</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">comparison</span><span class="p">[</span><span class="s1">&#39;Minutes_Used&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">total_available</span> <span class="k">if</span> <span class="n">total_available</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
         <span class="p">)</span>
 
         <span class="c1"># Compute Fraction of Time Used In Each Facility</span>
-        <span class="n">summary</span><span class="p">[</span><span class="s1">&#39;Fraction_Time_Used&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary</span><span class="p">[</span><span class="s1">&#39;Minutes_Used&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">summary</span><span class="p">[</span><span class="s1">&#39;Total_Minutes_Per_Day&#39;</span><span class="p">]</span>
-        <span class="n">summary</span><span class="p">[</span><span class="s1">&#39;Fraction_Time_Used&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">],</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">facility_id</span> <span class="o">=</span> <span class="p">[</span><span class="n">_f</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">_f</span> <span class="ow">in</span> <span class="n">comparison</span><span class="o">.</span><span class="n">index</span><span class="p">]</span>
+        <span class="n">summary_by_fac_id</span> <span class="o">=</span> <span class="n">comparison</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="n">facility_id</span><span class="p">)[[</span><span class="s1">&#39;Total_Minutes_Per_Day&#39;</span><span class="p">,</span> <span class="s1">&#39;Minutes_Used&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">summary_by_fac_id</span><span class="p">[</span><span class="s1">&#39;Fraction_Time_Used&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">summary_by_fac_id</span><span class="p">[</span><span class="s1">&#39;Minutes_Used&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">summary_by_fac_id</span><span class="p">[</span><span class="s1">&#39;Total_Minutes_Per_Day&#39;</span><span class="p">]</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">],</span> <span class="mf">0.0</span><span class="p">)</span>
 
-        <span class="n">log_capacity</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-        <span class="n">log_capacity</span><span class="p">[</span><span class="s1">&#39;Frac_Time_Used_Overall&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fraction_time_used_across_all_facilities</span>
-        <span class="n">log_capacity</span><span class="p">[</span><span class="s1">&#39;Frac_Time_Used_By_Facility_ID&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary</span><span class="p">[</span><span class="s1">&#39;Fraction_Time_Used&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        <span class="c1"># Compute Fraction of Time For Each Officer and level</span>
+        <span class="n">officer</span> <span class="o">=</span> <span class="p">[</span><span class="n">_f</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s1">&#39;Officer_&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">_f</span> <span class="ow">in</span> <span class="n">comparison</span><span class="o">.</span><span class="n">index</span><span class="p">]</span>
+        <span class="n">level</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_facility_by_facility_id</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">_fac_id</span><span class="p">)]</span><span class="o">.</span><span class="n">level</span> <span class="k">for</span> <span class="n">_fac_id</span> <span class="ow">in</span> <span class="n">facility_id</span><span class="p">]</span>
+        <span class="n">summary_by_officer</span> <span class="o">=</span> <span class="n">comparison</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="p">[</span><span class="n">officer</span><span class="p">,</span> <span class="n">level</span><span class="p">])[[</span><span class="s1">&#39;Total_Minutes_Per_Day&#39;</span><span class="p">,</span> <span class="s1">&#39;Minutes_Used&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">summary_by_officer</span><span class="p">[</span><span class="s1">&#39;Fraction_Time_Used&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">summary_by_officer</span><span class="p">[</span><span class="s1">&#39;Minutes_Used&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">summary_by_officer</span><span class="p">[</span><span class="s1">&#39;Total_Minutes_Per_Day&#39;</span><span class="p">]</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">],</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">summary_by_officer</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Officer_Type&#39;</span><span class="p">,</span> <span class="s1">&#39;Facility_Level&#39;</span><span class="p">]</span>
 
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;Capacity&#39;</span><span class="p">,</span>
-                    <span class="n">data</span><span class="o">=</span><span class="n">log_capacity</span><span class="p">,</span>
+                    <span class="n">data</span><span class="o">=</span><span class="p">{</span>
+                        <span class="s1">&#39;Frac_Time_Used_Overall&#39;</span><span class="p">:</span> <span class="n">fraction_time_used_overall</span><span class="p">,</span>
+                        <span class="s1">&#39;Frac_Time_Used_By_Facility_ID&#39;</span><span class="p">:</span> <span class="n">summary_by_fac_id</span><span class="p">[</span><span class="s1">&#39;Fraction_Time_Used&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+                        <span class="s1">&#39;Frac_Time_Used_By_OfficerType&#39;</span><span class="p">:</span>  <span class="n">flatten_multi_index_series_into_dict_for_logging</span><span class="p">(</span>
+                            <span class="n">summary_by_officer</span><span class="p">[</span><span class="s1">&#39;Fraction_Time_Used&#39;</span><span class="p">]</span>
+                        <span class="p">),</span>
+                    <span class="p">},</span>
                     <span class="n">description</span><span class="o">=</span><span class="s1">&#39;daily summary of utilisation and capacity of health system resources&#39;</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_summary_counter</span><span class="o">.</span><span class="n">record_hs_status</span><span class="p">(</span>
-            <span class="n">fraction_time_used_across_all_facilities</span><span class="o">=</span><span class="n">fraction_time_used_across_all_facilities</span><span class="p">)</span></div>
+            <span class="n">fraction_time_used_across_all_facilities</span><span class="o">=</span><span class="n">fraction_time_used_overall</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="HealthSystem.remove_beddays_footprint"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.remove_beddays_footprint">[docs]</a>    <span class="k">def</span> <span class="nf">remove_beddays_footprint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="c1"># removing bed_days from a particular individual if any</span>
@@ -1525,17 +1551,152 @@
         <span class="sd">&quot;&quot;&quot;Write to log the current states of the summary counters and reset them.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_summary_counter</span><span class="o">.</span><span class="n">write_to_log_and_reset_counters</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">consumables</span><span class="o">.</span><span class="n">on_end_of_year</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">bed_days</span><span class="o">.</span><span class="n">on_end_of_year</span><span class="p">()</span></div></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bed_days</span><span class="o">.</span><span class="n">on_end_of_year</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="HealthSystem.run_population_level_events"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.run_population_level_events">[docs]</a>    <span class="k">def</span> <span class="nf">run_population_level_events</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_list_of_population_hsi_event_tuples</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">HSIEventQueueItem</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Run a list of population level events.&quot;&quot;&quot;</span>
+        <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">_list_of_population_hsi_event_tuples</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">pop_level_hsi_event_tuple</span> <span class="o">=</span> <span class="n">_list_of_population_hsi_event_tuples</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+            <span class="n">pop_level_hsi_event</span> <span class="o">=</span> <span class="n">pop_level_hsi_event_tuple</span><span class="o">.</span><span class="n">hsi_event</span>
+            <span class="n">pop_level_hsi_event</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">squeeze_factor</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">record_hsi_event</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">=</span><span class="n">pop_level_hsi_event</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="HealthSystem.run_individual_level_events"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.run_individual_level_events">[docs]</a>    <span class="k">def</span> <span class="nf">run_individual_level_events</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_list_of_individual_hsi_event_tuples</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">HSIEventQueueItem</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Run a list of individual level events. Returns: list of events that did not run (maybe an empty a list).&quot;&quot;&quot;</span>
+        <span class="n">_to_be_held_over</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">_list_of_individual_hsi_event_tuples</span><span class="p">:</span>
+            <span class="c1"># Examine total call on health officers time from the HSI events in the list:</span>
+
+            <span class="c1"># For all events in the list, expand the appt-footprint of the event to give the demands on each</span>
+            <span class="c1"># officer-type in each facility_id.</span>
+            <span class="n">footprints_of_all_individual_level_hsi_event</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">event_tuple</span><span class="o">.</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">expected_time_requests</span>
+                <span class="k">for</span> <span class="n">event_tuple</span> <span class="ow">in</span> <span class="n">_list_of_individual_hsi_event_tuples</span>
+            <span class="p">]</span>
+
+            <span class="c1"># Compute total appointment footprint across all events</span>
+            <span class="k">for</span> <span class="n">footprint</span> <span class="ow">in</span> <span class="n">footprints_of_all_individual_level_hsi_event</span><span class="p">:</span>
+                <span class="c1"># Counter.update method when called with dict-like argument adds counts</span>
+                <span class="c1"># from argument to Counter object called from</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">running_total_footprint</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">footprint</span><span class="p">)</span>
+
+            <span class="c1"># Estimate Squeeze-Factors for today</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode_appt_constraints</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c1"># For Mode 0 (no Constraints), the squeeze factors are all zero.</span>
+                <span class="n">squeeze_factor_per_hsi_event</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+                    <span class="nb">len</span><span class="p">(</span><span class="n">footprints_of_all_individual_level_hsi_event</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># For Other Modes, the squeeze factors must be computed</span>
+                <span class="n">squeeze_factor_per_hsi_event</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_squeeze_factors</span><span class="p">(</span>
+                    <span class="n">footprints_per_event</span><span class="o">=</span><span class="n">footprints_of_all_individual_level_hsi_event</span><span class="p">,</span>
+                    <span class="n">total_footprint</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">running_total_footprint</span><span class="p">,</span>
+                    <span class="n">current_capabilities</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">capabilities_today</span><span class="p">,</span>
+                <span class="p">)</span>
+
+            <span class="c1"># For each event, determine to run or not, and run if so.</span>
+            <span class="k">for</span> <span class="n">ev_num</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">_list_of_individual_hsi_event_tuples</span><span class="p">):</span>
+                <span class="n">event</span> <span class="o">=</span> <span class="n">_list_of_individual_hsi_event_tuples</span><span class="p">[</span><span class="n">ev_num</span><span class="p">]</span><span class="o">.</span><span class="n">hsi_event</span>
+                <span class="n">squeeze_factor</span> <span class="o">=</span> <span class="n">squeeze_factor_per_hsi_event</span><span class="p">[</span><span class="n">ev_num</span><span class="p">]</span>                  <span class="c1"># todo use zip here!</span>
+
+                <span class="n">ok_to_run</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mode_appt_constraints</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+                    <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mode_appt_constraints</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+                    <span class="ow">or</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">mode_appt_constraints</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">squeeze_factor</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">))</span>
+                <span class="p">)</span>
+
+                <span class="c1"># Mode 0: All HSI Event run, with no squeeze</span>
+                <span class="c1"># Mode 1: All Run With Squeeze</span>
+                <span class="c1"># Mode 2: Only if squeeze &lt;1</span>
+
+                <span class="k">if</span> <span class="n">ok_to_run</span><span class="p">:</span>
+                    <span class="c1"># Compute the bed days that are allocated to this HSI and provide this information to the HSI</span>
+                    <span class="c1"># todo - only do this if some bed-days declared</span>
+                    <span class="n">event</span><span class="o">.</span><span class="n">_received_info_about_bed_days</span> <span class="o">=</span> \
+                        <span class="bp">self</span><span class="o">.</span><span class="n">bed_days</span><span class="o">.</span><span class="n">issue_bed_days_according_to_availability</span><span class="p">(</span>
+                            <span class="n">facility_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bed_days</span><span class="o">.</span><span class="n">get_facility_id_for_beds</span><span class="p">(</span><span class="n">persons_id</span><span class="o">=</span><span class="n">event</span><span class="o">.</span><span class="n">target</span><span class="p">),</span>
+                            <span class="n">footprint</span><span class="o">=</span><span class="n">event</span><span class="o">.</span><span class="n">BEDDAYS_FOOTPRINT</span>
+                        <span class="p">)</span>
+
+                    <span class="c1"># Check that a facility has been assigned to this HSI</span>
+                    <span class="k">assert</span> <span class="n">event</span><span class="o">.</span><span class="n">facility_info</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> \
+                        <span class="sa">f</span><span class="s2">&quot;Cannot run HSI </span><span class="si">{</span><span class="n">event</span><span class="o">.</span><span class="n">TREATMENT_ID</span><span class="si">}</span><span class="s2"> without facility_info being defined.&quot;</span>
+
+                    <span class="c1"># Run the HSI event (allowing it to return an updated appt_footprint)</span>
+                    <span class="n">actual_appt_footprint</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">squeeze_factor</span><span class="o">=</span><span class="n">squeeze_factor</span><span class="p">)</span>
+
+                    <span class="c1"># Check if the HSI event returned updated appt_footprint</span>
+                    <span class="k">if</span> <span class="n">actual_appt_footprint</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="c1"># The returned footprint is different to the expected footprint: so must update load factors</span>
+
+                        <span class="c1"># check its formatting:</span>
+                        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">appt_footprint_is_valid</span><span class="p">(</span><span class="n">actual_appt_footprint</span><span class="p">)</span>
+
+                        <span class="c1"># Update load factors:</span>
+                        <span class="n">updated_call</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_appt_footprint_as_time_request</span><span class="p">(</span>
+                            <span class="n">facility_info</span><span class="o">=</span><span class="n">event</span><span class="o">.</span><span class="n">facility_info</span><span class="p">,</span>
+                            <span class="n">appt_footprint</span><span class="o">=</span><span class="n">actual_appt_footprint</span>
+                        <span class="p">)</span>
+                        <span class="n">original_call</span> <span class="o">=</span> <span class="n">footprints_of_all_individual_level_hsi_event</span><span class="p">[</span><span class="n">ev_num</span><span class="p">]</span>
+                        <span class="n">footprints_of_all_individual_level_hsi_event</span><span class="p">[</span><span class="n">ev_num</span><span class="p">]</span> <span class="o">=</span> <span class="n">updated_call</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">running_total_footprint</span> <span class="o">-=</span> <span class="n">original_call</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">running_total_footprint</span> <span class="o">+=</span> <span class="n">updated_call</span>
+
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode_appt_constraints</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                            <span class="c1"># only need to recompute squeeze factors if running with constraints</span>
+                            <span class="c1"># i.e. mode != 0</span>
+                            <span class="n">squeeze_factor_per_hsi_event</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_squeeze_factors</span><span class="p">(</span>
+                                <span class="n">footprints_per_event</span><span class="o">=</span><span class="n">footprints_of_all_individual_level_hsi_event</span><span class="p">,</span>
+                                <span class="n">total_footprint</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">running_total_footprint</span><span class="p">,</span>
+                                <span class="n">current_capabilities</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">capabilities_today</span><span class="p">,</span>
+                            <span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="c1"># no actual footprint is returned so take the expected initial declaration as the actual</span>
+                        <span class="n">actual_appt_footprint</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span>
+
+                    <span class="c1"># Write to the log</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">record_hsi_event</span><span class="p">(</span>
+                        <span class="n">hsi_event</span><span class="o">=</span><span class="n">event</span><span class="p">,</span>
+                        <span class="n">actual_appt_footprint</span><span class="o">=</span><span class="n">actual_appt_footprint</span><span class="p">,</span>
+                        <span class="n">squeeze_factor</span><span class="o">=</span><span class="n">squeeze_factor</span><span class="p">,</span>
+                        <span class="n">did_run</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="p">)</span>
+
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Do not run,</span>
+                    <span class="c1"># Call did_not_run for the hsi_event</span>
+                    <span class="n">rtn_from_did_not_run</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">did_not_run</span><span class="p">()</span>
+
+                    <span class="c1"># If received no response from the call to did_not_run, or a True signal, then</span>
+                    <span class="c1"># add to the hold-over queue.</span>
+                    <span class="c1"># Otherwise (disease module returns &quot;FALSE&quot;) the event is not rescheduled and will not run.</span>
+
+                    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">rtn_from_did_not_run</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">):</span>
+                        <span class="c1"># reschedule event</span>
+                        <span class="n">hp</span><span class="o">.</span><span class="n">heappush</span><span class="p">(</span><span class="n">_to_be_held_over</span><span class="p">,</span> <span class="n">_list_of_individual_hsi_event_tuples</span><span class="p">[</span><span class="n">ev_num</span><span class="p">])</span>
+
+                    <span class="c1"># Log that the event did not run</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">record_hsi_event</span><span class="p">(</span>
+                        <span class="n">hsi_event</span><span class="o">=</span><span class="n">event</span><span class="p">,</span>
+                        <span class="n">actual_appt_footprint</span><span class="o">=</span><span class="n">event</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span><span class="p">,</span>
+                        <span class="n">squeeze_factor</span><span class="o">=</span><span class="n">squeeze_factor</span><span class="p">,</span>
+                        <span class="n">did_run</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                    <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">_to_be_held_over</span></div></div>
 
 
 <div class="viewcode-block" id="HealthSystemScheduler"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemScheduler">[docs]</a><span class="k">class</span> <span class="nc">HealthSystemScheduler</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    This is the HealthSystemScheduler. It is an event that occurs every day, inspects the calls on the healthsystem</span>
-<span class="sd">    and commissions event to occur that are consistent with the healthsystem&#39;s capabilities for the following day, given</span>
-<span class="sd">    assumptions about how this decision is made.</span>
-<span class="sd">    The overall Prioritization algorithm is:</span>
-<span class="sd">        * Look at events in order (the order is set by the heapq: see schedule_event</span>
-<span class="sd">        * Ignore is the current data is before topen</span>
+<span class="sd">    This is the HealthSystemScheduler. It is an event that occurs every day and must be the LAST event of the day.</span>
+<span class="sd">    It inspects the calls on the healthsystem and commissions event to occur that are consistent with the</span>
+<span class="sd">    healthsystem&#39;s capabilities for the following day, given assumptions about how this decision is made.</span>
+
+<span class="sd">    N.B. Events scheduled for the same day will occur that day, but after those which were scheduled on an earlier date.</span>
+
+<span class="sd">        The overall Prioritization algorithm is:</span>
+<span class="sd">        * Look at events in order (the order is set by the heapq: see `schedule_hsi_event`)</span>
+<span class="sd">        * Ignore if the current data is before topen</span>
 <span class="sd">        * Remove and do nothing if tclose has expired</span>
 <span class="sd">        * Run any  population-level HSI events</span>
 <span class="sd">        * For an individual-level HSI event, check if there are sufficient health system capabilities to run the event</span>
@@ -1550,47 +1711,21 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="HealthSystemScheduler.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemScheduler.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">:</span> <span class="n">HealthSystem</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span></div>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">priority</span><span class="o">=</span><span class="n">Priority</span><span class="o">.</span><span class="n">END_OF_DAY</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="HealthSystemScheduler._is_today_last_day_of_the_year"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemScheduler._is_today_last_day_of_the_year">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">_is_today_last_day_of_the_year</span><span class="p">(</span><span class="n">date</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">date</span><span class="o">.</span><span class="n">month</span> <span class="o">==</span> <span class="mi">12</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">date</span><span class="o">.</span><span class="n">day</span> <span class="o">==</span> <span class="mi">31</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="HealthSystemScheduler.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemScheduler.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
-
-        <span class="c1"># 0) Refresh information ready for new day:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">bed_days</span><span class="o">.</span><span class="n">on_start_of_day</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">consumables</span><span class="o">.</span><span class="n">on_start_of_day</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
-
-        <span class="c1"># 1) Compute footprint that arise from in-patient bed-days</span>
-        <span class="n">inpatient_appts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">bed_days</span><span class="o">.</span><span class="n">get_inpatient_appts</span><span class="p">()</span>
-        <span class="n">inpatient_footprints</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">()</span>
-        <span class="n">inpatient_appt_by_facility_level</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="n">Counter</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">_fac_id</span><span class="p">,</span> <span class="n">_footprint</span> <span class="ow">in</span> <span class="n">inpatient_appts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="n">inpatient_footprints</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">get_appt_footprint_as_time_request</span><span class="p">(</span>
-                <span class="n">facility_info</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">_facility_by_facility_id</span><span class="p">[</span><span class="n">_fac_id</span><span class="p">],</span> <span class="n">appt_footprint</span><span class="o">=</span><span class="n">_footprint</span><span class="p">)</span>
-            <span class="p">)</span>
-            <span class="n">inpatient_appt_by_facility_level</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">_facility_by_facility_id</span><span class="p">[</span><span class="n">_fac_id</span><span class="p">]</span><span class="o">.</span><span class="n">level</span><span class="p">]</span> <span class="o">+=</span> <span class="n">_footprint</span>
-
-        <span class="c1"># Write the log that these in-patient appointments were needed:</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">inpatient_appt_by_facility_level</span><span class="p">):</span>
-            <span class="k">for</span> <span class="n">_level</span><span class="p">,</span> <span class="n">_inpatient_appts</span> <span class="ow">in</span> <span class="n">inpatient_appt_by_facility_level</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">write_to_hsi_log</span><span class="p">(</span>
-                    <span class="n">treatment_id</span><span class="o">=</span><span class="s1">&#39;Inpatient_Care&#39;</span><span class="p">,</span>
-                    <span class="n">number_by_appt_type_code</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">_inpatient_appts</span><span class="p">),</span>
-                    <span class="n">person_id</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
-                    <span class="n">squeeze_factor</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
-                    <span class="n">did_run</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                    <span class="n">facility_level</span><span class="o">=</span><span class="n">_level</span>
-                <span class="p">)</span>
-
-        <span class="c1"># - Create hold-over list (will become a heapq). This will hold events that cannot occur today before they are</span>
-        <span class="c1">#  added back to the heapq</span>
-        <span class="n">hold_over</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
-
-        <span class="c1"># 1) Get the events that are due today:</span>
-        <span class="n">list_of_individual_hsi_event_tuples_due_today</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
-        <span class="n">list_of_population_hsi_event_tuples_due_today</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+<div class="viewcode-block" id="HealthSystemScheduler._get_events_due_today"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemScheduler._get_events_due_today">[docs]</a>    <span class="k">def</span> <span class="nf">_get_events_due_today</span><span class="p">(</span><span class="bp">self</span><span class="p">,)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">List</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Interrogate the HSI_EVENT queue object to remove from it the events due today, and to return these in two</span>
+<span class="sd">        lists:</span>
+<span class="sd">         * list_of_individual_hsi_event_tuples_due_today</span>
+<span class="sd">         * list_of_population_hsi_event_tuples_due_today</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_list_of_individual_hsi_event_tuples_due_today</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="n">_list_of_population_hsi_event_tuples_due_today</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="n">_list_of_events_not_due_today</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
 
         <span class="c1"># To avoid repeated dataframe accesses in subsequent loop, assemble set of alive</span>
         <span class="c1"># person IDs as  one-off operation, exploiting the improved efficiency of</span>
@@ -1603,6 +1738,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">is_alive</span><span class="p">]</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
         <span class="p">)</span>
 
+        <span class="c1"># Traverse the queue and split events into the three lists (due-individual, due-population, not_due)</span>
         <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">HSI_EVENT_QUEUE</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
 
             <span class="n">next_event_tuple</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">heappop</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">HSI_EVENT_QUEUE</span><span class="p">)</span>
@@ -1622,8 +1758,8 @@
                 <span class="k">pass</span>
 
             <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">&lt;</span> <span class="n">next_event_tuple</span><span class="o">.</span><span class="n">topen</span><span class="p">:</span>
-                <span class="c1"># The event is not yet due (before topen), add to the hold-over list</span>
-                <span class="n">hp</span><span class="o">.</span><span class="n">heappush</span><span class="p">(</span><span class="n">hold_over</span><span class="p">,</span> <span class="n">next_event_tuple</span><span class="p">)</span>
+                <span class="c1"># The event is not yet due (before topen)</span>
+                <span class="n">hp</span><span class="o">.</span><span class="n">heappush</span><span class="p">(</span><span class="n">_list_of_events_not_due_today</span><span class="p">,</span> <span class="n">next_event_tuple</span><span class="p">)</span>
 
                 <span class="k">if</span> <span class="n">next_event_tuple</span><span class="o">.</span><span class="n">priority</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
                     <span class="c1"># Check the priority</span>
@@ -1638,161 +1774,85 @@
 
                 <span class="n">is_pop_level_hsi_event</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="n">tlo</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">Population</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">is_pop_level_hsi_event</span><span class="p">:</span>
-                    <span class="n">list_of_population_hsi_event_tuples_due_today</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">next_event_tuple</span><span class="p">)</span>
+                    <span class="n">_list_of_population_hsi_event_tuples_due_today</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">next_event_tuple</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">list_of_individual_hsi_event_tuples_due_today</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">next_event_tuple</span><span class="p">)</span>
+                    <span class="n">_list_of_individual_hsi_event_tuples_due_today</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">next_event_tuple</span><span class="p">)</span>
 
-        <span class="c1"># 2) Run all population-level HSI events</span>
-        <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">list_of_population_hsi_event_tuples_due_today</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">pop_level_hsi_event_tuple</span> <span class="o">=</span> <span class="n">list_of_population_hsi_event_tuples_due_today</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+        <span class="c1"># add events from the _list_of_events_not_due_today back into the queue</span>
+        <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">_list_of_events_not_due_today</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">hp</span><span class="o">.</span><span class="n">heappush</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">HSI_EVENT_QUEUE</span><span class="p">,</span> <span class="n">hp</span><span class="o">.</span><span class="n">heappop</span><span class="p">(</span><span class="n">_list_of_events_not_due_today</span><span class="p">))</span>
 
-            <span class="n">pop_level_hsi_event</span> <span class="o">=</span> <span class="n">pop_level_hsi_event_tuple</span><span class="o">.</span><span class="n">hsi_event</span>
-            <span class="n">pop_level_hsi_event</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">squeeze_factor</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">record_hsi_event</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">=</span><span class="n">pop_level_hsi_event</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_list_of_individual_hsi_event_tuples_due_today</span><span class="p">,</span> <span class="n">_list_of_population_hsi_event_tuples_due_today</span></div>
 
-        <span class="c1"># 3) Get the capabilities that are available today and prepare dataframe to store all the calls for today</span>
-        <span class="n">current_capabilities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">get_capabilities_today</span><span class="p">()</span>
+<div class="viewcode-block" id="HealthSystemScheduler.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemScheduler.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
 
-        <span class="c1"># Define the total footprint of all calls today, which begins with those due to existing in-patients.</span>
-        <span class="n">total_footprint</span> <span class="o">=</span> <span class="n">inpatient_footprints</span>
+        <span class="c1"># Refresh information ready for new day:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">bed_days</span><span class="o">.</span><span class="n">on_start_of_day</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">consumables</span><span class="o">.</span><span class="n">on_start_of_day</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">list_of_individual_hsi_event_tuples_due_today</span><span class="p">:</span>
-            <span class="c1"># 4) Examine total call on health officers time from the HSI events that are due today</span>
+        <span class="c1"># Compute footprint that arise from in-patient bed-days</span>
+        <span class="n">inpatient_appts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">bed_days</span><span class="o">.</span><span class="n">get_inpatient_appts</span><span class="p">()</span>
+        <span class="n">inpatient_footprints</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">_fac_id</span><span class="p">,</span> <span class="n">_footprint</span> <span class="ow">in</span> <span class="n">inpatient_appts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">inpatient_footprints</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">get_appt_footprint_as_time_request</span><span class="p">(</span>
+                <span class="n">facility_info</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">_facility_by_facility_id</span><span class="p">[</span><span class="n">_fac_id</span><span class="p">],</span> <span class="n">appt_footprint</span><span class="o">=</span><span class="n">_footprint</span><span class="p">)</span>
+            <span class="p">)</span>
 
-            <span class="c1"># For all events in &#39;list_of_individual_hsi_event_tuples_due_today&#39;,</span>
-            <span class="c1"># expand the appt-footprint of the event to give the demands on</span>
-            <span class="c1"># each officer-type in each facility_id.</span>
-
-            <span class="n">footprints_of_all_individual_level_hsi_event</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="n">event_tuple</span><span class="o">.</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">expected_time_requests</span>
-                <span class="k">for</span> <span class="n">event_tuple</span> <span class="ow">in</span> <span class="n">list_of_individual_hsi_event_tuples_due_today</span>
-            <span class="p">]</span>
-
-            <span class="c1"># Compute total appointment footprint across all events</span>
-            <span class="k">for</span> <span class="n">footprint</span> <span class="ow">in</span> <span class="n">footprints_of_all_individual_level_hsi_event</span><span class="p">:</span>
-                <span class="c1"># Counter.update method when called with dict-like argument adds counts</span>
-                <span class="c1"># from argument to Counter object called from</span>
-                <span class="n">total_footprint</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">footprint</span><span class="p">)</span>
-
-            <span class="c1"># 5) Estimate Squeeze-Factors for today</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">mode_appt_constraints</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="c1"># For Mode 0 (no Constraints), the squeeze factors are all zero.</span>
-                <span class="n">squeeze_factor_per_hsi_event</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
-                    <span class="nb">len</span><span class="p">(</span><span class="n">footprints_of_all_individual_level_hsi_event</span><span class="p">))</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># For Other Modes, the squeeze factors must be computed</span>
-                <span class="n">squeeze_factor_per_hsi_event</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">get_squeeze_factors</span><span class="p">(</span>
-                    <span class="n">footprints_per_event</span><span class="o">=</span><span class="n">footprints_of_all_individual_level_hsi_event</span><span class="p">,</span>
-                    <span class="n">total_footprint</span><span class="o">=</span><span class="n">total_footprint</span><span class="p">,</span>
-                    <span class="n">current_capabilities</span><span class="o">=</span><span class="n">current_capabilities</span><span class="p">,</span>
+        <span class="c1"># Write to the log that these in-patient appointments were needed:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">inpatient_appts</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">_fac_id</span><span class="p">,</span> <span class="n">_inpatient_appts</span> <span class="ow">in</span> <span class="n">inpatient_appts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">write_to_hsi_log</span><span class="p">(</span>
+                    <span class="n">treatment_id</span><span class="o">=</span><span class="s1">&#39;Inpatient_Care&#39;</span><span class="p">,</span>
+                    <span class="n">number_by_appt_type_code</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">_inpatient_appts</span><span class="p">),</span>
+                    <span class="n">person_id</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+                    <span class="n">squeeze_factor</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+                    <span class="n">did_run</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">facility_level</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">_facility_by_facility_id</span><span class="p">[</span><span class="n">_fac_id</span><span class="p">]</span><span class="o">.</span><span class="n">level</span><span class="p">,</span>
+                    <span class="n">facility_id</span><span class="o">=</span><span class="n">_fac_id</span><span class="p">,</span>
                 <span class="p">)</span>
 
-            <span class="c1"># 6) For each event, determine if run or not, and run if so.</span>
-            <span class="k">for</span> <span class="n">ev_num</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">list_of_individual_hsi_event_tuples_due_today</span><span class="p">):</span>
-                <span class="n">event</span> <span class="o">=</span> <span class="n">list_of_individual_hsi_event_tuples_due_today</span><span class="p">[</span><span class="n">ev_num</span><span class="p">]</span><span class="o">.</span><span class="n">hsi_event</span>
-                <span class="n">squeeze_factor</span> <span class="o">=</span> <span class="n">squeeze_factor_per_hsi_event</span><span class="p">[</span><span class="n">ev_num</span><span class="p">]</span>
+        <span class="c1"># Restart the total footprint of all calls today, beginning with those due to existing in-patients.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">running_total_footprint</span> <span class="o">=</span> <span class="n">inpatient_footprints</span>
 
-                <span class="n">ok_to_run</span> <span class="o">=</span> <span class="p">(</span>
-                    <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">mode_appt_constraints</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
-                    <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">mode_appt_constraints</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
-                    <span class="ow">or</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">mode_appt_constraints</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">squeeze_factor</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">))</span>
-                <span class="p">)</span>
+        <span class="c1"># Create hold-over list. This will hold events that cannot occur today before they are added back to the queue.</span>
+        <span class="n">hold_over</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
 
-                <span class="c1"># Mode 0: All HSI Event run, with no squeeze</span>
-                <span class="c1"># Mode 1: All Run With Squeeze</span>
-                <span class="c1"># Mode 2: Only if squeeze &lt;1</span>
+        <span class="c1"># 3) Run all events due today, repeating the check for due events until none are due (this allows for HSI that</span>
+        <span class="c1"># are added to the queue in the course of other HSI for this today to be run this day).</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="c1"># Get the events that are due today:</span>
+            <span class="p">(</span>
+                <span class="n">list_of_individual_hsi_event_tuples_due_today</span><span class="p">,</span>
+                <span class="n">list_of_population_hsi_event_tuples_due_today</span>
+             <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_events_due_today</span><span class="p">()</span>
 
-                <span class="k">if</span> <span class="n">ok_to_run</span><span class="p">:</span>
-                    <span class="c1"># Compute the bed days that are allocated to this HSI and provide this information to the HSI</span>
-                    <span class="c1"># todo - only do this if some bed-days declared</span>
-                    <span class="n">event</span><span class="o">.</span><span class="n">_received_info_about_bed_days</span> <span class="o">=</span> \
-                        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">bed_days</span><span class="o">.</span><span class="n">issue_bed_days_according_to_availability</span><span class="p">(</span>
-                            <span class="n">facility_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">bed_days</span><span class="o">.</span><span class="n">get_facility_id_for_beds</span><span class="p">(</span><span class="n">persons_id</span><span class="o">=</span><span class="n">event</span><span class="o">.</span><span class="n">target</span><span class="p">),</span>
-                            <span class="n">footprint</span><span class="o">=</span><span class="n">event</span><span class="o">.</span><span class="n">BEDDAYS_FOOTPRINT</span>
-                        <span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">list_of_individual_hsi_event_tuples_due_today</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">list_of_population_hsi_event_tuples_due_today</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="p">):</span>
+                <span class="k">break</span>
 
-                    <span class="c1"># Check that a facility has been assigned to this HSI</span>
-                    <span class="k">assert</span> <span class="n">event</span><span class="o">.</span><span class="n">facility_info</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> \
-                        <span class="sa">f</span><span class="s2">&quot;Cannot run HSI </span><span class="si">{</span><span class="n">event</span><span class="o">.</span><span class="n">TREATMENT_ID</span><span class="si">}</span><span class="s2"> without facility_info being defined.&quot;</span>
+            <span class="c1"># Run the list of population-level HSI events</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">run_population_level_events</span><span class="p">(</span><span class="n">list_of_population_hsi_event_tuples_due_today</span><span class="p">)</span>
 
-                    <span class="c1"># Run the HSI event (allowing it to return an updated appt_footprint)</span>
-                    <span class="n">actual_appt_footprint</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">squeeze_factor</span><span class="o">=</span><span class="n">squeeze_factor</span><span class="p">)</span>
+            <span class="c1"># Run the list of individual-level events</span>
+            <span class="n">_to_be_held_over</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">run_individual_level_events</span><span class="p">(</span>
+                <span class="n">list_of_individual_hsi_event_tuples_due_today</span>
+            <span class="p">)</span>
+            <span class="n">hold_over</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">_to_be_held_over</span><span class="p">)</span>
 
-                    <span class="c1"># Check if the HSI event returned updated appt_footprint</span>
-                    <span class="k">if</span> <span class="n">actual_appt_footprint</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                        <span class="c1"># The returned footprint is different to the expected footprint: so must update load factors</span>
-
-                        <span class="c1"># check its formatting:</span>
-                        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">appt_footprint_is_valid</span><span class="p">(</span><span class="n">actual_appt_footprint</span><span class="p">)</span>
-
-                        <span class="c1"># Update load factors:</span>
-                        <span class="n">updated_call</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">get_appt_footprint_as_time_request</span><span class="p">(</span>
-                            <span class="n">facility_info</span><span class="o">=</span><span class="n">event</span><span class="o">.</span><span class="n">facility_info</span><span class="p">,</span>
-                            <span class="n">appt_footprint</span><span class="o">=</span><span class="n">actual_appt_footprint</span>
-                        <span class="p">)</span>
-                        <span class="n">original_call</span> <span class="o">=</span> <span class="n">footprints_of_all_individual_level_hsi_event</span><span class="p">[</span><span class="n">ev_num</span><span class="p">]</span>
-                        <span class="n">footprints_of_all_individual_level_hsi_event</span><span class="p">[</span><span class="n">ev_num</span><span class="p">]</span> <span class="o">=</span> <span class="n">updated_call</span>
-                        <span class="n">total_footprint</span> <span class="o">-=</span> <span class="n">original_call</span>
-                        <span class="n">total_footprint</span> <span class="o">+=</span> <span class="n">updated_call</span>
-
-                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">mode_appt_constraints</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                            <span class="c1"># only need to recompute squeeze factors if running with constraints</span>
-                            <span class="c1"># i.e. mode != 0</span>
-                            <span class="n">squeeze_factor_per_hsi_event</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">get_squeeze_factors</span><span class="p">(</span>
-                                <span class="n">footprints_per_event</span><span class="o">=</span><span class="n">footprints_of_all_individual_level_hsi_event</span><span class="p">,</span>
-                                <span class="n">total_footprint</span><span class="o">=</span><span class="n">total_footprint</span><span class="p">,</span>
-                                <span class="n">current_capabilities</span><span class="o">=</span><span class="n">current_capabilities</span><span class="p">,</span>
-                            <span class="p">)</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="c1"># no actual footprint is returned so take the expected initial declaration as the actual</span>
-                        <span class="n">actual_appt_footprint</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span>
-
-                    <span class="c1"># Write to the log</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">record_hsi_event</span><span class="p">(</span>
-                        <span class="n">hsi_event</span><span class="o">=</span><span class="n">event</span><span class="p">,</span>
-                        <span class="n">actual_appt_footprint</span><span class="o">=</span><span class="n">actual_appt_footprint</span><span class="p">,</span>
-                        <span class="n">squeeze_factor</span><span class="o">=</span><span class="n">squeeze_factor</span><span class="p">,</span>
-                        <span class="n">did_run</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                    <span class="p">)</span>
-
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="c1"># Do not run,</span>
-                    <span class="c1"># Call did_not_run for the hsi_event</span>
-                    <span class="n">rtn_from_did_not_run</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">did_not_run</span><span class="p">()</span>
-
-                    <span class="c1"># If received no response from the call to did_not_run, or a True signal, then</span>
-                    <span class="c1"># add to the hold-over queue.</span>
-                    <span class="c1"># Otherwise (disease module returns &quot;FALSE&quot;) the event is not rescheduled and will not run.</span>
-
-                    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">rtn_from_did_not_run</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">):</span>
-                        <span class="c1"># reschedule event</span>
-                        <span class="n">hp</span><span class="o">.</span><span class="n">heappush</span><span class="p">(</span><span class="n">hold_over</span><span class="p">,</span> <span class="n">list_of_individual_hsi_event_tuples_due_today</span><span class="p">[</span><span class="n">ev_num</span><span class="p">])</span>
-
-                    <span class="c1"># Log that the event did not run</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">record_hsi_event</span><span class="p">(</span>
-                        <span class="n">hsi_event</span><span class="o">=</span><span class="n">event</span><span class="p">,</span>
-                        <span class="n">actual_appt_footprint</span><span class="o">=</span><span class="n">event</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span><span class="p">,</span>
-                        <span class="n">squeeze_factor</span><span class="o">=</span><span class="n">squeeze_factor</span><span class="p">,</span>
-                        <span class="n">did_run</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                    <span class="p">)</span>
-
-        <span class="c1"># 7) Add back to the HSI_EVENT_QUEUE heapq all those events</span>
-        <span class="c1"># which are still eligible to run but which did not run</span>
+        <span class="c1"># -- End-of-day activities --</span>
+        <span class="c1"># Add back to the HSI_EVENT_QUEUE heapq all those events which are still eligible to run but which did not run</span>
         <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">hold_over</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">hp</span><span class="o">.</span><span class="n">heappush</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">HSI_EVENT_QUEUE</span><span class="p">,</span> <span class="n">hp</span><span class="o">.</span><span class="n">heappop</span><span class="p">(</span><span class="n">hold_over</span><span class="p">))</span>
 
-        <span class="c1"># -- End of day activities --</span>
+        <span class="c1"># Log total usage of the facilities</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">log_current_capabilities_and_usage</span><span class="p">()</span>
 
-        <span class="c1"># 8) Log total usage of the facilities</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">log_current_capabilities</span><span class="p">(</span>
-            <span class="n">current_capabilities</span><span class="o">=</span><span class="n">current_capabilities</span><span class="p">,</span>
-            <span class="n">total_footprint</span><span class="o">=</span><span class="n">total_footprint</span>
-        <span class="p">)</span>
-
-        <span class="c1"># 9) Trigger jobs to be done at the end of the day (after all HSI run)</span>
+        <span class="c1"># Trigger jobs to be done at the end of the day (after all HSI run)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">on_end_of_day</span><span class="p">()</span>
 
-        <span class="c1"># 10) Do activities required at end of year (if today is the last day of the year)</span>
+        <span class="c1"># Do activities that are required at end of year (if today is the last day of the year)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_today_last_day_of_the_year</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">on_end_of_year</span><span class="p">()</span></div></div>
 
@@ -1812,9 +1872,11 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_treatment_ids</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>  <span class="c1"># Running record of the `TREATMENT_ID`s of `HSI_Event`s</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_appts</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>  <span class="c1"># Running record of the Appointments of `HSI_Event`s that have run</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_appts_by_level</span> <span class="o">=</span> <span class="p">{</span><span class="n">_level</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span> <span class="k">for</span> <span class="n">_level</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;0&#39;</span><span class="p">,</span> <span class="s1">&#39;1a&#39;</span><span class="p">,</span> <span class="s1">&#39;1b&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;3&#39;</span><span class="p">,</span> <span class="s1">&#39;4&#39;</span><span class="p">)}</span>
+        <span class="c1"># &lt;--Same as `self._appts` but also split by facility_level</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_frac_time_used_overall</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># Running record of the usage of the healthcare system</span>
 
-    <span class="k">def</span> <span class="nf">record_hsi_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">treatment_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">appt_footprint</span><span class="p">:</span> <span class="n">Counter</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">record_hsi_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">treatment_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">appt_footprint</span><span class="p">:</span> <span class="n">Counter</span><span class="p">,</span> <span class="n">level</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Add information about an `HSI_Event` to the running summaries.&quot;&quot;&quot;</span>
 
         <span class="c1"># Count the treatment_id:</span>
@@ -1823,6 +1885,7 @@
         <span class="c1"># Count each type of appointment:</span>
         <span class="k">for</span> <span class="n">_appt_type</span><span class="p">,</span> <span class="n">_number</span> <span class="ow">in</span> <span class="n">appt_footprint</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_appts</span><span class="p">[</span><span class="n">_appt_type</span><span class="p">]</span> <span class="o">+=</span> <span class="n">_number</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_appts_by_level</span><span class="p">[</span><span class="n">level</span><span class="p">][</span><span class="n">_appt_type</span><span class="p">]</span> <span class="o">+=</span> <span class="n">_number</span>
 
     <span class="k">def</span> <span class="nf">record_hs_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fraction_time_used_across_all_facilities</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Record a current status metric of the HealthSystem.&quot;&quot;&quot;</span>
@@ -1840,6 +1903,7 @@
             <span class="n">data</span><span class="o">=</span><span class="p">{</span>
                 <span class="s2">&quot;TREATMENT_ID&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_treatment_ids</span><span class="p">,</span>
                 <span class="s2">&quot;Number_By_Appt_Type_Code&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_appts</span><span class="p">,</span>
+                <span class="s2">&quot;Number_By_Appt_Type_Code_And_Level&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_appts_by_level</span><span class="p">,</span>
             <span class="p">},</span>
         <span class="p">)</span>
 
@@ -1854,6 +1918,40 @@
         <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_reset_internal_stores</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="HealthSystemChangeParameters"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemChangeParameters">[docs]</a><span class="k">class</span> <span class="nc">HealthSystemChangeParameters</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Event that causes certain internal parameters of the HealthSystem to be changed; specifically:</span>
+<span class="sd">        * `mode_appt_constraints`</span>
+<span class="sd">        * `ignore_priority`</span>
+<span class="sd">        * `capabilities_coefficient`</span>
+<span class="sd">        * `cons_availability`</span>
+<span class="sd">        * `beds_availability`</span>
+<span class="sd">    Note that no checking is done here on the suitability of values of each parameter.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="HealthSystemChangeParameters.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemChangeParameters.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">:</span> <span class="n">HealthSystem</span><span class="p">,</span> <span class="n">parameters</span><span class="p">:</span> <span class="n">Dict</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span> <span class="o">=</span> <span class="n">parameters</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">HealthSystem</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="HealthSystemChangeParameters.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemChangeParameters.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s1">&#39;mode_appt_constraints&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">mode_appt_constraints</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span><span class="p">[</span><span class="s1">&#39;mode_appt_constraints&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="s1">&#39;ignore_priority&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">ignore_priority</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span><span class="p">[</span><span class="s1">&#39;ignore_priority&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="s1">&#39;capabilities_coefficient&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">capabilities_coefficient</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span><span class="p">[</span><span class="s1">&#39;capabilities_coefficient&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="s1">&#39;cons_availability&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">consumables</span> <span class="o">=</span> <span class="n">Consumables</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;availability_estimates&#39;</span><span class="p">],</span>
+                                                  <span class="n">rng</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="p">,</span>
+                                                  <span class="n">availability</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span><span class="p">[</span><span class="s1">&#39;cons_availability&#39;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">consumables</span><span class="o">.</span><span class="n">on_start_of_day</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s1">&#39;beds_availability&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">bed_days</span><span class="o">.</span><span class="n">availability</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span><span class="p">[</span><span class="s1">&#39;beds_availability&#39;</span><span class="p">]</span></div></div>
 </pre></div>
 
            </div>
@@ -1866,7 +1964,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on May 31, 2022.
+        Last updated on Aug 10, 2022.
       </span>
 
     </p>

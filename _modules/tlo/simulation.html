@@ -35,6 +35,7 @@
         <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
         <script src="../../_static/jquery.js"></script>
         <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../../_static/js/theme.js"></script>
@@ -181,7 +182,7 @@
 
 <span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">Date</span><span class="p">,</span> <span class="n">Population</span><span class="p">,</span> <span class="n">logging</span>
 <span class="kn">from</span> <span class="nn">tlo.dependencies</span> <span class="kn">import</span> <span class="n">check_dependencies_present</span><span class="p">,</span> <span class="n">topologically_sort_modules</span>
-<span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">IndividualScopeEventMixin</span>
+<span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span>
 <span class="kn">from</span> <span class="nn">tlo.progressbar</span> <span class="kn">import</span> <span class="n">ProgressBar</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
@@ -423,7 +424,6 @@
 
 <span class="sd">        :param event: the Event to schedule</span>
 <span class="sd">        :param date: when the event should happen</span>
-<span class="sd">        :param force_over_from_healthsystem: allows an HSI event to enter the scheduler</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="n">date</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">date</span><span class="p">,</span> <span class="s1">&#39;Cannot schedule events in the past&#39;</span>
 
@@ -431,8 +431,9 @@
             <span class="s1">&#39;This looks like an HSI event. It should be handed to the healthsystem scheduler&#39;</span>
         <span class="k">assert</span> <span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;HSI_&#39;</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">),</span> \
             <span class="s1">&#39;This looks like an HSI event. It should be handed to the healthsystem scheduler&#39;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">Event</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">event_queue</span><span class="o">.</span><span class="n">schedule</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">date</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">event_queue</span><span class="o">.</span><span class="n">schedule</span><span class="p">(</span><span class="n">event</span><span class="o">=</span><span class="n">event</span><span class="p">,</span> <span class="n">date</span><span class="o">=</span><span class="n">date</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Simulation.fire_single_event"><a class="viewcode-back" href="../../reference/tlo.simulation.html#tlo.simulation.Simulation.fire_single_event">[docs]</a>    <span class="k">def</span> <span class="nf">fire_single_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">date</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Fires the event once for the given date</span>
@@ -466,7 +467,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">person_events</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
 
-        <span class="k">for</span> <span class="n">date</span><span class="p">,</span> <span class="n">counter</span><span class="p">,</span> <span class="n">event</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_queue</span><span class="o">.</span><span class="n">queue</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">date</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">event</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_queue</span><span class="o">.</span><span class="n">queue</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
                 <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">target</span> <span class="o">==</span> <span class="n">person_id</span><span class="p">:</span>
                     <span class="n">person_events</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">date</span><span class="p">,</span> <span class="n">event</span><span class="p">))</span>
@@ -492,8 +493,7 @@
 <span class="sd">        :param event: the event to schedule</span>
 <span class="sd">        :param date: when it should happen</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="n">entry</span> <span class="o">=</span> <span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">counter</span><span class="p">),</span> <span class="n">event</span><span class="p">)</span>
+        <span class="n">entry</span> <span class="o">=</span> <span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="n">event</span><span class="o">.</span><span class="n">priority</span><span class="p">,</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">counter</span><span class="p">),</span> <span class="n">event</span><span class="p">)</span>
         <span class="n">heapq</span><span class="o">.</span><span class="n">heappush</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">,</span> <span class="n">entry</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="EventQueue.next_event"><a class="viewcode-back" href="../../reference/tlo.simulation.html#tlo.simulation.EventQueue.next_event">[docs]</a>    <span class="k">def</span> <span class="nf">next_event</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -501,7 +501,7 @@
 
 <span class="sd">        :returns: an (event, date) pair</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">date</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">event</span> <span class="o">=</span> <span class="n">heapq</span><span class="o">.</span><span class="n">heappop</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">)</span>
+        <span class="n">date</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">event</span> <span class="o">=</span> <span class="n">heapq</span><span class="o">.</span><span class="n">heappop</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">event</span><span class="p">,</span> <span class="n">date</span></div>
 
     <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -519,7 +519,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on May 31, 2022.
+        Last updated on Aug 10, 2022.
       </span>
 
     </p>

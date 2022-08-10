@@ -11,7 +11,7 @@ tlo.methods.healthsystem module
 
      **Class attributes:**
 
-     bed_days_allocated_to_this_event : <property object at 0x7fb9997e9e00>
+     bed_days_allocated_to_this_event : <property object at 0x7feb9078a270>
 
      **Functions (defined or overridden in class HSI_Event):**
 
@@ -141,6 +141,8 @@ tlo.methods.healthsystem module
 
      INIT_DEPENDENCIES : {'Demography'}
 
+     capabilities_today : <property object at 0x7feb9078a360>
+
      **Functions (defined or overridden in class HealthSystem):**
 
      .. automethod:: __init__
@@ -161,13 +163,15 @@ tlo.methods.healthsystem module
 
      .. automethod:: format_daily_capabilities
 
-     .. automethod:: set_service_availability
+     .. automethod:: get_service_availability
 
      .. automethod:: get_cons_availability
 
      .. automethod:: get_beds_availability
 
      .. automethod:: schedule_hsi_event
+
+     .. automethod:: _add_hsi_event_queue_item_to_hsi_event_queue
 
      .. automethod:: check_hsi_event_is_valid
 
@@ -176,8 +180,6 @@ tlo.methods.healthsystem module
      .. automethod:: schedule_batch_of_individual_hsi_events
 
      .. automethod:: appt_footprint_is_valid
-
-     .. automethod:: get_capabilities_today
 
      .. automethod:: get_blank_appt_footprint
 
@@ -191,7 +193,7 @@ tlo.methods.healthsystem module
 
      .. automethod:: write_to_hsi_log
 
-     .. automethod:: log_current_capabilities
+     .. automethod:: log_current_capabilities_and_usage
 
      .. automethod:: remove_beddays_footprint
 
@@ -208,6 +210,10 @@ tlo.methods.healthsystem module
      .. automethod:: on_end_of_day
 
      .. automethod:: on_end_of_year
+
+     .. automethod:: run_population_level_events
+
+     .. automethod:: run_individual_level_events
 
 
 
@@ -226,6 +232,26 @@ tlo.methods.healthsystem module
      .. automethod:: __init__
 
      .. automethod:: _is_today_last_day_of_the_year
+
+     .. automethod:: _get_events_due_today
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HealthSystemChangeParameters
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HealthSystemChangeParameters):**
+
+     .. automethod:: __init__
 
      .. automethod:: apply
 

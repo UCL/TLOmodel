@@ -35,6 +35,7 @@
         <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
@@ -177,7 +178,7 @@
            <div itemprop="articleBody">
             
   <div class="section" id="module-tlo.methods.postnatal_supervisor">
-<span id="tlo-methods-postnatal-supervisor-module"></span><h1>tlo.methods.postnatal_supervisor module<a class="headerlink" href="#module-tlo.methods.postnatal_supervisor" title="Permalink to this headline">¶</a></h1>
+<span id="tlo-methods-postnatal-supervisor-module"></span><h1>tlo.methods.postnatal_supervisor module<a class="headerlink" href="#module-tlo.methods.postnatal_supervisor" title="Permalink to this heading">¶</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.PostnatalSupervisor">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PostnatalSupervisor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#PostnatalSupervisor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.PostnatalSupervisor" title="Permalink to this definition">¶</a></dt>
@@ -490,9 +491,9 @@ day 28.</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘Labour’, ‘PregnancySupervisor’, ‘Lifestyle’, ‘NewbornOutcomes’}</p>
-<p>CAUSES_OF_DEATH : {‘secondary_postpartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x7fb99a4f7190&gt;, ‘postpartum_sepsis’: &lt;tlo.methods.causes.Cause object at 0x7fb99a4f75e0&gt;, ‘severe_pre_eclampsia’: &lt;tlo.methods.causes.Cause object at 0x7fb99a4f7640&gt;, ‘eclampsia’: &lt;tlo.methods.causes.Cause object at 0x7fb99a4f76a0&gt;, ‘severe_gestational_hypertension’: &lt;tlo.methods.causes.Cause object at 0x7fb99a4f7700&gt;, ‘early_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x7fb99a4f7760&gt;, ‘late_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x7fb99a4f77c0&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘maternal’: &lt;tlo.methods.causes.Cause object at 0x7fb99a4f7820&gt;}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘Lifestyle’, ‘NewbornOutcomes’, ‘Labour’, ‘PregnancySupervisor’}</p>
+<p>CAUSES_OF_DEATH : {‘secondary_postpartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x7feb91ceacd0&gt;, ‘postpartum_sepsis’: &lt;tlo.methods.causes.Cause object at 0x7feb91cfe160&gt;, ‘severe_pre_eclampsia’: &lt;tlo.methods.causes.Cause object at 0x7feb91cfe1c0&gt;, ‘eclampsia’: &lt;tlo.methods.causes.Cause object at 0x7feb91cfe220&gt;, ‘severe_gestational_hypertension’: &lt;tlo.methods.causes.Cause object at 0x7feb91cfe280&gt;, ‘early_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x7feb91cfe2e0&gt;, ‘late_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x7feb91cfe340&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘maternal’: &lt;tlo.methods.causes.Cause object at 0x7feb91cfe3a0&gt;}</p>
 <p>INIT_DEPENDENCIES : {‘Demography’, ‘HealthSystem’}</p>
 <p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;}</p>
 <p><strong>Functions (defined or overridden in class PostnatalSupervisor):</strong></p>
@@ -700,9 +701,12 @@ developed a complication. For women who dont seek care for themselves risk of de
 must be done by calling Simulation.schedule_event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
 All subclasses of Event take this as the first argument in their
-constructor, but may also take further keyword arguments.</p>
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -738,9 +742,12 @@ developed a complication. For newborns who dont seek care for themselves risk of
 must be done by calling Simulation.schedule_event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
 All subclasses of Event take this as the first argument in their
-constructor, but may also take further keyword arguments.</p>
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -810,7 +817,7 @@ constructor, but may also take further keyword arguments.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on May 31, 2022.
+        Last updated on Aug 10, 2022.
       </span>
 
     </p>

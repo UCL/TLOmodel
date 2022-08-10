@@ -35,6 +35,7 @@
         <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
@@ -177,10 +178,10 @@
            <div itemprop="articleBody">
             
   <div class="section" id="module-tlo.methods.stunting">
-<span id="tlo-methods-stunting-module"></span><h1>tlo.methods.stunting module<a class="headerlink" href="#module-tlo.methods.stunting" title="Permalink to this headline">¶</a></h1>
+<span id="tlo-methods-stunting-module"></span><h1>tlo.methods.stunting module<a class="headerlink" href="#module-tlo.methods.stunting" title="Permalink to this heading">¶</a></h1>
 <p>Stunting Module</p>
 <div class="section" id="overview">
-<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this heading">¶</a></h2>
 <p>The Stunting module determines the prevalence of stunting for children under 5 years old. A polling event runs
 every month and determines the risk of onset of non-severe stunting, progression to severe stunting or natural
 recovery. The Generic HSI calls <cite>do_routine_assessment_for_chronic_undernutrition</cite> for any HSI with a child under
@@ -348,7 +349,7 @@ recovery. The Generic HSI calls <cite>do_routine_assessment_for_chronic_undernut
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>INIT_DEPENDENCIES : {‘NewbornOutcomes’, ‘Demography’, ‘Wasting’, ‘Hiv’, ‘Diarrhoea’}</p>
+<p>INIT_DEPENDENCIES : {‘Wasting’, ‘NewbornOutcomes’, ‘Hiv’, ‘Diarrhoea’, ‘Demography’}</p>
 <p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
 <p><strong>Functions (defined or overridden in class Stunting):</strong></p>
 <dl class="py method">
@@ -403,19 +404,19 @@ Typically modules would read a particular file within here.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.stunting.Stunting.do_onset">
-<span class="sig-name descname"><span class="pre">do_onset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.indexes.base.Index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/stunting.html#Stunting.do_onset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.stunting.Stunting.do_onset" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">do_onset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/stunting.html#Stunting.do_onset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.stunting.Stunting.do_onset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Represent the onset of stunting for the person_id given in <cite>idx</cite></p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.stunting.Stunting.do_progression">
-<span class="sig-name descname"><span class="pre">do_progression</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.indexes.base.Index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/stunting.html#Stunting.do_progression"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.stunting.Stunting.do_progression" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">do_progression</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/stunting.html#Stunting.do_progression"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.stunting.Stunting.do_progression" title="Permalink to this definition">¶</a></dt>
 <dd><p>Represent the progression to severe stunting for the person_id given in <cite>idx</cite></p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.stunting.Stunting.do_recovery">
-<span class="sig-name descname"><span class="pre">do_recovery</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">pandas.core.indexes.base.Index</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/stunting.html#Stunting.do_recovery"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.stunting.Stunting.do_recovery" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">do_recovery</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Index</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/stunting.html#Stunting.do_recovery"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.stunting.Stunting.do_recovery" title="Permalink to this definition">¶</a></dt>
 <dd><p>Represent the recovery from stunting for the person_id given in <cite>idx</cite>. Recovery causes the person to move
 ‘up’ one level: i.e. ‘HAZ&lt;-3’ –&gt; ‘-3&lt;=HAZ&lt;-2’ or ‘-3&lt;=HAZ&lt;-2’ –&gt; ‘HAZ&gt;=-2’</p>
 </dd></dl>
@@ -602,7 +603,7 @@ constructor, but may also take further keyword arguments.</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ALTERNATIVE_TO : {‘Hiv’, ‘Diarrhoea’, ‘Wasting’}</p>
+<p>ALTERNATIVE_TO : {‘Diarrhoea’, ‘Wasting’, ‘Hiv’}</p>
 <p>INIT_DEPENDENCIES : {‘Demography’}</p>
 <p><strong>Functions (defined or overridden in class StuntingPropertiesOfOtherModules):</strong></p>
 <dl class="py method">
@@ -693,7 +694,7 @@ It is a good place to add initial events to the event queue.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on May 31, 2022.
+        Last updated on Aug 10, 2022.
       </span>
 
     </p>

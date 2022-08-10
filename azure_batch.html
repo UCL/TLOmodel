@@ -35,6 +35,7 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
@@ -171,12 +172,12 @@
            <div itemprop="articleBody">
             
   <div class="section" id="using-azure-batch">
-<h1>Using Azure Batch<a class="headerlink" href="#using-azure-batch" title="Permalink to this headline">¶</a></h1>
+<h1>Using Azure Batch<a class="headerlink" href="#using-azure-batch" title="Permalink to this heading">¶</a></h1>
 <p>Scenarios configure TLOmodel simulations. Simulations are configured as subclasses of
 <code class="docutils literal notranslate"><span class="pre">tlo.scenario.BaseScenario</span></code>. The <code class="docutils literal notranslate"><span class="pre">tlo</span></code> command-line tool is used to submit simulation scenarios to run on
 Azure Batch.</p>
 <div class="section" id="setup">
-<h2>Setup<a class="headerlink" href="#setup" title="Permalink to this headline">¶</a></h2>
+<h2>Setup<a class="headerlink" href="#setup" title="Permalink to this heading">¶</a></h2>
 <ol class="arabic">
 <li><p>Install Azure CLI <a class="reference external" href="https://docs.microsoft.com/en-us/cli/azure/install-azure-cli">https://docs.microsoft.com/en-us/cli/azure/install-azure-cli</a></p></li>
 <li><p>Checkout &amp; pull TLOmodel master branch</p></li>
@@ -204,7 +205,7 @@ Azure Batch.</p>
 </ol>
 </div>
 <div class="section" id="creating-a-scenario">
-<h2>Creating a Scenario<a class="headerlink" href="#creating-a-scenario" title="Permalink to this headline">¶</a></h2>
+<h2>Creating a Scenario<a class="headerlink" href="#creating-a-scenario" title="Permalink to this heading">¶</a></h2>
 <ol class="arabic">
 <li><p>Checkout a new branch for your scenario</p></li>
 <li><p>Create a file <code class="docutils literal notranslate"><span class="pre">src/scripts/&lt;your</span> <span class="pre">directory&gt;/&lt;a</span> <span class="pre">unique</span> <span class="pre">filename&gt;.py</span></code>. The filename will serve as the job identifier.</p></li>
@@ -262,7 +263,7 @@ Azure Batch.</p>
 <li><p>Commit the scenario file and push to Github</p></li>
 </ol>
 <div class="section" id="interacting-with-azure-batch">
-<h3>Interacting with Azure Batch<a class="headerlink" href="#interacting-with-azure-batch" title="Permalink to this headline">¶</a></h3>
+<h3>Interacting with Azure Batch<a class="headerlink" href="#interacting-with-azure-batch" title="Permalink to this heading">¶</a></h3>
 <p>Each of the subcommands of <code class="docutils literal notranslate"><span class="pre">tlo</span></code> has a <code class="docutils literal notranslate"><span class="pre">--help</span></code> flag for further information e.g. <code class="docutils literal notranslate"><span class="pre">tlo</span> <span class="pre">batch-submit</span> <span class="pre">--help</span></code></p>
 <p><em>Submit scenario to Azure Batch</em>:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">tlo</span> <span class="n">batch</span><span class="o">-</span><span class="n">submit</span> <span class="n">src</span><span class="o">/</span><span class="n">scripts</span><span class="o">/</span><span class="n">dev</span><span class="o">/</span><span class="n">tlo_q1_demo</span><span class="o">.</span><span class="n">py</span>
@@ -303,7 +304,7 @@ Azure Batch.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on May 31, 2022.
+        Last updated on Aug 10, 2022.
       </span>
 
     </p>

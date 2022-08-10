@@ -35,6 +35,7 @@
         <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
         <script src="../../_static/jquery.js"></script>
         <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../../_static/js/theme.js"></script>
@@ -318,7 +319,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="kc">None</span></div>
 
-<div class="viewcode-block" id="BaseScenario.save_draws"><a class="viewcode-back" href="../../reference/tlo.scenario.html#tlo.scenario.BaseScenario.save_draws">[docs]</a>    <span class="k">def</span> <span class="nf">save_draws</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="BaseScenario.save_draws"><a class="viewcode-back" href="../../reference/tlo.scenario.html#tlo.scenario.BaseScenario.save_draws">[docs]</a>    <span class="k">def</span> <span class="nf">save_draws</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">return_config</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="n">generator</span> <span class="o">=</span> <span class="n">DrawGenerator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">number_of_draws</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">runs_per_draw</span><span class="p">)</span>
         <span class="n">output_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenario_path</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">scenario_path</span><span class="o">.</span><span class="n">stem</span><span class="si">}</span><span class="s2">_draws.json&quot;</span>
         <span class="c1"># assert not os.path.exists(output_path), f&#39;Cannot save run config to {output_path} - file already exists&#39;</span>
@@ -329,8 +330,11 @@
         <span class="k">if</span> <span class="s2">&quot;commit&quot;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
             <span class="n">github_url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;https://github.com/UCL/TLOmodel/blob/</span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;commit&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;scenario_script_path&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="n">config</span><span class="p">[</span><span class="s2">&quot;github&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">github_url</span>
-        <span class="n">generator</span><span class="o">.</span><span class="n">save_config</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">output_path</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">output_path</span></div>
+        <span class="k">if</span> <span class="n">return_config</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">config</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">generator</span><span class="o">.</span><span class="n">save_config</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">output_path</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">output_path</span></div>
 
 <div class="viewcode-block" id="BaseScenario.make_grid"><a class="viewcode-back" href="../../reference/tlo.scenario.html#tlo.scenario.BaseScenario.make_grid">[docs]</a>    <span class="k">def</span> <span class="nf">make_grid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ranges</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Utility method to flatten an n-dimension grid of parameters for use in scenarios</span>
@@ -520,7 +524,8 @@
                 <span class="n">module</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="n">module_name</span><span class="p">]</span>
                 <span class="k">for</span> <span class="n">param_name</span><span class="p">,</span> <span class="n">param_val</span> <span class="ow">in</span> <span class="n">overrides</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                     <span class="k">assert</span> <span class="n">param_name</span> <span class="ow">in</span> <span class="n">module</span><span class="o">.</span><span class="n">PARAMETERS</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">module</span><span class="si">}</span><span class="s2"> does not have parameter &#39;</span><span class="si">{</span><span class="n">param_name</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
-                    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">param_val</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Parameter value &#39;</span><span class="si">{</span><span class="n">param_val</span><span class="si">}</span><span class="s2">&#39; is not scalar type (float, int, str)&quot;</span>
+                    <span class="c1"># assert np.isscalar(param_val),</span>
+                    <span class="c1">#  f&quot;Parameter value &#39;{param_val}&#39; is not scalar type (float, int, str)&quot;</span>
 
                     <span class="n">old_value</span> <span class="o">=</span> <span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">param_name</span><span class="p">]</span>
                     <span class="k">assert</span> <span class="nb">type</span><span class="p">(</span><span class="n">old_value</span><span class="p">)</span> <span class="o">==</span> <span class="nb">type</span><span class="p">(</span><span class="n">param_val</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Cannot override parameter &#39;</span><span class="si">{</span><span class="n">param_name</span><span class="si">}</span><span class="s2">&#39; - wrong type&quot;</span>
@@ -567,7 +572,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on May 31, 2022.
+        Last updated on Aug 10, 2022.
       </span>
 
     </p>

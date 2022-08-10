@@ -35,6 +35,7 @@
         <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
@@ -177,13 +178,13 @@
            <div itemprop="articleBody">
             
   <div class="section" id="module-tlo.methods.healthseekingbehaviour">
-<span id="tlo-methods-healthseekingbehaviour-module"></span><h1>tlo.methods.healthseekingbehaviour module<a class="headerlink" href="#module-tlo.methods.healthseekingbehaviour" title="Permalink to this headline">¶</a></h1>
+<span id="tlo-methods-healthseekingbehaviour-module"></span><h1>tlo.methods.healthseekingbehaviour module<a class="headerlink" href="#module-tlo.methods.healthseekingbehaviour" title="Permalink to this heading">¶</a></h1>
 <p>Health Seeking Behaviour Module
 This module determines if care is sought once a symptom is developed.</p>
 <p>The write-up of these estimates is: Health-seeking behaviour estimates for adults and children.docx</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HealthSeekingBehaviour</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_any_symptom_to_lead_to_healthcareseeking</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthseekingbehaviour.html#HealthSeekingBehaviour"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HealthSeekingBehaviour</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_any_symptom_to_lead_to_healthcareseeking</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthseekingbehaviour.html#HealthSeekingBehaviour"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour" title="Permalink to this definition">¶</a></dt>
 <dd><p>This modules determines if the onset of symptoms will lead to that person presenting at the health
 facility for a HSI_GenericFirstAppointment.</p>
 <p>An equation gives the probability of seeking care in response to the “average” symptom. This is modified according
@@ -203,67 +204,71 @@ to if the symptom is associated with a particular effect.</p>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>baseline_odds_of_healthcareseeking_children</p></td>
+<tr class="row-even"><td><p>force_any_symptom_to_lead_to_healthcareseeking</p></td>
+<td><p>BOOL</p></td>
+<td><p>Whether every symptom should always lead to healthcare seeking (ignoring the other parameters that determine the probability of seeking care.</p></td>
+</tr>
+<tr class="row-odd"><td><p>baseline_odds_of_healthcareseeking_children</p></td>
 <td><p>REAL</p></td>
 <td><p>odds of health-care seeking (children: 0-14) if male, 0-5 years-old, living in a rural setting in the Northern region, and not in the wealth categories 4 or 5</p></td>
 </tr>
-<tr class="row-odd"><td><p>odds_ratio_children_sex_Female</p></td>
+<tr class="row-even"><td><p>odds_ratio_children_sex_Female</p></td>
 <td><p>REAL</p></td>
 <td><p>odds ratio for health-care seeking (children) if sex is Female</p></td>
 </tr>
-<tr class="row-even"><td><p>odds_ratio_children_age_5to14</p></td>
+<tr class="row-odd"><td><p>odds_ratio_children_age_5to14</p></td>
 <td><p>REAL</p></td>
 <td><p>odds ratio for health-care seeking (children) if aged 5-14</p></td>
 </tr>
-<tr class="row-odd"><td><p>odds_ratio_children_setting_urban</p></td>
+<tr class="row-even"><td><p>odds_ratio_children_setting_urban</p></td>
 <td><p>REAL</p></td>
 <td><p>odds ratio for health-care seeking (children) if setting is Urban</p></td>
 </tr>
-<tr class="row-even"><td><p>odds_ratio_children_region_Central</p></td>
+<tr class="row-odd"><td><p>odds_ratio_children_region_Central</p></td>
 <td><p>REAL</p></td>
 <td><p>odds ratio for health-care seeking (children) if region is Central</p></td>
 </tr>
-<tr class="row-odd"><td><p>odds_ratio_children_region_Southern</p></td>
+<tr class="row-even"><td><p>odds_ratio_children_region_Southern</p></td>
 <td><p>REAL</p></td>
 <td><p>odds ratio for health-care seeking (children) if region is Southern</p></td>
 </tr>
-<tr class="row-even"><td><p>odds_ratio_children_wealth_higher</p></td>
+<tr class="row-odd"><td><p>odds_ratio_children_wealth_higher</p></td>
 <td><p>REAL</p></td>
 <td><p>odds ratio for health-care seeking (children) if wealth is in categories 4 or 5</p></td>
 </tr>
-<tr class="row-odd"><td><p>baseline_odds_of_healthcareseeking_adults</p></td>
+<tr class="row-even"><td><p>baseline_odds_of_healthcareseeking_adults</p></td>
 <td><p>REAL</p></td>
 <td><p>odds of health-care seeking (adults: 15+) if male, 15-34 year-olds, living in a rural setting in the Northern region, and not in the wealth categories 4 or 5.</p></td>
 </tr>
-<tr class="row-even"><td><p>odds_ratio_adults_sex_Female</p></td>
+<tr class="row-odd"><td><p>odds_ratio_adults_sex_Female</p></td>
 <td><p>REAL</p></td>
 <td><p>odds ratio for health-care seeking (adults) if sex is Female</p></td>
 </tr>
-<tr class="row-odd"><td><p>odds_ratio_adults_age_35to59</p></td>
+<tr class="row-even"><td><p>odds_ratio_adults_age_35to59</p></td>
 <td><p>REAL</p></td>
 <td><p>odds ratio for health-care seeking (adults) if aged 35-59</p></td>
 </tr>
-<tr class="row-even"><td><p>odds_ratio_adults_age_60plus</p></td>
+<tr class="row-odd"><td><p>odds_ratio_adults_age_60plus</p></td>
 <td><p>REAL</p></td>
 <td><p>odds ratio for health-care seeking (adults) if aged 60+</p></td>
 </tr>
-<tr class="row-odd"><td><p>odds_ratio_adults_setting_urban</p></td>
+<tr class="row-even"><td><p>odds_ratio_adults_setting_urban</p></td>
 <td><p>REAL</p></td>
 <td><p>odds ratio for health-care seeking (adults) if setting is Urban</p></td>
 </tr>
-<tr class="row-even"><td><p>odds_ratio_adults_region_Central</p></td>
+<tr class="row-odd"><td><p>odds_ratio_adults_region_Central</p></td>
 <td><p>REAL</p></td>
 <td><p>odds ratio for health-care seeking (adults) if region is Central</p></td>
 </tr>
-<tr class="row-odd"><td><p>odds_ratio_adults_region_Southern</p></td>
+<tr class="row-even"><td><p>odds_ratio_adults_region_Southern</p></td>
 <td><p>REAL</p></td>
 <td><p>odds ratio for health-care seeking (adults) if region is Southern</p></td>
 </tr>
-<tr class="row-even"><td><p>odds_ratio_adults_wealth_higher</p></td>
+<tr class="row-odd"><td><p>odds_ratio_adults_wealth_higher</p></td>
 <td><p>REAL</p></td>
 <td><p>odds ratio for health-care seeking (adults) if wealth is in categories 4 or 5</p></td>
 </tr>
-<tr class="row-odd"><td><p>max_days_delay_to_generic_HSI_after_symptoms</p></td>
+<tr class="row-even"><td><p>max_days_delay_to_generic_HSI_after_symptoms</p></td>
 <td><p>INT</p></td>
 <td><p>Maximum days delay between symptom onset and firstgeneric HSI. Actual delay is sample between 0 and this value.</p></td>
 </tr>
@@ -271,12 +276,13 @@ to if the symptom is associated with a particular effect.</p>
 </table>
 <p><strong>Class attributes:</strong></p>
 <p>ADDITIONAL_DEPENDENCIES : {‘Lifestyle’}</p>
-<p>INIT_DEPENDENCIES : {‘Demography’, ‘HealthSystem’, ‘SymptomManager’}</p>
+<p>INIT_DEPENDENCIES : {‘Demography’, ‘SymptomManager’, ‘HealthSystem’}</p>
 <p>METADATA : {&lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
+<p>force_any_symptom_to_lead_to_healthcareseeking : &lt;property object at 0x7feb910e2450&gt;</p>
 <p><strong>Functions (defined or overridden in class HealthSeekingBehaviour):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_any_symptom_to_lead_to_healthcareseeking</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthseekingbehaviour.html#HealthSeekingBehaviour.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.__init__" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_any_symptom_to_lead_to_healthcareseeking</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthseekingbehaviour.html#HealthSeekingBehaviour.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Construct a new disease module ready to be included in a simulation.</p>
 <p>Initialises an empty parameters dictionary and module-specific random number
 generator.</p>
@@ -345,7 +351,9 @@ generator.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthseekingbehaviour.HealthSeekingBehaviourPoll.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthseekingbehaviour.html#HealthSeekingBehaviourPoll.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviourPoll.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Determine if persons with newly onset acute generic symptoms will seek care.</p>
+<dd><p>Determine if persons with newly onset acute generic symptoms will seek care. This event runs second-to-last
+every day (i.e., just before the <cite>HealthSystemScheduler</cite>) in order that symptoms arising this day can lead to
+FirstAttendance on the same day.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>population</strong> – the current population</p>
@@ -372,7 +380,7 @@ generator.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on May 31, 2022.
+        Last updated on Aug 10, 2022.
       </span>
 
     </p>

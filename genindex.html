@@ -35,6 +35,7 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
@@ -211,6 +212,10 @@
 </li>
         <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.AlriIncidentCase.__init__">(AlriIncidentCase method)</a>
 </li>
+        <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.AlriIncidentCase_Lethal_DangerSigns_Pneumonia.__init__">(AlriIncidentCase_Lethal_DangerSigns_Pneumonia method)</a>
+</li>
+        <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia.__init__">(AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia method)</a>
+</li>
         <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.AlriIndividualLoggingEvent.__init__">(AlriIndividualLoggingEvent method)</a>
 </li>
         <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.AlriLoggingEvent.__init__">(AlriLoggingEvent method)</a>
@@ -218,8 +223,6 @@
         <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.AlriNaturalRecoveryEvent.__init__">(AlriNaturalRecoveryEvent method)</a>
 </li>
         <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.AlriPollingEvent.__init__">(AlriPollingEvent method)</a>
-</li>
-        <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.AlriPropertiesOfOtherModules.__init__">(AlriPropertiesOfOtherModules method)</a>
 </li>
         <li><a href="reference/tlo.methods.labour.html#tlo.methods.labour.BirthAndPostnatalOutcomesEvent.__init__">(BirthAndPostnatalOutcomesEvent method)</a>
 </li>
@@ -335,6 +338,8 @@
 </li>
         <li><a href="reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.__init__">(HealthSystem method)</a>
 </li>
+        <li><a href="reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemChangeParameters.__init__">(HealthSystemChangeParameters method)</a>
+</li>
         <li><a href="reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemScheduler.__init__">(HealthSystemScheduler method)</a>
 </li>
         <li><a href="reference/tlo.methods.hiv.html#tlo.methods.hiv.Hiv.__init__">(Hiv method)</a>
@@ -361,7 +366,7 @@
 </li>
         <li><a href="reference/tlo.methods.epi.html#tlo.methods.epi.HpvScheduleEvent.__init__">(HpvScheduleEvent method)</a>
 </li>
-        <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.HSI_Alri_GenericTreatment.__init__">(HSI_Alri_GenericTreatment method)</a>
+        <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.HSI_Alri_Treatment.__init__">(HSI_Alri_Treatment method)</a>
 </li>
         <li><a href="reference/tlo.methods.bladder_cancer.html#tlo.methods.bladder_cancer.HSI_BladderCancer_Investigation_Following_Blood_Urine.__init__">(HSI_BladderCancer_Investigation_Following_Blood_Urine method)</a>
 </li>
@@ -760,11 +765,33 @@
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem._add_hsi_event_queue_item_to_hsi_event_queue">_add_hsi_event_queue_item_to_hsi_event_queue() (HealthSystem method)</a>
+</li>
+      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.HSI_Alri_Treatment._as_in_patient">_as_in_patient() (HSI_Alri_Treatment method)</a>
+</li>
+      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.HSI_Alri_Treatment._as_out_patient">_as_out_patient() (HSI_Alri_Treatment method)</a>
+</li>
+      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.HSI_Alri_Treatment._assess_and_treat">_assess_and_treat() (HSI_Alri_Treatment method)</a>
+</li>
       <li><a href="reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event._check_if_appt_footprint_can_run">_check_if_appt_footprint_can_run() (HSI_Event method)</a>
+</li>
+      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.HSI_Alri_Treatment._do_action_given_classification">_do_action_given_classification() (HSI_Alri_Treatment method)</a>
 </li>
       <li><a href="reference/tlo.methods.demography.html#tlo.methods.demography.Demography._edit_init_pop_to_prevent_persons_greater_than_max_age">_edit_init_pop_to_prevent_persons_greater_than_max_age() (Demography method)</a>
 </li>
+      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.HSI_Alri_Treatment._get_classification_given_by_health_worker">_get_classification_given_by_health_worker() (HSI_Alri_Treatment method)</a>
+</li>
+      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.HSI_Alri_Treatment._get_cons">_get_cons() (HSI_Alri_Treatment method)</a>
+</li>
+      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.HSI_Alri_Treatment._get_cons_group">_get_cons_group() (HSI_Alri_Treatment method)</a>
+</li>
+      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.HSI_Alri_Treatment._get_cons_with_backups">_get_cons_with_backups() (HSI_Alri_Treatment method)</a>
+</li>
       <li><a href="reference/tlo.methods.schisto.html#tlo.methods.schisto.Schisto._get_disability_weight">_get_disability_weight() (Schisto method)</a>
+</li>
+      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.HSI_Alri_Treatment._get_disease_classification_for_treatment_decision">_get_disease_classification_for_treatment_decision() (HSI_Alri_Treatment method)</a>
+</li>
+      <li><a href="reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemScheduler._get_events_due_today">_get_events_due_today() (HealthSystemScheduler method)</a>
 </li>
       <li><a href="reference/tlo.methods.labour.html#tlo.methods.labour.HSI_Labour_ReceivesPostnatalCheck._get_facility_level_for_pnc">_get_facility_level_for_pnc() (HSI_Labour_ReceivesPostnatalCheck method)</a>
 
@@ -772,7 +799,13 @@
         <li><a href="reference/tlo.methods.newborn_outcomes.html#tlo.methods.newborn_outcomes.HSI_NewbornOutcomes_ReceivesPostnatalCheck._get_facility_level_for_pnc">(HSI_NewbornOutcomes_ReceivesPostnatalCheck method)</a>
 </li>
       </ul></li>
+      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.HSI_Alri_Treatment._get_imci_classification_based_on_symptoms">_get_imci_classification_based_on_symptoms() (HSI_Alri_Treatment method)</a>
+</li>
+      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.HSI_Alri_Treatment._get_imci_classification_by_SpO2_measure">_get_imci_classification_by_SpO2_measure() (HSI_Alri_Treatment static method)</a>
+</li>
       <li><a href="reference/tlo.methods.schisto.html#tlo.methods.schisto.Schisto._get_item_code_for_praziquantel">_get_item_code_for_praziquantel() (Schisto method)</a>
+</li>
+      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.HSI_Alri_Treatment._has_staph_aureus">_has_staph_aureus() (HSI_Alri_Treatment method)</a>
 </li>
       <li><a href="reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemScheduler._is_today_last_day_of_the_year">_is_today_last_day_of_the_year() (HealthSystemScheduler static method)</a>
 </li>
@@ -780,13 +813,23 @@
 </li>
       <li><a href="reference/tlo.methods.hiv.html#tlo.methods.hiv.HSI_Hiv_StartOrContinueTreatment._make_appt_footprint_according_age_and_patient_status">_make_appt_footprint_according_age_and_patient_status() (HSI_Hiv_StartOrContinueTreatment method)</a>
 </li>
+      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.HSI_Alri_Treatment._provide_bronchodilator_if_wheeze">_provide_bronchodilator_if_wheeze() (HSI_Alri_Treatment method)</a>
+</li>
+      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.HSI_Alri_Treatment._refer_to_become_inpatient">_refer_to_become_inpatient() (HSI_Alri_Treatment method)</a>
+</li>
+      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.HSI_Alri_Treatment._refer_to_next_level_up">_refer_to_next_level_up() (HSI_Alri_Treatment method)</a>
+</li>
       <li><a href="reference/tlo.methods.schisto.html#tlo.methods.schisto.Schisto._register_symptoms">_register_symptoms() (Schisto method)</a>
+</li>
+      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.HSI_Alri_Treatment._schedule_follow_up_following_treatment_failure">_schedule_follow_up_following_treatment_failure() (HSI_Alri_Treatment method)</a>
 </li>
       <li><a href="reference/tlo.methods.schisto.html#tlo.methods.schisto.Schisto._schedule_mda_events">_schedule_mda_events() (Schisto method)</a>
 </li>
       <li><a href="reference/tlo.methods.healthseekingbehaviour.html#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviourPoll._select_persons_with_any_symptoms">_select_persons_with_any_symptoms() (HealthSeekingBehaviourPoll static method)</a>
 </li>
       <li><a href="reference/tlo.methods.schisto.html#tlo.methods.schisto.SchistoMDAEvent._select_recipients">_select_recipients() (SchistoMDAEvent method)</a>
+</li>
+      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.Alri._ultimate_treatment_indicated_for_patient">_ultimate_treatment_indicated_for_patient() (Alri static method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -818,6 +861,10 @@
 </li>
       <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.AlriIncidentCase">AlriIncidentCase (class in tlo.methods.alri)</a>
 </li>
+      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.AlriIncidentCase_Lethal_DangerSigns_Pneumonia">AlriIncidentCase_Lethal_DangerSigns_Pneumonia (class in tlo.methods.alri)</a>
+</li>
+      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia">AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia (class in tlo.methods.alri)</a>
+</li>
       <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.AlriIndividualLoggingEvent">AlriIndividualLoggingEvent (class in tlo.methods.alri)</a>
 </li>
       <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.AlriLoggingEvent">AlriLoggingEvent (class in tlo.methods.alri)</a>
@@ -848,6 +895,10 @@
         <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.AlriDeathEvent.apply">(AlriDeathEvent method)</a>
 </li>
         <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.AlriIncidentCase.apply">(AlriIncidentCase method)</a>
+</li>
+        <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.AlriIncidentCase_Lethal_DangerSigns_Pneumonia.apply">(AlriIncidentCase_Lethal_DangerSigns_Pneumonia method)</a>
+</li>
+        <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia.apply">(AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia method)</a>
 </li>
         <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.AlriIndividualLoggingEvent.apply">(AlriIndividualLoggingEvent method)</a>
 </li>
@@ -945,6 +996,8 @@
 </li>
         <li><a href="reference/tlo.methods.healthseekingbehaviour.html#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviourPoll.apply">(HealthSeekingBehaviourPoll method)</a>
 </li>
+        <li><a href="reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemChangeParameters.apply">(HealthSystemChangeParameters method)</a>
+</li>
         <li><a href="reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemScheduler.apply">(HealthSystemScheduler method)</a>
 </li>
         <li><a href="reference/tlo.methods.epi.html#tlo.methods.epi.HibVaccineEvent.apply">(HibVaccineEvent method)</a>
@@ -971,7 +1024,7 @@
 </li>
         <li><a href="reference/tlo.methods.epi.html#tlo.methods.epi.HpvScheduleEvent.apply">(HpvScheduleEvent method)</a>
 </li>
-        <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.HSI_Alri_GenericTreatment.apply">(HSI_Alri_GenericTreatment method)</a>
+        <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.HSI_Alri_Treatment.apply">(HSI_Alri_Treatment method)</a>
 </li>
         <li><a href="reference/tlo.methods.epi.html#tlo.methods.epi.HSI_BcgVaccine.apply">(HSI_BcgVaccine method)</a>
 </li>
@@ -1362,6 +1415,8 @@
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.AlriIncidentCase.apply_characteristics_of_the_case">apply_characteristics_of_the_case() (AlriIncidentCase method)</a>
+</li>
       <li><a href="reference/tlo.methods.depression.html#tlo.methods.depression.Depression.apply_linear_model">apply_linear_model() (Depression method)</a>
 
       <ul>
@@ -1510,12 +1565,10 @@
 </li>
       <li><a href="reference/tlo.methods.care_of_women_during_pregnancy.html#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.call_if_maternal_emergency_assessment_cant_run">call_if_maternal_emergency_assessment_cant_run() (CareOfWomenDuringPregnancy method)</a>
 </li>
-      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.Alri.cancel_death_date">cancel_death_date() (Alri method)</a>
-
-      <ul>
-        <li><a href="reference/tlo.methods.diarrhoea.html#tlo.methods.diarrhoea.Diarrhoea.cancel_death_date">(Diarrhoea method)</a>
+      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.Alri.cancel_death_and_schedule_cure">cancel_death_and_schedule_cure() (Alri method)</a>
 </li>
-      </ul></li>
+      <li><a href="reference/tlo.methods.diarrhoea.html#tlo.methods.diarrhoea.Diarrhoea.cancel_death_date">cancel_death_date() (Diarrhoea method)</a>
+</li>
       <li><a href="reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders">CardioMetabolicDisorders (class in tlo.methods.cardio_metabolic_disorders)</a>
 </li>
       <li><a href="reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders_LoggingEvent">CardioMetabolicDisorders_LoggingEvent (class in tlo.methods.cardio_metabolic_disorders)</a>
@@ -1598,18 +1651,16 @@
 </li>
       <li><a href="reference/tlo.progressbar.html#tlo.progressbar.StreamDisplay.close">close() (StreamDisplay method)</a>
 </li>
+      <li><a href="reference/tlo.analysis.utils.html#tlo.analysis.utils.colors_in_matplotlib">colors_in_matplotlib() (in module tlo.analysis.utils)</a>
+</li>
       <li><a href="reference/tlo.analysis.utils.html#tlo.analysis.utils.compare_number_of_deaths">compare_number_of_deaths() (in module tlo.analysis.utils)</a>
 </li>
       <li><a href="reference/tlo.methods.enhanced_lifestyle.html#tlo.methods.enhanced_lifestyle.Lifestyle.compute_bmi_proportions_of_interest">compute_bmi_proportions_of_interest() (Lifestyle method)</a>
 </li>
       <li><a href="reference/tlo.methods.healthburden.html#tlo.methods.healthburden.HealthBurden.compute_dalys">compute_dalys() (HealthBurden method)</a>
 </li>
-      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.AlriPollingEvent.compute_fraction_of_year_between_polling_event">compute_fraction_of_year_between_polling_event() (AlriPollingEvent method)</a>
-
-      <ul>
-        <li><a href="reference/tlo.methods.diarrhoea.html#tlo.methods.diarrhoea.DiarrhoeaPollingEvent.compute_fraction_of_year_between_polling_event">(DiarrhoeaPollingEvent method)</a>
+      <li><a href="reference/tlo.methods.diarrhoea.html#tlo.methods.diarrhoea.DiarrhoeaPollingEvent.compute_fraction_of_year_between_polling_event">compute_fraction_of_year_between_polling_event() (DiarrhoeaPollingEvent method)</a>
 </li>
-      </ul></li>
       <li><a href="reference/tlo.methods.demography.html#tlo.methods.demography.Demography.compute_initial_model_to_data_popsize_ratio">compute_initial_model_to_data_popsize_ratio() (Demography method)</a>
 </li>
       <li><a href="reference/tlo.simulation.html#tlo.simulation.Simulation.configure_logging">configure_logging() (Simulation method)</a>
@@ -1697,6 +1748,8 @@
       <li><a href="reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders.determine_if_will_be_investigated">determine_if_will_be_investigated() (CardioMetabolicDisorders method)</a>
 </li>
       <li><a href="reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders.determine_if_will_be_investigated_events">determine_if_will_be_investigated_events() (CardioMetabolicDisorders method)</a>
+</li>
+      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.AlriIncidentCase.determine_nature_of_the_case">determine_nature_of_the_case() (AlriIncidentCase method)</a>
 </li>
       <li><a href="reference/tlo.methods.hiv.html#tlo.methods.hiv.HSI_Hiv_StartOrContinueTreatment.determine_vl_status">determine_vl_status() (HSI_Hiv_StartOrContinueTreatment method)</a>
 </li>
@@ -1868,7 +1921,11 @@
 </li>
       <li><a href="reference/tlo.methods.schisto.html#tlo.methods.schisto.Schisto.do_effect_of_treatment">do_effect_of_treatment() (Schisto method)</a>
 </li>
+      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.Alri.do_effects_of_treatment_and_return_outcome">do_effects_of_treatment_and_return_outcome() (Alri method)</a>
+</li>
       <li><a href="reference/tlo.methods.hiv.html#tlo.methods.hiv.Hiv.do_new_infection">do_new_infection() (Hiv method)</a>
+</li>
+      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.HSI_Alri_Treatment.do_on_follow_up_following_treatment_failure">do_on_follow_up_following_treatment_failure() (HSI_Alri_Treatment method)</a>
 </li>
       <li><a href="reference/tlo.methods.schisto.html#tlo.methods.schisto.Schisto.do_on_presentation_with_symptoms">do_on_presentation_with_symptoms() (Schisto method)</a>
 </li>
@@ -1882,11 +1939,9 @@
 </li>
       <li><a href="reference/tlo.methods.rti.html#tlo.methods.rti.RTI.do_rti_diagnosis_and_treatment">do_rti_diagnosis_and_treatment() (RTI method)</a>
 </li>
-      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.Alri.do_treatment">do_treatment() (Alri method)</a>
+      <li><a href="reference/tlo.methods.diarrhoea.html#tlo.methods.diarrhoea.Diarrhoea.do_treatment">do_treatment() (Diarrhoea method)</a>
 
       <ul>
-        <li><a href="reference/tlo.methods.diarrhoea.html#tlo.methods.diarrhoea.Diarrhoea.do_treatment">(Diarrhoea method)</a>
-</li>
         <li><a href="reference/tlo.methods.stunting.html#tlo.methods.stunting.Stunting.do_treatment">(Stunting method)</a>
 </li>
       </ul></li>
@@ -1934,6 +1989,8 @@
         <li><a href="reference/tlo.methods.diarrhoea.html#tlo.methods.diarrhoea.Diarrhoea.end_episode">(Diarrhoea method)</a>
 </li>
       </ul></li>
+      <li><a href="reference/tlo.events.html#tlo.events.Priority.END_OF_DAY">END_OF_DAY (Priority attribute)</a>
+</li>
       <li><a href="reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception.end_pregnancy">end_pregnancy() (Contraception method)</a>
 </li>
       <li><a href="reference/tlo.methods.tb.html#tlo.methods.tb.Tb.end_treatment">end_treatment() (Tb method)</a>
@@ -1984,13 +2041,21 @@
       </ul></li>
       <li><a href="reference/tlo.simulation.html#tlo.simulation.Simulation.fire_single_event">fire_single_event() (Simulation method)</a>
 </li>
+      <li><a href="reference/tlo.events.html#tlo.events.Priority.FIRST_HALF_OF_DAY">FIRST_HALF_OF_DAY (Priority attribute)</a>
+</li>
       <li><a href="reference/tlo.analysis.utils.html#tlo.analysis.utils.flatten_multi_index_series_into_dict_for_logging">flatten_multi_index_series_into_dict_for_logging() (in module tlo.analysis.utils)</a>
 </li>
       <li><a href="reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.format_daily_capabilities">format_daily_capabilities() (HealthSystem method)</a>
 </li>
+      <li><a href="reference/tlo.analysis.utils.html#tlo.analysis.utils.format_gbd">format_gbd() (in module tlo.analysis.utils)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="reference/tlo.analysis.utils.html#tlo.analysis.utils.format_gbd">format_gbd() (in module tlo.analysis.utils)</a>
+      <li><a href="reference/tlo.analysis.hsi_events.html#tlo.analysis.hsi_events.format_hsi_event_details_as_csv">format_hsi_event_details_as_csv() (in module tlo.analysis.hsi_events)</a>
+</li>
+      <li><a href="reference/tlo.analysis.hsi_events.html#tlo.analysis.hsi_events.format_hsi_event_details_as_list">format_hsi_event_details_as_list() (in module tlo.analysis.hsi_events)</a>
+</li>
+      <li><a href="reference/tlo.analysis.hsi_events.html#tlo.analysis.hsi_events.format_hsi_event_details_as_table">format_hsi_event_details_as_table() (in module tlo.analysis.hsi_events)</a>
 </li>
       <li><a href="reference/tlo.methods.care_of_women_during_pregnancy.html#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.full_blood_count_testing">full_blood_count_testing() (CareOfWomenDuringPregnancy method)</a>
 </li>
@@ -2018,6 +2083,8 @@
 </li>
       <li><a href="reference/tlo.methods.demography.html#tlo.methods.demography.OtherDeathPoll.get_all_cause_mort_risk_per_poll">get_all_cause_mort_risk_per_poll() (OtherDeathPoll method)</a>
 </li>
+      <li><a href="reference/tlo.analysis.hsi_events.html#tlo.analysis.hsi_events.get_all_defined_hsi_events_as_dataframe">get_all_defined_hsi_events_as_dataframe() (in module tlo.analysis.hsi_events)</a>
+</li>
       <li><a href="reference/tlo.dependencies.html#tlo.dependencies.get_all_dependencies">get_all_dependencies() (in module tlo.dependencies)</a>
 </li>
       <li><a href="reference/tlo.dependencies.html#tlo.dependencies.get_all_required_dependencies">get_all_required_dependencies() (in module tlo.dependencies)</a>
@@ -2040,11 +2107,17 @@
 </li>
       <li><a href="reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_blank_appt_footprint">get_blank_appt_footprint() (HealthSystem method)</a>
 </li>
-      <li><a href="reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_capabilities_today">get_capabilities_today() (HealthSystem method)</a>
-</li>
       <li><a href="reference/tlo.docs.html#tlo.docs.get_class_output_string">get_class_output_string() (in module tlo.docs)</a>
 </li>
       <li><a href="reference/tlo.docs.html#tlo.docs.get_classes_in_module">get_classes_in_module() (in module tlo.docs)</a>
+</li>
+      <li><a href="reference/tlo.analysis.utils.html#tlo.analysis.utils.get_coarse_appt_type">get_coarse_appt_type() (in module tlo.analysis.utils)</a>
+</li>
+      <li><a href="reference/tlo.analysis.utils.html#tlo.analysis.utils.get_color_cause_of_death_label">get_color_cause_of_death_label() (in module tlo.analysis.utils)</a>
+</li>
+      <li><a href="reference/tlo.analysis.utils.html#tlo.analysis.utils.get_color_coarse_appt">get_color_coarse_appt() (in module tlo.analysis.utils)</a>
+</li>
+      <li><a href="reference/tlo.analysis.utils.html#tlo.analysis.utils.get_color_short_treatment_id">get_color_short_treatment_id() (in module tlo.analysis.utils)</a>
 </li>
       <li><a href="reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.get_column_name_for_symptom">get_column_name_for_symptom() (SymptomManager method)</a>
 </li>
@@ -2060,6 +2133,8 @@
 </li>
       <li><a href="reference/tlo.dependencies.html#tlo.dependencies.get_dependencies_and_initialise">get_dependencies_and_initialise() (in module tlo.dependencies)</a>
 </li>
+      <li><a href="reference/tlo.analysis.hsi_events.html#tlo.analysis.hsi_events.get_details_of_defined_hsi_events">get_details_of_defined_hsi_events() (in module tlo.analysis.hsi_events)</a>
+</li>
       <li><a href="reference/tlo.scenario.html#tlo.scenario.DrawGenerator.get_draw">get_draw() (DrawGenerator method)</a>
 
       <ul>
@@ -2068,9 +2143,11 @@
       </ul></li>
       <li><a href="reference/tlo.methods.hiv.html#tlo.methods.hiv.HSI_Hiv_StartOrContinueTreatment.get_drugs">get_drugs() (HSI_Hiv_StartOrContinueTreatment method)</a>
 </li>
+      <li><a href="reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_facility_info">get_facility_info() (HealthSystem method)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_facility_info">get_facility_info() (HealthSystem method)</a>
+      <li><a href="reference/tlo.analysis.utils.html#tlo.analysis.utils.get_filtered_treatment_ids">get_filtered_treatment_ids() (in module tlo.analysis.utils)</a>
 </li>
       <li><a href="reference/tlo.docs.html#tlo.docs.get_fully_qualified_name">get_fully_qualified_name() (in module tlo.docs)</a>
 </li>
@@ -2081,6 +2158,10 @@
       <li><a href="reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_SpuriousSymptomOnset.get_generic_symptoms_dict">get_generic_symptoms_dict() (SymptomManager_SpuriousSymptomOnset method)</a>
 </li>
       <li><a href="reference/tlo.analysis.utils.html#tlo.analysis.utils.get_grid">get_grid() (in module tlo.analysis.utils)</a>
+</li>
+      <li><a href="reference/tlo.analysis.hsi_events.html#tlo.analysis.hsi_events.get_hsi_event_classes_per_module">get_hsi_event_classes_per_module() (in module tlo.analysis.hsi_events)</a>
+</li>
+      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.Alri.get_imci_classification_based_on_symptoms">get_imci_classification_based_on_symptoms() (Alri static method)</a>
 </li>
       <li><a href="reference/tlo.dependencies.html#tlo.dependencies.get_init_dependencies">get_init_dependencies() (in module tlo.dependencies)</a>
 </li>
@@ -2102,9 +2183,15 @@
 </li>
       <li><a href="reference/tlo.docs.html#tlo.docs.get_package_name">get_package_name() (in module tlo.docs)</a>
 </li>
+      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.AlriPollingEvent.get_persons_for_new_alri">get_persons_for_new_alri() (AlriPollingEvent method)</a>
+</li>
       <li><a href="reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.get_persons_with_newly_onset_symptoms">get_persons_with_newly_onset_symptoms() (SymptomManager method)</a>
 </li>
+      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.AlriPollingEvent.get_probs_of_acquiring_pathogen">get_probs_of_acquiring_pathogen() (AlriPollingEvent method)</a>
+</li>
       <li><a href="reference/tlo.methods.demography.html#tlo.methods.demography.OtherDeathPoll.get_proportion_of_deaths_to_represent_as_other_deaths">get_proportion_of_deaths_to_represent_as_other_deaths() (OtherDeathPoll method)</a>
+</li>
+      <li><a href="reference/tlo.analysis.utils.html#tlo.analysis.utils.get_root_path">get_root_path() (in module tlo.analysis.utils)</a>
 </li>
       <li><a href="reference/tlo.scenario.html#tlo.scenario.DrawGenerator.get_run_config">get_run_config() (DrawGenerator method)</a>
 </li>
@@ -2117,6 +2204,8 @@
       <li><a href="reference/tlo.analysis.utils.html#tlo.analysis.utils.get_scenario_info">get_scenario_info() (in module tlo.analysis.utils)</a>
 </li>
       <li><a href="reference/tlo.analysis.utils.html#tlo.analysis.utils.get_scenario_outputs">get_scenario_outputs() (in module tlo.analysis.utils)</a>
+</li>
+      <li><a href="reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_service_availability">get_service_availability() (HealthSystem method)</a>
 </li>
       <li><a href="reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_squeeze_factors">get_squeeze_factors() (HealthSystem method)</a>
 </li>
@@ -2162,6 +2251,8 @@
 </li>
       <li><a href="reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem">HealthSystem (class in tlo.methods.healthsystem)</a>
 </li>
+      <li><a href="reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemChangeParameters">HealthSystemChangeParameters (class in tlo.methods.healthsystem)</a>
+</li>
       <li><a href="reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemScheduler">HealthSystemScheduler (class in tlo.methods.healthsystem)</a>
 </li>
       <li><a href="reference/tlo.methods.care_of_women_during_pregnancy.html#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.hep_b_testing">hep_b_testing() (CareOfWomenDuringPregnancy method)</a>
@@ -2196,7 +2287,7 @@
 </li>
       <li><a href="reference/tlo.methods.epi.html#tlo.methods.epi.HpvScheduleEvent">HpvScheduleEvent (class in tlo.methods.epi)</a>
 </li>
-      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.HSI_Alri_GenericTreatment">HSI_Alri_GenericTreatment (class in tlo.methods.alri)</a>
+      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.HSI_Alri_Treatment">HSI_Alri_Treatment (class in tlo.methods.alri)</a>
 </li>
       <li><a href="reference/tlo.methods.epi.html#tlo.methods.epi.HSI_BcgVaccine">HSI_BcgVaccine (class in tlo.methods.epi)</a>
 </li>
@@ -2432,12 +2523,6 @@
 <h2 id="I">I</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.AlriIncidentCase.impose_complications">impose_complications() (AlriIncidentCase method)</a>
-</li>
-      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.Alri.impose_symptoms_for_complication">impose_symptoms_for_complication() (Alri method)</a>
-</li>
-      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.AlriIncidentCase.impose_symptoms_for_uncomplicated_disease">impose_symptoms_for_uncomplicated_disease() (AlriIncidentCase method)</a>
-</li>
       <li><a href="reference/tlo.methods.epi.html#tlo.methods.epi.Epi.increment_dose">increment_dose() (Epi method)</a>
 </li>
       <li><a href="reference/tlo.events.html#tlo.events.IndividualScopeEventMixin">IndividualScopeEventMixin (class in tlo.events)</a>
@@ -2674,7 +2759,9 @@
 </li>
       <li><a href="reference/tlo.cli.html#tlo.cli.is_file_clean">is_file_clean() (in module tlo.cli)</a>
 </li>
-      <li><a href="reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.is_treatment_id_allowed">is_treatment_id_allowed() (HealthSystem method)</a>
+      <li><a href="reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.is_treatment_id_allowed">is_treatment_id_allowed() (HealthSystem static method)</a>
+</li>
+      <li><a href="reference/tlo.analysis.hsi_events.html#tlo.analysis.hsi_events.is_valid_hsi_event_subclass">is_valid_hsi_event_subclass() (in module tlo.analysis.hsi_events)</a>
 </li>
       <li><a href="reference/tlo.dependencies.html#tlo.dependencies.is_valid_tlo_module_subclass">is_valid_tlo_module_subclass() (in module tlo.dependencies)</a>
 </li>
@@ -2714,6 +2801,8 @@
 </li>
       <li><a href="reference/tlo.methods.labour.html#tlo.methods.labour.LabourOnsetEvent">LabourOnsetEvent (class in tlo.methods.labour)</a>
 </li>
+      <li><a href="reference/tlo.events.html#tlo.events.Priority.LAST_HALF_OF_DAY">LAST_HALF_OF_DAY (Priority attribute)</a>
+</li>
       <li><a href="reference/tlo.logging.core.html#tlo.logging.core.Logger.level">level (Logger property)</a>
 </li>
       <li><a href="reference/tlo.methods.enhanced_lifestyle.html#tlo.methods.enhanced_lifestyle.Lifestyle">Lifestyle (class in tlo.methods.enhanced_lifestyle)</a>
@@ -2746,7 +2835,7 @@
 </li>
       <li><a href="reference/tlo.scenario.html#tlo.scenario.BaseScenario.log_configuration">log_configuration() (BaseScenario method)</a>
 </li>
-      <li><a href="reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.log_current_capabilities">log_current_capabilities() (HealthSystem method)</a>
+      <li><a href="reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.log_current_capabilities_and_usage">log_current_capabilities_and_usage() (HealthSystem method)</a>
 </li>
       <li><a href="reference/tlo.simulation.html#tlo.simulation.Simulation.log_filepath">log_filepath (Simulation property)</a>
 </li>
@@ -2760,8 +2849,12 @@
 </li>
       <li><a href="reference/tlo.methods.stunting.html#tlo.methods.stunting.Stunting.look_up_consumable_item_codes">look_up_consumable_item_codes() (Stunting method)</a>
 </li>
-      <li><a href="reference/tlo.methods.diarrhoea.html#tlo.methods.diarrhoea.Diarrhoea.look_up_consumables">look_up_consumables() (Diarrhoea method)</a>
+      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.Alri.look_up_consumables">look_up_consumables() (Alri method)</a>
+
+      <ul>
+        <li><a href="reference/tlo.methods.diarrhoea.html#tlo.methods.diarrhoea.Diarrhoea.look_up_consumables">(Diarrhoea method)</a>
 </li>
+      </ul></li>
       <li><a href="reference/tlo.scenario.html#tlo.scenario.SampleRunner.low_bias_32">low_bias_32() (SampleRunner static method)</a>
 </li>
   </ul></td>
@@ -2770,6 +2863,8 @@
 <h2 id="M">M</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/tlo.analysis.hsi_events.html#tlo.analysis.hsi_events.main">main() (in module tlo.analysis.hsi_events)</a>
+</li>
       <li><a href="reference/tlo.analysis.utils.html#tlo.analysis.utils.make_age_grp_lookup">make_age_grp_lookup() (in module tlo.analysis.utils)</a>
 </li>
       <li><a href="reference/tlo.analysis.utils.html#tlo.analysis.utils.make_age_grp_types">make_age_grp_types() (in module tlo.analysis.utils)</a>
@@ -2832,6 +2927,8 @@
 </li>
       <li><a href="reference/tlo.methods.epi.html#tlo.methods.epi.MeaslesVaccineEvent">MeaslesVaccineEvent (class in tlo.methods.epi)</a>
 </li>
+      <li><a href="reference/tlo.analysis.hsi_events.html#tlo.analysis.hsi_events.merge_hsi_event_details">merge_hsi_event_details() (in module tlo.analysis.hsi_events)</a>
+</li>
       <li><a href="reference/tlo.methods.html#tlo.methods.Metadata">Metadata (class in tlo.methods)</a>
 </li>
       <li><a href="reference/tlo.core.html#tlo.core.Module.METADATA">METADATA (Module attribute)</a>
@@ -2851,6 +2948,8 @@
         <li><a href="reference/tlo.html#module-tlo">tlo</a>
 </li>
         <li><a href="reference/tlo.analysis.html#module-tlo.analysis">tlo.analysis</a>
+</li>
+        <li><a href="reference/tlo.analysis.hsi_events.html#module-tlo.analysis.hsi_events">tlo.analysis.hsi_events</a>
 </li>
         <li><a href="reference/tlo.analysis.utils.html#module-tlo.analysis.utils">tlo.analysis.utils</a>
 </li>
@@ -3015,9 +3114,11 @@
 </li>
       <li><a href="reference/tlo.progressbar.html#tlo.progressbar.ProgressBar.n_step">n_step (ProgressBar property)</a>
 </li>
-      <li><a href="reference/tlo.methods.care_of_women_during_pregnancy.html#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment.never_ran">never_ran() (HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment method)</a>
+      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.HSI_Alri_Treatment.never_ran">never_ran() (HSI_Alri_Treatment method)</a>
 
       <ul>
+        <li><a href="reference/tlo.methods.care_of_women_during_pregnancy.html#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment.never_ran">(HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment method)</a>
+</li>
         <li><a href="reference/tlo.methods.care_of_women_during_pregnancy.html#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy.never_ran">(HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy method)</a>
 </li>
         <li><a href="reference/tlo.methods.contraception.html#tlo.methods.contraception.HSI_Contraception_FamilyPlanningAppt.never_ran">(HSI_Contraception_FamilyPlanningAppt method)</a>
@@ -3047,18 +3148,28 @@
 </li>
       <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.AlriLoggingEvent.new_death">new_death() (AlriLoggingEvent method)</a>
 </li>
+      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.AlriLoggingEvent.new_hypoxaemic_case">new_hypoxaemic_case() (AlriLoggingEvent method)</a>
+</li>
+      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.AlriLoggingEvent.new_pulmonary_complication_case">new_pulmonary_complication_case() (AlriLoggingEvent method)</a>
+</li>
       <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.AlriLoggingEvent.new_recovered_case">new_recovered_case() (AlriLoggingEvent method)</a>
 </li>
       <li><a href="reference/tlo.population.html#tlo.population.Population.new_row">new_row (Population attribute)</a>
 </li>
       <li><a href="reference/tlo.population.html#tlo.population.Population.new_rows">new_rows (Population attribute)</a>
 </li>
+      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.AlriLoggingEvent.new_seeking_care">new_seeking_care() (AlriLoggingEvent method)</a>
+</li>
+      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.AlriLoggingEvent.new_systemic_complication_case">new_systemic_complication_case() (AlriLoggingEvent method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.AlriLoggingEvent.new_treated">new_treated() (AlriLoggingEvent method)</a>
+</li>
       <li><a href="reference/tlo.methods.newborn_outcomes.html#tlo.methods.newborn_outcomes.NewbornOutcomes">NewbornOutcomes (class in tlo.methods.newborn_outcomes)</a>
 </li>
       <li><a href="reference/tlo.simulation.html#tlo.simulation.EventQueue.next_event">next_event() (EventQueue method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference/tlo.population.html#tlo.population.Population.next_person_id">next_person_id (Population attribute)</a>
 </li>
       <li><a href="reference/tlo.methods.care_of_women_during_pregnancy.html#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia.not_available">not_available() (HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia method)</a>
@@ -3261,6 +3372,8 @@
         <li><a href="reference/tlo.methods.skeleton.html#tlo.methods.skeleton.Skeleton.on_hsi_alert">(Skeleton method)</a>
 </li>
       </ul></li>
+      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.Alri.on_presentation">on_presentation() (Alri method)</a>
+</li>
       <li><a href="reference/tlo.methods.healthburden.html#tlo.methods.healthburden.HealthBurden.on_simulation_end">on_simulation_end() (HealthBurden method)</a>
 
       <ul>
@@ -3273,6 +3386,12 @@
 </li>
       <li><a href="reference/tlo.methods.epi.html#tlo.methods.epi.OpvEvent">OpvEvent (class in tlo.methods.epi)</a>
 </li>
+      <li><a href="reference/tlo.analysis.utils.html#tlo.analysis.utils.order_of_cause_of_death_label">order_of_cause_of_death_label() (in module tlo.analysis.utils)</a>
+</li>
+      <li><a href="reference/tlo.analysis.utils.html#tlo.analysis.utils.order_of_coarse_appt">order_of_coarse_appt() (in module tlo.analysis.utils)</a>
+</li>
+      <li><a href="reference/tlo.analysis.utils.html#tlo.analysis.utils.order_of_short_treatment_ids">order_of_short_treatment_ids() (in module tlo.analysis.utils)</a>
+</li>
       <li><a href="reference/tlo.methods.other_adult_cancers.html#tlo.methods.other_adult_cancers.OtherAdultCancer">OtherAdultCancer (class in tlo.methods.other_adult_cancers)</a>
 </li>
       <li><a href="reference/tlo.methods.other_adult_cancers.html#tlo.methods.other_adult_cancers.OtherAdultCancerLoggingEvent">OtherAdultCancerLoggingEvent (class in tlo.methods.other_adult_cancers)</a>
@@ -3282,6 +3401,8 @@
       <li><a href="reference/tlo.methods.demography.html#tlo.methods.demography.OtherDeathPoll">OtherDeathPoll (class in tlo.methods.demography)</a>
 </li>
       <li><a href="reference/tlo.lm.html#tlo.lm.Predictor.otherwise">otherwise() (Predictor method)</a>
+</li>
+      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.Alri.over_ride_availability_of_certain_consumables">over_ride_availability_of_certain_consumables() (Alri method)</a>
 </li>
       <li><a href="reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.override_availability_of_consumables">override_availability_of_consumables() (HealthSystem method)</a>
 </li>
@@ -3406,6 +3527,8 @@
       <li><a href="reference/tlo.cli.html#tlo.cli.print_basic_job_details">print_basic_job_details() (in module tlo.cli)</a>
 </li>
       <li><a href="reference/tlo.cli.html#tlo.cli.print_batch_exception">print_batch_exception() (in module tlo.cli)</a>
+</li>
+      <li><a href="reference/tlo.events.html#tlo.events.Priority">Priority (class in tlo.events)</a>
 </li>
       <li><a href="reference/tlo.methods.hiv.html#tlo.methods.hiv.Hiv.prob_art_start_after_test">prob_art_start_after_test() (Hiv method)</a>
 </li>
@@ -3571,6 +3694,8 @@
 </li>
       <li><a href="reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.record_hsi_event">record_hsi_event() (HealthSystem method)</a>
 </li>
+      <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.Alri.record_sought_care_for_alri">record_sought_care_for_alri() (Alri method)</a>
+</li>
       <li><a href="reference/tlo.progressbar.html#tlo.progressbar.ProgressBar.refresh">refresh() (ProgressBar method)</a>
 </li>
       <li><a href="reference/tlo.simulation.html#tlo.simulation.Simulation.register">register() (Simulation method)</a>
@@ -3729,6 +3854,10 @@
 </li>
       <li><a href="reference/tlo.methods.labour.html#tlo.methods.labour.Labour.run_if_receives_skilled_birth_attendance_cant_run">run_if_receives_skilled_birth_attendance_cant_run() (Labour method)</a>
 </li>
+      <li><a href="reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.run_individual_level_events">run_individual_level_events() (HealthSystem method)</a>
+</li>
+      <li><a href="reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.run_population_level_events">run_population_level_events() (HealthSystem method)</a>
+</li>
       <li><a href="reference/tlo.scenario.html#tlo.scenario.SampleRunner.run_sample">run_sample() (SampleRunner method)</a>
 </li>
       <li><a href="reference/tlo.scenario.html#tlo.scenario.SampleRunner.run_sample_by_number">run_sample_by_number() (SampleRunner method)</a>
@@ -3770,6 +3899,8 @@
       <li><a href="reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.PregnancySupervisor.schedule_first_anc_contact_for_new_pregnancy">schedule_first_anc_contact_for_new_pregnancy() (PregnancySupervisor method)</a>
 </li>
       <li><a href="reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.schedule_hsi_event">schedule_hsi_event() (HealthSystem method)</a>
+</li>
+      <li><a href="reference/tlo.methods.rti.html#tlo.methods.rti.RTI.schedule_hsi_event_for_tomorrow">schedule_hsi_event_for_tomorrow() (RTI method)</a>
 </li>
       <li><a href="reference/tlo.methods.newborn_outcomes.html#tlo.methods.newborn_outcomes.NewbornOutcomes.schedule_pnc">schedule_pnc() (NewbornOutcomes method)</a>
 </li>
@@ -3839,8 +3970,6 @@
 </li>
       <li><a href="reference/tlo.methods.labour.html#tlo.methods.labour.Labour.set_postpartum_complications">set_postpartum_complications() (Labour method)</a>
 </li>
-      <li><a href="reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.set_service_availability">set_service_availability() (HealthSystem method)</a>
-</li>
       <li><a href="reference/tlo.logging.html#tlo.logging.set_simulation">set_simulation() (in module tlo.logging)</a>
 
       <ul>
@@ -3869,9 +3998,15 @@
 </li>
       <li><a href="reference/tlo.methods.skeleton.html#tlo.methods.skeleton.Skeleton_LoggingEvent">Skeleton_LoggingEvent (class in tlo.methods.skeleton)</a>
 </li>
+      <li><a href="reference/tlo.analysis.hsi_events.html#tlo.analysis.hsi_events.sort_hsi_event_details">sort_hsi_event_details() (in module tlo.analysis.hsi_events)</a>
+</li>
       <li><a href="reference/tlo.core.html#tlo.core.Specifiable">Specifiable (class in tlo.core)</a>
 </li>
+      <li><a href="reference/tlo.analysis.utils.html#tlo.analysis.utils.squarify_neat">squarify_neat() (in module tlo.analysis.utils)</a>
+</li>
       <li><a href="reference/tlo.progressbar.html#tlo.progressbar.ProgressBar.start">start() (ProgressBar method)</a>
+</li>
+      <li><a href="reference/tlo.events.html#tlo.events.Priority.START_OF_DAY">START_OF_DAY (Priority attribute)</a>
 </li>
       <li><a href="reference/tlo.progressbar.html#tlo.progressbar.ProgressBar.stats">stats (ProgressBar property)</a>
 </li>
@@ -3951,6 +4086,13 @@
 
       <ul>
         <li><a href="reference/tlo.analysis.html#module-tlo.analysis">module</a>
+</li>
+      </ul></li>
+      <li>
+    tlo.analysis.hsi_events
+
+      <ul>
+        <li><a href="reference/tlo.analysis.hsi_events.html#module-tlo.analysis.hsi_events">module</a>
 </li>
       </ul></li>
       <li>
@@ -4424,6 +4566,8 @@
         <li><a href="reference/tlo.util.html#module-tlo.util">module</a>
 </li>
       </ul></li>
+      <li><a href="reference/tlo.analysis.utils.html#tlo.analysis.utils.to_age_group">to_age_group() (in module tlo.analysis.utils)</a>
+</li>
       <li><a href="reference/tlo.util.html#tlo.util.BitsetHandler.to_strings">to_strings() (BitsetHandler method)</a>
 </li>
       <li><a href="reference/tlo.dependencies.html#tlo.dependencies.topologically_sort_modules">topologically_sort_modules() (in module tlo.dependencies)</a>
@@ -4547,7 +4691,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on May 31, 2022.
+        Last updated on Aug 10, 2022.
       </span>
 
     </p>

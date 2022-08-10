@@ -1,7 +1,7 @@
 Alri
 ****
 
-* ``GenericTreatment`` at facility level 1a with appointment footprint: ``Over5OPD``.
+* ``Pneumonia_Treatment_Outpatient`` at facility level 0 with appointment footprint: ``ConWithDCSA``.
 
 BladderCancer
 *************
@@ -149,7 +149,7 @@ OtherAdultCancer
 PostnatalSupervisor
 *******************
 
-* ``TreatmentForObstetricFistula`` at facility level 1b with appointment footprint: ``MajorSurg`` and bed days footprint: ``general_bed`` (5 days).
+* ``PostnatalCare_TreatmentForObstetricFistula`` at facility level 1b with appointment footprint: ``MajorSurg`` and bed days footprint: ``general_bed`` (5 days).
 
 ProstateCancer
 **************

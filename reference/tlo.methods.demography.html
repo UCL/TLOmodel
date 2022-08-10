@@ -35,6 +35,7 @@
         <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
@@ -177,7 +178,7 @@
            <div itemprop="articleBody">
             
   <div class="section" id="module-tlo.methods.demography">
-<span id="tlo-methods-demography-module"></span><h1>tlo.methods.demography module<a class="headerlink" href="#module-tlo.methods.demography" title="Permalink to this headline">¶</a></h1>
+<span id="tlo-methods-demography-module"></span><h1>tlo.methods.demography module<a class="headerlink" href="#module-tlo.methods.demography" title="Permalink to this heading">¶</a></h1>
 <p>The core demography module and its associated events.
 * Sets initial population size
 * Determines the ‘is_alive’, age-related, and residential location properties.
@@ -305,7 +306,7 @@
 </table>
 <p><strong>Class attributes:</strong></p>
 <p>AGE_RANGE_CATEGORIES : [‘0-4’, ‘5-9’, ‘10-14’, ‘15-19’, ‘20-24’, ‘25-29’, ‘30-34’, ‘35-39’, ‘40-44’, ‘45-49’, ‘50-54’, ‘55-59’, ‘60-64’, ‘65-69’, ‘70-74’, ‘75-79’, ‘80-84’, ‘85-89’, ‘90-94’, ‘95-99’, ‘100+’]</p>
-<p>AGE_RANGE_LOOKUP : defaultdict(&lt;function create_age_range_lookup.&lt;locals&gt;.&lt;lambda&gt; at 0x7fb9998a2430&gt;, {0: ‘0-4’, 1: ‘0-4’, 2: ‘0-4’, 3: ‘0-4’, 4: ‘0-4’, 5: ‘5-9’, 6: ‘5-9’, 7: ‘5-9’, 8: ‘5-9’, 9: ‘5-9’, 10: ‘10-14’, 11: ‘10-14’, 12: ‘10-14’, 13: ‘10-14’, 14: ‘10-14’, 15: ‘15-19’, 16: ‘15-19’, 17: ‘15-19’, 18: ‘15-19’, 19: ‘15-19’, 20: ‘20-24’, 21: ‘20-24’, 22: ‘20-24’, 23: ‘20-24’, 24: ‘20-24’, 25: ‘25-29’, 26: ‘25-29’, 27: ‘25-29’, 28: ‘25-29’, 29: ‘25-29’, 30: ‘30-34’, 31: ‘30-34’, 32: ‘30-34’, 33: ‘30-34’, 34: ‘30-34’, 35: ‘35-39’, 36: ‘35-39’, 37: ‘35-39’, 38: ‘35-39’, 39: ‘35-39’, 40: ‘40-44’, 41: ‘40-44’, 42: ‘40-44’, 43: ‘40-44’, 44: ‘40-44’, 45: ‘45-49’, 46: ‘45-49’, 47: ‘45-49’, 48: ‘45-49’, 49: ‘45-49’, 50: ‘50-54’, 51: ‘50-54’, 52: ‘50-54’, 53: ‘50-54’, 54: ‘50-54’, 55: ‘55-59’, 56: ‘55-59’, 57: ‘55-59’, 58: ‘55-59’, 59: ‘55-59’, 60: ‘60-64’, 61: ‘60-64’, 62: ‘60-64’, 63: ‘60-64’, 64: ‘60-64’, 65: ‘65-69’, 66: ‘65-69’, 67: ‘65-69’, 68: ‘65-69’, 69: ‘65-69’, 70: ‘70-74’, 71: ‘70-74’, 72: ‘70-74’, 73: ‘70-74’, 74: ‘70-74’, 75: ‘75-79’, 76: ‘75-79’, 77: ‘75-79’, 78: ‘75-79’, 79: ‘75-79’, 80: ‘80-84’, 81: ‘80-84’, 82: ‘80-84’, 83: ‘80-84’, 84: ‘80-84’, 85: ‘85-89’, 86: ‘85-89’, 87: ‘85-89’, 88: ‘85-89’, 89: ‘85-89’, 90: ‘90-94’, 91: ‘90-94’, 92: ‘90-94’, 93: ‘90-94’, 94: ‘90-94’, 95: ‘95-99’, 96: ‘95-99’, 97: ‘95-99’, 98: ‘95-99’, 99: ‘95-99’})</p>
+<p>AGE_RANGE_LOOKUP : defaultdict(&lt;function create_age_range_lookup.&lt;locals&gt;.&lt;lambda&gt; at 0x7feb91074040&gt;, {0: ‘0-4’, 1: ‘0-4’, 2: ‘0-4’, 3: ‘0-4’, 4: ‘0-4’, 5: ‘5-9’, 6: ‘5-9’, 7: ‘5-9’, 8: ‘5-9’, 9: ‘5-9’, 10: ‘10-14’, 11: ‘10-14’, 12: ‘10-14’, 13: ‘10-14’, 14: ‘10-14’, 15: ‘15-19’, 16: ‘15-19’, 17: ‘15-19’, 18: ‘15-19’, 19: ‘15-19’, 20: ‘20-24’, 21: ‘20-24’, 22: ‘20-24’, 23: ‘20-24’, 24: ‘20-24’, 25: ‘25-29’, 26: ‘25-29’, 27: ‘25-29’, 28: ‘25-29’, 29: ‘25-29’, 30: ‘30-34’, 31: ‘30-34’, 32: ‘30-34’, 33: ‘30-34’, 34: ‘30-34’, 35: ‘35-39’, 36: ‘35-39’, 37: ‘35-39’, 38: ‘35-39’, 39: ‘35-39’, 40: ‘40-44’, 41: ‘40-44’, 42: ‘40-44’, 43: ‘40-44’, 44: ‘40-44’, 45: ‘45-49’, 46: ‘45-49’, 47: ‘45-49’, 48: ‘45-49’, 49: ‘45-49’, 50: ‘50-54’, 51: ‘50-54’, 52: ‘50-54’, 53: ‘50-54’, 54: ‘50-54’, 55: ‘55-59’, 56: ‘55-59’, 57: ‘55-59’, 58: ‘55-59’, 59: ‘55-59’, 60: ‘60-64’, 61: ‘60-64’, 62: ‘60-64’, 63: ‘60-64’, 64: ‘60-64’, 65: ‘65-69’, 66: ‘65-69’, 67: ‘65-69’, 68: ‘65-69’, 69: ‘65-69’, 70: ‘70-74’, 71: ‘70-74’, 72: ‘70-74’, 73: ‘70-74’, 74: ‘70-74’, 75: ‘75-79’, 76: ‘75-79’, 77: ‘75-79’, 78: ‘75-79’, 79: ‘75-79’, 80: ‘80-84’, 81: ‘80-84’, 82: ‘80-84’, 83: ‘80-84’, 84: ‘80-84’, 85: ‘85-89’, 86: ‘85-89’, 87: ‘85-89’, 88: ‘85-89’, 89: ‘85-89’, 90: ‘90-94’, 91: ‘90-94’, 92: ‘90-94’, 93: ‘90-94’, 94: ‘90-94’, 95: ‘95-99’, 96: ‘95-99’, 97: ‘95-99’, 98: ‘95-99’, 99: ‘95-99’})</p>
 <p><strong>Functions (defined or overridden in class Demography):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.demography.Demography.__init__">
@@ -380,7 +381,7 @@ should not be created.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.demography.Demography.do_death">
-<span class="sig-name descname"><span class="pre">do_death</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cause</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">originating_module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><span class="pre">tlo.core.Module</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#Demography.do_death"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.Demography.do_death" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">do_death</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cause</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">originating_module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><span class="pre">Module</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#Demography.do_death"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.Demography.do_death" title="Permalink to this definition">¶</a></dt>
 <dd><p>Register and log the death of an individual from a specific cause.
 * ‘individual_id’ is the index in the population.props dataframe to the (one) person.
 * ‘cause’ is the “tlo cause” that is defined by the disease module.
@@ -541,9 +542,12 @@ The ‘module’ passed to this event is the disease module that is causing the 
 must be done by calling Simulation.schedule_event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
 All subclasses of Event take this as the first argument in their
-constructor, but may also take further keyword arguments.</p>
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -606,7 +610,7 @@ constructor, but may also take further keyword arguments.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on May 31, 2022.
+        Last updated on Aug 10, 2022.
       </span>
 
     </p>

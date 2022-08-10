@@ -35,6 +35,7 @@
         <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
@@ -43,7 +44,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="tlo.logging package" href="tlo.logging.html" />
-    <link rel="prev" title="tlo.analysis package" href="tlo.analysis.html" /> 
+    <link rel="prev" title="tlo.analysis.hsi_events module" href="tlo.analysis.hsi_events.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -177,7 +178,7 @@
            <div itemprop="articleBody">
             
   <div class="section" id="module-tlo.analysis.utils">
-<span id="tlo-analysis-utils-module"></span><h1>tlo.analysis.utils module<a class="headerlink" href="#module-tlo.analysis.utils" title="Permalink to this headline">¶</a></h1>
+<span id="tlo-analysis-utils-module"></span><h1>tlo.analysis.utils module<a class="headerlink" href="#module-tlo.analysis.utils" title="Permalink to this heading">¶</a></h1>
 <p>General utility functions for TLO analysis</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.analysis.utils.parse_log_file">
@@ -229,27 +230,33 @@ Returns CategoricalDType</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="tlo.analysis.utils.to_age_group">
+<span class="sig-name descname"><span class="pre">to_age_group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_ages</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#to_age_group"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.to_age_group" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a pd.Series with age-group formatted as a categorical type, created from a pd.Series with exact age.</p>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="tlo.analysis.utils.get_scenario_outputs">
-<span class="sig-name descname"><span class="pre">get_scenario_outputs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scenario_filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputs_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pathlib.Path</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#get_scenario_outputs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.get_scenario_outputs" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_scenario_outputs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scenario_filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputs_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#get_scenario_outputs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.get_scenario_outputs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns paths of folders associated with a batch_file, in chronological order.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.analysis.utils.get_scenario_info">
-<span class="sig-name descname"><span class="pre">get_scenario_info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scenario_output_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pathlib.Path</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#get_scenario_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.get_scenario_info" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_scenario_info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scenario_output_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#get_scenario_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.get_scenario_info" title="Permalink to this definition">¶</a></dt>
 <dd><p>Utility function to get the the number draws and the number of runs in a batch set.</p>
 <p>TODO: read the JSON file to get further information</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.analysis.utils.load_pickled_dataframes">
-<span class="sig-name descname"><span class="pre">load_pickled_dataframes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">results_folder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pathlib.Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">draw</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#load_pickled_dataframes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.load_pickled_dataframes" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">load_pickled_dataframes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">results_folder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">draw</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#load_pickled_dataframes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.load_pickled_dataframes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Utility function to create a dict contaning all the logs from the specified run within a batch set</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.analysis.utils.extract_params">
-<span class="sig-name descname"><span class="pre">extract_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">results_folder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pathlib.Path</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">pandas.core.frame.DataFrame</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#extract_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.extract_params" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">extract_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">results_folder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">DataFrame</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#extract_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.extract_params" title="Permalink to this definition">¶</a></dt>
 <dd><p>Utility function to get overridden parameters from scenario runs</p>
 <p>Returns dateframe summarizing parameters that change across the draws. It produces a dataframe with index of draw
 and columns of each parameters that is specified to be varied in the batch. NB. This does the extraction from run 0
@@ -258,27 +265,29 @@ in each draw, under the assumption that the over-written parameters are the same
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.analysis.utils.extract_results">
-<span class="sig-name descname"><span class="pre">extract_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">results_folder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pathlib.Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">custom_generate_series</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_scaling</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.core.frame.DataFrame</span></span></span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#extract_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.extract_results" title="Permalink to this definition">¶</a></dt>
-<dd><p>Utility function to unpack results</p>
-<p>Produces a dataframe that summaries one series from the log, with column multi-index for the draw/run. If an ‘index’
-component of the log_element is provided, the dataframe uses that index (but note that this will only work if the
-index is the same in each run).
-Optionally, instead of a series that exists in the dataframe already, a function can be provided that, when applied
-to the dataframe indicated, yields a new pd.Series.
-Optionally, with <cite>do_scaling</cite>, each element is multiplied by the the scaling_factor recorded in the simulation
-(if available)</p>
+<span class="sig-name descname"><span class="pre">extract_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">results_folder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">custom_generate_series</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_scaling</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#extract_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.extract_results" title="Permalink to this definition">¶</a></dt>
+<dd><p>Utility function to unpack results.</p>
+<p>Produces a dataframe from extracting information from a log with the column multi-index for the draw/run.</p>
+<dl class="simple">
+<dt>If the column to be extracted exists in the log, the name of the <cite>column</cite> is provided as <cite>column</cite>. If the resulting</dt><dd><p>dataframe should be based on another column that exists in the log, this can be provided as ‘index’.</p>
+</dd>
+<dt>If instead, some work must be done to generate a new column from log, then a function can be provided to do this as</dt><dd><p><cite>custom_generate_series</cite>.</p>
+</dd>
+</dl>
+<p>Optionally, with <cite>do_scaling=True</cite>, each element is multiplied by the scaling_factor recorded in the simulation.</p>
+<p>Note that if runs in the batch have failed (such that logs have not been generated), these are dropped silently.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.analysis.utils.summarize">
-<span class="sig-name descname"><span class="pre">summarize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">results</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">only_mean</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">collapse_columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.core.frame.DataFrame</span></span></span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#summarize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.summarize" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">summarize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">results</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">only_mean</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">collapse_columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#summarize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.summarize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Utility function to compute summary statistics</p>
 <p>Finds mean value and 95% interval across the runs for each draw.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.analysis.utils.get_grid">
-<span class="sig-name descname"><span class="pre">get_grid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">res</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.series.Series</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#get_grid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.get_grid" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_grid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">res</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#get_grid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.get_grid" title="Permalink to this definition">¶</a></dt>
 <dd><p>Utility function to create the arrays needed to plot a heatmap.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -295,20 +304,20 @@ Optionally, with <cite>do_scaling</cite>, each element is multiplied by the the 
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.analysis.utils.format_gbd">
-<span class="sig-name descname"><span class="pre">format_gbd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gbd_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#format_gbd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.format_gbd" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">format_gbd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gbd_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#format_gbd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.format_gbd" title="Permalink to this definition">¶</a></dt>
 <dd><p>Format GBD data to give standarize categories for age_group and period</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.analysis.utils.create_pickles_locally">
-<span class="sig-name descname"><span class="pre">create_pickles_locally</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scenario_output_dir</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#create_pickles_locally"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.create_pickles_locally" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">create_pickles_locally</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scenario_output_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compressed_file_name_prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#create_pickles_locally"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.create_pickles_locally" title="Permalink to this definition">¶</a></dt>
 <dd><p>For a run from the Batch system that has not resulted in the creation of the pickles, reconstruct the pickles
 locally.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.analysis.utils.compare_number_of_deaths">
-<span class="sig-name descname"><span class="pre">compare_number_of_deaths</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logfile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pathlib.Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pathlib.Path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#compare_number_of_deaths"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.compare_number_of_deaths" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">compare_number_of_deaths</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logfile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#compare_number_of_deaths"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.compare_number_of_deaths" title="Permalink to this definition">¶</a></dt>
 <dd><p>Helper function to produce tables summarising deaths in the model run (given be a logfile) and the corresponding
 number of deaths in the GBD dataset.
 NB.
@@ -318,7 +327,7 @@ NB.
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.analysis.utils.flatten_multi_index_series_into_dict_for_logging">
-<span class="sig-name descname"><span class="pre">flatten_multi_index_series_into_dict_for_logging</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ser</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.series.Series</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#flatten_multi_index_series_into_dict_for_logging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.flatten_multi_index_series_into_dict_for_logging" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">flatten_multi_index_series_into_dict_for_logging</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ser</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#flatten_multi_index_series_into_dict_for_logging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.flatten_multi_index_series_into_dict_for_logging" title="Permalink to this definition">¶</a></dt>
 <dd><p>Helper function that converts a pd.Series with multi-index into a dict format that is suitable for logging.
 It does this by converting the multi-index into keys of type <cite>str</cite> in a format that later be used to reconstruct
 the multi-index (using <cite>unflatten_flattened_multi_index_in_logging</cite>).</p>
@@ -326,19 +335,20 @@ the multi-index (using <cite>unflatten_flattened_multi_index_in_logging</cite>).
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.analysis.utils.unflatten_flattened_multi_index_in_logging">
-<span class="sig-name descname"><span class="pre">unflatten_flattened_multi_index_in_logging</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.core.frame.DataFrame</span></span></span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#unflatten_flattened_multi_index_in_logging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.unflatten_flattened_multi_index_in_logging" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">unflatten_flattened_multi_index_in_logging</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">_x:</span> <span class="pre">[&lt;class</span> <span class="pre">'pandas.core.frame.DataFrame'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'pandas.core.indexes.base.Index'&gt;]</span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">[&lt;class</span> <span class="pre">'pandas.core.frame.DataFrame'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'pandas.core.indexes.base.Index'&gt;]</span></span></span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#unflatten_flattened_multi_index_in_logging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.unflatten_flattened_multi_index_in_logging" title="Permalink to this definition">¶</a></dt>
 <dd><p>Helper function that recreate the multi-index of logged results from a pd.DataFrame that is generated by
-<cite>parse_log</cite>.
-If a pd.DataFrame created by <cite>parse_log</cite> is the result of repeated logging of a pd.Series with a multi-index that
+<cite>parse_log</cite>.</p>
+<p>If a pd.DataFrame created by <cite>parse_log</cite> is the result of repeated logging of a pd.Series with a multi-index that
 was transformed before logging using <cite>flatten_multi_index_series_into_dict_for_logging</cite>, then the pd.DataFrame’s
 columns will be those flattened labels. This helper function recreates the original multi-index from which the
 flattened labels were created and applies it to the pd.DataFrame.</p>
+<p>Alternatively, if jus the index of the “flattened” labels is provided, then the equivalent multi-index is returned.</p>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.analysis.utils.LogsDict">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">LogsDict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_names_and_paths</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#LogsDict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.LogsDict" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">collections.abc.Mapping</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Mapping</span></code></p>
 <p>Parses module-specific log files and returns Pandas dataframes.</p>
 <p>The dictionary returned has the format:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
@@ -374,6 +384,80 @@ flattened labels were created and applies it to the pd.DataFrame.</p>
 
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.analysis.utils.get_filtered_treatment_ids">
+<span class="sig-name descname"><span class="pre">get_filtered_treatment_ids</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">depth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#get_filtered_treatment_ids"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.get_filtered_treatment_ids" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of treatment_ids that are defined in the model, filtered to a specified depth.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.analysis.utils.colors_in_matplotlib">
+<span class="sig-name descname"><span class="pre">colors_in_matplotlib</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span></span></span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#colors_in_matplotlib"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.colors_in_matplotlib" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return tuple of the strings for all the colours defined in Matplotlib.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.analysis.utils.get_coarse_appt_type">
+<span class="sig-name descname"><span class="pre">get_coarse_appt_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">appt_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#get_coarse_appt_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.get_coarse_appt_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the <cite>coarser</cite> categorization of appt_types for a given appt_type.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.analysis.utils.order_of_coarse_appt">
+<span class="sig-name descname"><span class="pre">order_of_coarse_appt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_coarse_appt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Index</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Index</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#order_of_coarse_appt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.order_of_coarse_appt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Define a standard order for the coarse appointment types.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.analysis.utils.get_color_coarse_appt">
+<span class="sig-name descname"><span class="pre">get_color_coarse_appt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coarse_appt_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#get_color_coarse_appt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.get_color_coarse_appt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the colour (as matplotlib string) assigned to this appointment type. Returns <cite>np.nan</cite> if appointment-type
+is not recognised.
+Names of colors are selected with reference to: <a class="reference external" href="https://i.stack.imgur.com/lFZum.png">https://i.stack.imgur.com/lFZum.png</a></p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.analysis.utils.order_of_short_treatment_ids">
+<span class="sig-name descname"><span class="pre">order_of_short_treatment_ids</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_short_treatment_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Index</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Index</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#order_of_short_treatment_ids"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.order_of_short_treatment_ids" title="Permalink to this definition">¶</a></dt>
+<dd><p>Define a standard order for short treatment_ids.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.analysis.utils.get_color_short_treatment_id">
+<span class="sig-name descname"><span class="pre">get_color_short_treatment_id</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">short_treatment_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#get_color_short_treatment_id"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.get_color_short_treatment_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the colour (as matplotlib string) assigned to this shorted TREATMENT_ID. Returns <cite>np.nan</cite> if treatment_id
+is not recognised.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.analysis.utils.order_of_cause_of_death_label">
+<span class="sig-name descname"><span class="pre">order_of_cause_of_death_label</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_cause_of_death_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Index</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Index</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#order_of_cause_of_death_label"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.order_of_cause_of_death_label" title="Permalink to this definition">¶</a></dt>
+<dd><p>Define a standard order for Cause-of-Death labels.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.analysis.utils.get_color_cause_of_death_label">
+<span class="sig-name descname"><span class="pre">get_color_cause_of_death_label</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cause_of_death_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#get_color_cause_of_death_label"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.get_color_cause_of_death_label" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the colour (as matplotlib string) assigned to this shorted Cause-of-Death Label. Returns <cite>np.nan</cite> if
+label is not recognised.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.analysis.utils.squarify_neat">
+<span class="sig-name descname"><span class="pre">squarify_neat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sizes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colormap</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numlabels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#squarify_neat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.squarify_neat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pass through to squarify, with some customisation: …
+* Apply the colormap specified
+* Only give label a selection of the segments
+N.B. The package <cite>squarify</cite> is required.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.analysis.utils.get_root_path">
+<span class="sig-name descname"><span class="pre">get_root_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">starter_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Path</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Path</span></span></span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#get_root_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.get_root_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the absolute path of the top level of the repository. <cite>starter_path</cite> optionally gives a reference
+location from which to begin search; if omitted the location of this file is used.</p>
+</dd></dl>
+
 </div>
 
 
@@ -383,7 +467,7 @@ flattened labels were created and applies it to the pd.DataFrame.</p>
           <footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
         <a href="tlo.logging.html" class="btn btn-neutral float-right" title="tlo.logging package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
-        <a href="tlo.analysis.html" class="btn btn-neutral float-left" title="tlo.analysis package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="tlo.analysis.hsi_events.html" class="btn btn-neutral float-left" title="tlo.analysis.hsi_events module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
   <hr/>
@@ -391,7 +475,7 @@ flattened labels were created and applies it to the pd.DataFrame.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on May 31, 2022.
+        Last updated on Aug 10, 2022.
       </span>
 
     </p>

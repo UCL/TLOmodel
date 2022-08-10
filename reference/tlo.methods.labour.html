@@ -35,6 +35,7 @@
         <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
@@ -177,7 +178,7 @@
            <div itemprop="articleBody">
             
   <div class="section" id="module-tlo.methods.labour">
-<span id="tlo-methods-labour-module"></span><h1>tlo.methods.labour module<a class="headerlink" href="#module-tlo.methods.labour" title="Permalink to this headline">¶</a></h1>
+<span id="tlo-methods-labour-module"></span><h1>tlo.methods.labour module<a class="headerlink" href="#module-tlo.methods.labour" title="Permalink to this heading">¶</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Labour</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour" title="Permalink to this definition">¶</a></dt>
@@ -1015,9 +1016,9 @@ PostnatalWeekOneMaternalEvent which represents the start of a womans postnatal p
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘Contraception’, ‘CareOfWomenDuringPregnancy’, ‘Lifestyle’, ‘NewbornOutcomes’, ‘HealthSystem’, ‘PregnancySupervisor’, ‘PostnatalSupervisor’}</p>
-<p>CAUSES_OF_DEATH : {‘uterine_rupture’: &lt;tlo.methods.causes.Cause object at 0x7fb9999b0e20&gt;, ‘intrapartum_sepsis’: &lt;tlo.methods.causes.Cause object at 0x7fb99a4def10&gt;, ‘antepartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x7fb99a4defd0&gt;, ‘postpartum_sepsis’: &lt;tlo.methods.causes.Cause object at 0x7fb99a500100&gt;, ‘postpartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x7fb99a500160&gt;, ‘secondary_postpartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x7fb99a5001c0&gt;, ‘severe_pre_eclampsia’: &lt;tlo.methods.causes.Cause object at 0x7fb99a500220&gt;, ‘eclampsia’: &lt;tlo.methods.causes.Cause object at 0x7fb99a500280&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘maternal’: &lt;tlo.methods.causes.Cause object at 0x7fb99a5002e0&gt;}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘CareOfWomenDuringPregnancy’, ‘Lifestyle’, ‘NewbornOutcomes’, ‘HealthSystem’, ‘Contraception’, ‘PregnancySupervisor’, ‘PostnatalSupervisor’}</p>
+<p>CAUSES_OF_DEATH : {‘uterine_rupture’: &lt;tlo.methods.causes.Cause object at 0x7feb91170cd0&gt;, ‘intrapartum_sepsis’: &lt;tlo.methods.causes.Cause object at 0x7feb91ceaa90&gt;, ‘antepartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x7feb91ceab50&gt;, ‘postpartum_sepsis’: &lt;tlo.methods.causes.Cause object at 0x7feb91d01c40&gt;, ‘postpartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x7feb91d01ca0&gt;, ‘secondary_postpartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x7feb91d01d00&gt;, ‘severe_pre_eclampsia’: &lt;tlo.methods.causes.Cause object at 0x7feb91d01d60&gt;, ‘eclampsia’: &lt;tlo.methods.causes.Cause object at 0x7feb91d01dc0&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘maternal’: &lt;tlo.methods.causes.Cause object at 0x7feb91d01e20&gt;}</p>
 <p>INIT_DEPENDENCIES : {‘Demography’}</p>
 <p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘Stunting’}</p>
@@ -1519,9 +1520,12 @@ LabourDeathEvent.</p>
 must be done by calling Simulation.schedule_event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
 All subclasses of Event take this as the first argument in their
-constructor, but may also take further keyword arguments.</p>
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -1560,9 +1564,12 @@ to seek care from at a health facility. In that case the appropriate HSI is sche
 must be done by calling Simulation.schedule_event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
 All subclasses of Event take this as the first argument in their
-constructor, but may also take further keyword arguments.</p>
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -1598,9 +1605,12 @@ experience an intrapartum stillbirth.</p>
 must be done by calling Simulation.schedule_event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
 All subclasses of Event take this as the first argument in their
-constructor, but may also take further keyword arguments.</p>
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -1636,9 +1646,12 @@ woman will receive a full postnatal check-up and when.</p>
 must be done by calling Simulation.schedule_event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
 All subclasses of Event take this as the first argument in their
-constructor, but may also take further keyword arguments.</p>
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -1926,7 +1939,7 @@ are processed and presented by different analysis scripts</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on May 31, 2022.
+        Last updated on Aug 10, 2022.
       </span>
 
     </p>

@@ -35,6 +35,7 @@
         <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
         <script src="../../_static/jquery.js"></script>
         <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../../_static/js/theme.js"></script>
@@ -168,8 +169,22 @@
             
   <h1>Source code for tlo.events</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;Support for creating different kinds of events.&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
 
 <span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">DateOffset</span>
+
+
+<div class="viewcode-block" id="Priority"><a class="viewcode-back" href="../../reference/tlo.events.html#tlo.events.Priority">[docs]</a><span class="k">class</span> <span class="nc">Priority</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Enumeration for the Priority, which is used in sorting the events in the simulation queue.&quot;&quot;&quot;</span>
+    <span class="n">START_OF_DAY</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">FIRST_HALF_OF_DAY</span> <span class="o">=</span> <span class="mi">25</span>
+    <span class="n">LAST_HALF_OF_DAY</span> <span class="o">=</span> <span class="mi">75</span>
+    <span class="n">END_OF_DAY</span> <span class="o">=</span> <span class="mi">100</span>
+
+    <span class="k">def</span> <span class="fm">__lt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span> <span class="ow">is</span> <span class="n">other</span><span class="o">.</span><span class="vm">__class__</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">&lt;</span> <span class="n">other</span><span class="o">.</span><span class="n">value</span>
+        <span class="k">return</span> <span class="bp">NotImplemented</span></div>
 
 
 <div class="viewcode-block" id="Event"><a class="viewcode-back" href="../../reference/tlo.events.html#tlo.events.Event">[docs]</a><span class="k">class</span> <span class="nc">Event</span><span class="p">:</span>
@@ -179,7 +194,7 @@
 <span class="sd">    defined below, and implement at least an `apply` method.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="n">Priority</span><span class="o">.</span><span class="n">FIRST_HALF_OF_DAY</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Create a new event.</span>
 
 <span class="sd">        Note that just creating an event does not schedule it to happen; that</span>
@@ -188,9 +203,12 @@
 <span class="sd">        :param module: the module that created this event.</span>
 <span class="sd">            All subclasses of Event take this as the first argument in their</span>
 <span class="sd">            constructor, but may also take further keyword arguments.</span>
+<span class="sd">        :param priority: a keyword-argument to set the priority (see Priority enum)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">priority</span><span class="p">,</span> <span class="n">Priority</span><span class="p">),</span> <span class="s2">&quot;priority argument should be a value from Priority enum&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">module</span> <span class="o">=</span> <span class="n">module</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sim</span> <span class="o">=</span> <span class="n">module</span><span class="o">.</span><span class="n">sim</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">priority</span> <span class="o">=</span> <span class="n">priority</span>
         <span class="c1"># This is needed so mixin constructors are called</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
@@ -207,7 +225,7 @@
 <div class="viewcode-block" id="RegularEvent"><a class="viewcode-back" href="../../reference/tlo.events.html#tlo.events.RegularEvent">[docs]</a><span class="k">class</span> <span class="nc">RegularEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;An event that automatically reschedules itself at a fixed frequency.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">frequency</span><span class="p">,</span> <span class="n">end_date</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">frequency</span><span class="p">,</span> <span class="n">end_date</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Create a new regular event.</span>
 
 <span class="sd">        :param module: the module that created this event</span>
@@ -215,7 +233,7 @@
 <span class="sd">            (must be supplied as a keyword argument)</span>
 <span class="sd">        :type frequency: pandas.tseries.offsets.DateOffset</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">frequency</span><span class="p">,</span> <span class="n">DateOffset</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">frequency</span> <span class="o">=</span> <span class="n">frequency</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">end_date</span> <span class="o">=</span> <span class="n">end_date</span>
@@ -302,7 +320,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on May 31, 2022.
+        Last updated on Aug 10, 2022.
       </span>
 
     </p>

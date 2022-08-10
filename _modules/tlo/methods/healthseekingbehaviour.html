@@ -35,6 +35,7 @@
         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
         <script src="../../../_static/jquery.js"></script>
         <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
@@ -182,7 +183,7 @@
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
 <span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">Date</span><span class="p">,</span> <span class="n">DateOffset</span><span class="p">,</span> <span class="n">Module</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">Types</span>
-<span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">PopulationScopeEventMixin</span><span class="p">,</span> <span class="n">RegularEvent</span>
+<span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">PopulationScopeEventMixin</span><span class="p">,</span> <span class="n">Priority</span><span class="p">,</span> <span class="n">RegularEvent</span>
 <span class="kn">from</span> <span class="nn">tlo.lm</span> <span class="kn">import</span> <span class="n">LinearModel</span><span class="p">,</span> <span class="n">LinearModelType</span><span class="p">,</span> <span class="n">Predictor</span>
 <span class="kn">from</span> <span class="nn">tlo.methods</span> <span class="kn">import</span> <span class="n">Metadata</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.hsi_generic_first_appts</span> <span class="kn">import</span> <span class="p">(</span>
@@ -212,6 +213,9 @@
 
     <span class="c1"># No parameters to declare</span>
     <span class="n">PARAMETERS</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;force_any_symptom_to_lead_to_healthcareseeking&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">BOOL</span><span class="p">,</span> <span class="s2">&quot;Whether every symptom should always lead to healthcare seeking (ignoring the other parameters &quot;</span>
+                        <span class="s2">&quot;that determine the probability of seeking care.&quot;</span><span class="p">),</span>
         <span class="s1">&#39;baseline_odds_of_healthcareseeking_children&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span> <span class="s1">&#39;odds of health-care seeking (children:&#39;</span>
                                                                              <span class="s1">&#39; 0-14) if male, 0-5 years-old, living in&#39;</span>
                                                                              <span class="s1">&#39; a rural setting in the Northern region,&#39;</span>
@@ -256,7 +260,7 @@
     <span class="c1"># No properties to declare</span>
     <span class="n">PROPERTIES</span> <span class="o">=</span> <span class="p">{}</span>
 
-<div class="viewcode-block" id="HealthSeekingBehaviour.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.healthseekingbehaviour.html#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">force_any_symptom_to_lead_to_healthcareseeking</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="HealthSeekingBehaviour.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.healthseekingbehaviour.html#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">force_any_symptom_to_lead_to_healthcareseeking</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span> <span class="o">=</span> <span class="n">resourcefilepath</span>
 
@@ -271,16 +275,22 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">non_emergency_healthcareseeking_in_adults</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
 
         <span class="c1"># &quot;force_any_symptom_to_lead_to_healthcareseeking&quot;=True will mean that probability of health care seeking is 1.0</span>
-        <span class="c1"># for anyone with newly onset symptoms</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">force_any_symptom_to_lead_to_healthcareseeking</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">force_any_symptom_to_lead_to_healthcareseeking</span> <span class="o">=</span> <span class="n">force_any_symptom_to_lead_to_healthcareseeking</span></div>
+        <span class="c1"># for anyone with newly onset symptoms. Note that if this is not specified, then the value is taken from the</span>
+        <span class="c1"># ResourceFile.</span>
+        <span class="k">if</span> <span class="n">force_any_symptom_to_lead_to_healthcareseeking</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">force_any_symptom_to_lead_to_healthcareseeking</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">arg_force_any_symptom_to_lead_to_healthcareseeking</span> <span class="o">=</span> <span class="n">force_any_symptom_to_lead_to_healthcareseeking</span></div>
 
 <div class="viewcode-block" id="HealthSeekingBehaviour.read_parameters"><a class="viewcode-back" href="../../../reference/tlo.methods.healthseekingbehaviour.html#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Read in ResourceFile&quot;&quot;&quot;</span>
         <span class="c1"># Load parameters from resource file:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">load_parameters_from_dataframe</span><span class="p">(</span>
-            <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_HealthSeekingBehaviour.csv&#39;</span><span class="p">))</span>
-        <span class="p">)</span></div>
+            <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_HealthSeekingBehaviour.csv&#39;</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Check that force_any_symptom_to_lead_to_healthcareseeking is a bool (this is returned in</span>
+        <span class="c1"># `self.force_any_symptom_to_lead_to_healthcareseeking` without any further checking).</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;force_any_symptom_to_lead_to_healthcareseeking&#39;</span><span class="p">],</span> <span class="nb">bool</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="HealthSeekingBehaviour.initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.healthseekingbehaviour.html#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Nothing to initialise in the population</span>
@@ -371,7 +381,16 @@
                     <span class="n">Predictor</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;sy_</span><span class="si">{</span><span class="n">symptom</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;&gt;0&#39;</span><span class="p">,</span> <span class="n">odds_ratios</span><span class="p">[</span><span class="n">symptom</span><span class="p">])</span>
                     <span class="k">for</span> <span class="n">symptom</span> <span class="ow">in</span> <span class="n">care_seeking_symptoms</span>
                 <span class="p">)</span>
-            <span class="p">)</span></div></div>
+            <span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">force_any_symptom_to_lead_to_healthcareseeking</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the parameter value stored for `force_any_symptom_to_lead_to_healthcareseeking` unless this has</span>
+<span class="sd">         been over-ridden by an argument to the module.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">arg_force_any_symptom_to_lead_to_healthcareseeking</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;force_any_symptom_to_lead_to_healthcareseeking&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">arg_force_any_symptom_to_lead_to_healthcareseeking</span></div>
 
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
 <span class="c1">#   REGULAR POLLING EVENT</span>
@@ -385,7 +404,7 @@
         <span class="sd">&quot;&quot;&quot;Initialise the HealthSeekingBehaviourPoll</span>
 <span class="sd">        :param module: the module that created this event</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">priority</span><span class="o">=</span><span class="n">Priority</span><span class="o">.</span><span class="n">LAST_HALF_OF_DAY</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">HealthSeekingBehaviour</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="HealthSeekingBehaviourPoll._select_persons_with_any_symptoms"><a class="viewcode-back" href="../../../reference/tlo.methods.healthseekingbehaviour.html#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviourPoll._select_persons_with_any_symptoms">[docs]</a>    <span class="nd">@staticmethod</span>
@@ -398,7 +417,9 @@
         <span class="p">]</span></div>
 
 <div class="viewcode-block" id="HealthSeekingBehaviourPoll.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.healthseekingbehaviour.html#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviourPoll.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Determine if persons with newly onset acute generic symptoms will seek care.</span>
+        <span class="sd">&quot;&quot;&quot;Determine if persons with newly onset acute generic symptoms will seek care. This event runs second-to-last</span>
+<span class="sd">        every day (i.e., just before the `HealthSystemScheduler`) in order that symptoms arising this day can lead to</span>
+<span class="sd">        FirstAttendance on the same day.</span>
 
 <span class="sd">        :param population: the current population</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -525,7 +546,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on May 31, 2022.
+        Last updated on Aug 10, 2022.
       </span>
 
     </p>

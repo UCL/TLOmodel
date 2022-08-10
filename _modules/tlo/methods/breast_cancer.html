@@ -35,6 +35,7 @@
         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
         <script src="../../../_static/jquery.js"></script>
         <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
@@ -904,7 +905,23 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;is_alive&#39;</span><span class="p">]:</span>
             <span class="k">return</span> <span class="n">hs</span><span class="o">.</span><span class="n">get_blank_appt_footprint</span><span class="p">()</span>
 
-        <span class="c1"># Check that the person has cancer, not in stage4, has been diagnosed and is not on treatment</span>
+        <span class="c1"># If the status is already in `stage4`, start palliative care (instead of treatment)</span>
+        <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;brc_status&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;stage4&#39;</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;warning&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s2">&quot;Cancer is in stage 4 - aborting HSI_breastCancer_StartTreatment,&quot;</span>
+                                               <span class="s2">&quot;scheduling HSI_BreastCancer_PalliativeCare&quot;</span><span class="p">)</span>
+
+            <span class="n">hs</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
+                <span class="n">hsi_event</span><span class="o">=</span><span class="n">HSI_BreastCancer_PalliativeCare</span><span class="p">(</span>
+                     <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span>
+                     <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
+                <span class="p">),</span>
+                <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
+                <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">priority</span><span class="o">=</span><span class="mi">0</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({})</span>
+
+        <span class="c1"># Check that the person has been diagnosed and is not on treatment</span>
         <span class="k">assert</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;brc_status&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;none&#39;</span>
         <span class="k">assert</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;brc_status&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;stage4&#39;</span>
         <span class="k">assert</span> <span class="ow">not</span> <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;brc_date_diagnosis&quot;</span><span class="p">])</span>
@@ -1125,7 +1142,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on May 31, 2022.
+        Last updated on Aug 10, 2022.
       </span>
 
     </p>

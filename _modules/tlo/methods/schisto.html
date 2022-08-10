@@ -35,6 +35,7 @@
         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
         <script src="../../../_static/jquery.js"></script>
         <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
@@ -689,18 +690,21 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">return</span>
 
-        <span class="k">def</span> <span class="nf">_inf_status</span><span class="p">(</span><span class="n">age</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">agg_wb</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">age</span> <span class="o">&lt;</span> <span class="mi">5</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">agg_wb</span> <span class="o">&gt;=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;high_intensity_threshold_PSAC&#39;</span><span class="p">]:</span>
-                    <span class="k">return</span> <span class="s1">&#39;High-infection&#39;</span>
-
-            <span class="k">if</span> <span class="n">agg_wb</span> <span class="o">&gt;=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;high_intensity_threshold&#39;</span><span class="p">]:</span>
-                <span class="k">return</span> <span class="s1">&#39;High-infection&#39;</span>
-
-            <span class="k">if</span> <span class="n">agg_wb</span> <span class="o">&gt;=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;low_intensity_threshold&#39;</span><span class="p">]:</span>
-                <span class="k">return</span> <span class="s1">&#39;Low-infection&#39;</span>
-
-            <span class="k">return</span> <span class="s1">&#39;Non-infected&#39;</span>
+        <span class="k">def</span> <span class="nf">_get_infection_status</span><span class="p">(</span><span class="n">population</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+            <span class="n">age</span> <span class="o">=</span> <span class="n">population</span><span class="p">[</span><span class="s2">&quot;age_years&quot;</span><span class="p">]</span>
+            <span class="n">agg_wb</span> <span class="o">=</span> <span class="n">population</span><span class="p">[</span><span class="n">prop</span><span class="p">(</span><span class="s2">&quot;aggregate_worm_burden&quot;</span><span class="p">)]</span>
+            <span class="n">status</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span>
+                <span class="s2">&quot;Non-infected&quot;</span><span class="p">,</span>
+                <span class="n">index</span><span class="o">=</span><span class="n">population</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="n">population</span><span class="p">[</span><span class="n">prop</span><span class="p">(</span><span class="s2">&quot;infection_status&quot;</span><span class="p">)]</span><span class="o">.</span><span class="n">dtype</span>
+            <span class="p">)</span>
+            <span class="n">high_group</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="p">(</span><span class="n">age</span> <span class="o">&lt;</span> <span class="mi">5</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">agg_wb</span> <span class="o">&gt;=</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;high_intensity_threshold_PSAC&quot;</span><span class="p">])</span>
+            <span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">agg_wb</span> <span class="o">&gt;=</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;high_intensity_threshold&quot;</span><span class="p">])</span>
+            <span class="n">low_group</span> <span class="o">=</span> <span class="o">~</span><span class="n">high_group</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">agg_wb</span> <span class="o">&gt;=</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;low_intensity_threshold&quot;</span><span class="p">])</span>
+            <span class="n">status</span><span class="p">[</span><span class="n">high_group</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;High-infection&quot;</span>
+            <span class="n">status</span><span class="p">[</span><span class="n">low_group</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Low-infection&quot;</span>
+            <span class="k">return</span> <span class="n">status</span>
 
         <span class="k">def</span> <span class="nf">_impose_symptoms_of_high_intensity_infection</span><span class="p">(</span><span class="n">idx</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
             <span class="sd">&quot;&quot;&quot;Assign symptoms to the person with high intensity infection.</span>
@@ -718,11 +722,7 @@
                         <span class="n">disease_module</span><span class="o">=</span><span class="n">schisto_module</span>
                     <span class="p">)</span>
 
-        <span class="n">correct_status</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
-            <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">_inf_status</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;age_years&#39;</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="n">prop</span><span class="p">(</span><span class="s1">&#39;aggregate_worm_burden&#39;</span><span class="p">)]),</span>
-            <span class="n">axis</span><span class="o">=</span><span class="mi">1</span>
-        <span class="p">)</span>
-
+        <span class="n">correct_status</span> <span class="o">=</span> <span class="n">_get_infection_status</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
         <span class="n">original_status</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="n">prop</span><span class="p">(</span><span class="s1">&#39;infection_status&#39;</span><span class="p">)]</span>
 
         <span class="c1"># Impose symptoms for those newly having &#39;High-infection&#39; status</span>
@@ -1200,7 +1200,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on May 31, 2022.
+        Last updated on Aug 10, 2022.
       </span>
 
     </p>
