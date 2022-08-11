@@ -3054,18 +3054,23 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
         # Iterate over all the injured people who are having medical treatment
         for person in relevant_population:
             # Iterate over all the  'rt_date_to_remove_daly_*' dates
-            for date_to_remove_daly_column in RTI.DATE_TO_REMOVE_DALY_COLUMNS:
-                date = df.loc[person, date_to_remove_daly_column]
+            # storing queried date values from dataframe for reuse
+            date_values = {}
+            for date_column in RTI.DATE_TO_REMOVE_DALY_COLUMNS:
+                date_values[date_column] = df.at[person, date_column]
                 # check that a recovery date hasn't been assigned to the past
-                if not pd.isnull(date):
-                    assert date >= self.sim.date, 'recovery date assigned to past'
+                if not pd.isnull(date_values[date_column]):
+                    assert date_values[date_column] >= self.sim.date, (
+                        "Recovery date assigned to past"
+                    )
                 # check if the recovery date is today
-                if date == now:
+                if date_values[date_column] == now:
                     # find the injury code associated with the healed injury
-                    injury_column = RTI.INJURY_DATE_COLUMN_MAP[date_to_remove_daly_column]
+                    injury_column = RTI.INJURY_DATE_COLUMN_MAP[date_column]
                     code_to_remove = [df.loc[person, injury_column]]
                     # Set the healed injury recovery data back to the default state
-                    df.loc[person, date_to_remove_daly_column] = pd.NaT
+                    # Also record updated values in date_values dict
+                    date_values[date_column] = df.loc[person, date_column] = pd.NaT
                     # Remove the daly weight associated with the healed injury code
                     person_injuries = df.loc[[person], RTI.INJURY_COLUMNS]
                     _, counts = RTI.rti_find_and_count_injuries(
@@ -3076,16 +3081,17 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
                     else:
                         road_traffic_injuries.rti_alter_daly_post_treatment(person, code_to_remove)
             # Check whether all their injuries are healed so the injury properties can be reset
-            if df.loc[person, RTI.DATE_TO_REMOVE_DALY_COLUMNS].isnull().all():
+            if all(pd.isnull(date) for date in date_values.values()):
                 # remove the injury severity as person is uninjured
-                df.loc[person, 'rt_inj_severity'] = "none"
+                df.at[person, 'rt_inj_severity'] = "none"
             # Check that the date to remove dalys is removed if the date to remove the daly is today
-            assert (df.loc[person, RTI.DATE_TO_REMOVE_DALY_COLUMNS] != now).all()
+            assert all(date != now for date in date_values.values())
             # finally ensure the reported disability burden is an appropriate value
-            if df.loc[person, 'rt_disability'] < 0:
-                df.loc[person, 'rt_disability'] = 0
-            if df.loc[person, 'rt_disability'] > 1:
-                df.loc[person, 'rt_disability'] = 1
+            current_rt_disability = df.at[person, 'rt_disability']
+            if current_rt_disability < 0:
+                df.at[person, 'rt_disability'] = 0
+            if current_rt_disability > 1:
+                df.at[person, 'rt_disability'] = 1
 
 
 # ---------------------------------------------------------------------------------------------------------
