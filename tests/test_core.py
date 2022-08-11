@@ -13,7 +13,8 @@ def test_categorical():
     s = p.create_series('Sex', 10)
     assert s.dtype.name == 'category'
     assert list(s.cat.categories) == categories
-
+    # by default if ordered is not set categories will be unordered. test this is true
+    assert not s.cat.ordered
     # assignment of valid category
     try:
         s[0] = 'M'
@@ -23,6 +24,13 @@ def test_categorical():
     # assignment of invalid category
     with pytest.raises(ValueError):
         s[0] = 'A'
+
+    # test we can create ordered categories
+    # set property p categories to be ordered
+    p.ordered = True
+    ser = p.create_series('Ordered_p_cat', 10)
+    # check we now have created ordered categories
+    assert ser.cat.ordered, 'categories are not ordered'
 
 
 def test_dict():
