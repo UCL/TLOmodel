@@ -25,10 +25,10 @@ def test_categorical():
     with pytest.raises(ValueError):
         s[0] = 'A'
 
-    # test we can create ordered categories
-    # set property p categories to be ordered
-    p.ordered = True
-    ser = p.create_series('Ordered_p_cat', 10)
+    # test we can create ordered categories.
+    # set ordered argument to True
+    prop = Property(Types.CATEGORICAL, description='Ordered Categories', categories=[0, 1, 2, 3], ordered=True)
+    ser = prop.create_series('ordered_cat', 10)
     # check we now have created ordered categories
     assert ser.cat.ordered, 'categories are not ordered'
 
