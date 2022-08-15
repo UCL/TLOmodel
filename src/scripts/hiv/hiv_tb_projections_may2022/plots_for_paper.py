@@ -1257,6 +1257,7 @@ delay0 = delay0.reset_index()
 delay0_scatter = pd.melt(delay0, id_vars='index', value_vars=years)
 delay0_scatter['value_weeks'] = round(delay0_scatter.value / 7)
 delay0_scatter.loc[delay0_scatter['value_weeks'] >= 10, 'value_weeks'] = 10
+delay0_scatter = delay0_scatter[delay0_scatter['value'].notna()]
 
 delay1 = pd.DataFrame(list_tx_delay1).T
 delay1.columns = years
@@ -1265,6 +1266,7 @@ delay1 = delay1.reset_index()
 delay1_scatter = pd.melt(delay1, id_vars='index', value_vars=years)
 delay1_scatter['value_weeks'] = round(delay1_scatter.value / 7)
 delay1_scatter.loc[delay1_scatter['value_weeks'] >= 10, 'value_weeks'] = 10
+delay1_scatter = delay1_scatter[delay1_scatter['value'].notna()]
 
 delay2 = pd.DataFrame(list_tx_delay2).T
 delay2.columns = years
@@ -1273,6 +1275,7 @@ delay2 = delay2.reset_index()
 delay2_scatter = pd.melt(delay2, id_vars='index', value_vars=years)
 delay2_scatter['value_weeks'] = round(delay2_scatter.value / 7)
 delay2_scatter.loc[delay2_scatter['value_weeks'] >= 10, 'value_weeks'] = 10
+delay2_scatter = delay2_scatter[delay2_scatter['value'].notna()]
 
 delay3 = pd.DataFrame(list_tx_delay3).T
 delay3.columns = years
@@ -1281,6 +1284,7 @@ delay3 = delay3.reset_index()
 delay3_scatter = pd.melt(delay3, id_vars='index', value_vars=years)
 delay3_scatter['value_weeks'] = round(delay3_scatter.value / 7)
 delay3_scatter.loc[delay3_scatter['value_weeks'] >= 10, 'value_weeks'] = 10
+delay3_scatter = delay3_scatter[delay3_scatter['value'].notna()]
 
 delay4 = pd.DataFrame(list_tx_delay4).T
 delay4.columns = years
@@ -1289,39 +1293,165 @@ delay4 = delay4.reset_index()
 delay4_scatter = pd.melt(delay4, id_vars='index', value_vars=years)
 delay4_scatter['value_weeks'] = round(delay4_scatter.value / 7)
 delay4_scatter.loc[delay4_scatter['value_weeks'] >= 10, 'value_weeks'] = 10
-
-
-## plots
+delay4_scatter = delay4_scatter[delay4_scatter['value'].notna()]
 
 
 # scenario 1 delays 2023-2035
 # aggregate values over 10 weeks
 delay0_hist = delay0_scatter.loc[delay0_scatter['variable'] >= 2023]
-delay0_hist = delay0_hist.loc[delay0_hist['value_weeks'] >= 1]  # exclude negative values (false +ve)
+delay0_hist = delay0_hist.loc[
+    (delay0_hist['value_weeks'] >= 1) & (delay0_hist['value'] <= 1095)]  # exclude negative values (false +ve)
 
 delay1_hist = delay1_scatter.loc[delay1_scatter['variable'] >= 2023]
-delay1_hist = delay1_hist.loc[delay1_hist['value_weeks'] >= 1]
+delay1_hist = delay1_hist.loc[
+    (delay1_hist['value_weeks'] >= 1) & (delay1_hist['value'] <= 1095)]
 
 delay2_hist = delay2_scatter.loc[delay2_scatter['variable'] >= 2023]
-delay2_hist = delay2_hist.loc[delay2_hist['value_weeks'] >= 1]
+delay2_hist = delay2_hist.loc[
+    (delay2_hist['value_weeks'] >= 1) & (delay2_hist['value'] <= 1095)]
 
 delay3_hist = delay3_scatter.loc[delay3_scatter['variable'] >= 2023]
-delay3_hist = delay3_hist.loc[delay3_hist['value_weeks'] >= 1]
+delay3_hist = delay3_hist.loc[
+    (delay3_hist['value_weeks'] >= 1) & (delay3_hist['value'] <= 1095)]
 
 delay4_hist = delay4_scatter.loc[delay4_scatter['variable'] >= 2023]
-delay4_hist = delay4_hist.loc[delay4_hist['value_weeks'] >= 1]
+delay4_hist = delay4_hist.loc[
+    (delay4_hist['value_weeks'] >= 1) & (delay4_hist['value'] <= 1095)]
+
+
+## TREATMENT DELAY CHILDREN
+
+tb_tx_delay_child_sc0_dict = extract_tx_delay(results_folder=results0,
+                                              module="tlo.methods.tb",
+                                              key="tb_treatment_delays",
+                                              column="tbTreatmentDelayChildren")
+
+tb_tx_delay_child_sc1_dict = extract_tx_delay(results_folder=results1,
+                                              module="tlo.methods.tb",
+                                              key="tb_treatment_delays",
+                                              column="tbTreatmentDelayChildren")
+
+tb_tx_delay_child_sc2_dict = extract_tx_delay(results_folder=results2,
+                                              module="tlo.methods.tb",
+                                              key="tb_treatment_delays",
+                                              column="tbTreatmentDelayChildren")
+
+tb_tx_delay_child_sc3_dict = extract_tx_delay(results_folder=results3,
+                                              module="tlo.methods.tb",
+                                              key="tb_treatment_delays",
+                                              column="tbTreatmentDelayChildren")
+
+tb_tx_delay_child_sc4_dict = extract_tx_delay(results_folder=results4,
+                                              module="tlo.methods.tb",
+                                              key="tb_treatment_delays",
+                                              column="tbTreatmentDelayChildren")
+
+# convert dict to dataframe
+tb_tx_delay_child_sc0 = pd.DataFrame(tb_tx_delay_child_sc0_dict.items())
+tb_tx_delay_child_sc1 = pd.DataFrame(tb_tx_delay_child_sc1_dict.items())
+tb_tx_delay_child_sc2 = pd.DataFrame(tb_tx_delay_child_sc2_dict.items())
+tb_tx_delay_child_sc3 = pd.DataFrame(tb_tx_delay_child_sc3_dict.items())
+tb_tx_delay_child_sc4 = pd.DataFrame(tb_tx_delay_child_sc4_dict.items())
+
+list_tx_delay0 = summarise_tx_delay(tb_tx_delay_child_sc0)
+list_tx_delay1 = summarise_tx_delay(tb_tx_delay_child_sc1)
+list_tx_delay2 = summarise_tx_delay(tb_tx_delay_child_sc2)
+list_tx_delay3 = summarise_tx_delay(tb_tx_delay_child_sc3)
+list_tx_delay4 = summarise_tx_delay(tb_tx_delay_child_sc4)
+
+# replace nan with negative number (false positive)
+list_tx_delay0 = [[-99 if np.isnan(j) else j for j in i] for i in list_tx_delay0]
+list_tx_delay1 = [[-99 if np.isnan(j) else j for j in i] for i in list_tx_delay1]
+list_tx_delay2 = [[-99 if np.isnan(j) else j for j in i] for i in list_tx_delay2]
+list_tx_delay3 = [[-99 if np.isnan(j) else j for j in i] for i in list_tx_delay3]
+list_tx_delay4 = [[-99 if np.isnan(j) else j for j in i] for i in list_tx_delay4]
+
+# convert lists to df
+# todo note nans are fillers for dataframe
+delay0child = pd.DataFrame(list_tx_delay0).T
+delay0child.columns = years
+# convert wide to long format
+delay0child = delay0child.reset_index()
+delay0_scatterchild = pd.melt(delay0child, id_vars='index', value_vars=years)
+delay0_scatterchild['value_weeks'] = round(delay0_scatterchild.value / 7)
+delay0_scatterchild.loc[delay0_scatterchild['value_weeks'] >= 10, 'value_weeks'] = 10
+delay0_scatterchild = delay0_scatterchild[delay0_scatterchild['value'].notna()]
+
+delay1child = pd.DataFrame(list_tx_delay1).T
+delay1child.columns = years
+# convert wide to long format
+delay1child = delay1child.reset_index()
+delay1_scatterchild = pd.melt(delay1child, id_vars='index', value_vars=years)
+delay1_scatterchild['value_weeks'] = round(delay1_scatterchild.value / 7)
+delay1_scatterchild.loc[delay1_scatterchild['value_weeks'] >= 10, 'value_weeks'] = 10
+delay1_scatterchild = delay1_scatterchild[delay1_scatterchild['value'].notna()]
+
+delay2child = pd.DataFrame(list_tx_delay2).T
+delay2child.columns = years
+# convert wide to long format
+delay2child = delay2child.reset_index()
+delay2_scatterchild = pd.melt(delay2child, id_vars='index', value_vars=years)
+delay2_scatterchild['value_weeks'] = round(delay2_scatterchild.value / 7)
+delay2_scatterchild.loc[delay2_scatterchild['value_weeks'] >= 10, 'value_weeks'] = 10
+delay2_scatterchild = delay2_scatterchild[delay2_scatterchild['value'].notna()]
+
+delay3child = pd.DataFrame(list_tx_delay3).T
+delay3child.columns = years
+# convert wide to long format
+delay3child = delay3child.reset_index()
+delay3_scatterchild = pd.melt(delay3child, id_vars='index', value_vars=years)
+delay3_scatterchild['value_weeks'] = round(delay3_scatterchild.value / 7)
+delay3_scatterchild.loc[delay3_scatterchild['value_weeks'] >= 10, 'value_weeks'] = 10
+delay3_scatterchild = delay3_scatterchild[delay3_scatterchild['value'].notna()]
+
+delay4child = pd.DataFrame(list_tx_delay4).T
+delay4child.columns = years
+# convert wide to long format
+delay4child = delay4child.reset_index()
+delay4_scatterchild = pd.melt(delay4child, id_vars='index', value_vars=years)
+delay4_scatterchild['value_weeks'] = round(delay4_scatterchild.value / 7)
+delay4_scatterchild.loc[delay4_scatterchild['value_weeks'] >= 10, 'value_weeks'] = 10
+delay4_scatterchild = delay4_scatterchild[delay4_scatterchild['value'].notna()]
+
+# aggregate values over 10 weeks
+delay0_histchild = delay0_scatterchild.loc[delay0_scatterchild['variable'] >= 2023]
+delay0_histchild = delay0_histchild.loc[
+    (delay0_histchild['value_weeks'] >= 1) & (delay0_histchild['value'] <= 1095)]  # exclude negative values (false +ve)
+
+delay1_histchild = delay1_scatterchild.loc[delay1_scatterchild['variable'] >= 2023]
+delay1_histchild = delay1_histchild.loc[
+    (delay1_histchild['value_weeks'] >= 1) & (delay1_histchild['value'] <= 1095)]
+
+delay2_histchild = delay2_scatterchild.loc[delay2_scatterchild['variable'] >= 2023]
+delay2_histchild = delay2_histchild.loc[
+    (delay2_histchild['value_weeks'] >= 1) & (delay2_histchild['value'] <= 1095)]
+
+delay3_histchild = delay3_scatterchild.loc[delay3_scatterchild['variable'] >= 2023]
+delay3_histchild = delay3_histchild.loc[
+    (delay3_histchild['value_weeks'] >= 1) & (delay3_histchild['value'] <= 1095)]
+
+delay4_histchild = delay4_scatterchild.loc[delay4_scatterchild['variable'] >= 2023]
+delay4_histchild = delay4_histchild.loc[
+    (delay4_histchild['value_weeks'] >= 1) & (delay4_histchild['value'] <= 1095)]
+
 
 
 counts, bins, bars = plt.hist(delay0_hist.value_weeks, bins=range(0,11))
 
 colours = [berry[5], berry[4], berry[3], berry[2], berry[1]]
 bins = range(1, 12)
-labels = ["", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
+labels = ["", "1", "2", "3", "4", "5", "6", "7", "8", "9", "≥ 10"]
 
 ## plot
-fig, ax = plt.subplots()
+plt.style.use('ggplot')
+# fig, ax = plt.subplots()
+fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=1, ncols=2,
+                                             sharey=True,
+                                             constrained_layout=True,
+                                             figsize=(4, 8))
+fig.suptitle('')
 
-plt.hist([list(delay0_hist.value_weeks),
+ax1.hist([list(delay0_hist.value_weeks),
                                list(delay1_hist.value_weeks),
                                list(delay2_hist.value_weeks),
                                list(delay3_hist.value_weeks),
@@ -1334,19 +1464,52 @@ plt.hist([list(delay0_hist.value_weeks),
 
 ax.set_xticks(bins)
 ax.set_xticklabels(labels)
+ax.patch.set_edgecolor('grey')
+ax.patch.set_linewidth('1')
 
-plt.ylabel("Density")
-plt.ylim((0, 1.0))
-# plt.xlim((1, 11.0))
+ax1.set(title='',
+        ylabel='Density',
+        xLabel="Treatment delay, weeks")
+ax1.set_ylim([0, 1.0])
 
-plt.title("TB treatment delays")
+# plt.ylabel("Density")
+# plt.xlabel("Treatment delay, weeks")
+# plt.ylim((0, 1.0))
+# plt.title("")
 plt.legend(labels=["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4"])
 plt.show()
 
 
 
+# ---------------------------------- TB false positives -------------------------------------
 
+# show false positives put on treatment per 100,000 population
 
+tmp1 = delay0_scatter.groupby('variable').count()
 
+false0 = delay0_scatter.groupby('variable')['value'].apply(lambda x: ((x<=0) | (x>1095)).count()).reset_index(name='count')
+false1 = delay1_scatter.groupby('variable')['value'].apply(lambda x: ((x<=0) | (x>1095)).count()).reset_index(name='count')
+false2 = delay2_scatter.groupby('variable')['value'].apply(lambda x: ((x<=0) | (x>1095)).count()).reset_index(name='count')
+false3 = delay3_scatter.groupby('variable')['value'].apply(lambda x: ((x<=0) | (x>1095)).count()).reset_index(name='count')
+false4 = delay4_scatter.groupby('variable')['value'].apply(lambda x: ((x<=0) | (x>1095)).count()).reset_index(name='count')
 
+# todo note these are aggregated across all runs
+plt.style.use('ggplot')
+fig, ax = plt.subplots()
+
+ax.plot(years_num[13:25], false0["count"].loc[13:24], "-", color=berry[5])
+ax.plot(years_num[13:25], false1["count"].loc[13:24], "-", color=berry[4])
+ax.plot(years_num[13:25], false2["count"].loc[13:24], "-", color=berry[3])
+ax.plot(years_num[13:25], false3["count"].loc[13:24], "-", color=berry[2])
+ax.plot(years_num[13:25], false4["count"].loc[13:24], "-", color=berry[1])
+
+ax.patch.set_edgecolor('grey')
+ax.patch.set_linewidth('1')
+
+plt.ylabel("number false positives")
+plt.xlabel("Year")
+# plt.ylim((0, 1.0))
+plt.title("")
+plt.legend(labels=["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4"])
+plt.show()
 
