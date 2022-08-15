@@ -1445,10 +1445,10 @@ labels = ["", "1", "2", "3", "4", "5", "6", "7", "8", "9", "≥ 10"]
 ## plot
 plt.style.use('ggplot')
 # fig, ax = plt.subplots()
-fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=1, ncols=2,
+fig, ((ax1, ax2)) = plt.subplots(nrows=1, ncols=2,
                                              sharey=True,
                                              constrained_layout=True,
-                                             figsize=(4, 8))
+                                             figsize=(9, 4))
 fig.suptitle('')
 
 ax1.hist([list(delay0_hist.value_weeks),
@@ -1462,21 +1462,43 @@ ax1.hist([list(delay0_hist.value_weeks),
          color=colours,
          density=True)
 
-ax.set_xticks(bins)
-ax.set_xticklabels(labels)
-ax.patch.set_edgecolor('grey')
-ax.patch.set_linewidth('1')
+ax1.set_xticks(bins)
+ax1.set_xticklabels(labels)
+ax1.patch.set_edgecolor('grey')
+ax1.patch.set_linewidth('1')
 
 ax1.set(title='',
         ylabel='Density',
         xLabel="Treatment delay, weeks")
 ax1.set_ylim([0, 1.0])
 
-# plt.ylabel("Density")
-# plt.xlabel("Treatment delay, weeks")
-# plt.ylim((0, 1.0))
-# plt.title("")
+
+ax2.hist([list(delay0_histchild.value_weeks),
+                               list(delay1_histchild.value_weeks),
+                               list(delay2_histchild.value_weeks),
+                               list(delay3_histchild.value_weeks),
+                               list(delay4_histchild.value_weeks),
+          ],
+         bins=bins,
+         align='right',
+         color=colours,
+         density=True)
+
+ax2.set_xticks(bins)
+ax2.set_xticklabels(labels)
+ax2.patch.set_edgecolor('grey')
+ax2.patch.set_linewidth('1')
+
+ax2.set(title='',
+        ylabel='',
+        xLabel="Treatment delay, weeks")
+ax2.set_ylim([0, 1.0])
+
+plt.tick_params(axis="both", which="major", labelsize=10)
+
 plt.legend(labels=["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4"])
+fig.savefig(outputspath / "Tb_treatmeant_delay.png")
+
 plt.show()
 
 
