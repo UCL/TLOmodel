@@ -26,7 +26,7 @@ logger.setLevel(logging.INFO)
 def _parse_log_file_inner_loop(filepath, level: int = logging.INFO):
     """Parses the log file and returns dictionary of dataframes"""
     log_data = LogData()
-    with open(filepath) as log_file:
+    with gzip.open(filepath, 'rt') as log_file:
         for line in log_file:
             # only parse json entities
             if line.startswith('{'):
@@ -41,44 +41,67 @@ def _parse_log_file_inner_loop(filepath, level: int = logging.INFO):
 
 
 def parse_log_file(log_filepath):
-    """Parses logged output from a TLO run, split it into smaller logfiles and returns a class containing paths to
-    these split logfiles.
+    """Parses logged output from a TLO run, split it into smaller logfiles and returns a dict-like to access those log
+    files. Can handle both gzipped and uncompressed log files. Looks for a gzip file first.
 
     :param log_filepath: file path to log file
     :return: a class containing paths to split logfiles
     """
     print(f'Processing log file {log_filepath}')
+    log_filepath = Path(log_filepath)
     uuid_to_module_name: Dict[str, str] = dict()  # uuid to module name
     module_name_to_filehandle: Dict[str, TextIO] = dict()  # module name to file handle
 
-    log_directory = Path(log_filepath).parent
+    log_directory = log_filepath.parent
     print(f'Writing module-specific log files to {log_directory}')
 
+    # We've been given a file path, which may or may not be a path to a gzipped file (scenarios produce gzipped log
+    # files). Check for both and open the right sort of file handle.
+    zipped_log_filepath = log_directory / (log_filepath.name + '.gz')
+    if log_filepath.suffix == '.gz':
+        log_file = gzip.open(log_filepath, 'rt')
+    elif os.path.exists(zipped_log_filepath):
+        log_file = gzip.open(zipped_log_filepath, 'rt')
+    else:
+        log_file = open(log_filepath, 'r')
+
+    module_name_to_filename = {}
+
     # iterate over each line in the logfile
-    with open(log_filepath) as log_file:
-        for line in log_file:
-            # only parse lines that are json log lines (old-style logging is not supported)
-            if line.startswith('{'):
-                log_data_json = json.loads(line)
-                uuid = log_data_json['uuid']
-                # if this is a header line (only header lines have a `type` key)
-                if 'type' in log_data_json:
-                    module_name = log_data_json["module"]
-                    uuid_to_module_name[uuid] = module_name
-                    # we only need to create the file if we don't already have one for this module
+    for line in log_file:
+        # only parse lines that are json log lines (old-style logging is not supported)
+        if line.startswith('{'):
+            log_data_json = json.loads(line)
+            uuid = log_data_json['uuid']
+            # if this is a header line (only header lines have a `type` key)
+            if 'type' in log_data_json:
+                module_name = log_data_json["module"]
+                uuid_to_module_name[uuid] = module_name
+                # we only need to create the file if we don't already have one for this module
+                # and we only need to write the lines if we haven't already got a pickled version
+                pickle_file_name = str(log_directory / f"{module_name}.pickle")
+                if os.path.exists(pickle_file_name):
+                    module_name_to_filename[module_name] = pickle_file_name
+                else:
+                    # the pickle file for this module doesn't exist. save the log lines to module-specific log file
                     if module_name not in module_name_to_filehandle:
-                        module_name_to_filehandle[module_name] = open(log_directory / f"{module_name}.log", mode="w")
+                        module_name_to_filehandle[module_name] = gzip.open(log_directory / f"{module_name}.log.gz", mode="wt")
+                        module_name_to_filename[module_name] = module_name_to_filehandle[module_name].name
+            # if we need to save the output of these log line (i.e. we don't have the pickled file)
+            if uuid_to_module_name[uuid] in module_name_to_filehandle:
                 # copy line from log file to module-specific log file (both headers and non-header lines)
                 module_name_to_filehandle[uuid_to_module_name[uuid]].write(line)
-
-    print('Finished writing module-specific log files.')
 
     # close all module-specific files
     for file_handle in module_name_to_filehandle.values():
         file_handle.close()
 
+    log_file.close()
+
+    print('Finished writing module-specific log files.')
+
     # return an object that accepts as an argument a dictionary containing paths to split logfiles
-    return LogsDict({name: handle.name for name, handle in module_name_to_filehandle.items()})
+    return LogsDict(module_name_to_filename)
 
 
 def write_log_to_excel(filename, log_dataframes):
@@ -550,9 +573,18 @@ class LogsDict(Mapping):
         if key in self._logfile_names_and_paths:
             # check if key is found in cache
             if key not in self._results_cache:
-                result_df = _parse_log_file_inner_loop(self._logfile_names_and_paths[key])
-                # get metadata for the selected log file and merge it all with the selected key
-                result_df[key]['_metadata'] = result_df['_metadata']
+                if self._logfile_names_and_paths[key].endswith('.pickle'):
+                    # return the already pickled file
+                    result_df = pickle.load(open(self._logfile_names_and_paths[key], 'rb'))
+                else:
+                    # if the pickled result doesn't exist, we need to create it
+                    result_df = _parse_log_file_inner_loop(self._logfile_names_and_paths[key])
+                    # get metadata for the selected log file and merge it all with the selected key
+                    result_df[key]['_metadata'] = result_df['_metadata']
+                    pickle_filename = str((Path(self._logfile_names_and_paths[key])).parent / (key + '.pickle'))
+                    pickle.dump(result_df, open(pickle_filename, 'wb'))
+                    self._logfile_names_and_paths[key] = pickle_filename
+
                 if not cache:  # check if caching is disallowed
                     return result_df[key]
                 self._results_cache[key] = result_df[key]    # add key specific parsed results to cache
