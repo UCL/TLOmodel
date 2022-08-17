@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 from typing import Dict, Iterable
 
-from .core import _FORMATTER, _LOGGERS, DEBUG, getLogger
+from .core import _FORMATTER, _LOGGERS, DEBUG, TLOStreamHandler, getLogger
 
 
 def set_output_file(log_path: Path) -> _logging.StreamHandler:
@@ -17,16 +17,14 @@ def set_output_file(log_path: Path) -> _logging.StreamHandler:
     if not log_path.name.endswith('.gz'):
         log_path = log_path.parent / (log_path.name + '.gz')
 
-    # log directly to this compressed file
-    gzip_file = gzip.open(log_path, mode='wt', encoding='utf-8')
-
-    stream_handler = _logging.StreamHandler(gzip_file)
+    # log to this compressed file
+    stream_handler = TLOStreamHandler(gzip.open(log_path, mode='wt', encoding='utf-8'))
     stream_handler.setFormatter(_FORMATTER)
 
-    # should be the only stream handler for all tlo logging
-    getLogger('tlo').handlers = [h for h in getLogger('tlo').handlers
-                                 if not isinstance(h, (_logging.FileHandler, _logging.StreamHandler))]
+    # Get rid of any existing TLOStreamHandlers
+    getLogger('tlo').handlers = [h for h in getLogger('tlo').handlers if not isinstance(h, TLOStreamHandler)]
     getLogger('tlo').addHandler(stream_handler)
+
     return stream_handler
 
 

@@ -19,11 +19,15 @@ def getLogger(name='tlo'):
     return _LOGGERS[name]
 
 
+class TLOStreamHandler(_logging.StreamHandler):
+    """Stream handler used for logging TLO simulations. Used to identify TLO stream handlers from others i.e. stdout"""
+    pass
+
+
 def shutdown():
-    # flush and close the handlers, skipping any which aren't streams (just in case)
+    # flush and close the tlo handlers, leave any others (e.g. stdout) intact
     for h in getLogger('tlo').handlers:
-        if hasattr(h, 'stream'):
-            h.stream.flush()
+        if isinstance(h, TLOStreamHandler):
             h.stream.close()
     _logging.shutdown()
 
