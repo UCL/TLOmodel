@@ -40,11 +40,12 @@ def _parse_log_file_inner_loop(filepath, level: int = logging.INFO):
     return output_logs
 
 
-def parse_log_file(log_filepath):
+def parse_log_file(log_filepath, keep_existing=False):
     """Parses logged output from a TLO run, split it into smaller logfiles and returns a dict-like to access those log
     files. Can handle both gzipped and uncompressed log files. Looks for a gzip file first.
 
     :param log_filepath: file path to log file
+    :param keep_existing: keep any existing module-specific log files and pickled dataframes
     :return: a class containing paths to split logfiles
     """
     print(f'Processing log file {log_filepath}')
@@ -80,7 +81,7 @@ def parse_log_file(log_filepath):
                 # we only need to create the file if we don't already have one for this module
                 # and we only need to write the lines if we haven't already got a pickled version
                 pickle_file_name = str(log_directory / f"{module_name}.pickle")
-                if os.path.exists(pickle_file_name):
+                if keep_existing and os.path.exists(pickle_file_name):
                     module_name_to_filename[module_name] = pickle_file_name
                 else:
                     # the pickle file for this module doesn't exist. save the log lines to module-specific log file
