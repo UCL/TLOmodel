@@ -85,7 +85,9 @@ def parse_log_file(log_filepath):
                 else:
                     # the pickle file for this module doesn't exist. save the log lines to module-specific log file
                     if module_name not in module_name_to_filehandle:
-                        module_name_to_filehandle[module_name] = gzip.open(log_directory / f"{module_name}.log.gz", mode="wt")
+                        module_name_to_filehandle[module_name] = gzip.open(
+                            log_directory / f"{module_name}.log.gz", mode="wt"
+                        )
                         module_name_to_filename[module_name] = module_name_to_filehandle[module_name].name
             # if we need to save the output of these log line (i.e. we don't have the pickled file)
             if uuid_to_module_name[uuid] in module_name_to_filehandle:

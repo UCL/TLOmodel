@@ -54,7 +54,6 @@ In summary:
 """
 import datetime
 import json
-import pickle
 from pathlib import Path, PurePosixPath
 
 import numpy as np
