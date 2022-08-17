@@ -112,7 +112,7 @@ class Simulation:
 
         if filename:
             timestamp = datetime.datetime.now().strftime('%Y-%m-%dT%H%M%S')
-            log_path = Path(directory) / f"{filename}__{timestamp}.log"
+            log_path = Path(directory) / f"{filename}__{timestamp}.log.gz"
             self.output_file = logging.set_output_file(log_path)
             logger.info(key='info', data=f'Log output: {log_path}')
             self._log_filepath = log_path
