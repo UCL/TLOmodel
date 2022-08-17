@@ -19,6 +19,15 @@ def getLogger(name='tlo'):
     return _LOGGERS[name]
 
 
+def shutdown():
+    # flush and close the handlers, skipping any which aren't streams (just in case)
+    for h in getLogger('tlo').handlers:
+        if hasattr(h, 'stream'):
+            h.stream.flush()
+            h.stream.close()
+    _logging.shutdown()
+
+
 class _MockSim:
     # used as place holder for any logging that happens before simulation is setup!
     class MockDate:

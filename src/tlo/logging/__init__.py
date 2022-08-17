@@ -1,4 +1,4 @@
-from .core import CRITICAL, DEBUG, FATAL, INFO, WARNING, disable, getLogger
+from .core import CRITICAL, DEBUG, FATAL, INFO, WARNING, disable, getLogger, shutdown
 from .helpers import init_logging, set_logging_levels, set_output_file, set_simulation
 
 __all__ = ['CRITICAL', 'DEBUG', 'FATAL', 'INFO', 'WARNING', 'disable', 'getLogger',
