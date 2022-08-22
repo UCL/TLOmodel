@@ -4,6 +4,7 @@ import datetime
 import json
 import math
 import os
+import tempfile
 from collections import defaultdict
 from pathlib import Path
 from typing import Dict
@@ -26,7 +27,7 @@ JOB_LABEL_PADDING = len("State transition time")
 
 
 @click.group()
-@click.option("--config-file", type=click.Path(exists=True), default="tlo.conf", hidden=True)
+@click.option("--config-file", type=click.Path(exists=False), default="tlo.conf", hidden=True)
 @click.option("--verbose", "-v", is_flag=True, default=False)
 @click.pass_context
 def cli(ctx, config_file, verbose):
@@ -46,21 +47,28 @@ def cli(ctx, config_file, verbose):
 @click.argument("scenario_file", type=click.Path(exists=True))
 @click.option("--draw-only", is_flag=True, help="Only generate draws; do not run the simulation")
 @click.option("--draw", "-d", nargs=2, type=int)
-def scenario_run(scenario_file, draw_only, draw: tuple):
+@click.option("--output-dir", type=str)
+def scenario_run(scenario_file, draw_only, draw: tuple, output_dir=None):
     """Run the specified scenario locally.
 
     SCENARIO_FILE is path to file containing a scenario class
     """
     scenario = load_scenario(scenario_file)
-    run_json = scenario.save_draws()
+    config = scenario.save_draws(return_config=True)
+    json_string = json.dumps(config, indent=2)
+
     if draw_only:
-        with open(run_json) as f:
-            print(f.read())
+        # pretty-print json
+        print(json_string)
         return
 
-    runner = SampleRunner(run_json)
+    tmp = tempfile.NamedTemporaryFile()
+    with open(tmp.name, 'w') as f:
+        f.write(json_string)
+    runner = SampleRunner(tmp.name)
+
     if draw:
-        runner.run_sample_by_number(output_directory=None, draw_number=draw[0], sample_number=draw[1])
+        runner.run_sample_by_number(output_directory=output_dir, draw_number=draw[0], sample_number=draw[1])
     else:
         runner.run()
 
@@ -294,10 +302,8 @@ def batch_job(ctx, job_id, raw, show_tasks):
 
 @cli.command()
 @click.option("--find", "-f", type=str, default=None, help="Show jobs where identifier contains supplied string")
-@click.option("--completed", "status", flag_value="completed", default=False, multiple=True,
-              help="Only display completed jobs")
-@click.option("--active", "status", flag_value="active", default=False, multiple=True,
-              help="Only display active jobs")
+@click.option("--completed", "status", flag_value="completed", default=False, help="Only display completed jobs")
+@click.option("--active", "status", flag_value="active", default=False, help="Only display active jobs")
 @click.option("-n", default=5, type=int, help="Maximum number of jobs to list (default is 5)")
 @click.pass_context
 def batch_list(ctx, status, n, find):
