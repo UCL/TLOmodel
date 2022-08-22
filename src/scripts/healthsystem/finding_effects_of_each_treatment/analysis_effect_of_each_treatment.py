@@ -29,7 +29,6 @@ from tlo.analysis.utils import (
 )
 
 
-
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Produce standard set of plots describing the effect of each TREATMENT_ID.
     - We estimate the epidemiological impact as the EXTRA deaths that would occur if that treatment did not occur.
@@ -513,7 +512,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig, ax = plt.subplots()
     name_of_plot = f'Additional Appointments [Coarse] With Intervention, {target_period()}'
     delta_appts_coarse = delta_appts \
-        .groupby(axis=0, by=delta_appts.index.map(get_corase_appt_type)) \
+        .groupby(axis=0, by=delta_appts.index.map(get_coarse_appt_type)) \
         .sum() \
         .sort_index(key=order_of_coarse_appt)
     delta_appts_coarse = delta_appts_coarse[order_of_short_treatment_ids(delta_appts_coarse.columns)]
@@ -535,6 +534,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
 
 if __name__ == "__main__":
+    rfp = Path('resources')
+
     parser = argparse.ArgumentParser(
         description="Produce plots to show the impact each set of treatments",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -598,8 +599,8 @@ if __name__ == "__main__":
 
     # Plot the legends
     plot_legends.apply(
-        results_folder=None, output_folder=results_folder, resourcefilepath=rfp)
+        results_folder=None, output_folder=results_path, resourcefilepath=rfp)
 
     # Plot the organisation chart of the TREATMENT_IDs
     plot_org_chart_treatment_ids.apply(
-        results_folder=None, output_folder=results_folder, resourcefilepath=None)
+        results_folder=None, output_folder=results_path, resourcefilepath=None)

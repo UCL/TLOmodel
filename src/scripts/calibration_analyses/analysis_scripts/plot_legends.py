@@ -46,7 +46,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     coarse_appt_types = sorted(
         pd.read_csv(
             resourcefilepath / 'healthsystem' / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Types_Table.csv'
-        )['Appt_Type_Code'].map(get_corase_appt_type).drop_duplicates().values,
+        )['Appt_Type_Code'].map(get_coarse_appt_type).drop_duplicates().values,
         key=order_of_coarse_appt
     )
 
