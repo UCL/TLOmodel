@@ -2602,8 +2602,15 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # ------------------------------------ CASE NOTIFICATIONS ------------------------------------
         # number diagnoses (new, relapse, reinfection) in last timeperiod
         new_tb_diagnosis = len(
-            df[(df.tb_date_diagnosed >= (now - DateOffset(months=self.repeat)))]
+            df[
+                (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
+                & (df.tb_date_diagnosed >= (now - DateOffset(months=self.repeat)))]
         )
+
+        if new_tb_diagnosis:
+            prop_dx = new_tb_diagnosis / new_tb_cases
+        else:
+            prop_dx = 0
 
         # ------------------------------------ TREATMENT ------------------------------------
         # number of tb cases who became active in last timeperiod and initiated treatment
@@ -2639,6 +2646,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             description="TB treatment coverage",
             data={
                 "tbNewDiagnosis": new_tb_diagnosis,
+                "tbPropDiagnosed": prop_dx,
                 "tbTreatmentCoverage": tx_coverage,
                 "tbIptCoverage": ipt_coverage,
             },
@@ -2648,9 +2656,11 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # for every person initiated on treatment, record time from onset to treatment
         # each year a series of intervals in days (treatment date - onset date) are recorded
         # convert to list
+        # this will include false positives as Nan or negative or delay > 3 years
 
         # adults
         # get index of adults starting tx in last time-period
+        # todo: tb onset may have been up to 3 years prior to treatment
         adult_tx_idx = df.loc[(df.age_years >= 16) &
                      (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))].index
         # calculate treatment_date - onset_date for each person in index
@@ -2671,6 +2681,71 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 "tbTreatmentDelayChildren": child_tx_delays,
             },
         )
+
+        # ------------------------------------ FALSE POSITIVES ------------------------------------
+        # from the numbers on treatment, extract those who did not have active TB infection
+        # they will be diagnosed as positive, but tb_inf != active
+        # proportion of new treatments which are false positives
+
+        # adults
+        # tb_date_active is not within last 3 years (or pd.NaT)
+        adult_num_false_positive = len(
+            df[
+                ~(df.tb_date_active >= (now - DateOffset(months=36)))
+                & (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
+                & (df.age_years >= 16)
+                ]
+        )
+
+        # these are all new adults treated, regardless of tb status
+        new_tb_tx_adult = len(
+            df[
+                (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
+                & (df.age_years >= 16)
+                ]
+        )
+
+        # proportion of adults starting on treatment who are false positive
+        if adult_num_false_positive:
+            adult_prop_false_positive = adult_num_false_positive / new_tb_tx_adult
+        else:
+            adult_prop_false_positive = 0
+
+        #children
+        child_num_false_positive = len(
+            df[
+                ~(df.tb_date_active >= (now - DateOffset(months=36)))
+                & (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
+                & (df.age_years < 16)
+                ]
+        )
+
+        # these are all new children treated, regardless of tb status
+        new_tb_tx_child = len(
+            df[
+                (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))
+                & (df.age_years < 16)
+                ]
+        )
+
+        # proportion of children starting on treatment who are false positive
+        if child_num_false_positive:
+            child_prop_false_positive = child_num_false_positive / new_tb_tx_child
+        else:
+            child_prop_false_positive = 0
+
+        logger.info(
+            key="tb_false_positive",
+            description="TB numbers on treatment without disease",
+            data={
+                "tbNumFalsePositiveAdults": adult_num_false_positive,
+                "tbNumFalsePositiveChildren": child_num_false_positive,
+                "tbPropFalsePositiveAdults": adult_prop_false_positive,
+                "tbPropFalsePositiveChildren": child_prop_false_positive,
+            },
+        )
+
+
 
 
 # ---------------------------------------------------------------------------

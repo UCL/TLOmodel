@@ -1023,121 +1023,121 @@ plt.show()
 
 
 
-# ---------------------------- 3d-plots ------------------------------------
+# # ---------------------------- 3d-plots ------------------------------------
+#
+# # TB test appts and TB proportion diagnosed
+#
+# x0 = tx_id0["Tb_Test_Screening_median"].values[1:26]
+# x1 = tx_id1["Tb_Test_Screening_median"].values[1:26]
+# x2 = tx_id2["Tb_Test_Screening_median"].values[1:26]
+# x3 = tx_id3["Tb_Test_Screening_median"].values[1:26]
+# x4 = tx_id4["Tb_Test_Screening_median"].values[1:26]
+#
+# y = years_num.values[1:26]
+#
+# z0 = tb_dx0["median"].values
+# z1 = tb_dx1["median"].values
+# z2 = tb_dx2["median"].values
+# z3 = tb_dx3["median"].values
+# z4 = tb_dx4["median"].values
+#
+#
+# plt.style.use('ggplot')
+#
+#
+# fig = plt.figure()
+# fig.tight_layout()
+# ax = plt.axes(projection='3d')
+#
+# ax.plot(y, x0, z0, color=berry[5], label="Scenario 0");
+# for i in range(len(tb_dx_full0.columns)):
+#     ax.plot(y, tb_test_counts0.iloc[1:26, i], tb_dx_full0.iloc[:, i], color=berry[5], alpha=0.1);
+#
+# ax.plot(y, x1, z1, color=berry[4], label="Scenario 1");
+# for i in range(len(tb_dx_full0.columns)):
+#     ax.plot(y, tb_test_counts1.iloc[1:26, i], tb_dx_full1.iloc[:, i], color=berry[4], alpha=0.1);
+#
+# ax.plot(y, x2, z2, color=berry[3], label="Scenario 2");
+# for i in range(len(tb_dx_full0.columns)):
+#     ax.plot(y, tb_test_counts2.iloc[1:26, i], tb_dx_full2.iloc[:, i], color=berry[3], alpha=0.1);
+#
+# ax.plot(y, x3, z3, color=berry[2], label="Scenario 3");
+# for i in range(len(tb_dx_full0.columns)):
+#     ax.plot(y, tb_test_counts3.iloc[1:26, i], tb_dx_full3.iloc[:, i], color=berry[2], alpha=0.1);
+#
+# ax.plot(y, x4, z4, color=berry[1], label="Scenario 4");
+# for i in range(len(tb_dx_full0.columns)):
+#     ax.plot(y, tb_test_counts4.iloc[1:26, i], tb_dx_full4.iloc[:, i], color=berry[1], alpha=0.1);
+#
+# ax.set(facecolor='w')
+#
+# xLabel = ax.set_xlabel('\nYear', linespacing=1.5)
+# yLabel = ax.set_ylabel('\nNo. treatment appts', linespacing=2.1)
+# zLabel = ax.set_zlabel('\nProportion treated', linespacing=1.4)
+#
+# plt.legend(bbox_to_anchor=(-0.4,0.4), loc="center left", facecolor="white")
+#
+# # fig.savefig(outputspath / "Tb_diagnosed.png")
+#
+# plt.show()
 
-# TB test appts and TB proportion diagnosed
-
-x0 = tx_id0["Tb_Test_Screening_median"].values[1:26]
-x1 = tx_id1["Tb_Test_Screening_median"].values[1:26]
-x2 = tx_id2["Tb_Test_Screening_median"].values[1:26]
-x3 = tx_id3["Tb_Test_Screening_median"].values[1:26]
-x4 = tx_id4["Tb_Test_Screening_median"].values[1:26]
-
-y = years_num.values[1:26]
-
-z0 = tb_dx0["median"].values
-z1 = tb_dx1["median"].values
-z2 = tb_dx2["median"].values
-z3 = tb_dx3["median"].values
-z4 = tb_dx4["median"].values
-
-
-plt.style.use('ggplot')
-
-
-fig = plt.figure()
-fig.tight_layout()
-ax = plt.axes(projection='3d')
-
-ax.plot(y, x0, z0, color=berry[5], label="Scenario 0");
-for i in range(len(tb_dx_full0.columns)):
-    ax.plot(y, tb_test_counts0.iloc[1:26, i], tb_dx_full0.iloc[:, i], color=berry[5], alpha=0.1);
-
-ax.plot(y, x1, z1, color=berry[4], label="Scenario 1");
-for i in range(len(tb_dx_full0.columns)):
-    ax.plot(y, tb_test_counts1.iloc[1:26, i], tb_dx_full1.iloc[:, i], color=berry[4], alpha=0.1);
-
-ax.plot(y, x2, z2, color=berry[3], label="Scenario 2");
-for i in range(len(tb_dx_full0.columns)):
-    ax.plot(y, tb_test_counts2.iloc[1:26, i], tb_dx_full2.iloc[:, i], color=berry[3], alpha=0.1);
-
-ax.plot(y, x3, z3, color=berry[2], label="Scenario 3");
-for i in range(len(tb_dx_full0.columns)):
-    ax.plot(y, tb_test_counts3.iloc[1:26, i], tb_dx_full3.iloc[:, i], color=berry[2], alpha=0.1);
-
-ax.plot(y, x4, z4, color=berry[1], label="Scenario 4");
-for i in range(len(tb_dx_full0.columns)):
-    ax.plot(y, tb_test_counts4.iloc[1:26, i], tb_dx_full4.iloc[:, i], color=berry[1], alpha=0.1);
-
-ax.set(facecolor='w')
-
-xLabel = ax.set_xlabel('\nYear', linespacing=1.5)
-yLabel = ax.set_ylabel('\nNo. treatment appts', linespacing=2.1)
-zLabel = ax.set_zlabel('\nProportion treated', linespacing=1.4)
-
-plt.legend(bbox_to_anchor=(-0.4,0.4), loc="center left", facecolor="white")
-
-# fig.savefig(outputspath / "Tb_diagnosed.png")
-
-plt.show()
-
-#--------------------------------------------
-# TB treatment appts and TB proportion treated
-
-x0 = tx_id0["Tb_Treatment_median"].values[1:26]
-x1 = tx_id1["Tb_Treatment_median"].values[1:26]
-x2 = tx_id2["Tb_Treatment_median"].values[1:26]
-x3 = tx_id3["Tb_Treatment_median"].values[1:26]
-x4 = tx_id4["Tb_Treatment_median"].values[1:26]
-
-y = years_num.values[1:26]
-
-z0 = tb_tx0["median"].values
-z1 = tb_tx1["median"].values
-z2 = tb_tx2["median"].values
-z3 = tb_tx3["median"].values
-z4 = tb_tx4["median"].values
-
-
-fig = plt.figure()
-fig.tight_layout()
-ax = plt.axes(projection='3d')
-
-ax.plot(y, x0, z0, color=berry[5], label="Scenario 0");
-for i in range(len(tb_tx_full0.columns)):
-    ax.plot(y, tb_tx_counts0.iloc[1:26, i], tb_tx_full0.iloc[:, i], color=berry[5], alpha=0.1);
-
-ax.plot(y, x1, z1, color=berry[4], label="Scenario 1");
-for i in range(len(tb_tx_full1.columns)):
-    ax.plot(y, tb_tx_counts1.iloc[1:26, i], tb_tx_full1.iloc[:, i], color=berry[4], alpha=0.1);
-
-ax.plot(y, x2, z2, color=berry[3], label="Scenario 2");
-for i in range(len(tb_tx_full2.columns)):
-    ax.plot(y, tb_tx_counts2.iloc[1:26, i], tb_tx_full2.iloc[:, i], color=berry[3], alpha=0.1);
-
-ax.plot(y, x3, z3, color=berry[2], label="Scenario 3");
-for i in range(len(tb_tx_full3.columns)):
-    ax.plot(y, tb_tx_counts3.iloc[1:26, i], tb_tx_full3.iloc[:, i], color=berry[2], alpha=0.1);
-
-ax.plot(y, x4, z4, color=berry[1], label="Scenario 4");
-for i in range(len(tb_tx_full4.columns)):
-    ax.plot(y, tb_tx_counts4.iloc[1:26, i], tb_tx_full4.iloc[:, i], color=berry[1], alpha=0.1);
-
-ax.set(facecolor='w')
-
-xLabel = ax.set_xlabel('\nYear', linespacing=1.5)
-yLabel = ax.set_ylabel('\nNo. treatment appts', linespacing=2.1)
-zLabel = ax.set_zlabel('\nProportion treated', linespacing=1.4)
-
-ax.set_zlim3d(0.3, 0.8)
-ax.set_ylim3d(150, 400)
-
-plt.legend(bbox_to_anchor=(-0.4,0.4), loc="center left", facecolor="white")
-
-fig.savefig(outputspath / "Tb_treated.png")
-
-plt.show()
-
+# #--------------------------------------------
+# # TB treatment appts and TB proportion treated
+#
+# x0 = tx_id0["Tb_Treatment_median"].values[1:26]
+# x1 = tx_id1["Tb_Treatment_median"].values[1:26]
+# x2 = tx_id2["Tb_Treatment_median"].values[1:26]
+# x3 = tx_id3["Tb_Treatment_median"].values[1:26]
+# x4 = tx_id4["Tb_Treatment_median"].values[1:26]
+#
+# y = years_num.values[1:26]
+#
+# z0 = tb_tx0["median"].values
+# z1 = tb_tx1["median"].values
+# z2 = tb_tx2["median"].values
+# z3 = tb_tx3["median"].values
+# z4 = tb_tx4["median"].values
+#
+#
+# fig = plt.figure()
+# fig.tight_layout()
+# ax = plt.axes(projection='3d')
+#
+# ax.plot(y, x0, z0, color=berry[5], label="Scenario 0");
+# for i in range(len(tb_tx_full0.columns)):
+#     ax.plot(y, tb_tx_counts0.iloc[1:26, i], tb_tx_full0.iloc[:, i], color=berry[5], alpha=0.1);
+#
+# ax.plot(y, x1, z1, color=berry[4], label="Scenario 1");
+# for i in range(len(tb_tx_full1.columns)):
+#     ax.plot(y, tb_tx_counts1.iloc[1:26, i], tb_tx_full1.iloc[:, i], color=berry[4], alpha=0.1);
+#
+# ax.plot(y, x2, z2, color=berry[3], label="Scenario 2");
+# for i in range(len(tb_tx_full2.columns)):
+#     ax.plot(y, tb_tx_counts2.iloc[1:26, i], tb_tx_full2.iloc[:, i], color=berry[3], alpha=0.1);
+#
+# ax.plot(y, x3, z3, color=berry[2], label="Scenario 3");
+# for i in range(len(tb_tx_full3.columns)):
+#     ax.plot(y, tb_tx_counts3.iloc[1:26, i], tb_tx_full3.iloc[:, i], color=berry[2], alpha=0.1);
+#
+# ax.plot(y, x4, z4, color=berry[1], label="Scenario 4");
+# for i in range(len(tb_tx_full4.columns)):
+#     ax.plot(y, tb_tx_counts4.iloc[1:26, i], tb_tx_full4.iloc[:, i], color=berry[1], alpha=0.1);
+#
+# ax.set(facecolor='w')
+#
+# xLabel = ax.set_xlabel('\nYear', linespacing=1.5)
+# yLabel = ax.set_ylabel('\nNo. treatment appts', linespacing=2.1)
+# zLabel = ax.set_zlabel('\nProportion treated', linespacing=1.4)
+#
+# ax.set_zlim3d(0.3, 0.8)
+# ax.set_ylim3d(150, 400)
+#
+# plt.legend(bbox_to_anchor=(-0.4,0.4), loc="center left", facecolor="white")
+#
+# fig.savefig(outputspath / "Tb_treated.png")
+#
+# plt.show()
+#
 
 # ---------------------------------- Treatment delays -------------------------------------
 
