@@ -117,7 +117,7 @@ class Parameter(Specifiable):
 class Property(Specifiable):
     """Used to specify properties of individuals."""
 
-    def __init__(self, type_, description, categories=None, *, optional=False):
+    def __init__(self, type_, description, categories=None, *, ordered=False):
         """Create a new property specification.
 
         :param type_: an instance of Types giving the type of allowed values of this property
@@ -125,7 +125,7 @@ class Property(Specifiable):
         :param optional: whether a value needs to be given for this property
         """
         super().__init__(type_, description, categories)
-        self.optional = optional
+        self.ordered = ordered
 
     def create_series(self, name, size):
         """Create a Pandas Series for this property.
@@ -143,7 +143,8 @@ class Property(Specifiable):
             s = pd.Series(
                 pd.Categorical(
                     values=np.repeat(np.nan, repeats=size),
-                    categories=self.categories
+                    categories=self.categories,
+                    ordered=self.ordered
                 ),
                 name=name,
                 index=range(size),

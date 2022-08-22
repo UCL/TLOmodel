@@ -999,6 +999,7 @@ def test_check_perfect_treatment_leads_to_zero_risk_of_death(seed):
             f"Perfect treatment does not prevent death: {_args=}"
 
 
+@pytest.mark.slow
 def test_zero_deaths_when_perfect_treatment(seed):
     """Check that there are no deaths when treatment is perfect and there is perfect healthcare seeking, and no
     healthcare constraints."""
@@ -1077,6 +1078,12 @@ def test_zero_deaths_when_perfect_treatment(seed):
     # Some deaths with imperfect treatment and default healthcare seeking
     assert 0 < get_number_of_deaths_from_cohort_of_children_with_diarrhoea(
         force_any_symptom_to_lead_to_healthcareseeking=False,
+        do_make_treatment_perfect=False,
+    )
+
+    # Some deaths with imperfect treatment and perfect healthcare seeking
+    assert 0 < get_number_of_deaths_from_cohort_of_children_with_diarrhoea(
+        force_any_symptom_to_lead_to_healthcareseeking=True,
         do_make_treatment_perfect=False,
     )
 
