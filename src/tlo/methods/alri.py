@@ -2772,17 +2772,18 @@ class AlriLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # initialise trakcers of incident cases, new recoveries, new treatments and deaths due to ALRI
         age_grps = {**{0: "0", 1: "1", 2: "2-4", 3: "2-4", 4: "2-4"}, **{x: "5+" for x in range(5, 100)}}
 
-        self.trackers = dict()
-        self.trackers['incident_cases'] = Tracker(age_grps=age_grps, pathogens=self.module.all_pathogens)
-        self.trackers['recovered_cases'] = Tracker(age_grps=age_grps, pathogens=self.module.all_pathogens)
-        self.trackers['cured_cases'] = Tracker(age_grps=age_grps, pathogens=self.module.all_pathogens)
-        self.trackers['deaths'] = Tracker(age_grps=age_grps, pathogens=self.module.all_pathogens)
-        self.trackers['deaths_among_persons_with_SpO2<90%'] = Tracker()
-        self.trackers['seeking_care'] = Tracker()
-        self.trackers['treated'] = Tracker()
-        self.trackers['pulmonary_complication_cases'] = Tracker()
-        self.trackers['systemic_complication_cases'] = Tracker()
-        self.trackers['hypoxaemic_cases'] = Tracker()
+        self.trackers = {
+            'incident_cases': Tracker(age_grps=age_grps, pathogens=self.module.all_pathogens),
+            'recovered_cases': Tracker(age_grps=age_grps, pathogens=self.module.all_pathogens),
+            'cured_cases': Tracker(age_grps=age_grps, pathogens=self.module.all_pathogens),
+            'deaths': Tracker(age_grps=age_grps, pathogens=self.module.all_pathogens),
+            'deaths_among_persons_with_SpO2<90%': Tracker(),
+            'seeking_care': Tracker(),
+            'treated': Tracker(),
+            'pulmonary_complication_cases': Tracker(),
+            'systemic_complication_cases': Tracker(),
+            'hypoxaemic_cases': Tracker()
+        }
 
     def new_case(self, **kwargs):
         self.trackers['incident_cases'].add_one(**kwargs)
@@ -2842,12 +2843,12 @@ class AlriLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 class Tracker:
     """Helper class to be a counter for number of events occurring by age-group and by pathogen."""
 
-    def __init__(self, age_grps: dict = {}, pathogens: list = []):
+    def __init__(self, age_grps: Dict = None, pathogens: List = None):
         """Create and initialise tracker"""
 
         # Check and store parameters
-        self.pathogens = pathogens
-        self.age_grps_lookup = age_grps
+        self.pathogens = [] if pathogens is None else pathogens
+        self.age_grps_lookup = {} if age_grps is None else age_grps
         self.unique_age_grps = sorted(set(self.age_grps_lookup.values()))
 
         # Initialise Tracker
@@ -2857,12 +2858,14 @@ class Tracker:
     def reset(self):
         """Produce a dict of the form: { <Age-Grp>: {<Pathogen>: <Count>} } if age-groups and pathogens are specified;
         otherwise the tracker is an integer."""
-        if (len(self.unique_age_grps) == 0) and (len(self.pathogens) == 0):
-            self.tracker = 0
-        else:
+
+        # if collections are not empty
+        if self.unique_age_grps and self.pathogens:
             self.tracker = {
                 age: dict(zip(self.pathogens, [0] * len(self.pathogens))) for age in self.unique_age_grps
             }
+        else:
+            self.tracker = 0
 
     def add_one(self, age=None, pathogen=None):
         """Increment counter by one for a specific age and pathogen"""
@@ -2887,8 +2890,8 @@ class Tracker:
             for _a in self.tracker.keys():
                 total += sum(self.tracker[_a].values())
             return total
-        else:
-            return self.tracker
+
+        return self.tracker
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -2952,9 +2955,6 @@ class AlriPropertiesOfOtherModules(Module):
         'un_clinical_acute_malnutrition': Property(Types.CATEGORICAL, 'temporary property',
                                                    categories=['MAM', 'SAM', 'well']),
     }
-
-    def __init__(self, name=None):
-        super().__init__(name)
 
     def read_parameters(self, data_folder):
         pass
