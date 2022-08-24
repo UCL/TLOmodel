@@ -294,7 +294,7 @@ class Lifestyle(Module):
         'li_wealth': Property(Types.CATEGORICAL, 'wealth level: 1 (high) to 5 (low)', categories=[1, 2, 3, 4, 5]),
         'li_bmi': Property(
             Types.CATEGORICAL, 'bmi: 1 (<18/80-100%) 2 (18-24.9/60-79%)  3 (25-29.9/40-59%) 4 (30-34.9/20-39%)'
-                               ' 5 (35+/0-19%)' 'bmi is np.nan until age 15', categories=[0, 1, 2, 3, 4, 5], optional=True
+                               ' 5 (35+/0-19%)' 'bmi is 0 until age 15', categories=[0, 1, 2, 3, 4, 5], ordered=True
         ),
         'li_exposed_to_campaign_weight_reduction': Property(
             Types.BOOL, 'currently exposed to population campaign for ' 'weight reduction if BMI >= 25'
