@@ -10,8 +10,10 @@ from pathlib import Path
 from typing import Callable, Dict, Iterable, List, Optional, TextIO, Union
 
 import git
+import matplotlib.colors as mcolors
 import numpy as np
 import pandas as pd
+import squarify
 
 from tlo import logging, util
 from tlo.logging.reader import LogData
@@ -610,16 +612,16 @@ def get_filtered_treatment_ids(depth: Optional[int] = None) -> List[str]:
         )))
 
     # Get pd.DataFrame with information of all the defined HSI
-    from tlo.analysis.tlo_hsi_events import get_all_hsi_info
-    all_hsi_info = get_all_hsi_info()
+    # Import within function to avoid circular import error
+    from tlo.analysis.hsi_events import get_all_defined_hsi_events_as_dataframe
+    hsi_event_details = get_all_defined_hsi_events_as_dataframe()
 
     # Return list of TREATMENT_IDs and filter to the resolution needed
-    return filter_treatments(all_hsi_info['treatment_id'], depth=depth if depth is not None else np.inf)
+    return filter_treatments(hsi_event_details['treatment_id'], depth=depth if depth is not None else np.inf)
 
 
 def colors_in_matplotlib() -> tuple:
     """Return tuple of the strings for all the colours defined in Matplotlib."""
-    import matplotlib.colors as mcolors
     return tuple(
         set().union(
             mcolors.BASE_COLORS.keys(),
@@ -692,7 +694,7 @@ def _define_coarse_appts() -> pd.DataFrame:
     ).set_index('category')
 
 
-def get_corase_appt_type(appt_type: str) -> str:
+def get_coarse_appt_type(appt_type: str) -> str:
     """Return the `coarser` categorization of appt_types for a given appt_type. """
     for coarse_appt_types, row in _define_coarse_appts().iterrows():
         if appt_type in row['appt_types']:
@@ -730,6 +732,7 @@ def _define_short_treatment_ids() -> pd.Series:
         'AntenatalCare*': 'green',
         'DeliveryCare*': 'limegreen',
         'PostnatalCare*': 'springgreen',
+        'PostnatalSupervisor*': 'mediumaquamarine',  # todo <-- remove this when it's gone from code.
 
         'Alri*': 'darkorange',
         'Diarrhoea*': 'tan',
@@ -834,8 +837,6 @@ def squarify_neat(sizes: np.array, label: np.array, colormap: Callable, numlabel
      * Only give label a selection of the segments
      N.B. The package `squarify` is required.
     """
-    import squarify
-
     # Suppress labels for all but the `numlabels` largest entries.
     to_label = set(pd.Series(index=label, data=sizes).sort_values(ascending=False).iloc[0:numlabels].index)
 

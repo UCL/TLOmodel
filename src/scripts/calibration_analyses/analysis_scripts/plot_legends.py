@@ -7,9 +7,9 @@ from matplotlib import pyplot as plt
 
 from tlo.analysis.utils import (
     _define_cause_of_death_labels,
+    get_coarse_appt_type,
     get_color_coarse_appt,
     get_color_short_treatment_id,
-    get_corase_appt_type,
     get_filtered_treatment_ids,
     order_of_coarse_appt,
     order_of_short_treatment_ids,
@@ -46,7 +46,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     coarse_appt_types = sorted(
         pd.read_csv(
             resourcefilepath / 'healthsystem' / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Types_Table.csv'
-        )['Appt_Type_Code'].map(get_corase_appt_type).drop_duplicates().values,
+        )['Appt_Type_Code'].map(get_coarse_appt_type).drop_duplicates().values,
         key=order_of_coarse_appt
     )
 
@@ -56,6 +56,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         title="Appointment Types (Coarse)",
     )
     fig.show()
+    plt.close(fig)
 
     # %% Cause of Death Labels
     all_labels = _define_cause_of_death_labels()
@@ -66,6 +67,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         title="Cause-of-Death Labels",
     )
     fig.show()
+    plt.close(fig)
 
 
 if __name__ == "__main__":

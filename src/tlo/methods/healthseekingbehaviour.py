@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import Date, DateOffset, Module, Parameter, Types
-from tlo.events import PopulationScopeEventMixin, RegularEvent
+from tlo.events import PopulationScopeEventMixin, Priority, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods.hsi_generic_first_appts import (
@@ -137,7 +137,7 @@ class HealthSeekingBehaviour(Module):
 
         # Schedule the HealthSeekingBehaviourPoll
         self.theHealthSeekingBehaviourPoll = HealthSeekingBehaviourPoll(self)
-        sim.schedule_event(self.theHealthSeekingBehaviourPoll, sim.date, order_in_day='second_to_last')
+        sim.schedule_event(self.theHealthSeekingBehaviourPoll, sim.date)
 
         # Assemble the health-care seeking information from the registered symptoms
         for symptom in self.sim.modules['SymptomManager'].all_registered_symptoms:
@@ -232,7 +232,7 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         """Initialise the HealthSeekingBehaviourPoll
         :param module: the module that created this event
         """
-        super().__init__(module, frequency=DateOffset(days=1), order_in_day="second_to_last")
+        super().__init__(module, frequency=DateOffset(days=1), priority=Priority.LAST_HALF_OF_DAY)
         assert isinstance(module, HealthSeekingBehaviour)
 
     @staticmethod

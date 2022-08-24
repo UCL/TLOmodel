@@ -19,7 +19,7 @@ import pandas as pd
 import tlo
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
-from tlo.events import Event, PopulationScopeEventMixin, RegularEvent
+from tlo.events import Event, PopulationScopeEventMixin, Priority, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.bed_days import BedDays
 from tlo.methods.consumables import (
@@ -220,7 +220,7 @@ class HSI_Event:
         # Return result in expected format:
         if not return_individual_results:
             # Determine if all results for all the `item_codes` are True (discarding results from optional_item_codes).
-            return all([v for k, v in rtn.items() if k in _item_codes])
+            return all(v for k, v in rtn.items() if k in _item_codes)
         else:
             return rtn
 
@@ -442,7 +442,8 @@ class HealthSystem(Module):
         disable: bool = False,
         disable_and_reject_all: bool = False,
         store_hsi_events_that_have_run: bool = False,
-        record_hsi_event_details: bool = False
+        record_hsi_event_details: bool = False,
+        compute_squeeze_factor_to_district_level: bool = True,
     ):
         """
         :param name: Name to use for module, defaults to module class name if ``None``.
@@ -472,6 +473,8 @@ class HealthSystem(Module):
             events run
         :param store_hsi_events_that_have_run: Convenience flag for debugging.
         :param record_hsi_event_details: Whether to record details of HSI events used.
+        :param compute_squeeze_factor_to_district_level: Whether to compute squeeze_factors to the district level, or
+            the national level (which effectively pools the resources across all districts).
         """
 
         super().__init__(name)
@@ -532,6 +535,12 @@ class HealthSystem(Module):
 
         assert beds_availability in (None, 'default', 'all', 'none')
         self.arg_beds_availability = beds_availability
+
+        # `compute_squeeze_factor_to_district_level` is a Boolean indicating whether the computation of squeeze_factors
+        # should be specific to each district (when `True`), or if the computation of squeeze_factors should be on the
+        # basis that resources from all districts can be effectively "pooled" (when `False).
+        assert isinstance(compute_squeeze_factor_to_district_level, bool)
+        self.compute_squeeze_factor_to_district_level = compute_squeeze_factor_to_district_level
 
         # Create the Diagnostic Test Manager to store and manage all Diagnostic Test
         self.dx_manager = DxManager(self)
@@ -648,7 +657,7 @@ class HealthSystem(Module):
         # Launch the healthsystem scheduler (a regular event occurring each day) [if not disabled]
         if not (self.disable or self.disable_and_reject_all):
             self.healthsystemscheduler = HealthSystemScheduler(self)
-            sim.schedule_event(self.healthsystemscheduler, sim.date, order_in_day="last")
+            sim.schedule_event(self.healthsystemscheduler, sim.date)
 
     def on_birth(self, mother_id, child_id):
         self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
@@ -826,8 +835,8 @@ class HealthSystem(Module):
         return capabilities_ex['Total_Minutes_Per_Day']
 
     def get_service_availability(self) -> List[str]:
-        """Returns service availability. (Should be equal to what is specified by the parameter, but overwrite with what was
-         provided in argument if an argument was specified -- provided for backward compatibility/debugging.)"""
+        """Returns service availability. (Should be equal to what is specified by the parameter, but overwrite with what
+        was provided in argument if an argument was specified -- provided for backward compatibility/debugging.)"""
 
         if self.arg_service_availabily is None:
             service_availability = self.parameters['Service_Availability']
@@ -1032,7 +1041,8 @@ class HealthSystem(Module):
         if not service_availability:
             # Empty list --> nothing is allowable
             return False
-        elif service_availability == ['*']:
+
+        if service_availability == ['*']:
             # Wildcard --> everything is allowed
             return True
         elif treatment_id in service_availability:
@@ -1157,7 +1167,9 @@ class HealthSystem(Module):
 
         return appt_footprint_times
 
-    def get_squeeze_factors(self, footprints_per_event, total_footprint, current_capabilities):
+    def get_squeeze_factors(self, footprints_per_event, total_footprint, current_capabilities,
+                            compute_squeeze_factor_to_district_level: bool
+                            ):
         """
         This will compute the squeeze factors for each HSI event from the list of all
         the calls on health system resources for the day.
@@ -1177,16 +1189,59 @@ class HealthSystem(Module):
             standard index)
         :param current_capabilities: Series giving the amount of time available for
             each health officer in each health facility (using the standard index)
+        :param compute_squeeze_factor_to_district_level: Boolean indicating whether
+            the computation of squeeze_factors should be specific to each district
+            (when `True`), or if the computation of squeeze_factors should be on
+            the basis that resources from all districts can be effectively "pooled"
+            (when `False).
 
         :return: squeeze_factors: an array of the squeeze factors for each HSI event
             (position in array matches that in the all_call_today list).
         """
 
+        def get_total_minutes_of_this_officer_in_this_district(_officer):
+            """Returns the minutes of current capabilities for the officer identified (this officer type in this
+            facility_id)."""
+            return current_capabilities.get(_officer)
+
+        def get_total_minutes_of_this_officer_in_all_district(_officer):
+            """Returns the minutes of current capabilities for the officer identified in all districts (this officer
+            type in this all facilities of the same level in all districts)."""
+
+            def split_officer_compound_string(cs) -> Tuple[int, str]:
+                """Returns (facility_id, officer_type) for the officer identified in the string of the form:
+                 'FacilityID_{facility_id}_Officer_{officer_type}'."""
+                _, _facility_id, _, _officer_type = cs.split('_', 3)  # (NB. Some 'officer_type' include "_")
+                return int(_facility_id), _officer_type
+
+            def _match(_this_officer, facility_ids: List[int], officer_type: str):
+                """Returns True if the officer identified is of the identified officer_type and is in one of the
+                facility_ids."""
+                this_facility_id, this_officer_type = split_officer_compound_string(_this_officer)
+                return (this_officer_type == officer_type) and (this_facility_id in facility_ids)
+
+            facility_id, officer_type = split_officer_compound_string(_officer)
+            facility_level = self._facility_by_facility_id[int(facility_id)].level
+            facilities_of_same_level_in_all_district = [
+                _fac.id for _fac in self._facilities_for_each_district[facility_level].values()
+            ]
+
+            officers_in_the_same_level_in_all_districts = [
+                _officer for _officer in current_capabilities.keys() if
+                _match(_officer, facility_ids=facilities_of_same_level_in_all_district, officer_type=officer_type)
+            ]
+
+            return sum(current_capabilities.get(_o) for _o in officers_in_the_same_level_in_all_districts)
+
         # 1) Compute the load factors for each officer type at each facility that is
         # called-upon in this list of HSIs
         load_factor = {}
         for officer, call in total_footprint.items():
-            availability = current_capabilities.get(officer)
+            if compute_squeeze_factor_to_district_level:
+                availability = get_total_minutes_of_this_officer_in_this_district(officer)
+            else:
+                availability = get_total_minutes_of_this_officer_in_all_district(officer)
+
             if availability is None:  # todo - does this ever happen?
                 load_factor[officer] = 99.99
             elif availability == 0:
@@ -1252,23 +1307,23 @@ class HealthSystem(Module):
                     }
                 )
 
-                if self.record_hsi_event_details:
-                    self.hsi_event_details.add(
-                        HSIEventDetails(
-                            event_name=type(hsi_event).__name__,
-                            module_name=type(hsi_event.module).__name__,
-                            treatment_id=hsi_event.TREATMENT_ID,
-                            facility_level=getattr(
-                                hsi_event, 'ACCEPTED_FACILITY_LEVEL', None
-                            ),
-                            appt_footprint=(
-                                tuple(actual_appt_footprint)
-                                if actual_appt_footprint is not None
-                                else tuple(getattr(hsi_event, 'EXPECTED_APPT_FOOTPRINT', {}))
-                            ),
-                            beddays_footprint=tuple(sorted(hsi_event.BEDDAYS_FOOTPRINT.items()))
-                        )
+            if self.record_hsi_event_details:
+                self.hsi_event_details.add(
+                    HSIEventDetails(
+                        event_name=type(hsi_event).__name__,
+                        module_name=type(hsi_event.module).__name__,
+                        treatment_id=hsi_event.TREATMENT_ID,
+                        facility_level=getattr(
+                            hsi_event, 'ACCEPTED_FACILITY_LEVEL', None
+                        ),
+                        appt_footprint=(
+                            tuple(actual_appt_footprint)
+                            if actual_appt_footprint is not None
+                            else tuple(getattr(hsi_event, 'EXPECTED_APPT_FOOTPRINT', {}))
+                        ),
+                        beddays_footprint=tuple(sorted(hsi_event.BEDDAYS_FOOTPRINT.items()))
                     )
+                )
 
     def write_to_hsi_log(self,
                          treatment_id,
@@ -1443,11 +1498,12 @@ class HealthSystem(Module):
                     footprints_per_event=footprints_of_all_individual_level_hsi_event,
                     total_footprint=self.running_total_footprint,
                     current_capabilities=self.capabilities_today,
+                    compute_squeeze_factor_to_district_level=self.compute_squeeze_factor_to_district_level,
                 )
 
             # For each event, determine to run or not, and run if so.
-            for ev_num, _ in enumerate(_list_of_individual_hsi_event_tuples):
-                event = _list_of_individual_hsi_event_tuples[ev_num].hsi_event
+            for ev_num, event in enumerate(_list_of_individual_hsi_event_tuples):
+                event = event.hsi_event
                 squeeze_factor = squeeze_factor_per_hsi_event[ev_num]                  # todo use zip here!
 
                 ok_to_run = (
@@ -1500,6 +1556,7 @@ class HealthSystem(Module):
                                 footprints_per_event=footprints_of_all_individual_level_hsi_event,
                                 total_footprint=self.running_total_footprint,
                                 current_capabilities=self.capabilities_today,
+                                compute_squeeze_factor_to_district_level=self.compute_squeeze_factor_to_district_level,
                             )
                     else:
                         # no actual footprint is returned so take the expected initial declaration as the actual
@@ -1562,7 +1619,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module: HealthSystem):
-        super().__init__(module, frequency=DateOffset(days=1), order_in_day="last")
+        super().__init__(module, frequency=DateOffset(days=1), priority=Priority.END_OF_DAY)
 
     @staticmethod
     def _is_today_last_day_of_the_year(date):

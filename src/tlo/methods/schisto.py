@@ -518,18 +518,21 @@ class SchistoSpecies:
         if not len(idx) > 0:
             return
 
-        def _inf_status(age: int, agg_wb: int) -> str:
-            if age < 5:
-                if agg_wb >= params['high_intensity_threshold_PSAC']:
-                    return 'High-infection'
-
-            if agg_wb >= params['high_intensity_threshold']:
-                return 'High-infection'
-
-            if agg_wb >= params['low_intensity_threshold']:
-                return 'Low-infection'
-
-            return 'Non-infected'
+        def _get_infection_status(population: pd.DataFrame) -> pd.Series:
+            age = population["age_years"]
+            agg_wb = population[prop("aggregate_worm_burden")]
+            status = pd.Series(
+                "Non-infected",
+                index=population.index,
+                dtype=population[prop("infection_status")].dtype
+            )
+            high_group = (
+                (age < 5) & (agg_wb >= params["high_intensity_threshold_PSAC"])
+            ) | (agg_wb >= params["high_intensity_threshold"])
+            low_group = ~high_group & (agg_wb >= params["low_intensity_threshold"])
+            status[high_group] = "High-infection"
+            status[low_group] = "Low-infection"
+            return status
 
         def _impose_symptoms_of_high_intensity_infection(idx: pd.Index) -> None:
             """Assign symptoms to the person with high intensity infection.
@@ -547,11 +550,7 @@ class SchistoSpecies:
                         disease_module=schisto_module
                     )
 
-        correct_status = df.loc[idx].apply(
-            lambda x: _inf_status(x['age_years'], x[prop('aggregate_worm_burden')]),
-            axis=1
-        )
-
+        correct_status = _get_infection_status(df.loc[idx])
         original_status = df.loc[idx, prop('infection_status')]
 
         # Impose symptoms for those newly having 'High-infection' status
