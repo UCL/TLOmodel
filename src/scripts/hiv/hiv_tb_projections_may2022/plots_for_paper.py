@@ -1467,7 +1467,7 @@ ax1.set_xticklabels(labels)
 ax1.patch.set_edgecolor('grey')
 ax1.patch.set_linewidth('1')
 
-ax1.set(title='',
+ax1.set(title='Adults',
         ylabel='Density',
         xLabel="Treatment delay, weeks")
 ax1.set_ylim([0, 1.0])
@@ -1489,7 +1489,7 @@ ax2.set_xticklabels(labels)
 ax2.patch.set_edgecolor('grey')
 ax2.patch.set_linewidth('1')
 
-ax2.set(title='',
+ax2.set(title='Children',
         ylabel='',
         xLabel="Treatment delay, weeks")
 ax2.set_ylim([0, 1.0])
@@ -1535,3 +1535,33 @@ plt.title("")
 plt.legend(labels=["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4"])
 plt.show()
 
+
+# ---------------------------------- PrEP IMPACT ---------------------------------- #
+
+# HIV incidence in AGYW
+
+def hiv_agyw_inc(results_folder):
+    inc = extract_results(
+        results_folder,
+        module="tlo.methods.hiv",
+        key="infections_by_2age_groups_and_sex",
+        column="n_new_infections_female_1524",
+        index="date",
+        do_scaling=False
+    )
+
+    inc.columns = inc.columns.get_level_values(0)
+    inc_summary = pd.DataFrame(index=inc.index, columns=["median", "lower", "upper"])
+    inc_summary["median"] = inc.median(axis=1)
+    inc_summary["lower"] = inc.quantile(q=0.025, axis=1)
+    inc_summary["upper"] = inc.quantile(q=0.975, axis=1)
+
+    return inc_summary
+
+
+agyw_inc0 = hiv_agyw_inc(results0)
+agyw_inc3 = hiv_agyw_inc(results3)
+agyw_inc4 = hiv_agyw_inc(results4)
+
+baseline_num_infections = agyw_inc0["median"][12:25]
+# multiply by scaling factor to get numbers of expected infections

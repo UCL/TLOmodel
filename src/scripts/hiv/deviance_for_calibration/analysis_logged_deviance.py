@@ -36,10 +36,10 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
-popsize = 5000
+end_date = Date(2035, 1, 1)
+popsize = 25000
 
-scenario = 0
+scenario = 2
 
 # set up the log config
 log_config = {
@@ -54,6 +54,7 @@ log_config = {
         "tlo.methods.demography": logging.INFO,
         # "tlo.methods.healthsystem.summary": logging.INFO,
         # "tlo.methods.healthsystem": logging.INFO,
+        "tlo.methods.healthburden": logging.INFO,
     },
 }
 

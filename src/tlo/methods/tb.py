@@ -1694,7 +1694,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         # if none of the above conditions are present, no further action
         persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
         if not any(x in self.module.symptom_list for x in persons_symptoms):
-            return
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         # ------------------------- testing ------------------------- #
         # if screening indicates presumptive tb
@@ -2040,6 +2040,7 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Tb_Treatment"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"TBNew": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.number_of_occurrences = 0
 
     def apply(self, person_id, squeeze_factor):
         """This is a Health System Interaction Event - start TB treatment
@@ -2049,6 +2050,7 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         now = self.sim.date
         person = df.loc[person_id]
+        self.number_of_occurrences += 1  # The current appointment is included in the count.
 
         if not person["is_alive"]:
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
@@ -2088,13 +2090,15 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             )
 
         # if treatment not available, return for treatment start in 1 week
+        # cap repeated visits at 5
         else:
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
-                topen=self.sim.date + DateOffset(weeks=1),
-                tclose=None,
-                priority=0,
-            )
+            if self.number_of_occurrences <= 5:
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
+                    topen=self.sim.date + DateOffset(weeks=1),
+                    tclose=None,
+                    priority=0,
+                )
 
     def select_treatment(self, person_id):
         """
