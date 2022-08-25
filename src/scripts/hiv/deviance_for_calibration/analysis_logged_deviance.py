@@ -36,10 +36,10 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2035, 1, 1)
-popsize = 25000
+end_date = Date(2012, 1, 1)
+popsize = 5000
 
-scenario = 2
+scenario = 4
 
 # set up the log config
 log_config = {
@@ -90,6 +90,7 @@ sim.register(
 
 # set the scenario
 sim.modules["Tb"].parameters["scenario"] = scenario
+sim.modules["Tb"].parameters["scenario_start_date"] = Date(2011, 1, 1)
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)

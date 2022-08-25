@@ -1,0 +1,124 @@
+{
+  "scenario_script_path": "src/scripts/hiv/hiv_tb_projections_may2022/scenario4_SI.py",
+  "scenario_seed": 5,
+  "runs_per_draw": 3,
+  "draws": [
+    {
+      "draw_number": 0,
+      "draw_seed": 953453411,
+      "parameters": {
+        "Tb": {
+          "scenario": 4,
+          "scenario_SI": "a"
+        },
+        "Hiv": {
+          "beta": 0.125
+        }
+      }
+    },
+    {
+      "draw_number": 1,
+      "draw_seed": 236996814,
+      "parameters": {
+        "Tb": {
+          "scenario": 4,
+          "scenario_SI": "b"
+        },
+        "Hiv": {
+          "beta": 0.125
+        }
+      }
+    },
+    {
+      "draw_number": 2,
+      "draw_seed": 1592283119,
+      "parameters": {
+        "Tb": {
+          "scenario": 4,
+          "scenario_SI": "c"
+        },
+        "Hiv": {
+          "beta": 0.125
+        }
+      }
+    },
+    {
+      "draw_number": 3,
+      "draw_seed": 1423042237,
+      "parameters": {
+        "Tb": {
+          "scenario": 4,
+          "scenario_SI": "d"
+        },
+        "Hiv": {
+          "beta": 0.125
+        }
+      }
+    },
+    {
+      "draw_number": 4,
+      "draw_seed": 887852006,
+      "parameters": {
+        "Tb": {
+          "scenario": 4,
+          "scenario_SI": "e"
+        },
+        "Hiv": {
+          "beta": 0.125
+        }
+      }
+    },
+    {
+      "draw_number": 5,
+      "draw_seed": 1562238070,
+      "parameters": {
+        "Tb": {
+          "scenario": 4,
+          "scenario_SI": "f"
+        },
+        "Hiv": {
+          "beta": 0.125
+        }
+      }
+    },
+    {
+      "draw_number": 6,
+      "draw_seed": 1797920144,
+      "parameters": {
+        "Tb": {
+          "scenario": 4,
+          "scenario_SI": "g"
+        },
+        "Hiv": {
+          "beta": 0.125
+        }
+      }
+    },
+    {
+      "draw_number": 7,
+      "draw_seed": 2059200585,
+      "parameters": {
+        "Tb": {
+          "scenario": 4,
+          "scenario_SI": "h"
+        },
+        "Hiv": {
+          "beta": 0.125
+        }
+      }
+    },
+    {
+      "draw_number": 8,
+      "draw_seed": 2097710088,
+      "parameters": {
+        "Tb": {
+          "scenario": 4,
+          "scenario_SI": "i"
+        },
+        "Hiv": {
+          "beta": 0.125
+        }
+      }
+    }
+  ]
+}
