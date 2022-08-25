@@ -1413,6 +1413,8 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
                 # retention on IPT (PLHIV)
                 self.sim.modules["Tb"].parameters["prob_retained_ipt_6_months"] = 0.99
 
+        print (self.sim.modules["Hiv"].parameters["hiv_testing_rates"]["annual_testing_rate_children"])
+
 
 class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
     """The Tb Regular Poll Event for assigning active infections

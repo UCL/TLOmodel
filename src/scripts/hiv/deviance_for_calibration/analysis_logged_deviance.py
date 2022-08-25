@@ -91,6 +91,7 @@ sim.register(
 # set the scenario
 sim.modules["Tb"].parameters["scenario"] = scenario
 sim.modules["Tb"].parameters["scenario_start_date"] = Date(2011, 1, 1)
+sim.modules["Tb"].parameters["scenario_SI"] = "b"
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
