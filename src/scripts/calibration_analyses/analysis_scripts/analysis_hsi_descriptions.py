@@ -11,7 +11,6 @@ from tlo.analysis.utils import (
     extract_results,
     get_color_coarse_appt,
     get_color_short_treatment_id,
-    get_corase_appt_type,
     order_of_coarse_appt,
     squarify_neat,
     summarize,
