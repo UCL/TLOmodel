@@ -6,6 +6,7 @@ from pathlib import Path
 import analysis_cause_of_death_and_disability_calibrations
 import analysis_demography_calibrations
 import analysis_hsi_descriptions
+import plot_legends
 
 from tlo.analysis.utils import get_scenario_outputs
 
@@ -22,6 +23,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     analysis_hsi_descriptions.apply(
         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath)
+
+    # Plot the legends
+    plot_legends.apply(
+        results_folder=None, output_folder=output_folder, resourcefilepath=rfp)
 
     # make html page to present results
     html = "<html><body>"
