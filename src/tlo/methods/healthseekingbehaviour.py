@@ -236,13 +236,11 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         assert isinstance(module, HealthSeekingBehaviour)
 
     @staticmethod
-    def _select_persons_with_any_symptoms(persons, symptoms):
-        """Select rows of `persons` dataframe with any symptoms columns non-zero."""
+    def _has_any_symptoms(persons, symptoms):
+        """Which rows in `persons` have non-zero values for columns in `symptoms`."""
         if len(symptoms) == 0:
             raise ValueError('At least one symptom must be specified')
-        return persons[
-            (persons[[f'sy_{symptom}' for symptom in symptoms]] != 0).any(axis=1)
-        ]
+        return (persons[[f'sy_{symptom}' for symptom in symptoms]] != 0).any(axis=1)
 
     def apply(self, population):
         """Determine if persons with newly onset acute generic symptoms will seek care. This event runs second-to-last
@@ -285,36 +283,40 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         ):
             if len(emergency_symptoms) > 0:
                 # Generate an emergency HSI event if any of the symptoms is an emergency
-                emergency_care_seeking_subgroup = self._select_persons_with_any_symptoms(
+                is_emergency_care_seeking = self._has_any_symptoms(
                     subgroup, emergency_symptoms
                 )
                 health_system.schedule_batch_of_individual_hsi_events(
                     hsi_event_class=emergency_hsi_event_class,
-                    person_ids=emergency_care_seeking_subgroup.index,
+                    person_ids=subgroup[is_emergency_care_seeking].index,
                     priority=0,
                     topen=self.sim.date,
                     tclose=None,
                     module=module
                 )
+                # If a person has had an emergency appointment scheduled this day
+                # already due to emergency symptoms, then do not allow a non-emergency
+                # appointment to be scheduled in addition, so select the subgroup
+                # who are not emergency care-seeking
+                not_emergency_care_seeking_subgroup = subgroup[
+                    ~is_emergency_care_seeking
+                ]
+            else:
+                not_emergency_care_seeking_subgroup = subgroup
+
             # Check if no symptoms initiating (non-emergency) care seeking specified
             if len(care_seeking_symptoms) == 0:
                 continue
             # Symptoms in non-emergency care seeking set may or may not generate an
-            # associated HSI event, we first select all persons in subgroup who have
-            # any symptoms which may lead to a HSI event being generated.
-            # From here onwards care seeking should be taken to mean specifically
-            # *non-emergency* care seeking
-            possibly_care_seeking_subgroup = self._select_persons_with_any_symptoms(
-                subgroup, care_seeking_symptoms
-            )
-
-            # If a person has had an emergency appointment scheduled this day already due
-            # to emergency symptoms, then do not allow a non-emergency appointment to be
-            # scheduled in addition.
-            if len(emergency_symptoms) > 0:
-                possibly_care_seeking_subgroup.drop(
-                    index=set(possibly_care_seeking_subgroup.index).intersection(emergency_care_seeking_subgroup.index),
-                    inplace=True)
+            # associated HSI event, we first select all persons in
+            # not_emergency_care_seeking_subgroup who have any symptoms which may lead
+            # to a HSI event being generated. From here onwards care seeking should be
+            # taken to mean specifically *non-emergency* care seeking
+            possibly_care_seeking_subgroup = not_emergency_care_seeking_subgroup[
+                self._has_any_symptoms(
+                    not_emergency_care_seeking_subgroup, care_seeking_symptoms
+                )
+            ]
 
             if module.force_any_symptom_to_lead_to_healthcareseeking:
                 # This HSB module flag causes a generic non-emergency appointment to be

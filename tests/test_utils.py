@@ -222,3 +222,30 @@ def test_logs_parsing(tmpdir):
 
         # check the created pickle file is not empty
         assert os.path.getsize(path_to_tmpdir / f"{key}.pickle") != 0
+
+
+def test_get_person_id_to_inherit_from(rng: np.random.RandomState):
+    population_size = 1000
+    num_test = 5
+    for child_id, mother_id in rng.randint(0, population_size, size=(num_test, 2)):
+        # population_dataframe and rng arguments should be unused if mother_id != -1
+        assert mother_id == tlo.util.get_person_id_to_inherit_from(
+            child_id, mother_id, population_dataframe=None, rng=None
+        )
+    population_dataframe = pd.DataFrame(
+        {
+            "is_alive": rng.choice((True, False), size=population_size),
+            "sex": rng.choice(("F", "M"), size=population_size),
+            "age_years": rng.randint(0, 100, size=population_size),
+        }
+    )
+    mother_id = -1
+    for child_id in rng.choice(
+        population_dataframe.index[population_dataframe.is_alive], size=num_test
+    ):
+        inherit_from_id = tlo.util.get_person_id_to_inherit_from(
+            child_id, mother_id, population_dataframe, rng
+        )
+        assert inherit_from_id != mother_id
+        assert inherit_from_id != child_id
+        assert population_dataframe.loc[inherit_from_id].is_alive
