@@ -10,6 +10,7 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
+from tlo.util import get_person_id_to_inherit_from
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -785,12 +786,13 @@ class Lifestyle(Module):
         :param mother_id: the mother for this child
         :param child_id: the new child
         """
-
         df = self.sim.population.props
 
-        # Determine id from which characteristics that inherited (from mother, or if no mother, from a randomly
-        # selected person.)
-        _id_inherit_from = mother_id if mother_id != -1 else self.rng.choice(df.index[df.is_alive])
+        # Determine id from which characteristics that inherited (from mother, or if no
+        # mother, from a randomly selected alive person that is not child themself)
+        _id_inherit_from = get_person_id_to_inherit_from(
+            child_id, mother_id, df, self.rng
+        )
 
         df.at[child_id, 'li_urban'] = df.at[_id_inherit_from, 'li_urban']
         df.at[child_id, 'li_wealth'] = df.at[_id_inherit_from, 'li_wealth']
