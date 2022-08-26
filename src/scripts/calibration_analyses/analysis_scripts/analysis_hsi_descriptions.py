@@ -12,7 +12,6 @@ from tlo.analysis.utils import (
     get_coarse_appt_type,
     get_color_coarse_appt,
     get_color_short_treatment_id,
-    get_corase_appt_type,
     order_of_coarse_appt,
     squarify_neat,
     summarize,
@@ -160,7 +159,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     counts_of_coarse_appt_by_treatment_id_short = \
         counts_of_appt_by_treatment_id_short \
         .unstack() \
-        .groupby(axis=1, by=counts_of_appt_by_treatment_id_short.index.levels[1].map(get_corase_appt_type)).sum()
+        .groupby(axis=1, by=counts_of_appt_by_treatment_id_short.index.levels[1].map(get_coarse_appt_type)).sum()
 
     counts_of_coarse_appt_by_treatment_id_short = counts_of_coarse_appt_by_treatment_id_short[
         sorted(counts_of_coarse_appt_by_treatment_id_short.columns, key=order_of_coarse_appt)
