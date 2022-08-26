@@ -9,10 +9,10 @@ from tlo import Date, Module, Simulation, logging
 from tlo.analysis.utils import (
     colors_in_matplotlib,
     flatten_multi_index_series_into_dict_for_logging,
+    get_coarse_appt_type,
     get_color_cause_of_death_label,
     get_color_coarse_appt,
     get_color_short_treatment_id,
-    get_corase_appt_type,
     get_filtered_treatment_ids,
     get_root_path,
     order_of_coarse_appt,
@@ -118,7 +118,7 @@ def test_get_root_path():
         assert is_correct_absolute_path(get_root_path(test_dir)), f"Failed on {test_dir=}"
 
 
-def test_corase_appt_type():
+def test_coarse_appt_type():
     """Check the function that maps each appt_types to a coarser definition."""
     appt_types = pd.read_csv(
         resourcefilepath / 'healthsystem' / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Types_Table.csv'
@@ -126,7 +126,7 @@ def test_corase_appt_type():
 
     appts = pd.DataFrame({
             "original": pd.Series(appt_types),
-            "coarse": pd.Series(appt_types).map(get_corase_appt_type)
+            "coarse": pd.Series(appt_types).map(get_coarse_appt_type)
     })
 
     coarse_appts = appts['coarse'].drop_duplicates()
@@ -142,7 +142,7 @@ def test_colormap_coarse_appts():
     """Check the function that allocates a unique colour to each coarse appointment type."""
     coarse_appt_types = pd.read_csv(
             resourcefilepath / 'healthsystem' / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Types_Table.csv'
-        )['Appt_Type_Code'].map(get_corase_appt_type).drop_duplicates().values
+        )['Appt_Type_Code'].map(get_coarse_appt_type).drop_duplicates().values
 
     coarse_appt_types = sorted(coarse_appt_types, key=order_of_coarse_appt)
 

@@ -1,5 +1,7 @@
 """Produce plots to show the impact each set of treatments."""
 
+import argparse
+import glob
 from pathlib import Path
 from typing import Tuple
 
@@ -12,10 +14,10 @@ from scripts.healthsystem.finding_effects_of_each_treatment import plot_org_char
 from tlo import Date
 from tlo.analysis.utils import (
     extract_results,
+    get_coarse_appt_type,
     get_color_cause_of_death_label,
     get_color_coarse_appt,
     get_color_short_treatment_id,
-    get_corase_appt_type,
     make_age_grp_lookup,
     make_age_grp_types,
     order_of_cause_of_death_label,
@@ -510,7 +512,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig, ax = plt.subplots()
     name_of_plot = f'Additional Appointments [Coarse] With Intervention, {target_period()}'
     delta_appts_coarse = delta_appts \
-        .groupby(axis=0, by=delta_appts.index.map(get_corase_appt_type)) \
+        .groupby(axis=0, by=delta_appts.index.map(get_coarse_appt_type)) \
         .sum() \
         .sort_index(key=order_of_coarse_appt)
     delta_appts_coarse = delta_appts_coarse[order_of_short_treatment_ids(delta_appts_coarse.columns)]
@@ -532,45 +534,73 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
 
 if __name__ == "__main__":
-    rfp = Path('./resources')
+    rfp = Path('resources')
 
-    # Most Recent arising from running `scenario_effect_of_each_treatment.py`.)
-    # outputspath = Path('./outputs/tbh03@ic.ac.uk')
-    # results_folder = get_scenario_outputs('scenario_effect_of_each_treatment.py', outputspath)[-1]
+    parser = argparse.ArgumentParser(
+        description="Produce plots to show the impact each set of treatments",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument(
+        "--output-path",
+        help=(
+            "Directory to write outputs to. If not specified (set to None) outputs "
+            "will be written to value of --results-path argument."
+        ),
+        type=Path,
+        default=None,
+        required=False,
+    )
+    parser.add_argument(
+        "--resources-path",
+        help="Directory containing resource files",
+        type=Path,
+        default=Path('resources'),
+        required=False,
+    )
+    parser.add_argument(
+        "--results-path",
+        type=Path,
+        help=(
+            "Directory containing results from running src/scripts/healthsystem/"
+            "finding_effects_of_each_treatment/scenario_effect_of_each_treatment.py "
+            "script. If not specified (set to None) the last (sorting in alphabetical "
+            "order) directory matching either of the glob patterns outputs/"
+            "*effect_of_each_treatment* and outputs/*/*effect_of_each_treatment* will "
+            "be used if any, or an error raised if there are no matches."
+        ),
+        default=None,
+        required=False
+    )
+    args = parser.parse_args()
+    if args.results_path is None:
+        candidate_paths = glob.glob(
+            str(Path("outputs") / "*effect_of_each_treatment*"), recursive=True
+        )
+        candidate_paths += glob.glob(
+            str(Path("outputs") / "*" / "*effect_of_each_treatment*"), recursive=True
+        )
+        if len(candidate_paths) == 0:
+            raise FileNotFoundError(
+                "Could not find any directories matching pattern outputs/[*/]"
+                "*effect_of_each_treatment* to use as results path, directory "
+                "to use should be specified explicitly using --results-path argument."
+            )
+        else:
+            results_path = Path(sorted(candidate_paths)[-1])
+    else:
+        results_path = args.results_path
 
-    # TREATMENT_IDs split by module; consumables not always available
-    # results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_effect_of_each_treatment-2022-06-13T181214Z')
-
-    # TREATMENT_IDs split by module: consumables always available and healthsystem in mode 0
-    # results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_effect_of_each_treatment-2022-06-14T133746Z')
-
-    # VERSION WITH WEALTH LEVEL RECORDED (50k pops)
-    # results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_effect_of_each_treatment-2022-06-25T121008Z')
-
-    # VERSION WITH WEALTH LEVEL RECORDED AND FORCED HEALTHCARE SEEKING (50k pops)
-    # results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_force_healthcare_seeking-2022-06-25T121344Z')
-    # <--- currently being used
-
-    # VERSION WITH WEALTH LEVEL RECORDED (100k pops)
-    # results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_effect_of_each_treatment-2022-06-26T221002Z')
-
-    # VERSION WITH WEALTH LEVEL RECORDED AND FORCED HEALTHCARE SEEKING (100k pops)
-    # results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_force_healthcare_seeking-2022-06-26T220938Z')
-
-    # VERSION FOLLOWING FIXES TO HEALTHCARE SYSTEM AND DIARRHOEA (50k pops) --- FORCED HEALTHCARE SEEKING
-    results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_force_healthcare_seeking-2022-06-29T202230Z')
-    # <--- latest version
-
-    # VERSION FOLLOWING FIXES TO HEALTHCARE SYSTEM AND DIARRHOEA (50k pops) --- DEFAULT HEALTHCARE SEEKING
-    # results_folder = Path('outputs/tbh03@ic.ac.uk/scenario_effect_of_each_treatment-2022-06-29T202321Z')
-    # <--- didn't work
-
-    apply(results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
+    output_path = results_path if args.output_path is None else args.output_path
+    apply(
+        results_folder=results_path,
+        output_folder=output_path,
+        resourcefilepath=args.resources_path
+    )
 
     # Plot the legends
     plot_legends.apply(
-        results_folder=None, output_folder=results_folder, resourcefilepath=rfp)
+        results_folder=None, output_folder=results_path, resourcefilepath=rfp)
 
     # Plot the organisation chart of the TREATMENT_IDs
     plot_org_chart_treatment_ids.apply(
-        results_folder=None, output_folder=results_folder, resourcefilepath=None)
+        results_folder=None, output_folder=results_path, resourcefilepath=None)
