@@ -9,6 +9,7 @@ from matplotlib import pyplot as plt
 from tlo import Date
 from tlo.analysis.utils import (
     extract_results,
+    get_coarse_appt_type,
     get_color_coarse_appt,
     get_color_short_treatment_id,
     order_of_coarse_appt,
@@ -154,7 +155,7 @@ def figure2_appointments_used(results_folder: Path, output_folder: Path, resourc
                                             .groupby(axis=1,
                                                      by=(
                                                          counts_of_appt_by_treatment_id_short.index.levels[1].map(
-                                                             get_corase_appt_type))
+                                                             get_coarse_appt_type))
                                                      )\
                                             .sum()
 
