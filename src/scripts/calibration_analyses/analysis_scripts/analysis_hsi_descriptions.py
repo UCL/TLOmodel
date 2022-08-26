@@ -163,6 +163,16 @@ def figure2_appointments_used(results_folder: Path, output_folder: Path, resourc
         sorted(counts_of_coarse_appt_by_treatment_id_short.columns, key=order_of_coarse_appt)
     ]
 
+    # PLOT TOTALS BY COARSE APPT_TYPE
+    counts_of_coarse_appt_by_treatment_id_short = \
+        counts_of_appt_by_treatment_id_short \
+        .unstack() \
+        .groupby(axis=1, by=counts_of_appt_by_treatment_id_short.index.levels[1].map(get_coarse_appt_type)).sum()
+
+    counts_of_coarse_appt_by_treatment_id_short = counts_of_coarse_appt_by_treatment_id_short[
+        sorted(counts_of_coarse_appt_by_treatment_id_short.columns, key=order_of_coarse_appt)
+    ]
+
     fig, ax = plt.subplots()
     name_of_plot = 'Appointment Types Used'
     (
