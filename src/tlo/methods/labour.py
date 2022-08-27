@@ -449,12 +449,8 @@ class Labour(Module):
                         'stage of labour'),
         'prob_haemostatis_uterotonics': Parameter(
             Types.LIST, 'probability of uterotonics stopping a postpartum haemorrhage due to uterine atony '),
-        'pph_treatment_effect_uterotonics_md': Parameter(
-            Types.LIST, 'effect of uterotonics on maternal death due to postpartum haemorrhage'),
         'prob_successful_manual_removal_placenta': Parameter(
             Types.LIST, 'probability of manual removal of retained products arresting a post partum haemorrhage'),
-        'pph_treatment_effect_mrp_md': Parameter(
-            Types.LIST, 'effect of uterotonics on maternal death due to postpartum haemorrhage'),
         'success_rate_pph_surgery': Parameter(
             Types.LIST, 'probability of surgery for postpartum haemorrhage being successful'),
         'pph_treatment_effect_surg_md': Parameter(
