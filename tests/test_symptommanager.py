@@ -219,7 +219,8 @@ def test_auto_onset_symptom(seed):
     assert 0 == len(sm.has_what(person_id))
 
     def get_events_in_sim():
-        return [ev for ev in sim.event_queue.queue if (person_id in ev[2].person_id)]
+        return [ev for ev in sim.event_queue.queue if (person_id in ev[3].person_id)]
+
     assert 0 == len(get_events_in_sim())
 
     # The symptom:
@@ -245,11 +246,11 @@ def test_auto_onset_symptom(seed):
     onset = get_events_in_sim()[0]
 
     assert onset[0] == date_of_onset
-    assert isinstance(onset[2], SymptomManager_AutoOnsetEvent)
+    assert isinstance(onset[3], SymptomManager_AutoOnsetEvent)
 
     # run the events and check for the changing of symptoms
     sim.date = date_of_onset
-    onset[2].apply(sim.population)
+    onset[3].apply(sim.population)
     assert symptom_string in sm.has_what(person_id)
 
     # get the future events for this person (should now include the auto-resolve event)
@@ -257,9 +258,9 @@ def test_auto_onset_symptom(seed):
     resolve = get_events_in_sim()[1]
 
     assert resolve[0] == date_of_onset + DateOffset(days=duration_in_days)
-    assert isinstance(resolve[2], SymptomManager_AutoResolveEvent)
+    assert isinstance(resolve[3], SymptomManager_AutoResolveEvent)
 
-    resolve[2].apply(sim.population)
+    resolve[3].apply(sim.population)
     assert 0 == len(sm.has_what(person_id))
 
 

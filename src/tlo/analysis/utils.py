@@ -7,11 +7,13 @@ import os
 import pickle
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Dict, Optional, TextIO
+from typing import Callable, Dict, Iterable, List, Optional, TextIO, Union
 
 import git
+import matplotlib.colors as mcolors
 import numpy as np
 import pandas as pd
+import squarify
 
 from tlo import logging, util
 from tlo.logging.reader import LogData
@@ -142,6 +144,12 @@ def make_age_grp_types():
     """
     keys, _ = create_age_range_lookup(min_age=0, max_age=100, range_size=5)
     return pd.CategoricalDtype(categories=keys, ordered=True)
+
+
+def to_age_group(_ages: pd.Series):
+    """Return a pd.Series with age-group formatted as a categorical type, created from a pd.Series with exact age."""
+    _, agegrplookup = make_age_grp_lookup()
+    return _ages.map(agegrplookup).astype(make_age_grp_types())
 
 
 def get_scenario_outputs(scenario_filename: str, outputs_dir: Path) -> list:
@@ -587,6 +595,255 @@ class LogsDict(Mapping):
         for key in self.keys():
             self.__getitem__(key, cache=True)
         return self.__dict__
+
+
+def get_filtered_treatment_ids(depth: Optional[int] = None) -> List[str]:
+    """Return a list of treatment_ids that are defined in the model, filtered to a specified depth."""
+
+    def filter_treatments(_treatments: Iterable[str], depth: int = 1) -> List[str]:
+        """Reduce an iterable of `TREATMENT_IDs` by ignoring difference beyond a certain depth of specification.
+        The TREATMENT_ID is defined with each increasing level of specification separated by a `_`. """
+        return sorted(list(set(
+            [
+                "".join(f"{x}_" for i, x in enumerate(t.split('_')) if i < depth).rstrip('_') + '*'
+                for t in set(_treatments)
+            ]
+        )))
+
+    # Get pd.DataFrame with information of all the defined HSI
+    # Import within function to avoid circular import error
+    from tlo.analysis.hsi_events import get_all_defined_hsi_events_as_dataframe
+    hsi_event_details = get_all_defined_hsi_events_as_dataframe()
+
+    # Return list of TREATMENT_IDs and filter to the resolution needed
+    return filter_treatments(hsi_event_details['treatment_id'], depth=depth if depth is not None else np.inf)
+
+
+def colors_in_matplotlib() -> tuple:
+    """Return tuple of the strings for all the colours defined in Matplotlib."""
+    return tuple(
+        set().union(
+            mcolors.BASE_COLORS.keys(),
+            mcolors.TABLEAU_COLORS.keys(),
+            mcolors.CSS4_COLORS.keys(),
+        )
+    )
+
+
+def _define_coarse_appts() -> pd.DataFrame:
+    """Define which appointment types fall into which 'coarse appointment' category, the order of the categories and the
+    colour of the category.
+    Names of colors are selected with reference to: https://i.stack.imgur.com/lFZum.png"""
+    return pd.DataFrame.from_records(
+        [
+            {
+                'category': 'Outpatient',
+                'appt_types': ['Under5OPD', 'Over5OPD'],
+                'color': 'magenta'
+            },
+            {
+                'category': 'Con w/ DCSA',
+                'appt_types': ['ConWithDCSA'],
+                'color': 'crimson'},
+            {
+                'category': 'A & E',
+                'appt_types': ['AccidentsandEmerg'],
+                'color': 'forestgreen'},
+            {
+                'category': 'Inpatient',
+                'appt_types': ['InpatientDays', 'IPAdmission'],
+                'color': 'mediumorchid'},
+            {
+                'category': 'RMNCH',
+                'appt_types': ['AntenatalFirst', 'ANCSubsequent', 'NormalDelivery', 'CompDelivery', 'Csection', 'EPI',
+                               'FamPlan', 'U5Malnutr'],
+                'color': 'darkturquoise'},
+            {
+                'category': 'HIV/AIDS',
+                'appt_types': ['VCTNegative', 'VCTPositive', 'MaleCirc', 'NewAdult', 'EstMedCom', 'EstNonCom', 'PMTCT',
+                               'Peds'],
+                'color': 'gold'},
+            {
+                'category': 'Tb',
+                'appt_types': ['TBNew', 'TBFollowUp'],
+                'color': 'y'},
+            {
+                'category': 'Dental',
+                'appt_types': ['DentAccidEmerg', 'DentSurg', 'DentalU5', 'DentalO5'],
+                'color': 'red'},
+            {
+                'category': 'Mental Health',
+                'appt_types': ['MentOPD', 'MentClinic'],
+                'color': 'orangered'},
+            {
+                'category': 'Surgery / Radiotherapy',
+                'appt_types': ['MajorSurg', 'MinorSurg', 'Radiotherapy'],
+                'color': 'orange'},
+            {
+                'category': 'STI',
+                'appt_types': ['STI'],
+                'color': 'slateblue'},
+            {
+                'category': 'Lab / Diagnostics',
+                'appt_types': ['LabHaem', 'LabPOC', 'LabParasit', 'LabBiochem', 'LabMicrobio', 'LabMolec', 'LabTBMicro',
+                               'LabSero', 'LabCyto', 'LabTrans', 'Ultrasound', 'Mammography', 'MRI', 'Tomography',
+                               'DiagRadio'],
+                'color': 'dodgerblue'}
+        ]
+    ).set_index('category')
+
+
+def get_coarse_appt_type(appt_type: str) -> str:
+    """Return the `coarser` categorization of appt_types for a given appt_type. """
+    for coarse_appt_types, row in _define_coarse_appts().iterrows():
+        if appt_type in row['appt_types']:
+            return coarse_appt_types
+
+
+def order_of_coarse_appt(_coarse_appt: Union[str, pd.Index]) -> Union[int, pd.Index]:
+    """Define a standard order for the coarse appointment types."""
+    order = _define_coarse_appts().index
+    if isinstance(_coarse_appt, str):
+        return tuple(order).index(_coarse_appt)
+    else:
+        return order[order.isin(_coarse_appt)]
+
+
+def get_color_coarse_appt(coarse_appt_type: str) -> str:
+    """Return the colour (as matplotlib string) assigned to this appointment type. Returns `np.nan` if appointment-type
+    is not recognised.
+    Names of colors are selected with reference to: https://i.stack.imgur.com/lFZum.png"""
+    colors = _define_coarse_appts().color
+    if coarse_appt_type in colors.index:
+        return colors.loc[coarse_appt_type]
+    else:
+        return np.nan
+
+
+def _define_short_treatment_ids() -> pd.Series:
+    """Define the order of the short treatment_ids and the color for each.
+    Names of colors are selected with reference to: https://matplotlib.org/stable/gallery/color/named_colors.html"""
+    return pd.Series({
+        'FirstAttendance*': 'darkgrey',
+        'Inpatient*': 'silver',
+
+        'Contraception*': 'darkseagreen',
+        'AntenatalCare*': 'green',
+        'DeliveryCare*': 'limegreen',
+        'PostnatalCare*': 'springgreen',
+        'PostnatalSupervisor*': 'mediumaquamarine',  # todo <-- remove this when it's gone from code.
+
+        'Alri*': 'darkorange',
+        'Diarrhoea*': 'tan',
+        'Undernutrition*': 'gold',
+        'Epi*': 'darkgoldenrod',
+
+        'Hiv*': 'deepskyblue',
+        'Malaria*': 'lightsteelblue',
+        'Measles*': 'cornflowerblue',
+        'Tb*': 'mediumslateblue',
+        'Schisto*': 'skyblue',
+
+        'CardioMetabolicDisorders*': 'brown',
+
+        'BladderCancer*': 'orchid',
+        'BreastCancer*': 'mediumvioletred',
+        'OesophagealCancer*': 'deeppink',
+        'ProstateCancer*': 'hotpink',
+        'OtherAdultCancer*': 'palevioletred',
+
+        'Depression*': 'indianred',
+        'Epilepsy*': 'red',
+
+        'Rti*': 'lightsalmon',
+    })
+
+
+def order_of_short_treatment_ids(_short_treatment_id: Union[str, pd.Index]) -> Union[int, pd.Index]:
+    """Define a standard order for short treatment_ids."""
+    order = _define_short_treatment_ids().index
+    if isinstance(_short_treatment_id, str):
+        return tuple(order).index(_short_treatment_id)
+    else:
+        return order[order.isin(_short_treatment_id)]
+
+
+def get_color_short_treatment_id(short_treatment_id: str) -> str:
+    """Return the colour (as matplotlib string) assigned to this shorted TREATMENT_ID. Returns `np.nan` if treatment_id
+    is not recognised."""
+    colors = _define_short_treatment_ids()
+    if short_treatment_id in colors.index:
+        return colors.loc[short_treatment_id]
+    else:
+        return np.nan
+
+
+def _define_cause_of_death_labels() -> pd.Series:
+    """Define the order of the cause_of_death_labels and the color for each.
+    Names of colors are selected with reference to: https://matplotlib.org/stable/gallery/color/named_colors.html"""
+    return pd.Series({
+        'Maternal Disorders': 'green',
+        'Neonatal Disorders': 'springgreen',
+        'Congenital birth defects': 'mediumaquamarine',
+
+        'Lower respiratory infections': 'darkorange',
+        'Childhood Diarrhoea': 'tan',
+
+        'AIDS': 'deepskyblue',
+        'Malaria': 'lightsteelblue',
+        'Measles': 'cornflowerblue',
+        'non_AIDS_TB': 'mediumslateblue',
+
+        'Heart Disease': 'sienna',  # brown-ish
+        'Kidney Disease': 'chocolate',  # brown-ish
+        'Diabetes': 'peru',  # brown-ish
+        'Stroke': 'burlywood',  # brown-ish
+
+        'Cancer': 'deeppink',
+
+        'Depression / Self-harm': 'indianred',
+        'Epilepsy': 'red',
+
+        'Transport Injuries': 'lightsalmon',
+
+        'Other': 'dimgrey',
+    })
+
+
+def order_of_cause_of_death_label(_cause_of_death_label: Union[str, pd.Index]) -> Union[int, pd.Index]:
+    """Define a standard order for Cause-of-Death labels."""
+    order = _define_cause_of_death_labels().index
+    if isinstance(_cause_of_death_label, str):
+        return tuple(order).index(_cause_of_death_label)
+    else:
+        return order[order.isin(_cause_of_death_label)]
+
+
+def get_color_cause_of_death_label(cause_of_death_label: str) -> str:
+    """Return the colour (as matplotlib string) assigned to this shorted Cause-of-Death Label. Returns `np.nan` if
+    label is not recognised."""
+    colors = _define_cause_of_death_labels()
+    if cause_of_death_label in colors.index:
+        return colors.loc[cause_of_death_label]
+    else:
+        return np.nan
+
+
+def squarify_neat(sizes: np.array, label: np.array, colormap: Callable, numlabels=5, **kwargs):
+    """Pass through to squarify, with some customisation: ...
+     * Apply the colormap specified
+     * Only give label a selection of the segments
+     N.B. The package `squarify` is required.
+    """
+    # Suppress labels for all but the `numlabels` largest entries.
+    to_label = set(pd.Series(index=label, data=sizes).sort_values(ascending=False).iloc[0:numlabels].index)
+
+    squarify.plot(
+        sizes=sizes,
+        label=[_label if _label in to_label else '' for _label in label],
+        color=[colormap(_x) for _x in label],
+        **kwargs,
+    )
 
 
 def get_root_path(starter_path: Optional[Path] = None) -> Path:

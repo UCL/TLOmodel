@@ -1,17 +1,27 @@
 import os
 from pathlib import Path
+from typing import List
 
 import numpy as np
 import pandas as pd
 
 from tlo import Date, Module, Simulation, logging
 from tlo.analysis.utils import (
+    colors_in_matplotlib,
     flatten_multi_index_series_into_dict_for_logging,
+    get_coarse_appt_type,
+    get_color_cause_of_death_label,
+    get_color_coarse_appt,
+    get_color_short_treatment_id,
+    get_filtered_treatment_ids,
     get_root_path,
+    order_of_coarse_appt,
+    order_of_short_treatment_ids,
     parse_log_file,
     unflatten_flattened_multi_index_in_logging,
 )
 from tlo.methods import demography
+from tlo.methods.fullmodel import fullmodel
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
@@ -106,3 +116,90 @@ def test_get_root_path():
         os.path.abspath(Path(os.path.dirname(__file__))),
     ]:
         assert is_correct_absolute_path(get_root_path(test_dir)), f"Failed on {test_dir=}"
+
+
+def test_coarse_appt_type():
+    """Check the function that maps each appt_types to a coarser definition."""
+    appt_types = pd.read_csv(
+        resourcefilepath / 'healthsystem' / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Types_Table.csv'
+    )['Appt_Type_Code'].values
+
+    appts = pd.DataFrame({
+            "original": pd.Series(appt_types),
+            "coarse": pd.Series(appt_types).map(get_coarse_appt_type)
+    })
+
+    coarse_appts = appts['coarse'].drop_duplicates()
+
+    assert not pd.isnull(appts).any().any()
+    assert 12 == len(coarse_appts)  # 12 coarse categories
+
+    # Check can run sorting on these
+    assert 12 == len(sorted(coarse_appts, key=order_of_coarse_appt))
+
+
+def test_colormap_coarse_appts():
+    """Check the function that allocates a unique colour to each coarse appointment type."""
+    coarse_appt_types = pd.read_csv(
+            resourcefilepath / 'healthsystem' / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Types_Table.csv'
+        )['Appt_Type_Code'].map(get_coarse_appt_type).drop_duplicates().values
+
+    coarse_appt_types = sorted(coarse_appt_types, key=order_of_coarse_appt)
+
+    colors = [get_color_coarse_appt(x) for x in coarse_appt_types]
+
+    assert len(set(colors)) == len(colors)  # No duplicates
+    assert all([isinstance(_x, str) for _x in colors])  # All strings
+    assert np.nan is get_color_coarse_appt('????')  # Return `np.nan` if appt_type not recognised.
+    assert all(map(lambda x: x in colors_in_matplotlib(), colors))  # All colors recognised
+
+
+def test_get_treatment_ids(tmpdir):
+    """Check the function that generates the list of TREATMENT_IDs defined in the model."""
+
+    x = get_filtered_treatment_ids()  # All TREATMENT_IDs
+    y = get_filtered_treatment_ids(depth=1)  # TREATMENT_IDs to the first level of depth (i.e. module level)
+
+    assert isinstance(x, list)
+    assert all([isinstance(_x, str) for _x in x])
+
+    assert isinstance(y, list)
+    assert all([isinstance(_y, str) for _y in y])
+
+    assert len(y) < len(x)
+
+
+def test_colormap_short_treatment_id():
+    """Check the function that allocates a unique colour to each shortened TREATMENT_ID (i.e. each module)"""
+
+    short_treatment_ids = sorted(get_filtered_treatment_ids(depth=1), key=order_of_short_treatment_ids)
+    colors = [get_color_short_treatment_id(x) for x in short_treatment_ids]
+
+    assert len(set(colors)) == len(colors)  # No duplicates
+    assert all([isinstance(_x, str) for _x in colors])  # All strings
+    assert np.nan is get_color_coarse_appt('????')  # Return `np.nan` if appt_type not recognised.
+    assert all(map(lambda x: x in colors_in_matplotlib(), colors))  # All colors recognised
+
+
+def test_colormap_cause_of_death_label(seed):
+    """Check that all the Cause-of-Deaths labels defined in the full model are assigned to a unique colour when
+     plotting."""
+
+    def get_all_cause_of_death_labels(seed=0) -> List[str]:
+        """Return list of all the causes of death defined in the full model."""
+        start_date = Date(2010, 1, 1)
+        sim = Simulation(start_date=start_date, seed=seed)
+        sim.register(*fullmodel(resourcefilepath=resourcefilepath, use_simplified_births=False))
+        sim.make_initial_population(n=1_000)
+        sim.simulate(end_date=start_date)
+        mapper, _ = (sim.modules['Demography']).create_mappers_from_causes_of_death_to_label()
+        return sorted(set(mapper.values()))
+
+    all_labels = get_all_cause_of_death_labels(seed)
+
+    colors = [get_color_cause_of_death_label(_label) for _label in all_labels]
+
+    assert len(set(colors)) == len(colors)  # No duplicates
+    assert all([isinstance(_x, str) for _x in colors])  # All strings
+    assert np.nan is get_color_coarse_appt('????')  # Return `np.nan` if label is not recognised.
+    assert all(map(lambda x: x in colors_in_matplotlib(), colors))  # All colors recognised
