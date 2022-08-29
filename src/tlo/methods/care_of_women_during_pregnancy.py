@@ -420,8 +420,7 @@ class CareOfWomenDuringPregnancy(Module):
                 sensitivity=params['sensitivity_blood_test_glucose'],
                 specificity=params['specificity_blood_test_glucose']),
 
-            # This test represents point of care glucose testing used in ANC to detect hyperglycemia, associated with
-            # gestational diabetes
+            # This test represents point of care testing for syphilis
             blood_test_syphilis=DxTest(
                 property='ps_syphilis',
                 sensitivity=params['sensitivity_blood_test_syphilis'],
@@ -1015,9 +1014,11 @@ class CareOfWomenDuringPregnancy(Module):
                 self, hsi_event, self.item_codes_preg_consumables, core='syphilis_test',
                 optional='blood_test_equipment')
 
+            test = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
+                         dx_tests_to_run='blood_test_syphilis', hsi_event=hsi_event)
+
             # If the testing occurs and detects syphilis she will get treatment (if consumables are available)
-            if avail and self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-                         dx_tests_to_run='blood_test_syphilis', hsi_event=hsi_event):
+            if avail and test:
 
                 avail = pregnancy_helper_functions.return_cons_avail(
                     self, hsi_event, self.item_codes_preg_consumables, core='syphilis_treatment',
