@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 
 from tlo.analysis.utils import extract_results, get_scenario_outputs
 
-from ..analysis_scripts import analysis_utility_functions
+import analysis_utility_functions
 
 plt.style.use('seaborn-darkgrid')
 

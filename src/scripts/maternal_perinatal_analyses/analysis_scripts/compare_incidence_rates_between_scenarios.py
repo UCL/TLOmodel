@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 
 from tlo.analysis.utils import extract_results, get_scenario_outputs
 
-from ..analysis_scripts import analysis_utility_functions
+import analysis_utility_functions
 
 
 def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_interest, outputspath,
