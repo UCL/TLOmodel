@@ -1,10 +1,9 @@
 import os
 
+import analysis_utility_functions
 from matplotlib import pyplot as plt
 
 from tlo.analysis.utils import extract_results, get_scenario_outputs
-
-import analysis_utility_functions
 
 
 def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath, intervention_years,

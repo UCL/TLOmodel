@@ -1,12 +1,11 @@
 import os
 
+import analysis_utility_functions
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
 from tlo.analysis.utils import extract_results, get_scenario_outputs
-
-import analysis_utility_functions
 
 plt.style.use('seaborn-darkgrid')
 
