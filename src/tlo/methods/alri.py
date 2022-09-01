@@ -327,6 +327,10 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'relative rate of acquiring Alri for infants with low birth weight'
                       ),
+        'rr_ALRI_wasting':
+            Parameter(Types.REAL,
+                      'relative rate of acquiring Alri children with WHZ<-2'
+                      ),
         'rr_ALRI_non_exclusive_breastfeeding':
             Parameter(Types.REAL,
                       'relative rate of acquiring Alri for not exclusive breastfeeding upto 6 months'
@@ -1471,7 +1475,11 @@ class Models:
                     Predictor('li_wood_burn_stove').when(False, p['rr_ALRI_indoor_air_pollution']),
                     Predictor().when('(va_measles_all_doses == False) & (age_years >= 1)',
                                      p['rr_ALRI_incomplete_measles_immunisation']),
-                    Predictor().when('(hv_inf == True) & (hv_art!= "on_VL_suppressed")', p['rr_ALRI_HIV/AIDS']),
+                    Predictor().when('(hv_inf == True) & (hv_art != "on_VL_suppressed")', p['rr_ALRI_HIV/AIDS']),
+                    Predictor('un_WHZ_category').when('WHZ<-3' or '-3<=WHZ<-2', p['rr_ALRI_wasting']),
+                    Predictor('nb_low_birth_weight_status').when('extremely_low_birth_weight' or
+                                                                 'very_low_birth_weight' or 'low_birth_weight',
+                                                                 p['rr_ALRI_low_birth_weight']),
                     Predictor().when('(nb_breastfeeding_status != "exclusive") & (age_exact_years < 1/6)',
                                      p['rr_ALRI_non_exclusive_breastfeeding'])
                 )
@@ -2954,6 +2962,8 @@ class AlriPropertiesOfOtherModules(Module):
         'va_measles_all_doses': Property(Types.BOOL, 'temporary property'),
         'un_clinical_acute_malnutrition': Property(Types.CATEGORICAL, 'temporary property',
                                                    categories=['MAM', 'SAM', 'well']),
+        'un_WHZ_category': Property(Types.CATEGORICAL, 'temporary property',
+                                    categories=['WHZ<-3', '-3<=WHZ<-2', 'WHZ>=-2']),
     }
 
     def read_parameters(self, data_folder):
@@ -2969,6 +2979,7 @@ class AlriPropertiesOfOtherModules(Module):
         df.loc[df.is_alive, 'va_hib_all_doses'] = False
         df.loc[df.is_alive, 'va_measles_all_doses'] = False
         df.loc[df.is_alive, 'un_clinical_acute_malnutrition'] = 'well'
+        df.loc[df.is_alive, 'un_WHZ_category'] = 'WHZ>=-2'
 
     def initialise_simulation(self, sim):
         pass
@@ -2983,6 +2994,7 @@ class AlriPropertiesOfOtherModules(Module):
         df.at[child, 'va_hib_all_doses'] = False
         df.at[child, 'va_measles_all_doses'] = False
         df.at[child, 'un_clinical_acute_malnutrition'] = 'well'
+        df.at[child, 'un_WHZ_category'] = 'WHZ>=-2'
 
 
 class AlriIncidentCase_Lethal_DangerSigns_Pneumonia(AlriIncidentCase):
