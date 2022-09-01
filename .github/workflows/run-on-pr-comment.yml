@@ -1,4 +1,4 @@
-name: Resuable workflow for triggering tests with a pull-request comment
+name: Reusable workflow for triggering tests with a pull-request comment
 
 on:
   workflow_call:
@@ -77,10 +77,18 @@ jobs:
         ref: ${{ steps.sha.outputs.result }}
     - name: Run test command(s)
       run: ${{ inputs.commands }}
+    - name: Get comment-bot token
+      id: get_comment_bot_token
+      uses: peter-murray/workflow-application-token-action@e8782d687a306fb13d733244d0f2a50e272d3752
+      with:
+        application_id: ${{ secrets.COMMENT_BOT_APP_ID }}
+        application_private_key: ${{ secrets.COMMENT_BOT_APP_PRIVATE_KEY }}
+        organization: UCL
     - name: Create comment with test result and link to workflow run information
       if: always() && steps.has_permissions.outputs.result == 'true'
       uses: actions/github-script@v4
       with:
+        token: ${{ steps.get_comment_bot_token.outputs.token }}
         script: |
           // There can be a delay between steps completing and this being reflected
           // in information queried from REST API, therefore we poll for the list of
