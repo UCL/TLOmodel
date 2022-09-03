@@ -27,6 +27,7 @@ from tlo.analysis.utils import (
     load_pickled_dataframes,
     summarize,
 )
+from tlo import Date
 
 resourcefilepath = Path("./resources")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
@@ -757,6 +758,170 @@ plt.tick_params(axis="both", which="major", labelsize=10)
 plt.legend(labels=["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4"])
 
 fig.savefig(outputspath / "Epi_outputs.png")
+
+plt.show()
+
+
+
+# ---------------------------------- DALYS ---------------------------------- #
+TARGET_PERIOD = (Date(2023, 1, 1), Date(2036, 1, 1))
+
+
+def num_dalys_by_cause(_df):
+    """Return total number of DALYS (Stacked) (total by age-group within the TARGET_PERIOD)"""
+    return _df \
+        .loc[_df.year.between(*[i.year for i in TARGET_PERIOD])] \
+        .drop(columns=['date', 'sex', 'age_range', 'year']) \
+        .sum()
+
+
+def return_daly_summary(results_folder):
+    dalys = extract_results(
+        results_folder,
+        module='tlo.methods.healthburden',
+        key='dalys_stacked',
+        custom_generate_series=num_dalys_by_cause,
+        do_scaling=True
+    )
+    dalys.columns = dalys.columns.get_level_values(0)
+    out = pd.DataFrame()
+    out['median'] = dalys.median(axis=1).round(decimals=-3).astype(int)
+    out['lower'] = dalys.quantile(q=0.025, axis=1).round(decimals=-3).astype(int)
+    out['upper'] = dalys.quantile(q=0.975, axis=1).round(decimals=-3).astype(int)
+
+    return out
+
+
+dalys0 = return_daly_summary(results0)
+dalys1 = return_daly_summary(results1)
+dalys2 = return_daly_summary(results2)
+dalys3 = return_daly_summary(results3)
+dalys4 = return_daly_summary(results4)
+
+# create full table for export
+daly_table = pd.DataFrame()
+daly_table['scenario0'] = dalys0['median'].astype(str) + \
+                          " (" + dalys0['lower'].astype(str) + " - " + \
+                          dalys0['upper'].astype(str) + ")"
+daly_table['scenario1'] = dalys1['median'].astype(str) + \
+                          " (" + dalys1['lower'].astype(str) + " - " + \
+                          dalys1['upper'].astype(str) + ")"
+daly_table['scenario2'] = dalys2['median'].astype(str) + \
+                          " (" + dalys2['lower'].astype(str) + " - " + \
+                          dalys2['upper'].astype(str) + ")"
+daly_table['scenario3'] = dalys3['median'].astype(str) + \
+                          " (" + dalys3['lower'].astype(str) + " - " + \
+                          dalys3['upper'].astype(str) + ")"
+daly_table['scenario4'] = dalys4['median'].astype(str) + \
+                          " (" + dalys4['lower'].astype(str) + " - " + \
+                          dalys4['upper'].astype(str) + ")"
+
+daly_table.to_csv(outputspath / "daly_summary.csv")
+
+
+# extract dalys averted by each scenario relative to scenario 0
+# comparison should be run-by-run
+full_dalys0 = extract_results(
+    results0,
+    module='tlo.methods.healthburden',
+    key='dalys_stacked',
+    custom_generate_series=num_dalys_by_cause,
+    do_scaling=True
+)
+full_dalys0.loc['Column_Total'] = full_dalys0.sum(numeric_only=True, axis=0)
+
+full_dalys1 = extract_results(
+    results1,
+    module='tlo.methods.healthburden',
+    key='dalys_stacked',
+    custom_generate_series=num_dalys_by_cause,
+    do_scaling=True
+)
+full_dalys1.loc['Column_Total'] = full_dalys1.sum(numeric_only=True, axis=0)
+
+full_dalys2 = extract_results(
+    results2,
+    module='tlo.methods.healthburden',
+    key='dalys_stacked',
+    custom_generate_series=num_dalys_by_cause,
+    do_scaling=True
+)
+full_dalys2.loc['Column_Total'] = full_dalys2.sum(numeric_only=True, axis=0)
+
+full_dalys3 = extract_results(
+    results3,
+    module='tlo.methods.healthburden',
+    key='dalys_stacked',
+    custom_generate_series=num_dalys_by_cause,
+    do_scaling=True
+)
+full_dalys3.loc['Column_Total'] = full_dalys3.sum(numeric_only=True, axis=0)
+
+full_dalys4 = extract_results(
+    results4,
+    module='tlo.methods.healthburden',
+    key='dalys_stacked',
+    custom_generate_series=num_dalys_by_cause,
+    do_scaling=True
+)
+full_dalys4.loc['Column_Total'] = full_dalys4.sum(numeric_only=True, axis=0)
+
+# DALYs averted: baseline - scenario
+# positive value will be DALYs averted due to interventions
+# negative value will be higher DALYs reported, therefore increased health burden
+sc1_sc0 = full_dalys0.subtract(full_dalys1, fill_value=0)
+sc1_sc0_median = sc1_sc0.median(axis=1)
+sc1_sc0_lower = sc1_sc0.quantile(q=0.025, axis=1)
+sc1_sc0_upper = sc1_sc0.quantile(q=0.975, axis=1)
+
+sc2_sc0 = full_dalys0.subtract(full_dalys2, fill_value=0)
+sc2_sc0_median = sc2_sc0.median(axis=1)
+sc2_sc0_lower = sc2_sc0.quantile(q=0.025, axis=1)
+sc2_sc0_upper = sc2_sc0.quantile(q=0.975, axis=1)
+
+sc3_sc0 = full_dalys0.subtract(full_dalys3, fill_value=0)
+sc3_sc0_median = sc3_sc0.median(axis=1)
+sc3_sc0_lower = sc3_sc0.quantile(q=0.025, axis=1)
+sc3_sc0_upper = sc3_sc0.quantile(q=0.975, axis=1)
+
+sc4_sc0 = full_dalys0.subtract(full_dalys4, fill_value=0)
+sc4_sc0_median = sc4_sc0.median(axis=1)
+sc4_sc0_lower = sc4_sc0.quantile(q=0.025, axis=1)
+sc4_sc0_upper = sc4_sc0.quantile(q=0.975, axis=1)
+
+aids_dalys = [sc1_sc0_median['AIDS'],
+              sc2_sc0_median['AIDS'],
+              sc3_sc0_median['AIDS'],
+              sc4_sc0_median['AIDS']]
+tb_dalys = [sc1_sc0_median['non_AIDS_TB'],
+              sc2_sc0_median['non_AIDS_TB'],
+              sc3_sc0_median['non_AIDS_TB'],
+              sc4_sc0_median['non_AIDS_TB']]
+total_dalys = [sc1_sc0_median['Column_Total'],
+              sc2_sc0_median['Column_Total'],
+              sc3_sc0_median['Column_Total'],
+              sc4_sc0_median['Column_Total']]
+
+
+labels = ['Scenario 1', 'Scenario 2', 'Scenario 3', 'Scenario 4']
+x = np.arange(len(labels))  # the label locations
+width = 0.2  # the width of the bars
+
+
+fig, ax = plt.subplots()
+rects1 = ax.bar(x - width, aids_dalys, width, label='AIDS')
+rects2 = ax.bar(x, tb_dalys, width, label='TB')
+rects3 = ax.bar(x + width, total_dalys, width, label='Total')
+
+# Add some text for labels, title and custom x-axis tick labels, etc.
+ax.set_ylabel('DALYs averted')
+ax.set_title('')
+ax.set_xticks(x)
+ax.set_xticklabels(labels)
+ax.legend()
+
+fig.tight_layout()
+fig.savefig(outputspath / "DALYS_averted.png")
 
 plt.show()
 

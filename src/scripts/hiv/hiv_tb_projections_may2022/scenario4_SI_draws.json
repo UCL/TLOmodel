@@ -120,5 +120,7 @@
         }
       }
     }
-  ]
+  ],
+  "commit": "b627decd2d0d1ab4c08589d29aeaadebad875d97",
+  "github": "https://github.com/UCL/TLOmodel/blob/b627decd2d0d1ab4c08589d29aeaadebad875d97/src/scripts/hiv/hiv_tb_projections_may2022/scenario4_SI.py"
 }
