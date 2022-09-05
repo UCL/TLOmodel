@@ -1220,6 +1220,127 @@ plt.show()
 
 
 
+# ---------------------------------- HIV TREATMENT CASCADE ---------------------------------- #
+
+# hiv proportion diagnosed
+def hiv_proportion_diagnosed(results_folder):
+
+    hiv_dx = extract_results(
+        results_folder,
+        module="tlo.methods.hiv",
+        key="hiv_program_coverage",
+        column="dx_adult",
+        index="date",
+        do_scaling=False
+    )
+
+    hiv_dx.columns = hiv_dx.columns.get_level_values(0)
+    dx_summary = pd.DataFrame(index=hiv_dx.index, columns=["median", "lower", "upper"])
+    dx_summary["median"] = hiv_dx.median(axis=1)
+    dx_summary["lower"] = hiv_dx.quantile(q=0.025, axis=1)
+    dx_summary["upper"] = hiv_dx.quantile(q=0.975, axis=1)
+
+    return dx_summary
+
+hiv_dx0 = hiv_proportion_diagnosed(results0)
+hiv_dx1 = hiv_proportion_diagnosed(results1)
+hiv_dx2 = hiv_proportion_diagnosed(results2)
+hiv_dx3 = hiv_proportion_diagnosed(results3)
+hiv_dx4 = hiv_proportion_diagnosed(results4)
+
+
+# hiv treatment coverage
+def hiv_tx_coverage(results_folder):
+    hiv_cov = extract_results(
+        results_folder,
+        module="tlo.methods.hiv",
+        key="hiv_program_coverage",
+        column="art_coverage_adult",
+        index="date",
+        do_scaling=False
+    )
+
+    hiv_cov.columns = hiv_cov.columns.get_level_values(0)
+    hiv_cov_summary = pd.DataFrame(index=hiv_cov.index, columns=["median", "lower", "upper"])
+    hiv_cov_summary["median"] = hiv_cov.median(axis=1)
+    hiv_cov_summary["lower"] = hiv_cov.quantile(q=0.025, axis=1)
+    hiv_cov_summary["upper"] = hiv_cov.quantile(q=0.975, axis=1)
+
+    return hiv_cov_summary
+
+
+hiv_tx0 = hiv_tx_coverage(results0)
+hiv_tx1 = hiv_tx_coverage(results1)
+hiv_tx2 = hiv_tx_coverage(results2)
+hiv_tx3 = hiv_tx_coverage(results3)
+hiv_tx4 = hiv_tx_coverage(results4)
+
+
+# ---------------------------------- PLOTS ---------------------------------- #
+
+scale = sf[0][0].values[0]
+
+
+# Make plot
+fig, ((ax1, ax2)) = plt.subplots(nrows=1, ncols=2,
+                                             constrained_layout=True,
+                                             figsize=(9, 4))
+fig.suptitle('')
+
+# HIV start treatment
+ax1.plot(hiv_dx0.index, tx_id0["Hiv_Treatment_median"][1:26] * sf[0][0].values[0], "-", color=berry[5])
+ax1.fill_between(hiv_dx0.index, tx_id0["Hiv_Treatment_lower"][1:26] * sf[0][0].values[0],
+                 tx_id0["Hiv_Treatment_upper"][1:26] * sf[0][0].values[0], color=berry[5], alpha=0.2)
+
+ax1.plot(hiv_dx0.index, tx_id1["Hiv_Treatment_median"][1:26] * sf[0][0].values[0], "-", color=berry[4])
+ax1.fill_between(hiv_dx0.index, tx_id1["Hiv_Treatment_lower"][1:26] * sf[0][0].values[0],
+                 tx_id1["Hiv_Treatment_upper"][1:26] * sf[0][0].values[0], color=berry[4], alpha=0.2)
+
+ax1.plot(hiv_dx0.index, tx_id2["Hiv_Treatment_median"][1:26] * sf[0][0].values[0], "-", color=berry[3])
+ax1.fill_between(hiv_dx0.index, tx_id2["Hiv_Treatment_lower"][1:26] * sf[0][0].values[0],
+                 tx_id2["Hiv_Treatment_upper"][1:26] * sf[0][0].values[0], color=berry[3], alpha=0.2)
+
+ax1.plot(hiv_dx0.index, tx_id3["Hiv_Treatment_median"][1:26] * sf[0][0].values[0], "-", color=berry[2])
+ax1.fill_between(hiv_dx0.index, tx_id3["Hiv_Treatment_lower"][1:26] * sf[0][0].values[0],
+                 tx_id3["Hiv_Treatment_upper"][1:26] * sf[0][0].values[0], color=berry[2], alpha=0.2)
+
+ax1.plot(hiv_dx0.index, tx_id4["Hiv_Treatment_median"][1:26] * sf[0][0].values[0], "-", color=berry[1])
+ax1.fill_between(hiv_dx0.index, tx_id4["Hiv_Treatment_lower"][1:26] * sf[0][0].values[0],
+                 tx_id4["Hiv_Treatment_upper"][1:26] * sf[0][0].values[0], color=berry[1], alpha=0.2)
+
+# ax1.set_ylim([10000, 60000])
+
+ax1.set(title='',
+       ylabel='No. treatment appts')
+ax1.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+
+# TB treatment coverage
+ax2.plot(hiv_tx0.index, hiv_tx0["median"], "-", color=berry[5])
+ax2.fill_between(hiv_tx0.index, hiv_tx0["lower"], hiv_tx0["upper"], color=berry[5], alpha=0.2)
+
+ax2.plot(hiv_tx1.index, hiv_tx1["median"], "-", color=berry[4])
+ax2.fill_between(hiv_tx1.index, hiv_tx1["lower"], hiv_tx1["upper"], color=berry[4], alpha=0.2)
+
+ax2.plot(hiv_tx2.index, hiv_tx2["median"], "-", color=berry[3])
+ax2.fill_between(hiv_tx2.index, hiv_tx2["lower"], hiv_tx2["upper"], color=berry[3], alpha=0.2)
+
+ax2.plot(hiv_tx3.index, hiv_tx3["median"], "-", color=berry[2])
+ax2.fill_between(hiv_tx3.index, hiv_tx3["lower"], hiv_tx3["upper"], color=berry[2], alpha=0.2)
+
+ax2.plot(hiv_tx4.index, hiv_tx4["median"], "-", color=berry[1])
+ax2.fill_between(hiv_tx4.index, hiv_tx4["lower"], hiv_tx4["upper"], color=berry[1], alpha=0.2)
+
+ax2.set_ylim([0, 1.1])
+
+ax2.set(title='',
+       ylabel='Proportion treated')
+
+plt.tick_params(axis="both", which="major", labelsize=10)
+# fig.savefig(outputspath / "Hivtreatment_cascade_2panel.png")
+
+plt.show()
+
+
 
 # # ---------------------------- 3d-plots ------------------------------------
 #
