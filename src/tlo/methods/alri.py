@@ -383,14 +383,32 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'probability of pneumothorax in pneumonia with pulmonary complications'
                       ),
-        'prob_hypoxaemia_in_pneumonia':
+        'prev_hypoxaemia_in_alri':
             Parameter(Types.REAL,
-                      'probability of hypoxaemia in pneumonia cases'
+                      'prevalence of hypoxaemia in all ALRI'
                       ),
-        'prob_hypoxaemia_in_other_alri':
+        'proportion_pneumonia_in_alri':
             Parameter(Types.REAL,
-                      'probability of hypoxaemia in bronchiolitis and other alri cases'
+                      'porportion of pneumonia in ALRI cases, 1 - this proportion is the other_alri group'
                       ),
+
+        'or_hypoxaemia_in_abnormal_CXR':
+            Parameter(Types.REAL,
+                      'Odds ratio of hypoxaemia in CXR+ compared to ref CXR-'
+                      ),
+        'assumed_prev_hypoxaemia_in_normal_CXR':
+            Parameter(Types.REAL,
+                      'assumed prevalence of hypoxaemia in CXR- / captured in other ALRI group'
+                      ),
+        'assumed_prev_bacteraemia_in_non_pc_pneumonia':
+            Parameter(Types.REAL,
+                      'assumed prevalence of bacteraemia in non-pulmonary complicated pneumonia'
+                      ),
+        'assumed_prev_hypoxaemia_in_non_pc_pneumonia':
+            Parameter(Types.REAL,
+                      'assumed prevalence of hypoxaemia in non-pulmonary complicated pneumonia'
+                      ),
+
         'prob_bacteraemia_in_pneumonia':
             Parameter(Types.REAL,
                       'probability of bacteraemia in pneumonia'
@@ -398,6 +416,10 @@ class Alri(Module):
         'prob_progression_to_sepsis_with_bacteraemia':
             Parameter(Types.REAL,
                       'probability of progression to sepsis from bactereamia'
+                      ),
+        'or_bacteraemia_and_hypoxaemia_in_pulmonary_complicated_pneumonia':
+            Parameter(Types.REAL,
+                      'odds ratio bactereamia and/or hypoxaemia if already complicated with pulmonary complications'
                       ),
         'proportion_hypoxaemia_with_SpO2<90%':
             Parameter(Types.REAL,
@@ -1597,27 +1619,90 @@ class Models:
 
         return outcome if outcome != '_none_' else np.nan
 
+    @staticmethod
+    def get_prob_of_outcome_in_baseline_group(or_value, prob_ref, prop_case_group, prevalence) -> dict:
+        """
+        Helper function to convert odds ratio (OR) to risk ratio (RR) and adjust for the overall prevalence,
+        it returns the probability of outcome in the unexposed group (reference group)
+        :param or_value: odds ratio of case group for the outcome
+        :param prob_ref: prevalence of outcome in reference group
+        :param prop_case_group: proportion of case group (with the outcome) over total (case + ref group)
+        :param prevalence: overall prevalence (joined groups)
+        :return: returns the risk ratio ('rr'), and the baseline probability of outcome in the reference group
+        """
+
+        # Convert OR to RR with the following equation
+        rr = or_value / ((1 - prob_ref) + (prob_ref * or_value))
+
+        # adjust the probability values using the RR, the two group proportions
+        # and the overall prevalence of the risk factor / outcome.
+        adjusted_p = prevalence / (prop_case_group * rr + (1 - prop_case_group))
+
+        return dict({'rr': rr, 'adjusted_p': adjusted_p})
+
     def get_complications_that_onset(self, disease_type, primary_path_is_bacterial, has_secondary_bacterial_inf):
         """Determine the set of complication for this person"""
         p = self.p
 
         probs = defaultdict(float)
 
-        # probabilities for local pulmonary complications
-        prob_pulmonary_complications = p['prob_pulmonary_complications_in_pneumonia']
+        # get the probabilities of hypoxaemia in other alri knowing the prevalence, OR for CXR+, and CXR+/- proportion
+        rr_and_prob_hypoxaemia_in_other_alri = self.get_prob_of_outcome_in_baseline_group(
+            or_value=p['or_hypoxaemia_in_abnormal_CXR'],
+            prob_ref=p['assumed_prev_hypoxaemia_in_normal_CXR'],
+            prop_case_group=p['proportion_pneumonia_in_alri'],
+            prevalence=p['prev_hypoxaemia_in_alri'])
+
+        # get the probabilities of sepsis by presence of pulmonary complicated pneumonia
+        rr_and_base_prob_bacteraemia = self.get_prob_of_outcome_in_baseline_group(
+            or_value=p['or_bacteraemia_and_hypoxaemia_in_pulmonary_complicated_pneumonia'],
+            prob_ref=p['assumed_prev_bacteraemia_in_non_pc_pneumonia'],
+            prop_case_group=p['prob_pulmonary_complications_in_pneumonia'],
+            prevalence=p['prob_bacteraemia_in_pneumonia'])
+
+        # get the probabilities of hypoxaemia by presence of pulmonary complicated pneumonia
+        rr_and_base_prob_hypoxaemia = self.get_prob_of_outcome_in_baseline_group(
+            or_value=p['or_bacteraemia_and_hypoxaemia_in_pulmonary_complicated_pneumonia'],
+            prob_ref=p['assumed_prev_hypoxaemia_in_non_pc_pneumonia'],
+            prop_case_group=p['prob_pulmonary_complications_in_pneumonia'],
+            prevalence=rr_and_prob_hypoxaemia_in_other_alri['adjusted_p'] * rr_and_prob_hypoxaemia_in_other_alri['rr'])
+        # to get prevalence of hypoxaemia in pneumonia (CXR+)
+
+        # # # # # # # # #
+        # For 'pneumonia' disease
         if disease_type == 'pneumonia':
-            if prob_pulmonary_complications > self.rng.random_sample():
+
+            # probabilities for local pulmonary complications
+            if p['prob_pulmonary_complications_in_pneumonia'] > self.rng.random_sample():
+
+                # get the probabilities for each pulmonary complication
                 for c in ['pneumothorax', 'pleural_effusion', 'lung_abscess', 'empyema']:
                     probs[c] += p[f'prob_{c}_in_pulmonary_complicated_pneumonia']
 
-            # probabilities for systemic complications
-            if primary_path_is_bacterial or has_secondary_bacterial_inf:
-                probs['sepsis'] += p['prob_bacteraemia_in_pneumonia'] * p['prob_progression_to_sepsis_with_bacteraemia']
+                # get the probability of bacteraemia in pulmonary complicated pneumonia
+                if primary_path_is_bacterial or has_secondary_bacterial_inf:
+                    probs['sepsis'] += \
+                        rr_and_base_prob_bacteraemia['adjusted_p'] * rr_and_base_prob_bacteraemia['rr'] * \
+                        p['prob_progression_to_sepsis_with_bacteraemia']
 
-            probs['hypoxaemia'] += p['prob_hypoxaemia_in_pneumonia']
+                # get the probability of hypoxaemia in pulmonary complicated pneumonia
+                probs['hypoxaemia'] += rr_and_base_prob_hypoxaemia['adjusted_p'] * rr_and_base_prob_hypoxaemia['rr']
 
+            # if no pulmonary complication is present
+            else:
+                # probability of hypoxaemia in non-pulmonary complicated pneumonia
+                probs['hypoxaemia'] += rr_and_base_prob_hypoxaemia['adjusted_p']
+
+                # probability of sepsis in non-pulmonary complicated pneumonia
+                if primary_path_is_bacterial or has_secondary_bacterial_inf:
+                    probs['sepsis'] += rr_and_base_prob_bacteraemia['adjusted_p'] * \
+                                       p['prob_progression_to_sepsis_with_bacteraemia']
+
+        # # # # # # # # #
+        # For 'other_alri' disease
         elif disease_type == 'other_alri':
-            probs['hypoxaemia'] += p['prob_hypoxaemia_in_other_alri']
+            # only hypoxaemia is modelled for other alri
+            probs['hypoxaemia'] += rr_and_prob_hypoxaemia_in_other_alri['adjusted_p']
 
         # determine which complications are onset:
         complications = {c for c, p in probs.items() if p > self.rng.random_sample()}

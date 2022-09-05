@@ -39,7 +39,7 @@ def get_sim(popsize):
     """Return a simulation (composed of only <5 years old) that has run for 0 days."""
     resourcefilepath = Path('./resources')
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=1)
 
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),

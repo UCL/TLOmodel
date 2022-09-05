@@ -680,6 +680,7 @@ def test_immediate_onset_complications(sim_hs_all_consumables):
     params['prob_pulmonary_complications_in_pneumonia'] = 1.0
     params['prob_bacteraemia_in_pneumonia'] = 1.0
     params['prob_progression_to_sepsis_with_bacteraemia'] = 1.0
+    params['prev_hypoxaemia_in_alri'] = 1.0
     for p in params:
         if any([p.startswith(f'prob_{c}') for c in sim.modules['Alri'].complications]):
             params[p] = 1.0
@@ -724,6 +725,7 @@ def test_no_immediate_onset_complications(sim_hs_all_consumables):
     params = sim.modules['Alri'].parameters
     params['prob_pulmonary_complications_in_pneumonia'] = 0.0
     params['prob_bacteraemia_in_pneumonia'] = 0.0
+    params['prev_hypoxaemia_in_alri'] = 0.0
     for p in params:
         if any([p.startswith(f'prob_{c}') for c in sim.modules['Alri'].complications]):
             params[p] = 0.0
@@ -745,6 +747,7 @@ def test_no_immediate_onset_complications(sim_hs_all_consumables):
 
     # Check has no complications following onset (check #1)
     complications_cols = [f"ri_complication_{complication}" for complication in sim.modules['Alri'].complications]
+    print(df.loc[person_id, complications_cols])
     assert not df.loc[person_id, complications_cols].any()
 
 
