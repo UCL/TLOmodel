@@ -346,65 +346,98 @@ width = 0.15
 years_num = pd.Series(years)
 
 # Make plot
-fig = plt.figure(figsize=(10, 6))
+fig, axs = plt.subplots(ncols=4, nrows=2,
+                        # sharex=True,
+                        # sharey=True,
+                        constrained_layout=True,
+                        figsize=(10, 5),
+                        gridspec_kw=dict(width_ratios=[4,4,4,0.2]))
+sns.heatmap(tx0_norm,
+                 xticklabels=5,
+                 yticklabels=1,
+                 vmax=3,
+                 linewidth=0.5,
+                 cmap=cmap,
+            cbar=False,
+            ax=axs[0,0]
+            )
+axs[0,0].set_title("Scenario 0", size=10)
 
-# heatmap scenario 0?
-ax0 = plt.subplot2grid((2, 3), (0, 0))  # 2 rows, 3 cols
+sns.heatmap(tx1_norm,
+                 xticklabels=5,
+                 yticklabels=False,
+                 vmax=3,
+                 linewidth=0.5,
+                 cmap=cmap,
+            cbar=False,
+            ax=axs[0,1]
+            )
+axs[0,1].set_title("Scenario 1", size=10)
+
+sns.heatmap(tx2_norm,
+                 xticklabels=5,
+                 yticklabels=False,
+                 vmax=3,
+                 linewidth=0.5,
+                 cmap=cmap,
+            cbar=False,
+            ax=axs[0,2]
+            )
+axs[0,2].set_title("Scenario 2", size=10)
+
+cb = fig.colorbar(axs[0, 0].collections[0],
+                  cax=axs[0, 3],
+                  # ticks=[0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0],
+                  drawedges=False)
+cb.set_ticks([0.05, 0.5, 1.0, 1.5, 2.0, 2.5, 2.95])
+cb.set_ticklabels([0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0])
+cb.ax.tick_params(labelsize=9)
+cb.outline.set_edgecolor('white')
+
 sns.heatmap(tx3_norm,
-            xticklabels=False,
-            yticklabels=1,
-            vmin=0,
-            vmax=3,
-            linewidth=0.5,
-            cmap=cmap,
-            cbar=True,
-            cbar_kws={
-                'pad': .02,
-                'ticks': [0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0],
-            },
+                 xticklabels=5,
+                 # yticklabels=False,
+                 vmax=3,
+                 linewidth=0.5,
+                 cmap=cmap,
+            cbar=False,
+            ax=axs[1,0]
             )
-ax0.set_title("Scenario 3", size=10)
+axs[1,0].set_title("Scenario 3", size=10)
 
-# heatmap scenario 2?
-ax1 = plt.subplot2grid((2, 3), (1, 0))
 sns.heatmap(tx4_norm,
-            xticklabels=5,
-            yticklabels=1,
-            vmin=0,
-            vmax=3,
-            linewidth=0.5,
-            cmap=cmap,
-            cbar=True,
-            cbar_kws={
-                'pad': .02,
-                'ticks': [0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0],
-            },
+                 xticklabels=5,
+                 yticklabels=False,
+                 vmax=3,
+                 linewidth=0.5,
+                 cmap=cmap,
+            cbar=False,
+            ax=axs[1,1]
             )
-ax1.set_title("Scenario 4", size=10)
+axs[1,1].set_title("Scenario 4", size=10)
 
-# Frac HCW time
-ax2 = plt.subplot2grid((2, 3), (0, 1), colspan=2, rowspan=2)
-ax2.yaxis.tick_right()
+axs[1,2].axis("off")
+axs[1,3].axis("off")
 
-ax2.bar(years_num[12:26], hcw1["median"].loc[12:25], width, color=berry[4])
-ax2.bar(years_num[12:26] + width, hcw2["median"].loc[12:25], width, color=berry[3])
-ax2.bar(years_num[12:26] + (width*2), hcw3["median"].loc[12:25], width, color=berry[2])
-ax2.bar(years_num[12:26] + (width*3), hcw4["median"].loc[12:25], width, color=berry[1])
-
-# ax2.plot(years, hcw1["median"], "-", color=berry[4])
-# ax2.fill_between(years, hcw1["lower"], hcw1["upper"], color=berry[4], alpha=0.2)
-# ax2.plot(years, hcw2["median"], "-", color=berry[3])
-# ax2.fill_between(years, hcw2["lower"], hcw2["upper"], color=berry[3], alpha=0.2)
-# ax2.plot(years, hcw3["median"], "-", color=berry[2])
-# ax2.fill_between(years, hcw3["lower"], hcw3["upper"], color=berry[2], alpha=0.2)
-# ax2.plot(years, hcw4["median"], "-", color=berry[1])
-# ax2.fill_between(years, hcw4["lower"], hcw4["upper"], color=berry[1], alpha=0.2)
-
-ax2.set_ylabel("% difference", rotation=-90, labelpad=20)
-ax2.yaxis.set_label_position("right")
-ax2.legend(["Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4"])
-
+plt.tick_params(axis="both", which="major", labelsize=9)
 fig.savefig(outputspath / "HS_use.png")
+plt.show()
+
+
+
+
+# frac HCW time
+fig, ax = plt.subplots()
+
+ax.bar(years_num[12:26], hcw1["median"].loc[12:25], width, color=berry[4])
+ax.bar(years_num[12:26] + width, hcw2["median"].loc[12:25], width, color=berry[3])
+ax.bar(years_num[12:26] + (width*2), hcw3["median"].loc[12:25], width, color=berry[2])
+ax.bar(years_num[12:26] + (width*3), hcw4["median"].loc[12:25], width, color=berry[1])
+
+ax.set_ylabel("% difference", rotation=90, labelpad=15)
+ax.yaxis.set_label_position("left")
+ax.legend(["Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4"])
+fig.savefig(outputspath / "Frac_HWC_time.png")
 
 plt.show()
 
@@ -1662,7 +1695,7 @@ ax2.set_ylim([0, 1.0])
 plt.tick_params(axis="both", which="major", labelsize=10)
 
 plt.legend(labels=["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4"])
-fig.savefig(outputspath / "Tb_treatmeant_delay.png")
+fig.savefig(outputspath / "Tb_treatment_delay.png")
 
 plt.show()
 
@@ -1681,24 +1714,96 @@ false3 = delay3_scatter.groupby('variable')['value'].apply(lambda x: ((x<=0) | (
 false4 = delay4_scatter.groupby('variable')['value'].apply(lambda x: ((x<=0) | (x>1095)).count()).reset_index(name='count')
 
 # todo note these are aggregated across all runs
+# plt.style.use('ggplot')
+# fig, ax = plt.subplots()
+#
+# ax.plot(years_num[13:25], false0["count"].loc[13:24], "-", color=berry[5])
+# ax.plot(years_num[13:25], false1["count"].loc[13:24], "-", color=berry[4])
+# ax.plot(years_num[13:25], false2["count"].loc[13:24], "-", color=berry[3])
+# ax.plot(years_num[13:25], false3["count"].loc[13:24], "-", color=berry[2])
+# ax.plot(years_num[13:25], false4["count"].loc[13:24], "-", color=berry[1])
+#
+# ax.patch.set_edgecolor('grey')
+# ax.patch.set_linewidth('1')
+#
+# plt.ylabel("number false positives")
+# plt.xlabel("Year")
+# # plt.ylim((0, 1.0))
+# plt.title("")
+# plt.legend(labels=["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4"])
+# plt.show()
+
+
+def tb_false_pos_adults(results_folder):
+    false_pos = extract_results(
+        results_folder,
+        module="tlo.methods.tb",
+        key="tb_false_positive",
+        column="tbPropFalsePositiveAdults",
+        index="date",
+        do_scaling=False
+    )
+
+    false_pos.columns = false_pos.columns.get_level_values(0)
+    false_pos_summary = pd.DataFrame(index=false_pos.index, columns=["median", "lower", "upper"])
+    false_pos_summary["median"] = false_pos.median(axis=1)
+    false_pos_summary["lower"] = false_pos.quantile(q=0.025, axis=1)
+    false_pos_summary["upper"] = false_pos.quantile(q=0.975, axis=1)
+
+    return false_pos_summary
+
+def tb_false_pos_children(results_folder):
+    false_pos = extract_results(
+        results_folder,
+        module="tlo.methods.tb",
+        key="tb_false_positive",
+        column="tbPropFalsePositiveChildren",
+        index="date",
+        do_scaling=False
+    )
+
+    false_pos.columns = false_pos.columns.get_level_values(0)
+    false_pos_summary = pd.DataFrame(index=false_pos.index, columns=["median", "lower", "upper"])
+    false_pos_summary["median"] = false_pos.median(axis=1)
+    false_pos_summary["lower"] = false_pos.quantile(q=0.025, axis=1)
+    false_pos_summary["upper"] = false_pos.quantile(q=0.975, axis=1)
+
+    return false_pos_summary
+
+false_pos0 = tb_false_pos_adults(results0)
+false_pos1 = tb_false_pos_adults(results1)
+false_pos2 = tb_false_pos_adults(results2)
+false_pos3 = tb_false_pos_adults(results3)
+false_pos4 = tb_false_pos_adults(results4)
+
+false_pos_child0 = tb_false_pos_children(results0)
+false_pos_child1 = tb_false_pos_children(results1)
+false_pos_child2 = tb_false_pos_children(results2)
+false_pos_child3 = tb_false_pos_children(results3)
+false_pos_child4 = tb_false_pos_children(results4)
+
+
 plt.style.use('ggplot')
 fig, ax = plt.subplots()
 
-ax.plot(years_num[13:25], false0["count"].loc[13:24], "-", color=berry[5])
-ax.plot(years_num[13:25], false1["count"].loc[13:24], "-", color=berry[4])
-ax.plot(years_num[13:25], false2["count"].loc[13:24], "-", color=berry[3])
-ax.plot(years_num[13:25], false3["count"].loc[13:24], "-", color=berry[2])
-ax.plot(years_num[13:25], false4["count"].loc[13:24], "-", color=berry[1])
+ax.plot(years_num[13:26], false_pos0["median"][12:25], "-", color=berry[5])
+ax.plot(years_num[13:26], false_pos1["median"][12:25], "-", color=berry[4])
+ax.plot(years_num[13:26], false_pos2["median"][12:25], "-", color=berry[3])
+ax.plot(years_num[13:26], false_pos3["median"][12:25], "-", color=berry[2])
+ax.plot(years_num[13:26], false_pos4["median"][12:25], "-", color=berry[1])
 
 ax.patch.set_edgecolor('grey')
 ax.patch.set_linewidth('1')
 
-plt.ylabel("number false positives")
+plt.ylabel("Proportion false positives")
+
 plt.xlabel("Year")
 # plt.ylim((0, 1.0))
 plt.title("")
 plt.legend(labels=["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4"])
+fig.savefig(outputspath / "Tb_false_positives.png")
 plt.show()
+
 
 
 # ---------------------------------- PrEP IMPACT ---------------------------------- #
