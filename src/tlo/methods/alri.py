@@ -1762,6 +1762,13 @@ class Models:
                 'danger_signs': p['prob_danger_signs_in_sepsis']
             }
 
+        if complication in ('pneumothorax', 'pleural_effusion', 'lung_abscess', 'empyema'):
+            # use the probability of danger signs and chest indrawing from hypoxaemia SpO2 < 90%
+            probs = {
+                'danger_signs': p['prob_danger_signs_in_SpO2<90%'],
+                'chest_indrawing': p['prob_chest_indrawing_in_SpO2<90%'],
+            }
+
         # determine which symptoms are onset:
         symptoms = {s for s, p in probs.items() if p > self.rng.random_sample()}
 
