@@ -39,7 +39,7 @@ start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
 popsize = 5000
 
-scenario = 4
+scenario = 0
 
 # set up the log config
 log_config = {
