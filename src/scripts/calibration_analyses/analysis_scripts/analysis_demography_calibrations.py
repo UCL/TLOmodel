@@ -29,11 +29,13 @@ from tlo.analysis.utils import (
     unflatten_flattened_multi_index_in_logging,
 )
 
+PREFIX_ON_FILENAME = '1'
+
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
 
     # Declare path for output graphs from this script
-    make_graph_file_name = lambda stub: output_folder / f"{stub}.png"  # noqa: E731
+    make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}.png"  # noqa: E731
 
     # Define colo(u)rs to use:
     colors = {
@@ -117,6 +119,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.tight_layout()
     plt.savefig(make_graph_file_name("Pop_Over_Time"))
     plt.show()
+    plt.close(fig)
 
     # 2) Population Size in 2018 (broken down by Male and Female)
 
@@ -176,6 +179,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.tight_layout()
     plt.savefig(make_graph_file_name("Pop_Over_Time"))
     plt.show()
+    plt.close(fig)
 
     # %% Population Pyramid
     # Population Pyramid at two time points
@@ -246,6 +250,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             fig.tight_layout()
             plt.savefig(make_graph_file_name(f"Pop_Size_{year}"))
             plt.show()
+            plt.close(fig)
+
         except pd.core.base.DataError:
             pass
 
@@ -336,6 +342,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         plt.tight_layout()
         plt.savefig(make_graph_file_name(f"Births_Over_Time_{tp}"))
         plt.show()
+        plt.close(fig)
 
     # %% Describe patterns of contraceptive usage over time
 
@@ -372,6 +379,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.subplots_adjust(right=0.65)
     plt.savefig(make_graph_file_name("Contraception_1549"))
     plt.show()
+    plt.close(fig)
 
     # %% Describe patterns of contraceptive usage over time and age
 
@@ -420,6 +428,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig.subplots_adjust(right=0.65)
         plt.savefig(make_graph_file_name(f"Contraception_{_age}"))
         plt.show()
+        plt.close(fig)
 
     # %% Age-specific fertility
 
@@ -490,6 +499,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.tight_layout()
     fig.savefig(make_graph_file_name("asfr_model_vs_data"))
     fig.show()
+    plt.close(fig)
 
     # %% All-Cause Deaths
     #  todo - fix this -- only do summarize after the groupbys
@@ -599,6 +609,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.tight_layout()
     plt.savefig(make_graph_file_name("Deaths_OverTime"))
     plt.show()
+    plt.close(fig)
 
     # 2) Plots by sex and age-group for selected period:
 
@@ -689,3 +700,4 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig.tight_layout()
         plt.savefig(make_graph_file_name(f"Deaths_By_Age_{period}"))
         plt.show()
+        plt.close(fig)

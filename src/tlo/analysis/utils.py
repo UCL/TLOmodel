@@ -771,9 +771,10 @@ def order_of_short_treatment_ids(_short_treatment_id: Union[str, pd.Index]) -> U
 def get_color_short_treatment_id(short_treatment_id: str) -> str:
     """Return the colour (as matplotlib string) assigned to this shorted TREATMENT_ID. Returns `np.nan` if treatment_id
     is not recognised."""
+    _short_treatment_id = short_treatment_id.rstrip('*') + '*'  # Ensure that there is a trailing '*'
     colors = _define_short_treatment_ids()
-    if short_treatment_id in colors.index:
-        return colors.loc[short_treatment_id]
+    if _short_treatment_id in colors.index:
+        return colors.loc[_short_treatment_id]
     else:
         return np.nan
 
