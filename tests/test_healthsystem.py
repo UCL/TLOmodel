@@ -758,6 +758,74 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
            counts_of_appts_by_level.sum(axis=1, level=1).sum(axis=0).to_dict()
 
 
+@pytest.mark.slow
+def test_summary_logger_generated_in_year_long_simulation(seed, tmpdir):
+    """Check that the summary logger is created when the simulation lasts exactly one year."""
+
+    def summary_logger_is_present(end_date_of_simulation):
+        """Returns True if the summary logger is present when using the specified end_date for the simulation."""
+        # Create a dummy disease module (to be the parent of the dummy HSI)
+        class DummyModule(Module):
+            METADATA = {Metadata.DISEASE_MODULE}
+
+            def read_parameters(self, data_folder):
+                pass
+
+            def initialise_population(self, population):
+                pass
+
+            def initialise_simulation(self, sim):
+                sim.modules['HealthSystem'].schedule_hsi_event(HSI_Dummy(self, person_id=0),
+                                                               topen=self.sim.date,
+                                                               tclose=None,
+                                                               priority=0)
+
+        # Create a dummy HSI event:
+        class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
+            def __init__(self, module, person_id):
+                super().__init__(module, person_id=person_id)
+                self.TREATMENT_ID = 'Dummy'
+                self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'Under5OPD': 1})
+                self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})
+                self.ACCEPTED_FACILITY_LEVEL = '1a'
+
+            def apply(self, person_id, squeeze_factor):
+                # Request a consumable (either 0 or 1)
+                self.get_consumables(item_codes=self.module.rng.choice((0, 1), p=(0.5, 0.5)))
+
+                # Schedule another occurrence of itself in three days.
+                sim.modules['HealthSystem'].schedule_hsi_event(self,
+                                                               topen=self.sim.date + pd.DateOffset(days=3),
+                                                               tclose=None,
+                                                               priority=0)
+
+        # Set up simulation:
+        sim = Simulation(start_date=start_date, seed=seed, log_config={
+            'filename': 'tmpfile',
+            'directory': tmpdir,
+            'custom_levels': {
+                "tlo.methods.healthsystem": logging.INFO,
+                "tlo.methods.healthsystem.summary": logging.INFO
+            }
+        })
+
+        sim.register(
+            demography.Demography(resourcefilepath=resourcefilepath),
+            healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+            DummyModule(),
+            sort_modules=False,
+            check_all_dependencies=False
+        )
+        sim.make_initial_population(n=1000)
+
+        sim.simulate(end_date=end_date_of_simulation)
+        log = parse_log_file(sim.log_filepath)
+
+        return ('tlo.methods.healthsystem.summary' in log) and len(log['tlo.methods.healthsystem.summary'])
+
+    assert summary_logger_is_present(start_date + pd.DateOffset(years=1))
+
+
 def test_HealthSystemChangeParameters(seed, tmpdir):
     """Check that the event `HealthSystemChangeParameters` can change the internal parameters of the HealthSystem. And
     check that this is effectual in the case of consumables."""
