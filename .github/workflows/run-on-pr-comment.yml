@@ -88,7 +88,7 @@ jobs:
       if: always() && steps.has_permissions.outputs.result == 'true'
       uses: actions/github-script@v4
       with:
-        token: ${{ steps.get_comment_bot_token.outputs.token }}
+        github-token: ${{ steps.get_comment_bot_token.outputs.token }}
         script: |
           // There can be a delay between steps completing and this being reflected
           // in information queried from REST API, therefore we poll for the list of
