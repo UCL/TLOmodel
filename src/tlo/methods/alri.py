@@ -850,6 +850,9 @@ class Alri(Module):
         # Pointer to store the logging event used by this module
         self.logging_event = None
 
+        # store the treatment given at initial appointment
+        self.store_treatment_info = dict()
+
     def read_parameters(self, data_folder):
         """
         * Setup parameters values used by the module
@@ -1361,6 +1364,20 @@ class Alri(Module):
             antibiotic_provided=antibiotic_provided,
             oxygen_provided=oxygen_provided,
         )
+        # # for inpatients provide 2nd line IV antibiotic if 1st line failed
+        # if treatment_fails and antibiotic_provided == '1st_line_antibiotics':
+        #     if HSI_Alri_Treatment._has_staph_aureus():
+        #         second_line_available = HSI_Alri_Treatment._get_cons(
+        #             '2nd_line_Antibiotic_therapy_for_severe_staph_pneumonia')
+        #     else:
+        #         second_line_available = HSI_Alri_Treatment._get_cons('Ceftriaxone_therapy_for_severe_pneumonia')
+        #
+        #     if second_line_available:
+        #         treatment_fails = \
+        #             self.parameters['tf_2nd_line_antibiotic_for_severe_pneumonia'] > self.rng.random_sample()
+
+        # store the information of the first appointment
+        self.store_treatment_info = {'person_id': person_id, 'antibiotic_provided': antibiotic_provided}
 
         # Cancel death (if there is one) if the treatment does not fail (i.e. it works) and return indication of
         # sucesss of failure.
@@ -2444,7 +2461,8 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
 
     def _as_out_patient(self, facility_level):
         """Cast this HSI as an out-patient appointment."""
-        self.TREATMENT_ID = f'{self._treatment_id_stub}_Outpatient'
+        self.TREATMENT_ID = \
+            f'{self._treatment_id_stub}_Outpatient{"_Followup" if self.is_followup_following_treatment_failure else ""}'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
             ('ConWithDCSA' if facility_level == '0' else 'Under5OPD'): 1})
         self.ACCEPTED_FACILITY_LEVEL = facility_level
@@ -2502,12 +2520,13 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
 
     def _schedule_follow_up_following_treatment_failure(self):
         """Schedule a copy of this event to occur in 5 days time as a 'follow-up' appointment at this level
-        (if above "0") and as an in-patient."""
+        (if above "0") and as an in-patient (for most cases).
+        (rare outpatient at follow-up, only if no treatment was given at initial appointment)."""
         self.sim.modules['HealthSystem'].schedule_hsi_event(
             HSI_Alri_Treatment(
                 module=self.module,
                 person_id=self.target,
-                inpatient=True,
+                inpatient=self._is_as_in_patient,
                 facility_level=self.ACCEPTED_FACILITY_LEVEL if self.ACCEPTED_FACILITY_LEVEL != "0" else "1a",
                 is_followup_following_treatment_failure=True,
             ),
@@ -2890,14 +2909,39 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
             else:
                 _ = self._get_cons('Brochodilator_and_Steroids')
 
-    def do_on_follow_up_following_treatment_failure(self):
+    def _do_on_follow_up_following_treatment_failure(self):
         """Things to do for a patient who is having this HSI following a failure of an earlier treatment.
         A further drug will be used but this will have no effect on the chance of the person dying."""
 
-        if self._has_staph_aureus():
-            _ = self._get_cons('2nd_line_Antibiotic_therapy_for_severe_staph_pneumonia')
-        else:
-            _ = self._get_cons('Ceftriaxone_therapy_for_severe_pneumonia')
+        random_sample = self.module.rng.random_sample
+        p = self.module.parameters
+
+        # Ascertain the treatment according to the previous treatment failure
+        previous_treatment = self.module.store_treatment_info['antibiotic_provided']
+
+        # if previous_treatment == '':  # and imci assessment is non-severe
+        #     # provide oral antibiotics ad treat outpatient
+        #     antibiotic_indicated = self._get_cons('Amoxicillin_tablet_or_suspension_5days')
+        #     if antibiotic_indicated:
+        #         if p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%'] > random_sample():
+        #             self.module.cancel_death_and_schedule_cure(self.target)
+        #
+        # elif previous_treatment == '1st_line_antibiotics':
+        #     # provide 2nd line iv antibiotic
+        #     if self._has_staph_aureus():
+        #         antibiotic_indicated = self._get_cons('2nd_line_Antibiotic_therapy_for_severe_staph_pneumonia')
+        #     else:
+        #         antibiotic_indicated = self._get_cons('Ceftriaxone_therapy_for_severe_pneumonia')
+        #     if antibiotic_indicated:
+        #         if p['tf_2nd_line_antibiotic_for_severe_pneumonia'] > random_sample():
+        #             self.module.cancel_death_and_schedule_cure(self.target)
+        #
+        # elif previous_treatment in self.module.antibiotics:
+        #     self._refer_to_become_inpatient()
+        #     antibiotic_indicated = self._get_cons('1st_line_IV_antibiotics')
+        #     if antibiotic_indicated:
+        #         if p['tf_1st_line_antibiotic_for_severe_pneumonia'] > random_sample():
+        #             self.module.cancel_death_and_schedule_cure(self.target)
 
     def apply(self, person_id, squeeze_factor):
         """Assess and attempt to treat the person."""
