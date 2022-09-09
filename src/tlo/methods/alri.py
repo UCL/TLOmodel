@@ -127,7 +127,7 @@ class Alri(Module):
                        'cough_or_cold'}
 
     all_symptoms = {
-        'cough', 'difficult_breathing', 'cyanosis', 'fever', 'tachypnoea', 'chest_indrawing', 'danger_signs'
+        'cough', 'difficult_breathing', 'fever', 'tachypnoea', 'chest_indrawing', 'danger_signs'
     }
 
     # Declare the Alri complications:
@@ -567,18 +567,6 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'probability of chest indrawing in children with SpO2 between 90-92%'
                       ),
-        'prob_cyanosis_in_other_alri':
-            Parameter(Types.REAL,
-                      'probability of cyanosis in bronchiolitis or other alri'
-                      ),  # N.B. This is not used
-        'prob_cyanosis_in_pneumonia':
-            Parameter(Types.REAL,
-                      'probability of cyanosis in pneumonia'
-                      ),  # N.B. This is not used
-        'prob_cyanosis_in_SpO2<90%':
-            Parameter(Types.REAL,
-                      'probability of cyanosis when SpO2 < 90%'
-                      ),
 
         # Parameters governing the effects of vaccine ----------------
         'rr_Strep_pneum_VT_ALRI_with_PCV13_age<2y':
@@ -615,12 +603,6 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'Risk of treatment failure for a person with danger_signs_pneumonia being treated with first line'
                       'intravenous antibiotics'
-                      ),
-        'rr_tf_1st_line_antibiotics_if_cyanosis':
-            Parameter(Types.REAL,
-                      'Relative Risk for treatment failure for persons with danger_signs_pneumonia being treated with '
-                      'first line intravenous antibiotics if the person has the symptom of cyanosis.'
-                      'having that symptom.'
                       ),
         'rr_tf_1st_line_antibiotics_if_SpO2<90%':
             Parameter(Types.REAL,
@@ -1775,7 +1757,7 @@ class Models:
         probs = {
             symptom: p[f'prob_{symptom}_in_{disease_type}']
             for symptom in [
-                'cough', 'difficult_breathing', 'cyanosis', 'fever', 'tachypnoea',
+                'cough', 'difficult_breathing', 'fever', 'tachypnoea',
                 'chest_indrawing', 'danger_signs']
         }
 
@@ -1794,8 +1776,7 @@ class Models:
             if oxygen_saturation == '<90%':
                 probs = {
                     'danger_signs': p['prob_danger_signs_in_SpO2<90%'],
-                    'chest_indrawing': p['prob_chest_indrawing_in_SpO2<90%'],
-                    'cyanosis': p['prob_cyanosis_in_SpO2<90%']
+                    'chest_indrawing': p['prob_chest_indrawing_in_SpO2<90%']
                 }
             elif oxygen_saturation == '90-92%':
                 probs = {
@@ -1953,10 +1934,6 @@ class Models:
 
             # Baseline risk of treatment failure ( ref group: non-need oxygen or if oxygen is also provided)
             risk_tf_1st_line_antibiotics = p['tf_1st_line_antibiotic_for_severe_pneumonia']
-
-            # The effect of central cyanosis
-            # if 'cyanosis' in symptoms:
-            #     risk_tf_1st_line_antibiotics *= p['rr_tf_1st_line_antibiotics_if_cyanosis']
 
             if SpO2_level == "<90%":
                 risk_tf_1st_line_antibiotics *= p['rr_tf_1st_line_antibiotics_if_SpO2<90%']
