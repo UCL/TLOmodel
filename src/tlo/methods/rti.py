@@ -5294,8 +5294,7 @@ class RTI_No_Lifesaving_Medical_Intervention_Death_Event(Event, IndividualScopeE
                     # Track whether they are permanently disabled
                     df.at[person_id, 'rt_perm_disability'] = True
                     # Find the column and code where the permanent injury is stored
-                    # TODO: find out if using col set previously as loop variable above
-                    #       here is correct
+                    col = self.module.rti_find_injury_column(person_id, injury)[0]
                     df.loc[person_id, col] = "P" + injury
                     # schedule the recovery date for the permanent injury for beyond the end of the simulation (making
                     # it permanent)
