@@ -185,12 +185,14 @@ def treatment_efficacy(
 
     imci_symptom_based_classification = hsi._get_imci_classification_based_on_symptoms(
         child_is_younger_than_2_months=(age_exact_years < 2.0 / 12.0),
-        symptoms=symptoms,
+        symptoms=symptoms
     )
 
     ultimate_treatment = alri_module_with_perfect_treatment_and_diagnosis._ultimate_treatment_indicated_for_patient(
         classification_for_treatment_decision=classification_for_treatment_decision,
-        age_exact_years=age_exact_years
+        age_exact_years=age_exact_years,
+        use_oximeter=oximeter_available,
+        oxygen_saturation=oxygen_saturation,
     )
 
     # Decide which alri_module configuration to use:
@@ -560,19 +562,19 @@ if __name__ == "__main__":
         ]
     ]
 
-    # In all cases, confirm they have exactly the same treatment effectiveness when no oxygen is available.
-    assert (
-        diff_classification['treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_perfect_hw_dx']
-        ==
-        diff_classification['treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx']
-    ).all()
+    # # In all cases, confirm they have exactly the same treatment effectiveness when no oxygen is available.
+    # assert (
+    #     diff_classification['treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_perfect_hw_dx']
+    #     ==
+    #     diff_classification['treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx']
+    # ).all()
 
-    # ... but that the availability of oxygen improves treatment effectiveness when there is a diff in diagnosis.
-    assert (
-        diff_classification['treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx']
-        >
-        diff_classification['treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx']
-    ).all()
+    # # ... but that the availability of oxygen improves treatment effectiveness when there is a diff in diagnosis.
+    # assert (
+    #     diff_classification['treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx']
+    #     >
+    #     diff_classification['treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx']
+    # ).all()
 
     # Overall summary figure: Number of deaths in the cohort Deaths broken down by ( disease / oxygen_saturation) when
     # * No Treatment
@@ -583,6 +585,7 @@ if __name__ == "__main__":
     # accuracy
 
     disease_classification = table["classification_for_treatment_decision_with_oximeter_perfect_accuracy"]
+    # disease_classification = table['classification_for_treatment_decision_without_oximeter_perfect_accuracy']
     low_oxygen = (table["oxygen_saturation"] == "<90%").replace({True: 'SpO2<90%', False: "SpO2>=90%"})
     res = {
         "Perfect HW Dx Accuracy": {

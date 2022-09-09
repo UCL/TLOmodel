@@ -241,3 +241,37 @@ prop_total_ds_hypoxaemia_other_alri = total_ds_in_hypoxaemia_other_alri / tot_hy
 # proportion danger signs in hypoxaemia in all ALRI
 total_ds_in_hypoxaemia = df[['complications', 'symptoms']].apply(lambda x: 1 if ('hypoxaemia' in x[0] and 'danger_signs' in x[1]) else 0, axis=1).sum()
 prop_total_ds_hypoxaemia_alri = total_ds_in_hypoxaemia / tot_hypox_all_alri
+
+total_ds_in_spo2_90 = df[['oxygen_saturation', 'symptoms']].apply(lambda x: 1 if (x[0] == '<90%' and 'danger_signs' in x[1]) else 0, axis=1).sum()
+total_no_ds_spo2_90 = df[['oxygen_saturation', 'symptoms']].apply(lambda x: 1 if (x[0] == '<90%' and not 'danger_signs' in x[1]) else 0, axis=1).sum()
+total_SpO2_90 = df['oxygen_saturation'].apply(lambda x: 1 if '<90%' in x else 0).sum()
+prop_total_ds_in_spo2_90 = total_ds_in_spo2_90 / total_SpO2_90  # 0.44 --> this means only 44% of SpO2<90% displayed danger signs, while 56% do Not have danger signs
+
+
+total_danger_signs_and_SpO2_90 = df[['oxygen_saturation', 'symptoms']].apply(lambda x: 1 if (x[0] == '<90%' or 'danger_signs' in x[1]) else 0, axis=1).sum()
+prop_SpO2_90_in_all_ds_pneumo = total_SpO2_90 / total_danger_signs_and_SpO2_90  # 0.42
+prop_SpO2_90_with_ds_in_all_ds_pneumo = total_ds_in_spo2_90 / total_danger_signs_and_SpO2_90  # 0.1879
+prop_SpO2_90_without_ds_in_all_ds_pneumo = total_no_ds_spo2_90 / total_danger_signs_and_SpO2_90  # 0.237  ---> this means 23.7% of SpO2<90% without danger signs would not be detected by perfect hw performance
+
+total_danger_signs_and_without_SpO2_90 = df[['oxygen_saturation', 'symptoms']].apply(lambda x: 1 if (x[0] != '<90%' and 'danger_signs' in x[1]) else 0, axis=1).sum()
+prop_no_SpO2_90_in_all_ds_pneumo = total_danger_signs_and_without_SpO2_90 / total_danger_signs_and_SpO2_90  # 0.575
+
+# 0.188 (SpO2 with danger signs) + 0.237 (SpO2 without danger signs) + 0.575 (danger signs without SpO2) = 1
+
+total_cold = df['symptoms'].apply(lambda x: 1 if 'danger_signs' not in x and 'tachypnoea' not in x and 'chest_indrawing' not in x else 0).sum()
+prop_cold = total_cold / total_alri_cases
+
+total_cold_in_complications = df[['complications', 'symptoms']].apply(
+    lambda x: 1 if len(x[0]) != 0 and 'danger_signs' not in x[1] and 'tachypnoea'
+                   not in x[1] and 'chest_indrawing' not in x[1] else 0, axis=1).sum()
+
+prop_cold_in_complications = total_cold_in_complications / total_alri_complications  # 0.0408
+
+total_cold_in_hypoxaemia = df[['complications', 'symptoms']].apply(
+    lambda x: 1 if ('hypoxaemia' in x[0] and 'danger_signs' not in x[1] and 'tachypnoea'
+                   not in x[1] and 'chest_indrawing' not in x[1]) else 0, axis=1).sum()
+
+prop_cold_in_hypoxaemia = total_cold_in_hypoxaemia / tot_hypox_all_alri  # 0.043
+
+
+# todo: what is the ovrall treatement failure in danger signs pneumonia - check for spo2<90 vs >90%

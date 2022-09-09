@@ -30,7 +30,8 @@ resourcefilepath = Path("./resources")
 # Create name for log-file
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
-log_filename = outputpath / 'GBD_lri_comparison_50k_pop__2022-03-15T111444.log'
+log_filename = 'none'
+# log_filename = outputpath / 'GBD_lri_comparison_50k_pop__2022-03-15T111444.log'
 # <-- insert name of log file to avoid re-running the simulation
 
 if not os.path.exists(log_filename):
@@ -39,10 +40,10 @@ if not os.path.exists(log_filename):
 
     start_date = Date(2010, 1, 1)
     end_date = Date(2025, 12, 31)
-    popsize = 50000
+    popsize = 5000
 
     log_config = {
-        "filename": "GBD_lri_comparison_50k_pop",
+        "filename": "GBD_lri_comparison_5k_pop",
         "directory": "./outputs",
         "custom_levels": {
             "*": logging.WARNING,
