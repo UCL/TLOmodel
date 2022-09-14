@@ -12,8 +12,8 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
-from tlo.util import get_person_id_to_inherit_from
 from tlo.lm import LinearModel, LinearModelType, Predictor
+from tlo.util import get_person_id_to_inherit_from
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
