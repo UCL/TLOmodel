@@ -19,7 +19,7 @@ from tlo.methods.causes import (
     collect_causes_from_disease_modules,
     create_mappers_from_causes_to_label,
 )
-from tlo.util import create_age_range_lookup
+from tlo.util import create_age_range_lookup, get_person_id_to_inherit_from
 
 # Standard logger
 logger = logging.getLogger(__name__)
@@ -280,8 +280,9 @@ class Demography(Module):
 
         fraction_of_births_male = self.parameters['fraction_of_births_male'][self.sim.date.year]
 
-        # Determine characteristics that are inherited from mother (and if no mother, from a randomly selected person)
-        _id_inherit_from = mother_id if mother_id != -1 else rng.choice(df.index[df.is_alive])
+        # Determine characteristics that are inherited from mother (and if no mother,
+        # from a randomly selected person)
+        _id_inherit_from = get_person_id_to_inherit_from(child_id, mother_id, df, rng)
         _district_num_of_residence = df.at[_id_inherit_from, 'district_num_of_residence']
         _district_of_residence = df.at[_id_inherit_from, 'district_of_residence']
         _region_of_residence = df.at[_id_inherit_from, 'region_of_residence']

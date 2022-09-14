@@ -6,6 +6,8 @@ import pandas as pd
 from tlo import Date
 from tlo.analysis.utils import extract_results, get_scenario_outputs, summarize
 
+PREFIX_ON_FILENAME = '4'
+
 # Declare period for which the results will be generated (defined inclusively)
 TARGET_PERIOD = (Date(2015, 1, 1), Date(2019, 12, 31))
 
@@ -129,8 +131,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _fig.tight_layout()
         _fig.savefig(make_graph_file_name(_name_of_plot.replace('\n', '_').replace(' ', '_')))
         _fig.show()
+        plt.close(_fig)
 
-    make_graph_file_name = lambda stub: output_folder / f"{stub}.png"  # noqa: E731
+    make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}.png"  # noqa: E731
 
     simulation_usage = get_simulation_usage(results_folder)
 
