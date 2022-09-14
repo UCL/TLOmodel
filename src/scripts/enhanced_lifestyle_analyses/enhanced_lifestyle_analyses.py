@@ -298,7 +298,7 @@ class LifeStylePlots:
             plt.bar(new_df.index, cat_3, bottom=cat_1 + cat_2, color='g')
 
         plt.title(f"{self.en_props[_property]} category by age group")
-        plt.xlabel("Year")
+        plt.xlabel("Age group")
         plt.ylabel("age group proportions")
         plt.ylim(0, )
         plt.legend([f'cat_{c}' for c in categories], loc='upper right')
