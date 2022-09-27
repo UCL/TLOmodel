@@ -604,8 +604,8 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         df = population.props
 
         # Cause the death immediately for anyone that is older than the maximum age
-        over_max_age = df.index[df.is_alive & (df.age_years > MAX_AGE)]
-        for individual_id in over_max_age:
+        max_age_or_older = df.index[df.is_alive & (df.age_years >= MAX_AGE)]
+        for individual_id in max_age_or_older:
             self.module.do_death(individual_id=individual_id, cause='Other', originating_module=self.module)
 
         # Get the mortality schedule for now...
@@ -618,7 +618,7 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
                 'age_years', 'sex', 'prob_of_dying_before_next_poll']].copy()
 
         # get the population
-        alive = df.loc[df.is_alive & (df.age_years <= MAX_AGE), ['sex', 'age_years']].copy()
+        alive = df.loc[df.is_alive & (df.age_years < MAX_AGE), ['sex', 'age_years']].copy()
 
         # merge the population dataframe with the parameter dataframe to pick-up the death_rate for each person
         length_before_merge = len(alive)
