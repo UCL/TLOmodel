@@ -603,7 +603,7 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         # Get shortcut to main dataframe
         df = population.props
 
-        # Cause the death immediately for anyone that is older than the maximum age
+        # Cause the death immediately for anyone that the maximum age or older
         max_age_or_older = df.index[df.is_alive & (df.age_years >= MAX_AGE)]
         for individual_id in max_age_or_older:
             self.module.do_death(individual_id=individual_id, cause='Other', originating_module=self.module)
