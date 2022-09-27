@@ -608,9 +608,7 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         for individual_id in max_age_or_older:
             self.module.do_death(individual_id=individual_id, cause='Other', originating_module=self.module)
 
-        # Get the mortality schedule for now...
-        # - get the subset of mortality rates for this year.
-        # confirms that we go to the five year period that we are in, not the exact year.
+        # Get the mortality schedule for the five-year calendar period we are currently in.
         fallbackyear = int(math.floor(self.sim.date.year / 5) * 5)
 
         mort_risk = self.mort_risk_per_poll.loc[
