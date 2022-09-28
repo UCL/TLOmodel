@@ -28,10 +28,15 @@ except NameError:
     resourcefilepath = './resources'
 
 
-def get_events_run_and_scheduled(_sim) -> List:
+def get_events_run_and_scheduled(sim) -> List:
     """Returns a list of HSI_Events that have been run already or are scheduled to run."""
-    return [ev['HSI_Event'] for ev in _sim.modules['HealthSystem'].store_of_hsi_events_that_have_run] + \
-           [e[4].__class__.__name__ for e in _sim.modules['HealthSystem'].HSI_EVENT_QUEUE]
+    return [
+        event_details.event_name
+        for event_details in sim.modules['HealthSystem'].hsi_event_details
+    ] + [
+        type(event_queue_item.hsi_event).__name__ 
+        for event_queue_item in sim.modules['HealthSystem'].HSI_EVENT_QUEUE
+    ]
 
 
 def test_healthcareseeking_does_occur_from_symptom_that_does_give_healthcareseeking_behaviour(seed):
@@ -70,7 +75,7 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_healthcareseek
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, store_hsi_events_that_have_run=True),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, record_hsi_event_details=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  DummyDisease()
@@ -140,7 +145,7 @@ def test_healthcareseeking_does_not_occurs_from_symptom_that_do_not_give_healthc
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, store_hsi_events_that_have_run=True),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, record_hsi_event_details=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  DummyDisease()
@@ -210,7 +215,7 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_emergency_heal
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, store_hsi_events_that_have_run=True),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, record_hsi_event_details=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  DummyDisease()
@@ -251,7 +256,7 @@ def test_no_healthcareseeking_when_no_spurious_symptoms_and_no_disease_modules(s
     # Register the core modules including Chronic Syndrome and Mockitis -
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, store_hsi_events_that_have_run=True),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, record_hsi_event_details=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
@@ -279,7 +284,7 @@ def test_healthcareseeking_occurs_with_spurious_symptoms_only(seed):
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, store_hsi_events_that_have_run=True),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, record_hsi_event_details=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  )
@@ -320,7 +325,7 @@ def test_healthcareseeking_occurs_with_spurious_symptoms_and_disease_modules(see
     # Register the core modules including Chronic Syndrome and Mockitis -
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, store_hsi_events_that_have_run=True),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, record_hsi_event_details=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
@@ -375,7 +380,7 @@ def test_one_per_hsi_scheduled_per_day_when_emergency_and_non_emergency_symptoms
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, store_hsi_events_that_have_run=True),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, record_hsi_event_details=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath,
                                                                force_any_symptom_to_lead_to_healthcareseeking=True),
@@ -572,7 +577,7 @@ def test_same_day_healthcare_seeking_for_emergency_symptoms(seed, tmpdir):
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, store_hsi_events_that_have_run=True),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, record_hsi_event_details=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  DummyDisease(),
@@ -584,15 +589,10 @@ def test_same_day_healthcare_seeking_for_emergency_symptoms(seed, tmpdir):
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    # Open log and check that the 'HSI_GenericEmergencyFirstApptAtFacilityLevel1' was the only event to occur
-    # and that it occurred on the day that the symptom was imposed.
-    events_run = sim.modules['HealthSystem'].store_of_hsi_events_that_have_run
-
-    assert 1 == len(events_run)
-
-    only_event_that_ran = events_run[0]
-    assert 'HSI_GenericEmergencyFirstApptAtFacilityLevel1' == only_event_that_ran['HSI_Event']
-    assert date_symptom_is_imposed == only_event_that_ran['date']
+    # Check that the 'HSI_GenericEmergencyFirstApptAtFacilityLevel1' was the only event to occur
+    assert len(sim.modules['HealthSystem'].hsi_event_details) == 1
+    only_event_that_ran = sim.modules['HealthSystem'].hsi_event_details.pop().event_name
+    assert only_event_that_ran == 'HSI_GenericEmergencyFirstApptAtFacilityLevel1'
 
 
 def test_same_day_healthcare_seeking_when_using_force_healthcare_seeking(seed, tmpdir):
@@ -643,7 +643,7 @@ def test_same_day_healthcare_seeking_when_using_force_healthcare_seeking(seed, t
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, store_hsi_events_that_have_run=True),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, record_hsi_event_details=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath,
                                                                force_any_symptom_to_lead_to_healthcareseeking=True),
@@ -656,12 +656,7 @@ def test_same_day_healthcare_seeking_when_using_force_healthcare_seeking(seed, t
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    # Open log and check that the 'HSI_GenericFirstApptAtFacilityLevel0' was the only event to occur
-    # and that it occurred on the day that the symptom was imposed.
-    events_run = sim.modules['HealthSystem'].store_of_hsi_events_that_have_run
-
-    assert 1 == len(events_run)
-
-    only_event_that_ran = events_run[0]
-    assert 'HSI_GenericFirstApptAtFacilityLevel0' == only_event_that_ran['HSI_Event']
-    assert date_symptom_is_imposed == only_event_that_ran['date']
+    # Check that the 'HSI_GenericFirstApptAtFacilityLevel0' was the only event to occur
+    assert len(sim.modules['HealthSystem'].hsi_event_details) == 1
+    only_event_that_ran = sim.modules['HealthSystem'].hsi_event_details.pop().event_name
+    assert only_event_that_ran == 'HSI_GenericFirstApptAtFacilityLevel0'

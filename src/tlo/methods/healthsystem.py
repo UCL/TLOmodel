@@ -441,7 +441,6 @@ class HealthSystem(Module):
         use_funded_or_actual_staffing: Optional[str] = 'funded_plus',
         disable: bool = False,
         disable_and_reject_all: bool = False,
-        store_hsi_events_that_have_run: bool = False,
         record_hsi_event_details: bool = False,
         compute_squeeze_factor_to_district_level: bool = True,
     ):
@@ -471,8 +470,7 @@ class HealthSystem(Module):
             logging) and every HSI event runs.
         :param disable_and_reject_all: If ``True``, disable health system and no HSI
             events run
-        :param store_hsi_events_that_have_run: Convenience flag for debugging.
-        :param record_hsi_event_details: Whether to record details of HSI events used.
+        :param record_hsi_event_details: Whether to record details of HSI events run.
         :param compute_squeeze_factor_to_district_level: Whether to compute squeeze_factors to the district level, or
             the national level (which effectively pools the resources across all districts).
         """
@@ -514,13 +512,6 @@ class HealthSystem(Module):
         # Define the container for calls for health system interaction events
         self.HSI_EVENT_QUEUE = []
         self.hsi_event_queue_counter = 0  # Counter to help with the sorting in the heapq
-
-        # Check 'store_hsi_events_that_have_run': will store a running list of HSI events that have run
-        # (for debugging)
-        assert isinstance(store_hsi_events_that_have_run, bool)
-        self.store_hsi_events_that_have_run = store_hsi_events_that_have_run
-        if self.store_hsi_events_that_have_run:
-            self.store_of_hsi_events_that_have_run = list()
 
         # If record_hsi_event_details == True, a set will be built during the simulation
         # containing HSIEventDetails tuples corresponding to all HSI_Event instances
@@ -1294,19 +1285,6 @@ class HealthSystem(Module):
             )
 
             # Storage for the purpose of testing / documentation
-            if self.store_hsi_events_that_have_run:
-                self.store_of_hsi_events_that_have_run.append(
-                    {
-                        'HSI_Event': hsi_event.__class__.__name__,
-                        'date': self.sim.date,
-                        'TREATMENT_ID': hsi_event.TREATMENT_ID,
-                        'did_run': did_run,
-                        'Appt_Footprint': actual_appt_footprint,
-                        'Squeeze_Factor': _squeeze_factor,
-                        'Person_ID': hsi_event.target
-                    }
-                )
-
             if self.record_hsi_event_details:
                 self.hsi_event_details.add(
                     HSIEventDetails(
