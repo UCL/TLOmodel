@@ -34,7 +34,7 @@ def get_events_run_and_scheduled(sim) -> List:
         event_details.event_name
         for event_details in sim.modules['HealthSystem'].hsi_event_details
     ] + [
-        type(event_queue_item.hsi_event).__name__ 
+        type(event_queue_item.hsi_event).__name__
         for event_queue_item in sim.modules['HealthSystem'].HSI_EVENT_QUEUE
     ]
 
