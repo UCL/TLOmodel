@@ -524,7 +524,7 @@ def figure6_cons_use(results_folder: Path, output_folder: Path, resourcefilepath
     )
 
     fig, ax = plt.subplots()
-    name_of_plot = 'HSI Affected by Unavailable Consumables\n(by Short TREATMENT_ID)'
+    name_of_plot = 'HSI Affected by Unavailable Consumables (by Short TREATMENT_ID)'
     squarify_neat(
         sizes=treatment_id_affecting_by_missing_consumables.values,
         label=treatment_id_affecting_by_missing_consumables.index,
