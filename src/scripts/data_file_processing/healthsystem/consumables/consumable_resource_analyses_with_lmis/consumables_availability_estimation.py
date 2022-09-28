@@ -31,7 +31,7 @@ from tlo.methods.consumables import check_format_of_consumables_file
 
 # Set local Dropbox source
 path_to_dropbox = Path(  # <-- point to the TLO dropbox locally
-    # 'C:/Users/sm2511/Dropbox/Thanzi la Onse'
+    'C:/Users/sm2511/Dropbox/Thanzi la Onse'
     # '/Users/sejjj49/Dropbox/Thanzi la Onse'
     # 'C:/Users/tmangal/Dropbox/Thanzi la Onse'
 )
@@ -538,7 +538,7 @@ fac_levels = {'0', '1a', '1b', '2', '3', '4'}
 
 sf = stkout_df[['item_code', 'month', 'district', 'fac_type_tlo', 'available_prop']].dropna()
 sf.loc[sf.month == 'Aggregate', 'month'] = 'January'  # Assign arbitrary month to data only available at aggregate level
-sf.loc[sf.district == 'Aggregate', 'district'] = 'Balaka'  \
+sf.loc[sf.district == 'Aggregate', 'district'] = 'Balaka' \
     # Assign arbitrary district to data only available at # aggregate level
 sf = sf.drop(index=sf.index[(sf.month == 'NA') | (sf.district == 'NA')])
 sf.month = sf.month.map(dict(zip(calendar.month_name[1:13], range(1, 13))))
@@ -696,7 +696,6 @@ assert not pd.isnull(full_set_interpolated).any().any()
 # --- Check that the exported file has the properties required of it by the model code. --- #
 check_format_of_consumables_file(df=full_set_interpolated.reset_index(), fac_ids=fac_ids)
 
-
 # %%
 # Save
 full_set_interpolated.reset_index().to_csv(
@@ -729,36 +728,81 @@ calibration_df['difference'] = (calibration_df['available_prop_hhfa'] - calibrat
 # Summary results by level of care
 calibration_df.groupby(['fac_type_tlo'])[['available_prop', 'available_prop_hhfa', 'difference']].mean()
 
-# Plots by consumable
+# Plots
 size = 10
 calibration_df['item_code'] = calibration_df['item_code'].astype(str)
-calibration_df['labels'] = calibration_df['consumable_name_tlo'].str[:5]
+calibration_df['labels'] = calibration_df['consumable_name_tlo'].str[:10]
 
-cond = calibration_df['fac_type_tlo'] == 'Facility_level_1a'
-ax = calibration_df[cond].plot.line(x='labels', y=['available_prop', 'available_prop_hhfa'])
-ax.set_xticks(np.arange(len(calibration_df[cond]['labels'])))
-ax.set_xticklabels(calibration_df[cond]['labels'], rotation=90, fontsize=7)
-plt.title('Level 1a', fontsize=size, weight="bold")
-# plt.savefig(outputfilepath / 'consumableavailability_calibration_level1a.png')
 
-cond = calibration_df['fac_type_tlo'] == 'Facility_level_1b'
-ax = calibration_df[cond].plot.line(x='labels', y=['available_prop', 'available_prop_hhfa'])
-ax.set_xticks(np.arange(len(calibration_df[cond]['labels'])))
-ax.set_xticklabels(calibration_df[cond]['labels'], rotation=90, fontsize=7)
-plt.title('Level 1b', fontsize=size, weight="bold")
-# plt.savefig(outputfilepath / 'consumableavailability_calibration_level1b.png')
+# Define function to draw calibration plots at different levels of disaggregation
+def calibration_plot(level_of_disaggregation, group_by_var, colour):
+    calibration_df_agg = calibration_df.groupby([group_by_var],
+                                                as_index=False).agg({'available_prop': 'mean',
+                                                                     'available_prop_hhfa': 'mean',
+                                                                     'fac_type_tlo': 'first',
+                                                                     'consumable_name_tlo': 'first'})
+    calibration_df_agg['labels'] = calibration_df_agg[level_of_disaggregation]
 
-cond = calibration_df['fac_type_tlo'] == 'Facility_level_2'
-ax = calibration_df[cond].plot.line(x='labels', y=['available_prop', 'available_prop_hhfa'])
-ax.set_xticks(np.arange(len(calibration_df[cond]['labels'])))
-ax.set_xticklabels(calibration_df[cond]['labels'], rotation=90, fontsize=7)
-plt.title('Level 2', fontsize=size, weight="bold")
-plt.show()
-# plt.savefig(outputfilepath / 'consumableavailability_calibration_level2.png')
+    ax = calibration_df_agg.plot.scatter('available_prop', 'available_prop_hhfa', c=colour)
+    ax.axline([0, 0], [1, 1])
+    for i, label in enumerate(calibration_df_agg['labels']):
+        plt.annotate(label,
+                     (calibration_df_agg['available_prop'][i] + 0.005,
+                      calibration_df_agg['available_prop_hhfa'][i] + 0.005),
+                     fontsize=6, rotation=38)
+    if level_of_disaggregation != 'aggregate':
+        plt.title('Disaggregated by ' + level_of_disaggregation, fontsize=size, weight="bold")
+    else:
+        plt.title('Aggregate', fontsize=size, weight="bold")
+    plt.xlabel('Pr(drug available) as per TLO model')
+    plt.ylabel('Pr(drug available) as per HHFA')
+    save_name = 'calibration_plots/calibration_to_hhfa_' + level_of_disaggregation + '.png'
+    plt.savefig(path_to_files_in_the_tlo_dropbox / save_name)
 
-cond = calibration_df['fac_type_tlo'] == 'Facility_level_3'
-ax = calibration_df[cond].plot.line(x='labels', y=['available_prop', 'available_prop_hhfa'])
-ax.set_xticks(np.arange(len(calibration_df[cond]['labels'])))
-ax.set_xticklabels(calibration_df[cond]['labels'], rotation=90, fontsize=7)
-plt.title('Level 3', fontsize=size, weight="bold")
-# plt.savefig(outputfilepath / 'consumableavailability_calibration_level3.png')
+
+# 8.2.1 Aggregate plot
+calibration_df['aggregate'] = 'aggregate'
+level_of_disaggregation = 'aggregate'
+colour = 'red'
+group_by_var = 'aggregate'
+calibration_plot(level_of_disaggregation, group_by_var, colour)
+
+# 8.2.2 Plot by facility level
+level_of_disaggregation = 'fac_type_tlo'
+group_by_var = 'fac_type_tlo'
+colour = 'orange'
+calibration_plot(level_of_disaggregation, group_by_var, colour)
+
+# 8.2.3 Plot by item
+level_of_disaggregation = 'consumable_name_tlo'
+group_by_var = 'consumable_name_tlo'
+colour = 'yellow'
+calibration_plot(level_of_disaggregation, group_by_var, colour)
+
+
+# 8.2.4 Plot by item and facility level
+def calibration_plot_by_level(fac_type):
+    cond_fac_type = calibration_df['fac_type_tlo'] == fac_type
+    calibration_df_by_level = calibration_df[cond_fac_type].reset_index()
+    plt.scatter(calibration_df_by_level['available_prop'],
+                calibration_df_by_level['available_prop_hhfa'])
+    plt.axline([0, 0], [1, 1])
+    for i, label in enumerate(calibration_df_by_level['labels']):
+        plt.annotate(label, (calibration_df_by_level['available_prop'][i] + 0.005,
+                             calibration_df_by_level['available_prop_hhfa'][i] + 0.005),
+                     fontsize=6, rotation=27)
+    plt.title(fac_type, fontsize=size, weight="bold")
+    plt.xlabel('Pr(drug available) as per TLO model')
+    plt.ylabel('Pr(drug available) as per HHFA')
+
+
+fig = plt.figure(figsize=(22, 22))
+plt.subplot(421)
+calibration_plot_by_level(calibration_df['fac_type_tlo'].unique()[0])
+plt.subplot(422)
+calibration_plot_by_level(calibration_df['fac_type_tlo'].unique()[1])
+plt.subplot(423)
+calibration_plot_by_level(calibration_df['fac_type_tlo'].unique()[2])
+plt.subplot(424)
+calibration_plot_by_level(calibration_df['fac_type_tlo'].unique()[3])
+plt.savefig(path_to_files_in_the_tlo_dropbox / 'calibration_plots/calibration_to_hhfa_fac_type_and_consumable.png')

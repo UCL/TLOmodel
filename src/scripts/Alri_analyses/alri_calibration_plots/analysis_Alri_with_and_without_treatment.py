@@ -18,6 +18,7 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
+    simplified_births,
     symptommanager,
 )
 
@@ -43,7 +44,7 @@ popsize = 5000
 for label, service_avail in scenarios.items():
 
     log_config = {
-        "filename": "alri_with_treatment",
+        "filename": "alri_with_treatment_and_without_treatment",
         "directory": "./outputs",
         "custom_levels": {
             "*": logging.WARNING,
@@ -51,22 +52,44 @@ for label, service_avail in scenarios.items():
             "tlo.methods.demography": logging.INFO,
         }
     }
+
+    if service_avail == []:
+        _disable = False
+        _disable_and_reject_all = True
+    else:
+        _disable = True
+        _disable_and_reject_all = False
+
+    # add file handler for the purpose of logging
     sim = Simulation(start_date=start_date, log_config=log_config, show_progress_bar=True)
 
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath,
+                                                      force_any_symptom_to_lead_to_healthcareseeking=True),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                  disable=_disable,
+                                  disable_and_reject_all=_disable_and_reject_all),
 
         alri.Alri(resourcefilepath=resourcefilepath),
         alri.AlriPropertiesOfOtherModules()
     )
 
     sim.make_initial_population(n=popsize)
+
+    # Assume perfect sensitivity in hw classification
+    p = sim.modules['Alri'].parameters
+    p['sensitivity_of_classification_of_fast_breathing_pneumonia_facility_level0'] = 1.0
+    p['sensitivity_of_classification_of_danger_signs_pneumonia_facility_level0'] = 1.0
+    p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level1'] = 1.0
+    p['sensitivity_of_classification_of_severe_pneumonia_facility_level1'] = 1.0
+    p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level2'] = 1.0
+    p['sensitivity_of_classification_of_severe_pneumonia_facility_level2'] = 1.0
+
     sim.simulate(end_date=end_date)
 
     # Save the full set of results:
@@ -148,8 +171,10 @@ for column_of_interest in inc_by_pathogen[list(inc_by_pathogen.keys())[0]].colum
 # Plot death rates by year: across the scenarios
 data = {}
 for label in deaths.keys():
-    data.update({label: deaths[label]})
-pd.concat(data, axis=1).plot.bar()
-plt.title('Number of Deaths Due to ALRI')
+    data.update({label: deaths[label].mean()})
+
+plt.bar(data.keys(), data.values(), align='center')
+plt.title(f'Mean number of deaths from {start_date.year} to {end_date.year}')
+plt.tight_layout()
 plt.savefig(outputpath / ("ALRI_deaths_by_scenario" + datestamp + ".pdf"), format='pdf')
 plt.show()

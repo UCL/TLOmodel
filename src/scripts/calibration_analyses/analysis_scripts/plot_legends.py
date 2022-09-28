@@ -15,6 +15,8 @@ from tlo.analysis.utils import (
     order_of_short_treatment_ids,
 )
 
+PREFIX_ON_FILENAME = '0'
+
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Plot the legend for (Short) TREATMENT_ID and (Coarse) APPT_TYPE, which are used in the standard plots."""
@@ -26,7 +28,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.legend(fontsize=14, ncol=2, loc='center')
         ax.axis('off')
         ax.set_title(title, fontsize=14)
-        fig.savefig(output_folder / f"{name_of_plot.replace(' ', '_')}.png")
+        fig.savefig(output_folder / f"{PREFIX_ON_FILENAME}_{title.replace(' ', '_')}.png")
         return fig, ax
 
     # %% Short TREATMENT_ID
@@ -34,14 +36,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     short_treatment_ids = sorted(x, key=order_of_short_treatment_ids)
 
-    name_of_plot = "Colormap for Short TREATMENT_ID"
     fig, ax = plot_legend(
         labels=[_label for _label in short_treatment_ids],
         colors=[get_color_short_treatment_id(x) for x in short_treatment_ids],
-        title=name_of_plot,
+        title="TREATMENT_ID (Short)",
     )
     fig.tight_layout()
     fig.show()
+    plt.close(fig)
 
     # %% Coarse Appt Type
     coarse_appt_types = sorted(
@@ -51,24 +53,24 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         key=order_of_coarse_appt
     )
 
-    name_of_plot = "Colormap for Coarse Appointment Types"
     fig, ax = plot_legend(
         labels=coarse_appt_types,
         colors=[get_color_coarse_appt(x) for x in coarse_appt_types],
-        title=name_of_plot,
+        title="Appointment Types (Coarse)",
     )
     fig.show()
+    plt.close(fig)
 
     # %% Cause of Death Labels
     all_labels = _define_cause_of_death_labels()
 
-    name_of_plot = "Colormap for Cause-of-Death Labels"
     fig, ax = plot_legend(
         labels=all_labels.index,
         colors=all_labels.values,
-        title=name_of_plot,
+        title="Cause-of-Death Labels",
     )
     fig.show()
+    plt.close(fig)
 
 
 if __name__ == "__main__":
