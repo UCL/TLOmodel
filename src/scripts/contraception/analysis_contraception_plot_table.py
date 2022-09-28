@@ -30,18 +30,18 @@ contraceptives_order = ['pill', 'IUD', 'injections', 'implant', 'male_condom',
 # => running time: 7.15e-06 s until analysis, 27.7 s loading the log, 22 mins
 # each analysis; total time: 42.5 mins
 # ##### '2022-09-10T181844'
-# outputFile = 'contraception_analysis__' + datestamp1_log + '.log'
+# logFile_xx = 'contraception_analysis__' + datestamp_xx_log + '.log'
 # => cons_availability = "all"
 # => start_date = Date(2010, 1, 1); end_date = Date(2099, 12, 31)
 # seed = 0
 # and pop_size = 20 => running time: ~17s
 # ##### '2022-08-29T160006'
-# outputFile = 'contraception_analysis__' + datestamp1_log + '.log'
+# logFile_xx = 'contraception_analysis__' + datestamp_xx_log + '.log'
 # => cons_availability = "default"
 # => start_date = Date(2010, 1, 1); end_date = Date(2099, 12, 31)
 # it is prepared so it can be run max to Date(2099, 12, 31), no longer
 # seed = 0
-# and pop_size = 20  # TODO: need data simulated with bigger population, 50000 or more?
+# and pop_size = 20
 ################################################################################
 
 
@@ -113,8 +113,6 @@ if not ('use_output' in locals() or 'use_output' in globals()):
 
 # TODO: finish
 
-# TODO: Methods in a particular order.
-
 # TODO: Remove the underscores from the names of contraception methods
 
 # TODO: Footnote marks manually into the table in the manuscript, at least so
@@ -182,8 +180,10 @@ use_costs_table_df = combine_use_costs_with_without_interv(
 print("TABLE")
 fullprint(use_costs_table_df)
 
-output_file = r"outputs/output_table_" + use_output + "-use_costs_" + "test" + ".xlsx"
-writer = pd.ExcelWriter(output_file)
+output_table_file = r"outputs/output_table_" + use_output + "-use_costs" +\
+                    "__" + datestamp_without_log + "_" + datestamp_with_log +\
+                    ".xlsx"
+writer = pd.ExcelWriter(output_table_file)
 # Mean use rounded to two decimals for the table
 use_costs_table_df.to_excel(writer, index_label=use_costs_table_df.columns.name)
 
