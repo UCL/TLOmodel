@@ -175,7 +175,9 @@ def get_details_of_defined_hsi_events(
                         module_name=tlo_module_class.__name__,
                         treatment_id=hsi_event.TREATMENT_ID,
                         facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL,
-                        appt_footprint=tuple(hsi_event.EXPECTED_APPT_FOOTPRINT),
+                        appt_footprint=tuple(
+                            sorted(hsi_event.EXPECTED_APPT_FOOTPRINT.items())
+                        ),
                         beddays_footprint=tuple(
                             sorted(hsi_event.BEDDAYS_FOOTPRINT.items())
                         ),
@@ -248,7 +250,9 @@ def _format_facility_level(facility_level):
 
 
 def _format_appt_footprint(appt_footprint, inline_code_formatter):
-    return ', '.join(f'{inline_code_formatter(a)}' for a in appt_footprint)
+    return ', '.join(
+        f'{inline_code_formatter(appt_type)}' for appt_type, _ in appt_footprint
+    )
 
 
 def _format_beddays_footprint(beddays_footprint, inline_code_formatter):

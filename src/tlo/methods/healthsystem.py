@@ -56,7 +56,7 @@ class HSIEventDetails(NamedTuple):
     module_name: str
     treatment_id: str
     facility_level: Optional[str]
-    appt_footprint: Tuple[str]
+    appt_footprint: Tuple[Tuple[str, int]]
     beddays_footprint: Tuple[Tuple[str, int]]
 
 
@@ -550,6 +550,9 @@ class HealthSystem(Module):
 
         # Create counter for the running total of footprint of all the HSIs being run today
         self.running_total_footprint: Counter = Counter()
+
+        # Counter for binning details of HSI events run
+        self._hsi_event_counts = Counter()
 
     def read_parameters(self, data_folder):
 
@@ -1273,65 +1276,64 @@ class HealthSystem(Module):
         else:
             # Individual HSI-Event
             _squeeze_factor = squeeze_factor if squeeze_factor != np.inf else 100.0
-
-            self.write_to_hsi_log(
-                treatment_id=hsi_event.TREATMENT_ID,
-                number_by_appt_type_code=actual_appt_footprint,
-                person_id=hsi_event.target,
-                squeeze_factor=_squeeze_factor,
-                did_run=did_run,
-                facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL,
-                facility_id=hsi_event.facility_info.id,
+            appt_footprint = (
+                getattr(hsi_event, 'EXPECTED_APPT_FOOTPRINT', {})
+                if actual_appt_footprint is None else
+                actual_appt_footprint
             )
-
-            # Storage for the purpose of testing / documentation
-            if self.record_hsi_event_details:
-                self.hsi_event_details.add(
-                    HSIEventDetails(
-                        event_name=type(hsi_event).__name__,
-                        module_name=type(hsi_event.module).__name__,
-                        treatment_id=hsi_event.TREATMENT_ID,
-                        facility_level=getattr(
-                            hsi_event, 'ACCEPTED_FACILITY_LEVEL', None
-                        ),
-                        appt_footprint=(
-                            tuple(actual_appt_footprint)
-                            if actual_appt_footprint is not None
-                            else tuple(getattr(hsi_event, 'EXPECTED_APPT_FOOTPRINT', {}))
-                        ),
-                        beddays_footprint=tuple(sorted(hsi_event.BEDDAYS_FOOTPRINT.items()))
+            event_details = HSIEventDetails(
+                event_name=type(hsi_event).__name__,
+                module_name=type(hsi_event.module).__name__,
+                treatment_id=hsi_event.TREATMENT_ID,
+                facility_level=getattr(
+                    hsi_event, 'ACCEPTED_FACILITY_LEVEL', None
+                ),
+                appt_footprint=tuple(sorted(appt_footprint.items())),
+                beddays_footprint=tuple(
+                    sorted(
+                        (k, v) for k, v in hsi_event.BEDDAYS_FOOTPRINT.items() if v > 0
                     )
                 )
+            )
+            self.write_to_hsi_log(
+                event_details=event_details,
+                person_id=hsi_event.target,
+                facility_id=hsi_event.facility_info.id,
+                squeeze_factor=_squeeze_factor,
+                did_run=did_run,
+            )
+            # Storage for the purpose of testing / documentation
+            if self.record_hsi_event_details:
+                self.hsi_event_details.add(event_details)
 
-    def write_to_hsi_log(self,
-                         treatment_id,
-                         number_by_appt_type_code,
-                         person_id,
-                         squeeze_factor,
-                         did_run,
-                         facility_level,
-                         facility_id,
-                         ):
+    def write_to_hsi_log(
+        self,
+        event_details: HSIEventDetails,
+        person_id: int,
+        facility_id: Optional[int],
+        squeeze_factor: float,
+        did_run: bool,
+    ):
         """Write the log `HSI_Event` and add to the summary counter."""
-
-        logger.info(key="HSI_Event",
-                    data={
-                        'TREATMENT_ID': treatment_id,
-                        'Number_By_Appt_Type_Code': number_by_appt_type_code,
-                        'Person_ID': person_id,
-                        'Squeeze_Factor': squeeze_factor,
-                        'did_run': did_run,
-                        'Facility_Level': facility_level if facility_level is not None else -99,
-                        'Facility_ID': facility_id if facility_id is not None else -99,
-                    },
-                    description="record of each HSI event"
-                    )
-
+        logger.info(
+            key="HSI_Event",
+            data={
+                'TREATMENT_ID': event_details.treatment_id,
+                'Number_By_Appt_Type_Code': dict(event_details.appt_footprint),
+                'Person_ID': person_id,
+                'Squeeze_Factor': squeeze_factor,
+                'did_run': did_run,
+                'Facility_Level': event_details.facility_level if event_details.facility_level is not None else -99,
+                'Facility_ID': facility_id if facility_id is not None else -99,
+            },
+            description="record of each HSI event"
+        )
         if did_run:
+            self._hsi_event_counts[event_details] += 1
             self._summary_counter.record_hsi_event(
-                treatment_id=treatment_id,
-                appt_footprint=number_by_appt_type_code,
-                level=facility_level,
+                treatment_id=event_details.treatment_id,
+                appt_footprint=event_details.appt_footprint,
+                level=event_details.facility_level,
             )
 
     def log_current_capabilities_and_usage(self):
@@ -1430,6 +1432,18 @@ class HealthSystem(Module):
     def on_end_of_day(self) -> None:
         """Do jobs to be done at the end of the day (after all HSI run)"""
         self.bed_days.on_end_of_day()
+
+    def on_end_of_month(self) -> None:
+        """Do jobs to be done at the end of the month (after all HSI run)"""
+        logger_summary.info(
+            key="hsi_event_counts",
+            description="Counts of the HSI events that have run in this calendar month.",
+            data=[
+                {"event_details": event_details._asdict(), "count": count}
+                for event_details, count in self._hsi_event_counts.items()
+            ],
+        )
+        self._hsi_event_counts.clear()
 
     def on_end_of_year(self) -> None:
         """Write to log the current states of the summary counters and reset them."""
@@ -1600,8 +1614,12 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(days=1), priority=Priority.END_OF_DAY)
 
     @staticmethod
-    def _is_today_last_day_of_the_year(date):
+    def _is_last_day_of_the_year(date):
         return (date.month == 12) and (date.day == 31)
+
+    @staticmethod
+    def _is_last_day_of_the_month(date):
+        return date.month != (date + pd.DateOffset(days=1)).month
 
     def _get_events_due_today(self,) -> Tuple[List, List]:
         """Interrogate the HSI_EVENT queue object to remove from it the events due today, and to return these in two
@@ -1688,13 +1706,18 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         if len(inpatient_appts):
             for _fac_id, _inpatient_appts in inpatient_appts.items():
                 self.module.write_to_hsi_log(
-                    treatment_id='Inpatient_Care',
-                    number_by_appt_type_code=dict(_inpatient_appts),
+                    event_details=HSIEventDetails(
+                        event_name='Inpatient_Care',
+                        module_name='HealthSystem',
+                        treatment_id='Inpatient_Care',
+                        facility_level=self.module._facility_by_facility_id[_fac_id].level,
+                        appt_footprint=tuple(sorted(_inpatient_appts.items())),
+                        beddays_footprint=()
+                    ),
                     person_id=-1,
+                    facility_id=_fac_id,
                     squeeze_factor=0.0,
                     did_run=True,
-                    facility_level=self.module._facility_by_facility_id[_fac_id].level,
-                    facility_id=_fac_id,
                 )
 
         # Restart the total footprint of all calls today, beginning with those due to existing in-patients.
@@ -1738,8 +1761,12 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         # Trigger jobs to be done at the end of the day (after all HSI run)
         self.module.on_end_of_day()
 
-        # Do activities that are required at end of year (if today is the last day of the year)
-        if self._is_today_last_day_of_the_year(self.sim.date):
+        # Do activities that are required at end of month (if last day of the month)
+        if self._is_last_day_of_the_month(self.sim.date):
+            self.module.on_end_of_month()
+
+        # Do activities that are required at end of year (if last day of the year)
+        if self._is_last_day_of_the_year(self.sim.date):
             self.module.on_end_of_year()
 
 # ---------------------------------------------------------------------------
@@ -1769,9 +1796,9 @@ class HealthSystemSummaryCounter:
         self._treatment_ids[treatment_id] += 1
 
         # Count each type of appointment:
-        for _appt_type, _number in appt_footprint.items():
-            self._appts[_appt_type] += _number
-            self._appts_by_level[level][_appt_type] += _number
+        for appt_type, number in appt_footprint:
+            self._appts[appt_type] += number
+            self._appts_by_level[level][appt_type] += number
 
     def record_hs_status(self, fraction_time_used_across_all_facilities: float) -> None:
         """Record a current status metric of the HealthSystem."""
