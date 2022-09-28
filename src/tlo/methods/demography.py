@@ -19,7 +19,7 @@ from tlo.methods.causes import (
     collect_causes_from_disease_modules,
     create_mappers_from_causes_to_label,
 )
-from tlo.util import create_age_range_lookup
+from tlo.util import create_age_range_lookup, get_person_id_to_inherit_from
 
 # Standard logger
 logger = logging.getLogger(__name__)
@@ -280,8 +280,9 @@ class Demography(Module):
 
         fraction_of_births_male = self.parameters['fraction_of_births_male'][self.sim.date.year]
 
-        # Determine characteristics that are inherited from mother (and if no mother, from a randomly selected person)
-        _id_inherit_from = mother_id if mother_id != -1 else rng.choice(df.index[df.is_alive])
+        # Determine characteristics that are inherited from mother (and if no mother,
+        # from a randomly selected person)
+        _id_inherit_from = get_person_id_to_inherit_from(child_id, mother_id, df, rng)
         _district_num_of_residence = df.at[_id_inherit_from, 'district_num_of_residence']
         _district_of_residence = df.at[_id_inherit_from, 'district_of_residence']
         _region_of_residence = df.at[_id_inherit_from, 'region_of_residence']
@@ -602,14 +603,12 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         # Get shortcut to main dataframe
         df = population.props
 
-        # Cause the death immediately for anyone that is older than the maximum age
-        over_max_age = df.index[df.is_alive & (df.age_years > MAX_AGE)]
-        for individual_id in over_max_age:
+        # Cause the death immediately for anyone that the maximum age or older
+        max_age_or_older = df.index[df.is_alive & (df.age_years >= MAX_AGE)]
+        for individual_id in max_age_or_older:
             self.module.do_death(individual_id=individual_id, cause='Other', originating_module=self.module)
 
-        # Get the mortality schedule for now...
-        # - get the subset of mortality rates for this year.
-        # confirms that we go to the five year period that we are in, not the exact year.
+        # Get the mortality schedule for the five-year calendar period we are currently in.
         fallbackyear = int(math.floor(self.sim.date.year / 5) * 5)
 
         mort_risk = self.mort_risk_per_poll.loc[
@@ -617,15 +616,14 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
                 'age_years', 'sex', 'prob_of_dying_before_next_poll']].copy()
 
         # get the population
-        alive = df.loc[df.is_alive & (df.age_years <= MAX_AGE), ['sex', 'age_years']].copy()
+        alive = df.loc[df.is_alive & (df.age_years < MAX_AGE), ['sex', 'age_years']].copy()
 
         # merge the population dataframe with the parameter dataframe to pick-up the death_rate for each person
-        # (where there is no entry [the person is older than the data provides for] fill this with 1.0)
         length_before_merge = len(alive)
-        alive = alive.merge(mort_risk,
-                            left_on=['age_years', 'sex'],
-                            right_on=['age_years', 'sex'],
-                            how='left').fillna(1.0)
+        alive = alive.reset_index().merge(mort_risk,
+                                          left_on=['age_years', 'sex'],
+                                          right_on=['age_years', 'sex'],
+                                          how='inner').set_index('person')
         assert length_before_merge == len(alive)
 
         # flipping the coin to determine if this person will die
