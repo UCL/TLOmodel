@@ -34,7 +34,7 @@ contraceptives_order = ['pill', 'IUD', 'injections', 'implant', 'male_condom',
 # => cons_availability = "all"
 # => start_date = Date(2010, 1, 1); end_date = Date(2099, 12, 31)
 # seed = 0
-# and pop_size = 20 => running time: ~17s
+# and pop_size = 20 => running time: ~12.13467526435852 s (incl. only one analysis, no figs)
 # ##### '2022-08-29T160006'
 # logFile_xx = 'contraception_analysis__' + datestamp_xx_log + '.log'
 # => cons_availability = "default"
