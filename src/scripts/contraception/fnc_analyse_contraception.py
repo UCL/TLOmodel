@@ -217,43 +217,48 @@ def analyse_contraception(in_datestamp, in_log_file,
                 (in_df_data['year'] < in_l_time_period_start[-1])
             ].copy()
 
-        def assign_time_period(in_l_time_period_start, in_l_year):
+        def assign_time_period(in_l_time_period_start, in_dfcol_year):
             """
             Assigns a time period to each individual record, according to the
             list of time period starts (in_l_time_period_start) and the years
-            when the records were performed (in_l_year). All records in input
-            should be within these years.
+            when the records were performed (in_dfcol_year). All records in
+            input should be within these years.
 
             :param in_l_time_period_start: list of time period starts, dividing
-               individual time periods
-            :param in_l_year: list of years when the records were performed
-            :return: List of time periods to which the records belong.
+                individual time periods
+            :param in_dfcol_year: a column of years when the records were
+                performed
+            :return: Time periods to which the records belong.
             """
-
-            in_l_year = list(map(int, in_l_year))
             # time period starts should be ordered
-            assert all(in_l_time_period_start[i] <= in_l_time_period_start[i+1]
+            assert all(in_l_time_period_start[i] <= in_l_time_period_start[i + 1]
                        for i in range(len(in_l_time_period_start) - 1))
             # # all records in input should be from the required time periods
             # assert all((in_l_time_period_start[0] <= in_l_year[j]) &
             #            (in_l_year[j] < in_l_time_period_start[-1])
             #            for j in range(len(in_l_year))
             #            )
-            l_time_period = []
-            for y in in_l_year:
-                time_period_i = next(i for i, v in enumerate(in_l_time_period_start) if v > y)
-                l_time_period.append(
-                    str(in_l_time_period_start[time_period_i-1]) +
-                    "-" + str(in_l_time_period_start[time_period_i]-1)
-                )
-            return l_time_period
+
+            def determine_tp(in_in_year):
+                """
+                Assigns to a year a time period to which the year belongs
+                according to the list of time period starts
+                (in_l_time_period_start)
+                :param in_in_year: a year when the record was performed
+                :return: A time period to which the record belongs.
+                """
+                time_period_pos = next(i for i, v in enumerate(in_l_time_period_start) if v > in_in_year) - 1
+                return str(in_l_time_period_start[time_period_pos]) +\
+                       "-" + str(in_l_time_period_start[time_period_pos+1] - 1)
+
+            return in_dfcol_year.apply(determine_tp)
 
         def create_time_period_data(in_l_time_period_start, in_df):
             tp_df =\
                 keep_data_required_time_period(in_l_time_period_start, in_df)
 
             tp_df['Time_Period'] =\
-                assign_time_period(in_l_time_period_start, tp_df.loc[:, 'year'])
+                assign_time_period(in_l_time_period_start, tp_df['year'])
 
             return tp_df
 
