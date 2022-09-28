@@ -1022,7 +1022,7 @@ class RTI(Module):
         **{
             f'rt_injury_{injury_index}': Property(
                 Types.CATEGORICAL,
-                'Codes for injury {injury_index} from RTI',
+                f'Codes for injury {injury_index} from RTI',
                 categories=categories,
             )
             # hacky solution to avoid issue that names defined in class scope are not
@@ -1035,7 +1035,7 @@ class RTI(Module):
         **{
             f'rt_date_to_remove_daly_{injury_index}': Property(
                 Types.DATE,
-                'Date to remove the daly weight for injury {injury_index}',
+                f'Date to remove the daly weight for injury {injury_index}',
             )
             for injury_index in INJURY_INDICES
         },
