@@ -560,8 +560,11 @@ class HealthSystem(Module):
 
         self._hsi_event_count_log_period = hsi_event_count_log_period
         if hsi_event_count_log_period in {"day", "month", "year", "simulation"}:
-            # Counter for binning HSI events run (by hex hashes of event details)
-            self._hsi_event_counts = Counter()
+            # Counters for binning HSI events run (by hex hashes of event details) over
+            # simulation period specified by hsi_event_count_log_period and cumulative
+            # counts over previous log periods
+            self._hsi_event_counts_log_period = Counter()
+            self._hsi_event_counts_cumulative = Counter()
             # Dictionary for recording mapping from hex hashes to HSI event details
             self._hsi_event_details = dict()
         elif hsi_event_count_log_period is not None:
@@ -1359,7 +1362,7 @@ class HealthSystem(Module):
         if did_run:
             if self._hsi_event_count_log_period is not None:
                 event_details_hash = hex(hash(event_details))
-                self._hsi_event_counts[event_details_hash] += 1
+                self._hsi_event_counts_log_period[event_details_hash] += 1
                 self._hsi_event_details[event_details_hash] = event_details
             self._summary_counter.record_hsi_event(
                 treatment_id=event_details.treatment_id,
@@ -1467,9 +1470,10 @@ class HealthSystem(Module):
                 f"Counts of the HSI events that have run in this "
                 f"{self._hsi_event_count_log_period} keyed by hashes of event details."
             ),
-            data={"hsi_event_hashes_to_counts": dict(self._hsi_event_counts)},
+            data={"hsi_event_hashes_to_counts": dict(self._hsi_event_counts_log_period)},
         )
-        self._hsi_event_counts.clear()
+        self._hsi_event_counts_cumulative += self._hsi_event_counts_log_period
+        self._hsi_event_counts_log_period.clear()
 
     def on_end_of_day(self) -> None:
         """Do jobs to be done at the end of the day (after all HSI run)"""
@@ -1626,20 +1630,24 @@ class HealthSystem(Module):
 
     @property
     def hsi_event_counts(self) -> Counter:
-        """Counts of details of HSI events which occurred over last logging period.
+        """Counts of details of HSI events which have run so far in simulation.
 
         Returns a ``Counter`` instance with keys ``HSIEventDetail`` named tuples
-        corresponding to details of HSI events that have run over last simulaiton period
-        defined by the ``hsi_event_count_log_period`` argument (or an empty ``Counter``)
-        instance if ``hsi_event_count_log_period`` is ``None``).
+        corresponding to details of HSI events that have run over simulation so far.
         """
         if self._hsi_event_count_log_period is None:
             return Counter()
         else:
+            # If in middle of log period _hsi_event_counts_log_period will not be empty
+            # and so overall total counts is sums of counts in both
+            # _hsi_event_counts_cumulative and _hsi_event_counts_log_period
+            total_hsi_event_counts = (
+                self._hsi_event_counts_cumulative + self._hsi_event_counts_log_period
+            )
             return Counter(
                 {
                     self._hsi_event_details[event_details_hash]: count
-                    for event_details_hash, count in self._hsi_event_counts.items()
+                    for event_details_hash, count in total_hsi_event_counts.items()
                 }
             )
 
