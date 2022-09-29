@@ -169,20 +169,7 @@ def get_details_of_defined_hsi_events(
                 # this is an abstract base class and so does not need documenting
                 pass
             else:
-                details_of_defined_hsi_events.add(
-                    HSIEventDetails(
-                        event_name=type(hsi_event).__name__,
-                        module_name=tlo_module_class.__name__,
-                        treatment_id=hsi_event.TREATMENT_ID,
-                        facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL,
-                        appt_footprint=tuple(
-                            sorted(hsi_event.EXPECTED_APPT_FOOTPRINT.items())
-                        ),
-                        beddays_footprint=tuple(
-                            sorted(hsi_event.BEDDAYS_FOOTPRINT.items())
-                        ),
-                    )
-                )
+                details_of_defined_hsi_events.add(hsi_event.as_namedtuple())
     return details_of_defined_hsi_events
 
 

@@ -306,6 +306,24 @@ class HSI_Event:
                 )
                 return False
 
+    def as_namedtuple(
+        self, actual_appt_footprint: Optional[dict] = None
+    ) -> HSIEventDetails:
+        appt_footprint = (
+            getattr(self, 'EXPECTED_APPT_FOOTPRINT', {})
+            if actual_appt_footprint is None else actual_appt_footprint
+        )
+        return HSIEventDetails(
+            event_name=type(self).__name__,
+            module_name=type(self.module).__name__,
+            treatment_id=self.TREATMENT_ID,
+            facility_level=getattr(self, 'ACCEPTED_FACILITY_LEVEL', None),
+            appt_footprint=tuple(sorted(appt_footprint.items())),
+            beddays_footprint=tuple(
+                sorted((k, v) for k, v in self.BEDDAYS_FOOTPRINT.items() if v > 0)
+            )
+        )
+
 
 class HSIEventWrapper(Event):
     """This is wrapper that contains an HSI event.
@@ -1298,27 +1316,8 @@ class HealthSystem(Module):
         else:
             # Individual HSI-Event
             _squeeze_factor = squeeze_factor if squeeze_factor != np.inf else 100.0
-            appt_footprint = (
-                getattr(hsi_event, 'EXPECTED_APPT_FOOTPRINT', {})
-                if actual_appt_footprint is None else
-                actual_appt_footprint
-            )
-            event_details = HSIEventDetails(
-                event_name=type(hsi_event).__name__,
-                module_name=type(hsi_event.module).__name__,
-                treatment_id=hsi_event.TREATMENT_ID,
-                facility_level=getattr(
-                    hsi_event, 'ACCEPTED_FACILITY_LEVEL', None
-                ),
-                appt_footprint=tuple(sorted(appt_footprint.items())),
-                beddays_footprint=tuple(
-                    sorted(
-                        (k, v) for k, v in hsi_event.BEDDAYS_FOOTPRINT.items() if v > 0
-                    )
-                )
-            )
             self.write_to_hsi_log(
-                event_details=event_details,
+                event_details=hsi_event.as_namedtuple(actual_appt_footprint),
                 person_id=hsi_event.target,
                 facility_id=hsi_event.facility_info.id,
                 squeeze_factor=_squeeze_factor,
