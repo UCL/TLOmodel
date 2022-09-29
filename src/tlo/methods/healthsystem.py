@@ -443,6 +443,7 @@ class HealthSystem(Module):
         disable_and_reject_all: bool = False,
         record_hsi_event_details: bool = False,
         compute_squeeze_factor_to_district_level: bool = True,
+        hsi_event_count_log_period: Optional[str] = None,
     ):
         """
         :param name: Name to use for module, defaults to module class name if ``None``.
@@ -473,6 +474,11 @@ class HealthSystem(Module):
         :param record_hsi_event_details: Whether to record details of HSI events run.
         :param compute_squeeze_factor_to_district_level: Whether to compute squeeze_factors to the district level, or
             the national level (which effectively pools the resources across all districts).
+        :param hsi_event_count_log_period: Period over which to accumulate counts of HSI
+            events that have run before logging and reseting counters. Should be on of
+            strings ``'day'``, ``'month'`` or ``'year'`` to log at end of each day,
+            calendar month or calendar year respectively, or ``None`` to not track the
+            HSI event frequencies.
         """
 
         super().__init__(name)
@@ -551,8 +557,15 @@ class HealthSystem(Module):
         # Create counter for the running total of footprint of all the HSIs being run today
         self.running_total_footprint: Counter = Counter()
 
-        # Counter for binning details of HSI events run
-        self._hsi_event_counts = Counter()
+        self._hsi_event_count_log_period = hsi_event_count_log_period
+        if hsi_event_count_log_period in {"day", "month", "year"}:
+            # Counter for binning details of HSI events run
+            self._hsi_event_counts = Counter()
+        elif hsi_event_count_log_period is not None:
+            raise ValueError(
+                "hsi_event_count_log_period argument should either be one of "
+                "'day', 'month' or 'year' or None if counts should not be logged."
+            )
 
     def read_parameters(self, data_folder):
 
@@ -1329,7 +1342,8 @@ class HealthSystem(Module):
             description="record of each HSI event"
         )
         if did_run:
-            self._hsi_event_counts[event_details] += 1
+            if self._hsi_event_count_log_period is not None:
+                self._hsi_event_counts[event_details] += 1
             self._summary_counter.record_hsi_event(
                 treatment_id=event_details.treatment_id,
                 appt_footprint=event_details.appt_footprint,
@@ -1429,15 +1443,13 @@ class HealthSystem(Module):
         """
         self.consumables.override_availability(item_codes)
 
-    def on_end_of_day(self) -> None:
-        """Do jobs to be done at the end of the day (after all HSI run)"""
-        self.bed_days.on_end_of_day()
-
-    def on_end_of_month(self) -> None:
-        """Do jobs to be done at the end of the month (after all HSI run)"""
+    def _write_hsi_event_counts_to_log_and_reset(self):
         logger_summary.info(
             key="hsi_event_counts",
-            description="Counts of the HSI events that have run in this calendar month.",
+            description=(
+                f"Counts of the HSI events that have run in this "
+                f"{self._hsi_event_count_log_period}."
+            ),
             data=[
                 {"event_details": event_details._asdict(), "count": count}
                 for event_details, count in self._hsi_event_counts.items()
@@ -1445,11 +1457,24 @@ class HealthSystem(Module):
         )
         self._hsi_event_counts.clear()
 
+    def on_end_of_day(self) -> None:
+        """Do jobs to be done at the end of the day (after all HSI run)"""
+        self.bed_days.on_end_of_day()
+        if self._hsi_event_count_log_period == "day":
+            self._write_hsi_event_counts_to_log_and_reset()
+
+    def on_end_of_month(self) -> None:
+        """Do jobs to be done at the end of the month (after all HSI run)"""
+        if self._hsi_event_count_log_period == "month":
+            self._write_hsi_event_counts_to_log_and_reset()
+
     def on_end_of_year(self) -> None:
         """Write to log the current states of the summary counters and reset them."""
         self._summary_counter.write_to_log_and_reset_counters()
         self.consumables.on_end_of_year()
         self.bed_days.on_end_of_year()
+        if self._hsi_event_count_log_period == "year":
+            self._write_hsi_event_counts_to_log_and_reset()
 
     def run_population_level_events(self, _list_of_population_hsi_event_tuples: List[HSIEventQueueItem]) -> None:
         """Run a list of population level events."""
