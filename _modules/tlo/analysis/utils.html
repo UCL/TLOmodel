@@ -99,6 +99,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../reference/index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../background.html">Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../authors.html">Authors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
@@ -771,11 +772,12 @@
     <span class="sd">&quot;&quot;&quot;Return a list of treatment_ids that are defined in the model, filtered to a specified depth.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">filter_treatments</span><span class="p">(</span><span class="n">_treatments</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-        <span class="sd">&quot;&quot;&quot;Reduce an iterable of `TREATMENT_IDs` by ignoring difference beyond a certain depth of specification.</span>
-<span class="sd">        The TREATMENT_ID is defined with each increasing level of specification separated by a `_`. &quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Reduce an iterable of `TREATMENT_IDs` by ignoring difference beyond a certain depth of specification and</span>
+<span class="sd">        adding &#39;_*&#39; to the end to serve as a wild-card.</span>
+<span class="sd">        N.B., The TREATMENT_ID is defined with each increasing level of specification separated by a `_`. &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span>
             <span class="p">[</span>
-                <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2">_&quot;</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">))</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">depth</span><span class="p">)</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;*&#39;</span>
+                <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2">_&quot;</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">))</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">depth</span><span class="p">)</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;_*&#39;</span>
                 <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">_treatments</span><span class="p">)</span>
             <span class="p">]</span>
         <span class="p">)))</span>
@@ -933,7 +935,7 @@
     <span class="sd">&quot;&quot;&quot;Define a standard order for short treatment_ids.&quot;&quot;&quot;</span>
     <span class="n">order</span> <span class="o">=</span> <span class="n">_define_short_treatment_ids</span><span class="p">()</span><span class="o">.</span><span class="n">index</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">_short_treatment_id</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">order</span><span class="p">)</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">_short_treatment_id</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">order</span><span class="p">)</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">_short_treatment_id</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;_*&#39;</span><span class="p">,</span> <span class="s1">&#39;*&#39;</span><span class="p">))</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">order</span><span class="p">[</span><span class="n">order</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">_short_treatment_id</span><span class="p">)]</span></div>
 
@@ -942,8 +944,9 @@
     <span class="sd">&quot;&quot;&quot;Return the colour (as matplotlib string) assigned to this shorted TREATMENT_ID. Returns `np.nan` if treatment_id</span>
 <span class="sd">    is not recognised.&quot;&quot;&quot;</span>
     <span class="n">colors</span> <span class="o">=</span> <span class="n">_define_short_treatment_ids</span><span class="p">()</span>
-    <span class="k">if</span> <span class="n">short_treatment_id</span> <span class="ow">in</span> <span class="n">colors</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">colors</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">short_treatment_id</span><span class="p">]</span>
+    <span class="n">_short_treatment_ids_with_trailing_asterix</span> <span class="o">=</span> <span class="n">short_treatment_id</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;_*&#39;</span><span class="p">,</span> <span class="s1">&#39;*&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">_short_treatment_ids_with_trailing_asterix</span> <span class="ow">in</span> <span class="n">colors</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">colors</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">_short_treatment_ids_with_trailing_asterix</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span></div>
 
@@ -1044,7 +1047,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Aug 10, 2022.
+        Last updated on Sep 29, 2022.
       </span>
 
     </p>

@@ -99,6 +99,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../reference/index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../background.html">Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../authors.html">Authors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
@@ -177,8 +178,8 @@
 <span class="c1"># - let the logger give times of each hcw</span>
 <span class="c1"># &quot;&quot;&quot;</span>
 <span class="kn">import</span> <span class="nn">datetime</span>
-<span class="kn">import</span> <span class="nn">fnmatch</span>
 <span class="kn">import</span> <span class="nn">heapq</span> <span class="k">as</span> <span class="nn">hp</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Counter</span><span class="p">,</span> <span class="n">defaultdict</span>
 <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Iterable</span>
 <span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">repeat</span>
@@ -392,7 +393,7 @@
         <span class="c1"># Return result in expected format:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">return_individual_results</span><span class="p">:</span>
             <span class="c1"># Determine if all results for all the `item_codes` are True (discarding results from optional_item_codes).</span>
-            <span class="k">return</span> <span class="nb">all</span><span class="p">([</span><span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">rtn</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">_item_codes</span><span class="p">])</span>
+            <span class="k">return</span> <span class="nb">all</span><span class="p">(</span><span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">rtn</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">_item_codes</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">rtn</span></div>
 
@@ -614,7 +615,8 @@
         <span class="n">disable</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">disable_and_reject_all</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">store_hsi_events_that_have_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="n">record_hsi_event_details</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">record_hsi_event_details</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">compute_squeeze_factor_to_district_level</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        :param name: Name to use for module, defaults to module class name if ``None``.</span>
@@ -644,6 +646,8 @@
 <span class="sd">            events run</span>
 <span class="sd">        :param store_hsi_events_that_have_run: Convenience flag for debugging.</span>
 <span class="sd">        :param record_hsi_event_details: Whether to record details of HSI events used.</span>
+<span class="sd">        :param compute_squeeze_factor_to_district_level: Whether to compute squeeze_factors to the district level, or</span>
+<span class="sd">            the national level (which effectively pools the resources across all districts).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
@@ -704,6 +708,12 @@
 
         <span class="k">assert</span> <span class="n">beds_availability</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;default&#39;</span><span class="p">,</span> <span class="s1">&#39;all&#39;</span><span class="p">,</span> <span class="s1">&#39;none&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">arg_beds_availability</span> <span class="o">=</span> <span class="n">beds_availability</span>
+
+        <span class="c1"># `compute_squeeze_factor_to_district_level` is a Boolean indicating whether the computation of squeeze_factors</span>
+        <span class="c1"># should be specific to each district (when `True`), or if the computation of squeeze_factors should be on the</span>
+        <span class="c1"># basis that resources from all districts can be effectively &quot;pooled&quot; (when `False).</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">compute_squeeze_factor_to_district_level</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compute_squeeze_factor_to_district_level</span> <span class="o">=</span> <span class="n">compute_squeeze_factor_to_district_level</span>
 
         <span class="c1"># Create the Diagnostic Test Manager to store and manage all Diagnostic Test</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dx_manager</span> <span class="o">=</span> <span class="n">DxManager</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
@@ -1171,28 +1181,52 @@
 <div class="viewcode-block" id="HealthSystem.is_treatment_id_allowed"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.is_treatment_id_allowed">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">is_treatment_id_allowed</span><span class="p">(</span><span class="n">treatment_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">service_availability</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Determine if a treatment_id (specified as a string) can be run (i.e., is within the allowable set of</span>
-<span class="sd">         treatments, given by `self.service_availability`.&quot;&quot;&quot;</span>
+<span class="sd">         treatments, given by `self.service_availability`. The rules are as follows:</span>
+<span class="sd">          * An empty list means nothing is allowed</span>
+<span class="sd">          * A list that contains only an asteriks [&#39;*&#39;] means run anything</span>
+<span class="sd">          * If the list is not empty, then a treatment_id with a first part &quot;FirstAttendance_&quot; is also allowed</span>
+<span class="sd">          * An entry in the list of the form &quot;A_B_C&quot; means a treatment_id that matches exactly is allowed</span>
+<span class="sd">          * An entry in the list of the form &quot;A_B_*&quot; means that a treatment_id that begins &quot;A_B_&quot; or &quot;A_B&quot; is allowed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">_treatment_matches_pattern</span><span class="p">(</span><span class="n">_treatment_id</span><span class="p">,</span> <span class="n">_service_availability</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Check if treatment_id matches any services specified with wildcard * patterns&quot;&quot;&quot;</span>
+
+            <span class="k">def</span> <span class="nf">_matches_this_pattern</span><span class="p">(</span><span class="n">_treatment_id</span><span class="p">,</span> <span class="n">_s</span><span class="p">):</span>
+                <span class="sd">&quot;&quot;&quot;Returns True if this treatment_id is consistent with this component of service_availability&quot;&quot;&quot;</span>
+                <span class="k">if</span> <span class="s1">&#39;*&#39;</span> <span class="ow">in</span> <span class="n">_s</span><span class="p">:</span>
+                    <span class="k">assert</span> <span class="n">_s</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Component of service_availability has an asteriks not at the end: </span><span class="si">{</span><span class="n">_s</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="n">_s_split</span> <span class="o">=</span> <span class="n">_s</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)</span>  <span class="c1"># split the matching pattern at &#39;_&#39; knowing that the last component is &#39;*&#39;</span>
+                    <span class="n">_treatment_id_split</span> <span class="o">=</span> <span class="n">_treatment_id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">_s_split</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># split treatment_id at &#39;_&#39; into</span>
+                    <span class="c1"># as many component as there as non-asteriks component of _s.</span>
+                    <span class="c1"># Check if all the components (that are not asteriks) are the same:</span>
+                    <span class="k">return</span> <span class="nb">all</span><span class="p">(</span>
+                        <span class="p">[(</span><span class="n">a</span> <span class="o">==</span> <span class="n">b</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">b</span> <span class="o">==</span> <span class="s2">&quot;*&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">zip_longest</span><span class="p">(</span><span class="n">_treatment_id_split</span><span class="p">,</span> <span class="n">_s_split</span><span class="p">)]</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># If not &quot;*&quot;, comparison is ordinary match between strings</span>
+                    <span class="k">return</span> <span class="n">_treatment_id</span> <span class="o">==</span> <span class="n">_s</span>
+
+            <span class="k">for</span> <span class="n">_s</span> <span class="ow">in</span> <span class="n">service_availability</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">_matches_this_pattern</span><span class="p">(</span><span class="n">_treatment_id</span><span class="p">,</span> <span class="n">_s</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="kc">True</span>
+            <span class="k">return</span> <span class="kc">False</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">service_availability</span><span class="p">:</span>
             <span class="c1"># Empty list --&gt; nothing is allowable</span>
             <span class="k">return</span> <span class="kc">False</span>
-        <span class="k">elif</span> <span class="n">service_availability</span> <span class="o">==</span> <span class="p">[</span><span class="s1">&#39;*&#39;</span><span class="p">]:</span>
+
+        <span class="k">if</span> <span class="n">service_availability</span> <span class="o">==</span> <span class="p">[</span><span class="s1">&#39;*&#39;</span><span class="p">]:</span>
             <span class="c1"># Wildcard --&gt; everything is allowed</span>
-            <span class="k">return</span> <span class="kc">True</span>
-        <span class="k">elif</span> <span class="n">treatment_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="c1"># Treatment_id is None --&gt; allowed</span>
             <span class="k">return</span> <span class="kc">True</span>
         <span class="k">elif</span> <span class="n">treatment_id</span> <span class="ow">in</span> <span class="n">service_availability</span><span class="p">:</span>
             <span class="c1"># Explicit inclusion of this treatment_id --&gt; allowed</span>
             <span class="k">return</span> <span class="kc">True</span>
-        <span class="k">elif</span> <span class="n">treatment_id</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;FirstAttendance&#39;</span><span class="p">):</span>
+        <span class="k">elif</span> <span class="n">treatment_id</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;FirstAttendance_&#39;</span><span class="p">):</span>
             <span class="c1"># FirstAttendance* --&gt; allowable</span>
             <span class="k">return</span> <span class="kc">True</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># Check if treatment_id matches any services specified with wildcard * patterns</span>
-            <span class="k">for</span> <span class="n">service_pattern</span> <span class="ow">in</span> <span class="n">service_availability</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="n">treatment_id</span><span class="p">,</span> <span class="n">service_pattern</span><span class="p">):</span>
-                    <span class="k">return</span> <span class="kc">True</span>
+            <span class="k">if</span> <span class="n">_treatment_matches_pattern</span><span class="p">(</span><span class="n">treatment_id</span><span class="p">,</span> <span class="n">service_availability</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">True</span>
         <span class="k">return</span> <span class="kc">False</span></div>
 
 <div class="viewcode-block" id="HealthSystem.schedule_batch_of_individual_hsi_events"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.schedule_batch_of_individual_hsi_events">[docs]</a>    <span class="k">def</span> <span class="nf">schedule_batch_of_individual_hsi_events</span><span class="p">(</span>
@@ -1306,7 +1340,9 @@
 
         <span class="k">return</span> <span class="n">appt_footprint_times</span></div>
 
-<div class="viewcode-block" id="HealthSystem.get_squeeze_factors"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_squeeze_factors">[docs]</a>    <span class="k">def</span> <span class="nf">get_squeeze_factors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">footprints_per_event</span><span class="p">,</span> <span class="n">total_footprint</span><span class="p">,</span> <span class="n">current_capabilities</span><span class="p">):</span>
+<div class="viewcode-block" id="HealthSystem.get_squeeze_factors"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_squeeze_factors">[docs]</a>    <span class="k">def</span> <span class="nf">get_squeeze_factors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">footprints_per_event</span><span class="p">,</span> <span class="n">total_footprint</span><span class="p">,</span> <span class="n">current_capabilities</span><span class="p">,</span>
+                            <span class="n">compute_squeeze_factor_to_district_level</span><span class="p">:</span> <span class="nb">bool</span>
+                            <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This will compute the squeeze factors for each HSI event from the list of all</span>
 <span class="sd">        the calls on health system resources for the day.</span>
@@ -1326,16 +1362,59 @@
 <span class="sd">            standard index)</span>
 <span class="sd">        :param current_capabilities: Series giving the amount of time available for</span>
 <span class="sd">            each health officer in each health facility (using the standard index)</span>
+<span class="sd">        :param compute_squeeze_factor_to_district_level: Boolean indicating whether</span>
+<span class="sd">            the computation of squeeze_factors should be specific to each district</span>
+<span class="sd">            (when `True`), or if the computation of squeeze_factors should be on</span>
+<span class="sd">            the basis that resources from all districts can be effectively &quot;pooled&quot;</span>
+<span class="sd">            (when `False).</span>
 
 <span class="sd">        :return: squeeze_factors: an array of the squeeze factors for each HSI event</span>
 <span class="sd">            (position in array matches that in the all_call_today list).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
+        <span class="k">def</span> <span class="nf">get_total_minutes_of_this_officer_in_this_district</span><span class="p">(</span><span class="n">_officer</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Returns the minutes of current capabilities for the officer identified (this officer type in this</span>
+<span class="sd">            facility_id).&quot;&quot;&quot;</span>
+            <span class="k">return</span> <span class="n">current_capabilities</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">_officer</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">get_total_minutes_of_this_officer_in_all_district</span><span class="p">(</span><span class="n">_officer</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Returns the minutes of current capabilities for the officer identified in all districts (this officer</span>
+<span class="sd">            type in this all facilities of the same level in all districts).&quot;&quot;&quot;</span>
+
+            <span class="k">def</span> <span class="nf">split_officer_compound_string</span><span class="p">(</span><span class="n">cs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+                <span class="sd">&quot;&quot;&quot;Returns (facility_id, officer_type) for the officer identified in the string of the form:</span>
+<span class="sd">                 &#39;FacilityID_{facility_id}_Officer_{officer_type}&#39;.&quot;&quot;&quot;</span>
+                <span class="n">_</span><span class="p">,</span> <span class="n">_facility_id</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_officer_type</span> <span class="o">=</span> <span class="n">cs</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>  <span class="c1"># (NB. Some &#39;officer_type&#39; include &quot;_&quot;)</span>
+                <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">_facility_id</span><span class="p">),</span> <span class="n">_officer_type</span>
+
+            <span class="k">def</span> <span class="nf">_match</span><span class="p">(</span><span class="n">_this_officer</span><span class="p">,</span> <span class="n">facility_ids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">officer_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="sd">&quot;&quot;&quot;Returns True if the officer identified is of the identified officer_type and is in one of the</span>
+<span class="sd">                facility_ids.&quot;&quot;&quot;</span>
+                <span class="n">this_facility_id</span><span class="p">,</span> <span class="n">this_officer_type</span> <span class="o">=</span> <span class="n">split_officer_compound_string</span><span class="p">(</span><span class="n">_this_officer</span><span class="p">)</span>
+                <span class="k">return</span> <span class="p">(</span><span class="n">this_officer_type</span> <span class="o">==</span> <span class="n">officer_type</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">this_facility_id</span> <span class="ow">in</span> <span class="n">facility_ids</span><span class="p">)</span>
+
+            <span class="n">facility_id</span><span class="p">,</span> <span class="n">officer_type</span> <span class="o">=</span> <span class="n">split_officer_compound_string</span><span class="p">(</span><span class="n">_officer</span><span class="p">)</span>
+            <span class="n">facility_level</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_facility_by_facility_id</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">facility_id</span><span class="p">)]</span><span class="o">.</span><span class="n">level</span>
+            <span class="n">facilities_of_same_level_in_all_district</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">_fac</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">_fac</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_facilities_for_each_district</span><span class="p">[</span><span class="n">facility_level</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+            <span class="p">]</span>
+
+            <span class="n">officers_in_the_same_level_in_all_districts</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">_officer</span> <span class="k">for</span> <span class="n">_officer</span> <span class="ow">in</span> <span class="n">current_capabilities</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span>
+                <span class="n">_match</span><span class="p">(</span><span class="n">_officer</span><span class="p">,</span> <span class="n">facility_ids</span><span class="o">=</span><span class="n">facilities_of_same_level_in_all_district</span><span class="p">,</span> <span class="n">officer_type</span><span class="o">=</span><span class="n">officer_type</span><span class="p">)</span>
+            <span class="p">]</span>
+
+            <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">current_capabilities</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">_o</span><span class="p">)</span> <span class="k">for</span> <span class="n">_o</span> <span class="ow">in</span> <span class="n">officers_in_the_same_level_in_all_districts</span><span class="p">)</span>
+
         <span class="c1"># 1) Compute the load factors for each officer type at each facility that is</span>
         <span class="c1"># called-upon in this list of HSIs</span>
         <span class="n">load_factor</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">officer</span><span class="p">,</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">total_footprint</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="n">availability</span> <span class="o">=</span> <span class="n">current_capabilities</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">officer</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">compute_squeeze_factor_to_district_level</span><span class="p">:</span>
+                <span class="n">availability</span> <span class="o">=</span> <span class="n">get_total_minutes_of_this_officer_in_this_district</span><span class="p">(</span><span class="n">officer</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">availability</span> <span class="o">=</span> <span class="n">get_total_minutes_of_this_officer_in_all_district</span><span class="p">(</span><span class="n">officer</span><span class="p">)</span>
+
             <span class="k">if</span> <span class="n">availability</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># todo - does this ever happen?</span>
                 <span class="n">load_factor</span><span class="p">[</span><span class="n">officer</span><span class="p">]</span> <span class="o">=</span> <span class="mf">99.99</span>
             <span class="k">elif</span> <span class="n">availability</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -1401,23 +1480,23 @@
                     <span class="p">}</span>
                 <span class="p">)</span>
 
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">record_hsi_event_details</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">hsi_event_details</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-                        <span class="n">HSIEventDetails</span><span class="p">(</span>
-                            <span class="n">event_name</span><span class="o">=</span><span class="nb">type</span><span class="p">(</span><span class="n">hsi_event</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
-                            <span class="n">module_name</span><span class="o">=</span><span class="nb">type</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">module</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
-                            <span class="n">treatment_id</span><span class="o">=</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">TREATMENT_ID</span><span class="p">,</span>
-                            <span class="n">facility_level</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span>
-                                <span class="n">hsi_event</span><span class="p">,</span> <span class="s1">&#39;ACCEPTED_FACILITY_LEVEL&#39;</span><span class="p">,</span> <span class="kc">None</span>
-                            <span class="p">),</span>
-                            <span class="n">appt_footprint</span><span class="o">=</span><span class="p">(</span>
-                                <span class="nb">tuple</span><span class="p">(</span><span class="n">actual_appt_footprint</span><span class="p">)</span>
-                                <span class="k">if</span> <span class="n">actual_appt_footprint</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-                                <span class="k">else</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">hsi_event</span><span class="p">,</span> <span class="s1">&#39;EXPECTED_APPT_FOOTPRINT&#39;</span><span class="p">,</span> <span class="p">{}))</span>
-                            <span class="p">),</span>
-                            <span class="n">beddays_footprint</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">BEDDAYS_FOOTPRINT</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span>
-                        <span class="p">)</span>
-                    <span class="p">)</span></div>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">record_hsi_event_details</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">hsi_event_details</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
+                    <span class="n">HSIEventDetails</span><span class="p">(</span>
+                        <span class="n">event_name</span><span class="o">=</span><span class="nb">type</span><span class="p">(</span><span class="n">hsi_event</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+                        <span class="n">module_name</span><span class="o">=</span><span class="nb">type</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">module</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+                        <span class="n">treatment_id</span><span class="o">=</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">TREATMENT_ID</span><span class="p">,</span>
+                        <span class="n">facility_level</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span>
+                            <span class="n">hsi_event</span><span class="p">,</span> <span class="s1">&#39;ACCEPTED_FACILITY_LEVEL&#39;</span><span class="p">,</span> <span class="kc">None</span>
+                        <span class="p">),</span>
+                        <span class="n">appt_footprint</span><span class="o">=</span><span class="p">(</span>
+                            <span class="nb">tuple</span><span class="p">(</span><span class="n">actual_appt_footprint</span><span class="p">)</span>
+                            <span class="k">if</span> <span class="n">actual_appt_footprint</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                            <span class="k">else</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">hsi_event</span><span class="p">,</span> <span class="s1">&#39;EXPECTED_APPT_FOOTPRINT&#39;</span><span class="p">,</span> <span class="p">{}))</span>
+                        <span class="p">),</span>
+                        <span class="n">beddays_footprint</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">BEDDAYS_FOOTPRINT</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span>
+                    <span class="p">)</span>
+                <span class="p">)</span></div>
 
 <div class="viewcode-block" id="HealthSystem.write_to_hsi_log"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.write_to_hsi_log">[docs]</a>    <span class="k">def</span> <span class="nf">write_to_hsi_log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                          <span class="n">treatment_id</span><span class="p">,</span>
@@ -1592,11 +1671,12 @@
                     <span class="n">footprints_per_event</span><span class="o">=</span><span class="n">footprints_of_all_individual_level_hsi_event</span><span class="p">,</span>
                     <span class="n">total_footprint</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">running_total_footprint</span><span class="p">,</span>
                     <span class="n">current_capabilities</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">capabilities_today</span><span class="p">,</span>
+                    <span class="n">compute_squeeze_factor_to_district_level</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">compute_squeeze_factor_to_district_level</span><span class="p">,</span>
                 <span class="p">)</span>
 
             <span class="c1"># For each event, determine to run or not, and run if so.</span>
-            <span class="k">for</span> <span class="n">ev_num</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">_list_of_individual_hsi_event_tuples</span><span class="p">):</span>
-                <span class="n">event</span> <span class="o">=</span> <span class="n">_list_of_individual_hsi_event_tuples</span><span class="p">[</span><span class="n">ev_num</span><span class="p">]</span><span class="o">.</span><span class="n">hsi_event</span>
+            <span class="k">for</span> <span class="n">ev_num</span><span class="p">,</span> <span class="n">event</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">_list_of_individual_hsi_event_tuples</span><span class="p">):</span>
+                <span class="n">event</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">hsi_event</span>
                 <span class="n">squeeze_factor</span> <span class="o">=</span> <span class="n">squeeze_factor_per_hsi_event</span><span class="p">[</span><span class="n">ev_num</span><span class="p">]</span>                  <span class="c1"># todo use zip here!</span>
 
                 <span class="n">ok_to_run</span> <span class="o">=</span> <span class="p">(</span>
@@ -1649,6 +1729,7 @@
                                 <span class="n">footprints_per_event</span><span class="o">=</span><span class="n">footprints_of_all_individual_level_hsi_event</span><span class="p">,</span>
                                 <span class="n">total_footprint</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">running_total_footprint</span><span class="p">,</span>
                                 <span class="n">current_capabilities</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">capabilities_today</span><span class="p">,</span>
+                                <span class="n">compute_squeeze_factor_to_district_level</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">compute_squeeze_factor_to_district_level</span><span class="p">,</span>
                             <span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="c1"># no actual footprint is returned so take the expected initial declaration as the actual</span>
@@ -1964,7 +2045,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Aug 10, 2022.
+        Last updated on Sep 29, 2022.
       </span>
 
     </p>

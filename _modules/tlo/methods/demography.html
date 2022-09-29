@@ -99,6 +99,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../reference/index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../background.html">Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../authors.html">Authors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
@@ -191,7 +192,7 @@
     <span class="n">collect_causes_from_disease_modules</span><span class="p">,</span>
     <span class="n">create_mappers_from_causes_to_label</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">tlo.util</span> <span class="kn">import</span> <span class="n">create_age_range_lookup</span>
+<span class="kn">from</span> <span class="nn">tlo.util</span> <span class="kn">import</span> <span class="n">create_age_range_lookup</span><span class="p">,</span> <span class="n">get_person_id_to_inherit_from</span>
 
 <span class="c1"># Standard logger</span>
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
@@ -452,8 +453,9 @@
 
         <span class="n">fraction_of_births_male</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;fraction_of_births_male&#39;</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">year</span><span class="p">]</span>
 
-        <span class="c1"># Determine characteristics that are inherited from mother (and if no mother, from a randomly selected person)</span>
-        <span class="n">_id_inherit_from</span> <span class="o">=</span> <span class="n">mother_id</span> <span class="k">if</span> <span class="n">mother_id</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span> <span class="k">else</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">])</span>
+        <span class="c1"># Determine characteristics that are inherited from mother (and if no mother,</span>
+        <span class="c1"># from a randomly selected person)</span>
+        <span class="n">_id_inherit_from</span> <span class="o">=</span> <span class="n">get_person_id_to_inherit_from</span><span class="p">(</span><span class="n">child_id</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span>
         <span class="n">_district_num_of_residence</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">_id_inherit_from</span><span class="p">,</span> <span class="s1">&#39;district_num_of_residence&#39;</span><span class="p">]</span>
         <span class="n">_district_of_residence</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">_id_inherit_from</span><span class="p">,</span> <span class="s1">&#39;district_of_residence&#39;</span><span class="p">]</span>
         <span class="n">_region_of_residence</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">_id_inherit_from</span><span class="p">,</span> <span class="s1">&#39;region_of_residence&#39;</span><span class="p">]</span>
@@ -774,14 +776,12 @@
         <span class="c1"># Get shortcut to main dataframe</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
 
-        <span class="c1"># Cause the death immediately for anyone that is older than the maximum age</span>
-        <span class="n">over_max_age</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">age_years</span> <span class="o">&gt;</span> <span class="n">MAX_AGE</span><span class="p">)]</span>
-        <span class="k">for</span> <span class="n">individual_id</span> <span class="ow">in</span> <span class="n">over_max_age</span><span class="p">:</span>
+        <span class="c1"># Cause the death immediately for anyone that the maximum age or older</span>
+        <span class="n">max_age_or_older</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">age_years</span> <span class="o">&gt;=</span> <span class="n">MAX_AGE</span><span class="p">)]</span>
+        <span class="k">for</span> <span class="n">individual_id</span> <span class="ow">in</span> <span class="n">max_age_or_older</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">do_death</span><span class="p">(</span><span class="n">individual_id</span><span class="o">=</span><span class="n">individual_id</span><span class="p">,</span> <span class="n">cause</span><span class="o">=</span><span class="s1">&#39;Other&#39;</span><span class="p">,</span> <span class="n">originating_module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">)</span>
 
-        <span class="c1"># Get the mortality schedule for now...</span>
-        <span class="c1"># - get the subset of mortality rates for this year.</span>
-        <span class="c1"># confirms that we go to the five year period that we are in, not the exact year.</span>
+        <span class="c1"># Get the mortality schedule for the five-year calendar period we are currently in.</span>
         <span class="n">fallbackyear</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">year</span> <span class="o">/</span> <span class="mi">5</span><span class="p">)</span> <span class="o">*</span> <span class="mi">5</span><span class="p">)</span>
 
         <span class="n">mort_risk</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mort_risk_per_poll</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
@@ -789,15 +789,14 @@
                 <span class="s1">&#39;age_years&#39;</span><span class="p">,</span> <span class="s1">&#39;sex&#39;</span><span class="p">,</span> <span class="s1">&#39;prob_of_dying_before_next_poll&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 
         <span class="c1"># get the population</span>
-        <span class="n">alive</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">age_years</span> <span class="o">&lt;=</span> <span class="n">MAX_AGE</span><span class="p">),</span> <span class="p">[</span><span class="s1">&#39;sex&#39;</span><span class="p">,</span> <span class="s1">&#39;age_years&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">alive</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">age_years</span> <span class="o">&lt;</span> <span class="n">MAX_AGE</span><span class="p">),</span> <span class="p">[</span><span class="s1">&#39;sex&#39;</span><span class="p">,</span> <span class="s1">&#39;age_years&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 
         <span class="c1"># merge the population dataframe with the parameter dataframe to pick-up the death_rate for each person</span>
-        <span class="c1"># (where there is no entry [the person is older than the data provides for] fill this with 1.0)</span>
         <span class="n">length_before_merge</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">alive</span><span class="p">)</span>
-        <span class="n">alive</span> <span class="o">=</span> <span class="n">alive</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">mort_risk</span><span class="p">,</span>
-                            <span class="n">left_on</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;age_years&#39;</span><span class="p">,</span> <span class="s1">&#39;sex&#39;</span><span class="p">],</span>
-                            <span class="n">right_on</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;age_years&#39;</span><span class="p">,</span> <span class="s1">&#39;sex&#39;</span><span class="p">],</span>
-                            <span class="n">how</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+        <span class="n">alive</span> <span class="o">=</span> <span class="n">alive</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">mort_risk</span><span class="p">,</span>
+                                          <span class="n">left_on</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;age_years&#39;</span><span class="p">,</span> <span class="s1">&#39;sex&#39;</span><span class="p">],</span>
+                                          <span class="n">right_on</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;age_years&#39;</span><span class="p">,</span> <span class="s1">&#39;sex&#39;</span><span class="p">],</span>
+                                          <span class="n">how</span><span class="o">=</span><span class="s1">&#39;inner&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;person&#39;</span><span class="p">)</span>
         <span class="k">assert</span> <span class="n">length_before_merge</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">alive</span><span class="p">)</span>
 
         <span class="c1"># flipping the coin to determine if this person will die</span>
@@ -889,7 +888,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Aug 10, 2022.
+        Last updated on Sep 29, 2022.
       </span>
 
     </p>

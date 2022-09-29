@@ -295,17 +295,17 @@ tlo.methods.tb module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'TB': <tlo.methods.causes.Cause object at 0x7feb91146ee0>, 'AIDS_TB': <tlo.methods.causes.Cause object at 0x7feb91146f70>}
+     CAUSES_OF_DEATH : {'TB': <tlo.methods.causes.Cause object at 0x7fc7ff060340>, 'AIDS_TB': <tlo.methods.causes.Cause object at 0x7fc7ff0603d0>}
 
-     CAUSES_OF_DISABILITY : {'TB': <tlo.methods.causes.Cause object at 0x7feb91146fd0>}
+     CAUSES_OF_DISABILITY : {'TB': <tlo.methods.causes.Cause object at 0x7fc7ff060430>}
 
-     INIT_DEPENDENCIES : {'Lifestyle', 'HealthSystem', 'Demography', 'SymptomManager', 'Epi'}
+     INIT_DEPENDENCIES : {'Lifestyle', 'Epi', 'Demography', 'SymptomManager', 'HealthSystem'}
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>}
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden', 'Hiv'}
 
-     SYMPTOMS : {'night_sweats', 'fatigue'}
+     SYMPTOMS : {'fatigue', 'night_sweats'}
 
      **Functions (defined or overridden in class Tb):**
 

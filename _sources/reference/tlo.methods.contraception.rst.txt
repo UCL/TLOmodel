@@ -100,7 +100,7 @@ tlo.methods.contraception module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'Labour', 'Hiv'}
+     ADDITIONAL_DEPENDENCIES : {'Hiv', 'Labour'}
 
      INIT_DEPENDENCIES : {'Demography'}
 
@@ -108,7 +108,7 @@ tlo.methods.contraception module
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthSystem'}
 
-     all_contraception_states : {'female_sterilization', 'implant', 'not_using', 'withdrawal', 'pill', 'other_traditional', 'IUD', 'male_condom', 'other_modern', 'periodic_abstinence', 'injections'}
+     all_contraception_states : {'female_sterilization', 'implant', 'IUD', 'injections', 'not_using', 'male_condom', 'pill', 'periodic_abstinence', 'other_modern', 'other_traditional', 'withdrawal'}
 
      **Functions (defined or overridden in class Contraception):**
 

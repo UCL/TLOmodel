@@ -101,6 +101,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../readme.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../background.html">Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../authors.html">Authors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
@@ -276,9 +277,9 @@ to if the symptom is associated with a particular effect.</p>
 </table>
 <p><strong>Class attributes:</strong></p>
 <p>ADDITIONAL_DEPENDENCIES : {‘Lifestyle’}</p>
-<p>INIT_DEPENDENCIES : {‘Demography’, ‘SymptomManager’, ‘HealthSystem’}</p>
+<p>INIT_DEPENDENCIES : {‘SymptomManager’, ‘Demography’, ‘HealthSystem’}</p>
 <p>METADATA : {&lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
-<p>force_any_symptom_to_lead_to_healthcareseeking : &lt;property object at 0x7feb910e2450&gt;</p>
+<p>force_any_symptom_to_lead_to_healthcareseeking : &lt;property object at 0x7fc7fcfe5130&gt;</p>
 <p><strong>Functions (defined or overridden in class HealthSeekingBehaviour):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.__init__">
@@ -343,9 +344,9 @@ generator.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.healthseekingbehaviour.HealthSeekingBehaviourPoll._select_persons_with_any_symptoms">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">_select_persons_with_any_symptoms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">persons</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">symptoms</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthseekingbehaviour.html#HealthSeekingBehaviourPoll._select_persons_with_any_symptoms"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviourPoll._select_persons_with_any_symptoms" title="Permalink to this definition">¶</a></dt>
-<dd><p>Select rows of <cite>persons</cite> dataframe with any symptoms columns non-zero.</p>
+<dt class="sig sig-object py" id="tlo.methods.healthseekingbehaviour.HealthSeekingBehaviourPoll._has_any_symptoms">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">_has_any_symptoms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">persons</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">symptoms</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthseekingbehaviour.html#HealthSeekingBehaviourPoll._has_any_symptoms"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviourPoll._has_any_symptoms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Which rows in <cite>persons</cite> have non-zero values for columns in <cite>symptoms</cite>.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -380,7 +381,7 @@ FirstAttendance on the same day.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Aug 10, 2022.
+        Last updated on Sep 29, 2022.
       </span>
 
     </p>
