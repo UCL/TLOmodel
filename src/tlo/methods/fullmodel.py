@@ -40,12 +40,12 @@ from tlo.methods import (
 
 def fullmodel(
     resourcefilepath: Path,
-    use_simplified_births: Optional[bool] = False,
-    symptommanager_spurious_symptoms: Optional[bool] = True,
-    healthsystem_disable: Optional[bool] = False,
-    healthsystem_mode_appt_constraints: Optional[int] = 1,
+    use_simplified_births: bool = False,
+    symptommanager_spurious_symptoms: bool = True,
+    healthsystem_disable: bool = False,
+    healthsystem_mode_appt_constraints: int = 1,
     healthsystem_capabilities_coefficient: Optional[float] = None,
-    healthsystem_record_hsi_event_details: Optional[bool] = False
+    healthsystem_hsi_event_count_log_period: Optional[str] = None
 ) -> List[Module]:
     """Return the modules that should be registered in a run of the `Full Model`."""
 
@@ -70,7 +70,8 @@ def fullmodel(
             disable=healthsystem_disable,
             mode_appt_constraints=healthsystem_mode_appt_constraints,
             capabilities_coefficient=healthsystem_capabilities_coefficient,
-            record_hsi_event_details=healthsystem_record_hsi_event_details),
+            hsi_event_count_log_period=healthsystem_hsi_event_count_log_period,
+        ),
     ])
 
     # Contraception, Pregnancy, Labour, etc. (or SimplifiedBirths)

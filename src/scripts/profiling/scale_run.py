@@ -187,7 +187,9 @@ sim.register(
         healthsystem_disable=args.disable_health_system,
         healthsystem_mode_appt_constraints=args.mode_appt_constraints,
         healthsystem_capabilities_coefficient=args.capabilities_coefficient,
-        healthsystem_record_hsi_event_details=args.record_hsi_event_details
+        healthsystem_hsi_event_count_log_period=(
+            "simulation" if args.record_hsi_event_details else None
+        )
     )
 )
 
@@ -205,4 +207,4 @@ if args.parse_log_file:
 
 if args.record_hsi_event_details:
     with open(args.output_dir / "hsi_event_details.json", "w") as f:
-        json.dump(list(sim.modules['HealthSystem'].hsi_event_details), f)
+        json.dump(list(sim.modules['HealthSystem'].hsi_event_counts.keys()), f)

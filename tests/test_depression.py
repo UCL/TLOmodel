@@ -106,7 +106,7 @@ def test_configuration_of_properties(seed):
 def get_hsi_events_run(sim):
     return {
         event_details.event_name
-        for event_details in sim.modules['HealthSystem'].hsi_event_details
+        for event_details in sim.modules['HealthSystem'].hsi_event_counts.keys()
     }
 
 
@@ -125,7 +125,7 @@ def test_hsi_functions(tmpdir, seed):
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            mode_appt_constraints=0,
                                            cons_availability='all',
-                                           record_hsi_event_details=True),
+                                           hsi_event_count_log_period="simulation"),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
@@ -184,7 +184,7 @@ def test_hsi_functions_no_medication_available(tmpdir, seed):
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            mode_appt_constraints=0,
                                            cons_availability='none',
-                                           record_hsi_event_details=True),
+                                           hsi_event_count_log_period="simulation"),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
