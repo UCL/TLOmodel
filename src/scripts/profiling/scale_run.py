@@ -206,5 +206,11 @@ if args.parse_log_file:
     log_df = parse_log_file(sim.log_filepath)
 
 if args.record_hsi_event_details:
-    with open(args.output_dir / "hsi_event_details.json", "w") as f:
-        json.dump(list(sim.modules['HealthSystem'].hsi_event_counts.keys()), f)
+    with open(args.output_dir / "hsi_event_details.json", "w") as json_file:
+        json.dump(
+            [
+                event_details._asdict()
+                for event_details in sim.modules['HealthSystem'].hsi_event_counts.keys()
+            ],
+            json_file
+        )

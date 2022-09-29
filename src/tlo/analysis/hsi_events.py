@@ -468,9 +468,22 @@ def main():
     if args.json_file is not None:
         with open(args.json_file, 'r') as f:
             hsi_event_details = json.load(f)
+
+        # JSON serializes tuples to lists therefore need to reformat to reconstruct
+        # HSIEventDetails named tuples
+        def recursive_list_to_tuple(obj):
+            if isinstance(obj, list):
+                return tuple(recursive_list_to_tuple(child) for child in obj)
+            else:
+                return obj
+
         json_hsi_event_details = set(
-            # JSON serializes tuples to lists therefore need to reformat
-            HSIEventDetails(*event_details[:-1], tuple(event_details[-1]))
+            HSIEventDetails(
+                **{
+                    key: recursive_list_to_tuple(value)
+                    for key, value in event_details.items()
+                }
+            )
             for event_details in hsi_event_details
         )
         print(f'HSI events loaded from JSON file {args.json_file}.')
