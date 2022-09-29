@@ -5,8 +5,8 @@
 # - let the logger give times of each hcw
 # """
 import datetime
-import fnmatch
 import heapq as hp
+import itertools
 from collections import Counter, defaultdict
 from collections.abc import Iterable
 from itertools import repeat
@@ -1008,7 +1008,35 @@ class HealthSystem(Module):
     @staticmethod
     def is_treatment_id_allowed(treatment_id: str, service_availability: list) -> bool:
         """Determine if a treatment_id (specified as a string) can be run (i.e., is within the allowable set of
-         treatments, given by `self.service_availability`."""
+         treatments, given by `self.service_availability`. The rules are as follows:
+          * An empty list means nothing is allowed
+          * A list that contains only an asteriks ['*'] means run anything
+          * If the list is not empty, then a treatment_id with a first part "FirstAttendance_" is also allowed
+          * An entry in the list of the form "A_B_C" means a treatment_id that matches exactly is allowed
+          * An entry in the list of the form "A_B_*" means that a treatment_id that begins "A_B_" or "A_B" is allowed
+        """
+        def _treatment_matches_pattern(_treatment_id, _service_availability):
+            """Check if treatment_id matches any services specified with wildcard * patterns"""
+
+            def _matches_this_pattern(_treatment_id, _s):
+                """Returns True if this treatment_id is consistent with this component of service_availability"""
+                if '*' in _s:
+                    assert _s[-1] == '*', f"Component of service_availability has an asteriks not at the end: {_s}"
+                    _s_split = _s.split('_')  # split the matching pattern at '_' knowing that the last component is '*'
+                    _treatment_id_split = _treatment_id.split('_', len(_s_split) - 1)  # split treatment_id at '_' into
+                    # as many component as there as non-asteriks component of _s.
+                    # Check if all the components (that are not asteriks) are the same:
+                    return all(
+                        [(a == b) or (b == "*") for a, b in itertools.zip_longest(_treatment_id_split, _s_split)]
+                    )
+                else:
+                    # If not "*", comparison is ordinary match between strings
+                    return _treatment_id == _s
+
+            for _s in service_availability:
+                if _matches_this_pattern(_treatment_id, _s):
+                    return True
+            return False
 
         if not service_availability:
             # Empty list --> nothing is allowable
@@ -1017,24 +1045,15 @@ class HealthSystem(Module):
         if service_availability == ['*']:
             # Wildcard --> everything is allowed
             return True
-
-        if treatment_id is None:
-            # Treatment_id is None --> allowed
-            return True
-
-        if treatment_id in service_availability:
+        elif treatment_id in service_availability:
             # Explicit inclusion of this treatment_id --> allowed
             return True
-
-        if treatment_id.startswith('FirstAttendance'):
+        elif treatment_id.startswith('FirstAttendance_'):
             # FirstAttendance* --> allowable
             return True
-
-        # Check if treatment_id matches any services specified with wildcard * patterns
-        for service_pattern in service_availability:
-            if fnmatch.fnmatch(treatment_id, service_pattern):
+        else:
+            if _treatment_matches_pattern(treatment_id, service_availability):
                 return True
-
         return False
 
     def schedule_batch_of_individual_hsi_events(

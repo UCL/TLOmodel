@@ -983,7 +983,7 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         self.module.sim.modules['HealthSystem'].schedule_hsi_event(hsi_event=self,
                                                                    topen=self.sim.date + pd.DateOffset(days=1),
                                                                    tclose=None,
-                                                                   priority=2)
+                                                                   priority=1)
 
     def never_ran(self):
         """If this HSI never ran, the person defaults to "not_using" a contraceptive."""
