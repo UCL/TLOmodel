@@ -291,11 +291,8 @@ def analyse_contraception(in_datestamp, in_log_file,
             :return: The sum row to append to the input df.
             """
             # tp of all times, ie very first to very last year of time periods
-            for r, i in enumerate(in_df_use_by_tp.index):
-                if r == 0:
-                    y_first = i.split("-")[0]
-                if r == (len(in_df_use_by_tp) - 1):
-                    y_last = i.split("-")[1]
+            y_first = in_df_use_by_tp.index[0].split("-")[0]
+            y_last = in_df_use_by_tp.index[len(in_df_use_by_tp) - 1].split("-")[1]
             sum_tp = (str(y_first) + "-" + str(y_last))
             l_summation = []
             for c in in_df_use_by_tp:
@@ -317,8 +314,7 @@ def analyse_contraception(in_datestamp, in_log_file,
             co_output_use_modern_tp_df = \
                 co_output_use_modern_tp_df \
                     .append(sum_use_all_times(co_output_use_modern_tp_df, in_use_output))
-            # print("OUTPUT MEAN/MAX USE WITH ALL TIMES SUM")
-            # fullprint(co_output_use_modern_tp_df
+
             co_output_percentage_use_df =\
                 co_percentage_use_df.groupby('Time_Period').mean()
             # Include the output summation for all time periods:
