@@ -440,16 +440,8 @@ def analyse_contraception(in_datestamp, in_log_file,
             #     lookup_df['Intervention_Pkg'] == package, ['Item_Code', 'Expected_Units_Per_Case']].set_index(
             #     'Item_Code')['Expected_Units_Per_Case'].apply(np.ceil).astype(int)
 
-        def get_list_contraceptive_methods(in_l_requests):
-            l_contraceptive_methods = []
-            for d in in_l_requests:
-                l_contraceptive_methods.append(
-                    get_contraceptive_method_for_request(d)
-                )
-            return l_contraceptive_methods
-
-        cons_processed_df['Contraceptive_Method'] =\
-            get_list_contraceptive_methods(cons_processed_df['Request'])
+        cons_processed_df['Contraceptive_Method'] = \
+            cons_processed_df['Request'].apply(get_contraceptive_method_for_request)
 
         cons_time_and_method_df =\
             create_time_period_data(in_required_time_period_starts, cons_processed_df)
