@@ -232,13 +232,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # %% Plots comparing between model and actual across all ages and sexes:
 
-        # - TLO Model:
-        tot_outcomes_by_cause = pd.concat({
-            'Model': summarize(results.groupby(by=['label']).sum(), collapse_columns=True).unstack(),
-            'GBD': gbd.loc[gbd.period == period].groupby(['label']).sum()[['mean', 'lower', 'upper']].unstack()
-        }, axis=1)
-        # todo - for GBD, instead use all ages and all sex numbers to get correct uncertainity bounds (the addition of
-        #  the bounds for the sub-categories is not correct)
+        tot_outcomes_by_cause = pd.concat(
+            {
+                dat: outcome_by_age_pt[dat].sum(axis=0) for dat in outcome_by_age_pt.keys()
+            }, axis=1
+        )
+        # todo N.B. For GBD, should really use all ages and all sex numbers from GBD to get correct uncertainty bounds
+        #  (the addition of the bounds for the sub-categories - as done here - is not strictly correct.)
 
         select_labels = ['AIDS', 'Childhood Diarrhoea', 'Other']
 
