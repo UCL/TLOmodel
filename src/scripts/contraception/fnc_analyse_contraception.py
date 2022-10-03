@@ -456,31 +456,22 @@ def analyse_contraception(in_datestamp, in_log_file,
 
         # Sum the counts of all item types that were actually used
         # (i.e. were available when requested) per time period per method.
-        def sum_dict_available(in_a_l_d_as_string):
-            """
-            Transforms multiple dictionaries per method per time period to one
-            joint dictionary.
 
-            :param in_a_l_d_as_string: array with indexes ('Time_Period' and
-                'Contraceptive_Method') and lists of dictionaries written as
-                string ('Item_Available')
-            :return: Data frame with 'Time_Period' and 'Contraceptive_Method'
-                and  one dictionary per method per time period written as dict
-                'Items_Available_forMethod_inTimePeriod'.
+        def string_to_dict(in_l_d_as_string):
             """
-            df_item_avail = pd.DataFrame(in_a_l_d_as_string)
-            df_item_avail['Items_Available_dicts'] = ""
-            # type(y) = <class 'int'>
-            for y, l_d_as_string in df_item_avail['Item_Available'].items():
-                l_dicts = []
-                for d_as_string in l_d_as_string:
-                    l_dicts.append(eval(d_as_string))
-                df_item_avail['Items_Available_dicts'][y] = l_dicts
-            df_item_avail['Items_Available_inTimePeriod'] = df_item_avail['Items_Available_dicts'].apply(merge_dicts)
-            return df_item_avail['Items_Available_inTimePeriod']
+            Transforms a dictionary written as string to actual dictionaries.
+
+            :param in_l_d_as_string: a list of dictionaries written as string
+
+            :return: A list of dictionaries as dictionaries.
+            """
+            l_dicts = []
+            for d_as_string in in_l_d_as_string:
+                l_dicts.append(eval(d_as_string))
+            return l_dicts
 
         cons_avail_grouped_by_time_and_method_df['Item_Available_summation'] =\
-            sum_dict_available(cons_avail_grouped_by_time_and_method_df .loc[:, 'Item_Available'])
+            cons_avail_grouped_by_time_and_method_df['Item_Available'].apply(string_to_dict).apply(merge_dicts)
 
         # Calculate the costs of available items for all except male_condom
         # & other_modern (= female condom only currently)
@@ -594,7 +585,6 @@ def analyse_contraception(in_datestamp, in_log_file,
 
         cons_costs_by_time_and_method_df =\
             cons_avail_grouped_by_time_and_method_df.loc[:, 'Costs'].copy().to_frame()
-        print(type(cons_costs_by_time_and_method_df))
         cons_costs_by_time_and_method_df =\
             cons_costs_by_time_and_method_df\
                 .append(sum_costs_all_times(cons_costs_by_time_and_method_df))
