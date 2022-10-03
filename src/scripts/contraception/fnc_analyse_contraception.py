@@ -6,7 +6,7 @@ a function 'analyse contraception' defined to be used for pre-simulated data
 use of contraception methods over time, pregnancies over time, and/or calculate
 data for a table of use and costs of contraception methods (if required)
 """
-
+import timeit
 from pathlib import Path
 
 import numpy as np
@@ -15,7 +15,6 @@ from matplotlib import dates as mdates
 from matplotlib import pyplot as plt
 from collections import Counter
 from tlo.analysis.utils import parse_log_file
-import time
 
 
 def analyse_contraception(in_datestamp, in_log_file,
@@ -55,18 +54,23 @@ def analyse_contraception(in_datestamp, in_log_file,
                                None):
             print(in_to_print)
 
+    timeit_rep_nmb = 600
+
+    def timeitprint(in_what_measures, in_fnc, in_timeit_rep_nmb=1):  # TODO: remove
+        if in_timeit_rep_nmb > 1:
+            print("time (s) of " + in_what_measures +
+                  " (" + str(in_timeit_rep_nmb) + " repetitions):")
+        else:
+            print("time (s) of " + in_what_measures + ":")
+        print(timeit.timeit(in_fnc, number=in_timeit_rep_nmb))
+
     # Where will outputs go - by default, wherever this script is run
     outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
     # Load without simulating again - parse the simulation logfile to get the
     # output dataframes
-    time_before_log = time.time()
     log_df = parse_log_file('outputs/' + in_log_file)
-    time_after_log = time.time()
-    print("time of loading the log:")
-    print(time_after_log - time_before_log)
 
-    time_before_figs = time.time()
     # %% Plot Contraception Use Over time:
     if in_plot_use_time_bool:
         years = mdates.YearLocator()  # every year
@@ -175,15 +179,14 @@ def analyse_contraception(in_datestamp, in_log_file,
         plt.savefig(outputpath / ('Pregnancies Over Time' + in_datestamp + '.png'), format='png')
         # plt.show()
 
-    time_after_figs = time.time()
-    print("time to plot figs:")
-    print(time_after_figs - time_before_figs)
-
     # %% Calculate Use and Consumables Costs of Contraception methods within
     # some time periods:
     if in_calc_use_costs_bool:
-
+        # time period starts should be given as input
         assert in_required_time_period_starts != []
+        # time period starts should be ordered
+        assert all(in_required_time_period_starts[i] <= in_required_time_period_starts[i + 1]
+                   for i in range(len(in_required_time_period_starts) - 1))
 
 #  ###### USE ##################################################################
         # Load Contraception Use Results
@@ -201,64 +204,46 @@ def analyse_contraception(in_datestamp, in_log_file,
 
         # Keep only records within required time periods and assign the time
         # periods they belong to
-        def keep_data_required_time_period(in_l_time_period_start, in_df_data):
+        def assign_time_period(in_year, in_l_time_period_start):
             """
-            Only keeps the data in required time periods, ie between first
-            (inclusive) and last (exclusive) year from in_l_time_period_start.
+            For an input year returns a time period to which the year belongs
+            according to the list of time period starts (in_l_time_period_start).
+            The input year should be within these time periods.
 
+            :param in_year: a year
             :param in_l_time_period_start: list of time period starts, dividing
                 individual time periods
-            :param in_df_data: all data, which we want to limit to required time
-                periods
-            :return: Only those data within required time periods.
+
+            :return: A time period to which the input year belongs.
             """
-            return in_df_data.loc[
-                (in_l_time_period_start[0] <= in_df_data['year']) &
-                (in_df_data['year'] < in_l_time_period_start[-1])
-            ].copy()
+            # # the input year should be from the required time periods
+            # assert (in_l_time_period_start[0] <= in_year) & (in_year < in_l_time_period_start[-1])  # TODO: give it back? (how much time it takes?)
 
-        def assign_time_period(in_l_time_period_start, in_dfcol_year):
-            """
-            Assigns a time period to each individual record, according to the
-            list of time period starts (in_l_time_period_start) and the years
-            when the records were performed (in_dfcol_year). All records in
-            input should be within these years.
-
-            :param in_l_time_period_start: list of time period starts, dividing
-                individual time periods
-            :param in_dfcol_year: a column of years when the records were
-                performed
-            :return: Time periods to which the records belong.
-            """
-            # time period starts should be ordered
-            assert all(in_l_time_period_start[i] <= in_l_time_period_start[i + 1]
-                       for i in range(len(in_l_time_period_start) - 1))
-            # # all records in input should be from the required time periods
-            # assert all((in_l_time_period_start[0] <= in_l_year[j]) &
-            #            (in_l_year[j] < in_l_time_period_start[-1])
-            #            for j in range(len(in_l_year))
-            #            )
-
-            def determine_tp(in_in_year):
-                """
-                Assigns to a year a time period to which the year belongs
-                according to the list of time period starts
-                (in_l_time_period_start)
-                :param in_in_year: a year when the record was performed
-                :return: A time period to which the record belongs.
-                """
-                time_period_pos = next(i for i, v in enumerate(in_l_time_period_start) if v > in_in_year) - 1
-                return str(in_l_time_period_start[time_period_pos]) +\
-                       "-" + str(in_l_time_period_start[time_period_pos+1] - 1)
-
-            return in_dfcol_year.apply(determine_tp)
+            time_period_pos = next(i for i, v in enumerate(in_l_time_period_start) if v > in_year) - 1
+            return str(in_l_time_period_start[time_period_pos]) + "-"\
+                   + str(in_l_time_period_start[time_period_pos+1] - 1)
 
         def create_time_period_data(in_l_time_period_start, in_df):
-            tp_df =\
-                keep_data_required_time_period(in_l_time_period_start, in_df)
+            """
+            Keeps only data within the required time periods and then assigns
+            each record the time period it belongs to, based on the 'year' the
+            record was performed.
 
-            tp_df['Time_Period'] =\
-                assign_time_period(in_l_time_period_start, tp_df['year'])
+            :param in_l_time_period_start: a list of starts of the time periods,
+                first year incl., last year excl.,
+            :param in_df: the data with records that include the 'year' when the
+                record was performed
+
+            :return: A new data frame that includes only records from the required
+                time periods, and includes a new column 'Time_Period'.
+            """
+            # keep data only from the required time periods
+            tp_df = in_df.loc[(in_l_time_period_start[0] <= in_df['year']) &
+                              (in_df['year'] < in_l_time_period_start[-1])].copy()
+
+            tp_df['Time_Period'] = \
+                tp_df['year'].apply(assign_time_period,
+                                    in_l_time_period_start=in_l_time_period_start)
 
             return tp_df
 
@@ -493,6 +478,7 @@ def analyse_contraception(in_datestamp, in_log_file,
             :param in_df_mean_use: data frame with mean numbers of women using
                 the contraceptives within the 'Time_Period' and including also
                 the length of the time period 'tp_len'
+
              :return: List of costs per time period per contraceptive method.
             """
             l_costs = []
