@@ -251,9 +251,10 @@ def test_get_person_id_to_inherit_from(rng: np.random.RandomState):
         assert population_dataframe.loc[inherit_from_id].is_alive
 
 def test_random_date_returns_date(rng):
-    num_iter=20
+    num_iter = 20
     for year_init, year_fin in rng.randint(1900, 2050, size=(num_iter, 2)):
-        assert isinstance(tlo.util.random_date(Date(year_init,1,1),Date(year_fin,1,1),rng),
-                      Date),\
-        "function random_date does not return date type"
+        assert isinstance(
+            tlo.util.random_date(Date(year_init, 1, 1), Date(year_fin, 1, 1), rng),
+            Date
+        ), "function random_date does not return date type"
 
