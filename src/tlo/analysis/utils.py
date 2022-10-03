@@ -818,7 +818,7 @@ def order_of_cause_of_death_label(_cause_of_death_label: Union[str, pd.Index]) -
     if isinstance(_cause_of_death_label, str):
         return tuple(order).index(_cause_of_death_label)
     else:
-        return order[order.isin(_cause_of_death_label)]
+        return pd.Index(sorted(_cause_of_death_label, key=order_of_cause_of_death_label))
 
 
 def get_color_cause_of_death_label(cause_of_death_label: str) -> str:
