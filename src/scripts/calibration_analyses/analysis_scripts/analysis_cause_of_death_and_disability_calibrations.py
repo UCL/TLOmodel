@@ -145,11 +145,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 by=['sex', 'age_grp', 'label']
             )[['mean', 'lower', 'upper']].sum().unstack(fill_value=0.0)
 
-        # %% Make figures of overall summaries of outcomes by cause
-
+        # %% Define useful things for the plotting:
         dats = ['GBD', 'Model']
         sexes = ['F', 'M']
+
+        all_causes = sorted(list(results.index.levels[3]), key=order_of_cause_of_death_label)
+
         sexname = lambda x: 'Females' if x == 'F' else 'Males'  # noqa: E731
+        reformat_cause = lambda x: x.replace(' / ', '_')  # noqa: E731
+
+        # %% Make figures of overall summaries of outcomes by cause
 
         for _i, sex in enumerate(sexes):
 
@@ -157,7 +162,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             for row, dat in enumerate(dats):
                 ax = axes[row]
                 df = outcome_by_age_pt[dat].loc[sex].loc[:, pd.IndexSlice['mean']] / 1e3
-                df = df[order_of_cause_of_death_label(df.columns)]  # Reorder manually
+                df = df[reversed(order_of_cause_of_death_label(df.columns))]  # Reverse the standard order so that
+                #                                                               'Other' is at base
 
                 df.plot.bar(stacked=True, ax=ax,
                             color=[get_color_cause_of_death_label(_label) for _label in df.columns])
@@ -170,28 +176,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             # Create figure legend and remove duplicated entries
             handles, labels = ax.get_legend_handles_labels()
             lgd = dict(zip(labels, handles))
-            fig.legend(lgd.values(), lgd.keys(), loc="center right", ncol=1, fontsize=6)
+            fig.legend(reversed(lgd.values()), reversed(lgd.keys()), loc="center right", ncol=1, fontsize=6)
 
-            fig.suptitle(f'{sexname(sex)}')
+            fig.suptitle(f'{sexname(sex)}', fontsize=18)
             fig.tight_layout()
 
             fig.savefig(make_graph_file_name(f"{what}_{period}_{sex}_StackedBars_ModelvsGBD"))
             fig.show()
             plt.close(fig)
 
-
-
-
         # %% Plots of age-breakdown of outcomes patten for each cause:
-
-        # order_of_cause_of_death_label
-        # get_color_cause_of_death_label
-
-        sexes = ['F', 'M']
-        dats = ['GBD', 'Model']
-        all_causes = sorted(list(results.index.levels[3]), key=order_of_cause_of_death_label)
-
-        reformat_cause = lambda x: x.replace(' / ', '_')  # noqa: E731
 
         for cause in all_causes:
             try:
@@ -228,7 +222,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
                 fig.tight_layout()
                 plt.savefig(make_graph_file_name(
-                    f"{what}_{period}_Scatter_Plot_{reformat_cause(cause)}")
+                    f"{what}_{period}_AgeAndSexSpecificLineGraph_{reformat_cause(cause)}")
                 )
                 plt.show()
                 plt.close(fig)
@@ -250,6 +244,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         fig, ax = plt.subplots()
         xylim = tot_outcomes_by_cause.loc[('upper', slice(None))].max().max() / 1e3
+        line_x = np.linspace(0, xylim)
+        ax.plot(line_x, line_x, 'k--')
+        ax.fill_between(line_x, line_x*0.9, line_x*1.1, color='grey', alpha=0.5)
+        ax.set(xlim=(0, xylim), ylim=(0, xylim))
+
         for cause in all_causes:
 
             vals = tot_outcomes_by_cause.loc[(slice(None), cause), ] / 1e3
@@ -276,9 +275,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                             ha='center'
                             )
 
-        line_x = np.linspace(0, xylim)
-        ax.plot(line_x, line_x, 'k--')
-        ax.set(xlim=(0, xylim), ylim=(0, xylim))
         ax.set_xlabel('GBD (thousands)')
         ax.set_ylabel('Model (thousands)')
         ax.set_title(f'{what} per year by Cause {period}')
@@ -287,12 +283,34 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         plt.show()
         plt.close(fig)
 
+        # %% Assess the "coverage" of the model: i.e. the fraction of deaths/dalys that are causes that are represnted
+        # the model.
+        outcomes = outcome_by_age_pt['GBD'][("mean")]
+        fraction_causes_modelled = 1.0 - outcomes['Other'] / outcomes.sum(axis=1)
+        fig, axs = plt.subplots(nrows=1, ncols=2, sharey=True)
+        for sex, ax in zip(sexes, axs):
+            fraction_causes_modelled.loc[(sex, slice(None))].droplevel(0).plot(
+                ax=ax, color=get_color_cause_of_death_label('Other'), lw=5)
+            ax.set_ylim(0, 1.0)
+            xticks = fraction_causes_modelled.index.levels[1]
+            ax.set_xticks(range(len(xticks)))
+            ax.set_xticklabels(xticks, rotation=90)
+            ax.grid(axis='y')
+            ax.set_xlabel('Age-Group')
+            ax.set_ylabel('Fraction')
+            ax.set_title(f"{sexname(sex)}")
+        fig.suptitle(f"Fraction of {what} Represented in the Model", fontsize=16)
+        fig.tight_layout()
+        plt.savefig(make_graph_file_name(f"{what}_{period}_coverage"))
+        plt.show()
+        plt.close(fig)
+
     # %% Make graphs for each of Deaths and DALYS for a specific period
-    make_std_graphs(what='Deaths', period='2010-2014')
+    # make_std_graphs(what='Deaths', period='2010-2014')
     # make_std_graphs(what='DALYs', period='2010-2014')
-    #
+
     # make_std_graphs(what='Deaths', period='2015-2019')
-    # make_std_graphs(what='DALYs', period='2015-2019')
+    make_std_graphs(what='DALYs', period='2015-2019')
 
 
 if __name__ == "__main__":
