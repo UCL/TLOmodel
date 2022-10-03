@@ -19,7 +19,7 @@ path_to_files = Path(os.path.dirname(__file__))
 
 @pytest.fixture
 def rng(seed):
-    return np.random.RandomState(seed % 2**32)
+    return np.random.RandomState(seed % 2 ** 32)
 
 
 def check_output_states_and_freq(
@@ -149,7 +149,7 @@ def test_sample_outcome(tmpdir, seed):
         'B': {0: 0.0, 1: 1.0, 2: 0.25, 3: 0.0},
         'C': {0: 0.0, 1: 0.0, 2: 0.50, 3: 0.0},
     })
-    rng = np.random.RandomState(seed=seed % 2**32)
+    rng = np.random.RandomState(seed=seed % 2 ** 32)
 
     list_of_results = list()
     n = 5000
@@ -250,11 +250,10 @@ def test_get_person_id_to_inherit_from(rng: np.random.RandomState):
         assert inherit_from_id != child_id
         assert population_dataframe.loc[inherit_from_id].is_alive
 
+
 def test_random_date_returns_date(rng):
     num_iter = 20
     for year_init, year_fin in rng.randint(1900, 2050, size=(num_iter, 2)):
-        assert isinstance(
-            tlo.util.random_date(Date(year_init, 1, 1), Date(year_fin, 1, 1), rng),
-            Date
-        ), "function random_date does not return date type"
-
+        random_date = tlo.util.random_date(Date(year_init, 1, 1), Date(year_fin, 1, 1), rng)
+        assert isinstance(random_date, Date)
+        assert Date(year_init, 1, 1) <= random_date <= Date(year_fin, 1, 1) or (Date(year_init, 1, 1) and Date(year_fin, 1, 1)  <= random_date)
