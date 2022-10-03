@@ -295,5 +295,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # make_std_graphs(what='DALYs', period='2015-2019')
 
 
-    make_std_graphs(what='Deaths', period='2015-2019')
-    make_std_graphs(what='DALYs', period='2015-2019')
+if __name__ == "__main__":
+    outputspath = Path('./outputs/tbh03@ic.ac.uk')
+    rfp = Path('./resources')
+
+    # Find results folder (most recent run generated using that scenario_filename)
+    scenario_filename = 'long_run_all_diseases.py'
+    results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
+
+    apply(results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
