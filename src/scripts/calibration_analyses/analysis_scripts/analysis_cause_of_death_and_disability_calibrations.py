@@ -21,7 +21,7 @@ from tlo.analysis.utils import (
     make_age_grp_types,
     make_calendar_period_lookup,
     make_calendar_period_type,
-    summarize,
+    summarize, get_scenario_outputs, order_of_cause_of_death_label, get_color_cause_of_death_label,
 )
 
 PREFIX_ON_FILENAME = '2'
@@ -112,7 +112,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # todo - the grouping should be inside the function for the extraction like done in
         #  `analysis_effect_of_each_treatment`...?
-        # todo - factorize this.
         # todo - use colormap
 
         # %% Load the cause-of-deaths mappers and use them to populate the 'label' for gbd outputs
@@ -147,44 +146,51 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             )[['mean', 'lower', 'upper']].sum().unstack(fill_value=0.0)
 
         # %% Make figures of overall summaries of outcomes by cause
-        # todo - improve formatting of this one
 
         dats = ['GBD', 'Model']
         sexes = ['F', 'M']
         sexname = lambda x: 'Females' if x == 'F' else 'Males'  # noqa: E731
 
-        fig, axes = plt.subplots(ncols=2, nrows=2, sharey=True, sharex=True, figsize=(40, 40))
+        for _i, sex in enumerate(sexes):
 
-        for col, sex in enumerate(sexes):
+            fig, axes = plt.subplots(ncols=2, nrows=1, sharey=True, sharex=True)
             for row, dat in enumerate(dats):
-                ax = axes[row][col]
+                ax = axes[row]
                 df = outcome_by_age_pt[dat].loc[sex].loc[:, pd.IndexSlice['mean']] / 1e3
+                df = df[order_of_cause_of_death_label(df.columns)]  # Reorder manually
 
-                xs = np.arange(len(df.index))
-                df.plot.bar(stacked=True, ax=ax, fontsize=30)
-                ax.set_xlabel('Age Group', fontsize=40)
-                ax.set_title(f"{sexname(sex)}: {dat}", fontsize=60)
+                df.plot.bar(stacked=True, ax=ax,
+                            color=[get_color_cause_of_death_label(_label) for _label in df.columns])
+                ax.set_xlabel('Age Group')
+                ax.set_ylabel(f"{what} per year\n(thousands)")
+                ax.set_title(f"{dat}")
                 ax.get_legend().remove()
+                ax.grid(axis='y')
 
-        # add a big axis, hide frame
-        bigax = fig.add_subplot(111, frameon=False)
+            # Create figure legend and remove duplicated entries
+            handles, labels = ax.get_legend_handles_labels()
+            lgd = dict(zip(labels, handles))
+            fig.legend(lgd.values(), lgd.keys(), loc="center right", ncol=1, fontsize=6)
 
-        # hide tick and tick label of the "big axis"
-        bigax.tick_params(labelcolor='none', which='both', top=False, bottom=False, left=False, right=False)
-        bigax.set_ylabel(f"{what} per year (thousands)", fontsize=40)
+            fig.suptitle(f'{sexname(sex)}')
+            fig.tight_layout()
 
-        fig.legend(loc="center right", fontsize=15)
-        fig.tight_layout()
-        plt.savefig(make_graph_file_name(f"{what}_{period}_StackedBars_ModelvsGBD"))
-        plt.show()
-        plt.close(fig)
+            fig.savefig(make_graph_file_name(f"{what}_{period}_{sex}_StackedBars_ModelvsGBD"))
+            fig.show()
+            plt.close(fig)
+
+
+
 
         # %% Plots of age-breakdown of outcomes patten for each cause:
 
+        # order_of_cause_of_death_label
+        # get_color_cause_of_death_label
+
         sexes = ['F', 'M']
         dats = ['GBD', 'Model']
+        all_causes = sorted(list(results.index.levels[3]), key=order_of_cause_of_death_label)
 
-        all_causes = list(results.index.levels[3])
         reformat_cause = lambda x: x.replace(' / ', '_')  # noqa: E731
 
         for cause in all_causes:
@@ -240,11 +246,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # todo N.B. For GBD, should really use all ages and all sex numbers from GBD to get correct uncertainty bounds
         #  (the addition of the bounds for the sub-categories - as done here - is not strictly correct.)
 
-        select_labels = ['AIDS', 'Childhood Diarrhoea', 'Other']
+        select_labels = ['AIDS', 'Cancer', 'Measles', 'Other']
 
         fig, ax = plt.subplots()
-        xylim = tot_outcomes_by_cause.loc[('mean', slice(None))].max().max() / 1e3
-        for cause in tot_outcomes_by_cause.index.levels[1]:
+        xylim = tot_outcomes_by_cause.loc[('upper', slice(None))].max().max() / 1e3
+        for cause in all_causes:
 
             vals = tot_outcomes_by_cause.loc[(slice(None), cause), ] / 1e3
 
@@ -259,7 +265,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 vals.at[('upper', cause), 'Model'] - y
             ]).reshape(2, 1)
 
-            ax.errorbar(x=x, y=y, xerr=xerr, yerr=yerr, label=cause)
+            ax.errorbar(x=x, y=y, xerr=xerr, yerr=yerr, label=cause, color=get_color_cause_of_death_label(cause))
 
             # add labels to selected points
             if cause in select_labels:
@@ -271,18 +277,23 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                             )
 
         line_x = np.linspace(0, xylim)
-        ax.plot(line_x, line_x, 'r')
+        ax.plot(line_x, line_x, 'k--')
         ax.set(xlim=(0, xylim), ylim=(0, xylim))
         ax.set_xlabel('GBD (thousands)')
         ax.set_ylabel('Model (thousands)')
         ax.set_title(f'{what} per year by Cause {period}')
+        ax.legend(ncol=1, prop={'size': 8}, loc='lower right')
         plt.savefig(make_graph_file_name(f"{what}_{period}_Scatter_Plot"))
         plt.show()
         plt.close(fig)
 
     # %% Make graphs for each of Deaths and DALYS for a specific period
     make_std_graphs(what='Deaths', period='2010-2014')
-    make_std_graphs(what='DALYs', period='2010-2014')
+    # make_std_graphs(what='DALYs', period='2010-2014')
+    #
+    # make_std_graphs(what='Deaths', period='2015-2019')
+    # make_std_graphs(what='DALYs', period='2015-2019')
+
 
     make_std_graphs(what='Deaths', period='2015-2019')
     make_std_graphs(what='DALYs', period='2015-2019')
