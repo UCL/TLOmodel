@@ -1212,6 +1212,7 @@ class Tb(Module):
             ] = True  # ensure classed as retreatment case
 
             for person in tx_failure:
+
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     HSI_Tb_ScreeningAndRefer(person_id=person, module=self),
                     topen=self.sim.date,

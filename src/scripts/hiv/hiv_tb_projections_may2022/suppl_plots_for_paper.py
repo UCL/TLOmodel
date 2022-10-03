@@ -32,3 +32,19 @@ outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
 
 # download all files (and get most recent [-1])
 results = get_scenario_outputs("scenario4_SI.py", outputspath)[-1]
+baseline_results = get_scenario_outputs("scenario0.py", outputspath)[-1]
+
+# %%: get difference in numbers of deaths by intervention
+
+# extract numbers of deaths (median, 95% UI) by scenario (9 scenarios)
+
+# aggregate over 2023-2035
+
+# for plot - difference from baseline (scenario 0)
+# (scenario - scenario0) / scenario0
+
+
+
+
+
+# %%: get difference in DALYs by intervention
