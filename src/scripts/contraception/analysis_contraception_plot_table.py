@@ -3,6 +3,7 @@ import numpy as np
 import fnc_analyse_contraception as a_co
 import pandas as pd
 # import collections
+import timeit
 import time
 
 time_start = time.time()
@@ -51,29 +52,37 @@ def fullprint(in_to_print):  # TODO: remove
         print(in_to_print)
 
 
-time_before_analysis = time.time()
-print("time until analysis:")
-print(time_before_analysis - time_start)
+def timeitprint(in_what_measures, in_fnc, in_timeit_rep_nmb=1):  # TODO: remove
+    if in_timeit_rep_nmb > 1:
+        print("time (s) of " + in_what_measures +
+              " (" + str(in_timeit_rep_nmb) + " repetitions):")
+    else:
+        print("time (s) of " + in_what_measures + ":")
+    print(timeit.timeit(in_fnc, number=in_timeit_rep_nmb))
+
 
 # Use and Consumables Costs of Contraception methods Over time
 # WITHOUT interventions:
-use_without_df, percentage_use_without_df, costs_without_df =\
-    a_co.analyse_contraception(
-        datestamp_without, logFile_without,
-        # %% Plot Contraception Use Over time?
-        True,
-        # %% Plot Contraception Use By Method Over time?
-        True,
-        # %% Plot Pregnancies Over time?
-        True,
-        # Calculate Use and Consumables Costs of Contraception methods within
-        # some time periods?
-        True, TimePeriods_starts
-    )
+def do_without_analysis():  # TODO: temporarily as a function (to allow better measurement of running time)
+    out_use_without_df, out_percentage_use_without_df, out_costs_without_df =\
+        a_co.analyse_contraception(
+            datestamp_without, logFile_without,
+            # %% Plot Contraception Use Over time?
+            False,
+            # %% Plot Contraception Use By Method Over time?
+            False,
+            # %% Plot Pregnancies Over time?
+            False,
+            # Calculate Use and Consumables Costs of Contraception methods within
+            # some time periods?
+            True, TimePeriods_starts
+        )
+    return out_use_without_df, out_percentage_use_without_df, out_costs_without_df
 
-time_after_analysis = time.time()
-print("time of analysis performance only:")
-print(time_after_analysis - time_before_analysis)
+
+use_without_df, percentage_use_without_df, costs_without_df = do_without_analysis()
+# timeitprint("one analysis performance only", do_without_analysis)
+# 11.47628352700849 for test data ('2022-09-10T181844')
 
 print("COSTS")
 print(costs_without_df)
