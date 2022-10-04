@@ -401,6 +401,7 @@ def random_date(start, end, rng):
         print('Invalid date was entered')
     return start + DateOffset(days=rng.randint(0, (end - start).days))
 
+
 def hash_dataframe(dataframe: pd.DataFrame):
     def coerce_lists_to_tuples(df: pd.DataFrame) -> pd.DataFrame:
         """Coerce columns in a pd.DataFrame that are lists to tuples. This step is needed before hashing a pd.DataFrame
