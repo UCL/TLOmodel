@@ -15,6 +15,7 @@ from matplotlib import dates as mdates
 from matplotlib import pyplot as plt
 from collections import Counter
 from tlo.analysis.utils import parse_log_file
+import functools
 
 
 def analyse_contraception(in_datestamp, in_log_file,
@@ -56,7 +57,7 @@ def analyse_contraception(in_datestamp, in_log_file,
 
     timeit_rep_nmb = 600
 
-    def timeitprint(in_what_measures, in_fnc, in_timeit_rep_nmb=1):  # TODO: remove
+    def timeitprint(in_what_measures: str, in_fnc, in_timeit_rep_nmb=1):  # TODO: remove
         if in_timeit_rep_nmb > 1:
             print("time (s) of " + in_what_measures +
                   " (" + str(in_timeit_rep_nmb) + " repetitions):")
@@ -240,11 +241,9 @@ def analyse_contraception(in_datestamp, in_log_file,
             # keep data only from the required time periods
             tp_df = in_df.loc[(in_l_time_period_start[0] <= in_df['year']) &
                               (in_df['year'] < in_l_time_period_start[-1])].copy()
-
             tp_df['Time_Period'] = \
                 tp_df['year'].apply(assign_time_period,
                                     in_l_time_period_start=in_l_time_period_start)
-
             return tp_df
 
         co_use_modern_tp_df = \
@@ -526,7 +525,7 @@ def analyse_contraception(in_datestamp, in_log_file,
                                      (1 - prob_progestin_only) * time_method_key) *\
                                     float(in_df_resource_items_pkgs['Unit_Cost'].loc[
                                               (in_df_resource_items_pkgs['Contraceptive_Method'] == i[1]) &
-                                              (in_df_resource_items_pkgs[ 'Item_Code'] == time_method_key)])
+                                              (in_df_resource_items_pkgs['Item_Code'] == time_method_key)])
                         costs = costs + (unit_cost * item_avail_dict[time_method_key])
                 else:
                     item_avail_dict = in_df_cons_avail_by_time_and_method.loc[
@@ -541,9 +540,17 @@ def analyse_contraception(in_datestamp, in_log_file,
                 l_costs.append(costs)
             return l_costs
 
+        # timeitprint("calc costs",
+        #             functools.partial(calculate_costs,
+        #                               resource_items_pkgs_contraception_only_df,
+        #                               cons_avail_grouped_by_time_and_method_df,
+        #                               mean_use_df),
+        #             6000)
+        # 26.302437201999055 s for 6000 repetitions
         cons_avail_grouped_by_time_and_method_df['Costs'] =\
             calculate_costs(resource_items_pkgs_contraception_only_df,
-                            cons_avail_grouped_by_time_and_method_df, mean_use_df)
+                            cons_avail_grouped_by_time_and_method_df,
+                            mean_use_df)
 
         def sum_costs_all_times(in_df_costs_by_tp):
             """
@@ -555,11 +562,8 @@ def analyse_contraception(in_datestamp, in_log_file,
                 input df.
             """
             # tp of all times, ie very first to very last year of time periods
-            for r, i in enumerate(in_df_costs_by_tp.index):
-                if r == 0:
-                    y_first = i[0].split("-")[0]
-                if r == (len(in_df_costs_by_tp) - 1):
-                    y_last = i[0].split("-")[1]
+            y_first = in_df_costs_by_tp.index[0][0].split("-")[0]
+            y_last = in_df_costs_by_tp.index[len(in_df_costs_by_tp) - 1][0].split("-")[1]
             sum_tp = (str(y_first) + "-" + str(y_last))
             # sum the costs in all time periods for each contraceptive method
             sum_costs = in_df_costs_by_tp.groupby(level=[1]).sum()
