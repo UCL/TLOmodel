@@ -26,20 +26,27 @@ def analyse_contraception(in_datestamp, in_log_file,
                           in_required_time_period_starts=[],
                           in_use_output="mean"):
     """
+    Performs analysis of contraception for pre-simulated data (data given by
+    'in_log_file'), saves figure(s) and/or calculates contraception use and
+    costs to be included in a table, according to what is (not) required
+    (requirements set by inputs in_xx_bool). The name of output figs includes
+     'in_datestamp' to be assigned to correct simulations.
 
     :param in_datestamp: datestamp to be included in output files names
     :param in_log_file: log file from which the simulations logging is downloaded
-    :param in_plot_use_time_bool: True if we want to plot use of contraception
-        over time
+    :param in_plot_use_time_bool: True if we want to plot use of any
+        contraception over time
     :param in_plot_use_time_method_bool: True if we want to plot use of
-        contraception methods over time
+        individual contraception methods over time
     :param in_plot_pregnancies_bool: True if we want to plot pregnancies over
         time
     :param in_calc_use_costs_bool: True if we want to calculate use and costs of
-        contraception methods in time periods
-    :param in_required_time_period_starts: time periods specified if
-        'in_calc_use_costs_bool' is True (default: [] -- as we don't need it if
-         'in_calc_use_costs_bool' is False)
+        contraception methods in time periods (time periods
+        'in_required_time_period_starts' needs to be given as input)
+    :param in_required_time_period_starts: a list of years determining the time
+        periods for which we require the calculations, first year inc.,
+        last year excl. (default: [] -- as we don't need if
+        'in_calc_use_costs_bool' is False)
     :param in_use_output: "mean" or "max", according to which output of numbers,
         and percentage of women using contraception methods we want to display
         in the table (default: "mean")
@@ -256,6 +263,18 @@ def analyse_contraception(in_datestamp, in_log_file,
              (co_use_modern_tp_df.columns != 'year'))]
 
         def create_percentage_use_df(in_df_use_incl_women_total):
+            """
+            Based on mean/max use creates a data frame with mean/max percentage
+            use.
+
+            :param in_df_use_incl_women_total: data frame of contraceptive use,
+                grouped by 'Time_Period', for all modern contraception methods,
+                including a column 'women_total'
+
+            :return: Data frame grouped by 'Time_Period' of percentage use for
+                all modern contraception methods, including a column
+                'women_total' (ie 100%).
+            """
             df_percentage_use = in_df_use_incl_women_total.copy()
             df_percentage_use.iloc[:, :-1] = df_percentage_use.iloc[:, :-1]\
                 .div(df_percentage_use['women_total'], axis=0).mul(100, axis=0)
@@ -388,6 +407,14 @@ def analyse_contraception(in_datestamp, in_log_file,
         )  # TODO: Use this in the function below.
 
         def get_contraceptive_method_for_request(in_d):
+            """
+            Based on a dictionary of requested items returns what contraception
+            method was requested.
+
+            :param in_d: a dictionary of requested items
+
+            :return: Contraception method as string.
+            """
         # TODO: any chance to take these from the model, or make a file from
         #  which both model and visualisation will take it, so if any changes
         #  are done in future, it will be done only once.
