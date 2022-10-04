@@ -796,15 +796,19 @@ def _define_cause_of_death_labels() -> pd.Series:
         'Measles': 'cornflowerblue',
         'non_AIDS_TB': 'mediumslateblue',
 
-        'Heart Disease': 'sienna',  # brown-ish
-        'Kidney Disease': 'chocolate',  # brown-ish
-        'Diabetes': 'peru',  # brown-ish
-        'Stroke': 'burlywood',  # brown-ish
+        'Heart Disease': 'sienna',
+        'Kidney Disease': 'chocolate',
+        'Diabetes': 'peru',
+        'Stroke': 'burlywood',
 
-        'Cancer': 'deeppink',
+        'Cancer (Bladder)': 'deeppink',
+        'Cancer (Breast)': 'darkmagenta',
+        'Cancer (Oesophagus)': 'mediumvioletred',
+        'Cancer (Other)': 'crimson',
+        'Cancer (Prostate)': 'hotpink',
 
-        'Depression / Self-harm': 'indianred',
-        'Epilepsy': 'red',
+        'Depression / Self-harm': 'goldenrod',
+        'Epilepsy': 'gold',
 
         'Transport Injuries': 'lightsalmon',
 
