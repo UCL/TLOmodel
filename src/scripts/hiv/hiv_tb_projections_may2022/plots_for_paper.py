@@ -2215,6 +2215,17 @@ selected_cons_availability = selected_cons_availability.loc[selected_cons_availa
 # remove level 4
 selected_cons_availability = selected_cons_availability.loc[selected_cons_availability.Facility_Level != "4"]
 
+# replace item code with item name
+selected_cons_availability.loc[selected_cons_availability.item_code == 184, "item_code"] = "Sputum test"
+selected_cons_availability.loc[selected_cons_availability.item_code == 187, "item_code"] = "GeneXpert test"
+selected_cons_availability.loc[selected_cons_availability.item_code == 175, "item_code"] = "Chest X-ray"
+selected_cons_availability.loc[selected_cons_availability.item_code == 176, "item_code"] = "Adult treatment"
+selected_cons_availability.loc[selected_cons_availability.item_code == 178, "item_code"] = "Child treatment"
+selected_cons_availability.loc[selected_cons_availability.item_code == 177, "item_code"] = "Adult retreatment"
+selected_cons_availability.loc[selected_cons_availability.item_code == 179, "item_code"] = "Child retreatment"
+selected_cons_availability.loc[selected_cons_availability.item_code == 180, "item_code"] = "MDR treatment"
+selected_cons_availability.loc[selected_cons_availability.item_code == 192, "item_code"] = "IPT"
+
 df_heatmap = selected_cons_availability.pivot_table(
     values='available_prop',
     index='item_code',
@@ -2222,9 +2233,10 @@ df_heatmap = selected_cons_availability.pivot_table(
     aggfunc=np.mean)
 
 ax = sns.heatmap(df_heatmap, annot=True)
+# plt.tight_layout()
 plt.xlabel('Facility level')
-plt.ylabel('Item code')
-# fig.savefig(outputspath / "cons_availability.png")
+plt.ylabel('')
+plt.savefig(outputspath / "cons_availability.png", bbox_inches='tight')
 plt.show()
 
 
