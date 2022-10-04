@@ -330,15 +330,12 @@ def analyse_contraception(in_datestamp, in_log_file,
             'Time_Period'
 
         # Add a column with the nmb of years within the time periods
-        def calculate_tp_len(in_a_tp_as_string):
-            l_tp_len = []
-            for tp in in_a_tp_as_string:
-                l_first_last_y = [int(x) for x in tp.split("-")]
-                l_tp_len.append(l_first_last_y[1] - l_first_last_y[0] + 1)
-            return l_tp_len
+        def calculate_tp_len(in_tp_as_string):
+            l_start_end_tp = [int(x) for x in in_tp_as_string.split("-")]
+            return l_start_end_tp[1] - l_start_end_tp[0] + 1
 
         # Add length of time periods to mean_use_df
-        mean_use_df['tp_len'] = calculate_tp_len(mean_use_df.index)
+        mean_use_df['tp_len'] = mean_use_df.index.map(calculate_tp_len)
 
 #  ###### CONSUMABLES ##########################################################
         # Load Consumables results
