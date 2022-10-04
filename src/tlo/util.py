@@ -393,12 +393,8 @@ class BitsetHandler:
 
 
 def random_date(start, end, rng):
-    try:
-        if start >= end:
-            raise ValueError("End date smaller than start date")
-    except ValueError as ex:
-        print(ex)
-        print('Invalid date was entered')
+    if start >= end:
+        raise ValueError("End date equal to or earlier than start date")
     return start + DateOffset(days=rng.randint(0, (end - start).days))
 
 
