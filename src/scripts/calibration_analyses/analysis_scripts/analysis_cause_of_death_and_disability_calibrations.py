@@ -5,8 +5,6 @@ This uses the results of the Scenario defined in: src/scripts/long_run/long_run.
 results (change 'scenario_filename').
 """
 
-# todo - use GBD all ages numbers for some outputs (correct uncertainty bounds)
-
 from pathlib import Path
 
 import numpy as np
@@ -16,12 +14,15 @@ from matplotlib import pyplot as plt
 from tlo.analysis.utils import (
     extract_results,
     format_gbd,
+    get_color_cause_of_death_label,
+    get_scenario_outputs,
     load_pickled_dataframes,
     make_age_grp_lookup,
     make_age_grp_types,
     make_calendar_period_lookup,
     make_calendar_period_type,
-    summarize, get_scenario_outputs, order_of_cause_of_death_label, get_color_cause_of_death_label,
+    order_of_cause_of_death_label,
+    summarize,
 )
 
 PREFIX_ON_FILENAME = '2'
@@ -239,8 +240,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         )
         # todo N.B. For GBD, should really use all ages and all sex numbers from GBD to get correct uncertainty bounds
         #  (the addition of the bounds for the sub-categories - as done here - is not strictly correct.)
+        #  ... OR use formula to make my own explicit assumption about correlation of uncertainty in different age-grps.
 
-        select_labels = ['AIDS', 'Cancer', 'Measles', 'Other']
+        select_labels = ['AIDS', 'Cancer (Other)', 'Measles', 'Other']
 
         fig, ax = plt.subplots()
         xylim = tot_outcomes_by_cause.loc[('upper', slice(None))].max().max() / 1e3
@@ -306,11 +308,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         plt.close(fig)
 
     # %% Make graphs for each of Deaths and DALYS for a specific period
-    # make_std_graphs(what='Deaths', period='2010-2014')
-    # make_std_graphs(what='DALYs', period='2010-2014')
+    make_std_graphs(what='Deaths', period='2010-2014')
+    # make_std_graphs(what='DALYs', period='2010-2014')  # <-- todo colormapping and order for DALYS
 
     # make_std_graphs(what='Deaths', period='2015-2019')
-    make_std_graphs(what='DALYs', period='2015-2019')
+    # make_std_graphs(what='DALYs', period='2015-2019')  # <-- todo colormapping and order for DALYS
 
 
 if __name__ == "__main__":

@@ -21,12 +21,13 @@ from matplotlib.ticker import FormatStrFormatter
 from tlo.analysis.utils import (
     extract_results,
     format_gbd,
+    get_scenario_outputs,
     make_age_grp_lookup,
     make_age_grp_types,
     make_calendar_period_lookup,
     make_calendar_period_type,
     summarize,
-    unflatten_flattened_multi_index_in_logging, get_scenario_outputs,
+    unflatten_flattened_multi_index_in_logging,
 )
 
 PREFIX_ON_FILENAME = '1'
