@@ -758,6 +758,74 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
            counts_of_appts_by_level.sum(axis=1, level=1).sum(axis=0).to_dict()
 
 
+@pytest.mark.slow
+def test_summary_logger_generated_in_year_long_simulation(seed, tmpdir):
+    """Check that the summary logger is created when the simulation lasts exactly one year."""
+
+    def summary_logger_is_present(end_date_of_simulation):
+        """Returns True if the summary logger is present when using the specified end_date for the simulation."""
+        # Create a dummy disease module (to be the parent of the dummy HSI)
+        class DummyModule(Module):
+            METADATA = {Metadata.DISEASE_MODULE}
+
+            def read_parameters(self, data_folder):
+                pass
+
+            def initialise_population(self, population):
+                pass
+
+            def initialise_simulation(self, sim):
+                sim.modules['HealthSystem'].schedule_hsi_event(HSI_Dummy(self, person_id=0),
+                                                               topen=self.sim.date,
+                                                               tclose=None,
+                                                               priority=0)
+
+        # Create a dummy HSI event:
+        class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
+            def __init__(self, module, person_id):
+                super().__init__(module, person_id=person_id)
+                self.TREATMENT_ID = 'Dummy'
+                self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'Under5OPD': 1})
+                self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})
+                self.ACCEPTED_FACILITY_LEVEL = '1a'
+
+            def apply(self, person_id, squeeze_factor):
+                # Request a consumable (either 0 or 1)
+                self.get_consumables(item_codes=self.module.rng.choice((0, 1), p=(0.5, 0.5)))
+
+                # Schedule another occurrence of itself in three days.
+                sim.modules['HealthSystem'].schedule_hsi_event(self,
+                                                               topen=self.sim.date + pd.DateOffset(days=3),
+                                                               tclose=None,
+                                                               priority=0)
+
+        # Set up simulation:
+        sim = Simulation(start_date=start_date, seed=seed, log_config={
+            'filename': 'tmpfile',
+            'directory': tmpdir,
+            'custom_levels': {
+                "tlo.methods.healthsystem": logging.INFO,
+                "tlo.methods.healthsystem.summary": logging.INFO
+            }
+        })
+
+        sim.register(
+            demography.Demography(resourcefilepath=resourcefilepath),
+            healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+            DummyModule(),
+            sort_modules=False,
+            check_all_dependencies=False
+        )
+        sim.make_initial_population(n=1000)
+
+        sim.simulate(end_date=end_date_of_simulation)
+        log = parse_log_file(sim.log_filepath)
+
+        return ('tlo.methods.healthsystem.summary' in log) and len(log['tlo.methods.healthsystem.summary'])
+
+    assert summary_logger_is_present(start_date + pd.DateOffset(years=1))
+
+
 def test_HealthSystemChangeParameters(seed, tmpdir):
     """Check that the event `HealthSystemChangeParameters` can change the internal parameters of the HealthSystem. And
     check that this is effectual in the case of consumables."""
@@ -860,23 +928,54 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
 
 
 def test_is_treatment_id_allowed():
-    """Check the pattern matching in `is_treatment_id_allowed`."""
+    """Check the pattern matching in `is_treatment_id_allowed` works as expected."""
     hs = HealthSystem(resourcefilepath=resourcefilepath)
 
-    assert hs.is_treatment_id_allowed('Hiv', ['*'])
+    # An empty list means nothing is allowed
     assert not hs.is_treatment_id_allowed('Hiv', [])
-    assert not hs.is_treatment_id_allowed('Hiv', ['A', 'B', 'C'])
-    assert hs.is_treatment_id_allowed('Hiv_X', ['A*', 'Hiv*'])
-    assert hs.is_treatment_id_allowed('Hiv_Y', ['A', 'Hiv*'])
-    assert hs.is_treatment_id_allowed('Hiv_A_B_C', ['A', 'Hiv_A_B*'])
-    assert not hs.is_treatment_id_allowed('Hiv_A_B_C', ['A', 'Hiv_X*'])
-    assert hs.is_treatment_id_allowed('Hiv_X_B_C_1_2_3', ['A', 'Hiv_X*'])
-    assert not hs.is_treatment_id_allowed('Hiv_A_B', ['A', 'Hiv_A_B_C_D_E_F*'])
 
-    # First Attendance appointments are always allowed, if anything else is allowed (but not if nothing is allowed).
-    assert hs.is_treatment_id_allowed('FirstAttendance*', ["*"])
-    assert hs.is_treatment_id_allowed('FirstAttendance*', ["A"])
-    assert not hs.is_treatment_id_allowed('FirstAttendance*', [])
+    # A list that contains only an asteriks ['*'] means run anything
+    assert hs.is_treatment_id_allowed('Hiv', ['*'])
+
+    # If the list is not empty, then a treatment_id with a first part "FirstAttendance_" is also allowed
+    assert hs.is_treatment_id_allowed('FirstAttendance_Em', ["A_B_C_D_E"])
+    assert not hs.is_treatment_id_allowed('FirstAttendance_Em', [])
+
+    # An entry in the list of the form "A_B_C" means a treatment_id that matches exactly is allowed
+    assert hs.is_treatment_id_allowed('A', ['A', 'B_C_D', 'E_F_G_H'])
+    assert hs.is_treatment_id_allowed('B_C_D', ['A', 'B_C_D', 'E_F_G_H'])
+
+    assert not hs.is_treatment_id_allowed('A_', ['A', 'B_C_D', 'E_F_G_H'])
+    assert not hs.is_treatment_id_allowed('E_F_G', ['E', 'E_F', 'E_F_G_H'])
+
+    # An entry in the list of the form "A_B_*" means that a treatment_id that begins "A_B_" or "A_B" is allowed
+    assert hs.is_treatment_id_allowed('Hiv_X', ['Hiv_*'])
+    assert hs.is_treatment_id_allowed('Hiv_Y', ['Hiv_*'])
+    assert hs.is_treatment_id_allowed('Hiv_A_B_C', ['Hiv_A_B_*'])
+    assert hs.is_treatment_id_allowed('Hiv_A_B', ['Hiv_A_B_*'])
+    assert hs.is_treatment_id_allowed('Hiv_A_B_C_D', ['Hiv_A_B_C_*'])
+    assert hs.is_treatment_id_allowed('Hiv_A_B_C', ['Hiv_A_B_C_*'])
+    assert hs.is_treatment_id_allowed('Hiv_X_1_2_3_4', ['Hiv_X_*'])
+    assert hs.is_treatment_id_allowed('Hiv_X_1_2_3_4', ['Hiv_*'])
+
+    assert not hs.is_treatment_id_allowed('Hiv_X', ['Hiv_A_*'])
+    assert not hs.is_treatment_id_allowed('Hiv_Y', ['Y_*'])
+    assert not hs.is_treatment_id_allowed('Hiv_A_B_C', ['Hiv_X_B_C_*'])
+    assert not hs.is_treatment_id_allowed('Hiv_A_B_C', ['Hiv1_A_B_C_*'])
+    assert not hs.is_treatment_id_allowed('Hiv_X_1_2_3_4', ['Hiv_Y_*'])
+    assert not hs.is_treatment_id_allowed('A', ['A_B_C_*'])
+
+    # (An asteriks that is not preceded by an "_" has no effect is allowing treatment_ids).
+    assert not hs.is_treatment_id_allowed('Hiv_A_B', ['Hiv*'])
+    assert not hs.is_treatment_id_allowed('Hiv', ['Hiv*'])
+
+    # (And no confusion about stubs that are similar...)
+    assert hs.is_treatment_id_allowed('Epi', ['Epi_*'])
+    assert not hs.is_treatment_id_allowed('Epilepsy', ['Epi_*'])
+    assert not hs.is_treatment_id_allowed('Epi', ['Epilepsy_*'])
+    assert hs.is_treatment_id_allowed('Epilepsy', ['Epilepsy_*'])
+    assert hs.is_treatment_id_allowed('Epi', ['Epi', 'Epilepsy_*'])
+    assert hs.is_treatment_id_allowed('Epilepsy', ['Epi', 'Epilepsy_*'])
 
 
 def test_manipulation_of_service_availability(seed, tmpdir):
@@ -885,7 +984,7 @@ def test_manipulation_of_service_availability(seed, tmpdir):
 
     generic_first_appts = {'FirstAttendance_NonEmergency', 'FirstAttendance_Emergency'}
 
-    def run_sim(service_availability) -> Set[str]:
+    def get_set_of_treatment_ids_that_run(service_availability) -> Set[str]:
         """Return set of TREATMENT_IDs that occur when running the simulation with the `service_availability`."""
         sim = Simulation(start_date=start_date, seed=seed, log_config={
             'filename': 'tmpfile',
@@ -907,35 +1006,40 @@ def test_manipulation_of_service_availability(seed, tmpdir):
             return set()
 
     # Run model with everything available by default using "*"
-    everything = run_sim(service_availability=["*"])
+    everything = get_set_of_treatment_ids_that_run(service_availability=["*"])
 
     # Run model with everything specified individually
-    assert everything == run_sim(service_availability=list(everything))
+    assert everything == get_set_of_treatment_ids_that_run(service_availability=list(everything))
 
     # Run model with nothing available
-    assert set() == run_sim(service_availability=[])
+    assert set() == get_set_of_treatment_ids_that_run(service_availability=[])
 
     # Only allow 'Hiv_Test' (Not `Hiv_Treatment`)
-    assert set({'Hiv_Test'}) == run_sim(service_availability=["Hiv_Test*"]) - generic_first_appts
+    assert set({'Hiv_Test'}) == \
+           get_set_of_treatment_ids_that_run(service_availability=["Hiv_Test_*"]) - generic_first_appts
 
     # Allow all `Hiv` things (but nothing else)
-    assert set({'Hiv_Test', 'Hiv_Treatment'}) == run_sim(service_availability=["Hiv*"]) - generic_first_appts
+    assert set({'Hiv_Test', 'Hiv_Treatment'}) == \
+           get_set_of_treatment_ids_that_run(service_availability=["Hiv_*"]) - generic_first_appts
 
     # Allow all except `Hiv_Test`
     everything_except_hiv_test = everything - set({'Hiv_Test'})
-    run_everything_except_hiv_test = run_sim(service_availability=list(everything_except_hiv_test))
+    run_everything_except_hiv_test = \
+        get_set_of_treatment_ids_that_run(service_availability=list(everything_except_hiv_test))
     assert 'Hiv_Test' not in run_everything_except_hiv_test
     assert len(run_everything_except_hiv_test.union(everything))
 
     # Allow all except `Hiv_Treatment`
     everything_except_hiv_treatment = everything - set({'Hiv_Treatment'})
-    run_everything_except_hiv_treatment = run_sim(service_availability=list(everything_except_hiv_treatment))
+    run_everything_except_hiv_treatment = \
+        get_set_of_treatment_ids_that_run(service_availability=list(everything_except_hiv_treatment))
     assert 'Hiv_Treatment' not in run_everything_except_hiv_treatment
     assert len(run_everything_except_hiv_treatment.union(everything))
 
     # Allow all except `HIV*`
     everything_except_hiv_anything = {x for x in everything if not x.startswith('Hiv')}
-    run_everything_except_hiv_anything = run_sim(service_availability=list(everything_except_hiv_anything))
+    run_everything_except_hiv_anything = \
+        get_set_of_treatment_ids_that_run(service_availability=list(everything_except_hiv_anything))
     assert 'Hiv_Treatment' not in run_everything_except_hiv_anything
     assert 'Hiv_Test' not in run_everything_except_hiv_anything
     assert len(run_everything_except_hiv_anything.union(everything))
