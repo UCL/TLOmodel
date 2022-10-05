@@ -30,7 +30,7 @@ Representation of the Healthcare System
 ========================================
 * **HealthSystem**: Tracks the availability and usage of the resources of the healthcare system with respect to healthcare worker time, consumables and equipment for in-patient care. :download:`.docx <./write-ups/HealthSystem.docx>`
 
-* **Routine Immunization**: The services that deliver a set of immunizations to children. (Forthcoming)
+* **Routine Immunization**: The services that deliver a set of immunizations to children. :download:`.docx <./write-ups/EPI.docx>`
 
 
 Contraception, Pregnancy and Labour
