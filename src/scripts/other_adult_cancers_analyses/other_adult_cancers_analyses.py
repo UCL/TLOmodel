@@ -16,22 +16,16 @@ import numpy as np
 import pandas as pd
 
 from tlo import Date, Simulation
-from tlo.analysis.utils import make_age_grp_types, parse_log_file, compare_number_of_deaths
+from tlo.analysis.utils import compare_number_of_deaths, make_age_grp_types, parse_log_file
 from tlo.methods import (
-    care_of_women_during_pregnancy,
-    contraception,
     demography,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    labour,
-    newborn_outcomes,
-    oesophagealcancer,
     other_adult_cancers,
-    postnatal_supervisor,
-    pregnancy_supervisor,
-    symptommanager, simplified_births,
+    simplified_births,
+    symptommanager,
 )
 
 # Where will outputs go
@@ -261,4 +255,3 @@ comparison = comparison.fillna(0.0)
 comparison.index = comparison.index.droplevel([0, 3])
 comparison.plot()
 plt.show()
-
