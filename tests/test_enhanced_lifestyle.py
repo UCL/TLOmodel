@@ -2,11 +2,14 @@ import os
 import time
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
-from tlo import Date, Simulation
+from tlo import Date, DateOffset, Module, Simulation
+from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.methods import demography, enhanced_lifestyle
 
+resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 4, 1)
 popsize = 10000
@@ -22,14 +25,15 @@ def simulation(seed):
     return sim
 
 
-def __check_properties(df):
+def check_properties(df):
     # no one under 15 can be overweight, low exercise, tobacco, excessive alcohol, married
     under15 = df.age_years < 15
-    # assert not (under15 & df.li_bmi > 0).any()
+    assert not (under15 & pd.notna(df.li_bmi)).any()
     assert not (under15 & df.li_low_ex).any()
     assert not (under15 & df.li_tob).any()
     assert not (under15 & df.li_ex_alc).any()
     assert not (under15 & (df.li_mar_stat != 1)).any()
+
     # education: no one 0-5 should be in education
     assert not ((df.age_years < 5) & (df.li_in_ed | (df.li_ed_lev != 1))).any()
 
@@ -50,30 +54,57 @@ def __check_properties(df):
 
 def test_properties_and_dtypes(simulation):
     simulation.make_initial_population(n=popsize)
-    __check_properties(simulation.population.props)
+    check_properties(simulation.population.props)
     simulation.simulate(end_date=end_date)
-    __check_properties(simulation.population.props)
+    check_properties(simulation.population.props)
     # check types of columns
     df = simulation.population.props
     orig = simulation.population.new_row
     assert (df.dtypes == orig.dtypes).all()
 
 
-def test_init_linear_models(simulation):
-    """ a function to test initialisation and updating of properties """
-    simulation.make_initial_population(n=popsize)
-    # check types of columns
-    df = simulation.population.props
-    orig = simulation.population.new_row
+def test_check_properties_daily_event():
+    class DummyModule(Module):
 
-    # initialise properties
-    enhanced_lifestyle.LifestyleModels(simulation.modules["Lifestyle"]).update_all_properties(df)
+        def read_parameters(self, data_folder):
+            pass
 
-    # update properties
-    enhanced_lifestyle.LifestyleModels(simulation.modules["Lifestyle"]).update_all_properties(df)
+        def initialise_population(self, population):
+            pass
 
-    # check dtypes have not changed
-    assert (df.dtypes == orig.dtypes).all()
+        def initialise_simulation(self, sim):
+            event = DummyLifestyleEvent(self)
+            sim.schedule_event(event, sim.date)
+
+        def on_birth(self, mother, child):
+            pass
+
+    class DummyLifestyleEvent(RegularEvent, PopulationScopeEventMixin):
+        """ An event that runs daily to check the integrity of lifestyle properties """
+
+        def __init__(self, module):
+            """schedule to run everyday
+            """
+            self.repeat_months = 1
+            self.module = module
+            super().__init__(module, frequency=DateOffset(days=1))
+
+        def apply(self, population):
+            """ Apply this event to the population.
+            :param population: the current population
+            """
+            # check lifestyle properties
+            check_properties(population.props)
+
+    # Create simulation:
+    sim = Simulation(start_date=start_date)
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        DummyModule()
+    )
+    sim.make_initial_population(n=2000)
+    sim.simulate(end_date=end_date)
 
 
 if __name__ == '__main__':
