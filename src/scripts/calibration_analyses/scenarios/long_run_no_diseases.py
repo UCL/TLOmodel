@@ -9,6 +9,7 @@ or locally using:
     ```tlo scenario-run src/scripts/calibration_analyses/scenarios/long_run_no_diseases.py```
 
 """
+import pandas as pd
 
 from tlo import Date, logging
 from tlo.methods import contraception, demography, hiv
@@ -20,10 +21,10 @@ class LongRun(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2020, 12, 31)
-        self.pop_size = 2000  # <- recommended population size for the runs is 50k
-        self.number_of_draws = 1  # <- one scenario
-        self.runs_per_draw = 5  # <- repeated this many times
+        self.end_date = self.start_date + pd.DateOffset(years=10)
+        self.pop_size = 20_000
+        self.number_of_draws = 1
+        self.runs_per_draw = 10
 
     def log_configuration(self):
         return {

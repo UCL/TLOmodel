@@ -244,13 +244,25 @@ def test_module_properties(seed):
     those_injured_index = df.loc[df.is_alive & df.rt_road_traffic_inc & ~df.rt_imm_death].index
     the_result_of_test = []
     for person in those_injured_index:
-        the_result_of_test.append([df.loc[person, 'rt_date_inj'] < date for date in
-                                   df.loc[person, 'rt_date_to_remove_daly'] if date is not pd.NaT])
+        the_result_of_test.append(
+            [
+                df.loc[person, 'rt_date_inj'] < date
+                for date in df.loc[person, rti.RTI.DATE_TO_REMOVE_DALY_COLUMNS]
+                if date is not pd.NaT
+            ]
+        )
     did_all_pass_test = [True if all(test_list) else False for test_list in the_result_of_test]
     assert all(did_all_pass_test)
 
-    assert (df.loc[df.is_alive & df.rt_road_traffic_inc & ~df.rt_imm_death, 'rt_date_inj'] < date for date in
-            df.loc[df.is_alive & df.rt_road_traffic_inc & ~df.rt_imm_death, 'rt_date_to_remove_daly'])
+    assert (
+        df.loc[
+            df.is_alive & df.rt_road_traffic_inc & ~df.rt_imm_death, 'rt_date_inj'
+        ] < date
+        for date in df.loc[
+            df.is_alive & df.rt_road_traffic_inc & ~df.rt_imm_death,
+            rti.RTI.DATE_TO_REMOVE_DALY_COLUMNS
+        ]
+    )
     check_dtypes(sim)
 
 
