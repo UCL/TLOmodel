@@ -849,7 +849,6 @@ class Tb(Module):
         # 2) Scenario change
         sim.schedule_event(ScenarioSetupEvent(self), self.parameters["scenario_start_date"])
 
-
         # 3) Define the DxTests and get the consumables required
         self.get_consumables_for_dx_and_tx()
 
@@ -1413,8 +1412,6 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
 
                 # retention on IPT (PLHIV)
                 self.sim.modules["Tb"].parameters["prob_retained_ipt_6_months"] = 0.99
-
-        print (self.sim.modules["Hiv"].parameters["hiv_testing_rates"]["annual_testing_rate_children"])
 
 
 class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
@@ -2567,7 +2564,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         )
         prev_latent_adult = num_latent_adult / len(
             df[(df.age_years >= 15) & df.is_alive]
-        ) if  len(
+        ) if len(
             df[(df.age_years >= 15) & df.is_alive]
         ) else 0
         assert prev_latent_adult <= 1
@@ -2685,14 +2682,14 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get index of adults starting tx in last time-period
         # todo: tb onset may have been up to 3 years prior to treatment
         adult_tx_idx = df.loc[(df.age_years >= 16) &
-                     (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))].index
+                              (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))].index
         # calculate treatment_date - onset_date for each person in index
         adult_tx_delays = (df.loc[adult_tx_idx, "tb_date_treated"] - df.loc[adult_tx_idx, "tb_date_active"]).dt.days
         adult_tx_delays = adult_tx_delays.tolist()
 
         # children
         child_tx_idx = df.loc[(df.age_years < 16) &
-                     (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))].index
+                              (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))].index
         child_tx_delays = (df.loc[child_tx_idx, "tb_date_treated"] - df.loc[child_tx_idx, "tb_date_active"]).dt.days
         child_tx_delays = child_tx_delays.tolist()
 
@@ -2734,7 +2731,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         else:
             adult_prop_false_positive = 0
 
-        #children
+        # children
         child_num_false_positive = len(
             df[
                 ~(df.tb_date_active >= (now - DateOffset(months=36)))
@@ -2767,8 +2764,6 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 "tbPropFalsePositiveChildren": child_prop_false_positive,
             },
         )
-
-
 
 
 # ---------------------------------------------------------------------------
