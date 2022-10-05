@@ -63,9 +63,9 @@ Communicable Diseases
 
 * **TB**: Tuberculosis and associated prevention and treatment programmes. :download:`.docx <./write-ups/TB.docx>`
 
-* **Measles**: Measles-related disease and associated prevention and treatment programmes. (Forthcoming)
-
 * **Malaria**: Malaria disease and associated prevention and treatment programmes. :download:`.docx <./write-ups/Malaria.docx>`
+
+* **Measles**: Measles-related disease and associated prevention and treatment programmes. :download:`.docx <./write-ups/Measles.docx>`
 
 * **Schistosomiasis**: Schistosomiasis disease and associated prevention and treatment programmes. :download:`.docx <./write-ups/Schistosomiasis.docx>`
 
