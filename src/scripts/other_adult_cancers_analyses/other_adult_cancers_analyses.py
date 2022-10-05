@@ -253,6 +253,10 @@ comparison = pd.concat([comparison, x], axis=1)
 comparison = comparison.loc[('2010-2014', slice(None), slice(None), CAUSE_NAME)]
 comparison = comparison.fillna(0.0)
 comparison.index = comparison.index.droplevel([0, 3])
-comparison.plot()
-plt.ylabel('Deaths per year')
+
+fig, axs = plt.subplots(nrows=2, sharex=True)
+for ax, sex in zip(axs, ('M', 'F')):
+    comparison.loc[sex].plot(use_index=True, ax=ax)
+    ax.set_ylabel('Deaths per year')
+    ax.set_title(f"{sex}")
 plt.show()
