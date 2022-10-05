@@ -19,7 +19,7 @@ path_to_files = Path(os.path.dirname(__file__))
 
 @pytest.fixture
 def rng(seed):
-    return np.random.RandomState(seed % 2**32)
+    return np.random.RandomState(seed % 2 ** 32)
 
 
 def check_output_states_and_freq(
@@ -149,7 +149,7 @@ def test_sample_outcome(tmpdir, seed):
         'B': {0: 0.0, 1: 1.0, 2: 0.25, 3: 0.0},
         'C': {0: 0.0, 1: 0.0, 2: 0.50, 3: 0.0},
     })
-    rng = np.random.RandomState(seed=seed % 2**32)
+    rng = np.random.RandomState(seed=seed % 2 ** 32)
 
     list_of_results = list()
     n = 5000
@@ -249,3 +249,15 @@ def test_get_person_id_to_inherit_from(rng: np.random.RandomState):
         assert inherit_from_id != mother_id
         assert inherit_from_id != child_id
         assert population_dataframe.loc[inherit_from_id].is_alive
+
+
+def test_hash_dataframe(rng):
+    # create a dataframe and test for list
+    data = {
+        'A': ['A', 'B', 'C', 'D'],
+        'B': [1, 2, 3, 4],
+    }
+    df = pd.DataFrame(data)
+    df.at[1, 'A'] = [30, 35, 40]
+    df_hash = tlo.util.hash_dataframe(df)
+    assert hasattr(df_hash, '__hash__')
