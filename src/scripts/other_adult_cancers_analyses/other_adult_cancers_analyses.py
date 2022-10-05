@@ -254,4 +254,5 @@ comparison = comparison.loc[('2010-2014', slice(None), slice(None), CAUSE_NAME)]
 comparison = comparison.fillna(0.0)
 comparison.index = comparison.index.droplevel([0, 3])
 comparison.plot()
+plt.ylabel('Deaths per year')
 plt.show()
