@@ -658,12 +658,12 @@ def _define_coarse_appts() -> pd.DataFrame:
                 'category': 'RMNCH',
                 'appt_types': ['AntenatalFirst', 'ANCSubsequent', 'NormalDelivery', 'CompDelivery', 'Csection', 'EPI',
                                'FamPlan', 'U5Malnutr'],
-                'color': 'darkturquoise'},
+                'color': 'gold'},
             {
                 'category': 'HIV/AIDS',
                 'appt_types': ['VCTNegative', 'VCTPositive', 'MaleCirc', 'NewAdult', 'EstMedCom', 'EstNonCom', 'PMTCT',
                                'Peds'],
-                'color': 'gold'},
+                'color': 'darkturquoise'},
             {
                 'category': 'Tb',
                 'appt_types': ['TBNew', 'TBFollowUp'],
@@ -671,11 +671,11 @@ def _define_coarse_appts() -> pd.DataFrame:
             {
                 'category': 'Dental',
                 'appt_types': ['DentAccidEmerg', 'DentSurg', 'DentalU5', 'DentalO5'],
-                'color': 'red'},
+                'color': 'rosybrown'},
             {
                 'category': 'Mental Health',
                 'appt_types': ['MentOPD', 'MentClinic'],
-                'color': 'orangered'},
+                'color': 'lightsalmon'},
             {
                 'category': 'Surgery / Radiotherapy',
                 'appt_types': ['MajorSurg', 'MinorSurg', 'Radiotherapy'],
