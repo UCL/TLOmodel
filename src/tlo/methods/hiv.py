@@ -524,9 +524,6 @@ class Hiv(Module):
         df.loc[df.is_alive, "hv_date_inf"] = pd.NaT
         df.loc[df.is_alive, "hv_last_test_date"] = pd.NaT
 
-        # --- VMMC counter
-        df.loc[df.is_alive, "hv_vmmc_counter"] = 0
-
         # Launch sub-routines for allocating the right number of people into each category
         self.initialise_baseline_prevalence(population)  # allocate baseline prevalence
 
