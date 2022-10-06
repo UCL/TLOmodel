@@ -772,7 +772,7 @@ def get_color_short_treatment_id(short_treatment_id: str) -> str:
     """Return the colour (as matplotlib string) assigned to this shorted TREATMENT_ID. Returns `np.nan` if treatment_id
     is not recognised."""
     colors = _define_short_treatment_ids()
-    _short_treatment_ids_with_trailing_asterix = short_treatment_id.replace('_*', '*')
+    _short_treatment_ids_with_trailing_asterix = short_treatment_id.replace('_*', '*').rstrip('*') + '*'
     if _short_treatment_ids_with_trailing_asterix in colors.index:
         return colors.loc[_short_treatment_ids_with_trailing_asterix]
     else:
