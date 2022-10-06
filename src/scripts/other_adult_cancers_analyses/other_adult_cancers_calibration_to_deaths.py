@@ -25,7 +25,7 @@ resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
 end_date = start_date + pd.DateOffset(years=10)
-popsize = 20_000
+popsize = 50_000
 
 
 def run_sim():
@@ -53,6 +53,7 @@ def run_sim():
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath),
                  )
+
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
