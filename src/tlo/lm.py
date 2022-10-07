@@ -369,9 +369,13 @@ class LinearModel(object):
                     # `pandas.eval` raises an error when using boolean
                     # operations on series with a categorical dtype with integer
                     # categories therefore if any such columns are present we
-                    # convert to the corresponding integer type
-                    dtype = col.dtype.categories.dtype
-                    column_resolvers[cleaned_name] = col.astype(dtype)
+                    # convert to the corresponding Pandas nullable integer type
+                    # with Pandas using the convention that the nullable integer
+                    # dtypes have string aliases which correspond to a capitalization
+                    # of the corresponding NumPy integer dtypes, for example
+                    # int64 -> Int64, int32 -> Int32
+                    dtype_alias = str(col.dtype.categories.dtype).capitalize()
+                    column_resolvers[cleaned_name] = col.astype(dtype_alias)
                 else:
                     column_resolvers[cleaned_name] = col
         for name, value in external_variables.items():
