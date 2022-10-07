@@ -558,10 +558,12 @@ class Contraception(Module):
                         module=self,
                         new_contraceptive=_new
                     ),
+                    # select start_date for 0 max day delay; start_date or later for >=1 max day delay:
                     topen=random_date(
                         self.sim.date,
                         self.sim.date + pd.DateOffset(
-                            days=self.parameters['max_days_delay_between_decision_to_change_method_and_hsi_scheduled']),
+                            days=self.parameters[
+                                     'max_days_delay_between_decision_to_change_method_and_hsi_scheduled'] + 1),
                         self.rng2),
                     tclose=None,
                     priority=1
@@ -1039,7 +1041,6 @@ class SimplifiedPregnancyAndLabour(Module):
         super().__init__(name='Labour')
 
     def read_parameters(self, *args):
-
         parameter_dataframe = pd.read_excel(self.sim.modules['Contraception'].resourcefilepath /
                                             'ResourceFile_Contraception.xlsx',
                                             sheet_name='simplified_labour_parameters')

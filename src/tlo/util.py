@@ -393,11 +393,9 @@ class BitsetHandler:
 
 
 def random_date(start, end, rng):
-    """Generate a randomly-chosen day between `start` (inclusive) `end` (exclusive)"""
-    if end > start:
-        return start + DateOffset(days=rng.randint(0, (end - start).days))
-    else:
-        return start
+    if start >= end:
+        raise ValueError("End date equal to or earlier than start date")
+    return start + DateOffset(days=rng.randint(0, (end - start).days))
 
 
 def hash_dataframe(dataframe: pd.DataFrame):
