@@ -19,7 +19,7 @@ path_to_files = Path(os.path.dirname(__file__))
 
 @pytest.fixture
 def rng(seed):
-    return np.random.RandomState(seed % 2**32)
+    return np.random.RandomState(seed % 2 ** 32)
 
 
 def check_output_states_and_freq(
@@ -149,7 +149,7 @@ def test_sample_outcome(tmpdir, seed):
         'B': {0: 0.0, 1: 1.0, 2: 0.25, 3: 0.0},
         'C': {0: 0.0, 1: 0.0, 2: 0.50, 3: 0.0},
     })
-    rng = np.random.RandomState(seed=seed % 2**32)
+    rng = np.random.RandomState(seed=seed % 2 ** 32)
 
     list_of_results = list()
     n = 5000
@@ -249,3 +249,24 @@ def test_get_person_id_to_inherit_from(rng: np.random.RandomState):
         assert inherit_from_id != mother_id
         assert inherit_from_id != child_id
         assert population_dataframe.loc[inherit_from_id].is_alive
+
+
+def test_random_date_returns_date_sequential(rng):
+    # start_date < end_date - sequential order
+    num_iter = 20
+    for year_init in rng.randint(1900, 2050, size=num_iter):
+        year_fin = year_init + rng.randint(1, 100)
+        start_date, end_date = Date(year_init, 1, 1), Date(year_fin, 1, 1)
+        random_date = tlo.util.random_date(start_date, end_date, rng)
+        assert isinstance(random_date, Date)
+        assert start_date <= random_date < end_date
+
+
+def test_random_date_returns_date_nonsequential(rng):
+    # start_date >= end_date - nonsequential order
+    num_iter = 20
+    for year_init in rng.randint(1900, 2050, size=num_iter):
+        year_fin = year_init - rng.randint(0, 100)
+        start_date, end_date = Date(year_init, 1, 1), Date(year_fin, 1, 1)
+        with pytest.raises(ValueError):
+            tlo.util.random_date(start_date, end_date, rng)
