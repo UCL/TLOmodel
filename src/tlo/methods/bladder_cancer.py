@@ -48,12 +48,12 @@ class BladderCancer(Module):
 
     # Declare Causes of Death
     CAUSES_OF_DEATH = {
-        'BladderCancer': Cause(gbd_causes='Bladder cancer', label='Cancer'),
+        'BladderCancer': Cause(gbd_causes='Bladder cancer', label='Cancer (Bladder)'),
     }
 
     # Declare Causes of Disability
     CAUSES_OF_DISABILITY = {
-        'BladderCancer': Cause(gbd_causes='Bladder cancer', label='Cancer'),
+        'BladderCancer': Cause(gbd_causes='Bladder cancer', label='Cancer (Bladder)'),
     }
 
     PARAMETERS = {

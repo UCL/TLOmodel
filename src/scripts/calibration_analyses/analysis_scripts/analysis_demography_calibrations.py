@@ -21,6 +21,7 @@ from matplotlib.ticker import FormatStrFormatter
 from tlo.analysis.utils import (
     extract_results,
     format_gbd,
+    get_scenario_outputs,
     make_age_grp_lookup,
     make_age_grp_types,
     make_calendar_period_lookup,
@@ -701,3 +702,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         plt.savefig(make_graph_file_name(f"Deaths_By_Age_{period}"))
         plt.show()
         plt.close(fig)
+
+
+if __name__ == "__main__":
+    outputspath = Path('./outputs/tbh03@ic.ac.uk')
+    rfp = Path('./resources')
+
+    # Find results folder (most recent run generated using that scenario_filename)
+    scenario_filename = 'long_run_all_diseases.py'
+    results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
+
+    apply(results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
