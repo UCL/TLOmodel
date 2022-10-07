@@ -273,12 +273,37 @@ def test_random_date_returns_date_nonsequential(rng):
 
 
 def test_hash_dataframe(rng):
-    # create a dataframe and test for list
-    data = {
-        'A': ['A', 'B', 'C', 'D'],
-        'B': [1, 2, 3, 4],
-    }
-    df = pd.DataFrame(data)
-    df.at[1, 'A'] = [30, 35, 40]
-    df_hash = tlo.util.hash_dataframe(df)
-    assert hasattr(df_hash, '__hash__')
+    """ Check that hash types:
+                - are generated,
+                - are equal for the same dataframes,
+                - differ for different dataframes,
+                - validate for lists.
+        """
+
+    def hash_assert(df):
+        # assert hash_dataframe returns hash
+        df_hash = tlo.util.hash_dataframe(df)
+        assert isinstance(df_hash, str)
+        assert int(df_hash, 16)
+        for ch in df_hash:
+            assert (('0' <= ch <= '9') or
+                    ('a' <= ch <= 'f'))
+        return df_hash
+
+    # create dataframe of random strings
+    df0 = pd.DataFrame(np.arange(12).reshape(4, 3)).applymap(
+        lambda x: np.random.choice(list('abcdefghijklmnop')))
+    df0_hash = hash_assert(df0)
+
+    for dfi in range(10):
+
+        dfi = pd.DataFrame(np.arange(12).reshape(4, 3)).applymap(
+            lambda x: np.random.choice(list('abcdefghijklmnop')))
+        dfi_hash = hash_assert(dfi)
+
+        if not dfi.equals(df0):
+            assert dfi_hash != df0_hash
+            dfi_hash = hash_assert(df0)
+        assert df0_hash == dfi_hash
+        dfi.at[1, 1] = [0, 1, 2]
+        hash_assert(dfi)
