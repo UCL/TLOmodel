@@ -731,10 +731,12 @@
                         <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
                         <span class="n">new_contraceptive</span><span class="o">=</span><span class="n">_new</span>
                     <span class="p">),</span>
+                    <span class="c1"># select start_date for 0 max day delay; start_date or later for &gt;=1 max day delay:</span>
                     <span class="n">topen</span><span class="o">=</span><span class="n">random_date</span><span class="p">(</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span>
-                            <span class="n">days</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;max_days_delay_between_decision_to_change_method_and_hsi_scheduled&#39;</span><span class="p">]),</span>
+                            <span class="n">days</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span>
+                                     <span class="s1">&#39;max_days_delay_between_decision_to_change_method_and_hsi_scheduled&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">rng2</span><span class="p">),</span>
                     <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                     <span class="n">priority</span><span class="o">=</span><span class="mi">1</span>
@@ -1212,7 +1214,6 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Labour&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="SimplifiedPregnancyAndLabour.read_parameters"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.SimplifiedPregnancyAndLabour.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
-
         <span class="n">parameter_dataframe</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Contraception&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">resourcefilepath</span> <span class="o">/</span>
                                             <span class="s1">&#39;ResourceFile_Contraception.xlsx&#39;</span><span class="p">,</span>
                                             <span class="n">sheet_name</span><span class="o">=</span><span class="s1">&#39;simplified_labour_parameters&#39;</span><span class="p">)</span>
@@ -1317,7 +1318,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 29, 2022.
+        Last updated on Oct 10, 2022.
       </span>
 
     </p>

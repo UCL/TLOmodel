@@ -647,15 +647,31 @@ for routine antenatal care and emergency obstetric care in the event of severe c
 </tr>
 <tr class="row-even"><td><p>anc_service_structure</p></td>
 <td><p>INT</p></td>
-<td><p>stores type of ANC service being delivered in the model (anc4 or anc8) and is used in analysis scripts to change ANC structure</p></td>
+<td><p>stores type of ANC service being delivered in the model (anc4 or anc8) and is used in analysisscripts to change ANC structure</p></td>
 </tr>
-<tr class="row-odd"><td><p>switch_anc_coverage</p></td>
+<tr class="row-odd"><td><p>analysis_year</p></td>
+<td><p>INT</p></td>
+<td><p>Year on which the pregnancy analysis event is scheduled to update any relevant parameters for analysis (1st day 1st month)</p></td>
+</tr>
+<tr class="row-even"><td><p>ps_analysis_in_progress</p></td>
 <td><p>BOOL</p></td>
-<td><p>used to signal if a change in parameters governing ANC coverage should be made at some predetermined time point</p></td>
+<td><p>Used within the pregnancy_helper_function to signify that analysis is currently being conducted</p></td>
 </tr>
-<tr class="row-even"><td><p>target_anc_coverage_for_analysis</p></td>
+<tr class="row-odd"><td><p>alternative_anc_coverage</p></td>
+<td><p>BOOL</p></td>
+<td><p>Signals within the analysis event that an alternative level of ANC coverage has been determined following the events run</p></td>
+</tr>
+<tr class="row-even"><td><p>alternative_anc_quality</p></td>
+<td><p>BOOL</p></td>
+<td><p>Signals within the analysis event that an alternative level of ANC quality has been determined following the events run</p></td>
+</tr>
+<tr class="row-odd"><td><p>anc_availability_odds</p></td>
 <td><p>REAL</p></td>
-<td><p>contains a target level of coverage for analysis so that a linear model of choice can be scaled to force set level of intervention coverage</p></td>
+<td><p>Target odds of early initiation of ANC4+ when analysis is being conducted - only applied ifalternative_anc_coverage is true</p></td>
+</tr>
+<tr class="row-even"><td><p>anc_availability_probability</p></td>
+<td><p>REAL</p></td>
+<td><p>Target probability of quality/consumables when analysis is being conducted - only applied if alternative_anc_quality is true</p></td>
 </tr>
 </tbody>
 </table>
@@ -756,12 +772,12 @@ for routine antenatal care and emergency obstetric care in the event of severe c
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘Lifestyle’, ‘CareOfWomenDuringPregnancy’, ‘Labour’, ‘Contraception’, ‘HealthSystem’}</p>
-<p>CAUSES_OF_DEATH : {‘ectopic_pregnancy’: &lt;tlo.methods.causes.Cause object at 0x7fc7ffee0850&gt;, ‘spontaneous_abortion’: &lt;tlo.methods.causes.Cause object at 0x7fc7ffee0d30&gt;, ‘induced_abortion’: &lt;tlo.methods.causes.Cause object at 0x7fc7ffee0d90&gt;, ‘antepartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x7fc7ffee0df0&gt;, ‘severe_gestational_hypertension’: &lt;tlo.methods.causes.Cause object at 0x7fc7ffee0e50&gt;, ‘severe_pre_eclampsia’: &lt;tlo.methods.causes.Cause object at 0x7fc7ffee0eb0&gt;, ‘eclampsia’: &lt;tlo.methods.causes.Cause object at 0x7fc7ffee0f10&gt;, ‘antenatal_sepsis’: &lt;tlo.methods.causes.Cause object at 0x7fc7ffee0f70&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘maternal’: &lt;tlo.methods.causes.Cause object at 0x7fc7ffee0fd0&gt;}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘Labour’, ‘Lifestyle’, ‘Contraception’, ‘HealthSystem’, ‘CareOfWomenDuringPregnancy’}</p>
+<p>CAUSES_OF_DEATH : {‘ectopic_pregnancy’: &lt;tlo.methods.causes.Cause object at 0x7fb1a4f7ae50&gt;, ‘spontaneous_abortion’: &lt;tlo.methods.causes.Cause object at 0x7fb1a4ff4370&gt;, ‘induced_abortion’: &lt;tlo.methods.causes.Cause object at 0x7fb1a4ff43d0&gt;, ‘antepartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x7fb1a4ff4430&gt;, ‘severe_gestational_hypertension’: &lt;tlo.methods.causes.Cause object at 0x7fb1a4ff4490&gt;, ‘severe_pre_eclampsia’: &lt;tlo.methods.causes.Cause object at 0x7fb1a4ff44f0&gt;, ‘eclampsia’: &lt;tlo.methods.causes.Cause object at 0x7fb1a4ff4550&gt;, ‘antenatal_sepsis’: &lt;tlo.methods.causes.Cause object at 0x7fb1a4ff45b0&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘maternal’: &lt;tlo.methods.causes.Cause object at 0x7fb1a4ff4610&gt;}</p>
 <p>INIT_DEPENDENCIES : {‘Demography’}</p>
-<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;}</p>
-<p>OPTIONAL_INIT_DEPENDENCIES : {‘Hiv’, ‘Malaria’, ‘HealthBurden’, ‘CardioMetabolicDisorders’}</p>
+<p>METADATA : {&lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;}</p>
+<p>OPTIONAL_INIT_DEPENDENCIES : {‘CardioMetabolicDisorders’, ‘Malaria’, ‘Hiv’, ‘HealthBurden’}</p>
 <p><strong>Functions (defined or overridden in class PregnancySupervisor):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.__init__">
@@ -984,16 +1000,8 @@ PregnancySupervisorEvent.
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_sepsis_post_prom">
-<span class="sig-name descname"><span class="pre">apply_risk_of_sepsis_post_prom</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gestation_of_interest</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.apply_risk_of_sepsis_post_prom"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_sepsis_post_prom" title="Permalink to this definition">¶</a></dt>
-<dd><p>This function applies risk of chorioamnionitis to women who have experienced premature rupture of membranes
-during labour
-:param gestation_of_interest: gestation in weeks</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_premature_rupture_of_membranes">
-<span class="sig-name descname"><span class="pre">apply_risk_of_premature_rupture_of_membranes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gestation_of_interest</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.apply_risk_of_premature_rupture_of_membranes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_premature_rupture_of_membranes" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_premature_rupture_of_membranes_and_chorioamnionitis">
+<span class="sig-name descname"><span class="pre">apply_risk_of_premature_rupture_of_membranes_and_chorioamnionitis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gestation_of_interest</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisor.apply_risk_of_premature_rupture_of_membranes_and_chorioamnionitis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_premature_rupture_of_membranes_and_chorioamnionitis" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function applies risk of premature rupture of membranes to a slice of the dataframe. It is called by
 PregnancySupervisorEvent.
 :param gestation_of_interest: gestation in weeks</p>
@@ -1351,17 +1359,16 @@ constructor, but may also take further keyword arguments.</p></li>
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.OverrideKeyParameterForAnalysis">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">OverrideKeyParameterForAnalysis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#OverrideKeyParameterForAnalysis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.OverrideKeyParameterForAnalysis" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="simple">
-<dt>This is OverrideKeyParameterForAnalysis. This event is scheduled in initialise_simulation and allows for a parameter</dt><dd><p>value/values to be overridden at a set time point within a simulation run.</p>
-</dd>
-</dl>
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancyAnalysisEvent">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PregnancyAnalysisEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancyAnalysisEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancyAnalysisEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is PregnancyAnalysisEvent. This event is scheduled in initialise_simulation. When this event runs, and if
+either of the module parameters the signify analysis is being conducted are set to True, then key parameters
+are overridden to alter the coverage and/or quality of routine antenatal care delivery.</p>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
-<p><strong>Functions (defined or overridden in class OverrideKeyParameterForAnalysis):</strong></p>
+<p><strong>Functions (defined or overridden in class PregnancyAnalysisEvent):</strong></p>
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.OverrideKeyParameterForAnalysis.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#OverrideKeyParameterForAnalysis.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.OverrideKeyParameterForAnalysis.__init__" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancyAnalysisEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancyAnalysisEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancyAnalysisEvent.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
@@ -1378,8 +1385,8 @@ constructor, but may also take further keyword arguments.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.OverrideKeyParameterForAnalysis.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#OverrideKeyParameterForAnalysis.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.OverrideKeyParameterForAnalysis.apply" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancyAnalysisEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancyAnalysisEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancyAnalysisEvent.apply" title="Permalink to this definition">¶</a></dt>
 <dd><p>Apply this event to the population.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
@@ -1443,7 +1450,7 @@ constructor, but may also take further keyword arguments.</p></li>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 29, 2022.
+        Last updated on Oct 10, 2022.
       </span>
 
     </p>

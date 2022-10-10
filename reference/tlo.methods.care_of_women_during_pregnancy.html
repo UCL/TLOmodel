@@ -252,7 +252,7 @@ interventions are stored as functions within the module to prevent repetition.</
 <td><p>treatment effectiveness of blood transfusion for anaemia in pregnancy</p></td>
 </tr>
 <tr class="row-even"><td><p>squeeze_factor_threshold_anc</p></td>
-<td><p>LIST</p></td>
+<td><p>INT</p></td>
 <td><p>squeeze factor threshold over which an ANC appointment cannot run</p></td>
 </tr>
 <tr class="row-odd"><td><p>prob_intervention_delivered_urine_ds</p></td>
@@ -418,8 +418,8 @@ interventions are stored as functions within the module to prevent repetition.</
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘Lifestyle’, ‘Contraception’, ‘Labour’}</p>
-<p>INIT_DEPENDENCIES : {‘PregnancySupervisor’, ‘Demography’, ‘HealthSystem’}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘Lifestyle’, ‘Labour’, ‘Contraception’}</p>
+<p>INIT_DEPENDENCIES : {‘PregnancySupervisor’, ‘HealthSystem’, ‘Demography’}</p>
 <p>METADATA : {&lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
 <p><strong>Functions (defined or overridden in class CareOfWomenDuringPregnancy):</strong></p>
 <dl class="py method">
@@ -1577,6 +1577,42 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
 </dd></dl>
 
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancyLoggingEvent">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CareOfWomenDuringPregnancyLoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancyLoggingEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancyLoggingEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is CareOfWomenDuringPregnancyLoggingEvent. It runs yearly to capture the number of ANC visits which
+have ran (and interventions are delivered) for women during pregnancy.</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class CareOfWomenDuringPregnancyLoggingEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancyLoggingEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancyLoggingEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancyLoggingEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new regular event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event</p></li>
+<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
+(must be supplied as a keyword argument)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancyLoggingEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancyLoggingEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancyLoggingEvent.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>population</strong> – the current population</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 
 
@@ -1594,7 +1630,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 29, 2022.
+        Last updated on Oct 10, 2022.
       </span>
 
     </p>

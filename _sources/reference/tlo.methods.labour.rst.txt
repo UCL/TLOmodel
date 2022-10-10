@@ -380,7 +380,10 @@ tlo.methods.labour module
           - probabilities used in a weighted random draw to determine when a woman will attend the postnatal event
         * - prob_careseeking_for_complication
           - LIST
-          - odds of a woman seeking skilled assistance after developing a complication at a home birth
+          - probability of a woman seeking skilled assistance after developing a complication at a home birth
+        * - prob_careseeking_for_complication_pn
+          - LIST
+          - probability of a woman seeking skilled assistance after developing a postnatal complication following a home birth
         * - test_care_seeking_probs
           - LIST
           - dummy probabilities of delivery care seeking used in testing
@@ -417,15 +420,9 @@ tlo.methods.labour module
         * - prob_haemostatis_uterotonics
           - LIST
           - probability of uterotonics stopping a postpartum haemorrhage due to uterine atony 
-        * - pph_treatment_effect_uterotonics_md
-          - LIST
-          - effect of uterotonics on maternal death due to postpartum haemorrhage
         * - prob_successful_manual_removal_placenta
           - LIST
           - probability of manual removal of retained products arresting a post partum haemorrhage
-        * - pph_treatment_effect_mrp_md
-          - LIST
-          - effect of uterotonics on maternal death due to postpartum haemorrhage
         * - success_rate_pph_surgery
           - LIST
           - probability of surgery for postpartum haemorrhage being successful
@@ -525,6 +522,36 @@ tlo.methods.labour module
         * - prob_intervention_delivered_anaemia_assessment_pnc
           - LIST
           - probability a woman will have their Hb levels checked during PNC given that the HSI has ran and the consumables are available (proxy for clinical quality)
+        * - analysis_year
+          - INT
+          - Year on which changes in parameters as part of analysis should be enacted (1st day, 1st month)
+        * - la_analysis_in_progress
+          - BOOL
+          - Used within the pregnancy_helper_function to signify that labour/postnatal analysis is currently being conducted
+        * - alternative_bemonc_availability
+          - BOOL
+          - parameter used in analysis to allow manipulation of coverage of BEmONC interventions
+        * - alternative_cemonc_availability
+          - BOOL
+          - parameter used in analysis to allow manipulation of coverage of CEmONC interventions
+        * - bemonc_availability
+          - REAL
+          - set probability of BEmONC intervention being delivered during analysis
+        * - cemonc_availability
+          - REAL
+          - set probability of CEmONC intervention being delivered during analysis
+        * - alternative_pnc_coverage
+          - BOOL
+          - Signals within the analysis event that an alternative level of PNC coverage has been determined following the events run
+        * - alternative_pnc_quality
+          - BOOL
+          - Signals within the analysis event that an alternative level of PNC quality has been determined following the events run
+        * - pnc_availability_odds
+          - REAL
+          - Target odds of maternal PNC coverage when analysis is being conducted - only applied ifalternative_pnc_coverage is true
+        * - pnc_availability_probability
+          - REAL
+          - Target probability of quality/consumables when analysis is being conducted - only applied if alternative_pnc_coverage is true
 
 
      **PROPERTIES:**
@@ -622,15 +649,15 @@ tlo.methods.labour module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'Lifestyle', 'CareOfWomenDuringPregnancy', 'PostnatalSupervisor', 'NewbornOutcomes', 'Contraception', 'PregnancySupervisor', 'HealthSystem'}
+     ADDITIONAL_DEPENDENCIES : {'Lifestyle', 'Contraception', 'PregnancySupervisor', 'HealthSystem', 'NewbornOutcomes', 'CareOfWomenDuringPregnancy', 'PostnatalSupervisor'}
 
-     CAUSES_OF_DEATH : {'uterine_rupture': <tlo.methods.causes.Cause object at 0x7fc7ff091190>, 'intrapartum_sepsis': <tlo.methods.causes.Cause object at 0x7fc7ffd16eb0>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x7fc7ffd16f70>, 'postpartum_sepsis': <tlo.methods.causes.Cause object at 0x7fc7ffd320a0>, 'postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x7fc7ffd32100>, 'secondary_postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x7fc7ffd32160>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x7fc7ffd321c0>, 'eclampsia': <tlo.methods.causes.Cause object at 0x7fc7ffd32220>}
+     CAUSES_OF_DEATH : {'uterine_rupture': <tlo.methods.causes.Cause object at 0x7fb1a4e280d0>, 'intrapartum_sepsis': <tlo.methods.causes.Cause object at 0x7fb1a4e311f0>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x7fb1a4e31250>, 'postpartum_sepsis': <tlo.methods.causes.Cause object at 0x7fb1a4e312b0>, 'postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x7fb1a4e31310>, 'secondary_postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x7fb1a4e31370>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x7fb1a4e313d0>, 'eclampsia': <tlo.methods.causes.Cause object at 0x7fb1a4e31430>}
 
-     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x7fc7ffd32280>}
+     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x7fb1a4e31490>}
 
      INIT_DEPENDENCIES : {'Demography'}
 
-     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>}
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'Stunting'}
 
@@ -673,8 +700,6 @@ tlo.methods.labour module
      .. automethod:: labour_characteristics_checker
 
      .. automethod:: postpartum_characteristics_checker
-
-     .. automethod:: check_emonc_signal_function_will_run
 
      .. automethod:: prophylactic_labour_interventions
 
@@ -883,6 +908,24 @@ tlo.methods.labour module
      .. automethod:: did_not_run
 
      .. automethod:: not_available
+
+
+
+
+
+
+
+
+.. autoclass:: LabourAndPostnatalCareAnalysisEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class LabourAndPostnatalCareAnalysisEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
 
 
 

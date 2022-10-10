@@ -413,10 +413,7 @@
 <div class="viewcode-block" id="PostnatalSupervisor.read_parameters"><a class="viewcode-back" href="../../../reference/tlo.methods.postnatal_supervisor.html#tlo.methods.postnatal_supervisor.PostnatalSupervisor.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
         <span class="n">parameter_dataframe</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_PostnatalSupervisor.xlsx&#39;</span><span class="p">,</span>
                                             <span class="n">sheet_name</span><span class="o">=</span><span class="s1">&#39;parameter_values&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">load_parameters_from_dataframe</span><span class="p">(</span><span class="n">parameter_dataframe</span><span class="p">)</span>
-
-        <span class="c1"># For the first period (2010-2015) we use the first value in each list as a parameter</span>
-        <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">update_current_parameter_dictionary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">list_position</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">load_parameters_from_dataframe</span><span class="p">(</span><span class="n">parameter_dataframe</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="PostnatalSupervisor.initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.postnatal_supervisor.html#tlo.methods.postnatal_supervisor.PostnatalSupervisor.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
@@ -434,6 +431,8 @@
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;pn_emergency_event_mother&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div>
 
 <div class="viewcode-block" id="PostnatalSupervisor.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.postnatal_supervisor.html#tlo.methods.postnatal_supervisor.PostnatalSupervisor.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
+        <span class="c1"># For the first period (2010-2015) we use the first value in each list as a parameter</span>
+        <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">update_current_parameter_dictionary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">list_position</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
         <span class="c1"># Schedule the first instance of the PostnatalSupervisorEvent</span>
         <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">PostnatalSupervisorEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
@@ -890,11 +889,13 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">apply_risk_of_maternal_or_neonatal_death_postnatal</span><span class="p">(</span><span class="n">mother_or_child</span><span class="o">=</span><span class="s1">&#39;mother&#39;</span><span class="p">,</span> <span class="n">individual_id</span><span class="o">=</span><span class="n">person</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">week</span> <span class="o">==</span> <span class="mi">6</span><span class="p">:</span>
-            <span class="c1"># We call a function in the PregnancySupervisor module to reset the variables from pregnancy which are not</span>
-            <span class="c1"># longer needed</span>
+            <span class="c1"># Here we reset any remaining pregnancy variables (as some are used as predictors in models in the postnatal</span>
+            <span class="c1"># period)</span>
             <span class="n">week_6_women</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">la_is_postpartum</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">pn_postnatal_period_in_weeks</span> <span class="o">==</span> <span class="mi">6</span><span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;PregnancySupervisor&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">pregnancy_supervisor_property_reset</span><span class="p">(</span>
+                <span class="n">id_or_index</span><span class="o">=</span><span class="n">week_6_women</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">week_6_women</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;CareOfWomenDuringPregnancy&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">care_of_women_in_pregnancy_property_reset</span><span class="p">(</span>
                 <span class="n">id_or_index</span><span class="o">=</span><span class="n">week_6_women</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">week_6_women</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="PostnatalSupervisor.apply_risk_of_neonatal_complications_in_week_one"><a class="viewcode-back" href="../../../reference/tlo.methods.postnatal_supervisor.html#tlo.methods.postnatal_supervisor.PostnatalSupervisor.apply_risk_of_neonatal_complications_in_week_one">[docs]</a>    <span class="k">def</span> <span class="nf">apply_risk_of_neonatal_complications_in_week_one</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">child_id</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">):</span>
@@ -1006,6 +1007,7 @@
         <span class="c1"># ================================== MATERNAL DEATH EQUATIONS ==============================================</span>
         <span class="c1"># Create a list of all the causes that may cause death in the individual (matched to GBD labels)</span>
         <span class="k">if</span> <span class="n">mother_or_child</span> <span class="o">==</span> <span class="s1">&#39;mother&#39;</span><span class="p">:</span>
+
             <span class="c1"># Function checks df for any potential cause of death, uses CFR parameters to determine risk of death</span>
             <span class="c1"># (either from one or multiple causes) and if death occurs returns the cause</span>
             <span class="n">potential_cause_of_death</span> <span class="o">=</span> <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">check_for_risk_of_death_from_cause_maternal</span><span class="p">(</span>
@@ -1013,9 +1015,10 @@
 
             <span class="c1"># If a cause is returned death is scheduled</span>
             <span class="k">if</span> <span class="n">potential_cause_of_death</span><span class="p">:</span>
+                <span class="n">mni</span><span class="p">[</span><span class="n">individual_id</span><span class="p">][</span><span class="s1">&#39;didnt_seek_care&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">log_mni_for_maternal_death</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individual_id</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Demography&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">do_death</span><span class="p">(</span><span class="n">individual_id</span><span class="o">=</span><span class="n">individual_id</span><span class="p">,</span> <span class="n">cause</span><span class="o">=</span><span class="n">potential_cause_of_death</span><span class="p">,</span>
                                                         <span class="n">originating_module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;PostnatalSupervisor&#39;</span><span class="p">])</span>
-
                 <span class="k">del</span> <span class="n">mni</span><span class="p">[</span><span class="n">individual_id</span><span class="p">]</span>
 
             <span class="k">else</span><span class="p">:</span>
@@ -1083,7 +1086,7 @@
 
         <span class="c1"># Check that all women are week 1 or above</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">alive_and_recently_delivered</span><span class="p">,</span> <span class="s1">&#39;pn_postnatal_period_in_weeks&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;Postnatal weeks incorrectly calculated&#39;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;Postnatal weeks incorrectly calculated&#39;</span><span class="p">)</span>
 
         <span class="c1"># ================================= COMPLICATIONS/CARE SEEKING FOR WOMEN ======================================</span>
         <span class="c1"># This function is called to apply risk of complications to women in weeks 2, 3, 4, 5 and 6 of the postnatal</span>
@@ -1178,7 +1181,7 @@
         <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">mother</span><span class="o">.</span><span class="n">la_is_postpartum</span> <span class="ow">or</span>
             <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">-</span> <span class="n">mother</span><span class="o">.</span><span class="n">la_date_most_recent_delivery</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_timedelta</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;d&#39;</span><span class="p">)</span> <span class="ow">or</span>
            <span class="n">mni</span><span class="p">[</span><span class="n">individual_id</span><span class="p">][</span><span class="s1">&#39;passed_through_week_one&#39;</span><span class="p">]):</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;Mother incorrectly scheduled to arrive at PostnatalWeekOneMaternalEvent&#39;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;Mother incorrectly scheduled to arrive at PostnatalWeekOneMaternalEvent&#39;</span><span class="p">)</span>
             <span class="k">return</span>
 
         <span class="c1"># Signify this woman has reached week one of the postnatal period (this variable is used in the labour module)</span>
@@ -1396,7 +1399,7 @@
 
         <span class="c1"># Run checks to ensure only the right newborns have arrived here</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">child</span><span class="o">.</span><span class="n">age_days</span> <span class="o">&lt;</span> <span class="mi">7</span> <span class="ow">or</span> <span class="n">nci</span><span class="p">[</span><span class="n">individual_id</span><span class="p">][</span><span class="s1">&#39;passed_through_week_one&#39;</span><span class="p">]:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;Child incorrectly scheduled for PostnatalWeekOneNeonatalEvent&#39;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;Child incorrectly scheduled for PostnatalWeekOneNeonatalEvent&#39;</span><span class="p">)</span>
             <span class="k">return</span>
 
         <span class="n">nci</span><span class="p">[</span><span class="n">individual_id</span><span class="p">][</span><span class="s1">&#39;passed_through_week_one&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
@@ -1477,7 +1480,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 29, 2022.
+        Last updated on Oct 10, 2022.
       </span>
 
     </p>

@@ -43,7 +43,7 @@ tlo.methods.care_of_women_during_pregnancy module
           - LIST
           - treatment effectiveness of blood transfusion for anaemia in pregnancy
         * - squeeze_factor_threshold_anc
-          - LIST
+          - INT
           - squeeze factor threshold over which an ANC appointment cannot run
         * - prob_intervention_delivered_urine_ds
           - LIST
@@ -169,9 +169,9 @@ tlo.methods.care_of_women_during_pregnancy module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'Lifestyle', 'Contraception', 'Labour'}
+     ADDITIONAL_DEPENDENCIES : {'Lifestyle', 'Labour', 'Contraception'}
 
-     INIT_DEPENDENCIES : {'PregnancySupervisor', 'Demography', 'HealthSystem'}
+     INIT_DEPENDENCIES : {'PregnancySupervisor', 'HealthSystem', 'Demography'}
 
      METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>}
 
@@ -604,6 +604,24 @@ tlo.methods.care_of_women_during_pregnancy module
      .. automethod:: did_not_run
 
      .. automethod:: not_available
+
+
+
+
+
+
+
+
+.. autoclass:: CareOfWomenDuringPregnancyLoggingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class CareOfWomenDuringPregnancyLoggingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
 
 
 

@@ -537,12 +537,13 @@
                     <span class="nb">isinstance</span><span class="p">(</span><span class="n">col</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">CategoricalDtype</span><span class="p">)</span>
                     <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">col</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">categories</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">)</span>
                 <span class="p">):</span>
-                    <span class="c1"># `pandas.eval` raises an error when using boolean</span>
-                    <span class="c1"># operations on series with a categorical dtype with integer</span>
-                    <span class="c1"># categories therefore if any such columns are present we</span>
-                    <span class="c1"># convert to the corresponding integer type</span>
-                    <span class="n">dtype</span> <span class="o">=</span> <span class="n">col</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">categories</span><span class="o">.</span><span class="n">dtype</span>
-                    <span class="n">column_resolvers</span><span class="p">[</span><span class="n">cleaned_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">col</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span>
+                    <span class="c1"># `pandas.eval` raises an error when using boolean operations</span>
+                    <span class="c1"># on series with a categorical dtype with integer categories</span>
+                    <span class="c1"># therefore if any such columns are present we convert to</span>
+                    <span class="c1"># double-precision floats - this should be safe providing only</span>
+                    <span class="c1"># integer categories which have exact floating point representations</span>
+                    <span class="c1"># are used (which is likely to be the case)</span>
+                    <span class="n">column_resolvers</span><span class="p">[</span><span class="n">cleaned_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">col</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">column_resolvers</span><span class="p">[</span><span class="n">cleaned_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">col</span>
         <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">external_variables</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -650,7 +651,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 29, 2022.
+        Last updated on Oct 10, 2022.
       </span>
 
     </p>

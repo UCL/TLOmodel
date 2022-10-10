@@ -350,13 +350,25 @@ tlo.methods.pregnancy_supervisor module
           - factor by which treatment effectiveness is reduced in the presences of one delays
         * - anc_service_structure
           - INT
-          - stores type of ANC service being delivered in the model (anc4 or anc8) and is used in analysis scripts to change ANC structure
-        * - switch_anc_coverage
+          - stores type of ANC service being delivered in the model (anc4 or anc8) and is used in analysisscripts to change ANC structure
+        * - analysis_year
+          - INT
+          - Year on which the pregnancy analysis event is scheduled to update any relevant parameters for analysis (1st day 1st month)
+        * - ps_analysis_in_progress
           - BOOL
-          - used to signal if a change in parameters governing ANC coverage should be made at some predetermined time point
-        * - target_anc_coverage_for_analysis
+          - Used within the pregnancy_helper_function to signify that analysis is currently being conducted
+        * - alternative_anc_coverage
+          - BOOL
+          - Signals within the analysis event that an alternative level of ANC coverage has been determined following the events run
+        * - alternative_anc_quality
+          - BOOL
+          - Signals within the analysis event that an alternative level of ANC quality has been determined following the events run
+        * - anc_availability_odds
           - REAL
-          - contains a target level of coverage for analysis so that a linear model of choice can be scaled to force set level of intervention coverage
+          - Target odds of early initiation of ANC4+ when analysis is being conducted - only applied ifalternative_anc_coverage is true 
+        * - anc_availability_probability
+          - REAL
+          - Target probability of quality/consumables when analysis is being conducted - only applied if alternative_anc_quality is true
 
 
      **PROPERTIES:**
@@ -433,17 +445,17 @@ tlo.methods.pregnancy_supervisor module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'Lifestyle', 'CareOfWomenDuringPregnancy', 'Labour', 'Contraception', 'HealthSystem'}
+     ADDITIONAL_DEPENDENCIES : {'Labour', 'Lifestyle', 'Contraception', 'HealthSystem', 'CareOfWomenDuringPregnancy'}
 
-     CAUSES_OF_DEATH : {'ectopic_pregnancy': <tlo.methods.causes.Cause object at 0x7fc7ffee0850>, 'spontaneous_abortion': <tlo.methods.causes.Cause object at 0x7fc7ffee0d30>, 'induced_abortion': <tlo.methods.causes.Cause object at 0x7fc7ffee0d90>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x7fc7ffee0df0>, 'severe_gestational_hypertension': <tlo.methods.causes.Cause object at 0x7fc7ffee0e50>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x7fc7ffee0eb0>, 'eclampsia': <tlo.methods.causes.Cause object at 0x7fc7ffee0f10>, 'antenatal_sepsis': <tlo.methods.causes.Cause object at 0x7fc7ffee0f70>}
+     CAUSES_OF_DEATH : {'ectopic_pregnancy': <tlo.methods.causes.Cause object at 0x7fb1a4f7ae50>, 'spontaneous_abortion': <tlo.methods.causes.Cause object at 0x7fb1a4ff4370>, 'induced_abortion': <tlo.methods.causes.Cause object at 0x7fb1a4ff43d0>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x7fb1a4ff4430>, 'severe_gestational_hypertension': <tlo.methods.causes.Cause object at 0x7fb1a4ff4490>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x7fb1a4ff44f0>, 'eclampsia': <tlo.methods.causes.Cause object at 0x7fb1a4ff4550>, 'antenatal_sepsis': <tlo.methods.causes.Cause object at 0x7fb1a4ff45b0>}
 
-     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x7fc7ffee0fd0>}
+     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x7fb1a4ff4610>}
 
      INIT_DEPENDENCIES : {'Demography'}
 
-     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>}
+     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>}
 
-     OPTIONAL_INIT_DEPENDENCIES : {'Hiv', 'Malaria', 'HealthBurden', 'CardioMetabolicDisorders'}
+     OPTIONAL_INIT_DEPENDENCIES : {'CardioMetabolicDisorders', 'Malaria', 'Hiv', 'HealthBurden'}
 
      **Functions (defined or overridden in class PregnancySupervisor):**
 
@@ -491,9 +503,7 @@ tlo.methods.pregnancy_supervisor module
 
      .. automethod:: apply_risk_of_antepartum_haemorrhage
 
-     .. automethod:: apply_risk_of_sepsis_post_prom
-
-     .. automethod:: apply_risk_of_premature_rupture_of_membranes
+     .. automethod:: apply_risk_of_premature_rupture_of_membranes_and_chorioamnionitis
 
      .. automethod:: apply_risk_of_preterm_labour
 
@@ -644,12 +654,12 @@ tlo.methods.pregnancy_supervisor module
 
 
 
-.. autoclass:: OverrideKeyParameterForAnalysis
+.. autoclass:: PregnancyAnalysisEvent
 
      Bases: :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
 
-     **Functions (defined or overridden in class OverrideKeyParameterForAnalysis):**
+     **Functions (defined or overridden in class PregnancyAnalysisEvent):**
 
      .. automethod:: __init__
 
