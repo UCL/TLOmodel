@@ -326,7 +326,7 @@ def test_logisitc_HSB_example():
     # nb. In the code this is done for one individual, so looping through individual to get a good range
     # f is the odds
 
-    prob_seeking_care = pd.Series(index=df.index)
+    prob_seeking_care = pd.Series(index=df.index, dtype='float64')
     for i in df.index:
         person_profile = df.loc[i]
         f = 3.237729            # 'Constant' term from STATA is the baseline odds.
