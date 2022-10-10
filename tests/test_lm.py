@@ -685,7 +685,7 @@ def test_integer_category_column_with_missing_data(population_dataframe):
     assert not predictions_with_isna.isna().any()
     # predictions for NA values should be value set by isna condition
     assert (
-        predictions_with_isna[population_dataframe.li_wealth.isna()] 
+        predictions_with_isna[population_dataframe.li_wealth.isna()]
         == isna_value
     ).all()
     model_with_otherwise = LinearModel(
