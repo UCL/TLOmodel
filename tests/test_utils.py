@@ -288,15 +288,14 @@ def test_hash_dataframe(rng, seed):
         int(df_hash, base=16)
 
     # generate hash for a dataframe of random strings
-    df0 = pd.DataFrame(np.arange(12).reshape(4, 3)).applymap(
-        lambda x: rng.choice(list(string.ascii_lowercase)))
+    rng = np.random.RandomState(seed % 2 ** 32)
+    df0 = pd.DataFrame(rng.choice(list(string.ascii_lowercase), size=(4, 3)))
     df0_hash = tlo.util.hash_dataframe(df0)
     check_hash_is_valid(df0_hash)
 
     for dfi in range(10):
         # generate hash for a series of random dataframes
-        dfi = pd.DataFrame(np.arange(12).reshape(4, 3)).applymap(
-            lambda x: rng.choice(list(string.ascii_lowercase)))
+        dfi = pd.DataFrame(rng.choice(list(string.ascii_lowercase), size=(4, 3)))
         dfi_hash = tlo.util.hash_dataframe(dfi)
         check_hash_is_valid(dfi_hash)
 
