@@ -272,7 +272,8 @@ def test_random_date_returns_date_nonsequential(rng):
             tlo.util.random_date(start_date, end_date, rng)
 
 
-def test_hash_dataframe(rng):
+def test_hash_dataframe(rng, seed):
+    import string
     """ Check that hash types:
                 - are generated,
                 - are equal for the same dataframes,
@@ -280,27 +281,32 @@ def test_hash_dataframe(rng):
                 - validate for lists.
         """
 
-    def hash_assert(df):
+    def check_hash_is_valid(df_hash):
         # assert hash_dataframe returns hash
-        df_hash = tlo.util.hash_dataframe(df)
         assert isinstance(df_hash, str)
-        # Try interpret hash as a hexadecimal integer (should not raise exception)
+        # Try to interpret hash as a hexadecimal integer (should not raise exception)
         int(df_hash, base=16)
 
-    # create dataframe of random strings
+    # generate hash for a dataframe of random strings
     df0 = pd.DataFrame(np.arange(12).reshape(4, 3)).applymap(
-        lambda x: np.random.choice(list('abcdefghijklmnop')))
-    df0_hash = hash_assert(df0)
+        lambda x: rng.choice(list(string.ascii_lowercase)))
+    df0_hash = tlo.util.hash_dataframe(df0)
+    check_hash_is_valid(df0_hash)
 
     for dfi in range(10):
-
+        # generate hash for a series of random dataframes
         dfi = pd.DataFrame(np.arange(12).reshape(4, 3)).applymap(
-            lambda x: np.random.choice(list('abcdefghijklmnop')))
-        dfi_hash = hash_assert(dfi)
+            lambda x: rng.choice(list(string.ascii_lowercase)))
+        dfi_hash = tlo.util.hash_dataframe(dfi)
+        check_hash_is_valid(dfi_hash)
 
+        # check hash differs for different dataframes and equal for similar
         if not dfi.equals(df0):
             assert dfi_hash != df0_hash
-            dfi_hash = hash_assert(df0)
+            dfi_hash = tlo.util.hash_dataframe(df0)
+            check_hash_is_valid(dfi_hash)
         assert df0_hash == dfi_hash
+        # check hash function works for lists
         dfi.at[1, 1] = [0, 1, 2]
-        hash_assert(dfi)
+        dfi_hash = tlo.util.hash_dataframe(dfi)
+        check_hash_is_valid(dfi_hash)
