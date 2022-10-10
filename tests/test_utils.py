@@ -281,31 +281,31 @@ def test_hash_dataframe(rng, seed):
                 - validate for lists.
         """
 
-    def check_hash_is_valid(df_hash):
+    def check_hash_is_valid(dfh):
         # assert hash_dataframe returns hash
-        assert isinstance(df_hash, str)
+        assert isinstance(dfh, str)
         # Try to interpret hash as a hexadecimal integer (should not raise exception)
-        int(df_hash, base=16)
+        int(dfh, base=16)
 
-    # generate hash for a dataframe of random strings
+    # generate dataframes of random strings
     rng = np.random.RandomState(seed % 2 ** 32)
-    df0 = pd.DataFrame(rng.choice(list(string.ascii_lowercase), size=(4, 3)))
-    df0_hash = tlo.util.hash_dataframe(df0)
-    check_hash_is_valid(df0_hash)
+    dataframes = [
+        pd.DataFrame(rng.choice(list(string.ascii_lowercase), size=(4, 3)))
+        for _ in range(10)
+    ]
+    # account for lists
+    for i in range(5):
+        dataframes[i].at[1, 1] = [0, 1, 2]
 
-    for dfi in range(10):
-        # generate hash for a series of random dataframes
-        dfi = pd.DataFrame(rng.choice(list(string.ascii_lowercase), size=(4, 3)))
-        dfi_hash = tlo.util.hash_dataframe(dfi)
-        check_hash_is_valid(dfi_hash)
+    for i in range(len(dataframes)):
+        # do checks on single dataframe dataframes[i]
+        df_hash = tlo.util.hash_dataframe(dataframes[i])
+        check_hash_is_valid(df_hash)
 
-        # check hash differs for different dataframes and equal for similar
-        if not dfi.equals(df0):
-            assert dfi_hash != df0_hash
-            dfi_hash = tlo.util.hash_dataframe(df0)
-            check_hash_is_valid(dfi_hash)
-        assert df0_hash == dfi_hash
-        # check hash function works for lists
-        dfi.at[1, 1] = [0, 1, 2]
-        dfi_hash = tlo.util.hash_dataframe(dfi)
-        check_hash_is_valid(dfi_hash)
+        for j in range(i):
+            # do checks on dataframe pair (dataframes[i], dataframes[j])
+            # check hash differs for different dataframes and is equal for the same
+            if not dataframes[i].equals(dataframes[j]):
+                assert df_hash != tlo.util.hash_dataframe(dataframes[j])
+                hash_test = tlo.util.hash_dataframe(dataframes[i])
+                assert df_hash == hash_test
