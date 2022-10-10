@@ -284,7 +284,8 @@ def test_hash_dataframe(rng):
         # assert hash_dataframe returns hash
         df_hash = tlo.util.hash_dataframe(df)
         assert isinstance(df_hash, str)
-        assert int(df_hash, 16)
+        # Try interpret hash as a hexadecimal integer (should not raise exception)
+        int(df_hash, base=16)
         for ch in df_hash:
             assert (('0' <= ch <= '9') or
                     ('a' <= ch <= 'f'))
