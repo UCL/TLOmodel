@@ -325,10 +325,10 @@ def test_calculation_of_gestational_age(seed):
 
     sim.make_initial_population(n=100)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
-    turn_off_antenatal_pregnancy_loss(sim)
 
     # Run the sim for 0 days
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+    turn_off_antenatal_pregnancy_loss(sim)
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
     sim.event_queue.queue.clear()
     df = sim.population.props
@@ -1190,8 +1190,8 @@ def test_induction_of_labour_logic(seed):
     register_modules(sim)
     sim.make_initial_population(n=100)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
-    turn_off_antenatal_pregnancy_loss(sim)
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+    turn_off_antenatal_pregnancy_loss(sim)
 
     params = sim.modules['PregnancySupervisor'].current_parameters
     params['prob_seek_care_induction'] = 1.0

@@ -601,11 +601,12 @@ def get_filtered_treatment_ids(depth: Optional[int] = None) -> List[str]:
     """Return a list of treatment_ids that are defined in the model, filtered to a specified depth."""
 
     def filter_treatments(_treatments: Iterable[str], depth: int = 1) -> List[str]:
-        """Reduce an iterable of `TREATMENT_IDs` by ignoring difference beyond a certain depth of specification.
-        The TREATMENT_ID is defined with each increasing level of specification separated by a `_`. """
+        """Reduce an iterable of `TREATMENT_IDs` by ignoring difference beyond a certain depth of specification and
+        adding '_*' to the end to serve as a wild-card.
+        N.B., The TREATMENT_ID is defined with each increasing level of specification separated by a `_`. """
         return sorted(list(set(
             [
-                "".join(f"{x}_" for i, x in enumerate(t.split('_')) if i < depth).rstrip('_') + '*'
+                "".join(f"{x}_" for i, x in enumerate(t.split('_')) if i < depth).rstrip('_') + '_*'
                 for t in set(_treatments)
             ]
         )))
@@ -763,7 +764,7 @@ def order_of_short_treatment_ids(_short_treatment_id: Union[str, pd.Index]) -> U
     """Define a standard order for short treatment_ids."""
     order = _define_short_treatment_ids().index
     if isinstance(_short_treatment_id, str):
-        return tuple(order).index(_short_treatment_id)
+        return tuple(order).index(_short_treatment_id.replace('_*', '*'))
     else:
         return order[order.isin(_short_treatment_id)]
 
@@ -772,8 +773,9 @@ def get_color_short_treatment_id(short_treatment_id: str) -> str:
     """Return the colour (as matplotlib string) assigned to this shorted TREATMENT_ID. Returns `np.nan` if treatment_id
     is not recognised."""
     colors = _define_short_treatment_ids()
-    if short_treatment_id in colors.index:
-        return colors.loc[short_treatment_id]
+    _short_treatment_ids_with_trailing_asterix = short_treatment_id.replace('_*', '*')
+    if _short_treatment_ids_with_trailing_asterix in colors.index:
+        return colors.loc[_short_treatment_ids_with_trailing_asterix]
     else:
         return np.nan
 
