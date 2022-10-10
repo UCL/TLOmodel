@@ -72,12 +72,12 @@ class OtherAdultCancer(Module):
 
     # Declare Causes of Death
     CAUSES_OF_DEATH = {
-        'OtherAdultCancer': Cause(gbd_causes=gbd_causes_of_cancer_represented_in_this_module, label='Cancer')
+        'OtherAdultCancer': Cause(gbd_causes=gbd_causes_of_cancer_represented_in_this_module, label='Cancer (Other)')
     }
 
     # Declare Causes of Disability
     CAUSES_OF_DISABILITY = {
-        'OtherAdultCancer': Cause(gbd_causes=gbd_causes_of_cancer_represented_in_this_module, label='Cancer')
+        'OtherAdultCancer': Cause(gbd_causes=gbd_causes_of_cancer_represented_in_this_module, label='Cancer (Other)')
     }
 
     PARAMETERS = {
@@ -712,13 +712,10 @@ class HSI_OtherAdultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
 
-        # Check that the person has cancer, has been diagnosed and is not on treatment
-        assert not df.at[person_id, "oac_status"] == 'none'
-        assert not pd.isnull(df.at[person_id, "oac_date_diagnosis"])
-        assert pd.isnull(df.at[person_id, "oac_date_treatment"])
-
-        # If the status is already `metastatic`, start palliative care (instead of treatment)
         if df.at[person_id, "oac_status"] == 'metastatic':
+            logger.warning(key="warning", data="Cancer is metastatic- aborting HSI_OtherAdultCancer_StartTreatment,"
+                                               "scheduling HSI_OtherAdultCancer_PalliativeCare")
+
             hs.schedule_hsi_event(
                 hsi_event=HSI_OtherAdultCancer_PalliativeCare(
                     module=self.module,
@@ -729,6 +726,10 @@ class HSI_OtherAdultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                 priority=0
             )
             return self.make_appt_footprint({})
+        # Check that the person has cancer, not in metastatic, has been diagnosed and is not on treatment
+        assert not df.at[person_id, "oac_status"] == 'none'
+        assert not pd.isnull(df.at[person_id, "oac_date_diagnosis"])
+        assert pd.isnull(df.at[person_id, "oac_date_treatment"])
 
         # Record date and stage of starting treatment
         df.at[person_id, "oac_date_treatment"] = self.sim.date

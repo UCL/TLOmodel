@@ -167,6 +167,7 @@ class DxTest:
             :param target_categories: if property is categorical, a list of categories corresponding
                                       to a positive result.
     """
+
     def __init__(self,
                  property: str,
                  item_codes: Union[np.integer, int, list, set, dict] = None,
@@ -234,7 +235,8 @@ class DxTest:
         """
         # Must be an individual level HSI and not a population level HSI
         assert isinstance(hsi_event, IndividualScopeEventMixin), 'DxManager requires individual-level HSI_Event'
-        assert isinstance(hsi_event.target, int), 'DxManager requires individual-level HSI_Event'
+        assert pd.notnull(hsi_event.target) and isinstance(hsi_event.target, (
+            int, np.integer)), f'DxManager error "{hsi_event.target}" is not an integer'
         person_id = hsi_event.target
 
         # Get the "true value" of the property being examined

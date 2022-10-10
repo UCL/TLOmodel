@@ -1,15 +1,19 @@
 """
 General utility functions for TLO analysis
 """
+import gzip
 import json
 import os
 import pickle
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Dict, Optional, TextIO
+from typing import Callable, Dict, Iterable, List, Optional, TextIO, Union
 
+import git
+import matplotlib.colors as mcolors
 import numpy as np
 import pandas as pd
+import squarify
 
 from tlo import logging, util
 from tlo.logging.reader import LogData
@@ -142,6 +146,12 @@ def make_age_grp_types():
     return pd.CategoricalDtype(categories=keys, ordered=True)
 
 
+def to_age_group(_ages: pd.Series):
+    """Return a pd.Series with age-group formatted as a categorical type, created from a pd.Series with exact age."""
+    _, agegrplookup = make_age_grp_lookup()
+    return _ages.map(agegrplookup).astype(make_age_grp_types())
+
+
 def get_scenario_outputs(scenario_filename: str, outputs_dir: Path) -> list:
     """Returns paths of folders associated with a batch_file, in chronological order."""
     stub = scenario_filename.rstrip('.py')
@@ -228,86 +238,69 @@ def extract_results(results_folder: Path,
                     custom_generate_series=None,
                     do_scaling: bool = False,
                     ) -> pd.DataFrame:
-    """Utility function to unpack results
+    """Utility function to unpack results.
 
-    Produces a dataframe that summaries one series from the log, with column multi-index for the draw/run. If an 'index'
-    component of the log_element is provided, the dataframe uses that index (but note that this will only work if the
-    index is the same in each run).
-    Optionally, instead of a series that exists in the dataframe already, a function can be provided that, when applied
-    to the dataframe indicated, yields a new pd.Series.
-    Optionally, with `do_scaling`, each element is multiplied by the the scaling_factor recorded in the simulation
-    (if available)
+    Produces a dataframe from extracting information from a log with the column multi-index for the draw/run.
+
+    If the column to be extracted exists in the log, the name of the `column` is provided as `column`. If the resulting
+     dataframe should be based on another column that exists in the log, this can be provided as 'index'.
+
+    If instead, some work must be done to generate a new column from log, then a function can be provided to do this as
+     `custom_generate_series`.
+
+    Optionally, with `do_scaling=True`, each element is multiplied by the scaling_factor recorded in the simulation.
+
+    Note that if runs in the batch have failed (such that logs have not been generated), these are dropped silently.
     """
+
+    def get_multiplier(_draw, _run):
+        """Helper function to get the multiplier from the simulation, if do_scaling=True.
+        Note that if the scaling factor cannot be found a `KeyError` is thrown."""
+        if not do_scaling:
+            return 1.0
+        else:
+            return load_pickled_dataframes(results_folder, _draw, _run, 'tlo.methods.population'
+                                           )['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
+
+    if custom_generate_series is None:
+        # If there is no `custom_generate_series` provided, it implies that function required selects a the specified
+        # column from the dataframe.
+        assert column is not None, "Must specify which column to extract"
+
+        if index is not None:
+            _gen_series = lambda _df: _df.set_index(index)[column]  # noqa: 731
+        else:
+            _gen_series = lambda _df: _df.reset_index(drop=True)[column]  # noqa: 731
+
+    else:
+        assert index is None, "Cannot specify an index if using custom_generate_series"
+        assert column is None, "Cannot specify a column if using custom_generate_series"
+        _gen_series = custom_generate_series
 
     # get number of draws and numbers of runs
     info = get_scenario_info(results_folder)
 
-    cols = pd.MultiIndex.from_product(
-        [range(info['number_of_draws']), range(info['runs_per_draw'])],
-        names=["draw", "run"]
-    )
+    # Collect results from each draw/run
+    res = dict()
+    for draw in range(info['number_of_draws']):
+        for run in range(info['runs_per_draw']):
 
-    def get_multiplier(_draw, _run):
-        """Helper function to get the multiplier from the simulation, if it's specified and do_scaling=True"""
-        if not do_scaling:
-            return 1.0
-        else:
+            draw_run = (draw, run)
+
             try:
-                return load_pickled_dataframes(results_folder, _draw, _run, 'tlo.methods.population'
-                                               )['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
-            except KeyError:
-                return 1.0
-
-    if custom_generate_series is None:
-
-        assert column is not None, "Must specify which column to extract"
-
-        results_index = None
-        if index is not None:
-            # extract the index from the first log, and use this ensure that all other are exactly the same.
-            filename = f"{module}.pickle"
-            df: pd.DataFrame = load_pickled_dataframes(results_folder, draw=0, run=0, name=filename)[module][key]
-            results_index = df[index]
-
-        results = pd.DataFrame(columns=cols)
-        for draw in range(info['number_of_draws']):
-            for run in range(info['runs_per_draw']):
-
-                try:
-                    df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
-                    results[draw, run] = df[column] * get_multiplier(draw, run)
-
-                    if index is not None:
-                        idx = df[index]
-                        assert idx.equals(results_index), "Indexes are not the same between runs"
-
-                except ValueError:
-                    results[draw, run] = np.nan
-
-        # if 'index' is provided, set this to be the index of the results
-        if index is not None:
-            results.index = results_index
-
-        return results
-
-    else:
-        # A custom commaand to generate a series has been provided.
-        # No other arguements should be provided.
-        assert index is None, "Cannot specify an index if using custom_generate_series"
-        assert column is None, "Cannot specify a column if using custom_generate_series"
-
-        # Collect results and then use pd.concat as indicies may be different betweeen runs
-        res = dict()
-        for draw in range(info['number_of_draws']):
-            for run in range(info['runs_per_draw']):
                 df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
-                output_from_eval = custom_generate_series(df)
+                output_from_eval: pd.Series = _gen_series(df)
                 assert pd.Series == type(output_from_eval), 'Custom command does not generate a pd.Series'
-                res[f"{draw}_{run}"] = output_from_eval * get_multiplier(draw, run)
-        results = pd.concat(res.values(), axis=1).fillna(0)
-        results.columns = cols
+                res[draw_run] = output_from_eval * get_multiplier(draw, run)
 
-        return results
+            except KeyError:
+                # Some logs could not be found - probably because this run failed.
+                res[draw_run] = None
+
+    # Use pd.concat to compile results (skips dict items where the values is None)
+    _concat = pd.concat(res, axis=1)
+    _concat.columns.names = ['draw', 'run']  # name the levels of the columns multi-index
+    return _concat
 
 
 def summarize(results: pd.DataFrame, only_mean: bool = False, collapse_columns: bool = False) -> pd.DataFrame:
@@ -378,7 +371,7 @@ def format_gbd(gbd_df: pd.DataFrame):
     return gbd_df
 
 
-def create_pickles_locally(scenario_output_dir):
+def create_pickles_locally(scenario_output_dir, compressed_file_name_prefix=None):
     """For a run from the Batch system that has not resulted in the creation of the pickles, reconstruct the pickles
      locally."""
 
@@ -391,13 +384,29 @@ def create_pickles_locally(scenario_output_dir):
                 with open(logfile.parent / f"{key}.pickle", "wb") as f:
                     pickle.dump(output, f)
 
+    def uncompress_and_save_logfile(compressed_file) -> Path:
+        """Uncompress and save a log file and return its path."""
+        target = compressed_file.parent / str(compressed_file.name[0:-3])
+        with open(target, "wb") as t:
+            with gzip.open(compressed_file, 'rb') as s:
+                t.write(s.read())
+        return target
+
     f: os.DirEntry
     draw_folders = [f for f in os.scandir(scenario_output_dir) if f.is_dir()]
     for draw_folder in draw_folders:
         run_folders = [f for f in os.scandir(draw_folder) if f.is_dir()]
         for run_folder in run_folders:
-            logfile = [x for x in os.listdir(run_folder) if x.endswith('.log')][0]
-            turn_log_into_pickles(Path(run_folder) / logfile)
+            # Find the original log-file written by the simulation
+            if compressed_file_name_prefix is None:
+                logfile = [x for x in os.listdir(run_folder) if x.endswith('.log')][0]
+            else:
+                compressed_file_name = [
+                    x for x in os.listdir(run_folder) if x.startswith(compressed_file_name_prefix)
+                ][0]
+                logfile = uncompress_and_save_logfile(Path(run_folder) / compressed_file_name)
+
+            turn_log_into_pickles(logfile)
 
 
 def compare_number_of_deaths(logfile: Path, resourcefilepath: Path):
@@ -478,21 +487,32 @@ def flatten_multi_index_series_into_dict_for_logging(ser: pd.Series) -> dict:
     return dict(zip(flat_index, ser.values))
 
 
-def unflatten_flattened_multi_index_in_logging(_x: pd.DataFrame) -> pd.DataFrame:
+def unflatten_flattened_multi_index_in_logging(_x: [pd.DataFrame, pd.Index]) -> [pd.DataFrame, pd.Index]:
     """Helper function that recreate the multi-index of logged results from a pd.DataFrame that is generated by
     `parse_log`.
+
     If a pd.DataFrame created by `parse_log` is the result of repeated logging of a pd.Series with a multi-index that
     was transformed before logging using `flatten_multi_index_series_into_dict_for_logging`, then the pd.DataFrame's
     columns will be those flattened labels. This helper function recreates the original multi-index from which the
-    flattened labels were created and applies it to the pd.DataFrame."""
-    cols = _x.columns
-    index_value_list = list()
-    for col in cols.str.split('|'):
-        index_value_list.append(tuple(component.split('=')[1] for component in col))
-    index_name_list = tuple(component.split('=')[0] for component in cols[0].split('|'))
-    _y = _x.copy()
-    _y.columns = pd.MultiIndex.from_tuples(index_value_list, names=index_name_list)
-    return _y
+    flattened labels were created and applies it to the pd.DataFrame.
+
+    Alternatively, if jus the index of the "flattened" labels is provided, then the equivalent multi-index is returned.
+    """
+
+    def gen_mutli_index(_idx: pd.Index):
+        """Returns the multi-index represented by the flattened index."""
+        index_value_list = list()
+        for col in _idx.str.split('|'):
+            index_value_list.append(tuple(component.split('=')[1] for component in col))
+        index_name_list = tuple(component.split('=')[0] for component in _idx[0].split('|'))
+        return pd.MultiIndex.from_tuples(index_value_list, names=index_name_list)
+
+    if isinstance(_x, pd.DataFrame):
+        _y = _x.copy()
+        _y.columns = gen_mutli_index(_x.columns)
+        return _y
+    else:
+        return gen_mutli_index(_x)
 
 
 class LogsDict(Mapping):
@@ -575,3 +595,275 @@ class LogsDict(Mapping):
         for key in self.keys():
             self.__getitem__(key, cache=True)
         return self.__dict__
+
+
+def get_filtered_treatment_ids(depth: Optional[int] = None) -> List[str]:
+    """Return a list of treatment_ids that are defined in the model, filtered to a specified depth."""
+
+    def filter_treatments(_treatments: Iterable[str], depth: int = 1) -> List[str]:
+        """Reduce an iterable of `TREATMENT_IDs` by ignoring difference beyond a certain depth of specification and
+        adding '_*' to the end to serve as a wild-card.
+        N.B., The TREATMENT_ID is defined with each increasing level of specification separated by a `_`. """
+        return sorted(list(set(
+            [
+                "".join(f"{x}_" for i, x in enumerate(t.split('_')) if i < depth).rstrip('_') + '_*'
+                for t in set(_treatments)
+            ]
+        )))
+
+    # Get pd.DataFrame with information of all the defined HSI
+    # Import within function to avoid circular import error
+    from tlo.analysis.hsi_events import get_all_defined_hsi_events_as_dataframe
+    hsi_event_details = get_all_defined_hsi_events_as_dataframe()
+
+    # Return list of TREATMENT_IDs and filter to the resolution needed
+    return filter_treatments(hsi_event_details['treatment_id'], depth=depth if depth is not None else np.inf)
+
+
+def colors_in_matplotlib() -> tuple:
+    """Return tuple of the strings for all the colours defined in Matplotlib."""
+    return tuple(
+        set().union(
+            mcolors.BASE_COLORS.keys(),
+            mcolors.TABLEAU_COLORS.keys(),
+            mcolors.CSS4_COLORS.keys(),
+        )
+    )
+
+
+def _define_coarse_appts() -> pd.DataFrame:
+    """Define which appointment types fall into which 'coarse appointment' category, the order of the categories and the
+    colour of the category.
+    Names of colors are selected with reference to: https://i.stack.imgur.com/lFZum.png"""
+    return pd.DataFrame.from_records(
+        [
+            {
+                'category': 'Outpatient',
+                'appt_types': ['Under5OPD', 'Over5OPD'],
+                'color': 'magenta'
+            },
+            {
+                'category': 'Con w/ DCSA',
+                'appt_types': ['ConWithDCSA'],
+                'color': 'crimson'},
+            {
+                'category': 'A & E',
+                'appt_types': ['AccidentsandEmerg'],
+                'color': 'forestgreen'},
+            {
+                'category': 'Inpatient',
+                'appt_types': ['InpatientDays', 'IPAdmission'],
+                'color': 'mediumorchid'},
+            {
+                'category': 'RMNCH',
+                'appt_types': ['AntenatalFirst', 'ANCSubsequent', 'NormalDelivery', 'CompDelivery', 'Csection', 'EPI',
+                               'FamPlan', 'U5Malnutr'],
+                'color': 'gold'},
+            {
+                'category': 'HIV/AIDS',
+                'appt_types': ['VCTNegative', 'VCTPositive', 'MaleCirc', 'NewAdult', 'EstMedCom', 'EstNonCom', 'PMTCT',
+                               'Peds'],
+                'color': 'darkturquoise'},
+            {
+                'category': 'Tb',
+                'appt_types': ['TBNew', 'TBFollowUp'],
+                'color': 'y'},
+            {
+                'category': 'Dental',
+                'appt_types': ['DentAccidEmerg', 'DentSurg', 'DentalU5', 'DentalO5'],
+                'color': 'rosybrown'},
+            {
+                'category': 'Mental Health',
+                'appt_types': ['MentOPD', 'MentClinic'],
+                'color': 'lightsalmon'},
+            {
+                'category': 'Surgery / Radiotherapy',
+                'appt_types': ['MajorSurg', 'MinorSurg', 'Radiotherapy'],
+                'color': 'orange'},
+            {
+                'category': 'STI',
+                'appt_types': ['STI'],
+                'color': 'slateblue'},
+            {
+                'category': 'Lab / Diagnostics',
+                'appt_types': ['LabHaem', 'LabPOC', 'LabParasit', 'LabBiochem', 'LabMicrobio', 'LabMolec', 'LabTBMicro',
+                               'LabSero', 'LabCyto', 'LabTrans', 'Ultrasound', 'Mammography', 'MRI', 'Tomography',
+                               'DiagRadio'],
+                'color': 'dodgerblue'}
+        ]
+    ).set_index('category')
+
+
+def get_coarse_appt_type(appt_type: str) -> str:
+    """Return the `coarser` categorization of appt_types for a given appt_type. """
+    for coarse_appt_types, row in _define_coarse_appts().iterrows():
+        if appt_type in row['appt_types']:
+            return coarse_appt_types
+
+
+def order_of_coarse_appt(_coarse_appt: Union[str, pd.Index]) -> Union[int, pd.Index]:
+    """Define a standard order for the coarse appointment types."""
+    order = _define_coarse_appts().index
+    if isinstance(_coarse_appt, str):
+        return tuple(order).index(_coarse_appt)
+    else:
+        return order[order.isin(_coarse_appt)]
+
+
+def get_color_coarse_appt(coarse_appt_type: str) -> str:
+    """Return the colour (as matplotlib string) assigned to this appointment type. Returns `np.nan` if appointment-type
+    is not recognised.
+    Names of colors are selected with reference to: https://i.stack.imgur.com/lFZum.png"""
+    colors = _define_coarse_appts().color
+    if coarse_appt_type in colors.index:
+        return colors.loc[coarse_appt_type]
+    else:
+        return np.nan
+
+
+def _define_short_treatment_ids() -> pd.Series:
+    """Define the order of the short treatment_ids and the color for each.
+    Names of colors are selected with reference to: https://matplotlib.org/stable/gallery/color/named_colors.html"""
+    return pd.Series({
+        'FirstAttendance*': 'darkgrey',
+        'Inpatient*': 'silver',
+
+        'Contraception*': 'darkseagreen',
+        'AntenatalCare*': 'green',
+        'DeliveryCare*': 'limegreen',
+        'PostnatalCare*': 'springgreen',
+
+        'Alri*': 'darkorange',
+        'Diarrhoea*': 'tan',
+        'Undernutrition*': 'gold',
+        'Epi*': 'darkgoldenrod',
+
+        'Hiv*': 'deepskyblue',
+        'Malaria*': 'lightsteelblue',
+        'Measles*': 'cornflowerblue',
+        'Tb*': 'mediumslateblue',
+        'Schisto*': 'skyblue',
+
+        'CardioMetabolicDisorders*': 'brown',
+
+        'BladderCancer*': 'orchid',
+        'BreastCancer*': 'mediumvioletred',
+        'OesophagealCancer*': 'deeppink',
+        'ProstateCancer*': 'hotpink',
+        'OtherAdultCancer*': 'palevioletred',
+
+        'Depression*': 'indianred',
+        'Epilepsy*': 'red',
+
+        'Rti*': 'lightsalmon',
+    })
+
+
+def order_of_short_treatment_ids(_short_treatment_id: Union[str, pd.Index]) -> Union[int, pd.Index]:
+    """Define a standard order for short treatment_ids."""
+    order = _define_short_treatment_ids().index
+    if isinstance(_short_treatment_id, str):
+        return tuple(order).index(_short_treatment_id.replace('_*', '*'))
+    else:
+        return order[order.isin(_short_treatment_id)]
+
+
+def get_color_short_treatment_id(short_treatment_id: str) -> str:
+    """Return the colour (as matplotlib string) assigned to this shorted TREATMENT_ID. Returns `np.nan` if treatment_id
+    is not recognised."""
+    colors = _define_short_treatment_ids()
+    _short_treatment_ids_with_trailing_asterix = short_treatment_id.replace('_*', '*').rstrip('*') + '*'
+    if _short_treatment_ids_with_trailing_asterix in colors.index:
+        return colors.loc[_short_treatment_ids_with_trailing_asterix]
+    else:
+        return np.nan
+
+
+def _define_cause_of_death_labels() -> pd.Series:
+    """Define the order of the cause_of_death_labels and the color for each.
+    Names of colors are selected with reference to: https://matplotlib.org/stable/gallery/color/named_colors.html"""
+    return pd.Series({
+        'Maternal Disorders': 'green',
+        'Neonatal Disorders': 'springgreen',
+        'Congenital birth defects': 'mediumaquamarine',
+
+        'Lower respiratory infections': 'darkorange',
+        'Childhood Diarrhoea': 'tan',
+
+        'AIDS': 'deepskyblue',
+        'Malaria': 'lightsteelblue',
+        'Measles': 'cornflowerblue',
+        'non_AIDS_TB': 'mediumslateblue',
+
+        'Heart Disease': 'sienna',
+        'Kidney Disease': 'chocolate',
+        'Diabetes': 'peru',
+        'Stroke': 'burlywood',
+
+        'Cancer (Bladder)': 'deeppink',
+        'Cancer (Breast)': 'darkmagenta',
+        'Cancer (Oesophagus)': 'mediumvioletred',
+        'Cancer (Other)': 'crimson',
+        'Cancer (Prostate)': 'hotpink',
+
+        'Depression / Self-harm': 'goldenrod',
+        'Epilepsy': 'gold',
+
+        'Transport Injuries': 'lightsalmon',
+
+        'Other': 'dimgrey',
+    })
+
+
+def order_of_cause_of_death_label(_cause_of_death_label: Union[str, pd.Index]) -> Union[int, pd.Index]:
+    """Define a standard order for Cause-of-Death labels."""
+    order = _define_cause_of_death_labels().index
+    if isinstance(_cause_of_death_label, str):
+        return tuple(order).index(_cause_of_death_label)
+    else:
+        return pd.Index(sorted(_cause_of_death_label, key=order_of_cause_of_death_label))
+
+
+def get_color_cause_of_death_label(cause_of_death_label: str) -> str:
+    """Return the colour (as matplotlib string) assigned to this shorted Cause-of-Death Label. Returns `np.nan` if
+    label is not recognised."""
+    colors = _define_cause_of_death_labels()
+    if cause_of_death_label in colors.index:
+        return colors.loc[cause_of_death_label]
+    else:
+        return np.nan
+
+
+def squarify_neat(sizes: np.array, label: np.array, colormap: Callable, numlabels=5, **kwargs):
+    """Pass through to squarify, with some customisation: ...
+     * Apply the colormap specified
+     * Only give label a selection of the segments
+     N.B. The package `squarify` is required.
+    """
+    # Suppress labels for all but the `numlabels` largest entries.
+    to_label = set(pd.Series(index=label, data=sizes).sort_values(ascending=False).iloc[0:numlabels].index)
+
+    squarify.plot(
+        sizes=sizes,
+        label=[_label if _label in to_label else '' for _label in label],
+        color=[colormap(_x) for _x in label],
+        **kwargs,
+    )
+
+
+def get_root_path(starter_path: Optional[Path] = None) -> Path:
+    """Returns the absolute path of the top level of the repository. `starter_path` optionally gives a reference
+    location from which to begin search; if omitted the location of this file is used."""
+
+    def get_git_root(path: Path) -> Path:
+        """Return path of git repo. Based on: https://stackoverflow.com/a/41920796"""
+        git_repo = git.Repo(path, search_parent_directories=True)
+        git_root = git_repo.working_dir
+        return Path(git_root)
+
+    if starter_path is None:
+        return get_git_root(__file__)
+    elif Path(starter_path).exists() and Path(starter_path).is_absolute():
+        return get_git_root(starter_path)
+    else:
+        raise OSError("File Not Found")

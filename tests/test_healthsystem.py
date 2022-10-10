@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from typing import Set
 
 import numpy as np
 import pandas as pd
@@ -7,7 +8,7 @@ import pytest
 
 from tlo import Date, Module, Simulation, logging
 from tlo.analysis.utils import parse_log_file
-from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import (
     Metadata,
     chronicsyndrome,
@@ -20,7 +21,8 @@ from tlo.methods import (
     symptommanager,
 )
 from tlo.methods.consumables import Consumables, create_dummy_data_for_cons_availability
-from tlo.methods.healthsystem import HealthSystemChangeParameters, HSI_Event
+from tlo.methods.fullmodel import fullmodel
+from tlo.methods.healthsystem import HealthSystem, HealthSystemChangeParameters, HSI_Event
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
@@ -459,7 +461,7 @@ def test_run_in_with_hs_disabled(tmpdir, seed):
     assert any(sim.population.props['mi_status'] == 'P')  # At least some mockitis cure have occurred (though HS)
 
     # Check for hsi_wrappers in the main event queue
-    list_of_ev_name = [ev[2] for ev in sim.event_queue.queue]
+    list_of_ev_name = [ev[3] for ev in sim.event_queue.queue]
     assert any(['HSIEventWrapper' in str(ev_name) for ev_name in list_of_ev_name])
 
 
@@ -689,7 +691,7 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
     assert {'date', 'TREATMENT_ID', 'did_run', 'Squeeze_Factor', 'Number_By_Appt_Type_Code', 'Person_ID',
             'Facility_Level', 'Facility_ID',
             } == set(detailed_hsi_event.columns)
-    assert {'date', 'Frac_Time_Used_Overall', 'Frac_Time_Used_By_Facility_ID'
+    assert {'date', 'Frac_Time_Used_Overall', 'Frac_Time_Used_By_Facility_ID', 'Frac_Time_Used_By_OfficerType',
             } == set(detailed_capacity.columns)
     assert {'date', 'TREATMENT_ID', 'Item_Available', 'Item_NotAvailable'
             } == set(detailed_consumables.columns)
@@ -745,6 +747,83 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
             .to_dict()
 
         assert detail_beddays_used == summary_beddays_used
+
+    # Check the count of appointment type (total) matches the count split by level
+    counts_of_appts_by_level = pd.concat(
+        {idx: pd.DataFrame.from_dict(mydict)
+         for idx, mydict in summary_hsi_event['Number_By_Appt_Type_Code_And_Level'].iteritems()
+         }).unstack().fillna(0.0).astype(int)
+
+    assert summary_hsi_event['Number_By_Appt_Type_Code'].apply(pd.Series).sum().to_dict() == \
+           counts_of_appts_by_level.sum(axis=1, level=1).sum(axis=0).to_dict()
+
+
+@pytest.mark.slow
+def test_summary_logger_generated_in_year_long_simulation(seed, tmpdir):
+    """Check that the summary logger is created when the simulation lasts exactly one year."""
+
+    def summary_logger_is_present(end_date_of_simulation):
+        """Returns True if the summary logger is present when using the specified end_date for the simulation."""
+        # Create a dummy disease module (to be the parent of the dummy HSI)
+        class DummyModule(Module):
+            METADATA = {Metadata.DISEASE_MODULE}
+
+            def read_parameters(self, data_folder):
+                pass
+
+            def initialise_population(self, population):
+                pass
+
+            def initialise_simulation(self, sim):
+                sim.modules['HealthSystem'].schedule_hsi_event(HSI_Dummy(self, person_id=0),
+                                                               topen=self.sim.date,
+                                                               tclose=None,
+                                                               priority=0)
+
+        # Create a dummy HSI event:
+        class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
+            def __init__(self, module, person_id):
+                super().__init__(module, person_id=person_id)
+                self.TREATMENT_ID = 'Dummy'
+                self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'Under5OPD': 1})
+                self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})
+                self.ACCEPTED_FACILITY_LEVEL = '1a'
+
+            def apply(self, person_id, squeeze_factor):
+                # Request a consumable (either 0 or 1)
+                self.get_consumables(item_codes=self.module.rng.choice((0, 1), p=(0.5, 0.5)))
+
+                # Schedule another occurrence of itself in three days.
+                sim.modules['HealthSystem'].schedule_hsi_event(self,
+                                                               topen=self.sim.date + pd.DateOffset(days=3),
+                                                               tclose=None,
+                                                               priority=0)
+
+        # Set up simulation:
+        sim = Simulation(start_date=start_date, seed=seed, log_config={
+            'filename': 'tmpfile',
+            'directory': tmpdir,
+            'custom_levels': {
+                "tlo.methods.healthsystem": logging.INFO,
+                "tlo.methods.healthsystem.summary": logging.INFO
+            }
+        })
+
+        sim.register(
+            demography.Demography(resourcefilepath=resourcefilepath),
+            healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+            DummyModule(),
+            sort_modules=False,
+            check_all_dependencies=False
+        )
+        sim.make_initial_population(n=1000)
+
+        sim.simulate(end_date=end_date_of_simulation)
+        log = parse_log_file(sim.log_filepath)
+
+        return ('tlo.methods.healthsystem.summary' in log) and len(log['tlo.methods.healthsystem.summary'])
+
+    assert summary_logger_is_present(start_date + pd.DateOffset(years=1))
 
 
 def test_HealthSystemChangeParameters(seed, tmpdir):
@@ -846,3 +925,219 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
     assert logged_access_consumables.loc[start_date].all()  # All consumables available at start
     assert not logged_access_consumables.loc[start_date + pd.DateOffset(days=4)].any()  # No consumables available after
     #                                                                                 parameter change
+
+
+def test_is_treatment_id_allowed():
+    """Check the pattern matching in `is_treatment_id_allowed` works as expected."""
+    hs = HealthSystem(resourcefilepath=resourcefilepath)
+
+    # An empty list means nothing is allowed
+    assert not hs.is_treatment_id_allowed('Hiv', [])
+
+    # A list that contains only an asteriks ['*'] means run anything
+    assert hs.is_treatment_id_allowed('Hiv', ['*'])
+
+    # If the list is not empty, then a treatment_id with a first part "FirstAttendance_" is also allowed
+    assert hs.is_treatment_id_allowed('FirstAttendance_Em', ["A_B_C_D_E"])
+    assert not hs.is_treatment_id_allowed('FirstAttendance_Em', [])
+
+    # An entry in the list of the form "A_B_C" means a treatment_id that matches exactly is allowed
+    assert hs.is_treatment_id_allowed('A', ['A', 'B_C_D', 'E_F_G_H'])
+    assert hs.is_treatment_id_allowed('B_C_D', ['A', 'B_C_D', 'E_F_G_H'])
+
+    assert not hs.is_treatment_id_allowed('A_', ['A', 'B_C_D', 'E_F_G_H'])
+    assert not hs.is_treatment_id_allowed('E_F_G', ['E', 'E_F', 'E_F_G_H'])
+
+    # An entry in the list of the form "A_B_*" means that a treatment_id that begins "A_B_" or "A_B" is allowed
+    assert hs.is_treatment_id_allowed('Hiv_X', ['Hiv_*'])
+    assert hs.is_treatment_id_allowed('Hiv_Y', ['Hiv_*'])
+    assert hs.is_treatment_id_allowed('Hiv_A_B_C', ['Hiv_A_B_*'])
+    assert hs.is_treatment_id_allowed('Hiv_A_B', ['Hiv_A_B_*'])
+    assert hs.is_treatment_id_allowed('Hiv_A_B_C_D', ['Hiv_A_B_C_*'])
+    assert hs.is_treatment_id_allowed('Hiv_A_B_C', ['Hiv_A_B_C_*'])
+    assert hs.is_treatment_id_allowed('Hiv_X_1_2_3_4', ['Hiv_X_*'])
+    assert hs.is_treatment_id_allowed('Hiv_X_1_2_3_4', ['Hiv_*'])
+
+    assert not hs.is_treatment_id_allowed('Hiv_X', ['Hiv_A_*'])
+    assert not hs.is_treatment_id_allowed('Hiv_Y', ['Y_*'])
+    assert not hs.is_treatment_id_allowed('Hiv_A_B_C', ['Hiv_X_B_C_*'])
+    assert not hs.is_treatment_id_allowed('Hiv_A_B_C', ['Hiv1_A_B_C_*'])
+    assert not hs.is_treatment_id_allowed('Hiv_X_1_2_3_4', ['Hiv_Y_*'])
+    assert not hs.is_treatment_id_allowed('A', ['A_B_C_*'])
+
+    # (An asteriks that is not preceded by an "_" has no effect is allowing treatment_ids).
+    assert not hs.is_treatment_id_allowed('Hiv_A_B', ['Hiv*'])
+    assert not hs.is_treatment_id_allowed('Hiv', ['Hiv*'])
+
+    # (And no confusion about stubs that are similar...)
+    assert hs.is_treatment_id_allowed('Epi', ['Epi_*'])
+    assert not hs.is_treatment_id_allowed('Epilepsy', ['Epi_*'])
+    assert not hs.is_treatment_id_allowed('Epi', ['Epilepsy_*'])
+    assert hs.is_treatment_id_allowed('Epilepsy', ['Epilepsy_*'])
+    assert hs.is_treatment_id_allowed('Epi', ['Epi', 'Epilepsy_*'])
+    assert hs.is_treatment_id_allowed('Epilepsy', ['Epi', 'Epilepsy_*'])
+
+
+def test_manipulation_of_service_availability(seed, tmpdir):
+    """Check that the parameter `service_availability` can be used to allow/disallow certain `TREATMENT_ID`s.
+    N.B. This is setting service_availability through a change in parameter, as would be done by BatchRunner."""
+
+    generic_first_appts = {'FirstAttendance_NonEmergency', 'FirstAttendance_Emergency'}
+
+    def get_set_of_treatment_ids_that_run(service_availability) -> Set[str]:
+        """Return set of TREATMENT_IDs that occur when running the simulation with the `service_availability`."""
+        sim = Simulation(start_date=start_date, seed=seed, log_config={
+            'filename': 'tmpfile',
+            'directory': tmpdir,
+            'custom_levels': {
+                "tlo.methods.healthsystem": logging.INFO,
+            }
+        })
+
+        sim.register(*fullmodel(resourcefilepath=resourcefilepath))
+        sim.modules['HealthSystem'].parameters['Service_Availability'] = service_availability  # Change parameter
+        sim.make_initial_population(n=500)
+        sim.simulate(end_date=start_date + pd.DateOffset(days=7))
+
+        log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']
+        if 'HSI_Event' in log:
+            return set(log['HSI_Event']['TREATMENT_ID'].value_counts().to_dict().keys())
+        else:
+            return set()
+
+    # Run model with everything available by default using "*"
+    everything = get_set_of_treatment_ids_that_run(service_availability=["*"])
+
+    # Run model with everything specified individually
+    assert everything == get_set_of_treatment_ids_that_run(service_availability=list(everything))
+
+    # Run model with nothing available
+    assert set() == get_set_of_treatment_ids_that_run(service_availability=[])
+
+    # Only allow 'Hiv_Test' (Not `Hiv_Treatment`)
+    assert set({'Hiv_Test'}) == \
+           get_set_of_treatment_ids_that_run(service_availability=["Hiv_Test_*"]) - generic_first_appts
+
+    # Allow all `Hiv` things (but nothing else)
+    assert set({'Hiv_Test', 'Hiv_Treatment'}) == \
+           get_set_of_treatment_ids_that_run(service_availability=["Hiv_*"]) - generic_first_appts
+
+    # Allow all except `Hiv_Test`
+    everything_except_hiv_test = everything - set({'Hiv_Test'})
+    run_everything_except_hiv_test = \
+        get_set_of_treatment_ids_that_run(service_availability=list(everything_except_hiv_test))
+    assert 'Hiv_Test' not in run_everything_except_hiv_test
+    assert len(run_everything_except_hiv_test.union(everything))
+
+    # Allow all except `Hiv_Treatment`
+    everything_except_hiv_treatment = everything - set({'Hiv_Treatment'})
+    run_everything_except_hiv_treatment = \
+        get_set_of_treatment_ids_that_run(service_availability=list(everything_except_hiv_treatment))
+    assert 'Hiv_Treatment' not in run_everything_except_hiv_treatment
+    assert len(run_everything_except_hiv_treatment.union(everything))
+
+    # Allow all except `HIV*`
+    everything_except_hiv_anything = {x for x in everything if not x.startswith('Hiv')}
+    run_everything_except_hiv_anything = \
+        get_set_of_treatment_ids_that_run(service_availability=list(everything_except_hiv_anything))
+    assert 'Hiv_Treatment' not in run_everything_except_hiv_anything
+    assert 'Hiv_Test' not in run_everything_except_hiv_anything
+    assert len(run_everything_except_hiv_anything.union(everything))
+
+
+def test_hsi_run_on_same_day_if_scheduled_for_same_day(seed, tmpdir):
+    """An HSI_Event which is scheduled for the current day should run on the current day. This should be the case
+    whether the HSI_Event is scheduled from initialise_simulation, a normal event, or an HSI_Event."""
+
+    class DummyHSI_To_Run_On_Same_Day(HSI_Event, IndividualScopeEventMixin):
+        """HSI event that will demonstrate it has been run."""
+        def __init__(self, module, person_id, source):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = f"{self.__class__.__name__ }_{source}"
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+            self.ACCEPTED_FACILITY_LEVEL = '1a'
+
+        def apply(self, person_id, squeeze_factor):
+            pass
+
+    class DummyHSI_To_Run_On_First_Day_Of_Simulation(HSI_Event, IndividualScopeEventMixin):
+        """HSI event that schedules another HSI_Event for the same day"""
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = self.__class__.__name__
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+            self.ACCEPTED_FACILITY_LEVEL = '1a'
+
+        def apply(self, person_id, squeeze_factor):
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                DummyHSI_To_Run_On_Same_Day(module=self.module, person_id=person_id, source='HSI'),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0)
+
+    class Event_To_Run_On_First_Day_Of_Simulation(Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+
+        def apply(self, person_id):
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                DummyHSI_To_Run_On_Same_Day(module=self.module, person_id=person_id, source='Event'),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0)
+
+    class DummyModule(Module):
+        """Schedules an HSI to occur on the first day of the simulation from initialise_simulation, and an event that
+         will schedule the event for the same day."""
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            # Schedule the HSI to run on the same day
+            sim.modules['HealthSystem'].schedule_hsi_event(
+                DummyHSI_To_Run_On_Same_Day(self, person_id=0, source='initialise_simulation'),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0)
+
+            # Schedule an HSI that will schedule a further HSI to run on the same day
+            sim.modules['HealthSystem'].schedule_hsi_event(
+                DummyHSI_To_Run_On_First_Day_Of_Simulation(module=self, person_id=0),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0)
+
+            # Schedule an event that will schedule an HSI to run on the same day
+            sim.schedule_event(Event_To_Run_On_First_Day_Of_Simulation(self, person_id=0), sim.date)
+
+    log_config = {
+        "filename": "log",
+        "directory": tmpdir,
+    }
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, log_config=log_config)
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(
+                     resourcefilepath=resourcefilepath,
+                     disable=False,
+                     cons_availability='all',
+                 ),
+                 DummyModule(),
+                 check_all_dependencies=False,
+                 )
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=sim.start_date + pd.DateOffset(days=5))
+
+    # Check that all events ran on the same day, the first day of the simulation.
+    log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']['HSI_Event']
+    assert 4 == len(log)  # 3 HSI events should have occurred
+    assert (log['date'] == sim.start_date).all()
+    assert log['TREATMENT_ID'].to_list() == [
+        'DummyHSI_To_Run_On_Same_Day_initialise_simulation',
+        'DummyHSI_To_Run_On_First_Day_Of_Simulation',
+        'DummyHSI_To_Run_On_Same_Day_Event',
+        'DummyHSI_To_Run_On_Same_Day_HSI',
+    ]

@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import Date, DateOffset, Module, Parameter, Types
-from tlo.events import PopulationScopeEventMixin, RegularEvent
+from tlo.events import PopulationScopeEventMixin, Priority, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods.hsi_generic_first_appts import (
@@ -41,6 +41,9 @@ class HealthSeekingBehaviour(Module):
 
     # No parameters to declare
     PARAMETERS = {
+        'force_any_symptom_to_lead_to_healthcareseeking': Parameter(
+            Types.BOOL, "Whether every symptom should always lead to healthcare seeking (ignoring the other parameters "
+                        "that determine the probability of seeking care."),
         'baseline_odds_of_healthcareseeking_children': Parameter(Types.REAL, 'odds of health-care seeking (children:'
                                                                              ' 0-14) if male, 0-5 years-old, living in'
                                                                              ' a rural setting in the Northern region,'
@@ -85,7 +88,7 @@ class HealthSeekingBehaviour(Module):
     # No properties to declare
     PROPERTIES = {}
 
-    def __init__(self, name=None, resourcefilepath=None, force_any_symptom_to_lead_to_healthcareseeking=False):
+    def __init__(self, name=None, resourcefilepath=None, force_any_symptom_to_lead_to_healthcareseeking=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
@@ -100,16 +103,22 @@ class HealthSeekingBehaviour(Module):
         self.non_emergency_healthcareseeking_in_adults = set()
 
         # "force_any_symptom_to_lead_to_healthcareseeking"=True will mean that probability of health care seeking is 1.0
-        # for anyone with newly onset symptoms
-        assert isinstance(force_any_symptom_to_lead_to_healthcareseeking, bool)
-        self.force_any_symptom_to_lead_to_healthcareseeking = force_any_symptom_to_lead_to_healthcareseeking
+        # for anyone with newly onset symptoms. Note that if this is not specified, then the value is taken from the
+        # ResourceFile.
+        if force_any_symptom_to_lead_to_healthcareseeking is not None:
+            assert isinstance(force_any_symptom_to_lead_to_healthcareseeking, bool)
+        self.arg_force_any_symptom_to_lead_to_healthcareseeking = force_any_symptom_to_lead_to_healthcareseeking
 
     def read_parameters(self, data_folder):
         """Read in ResourceFile"""
         # Load parameters from resource file:
         self.load_parameters_from_dataframe(
-            pd.DataFrame(pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_HealthSeekingBehaviour.csv'))
+            pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_HealthSeekingBehaviour.csv')
         )
+
+        # Check that force_any_symptom_to_lead_to_healthcareseeking is a bool (this is returned in
+        # `self.force_any_symptom_to_lead_to_healthcareseeking` without any further checking).
+        assert isinstance(self.parameters['force_any_symptom_to_lead_to_healthcareseeking'], bool)
 
     def initialise_population(self, population):
         """Nothing to initialise in the population
@@ -202,6 +211,15 @@ class HealthSeekingBehaviour(Module):
                 )
             )
 
+    @property
+    def force_any_symptom_to_lead_to_healthcareseeking(self):
+        """Returns the parameter value stored for `force_any_symptom_to_lead_to_healthcareseeking` unless this has
+         been over-ridden by an argument to the module."""
+        if self.arg_force_any_symptom_to_lead_to_healthcareseeking is None:
+            return self.parameters['force_any_symptom_to_lead_to_healthcareseeking']
+        else:
+            return self.arg_force_any_symptom_to_lead_to_healthcareseeking
+
 # ---------------------------------------------------------------------------------------------------------
 #   REGULAR POLLING EVENT
 # ---------------------------------------------------------------------------------------------------------
@@ -214,20 +232,20 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         """Initialise the HealthSeekingBehaviourPoll
         :param module: the module that created this event
         """
-        super().__init__(module, frequency=DateOffset(days=1))
+        super().__init__(module, frequency=DateOffset(days=1), priority=Priority.LAST_HALF_OF_DAY)
         assert isinstance(module, HealthSeekingBehaviour)
 
     @staticmethod
-    def _select_persons_with_any_symptoms(persons, symptoms):
-        """Select rows of `persons` dataframe with any symptoms columns non-zero."""
+    def _has_any_symptoms(persons, symptoms):
+        """Which rows in `persons` have non-zero values for columns in `symptoms`."""
         if len(symptoms) == 0:
             raise ValueError('At least one symptom must be specified')
-        return persons[
-            (persons[[f'sy_{symptom}' for symptom in symptoms]] != 0).any(axis=1)
-        ]
+        return (persons[[f'sy_{symptom}' for symptom in symptoms]] != 0).any(axis=1)
 
     def apply(self, population):
-        """Determine if persons with newly onset acute generic symptoms will seek care.
+        """Determine if persons with newly onset acute generic symptoms will seek care. This event runs second-to-last
+        every day (i.e., just before the `HealthSystemScheduler`) in order that symptoms arising this day can lead to
+        FirstAttendance on the same day.
 
         :param population: the current population
         """
@@ -265,36 +283,40 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         ):
             if len(emergency_symptoms) > 0:
                 # Generate an emergency HSI event if any of the symptoms is an emergency
-                emergency_care_seeking_subgroup = self._select_persons_with_any_symptoms(
+                is_emergency_care_seeking = self._has_any_symptoms(
                     subgroup, emergency_symptoms
                 )
                 health_system.schedule_batch_of_individual_hsi_events(
                     hsi_event_class=emergency_hsi_event_class,
-                    person_ids=emergency_care_seeking_subgroup.index,
+                    person_ids=subgroup[is_emergency_care_seeking].index,
                     priority=0,
                     topen=self.sim.date,
                     tclose=None,
                     module=module
                 )
+                # If a person has had an emergency appointment scheduled this day
+                # already due to emergency symptoms, then do not allow a non-emergency
+                # appointment to be scheduled in addition, so select the subgroup
+                # who are not emergency care-seeking
+                not_emergency_care_seeking_subgroup = subgroup[
+                    ~is_emergency_care_seeking
+                ]
+            else:
+                not_emergency_care_seeking_subgroup = subgroup
+
             # Check if no symptoms initiating (non-emergency) care seeking specified
             if len(care_seeking_symptoms) == 0:
                 continue
             # Symptoms in non-emergency care seeking set may or may not generate an
-            # associated HSI event, we first select all persons in subgroup who have
-            # any symptoms which may lead to a HSI event being generated.
-            # From here onwards care seeking should be taken to mean specifically
-            # *non-emergency* care seeking
-            possibly_care_seeking_subgroup = self._select_persons_with_any_symptoms(
-                subgroup, care_seeking_symptoms
-            )
-
-            # If a person has had an emergency appointment scheduled this day already due
-            # to emergency symptoms, then do not allow a non-emergency appointment to be
-            # scheduled in addition.
-            if len(emergency_symptoms) > 0:
-                possibly_care_seeking_subgroup.drop(
-                    index=set(possibly_care_seeking_subgroup.index).intersection(emergency_care_seeking_subgroup.index),
-                    inplace=True)
+            # associated HSI event, we first select all persons in
+            # not_emergency_care_seeking_subgroup who have any symptoms which may lead
+            # to a HSI event being generated. From here onwards care seeking should be
+            # taken to mean specifically *non-emergency* care seeking
+            possibly_care_seeking_subgroup = not_emergency_care_seeking_subgroup[
+                self._has_any_symptoms(
+                    not_emergency_care_seeking_subgroup, care_seeking_symptoms
+                )
+            ]
 
             if module.force_any_symptom_to_lead_to_healthcareseeking:
                 # This HSB module flag causes a generic non-emergency appointment to be

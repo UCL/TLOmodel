@@ -366,12 +366,13 @@ class LinearModel(object):
                     isinstance(col.dtype, pd.CategoricalDtype)
                     and np.issubdtype(col.dtype.categories.dtype, np.integer)
                 ):
-                    # `pandas.eval` raises an error when using boolean
-                    # operations on series with a categorical dtype with integer
-                    # categories therefore if any such columns are present we
-                    # convert to the corresponding integer type
-                    dtype = col.dtype.categories.dtype
-                    column_resolvers[cleaned_name] = col.astype(dtype)
+                    # `pandas.eval` raises an error when using boolean operations
+                    # on series with a categorical dtype with integer categories
+                    # therefore if any such columns are present we convert to
+                    # double-precision floats - this should be safe providing only
+                    # integer categories which have exact floating point representations
+                    # are used (which is likely to be the case)
+                    column_resolvers[cleaned_name] = col.astype(np.float64)
                 else:
                     column_resolvers[cleaned_name] = col
         for name, value in external_variables.items():

@@ -393,11 +393,9 @@ class BitsetHandler:
 
 
 def random_date(start, end, rng):
-    """Generate a randomly-chosen day between `start` (inclusive) `end` (exclusive)"""
-    if end > start:
-        return start + DateOffset(days=rng.randint(0, (end - start).days))
-    else:
-        return start
+    if start >= end:
+        raise ValueError("End date equal to or earlier than start date")
+    return start + DateOffset(days=rng.randint(0, (end - start).days))
 
 
 def hash_dataframe(dataframe: pd.DataFrame):
@@ -407,3 +405,22 @@ def hash_dataframe(dataframe: pd.DataFrame):
         return df.applymap(lambda x: tuple(x) if isinstance(x, list) else x)
 
     return hashlib.sha1(pd.util.hash_pandas_object(coerce_lists_to_tuples(dataframe)).values).hexdigest()
+
+
+def get_person_id_to_inherit_from(child_id, mother_id, population_dataframe, rng):
+    """Get index of person to inherit properties from.
+
+    Should be specified mother_id unless this is equal to -1 (for example for
+    individuals generated at population initialisation with no mother set) in which
+    case an individual from currently alive persons, _excluding the person the index to
+    inherit from is being computed for_, is randomly chosen.
+    """
+    if mother_id == -1:
+        # Get indices of alive persons and try to drop child_id from these indices if
+        # present, ignoring any errors if child_id not currently in population dataframe
+        alive_persons_not_including_child = population_dataframe.index[
+            population_dataframe.is_alive
+        ].drop(child_id, errors="ignore")
+        return rng.choice(alive_persons_not_including_child)
+    else:
+        return mother_id

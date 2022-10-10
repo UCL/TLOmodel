@@ -1,43 +1,52 @@
 import io
 import os
 from pathlib import Path
+from textwrap import dedent
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from tlo.lm import LinearModel, LinearModelType, Predictor
 
-EXAMPLE_POP = """region_of_residence,li_urban,sex,age_years,sy_vomiting,li_wealth
-Northern,True,M,12,False,3
-Central,True,M,6,True,2
-Northern,True,M,24,False,5
-Southern,True,M,46,True,1
-Central,True,M,91,True,1
-Central,False,M,16,False,4
-Southern,False,F,80,True,2
-Northern,True,F,99,False,3
-Western,True,F,63,False,5
-Central,True,F,51,True,2
-Central,True,M,57,False,3
-Central,False,F,2,False,1
-Central,True,F,93,False,4
-Western,False,M,15,True,2
-Western,False,M,5,False,3
-Northern,True,M,29,True,4
-Western,True,M,63,False,1
-Southern,True,F,54,False,5
-Western,False,M,94,False,2
-Northern,False,F,91,True,1
-Northern,True,M,29,False,3
-"""
 
-# Make `li_wealth` column integer categorical to test for failures due to brittle behaviour
-# of Pandas `eval` with columns of this datatype
-EXAMPLE_DF = pd.read_csv(
-    io.StringIO(EXAMPLE_POP), dtype={'li_wealth': pd.CategoricalDtype([1, 2, 3, 4, 5])})
+@pytest.fixture
+def population_dataframe():
+    population_csv = dedent(
+        """\
+        region_of_residence,li_urban,sex,age_years,sy_vomiting,li_wealth
+        Northern,True,M,12,False,3
+        Central,True,M,6,True,2
+        Northern,True,M,24,False,5
+        Southern,True,M,46,True,1
+        Central,True,M,91,True,1
+        Central,False,M,16,False,4
+        Southern,False,F,80,True,2
+        Northern,True,F,99,False,3
+        Western,True,F,63,False,5
+        Central,True,F,51,True,2
+        Central,True,M,57,False,3
+        Central,False,F,2,False,1
+        Central,True,F,93,False,4
+        Western,False,M,15,True,2
+        Western,False,M,5,False,3
+        Northern,True,M,29,True,4
+        Western,True,M,63,False,1
+        Southern,True,F,54,False,5
+        Western,False,M,94,False,2
+        Northern,False,F,91,True,1
+        Northern,True,M,29,False,3
+        """
+    )
+    # Make `li_wealth` column integer categorical to test for failures due to brittle
+    # behaviour of Pandas `eval` with columns of this datatype
+    return pd.read_csv(
+        io.StringIO(population_csv),
+        dtype={'li_wealth': pd.CategoricalDtype([1, 2, 3, 4, 5])}
+    )
 
 
-def test_of_example_usage():
+def test_of_example_usage(population_dataframe):
     # Test the use of basic functions using different syntax and model types
 
     # Linear Model
@@ -56,7 +65,7 @@ def test_of_example_usage():
         Predictor('li_wealth').when(1, 0.001).when(2, 0.002).otherwise(0.003)
     )
 
-    eq.predict(EXAMPLE_DF)
+    eq.predict(population_dataframe)
 
     # Logistic model
     eq = LinearModel(
@@ -68,7 +77,7 @@ def test_of_example_usage():
         .when('.between(0,5)', 0.001)
         .otherwise(0),
     )
-    eq.predict(EXAMPLE_DF)
+    eq.predict(population_dataframe)
 
     # Multiplicative model
     eq = LinearModel(
@@ -77,7 +86,7 @@ def test_of_example_usage():
         Predictor('region_of_residence').when('Northern', 1.0).when('Central', 1.1).when('Southern', 0.8),
         Predictor('sy_vomiting').when(True, 2.5).otherwise(1.0)
     )
-    eq.predict(EXAMPLE_DF)
+    eq.predict(population_dataframe)
 
 
 def test_additive_trivial_application():
@@ -142,7 +151,7 @@ def test_logistic_trivial_application():
     ])
 
 
-def test_external_variable():
+def test_external_variable(population_dataframe):
     eq = LinearModel(
         LinearModelType.ADDITIVE,
         0.0,
@@ -150,20 +159,20 @@ def test_external_variable():
         Predictor('year', external=True).when('.between(0,2019)', 1).when(2020, 2).otherwise(3)
     )
 
-    output = eq.predict(EXAMPLE_DF, year=2010)
+    output = eq.predict(population_dataframe, year=2010)
     assert output.tolist() == [1.1, 1.3, 1.1, 1.3, 1.3, 1.3, 1.3, 1.1, 1.3, 1.3, 1.3,
                                1.3, 1.3, 1.3, 1.3, 1.1, 1.3, 1.3, 1.3, 1.1, 1.1]
 
-    output = eq.predict(EXAMPLE_DF, year=2020)
+    output = eq.predict(population_dataframe, year=2020)
     assert output.tolist() == [2.1, 2.3, 2.1, 2.3, 2.3, 2.3, 2.3, 2.1, 2.3, 2.3, 2.3,
                                2.3, 2.3, 2.3, 2.3, 2.1, 2.3, 2.3, 2.3, 2.1, 2.1]
 
-    output = eq.predict(EXAMPLE_DF, year=2021)
+    output = eq.predict(population_dataframe, year=2021)
     assert output.tolist() == [3.1, 3.3, 3.1, 3.3, 3.3, 3.3, 3.3, 3.1, 3.3, 3.3, 3.3,
                                3.3, 3.3, 3.3, 3.3, 3.1, 3.3, 3.3, 3.3, 3.1, 3.1]
 
 
-def test_multiple_external_variables():
+def test_multiple_external_variables(population_dataframe):
     eq = LinearModel(
         LinearModelType.ADDITIVE,
         0.0,
@@ -175,23 +184,23 @@ def test_multiple_external_variables():
     def get_digit(n, i):
         return n // 10**i % 10
 
-    output = eq.predict(EXAMPLE_DF, tens_digit='a', units_digit='z')
+    output = eq.predict(population_dataframe, tens_digit='a', units_digit='z')
     assert (get_digit(output, 1) == 1).all()
     assert (get_digit(output, 0) == 6).all()
 
-    output = eq.predict(EXAMPLE_DF, tens_digit='b', units_digit='y')
+    output = eq.predict(population_dataframe, tens_digit='b', units_digit='y')
     assert (get_digit(output, 1) == 2).all()
     assert (get_digit(output, 0) == 5).all()
 
 
-def test_callback_value():
+def test_callback_value(population_dataframe):
     # as lambda
     eq = LinearModel(
         LinearModelType.ADDITIVE,
         0.0,
         Predictor('age_years').apply(lambda x: x / 100)
     )
-    output1 = eq.predict(EXAMPLE_DF)
+    output1 = eq.predict(population_dataframe)
 
     # as function
     def callback(x):
@@ -202,25 +211,25 @@ def test_callback_value():
         0.0,
         Predictor('age_years').apply(callback)
     )
-    output2 = eq2.predict(EXAMPLE_DF)
+    output2 = eq2.predict(population_dataframe)
 
-    assert output1.tolist() == (EXAMPLE_DF.age_years/100).tolist()
+    assert output1.tolist() == (population_dataframe.age_years/100).tolist()
     assert output1.tolist() == output2.tolist()
 
 
-def test_callback_with_external_variable():
+def test_callback_with_external_variable(population_dataframe):
     eq = LinearModel(
         LinearModelType.ADDITIVE,
         0.0,
         Predictor('region_of_residence').when('Northern', 1).otherwise(2),
         Predictor('year', external=True).apply(lambda x: (x - 10) / 10000)
     )
-    output1 = eq.predict(EXAMPLE_DF, year=2019)
+    output1 = eq.predict(population_dataframe, year=2019)
     assert output1.tolist() == [1.2009, 2.2009, 1.2009, 2.2009, 2.2009, 2.2009, 2.2009, 1.2009,
                                 2.2009, 2.2009, 2.2009, 2.2009, 2.2009, 2.2009, 2.2009, 1.2009,
                                 2.2009, 2.2009, 2.2009, 1.2009, 1.2009]
 
-    output2 = eq.predict(EXAMPLE_DF, year=2010)
+    output2 = eq.predict(population_dataframe, year=2010)
     assert output2.tolist() == [1.2000, 2.2000, 1.2000, 2.2000, 2.2000, 2.2000, 2.2000, 1.2000,
                                 2.2000, 2.2000, 2.2000, 2.2000, 2.2000, 2.2000, 2.2000, 1.2000,
                                 2.2000, 2.2000, 2.2000, 1.2000, 1.2000]
@@ -317,7 +326,7 @@ def test_logisitc_HSB_example():
     # nb. In the code this is done for one individual, so looping through individual to get a good range
     # f is the odds
 
-    prob_seeking_care = pd.Series(index=df.index)
+    prob_seeking_care = pd.Series(index=df.index, dtype='float64')
     for i in df.index:
         person_profile = df.loc[i]
         f = 3.237729            # 'Constant' term from STATA is the baseline odds.
@@ -415,16 +424,16 @@ def test_logisitc_HSB_example():
     assert np.allclose(prob_seeking_care_lm, prob_seeking_care)
 
 
-def test_using_int_as_intercept():
+def test_using_int_as_intercept(population_dataframe):
     eq = LinearModel(
         LinearModelType.ADDITIVE,
         0
     )
     assert isinstance(eq, LinearModel)
-    pred = eq.predict(EXAMPLE_DF)
+    pred = eq.predict(population_dataframe)
     assert isinstance(pred, pd.Series)
     assert np.issubdtype(pred.dtype, np.integer)
-    assert (pred.index == EXAMPLE_DF.index).all()
+    assert (pred.index == population_dataframe.index).all()
     assert (pred == 0).all()
 
 
@@ -531,7 +540,7 @@ def test_custom():
     assert lm2.predict(dataframe.loc['row4'], other=4000.0) == 4321.0
 
 
-def test_mutually_exclusive_conditions():
+def test_mutually_exclusive_conditions(population_dataframe):
     """Check that declaring conditions mutually exclusive gives consistent output"""
     lm = LinearModel(
         LinearModelType.ADDITIVE,
@@ -563,10 +572,13 @@ def test_mutually_exclusive_conditions():
         .when('.between(80, 89)', 9.)
         .when('.between(90, 99)', 10.)
     )
-    assert np.allclose(lm.predict(EXAMPLE_DF), lm_mutex.predict(EXAMPLE_DF))
+    assert np.allclose(
+        lm.predict(population_dataframe),
+        lm_mutex.predict(population_dataframe)
+    )
 
 
-def test_non_mutually_exclusive_conditions():
+def test_non_mutually_exclusive_conditions(population_dataframe):
     """Check that declaring conditions mutually exclusive when not gives wrong output"""
     lm = LinearModel(
         LinearModelType.ADDITIVE,
@@ -599,10 +611,13 @@ def test_non_mutually_exclusive_conditions():
         .when('< 90', 9.)
         .when('< 100', 10.)
     )
-    assert not np.allclose(lm.predict(EXAMPLE_DF), lm_mutex.predict(EXAMPLE_DF))
+    assert not np.allclose(
+        lm.predict(population_dataframe),
+        lm_mutex.predict(population_dataframe)
+    )
 
 
-def test_exhaustive_conditions():
+def test_exhaustive_conditions(population_dataframe):
     """Check that declaring conditions exhaustive gives consistent output"""
     lm = LinearModel(
         LinearModelType.MULTIPLICATIVE,
@@ -624,10 +639,13 @@ def test_exhaustive_conditions():
         .when('.between(30, 39)', 4.)
         .when('>= 40', 5.)
     )
-    assert np.allclose(lm.predict(EXAMPLE_DF), lm_exhaustive.predict(EXAMPLE_DF))
+    assert np.allclose(
+        lm.predict(population_dataframe),
+        lm_exhaustive.predict(population_dataframe)
+    )
 
 
-def test_non_exhaustive_conditions():
+def test_non_exhaustive_conditions(population_dataframe):
     """Check that declaring conditions exhaustive when not gives wrong output"""
     lm = LinearModel(
         LinearModelType.MULTIPLICATIVE,
@@ -646,4 +664,54 @@ def test_non_exhaustive_conditions():
         .when('.between(20, 29)', 3.)
         .when('.between(30, 39)', 4.)
     )
-    assert not np.allclose(lm.predict(EXAMPLE_DF), lm_exhaustive.predict(EXAMPLE_DF))
+    assert not np.allclose(
+        lm.predict(population_dataframe),
+        lm_exhaustive.predict(population_dataframe)
+    )
+
+
+def test_integer_category_column_with_missing_data(population_dataframe):
+    # make every other row missing (NA / NaN) in li_wealth column
+    population_dataframe.li_wealth[::2] = pd.NA
+    otherwise_value = 0.3
+    isna_value = -0.1
+    model_with_isna = LinearModel(
+        LinearModelType.ADDITIVE,
+        0.0,
+        Predictor('li_wealth').when('.isna()', isna_value).otherwise(otherwise_value)
+    )
+    predictions_with_isna = model_with_isna.predict(population_dataframe)
+    # predictions should not contain any NA values
+    assert not predictions_with_isna.isna().any()
+    # predictions for NA values should be value set by isna condition
+    assert (
+        predictions_with_isna[population_dataframe.li_wealth.isna()]
+        == isna_value
+    ).all()
+    model_with_otherwise = LinearModel(
+        LinearModelType.ADDITIVE,
+        0.0,
+        Predictor('li_wealth').when(1, 0.1).when(2, 0.2).otherwise(otherwise_value)
+    )
+    predictions_with_otherwise = model_with_otherwise.predict(population_dataframe)
+    # predictions should not contain any NA values
+    assert not predictions_with_otherwise.isna().any()
+    # predictions for NA values should be value set by otherwise clause
+    assert (
+        predictions_with_otherwise[population_dataframe.li_wealth.isna()]
+        == otherwise_value
+    ).all()
+    intercept = 0.0
+    model_no_otherwise = LinearModel(
+        LinearModelType.ADDITIVE,
+        intercept,
+        Predictor('li_wealth').when(1, 0.1).when(2, 0.2)
+    )
+    predictions_no_otherwise = model_no_otherwise.predict(population_dataframe)
+    # predictions should not contain any NA values
+    assert not predictions_no_otherwise.isna().any()
+    # predictions for NA values should be equal to intercept value
+    assert (
+        predictions_no_otherwise[population_dataframe.li_wealth.isna()]
+        == intercept
+    ).all()

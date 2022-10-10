@@ -103,6 +103,8 @@ def test_run_no_constraints(tmpdir, seed):
     sim.simulate(end_date=Date(2015, 1, 1))
     check_dtypes(sim)
 
+    # TODO: THE LOGGER NEEDS TO BE SET TO DEBUG FOR LABOUR OTHERWISE ITS NOT GOING TO PICK UP ANY ERRORS
+    #  (im also not sure that parse_log_file is extracting it properly)
     # check that no errors have been logged during the simulation run
     output = parse_log_file(sim.log_filepath)
     assert 'error' not in output['tlo.methods.labour']
@@ -546,7 +548,7 @@ def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_const
     assert df.at[mother_id, 'la_severe_pre_eclampsia_treatment']
 
     # Now check she also would receive antihypertensives
-    sim.modules['Labour'].assessment_and_treatment_of_hypertension(hsi_event=hsi_event)
+    sim.modules['Labour'].assessment_and_treatment_of_hypertension(hsi_event=hsi_event, labour_stage='ip')
     assert df.at[mother_id, 'la_maternal_hypertension_treatment']
 
     # Set disease status to eclampsia and run the appropriate intervention function, check treatment delivered
@@ -674,6 +676,7 @@ def test_cemonc_event_and_treatments_are_delivered_correct_with_no_cons_or_quali
     # Test uterine rupture surgery
     # Set variables showing woman has been referred to surgery due to uterine rupture
     mni[mother_id]['referred_for_surgery'] = True
+    mni[mother_id]['referred_for_cs'] = True
     df.at[mother_id, 'la_uterine_rupture'] = True
 
     # Force success rate of surgery to 1

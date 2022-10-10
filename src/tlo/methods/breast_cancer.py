@@ -46,12 +46,12 @@ class BreastCancer(Module):
 
     # Declare Causes of Death
     CAUSES_OF_DEATH = {
-        'BreastCancer': Cause(gbd_causes='Breast cancer', label='Cancer'),
+        'BreastCancer': Cause(gbd_causes='Breast cancer', label='Cancer (Breast)'),
     }
 
     # Declare Causes of Disability
     CAUSES_OF_DISABILITY = {
-        'BreastCancer': Cause(gbd_causes='Breast cancer', label='Cancer'),
+        'BreastCancer': Cause(gbd_causes='Breast cancer', label='Cancer (Breast)'),
     }
 
     PARAMETERS = {
@@ -735,6 +735,9 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # If the status is already in `stage4`, start palliative care (instead of treatment)
         if df.at[person_id, "brc_status"] == 'stage4':
+            logger.warning(key="warning", data="Cancer is in stage 4 - aborting HSI_breastCancer_StartTreatment,"
+                                               "scheduling HSI_BreastCancer_PalliativeCare")
+
             hs.schedule_hsi_event(
                 hsi_event=HSI_BreastCancer_PalliativeCare(
                      module=self.module,
@@ -748,6 +751,7 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # Check that the person has been diagnosed and is not on treatment
         assert not df.at[person_id, "brc_status"] == 'none'
+        assert not df.at[person_id, "brc_status"] == 'stage4'
         assert not pd.isnull(df.at[person_id, "brc_date_diagnosis"])
         assert pd.isnull(df.at[person_id, "brc_date_treatment"])
 
