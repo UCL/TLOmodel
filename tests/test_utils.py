@@ -286,10 +286,6 @@ def test_hash_dataframe(rng):
         assert isinstance(df_hash, str)
         # Try interpret hash as a hexadecimal integer (should not raise exception)
         int(df_hash, base=16)
-        for ch in df_hash:
-            assert (('0' <= ch <= '9') or
-                    ('a' <= ch <= 'f'))
-        return df_hash
 
     # create dataframe of random strings
     df0 = pd.DataFrame(np.arange(12).reshape(4, 3)).applymap(
