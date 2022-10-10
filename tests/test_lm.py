@@ -668,3 +668,50 @@ def test_non_exhaustive_conditions(population_dataframe):
         lm.predict(population_dataframe),
         lm_exhaustive.predict(population_dataframe)
     )
+
+
+def test_integer_category_column_with_missing_data(population_dataframe):
+    # make every other row missing (NA / NaN) in li_wealth column
+    population_dataframe.li_wealth[::2] = pd.NA
+    otherwise_value = 0.3
+    isna_value = -0.1
+    model_with_isna = LinearModel(
+        LinearModelType.ADDITIVE,
+        0.0,
+        Predictor('li_wealth').when('.isna()', isna_value).otherwise(otherwise_value)
+    )
+    predictions_with_isna = model_with_isna.predict(population_dataframe)
+    # predictions should not contain any NA values
+    assert not predictions_with_isna.isna().any()
+    # predictions for NA values should be value set by isna condition
+    assert (
+        predictions_with_isna[population_dataframe.li_wealth.isna()] 
+        == isna_value
+    ).all()
+    model_with_otherwise = LinearModel(
+        LinearModelType.ADDITIVE,
+        0.0,
+        Predictor('li_wealth').when(1, 0.1).when(2, 0.2).otherwise(otherwise_value)
+    )
+    predictions_with_otherwise = model_with_otherwise.predict(population_dataframe)
+    # predictions should not contain any NA values
+    assert not predictions_with_otherwise.isna().any()
+    # predictions for NA values should be value set by otherwise clause
+    assert (
+        predictions_with_otherwise[population_dataframe.li_wealth.isna()]
+        == otherwise_value
+    ).all()
+    intercept = 0.0
+    model_no_otherwise = LinearModel(
+        LinearModelType.ADDITIVE,
+        intercept,
+        Predictor('li_wealth').when(1, 0.1).when(2, 0.2)
+    )
+    predictions_no_otherwise = model_no_otherwise.predict(population_dataframe)
+    # predictions should not contain any NA values
+    assert not predictions_no_otherwise.isna().any()
+    # predictions for NA values should be equal to intercept value
+    assert (
+        predictions_no_otherwise[population_dataframe.li_wealth.isna()]
+        == intercept
+    ).all()
