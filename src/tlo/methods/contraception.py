@@ -50,6 +50,8 @@ class Contraception(Module):
         'Initiation_ByMethod': Parameter(Types.DATA_FRAME,
                                          'Probability per month of a women who is not using any contraceptive method of'
                                          ' starting use of a method, by method.'),
+        'Interventions' : Parameter(Types.DATA_FRAME,
+                                         'Pop intervention multiplier'),
         'Initiation_ByAge': Parameter(Types.DATA_FRAME,
                                       'The effect of age on the probability of starting use of contraceptive (add one '
                                       'for multiplicative effect).'),
@@ -152,6 +154,7 @@ class Contraception(Module):
             'Failure_ByMethod',
             'Initiation_ByAge',
             'Initiation_ByMethod',
+            'Interventions',
             'Initiation_AfterBirth',
             'Discontinuation_ByMethod',
             'Discontinuation_ByAge',
