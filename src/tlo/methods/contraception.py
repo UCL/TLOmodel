@@ -50,8 +50,10 @@ class Contraception(Module):
         'Initiation_ByMethod': Parameter(Types.DATA_FRAME,
                                          'Probability per month of a women who is not using any contraceptive method of'
                                          ' starting use of a method, by method.'),
-        'Interventions' : Parameter(Types.DATA_FRAME,
-                                         'Pop intervention multiplier'),
+        'Interventions_Pop': Parameter(Types.DATA_FRAME,
+                                         'Pop (population scale contraception intervention) intervention multiplier'),
+        'Interventions_PPFP': Parameter(Types.DATA_FRAME,
+                                       'PPFP (post-partum family planning) intervention multiplier'),
         'Initiation_ByAge': Parameter(Types.DATA_FRAME,
                                       'The effect of age on the probability of starting use of contraceptive (add one '
                                       'for multiplicative effect).'),
@@ -127,7 +129,7 @@ class Contraception(Module):
         self.use_healthsystem = use_healthsystem  # if True: initiation and switches to contraception require an HSI;
         # if False: initiation and switching do not occur through an HSI
 
-        self.use_interventions = use_interventions  # if True: interventions are on, if False they are off
+        self.use_interventions = use_interventions  # if True: interventions are on, if False interventions are off
 
         self.run_update_contraceptive = run_update_contraceptive  # If 'False' prevents any logic occurring for
         #                                                           updating/changing/maintaining contraceptive methods.
@@ -156,7 +158,8 @@ class Contraception(Module):
             'Failure_ByMethod',
             'Initiation_ByAge',
             'Initiation_ByMethod',
-            'Interventions',
+            'Interventions_Pop',
+            'Interventions_PPFP',
             'Initiation_AfterBirth',
             'Discontinuation_ByMethod',
             'Discontinuation_ByAge',
@@ -294,6 +297,8 @@ class Contraception(Module):
 
             # Probability of initiation by method per month (average over all ages)
             p_init_by_method = self.parameters['Initiation_ByMethod'].loc[0].drop('not_using')
+
+            # Pop intervention multiplier:
             if self.use_interventions:
                 p_init_by_method = p_init_by_method.mul(self.parameters['Interventions'].loc[0])
 
@@ -405,6 +410,10 @@ class Contraception(Module):
 
             # Get data from read-in excel sheets
             probs = self.parameters['Initiation_AfterBirth'].loc[0]
+
+            # PPFP intervention multiplier:
+            if self.use_interventions:
+                probs = probs.mul(self.parameters['Interventions_PPFP'].loc[0])
 
             # Scale so that the probability of all outcomes sum to 1.0
             p_start_after_birth = probs / probs.sum()
