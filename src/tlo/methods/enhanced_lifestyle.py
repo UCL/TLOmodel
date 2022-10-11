@@ -1828,10 +1828,9 @@ class LifestyleModels:
             p = self.parameters
 
             # create a new series that will hold all bmi transitions
-            trans_bmi = pd.Series(data=df.li_bmi.copy(), index=df.index, dtype=int)
+            trans_bmi = pd.Series(data=df.li_bmi.copy(), index=df.index, dtype=float)
 
             # those reaching age 15 allocated bmi 3
-
             age15_idx = df.index[df.is_alive & (df.age_exact_years >= 15) & (df.age_exact_years < 15.25)]
             trans_bmi.loc[age15_idx] = 3
 
@@ -1851,10 +1850,9 @@ class LifestyleModels:
 
             random_draw = rng.random_sample(len(bmi_cat_1_to_4_idx))
             newly_increase_bmi_cat_idx = bmi_cat_1_to_4_idx[random_draw < eff_rate_higher_bmi]
-            if pd.isna(df['li_bmi']).any():
-                trans_bmi.loc[newly_increase_bmi_cat_idx] = 1
-            else:
-                trans_bmi.loc[newly_increase_bmi_cat_idx] = df['li_bmi'].astype('int64') + 1
+            # increase bmi
+            trans_bmi.loc[newly_increase_bmi_cat_idx] += 1
+            trans_bmi.loc[newly_increase_bmi_cat_idx].fillna(1)
 
             # possible decrease in category of bmi
             bmi_cat_3_to_5_idx = df.index[df.is_alive & df.li_bmi.isin(range(3, 6)) & (df.age_years >= 15)]
@@ -1863,10 +1861,8 @@ class LifestyleModels:
             eff_rate_lower_bmi.loc[df.li_exposed_to_campaign_weight_reduction] *= p['rr_lower_bmi_pop_advice_weight']
             random_draw = rng.random_sample(len(bmi_cat_3_to_5_idx))
             newly_decrease_bmi_cat_idx = bmi_cat_3_to_5_idx[random_draw < eff_rate_lower_bmi]
-            if pd.isna(df['li_bmi']).any():
-                pass
-            else:
-                trans_bmi.loc[newly_decrease_bmi_cat_idx] = df['li_bmi'].astype('int64') - 1
+            # decrease bmi
+            trans_bmi.loc[newly_decrease_bmi_cat_idx] -= 1
 
             # make exposed to campaing weigh reduction reflect individuals who have decreased their bmi category.
             # setting `li_exposed_to_campaign_weight_reduction` directly here, perhaps we can do better?
@@ -1923,7 +1919,6 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
         all_lm_keys = self.module.models.get_lm_keys()
-
         # log summary of each lifestyle property
         for _property in all_lm_keys:
             # for wealth level log separately for rular and urban
