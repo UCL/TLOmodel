@@ -414,8 +414,8 @@ class Contraception(Module):
             if self.use_interventions:
                 probs = self.parameters['Initiation_AfterBirth'].loc[0].drop('not_using')
                 probs = probs.mul(self.parameters['Interventions_PPFP'].loc[0])
-                not_using = 1 - probs.sum()
-                probs.concat(not_using).loc[0]
+                not_using = pd.Series((1 - probs.sum()), index=['not_using'])
+                probs = not_using.append(probs)
 
             # Scale so that the probability of all outcomes sum to 1.0
             p_start_after_birth = probs / probs.sum()
