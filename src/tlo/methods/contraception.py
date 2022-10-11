@@ -300,7 +300,7 @@ class Contraception(Module):
 
             # Pop intervention multiplier:
             if self.use_interventions:
-                p_init_by_method = p_init_by_method.mul(self.parameters['Interventions'].loc[0])
+                p_init_by_method = p_init_by_method.mul(self.parameters['Interventions_Pop'].loc[0])
 
             # Effect of age
             age_effect = 1.0 + self.parameters['Initiation_ByAge'].set_index('age')['r_init1_age'].rename_axis(
@@ -413,7 +413,10 @@ class Contraception(Module):
 
             # PPFP intervention multiplier:
             if self.use_interventions:
+                probs = self.parameters['Initiation_AfterBirth'].loc[0].drop('not_using')
                 probs = probs.mul(self.parameters['Interventions_PPFP'].loc[0])
+                not_using = 1 - probs.sum()
+                probs.concat(not_using).loc[0]
 
             # Scale so that the probability of all outcomes sum to 1.0
             p_start_after_birth = probs / probs.sum()
