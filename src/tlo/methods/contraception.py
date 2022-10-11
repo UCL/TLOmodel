@@ -288,7 +288,7 @@ class Contraception(Module):
 
             # Probability of initiation by method per month (average over all ages)
             p_init_by_method = self.parameters['Initiation_ByMethod'].loc[0].drop('not_using')
-
+            p_init_by_method = p_init_by_method.mul(self.parameters['Interventions'].loc[0])
             # Effect of age
             age_effect = 1.0 + self.parameters['Initiation_ByAge'].set_index('age')['r_init1_age'].rename_axis(
                 "age_years")
