@@ -117,12 +117,14 @@ class Contraception(Module):
                                             )
     }
 
-    def __init__(self, name=None, resourcefilepath=None, use_healthsystem=True):
+    def __init__(self, name=None, resourcefilepath=None, use_healthsystem=True, use_interventions=True):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
         self.use_healthsystem = use_healthsystem  # if True: initiation and switches to contraception require an HSI;
         # if False: initiation and switching do not occur through an HSI
+
+        self.use_interventions = use_interventions  # if True: interventions are on, if False they are off
 
         self.states_that_may_require_HSI_to_switch_to = {'male_condom', 'injections', 'other_modern', 'IUD', 'pill',
                                                          'female_sterilization', 'implant'}
@@ -282,7 +284,9 @@ class Contraception(Module):
 
             # Probability of initiation by method per month (average over all ages)
             p_init_by_method = self.parameters['Initiation_ByMethod'].loc[0].drop('not_using')
-            p_init_by_method = p_init_by_method.mul(self.parameters['Interventions'].loc[0])
+            if self.use_interventions:
+                p_init_by_method = p_init_by_method.mul(self.parameters['Interventions'].loc[0])
+
             # Effect of age
             age_effect = 1.0 + self.parameters['Initiation_ByAge'].set_index('age')['r_init1_age'].rename_axis(
                 "age_years")
