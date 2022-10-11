@@ -658,12 +658,12 @@ def _define_coarse_appts() -> pd.DataFrame:
                 'category': 'RMNCH',
                 'appt_types': ['AntenatalFirst', 'ANCSubsequent', 'NormalDelivery', 'CompDelivery', 'Csection', 'EPI',
                                'FamPlan', 'U5Malnutr'],
-                'color': 'darkturquoise'},
+                'color': 'gold'},
             {
                 'category': 'HIV/AIDS',
                 'appt_types': ['VCTNegative', 'VCTPositive', 'MaleCirc', 'NewAdult', 'EstMedCom', 'EstNonCom', 'PMTCT',
                                'Peds'],
-                'color': 'gold'},
+                'color': 'darkturquoise'},
             {
                 'category': 'Tb',
                 'appt_types': ['TBNew', 'TBFollowUp'],
@@ -671,11 +671,11 @@ def _define_coarse_appts() -> pd.DataFrame:
             {
                 'category': 'Dental',
                 'appt_types': ['DentAccidEmerg', 'DentSurg', 'DentalU5', 'DentalO5'],
-                'color': 'red'},
+                'color': 'rosybrown'},
             {
                 'category': 'Mental Health',
                 'appt_types': ['MentOPD', 'MentClinic'],
-                'color': 'orangered'},
+                'color': 'lightsalmon'},
             {
                 'category': 'Surgery / Radiotherapy',
                 'appt_types': ['MajorSurg', 'MinorSurg', 'Radiotherapy'],
@@ -732,7 +732,6 @@ def _define_short_treatment_ids() -> pd.Series:
         'AntenatalCare*': 'green',
         'DeliveryCare*': 'limegreen',
         'PostnatalCare*': 'springgreen',
-        'PostnatalSupervisor*': 'mediumaquamarine',  # todo <-- remove this when it's gone from code.
 
         'Alri*': 'darkorange',
         'Diarrhoea*': 'tan',
@@ -773,7 +772,7 @@ def get_color_short_treatment_id(short_treatment_id: str) -> str:
     """Return the colour (as matplotlib string) assigned to this shorted TREATMENT_ID. Returns `np.nan` if treatment_id
     is not recognised."""
     colors = _define_short_treatment_ids()
-    _short_treatment_ids_with_trailing_asterix = short_treatment_id.replace('_*', '*')
+    _short_treatment_ids_with_trailing_asterix = short_treatment_id.replace('_*', '*').rstrip('*') + '*'
     if _short_treatment_ids_with_trailing_asterix in colors.index:
         return colors.loc[_short_treatment_ids_with_trailing_asterix]
     else:
@@ -796,15 +795,19 @@ def _define_cause_of_death_labels() -> pd.Series:
         'Measles': 'cornflowerblue',
         'non_AIDS_TB': 'mediumslateblue',
 
-        'Heart Disease': 'sienna',  # brown-ish
-        'Kidney Disease': 'chocolate',  # brown-ish
-        'Diabetes': 'peru',  # brown-ish
-        'Stroke': 'burlywood',  # brown-ish
+        'Heart Disease': 'sienna',
+        'Kidney Disease': 'chocolate',
+        'Diabetes': 'peru',
+        'Stroke': 'burlywood',
 
-        'Cancer': 'deeppink',
+        'Cancer (Bladder)': 'deeppink',
+        'Cancer (Breast)': 'darkmagenta',
+        'Cancer (Oesophagus)': 'mediumvioletred',
+        'Cancer (Other)': 'crimson',
+        'Cancer (Prostate)': 'hotpink',
 
-        'Depression / Self-harm': 'indianred',
-        'Epilepsy': 'red',
+        'Depression / Self-harm': 'goldenrod',
+        'Epilepsy': 'gold',
 
         'Transport Injuries': 'lightsalmon',
 
@@ -818,7 +821,7 @@ def order_of_cause_of_death_label(_cause_of_death_label: Union[str, pd.Index]) -
     if isinstance(_cause_of_death_label, str):
         return tuple(order).index(_cause_of_death_label)
     else:
-        return order[order.isin(_cause_of_death_label)]
+        return pd.Index(sorted(_cause_of_death_label, key=order_of_cause_of_death_label))
 
 
 def get_color_cause_of_death_label(cause_of_death_label: str) -> str:
