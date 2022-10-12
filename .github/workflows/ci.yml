@@ -36,7 +36,8 @@ jobs:
               VAR_FILES="${VAR_FILES}{\"file\":\"${file}\"},"
           done
           VAR_FILES="${VAR_FILES}]}"
-          echo "matrix={VAR_FILES}" >> $GITHUB_OUTPUT
+          echo $VAR_FILES
+          echo "matrix=${VAR_FILES}" >> $GITHUB_OUTPUT
 
   test:
     needs: gen-test-matrix
