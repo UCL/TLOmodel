@@ -1,8 +1,8 @@
 """Unit tests for utility functions."""
 import os
 import pickle
-import types
 import string
+import types
 from pathlib import Path
 
 import numpy as np
