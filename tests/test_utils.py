@@ -300,11 +300,10 @@ def test_hash_dataframe(rng):
         # do checks on single dataframe dataframes[i]
         df_hash = tlo.util.hash_dataframe(dataframes[i])
         check_hash_is_valid(df_hash)
-
+        # check hash returned remains constant over repeated calls
+        assert df_hash == tlo.util.hash_dataframe(dataframes[i])
         for j in range(i):
             # do checks on dataframe pair (dataframes[i], dataframes[j])
             # check hash differs for different dataframes
             if not dataframes[i].equals(dataframes[j]):
                 assert df_hash != tlo.util.hash_dataframe(dataframes[j])
-            # check hash returned remains constant over repeated calls
-            assert df_hash == tlo.util.hash_dataframe(dataframes[i])
