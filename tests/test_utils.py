@@ -2,6 +2,7 @@
 import os
 import pickle
 import types
+import string
 from pathlib import Path
 
 import numpy as np
@@ -272,8 +273,7 @@ def test_random_date_returns_date_nonsequential(rng):
             tlo.util.random_date(start_date, end_date, rng)
 
 
-def test_hash_dataframe(rng, seed):
-    import string
+def test_hash_dataframe(rng):
     """ Check that hash types:
                 - are generated,
                 - are equal for the same dataframes,
@@ -288,7 +288,6 @@ def test_hash_dataframe(rng, seed):
         int(dfh, base=16)
 
     # generate dataframes of random strings
-    rng = np.random.RandomState(seed % 2 ** 32)
     dataframes = [
         pd.DataFrame(rng.choice(list(string.ascii_lowercase), size=(4, 3)))
         for _ in range(10)
@@ -304,8 +303,8 @@ def test_hash_dataframe(rng, seed):
 
         for j in range(i):
             # do checks on dataframe pair (dataframes[i], dataframes[j])
-            # check hash differs for different dataframes and is equal for the same
+            # check hash differs for different dataframes
             if not dataframes[i].equals(dataframes[j]):
                 assert df_hash != tlo.util.hash_dataframe(dataframes[j])
-                hash_test = tlo.util.hash_dataframe(dataframes[i])
-                assert df_hash == hash_test
+            # check hash returned remains constant over repeated calls
+            assert df_hash == tlo.util.hash_dataframe(dataframes[i])
