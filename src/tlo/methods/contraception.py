@@ -187,7 +187,7 @@ class Contraception(Module):
         )
 
         # 3) Give a notional date on which the last appointment occurred for those that need them
-        needs_appts = females1549 & df['co_contraception'].isin(self.states_that_may_require_HSI_to_switch_to)
+        needs_appts = females1549 & df['co_contraception'].isin(self.states_that_may_require_HSI_to_maintain_on)
         df.loc[needs_appts, 'co_date_of_last_fp_appt'] = pd.Series([
             random_date(
                 self.sim.date - pd.DateOffset(days=self.parameters['days_between_appts_for_maintenance']),
