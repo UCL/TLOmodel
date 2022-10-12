@@ -9,8 +9,8 @@ Azure Batch.
 Setup
 =====
 
-1. Install the Azure command line interface `<https://docs.microsoft.com/en-us/cli/azure/install-azure-cli>`_
-2. If you have not already done so ensure you have followed the instructions to set up a ``tlo`` `Conda <https://docs.conda.io/en/latest/>` environment in :doc:`readme`.
+1. `Install the Azure command line interface <https://docs.microsoft.com/en-us/cli/azure/install-azure-cli>`_
+2. If you have not already done so ensure you have followed the instructions to set up a ``tlo`` `Conda <https://docs.conda.io/en/latest/>`_ environment in :doc:`readme`.
 3. Open Terminal (MacOS) or Anaconda Prompt (Windows)
 4. Activate the ``tlo`` environment by running ``conda activate tlo``
 5. *Extra step for Windows only*
