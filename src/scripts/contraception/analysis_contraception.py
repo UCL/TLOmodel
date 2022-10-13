@@ -42,7 +42,7 @@ log_config = {
 # Basic arguments required for the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2020, 12, 31)
-pop_size = 50000
+pop_size = 5000
 
 # This creates the Simulation instance for this run. Because we've passed the `seed` and
 # `log_config` arguments, these will override the default behaviour.
@@ -126,6 +126,94 @@ plt.ylabel("Number of women")
 # plt.gca().set_xlim(Date(2010, 1, 1), Date(2013, 1, 1))
 plt.legend(['Total women age 15-49 years', 'Not Using Contraception', 'Using Contraception'])
 plt.savefig(outputpath / ('Contraception Use' + datestamp + '.png'), format='png')
+plt.show()
+
+# %% Plot proportion of women using each contraception method over time:
+years = mdates.YearLocator()  # every year
+months = mdates.MonthLocator()  # every month
+years_fmt = mdates.DateFormatter('%Y')
+
+# Load Model Results
+co_df = log_df['tlo.methods.contraception']['contraception_use_summary'].set_index('date')
+Model_Years = pd.to_datetime(co_df.index)
+Model_total = co_df.sum(axis=1)
+Model_pill = co_df.pill
+Model_IUD = co_df.IUD
+Model_injections = co_df.injections
+Model_implant = co_df.implant
+Model_male_condom = co_df.male_condom
+Model_female_sterilization = co_df.female_sterilization
+Model_other_modern = co_df.other_modern
+Model_periodic_abstinence = co_df.periodic_abstinence
+Model_withdrawal = co_df.withdrawal
+Model_other_traditional = co_df.other_traditional
+
+fig, ax = plt.subplots()
+ax.plot(np.asarray(Model_Years), Model_pill/Model_total)
+ax.plot(np.asarray(Model_Years), Model_IUD/Model_total)
+ax.plot(np.asarray(Model_Years), Model_injections/Model_total)
+ax.plot(np.asarray(Model_Years), Model_implant/Model_total)
+ax.plot(np.asarray(Model_Years), Model_male_condom/Model_total)
+ax.plot(np.asarray(Model_Years), Model_female_sterilization/Model_total)
+ax.plot(np.asarray(Model_Years), Model_other_modern/Model_total)
+ax.plot(np.asarray(Model_Years), Model_periodic_abstinence/Model_total)
+ax.plot(np.asarray(Model_Years), Model_withdrawal/Model_total)
+ax.plot(np.asarray(Model_Years), Model_other_traditional/Model_total)
+# plt.plot(Data_Years, Data_Pop_Normalised)
+
+# format the ticks
+# ax.xaxis.set_major_locator(years)
+# ax.xaxis.set_major_formatter(years_fmt)
+
+plt.title("Proportion of women using each contraception method over time:")
+plt.xlabel("Year")
+plt.ylabel("% of women")
+# plt.gca().set_xlim(Date(2010, 1, 1), Date(2013, 1, 1))
+plt.legend(['pill', 'IUD', 'injections', 'implant', 'male_condom', 'female_sterilization',
+            'other_modern', 'periodic_abstinence', 'withdrawal', 'other_traditional'])
+plt.savefig(outputpath / ('Contraception Use Proportion' + datestamp + '.png'), format='png')
+plt.show()
+
+# %% Plot proportion of women using each contraception method over time:
+years = mdates.YearLocator()  # every year
+months = mdates.MonthLocator()  # every month
+years_fmt = mdates.DateFormatter('%Y')
+
+# Load Model Results
+co_df = log_df['tlo.methods.contraception']['contraception_use_summary'].set_index('date')
+Model_Years = pd.to_datetime(co_df.index)
+Model_total = co_df.sum(axis=1)
+Model_pill = co_df.pill
+Model_IUD = co_df.IUD
+Model_implant = co_df.implant
+Model_male_condom = co_df.male_condom
+Model_other_modern = co_df.other_modern
+Model_periodic_abstinence = co_df.periodic_abstinence
+Model_withdrawal = co_df.withdrawal
+Model_other_traditional = co_df.other_traditional
+
+fig, ax = plt.subplots()
+ax.plot(np.asarray(Model_Years), Model_pill/Model_total)
+ax.plot(np.asarray(Model_Years), Model_IUD/Model_total)
+ax.plot(np.asarray(Model_Years), Model_implant/Model_total)
+ax.plot(np.asarray(Model_Years), Model_male_condom/Model_total)
+ax.plot(np.asarray(Model_Years), Model_other_modern/Model_total)
+ax.plot(np.asarray(Model_Years), Model_periodic_abstinence/Model_total)
+ax.plot(np.asarray(Model_Years), Model_withdrawal/Model_total)
+ax.plot(np.asarray(Model_Years), Model_other_traditional/Model_total)
+# plt.plot(Data_Years, Data_Pop_Normalised)
+
+# format the ticks
+# ax.xaxis.set_major_locator(years)
+# ax.xaxis.set_major_formatter(years_fmt)
+
+plt.title("Proportion of women using each contraception method over time:")
+plt.xlabel("Year")
+plt.ylabel("% of women")
+# plt.gca().set_xlim(Date(2010, 1, 1), Date(2013, 1, 1))
+plt.legend(['pill', 'IUD', 'implant', 'male_condom',
+            'other_modern', 'periodic_abstinence', 'withdrawal', 'other_traditional'])
+plt.savefig(outputpath / ('Contraception Use Proportion magnified' + datestamp + '.png'), format='png')
 plt.show()
 
 # %% Plot proportion of women using each contraception method over time:
