@@ -122,7 +122,7 @@ class Contraception(Module):
                                             )
     }
 
-    def __init__(self, name=None, resourcefilepath=None, use_healthsystem=True, use_interventions=True, run_update_contraceptive=True):
+    def __init__(self, name=None, resourcefilepath=None, use_healthsystem=True, use_interventions=False, run_update_contraceptive=True):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
