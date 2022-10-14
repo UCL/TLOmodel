@@ -402,8 +402,8 @@ def analyse_contraception(in_datestamp, in_log_file,
         cons_processed_df = cons_df.loc[cons_df['Item_NotAvailable'] == "{}"].copy()
 
         # Assign a contraceptive method to each record according to the request.
-        resource_items_pkgs_contraception_only_df = pd.read_csv(
-            'src/scripts/contraception/Consumables_Items_and_Packages_contraceptionOnly_MadeAccordingToModel.csv'
+        resource_items_pkgs_df = pd.read_csv(
+            'resources/healthsystem/consumables/ResourceFile_Consumables_Items_and_Packages.csv'
         )  # TODO: Use this in the function below.
 
         def get_contraceptive_method_for_request(in_d):
@@ -415,39 +415,27 @@ def analyse_contraception(in_datestamp, in_log_file,
 
             :return: Contraception method as string.
             """
-        # TODO: any chance to take these from the model, or make a file from
-        #  which both model and visualisation will take it, so if any changes
-        #  are done in future, it will be done only once.
-        # TODO: for now create dictionaries for contraceptives methods from the
-        #  CSV I created - resources_df
-            if in_d == dict({0: 8, 1: 8}):  # TODO: change it in the table to 8s and remove the rounding up
+        # TODO: Create dictionaries for contraception methods from the ResourceFile (resource_items_pkgs_df)
+            if in_d == dict({1: 8}):
                 return 'pill'
             if in_d == dict({2: 120}):
                 return 'male_condom'
             if in_d == dict({25: 120}):
                 return 'other_modern'
-            if in_d == dict({7: 1}):
+            if in_d == dict({4: 3, 7: 1}):
                 return 'IUD'
-            if in_d == dict({3: 1, 5: 1, 6: 1}):
+            if in_d == dict({3: 1, 4: 1, 5: 1, 6: 1}):
                 return 'injections'
-            if in_d == dict({5: 1, 8: 1, 12: 1, 13: 1, 247: 1}):
+            if in_d == dict({4: 2, 5: 2, 8: 2, 9: 2, 10: 0.1, 11: 0.2, 12: 0.5}):
                 return 'implant'
-            if in_d == dict({5: 1, 14: 1, 15: 1, 16: 1, 17: 1, 21: 1, 23: 1, 101: 1, 247: 1}):
+            if in_d == dict(
+                {5: 2, 9: 3, 14: 1, 15: 1, 16: 1, 17: 1, 18: 2, 19: 3, 20: 3, 21: 1, 22: 2, 23: 8, 24: 2}
+            ):
                 return 'female_sterilization'
             else:
                 raise ValueError(
                     "There is an unrecognised request: " + str(in_d) + "."
                 )
-            # TODO: in resource file, there are expected units 7.5 for both, but
-            #  when getting them from the file in the model, they are rounded up
-            #  and their type changed to int (but for some reason it looks that
-            #  they are rounded up indeed, but their type is not integer as for
-            #  male_condom, I see 120.0 units to be logged and for pills 8.0)
-            #  SEE consumables_L208-210:
-            #  ser = lookup_df.loc[
-            #     lookup_df['Intervention_Pkg'] == package, ['Item_Code', 'Expected_Units_Per_Case']].set_index(
-            #     'Item_Code')['Expected_Units_Per_Case'].apply(np.ceil).astype(int)
-
         cons_processed_df['Contraceptive_Method'] = \
             cons_processed_df['Request'].apply(get_contraceptive_method_for_request)
 
@@ -481,6 +469,33 @@ def analyse_contraception(in_datestamp, in_log_file,
         cons_avail_grouped_by_time_and_method_df['Item_Available_summation'] =\
             cons_avail_grouped_by_time_and_method_df['Item_Available'].apply(string_to_dict).apply(merge_dicts)
 
+        def get_intervention_pkg_name(in_co_meth_name):
+            """
+            Returns Intervention_Pkg name used in a ResourceFile for the input co. method name.
+
+            :param in_co_meth_name: name of the contraception method
+
+            :return: Intervention_Pkg name used in a ResourceFile.
+            """
+            if in_co_meth_name == 'pill':
+                return 'Pill'
+            if in_co_meth_name == 'male_condom':
+                return 'Male condom'
+            if in_co_meth_name == 'other_modern':
+                return 'Female Condom'
+            if in_co_meth_name == 'IUD':
+                return 'IUD'
+            if in_co_meth_name == 'injections':
+                return 'Injectable'
+            if in_co_meth_name == 'implant':
+                return 'Implant'
+            if in_co_meth_name == 'female_sterilization':
+                return 'Female sterilization'
+            else:
+                raise ValueError(
+                    "There is an unrecognised co. method name: " + str(in_co_meth_name) + "."
+                )
+
         # Calculate the costs of available items for all except male_condom
         # & other_modern (= female condom only currently)
         # TODO: change if Male sterilization is modelled as other_modern as well
@@ -509,6 +524,7 @@ def analyse_contraception(in_datestamp, in_log_file,
                 # if the method == males or females condoms calculate from the
                 # mean numbers of women using them (there is only one item for
                 # condoms)
+                costs = 0
                 if (i[1] == "male_condom") | (i[1] == "other_modern"):
                     unit_cost = float(in_df_resource_items_pkgs['Unit_Cost']
                                       .loc[in_df_resource_items_pkgs['Contraceptive_Method']
@@ -522,57 +538,27 @@ def analyse_contraception(in_datestamp, in_log_file,
                             2 / 3 * 365.25 *\
                             float(in_df_mean_use[i[1]].loc[in_df_mean_use.index == i[0]])
                 # otherwise calculate from the logs
-                elif i[1] == "pill":
-                    item_avail_dict = in_df_cons_avail_by_time_and_method.loc[
-                        i, 'Item_Available_summation'
-                    ]
-                # TODO: this version is only for sims where all resources are
-                #  always available (ie health.system with
-                #  cons_availability="all"), and with a knowledge that there are
-                #  items 0 or 1 assigned with contraception method 'pill', where
-                #  item 1 (=combined pills) is used in main cases, and item 0
-                #  (progestin-only pills) only in a few special cases. Better,
-                #  in future when pills required, choose which one is used in a
-                #  probabilistic manner, then check the availability and then do
-                #  the logging if available.
-                    # 2.8% of pills users using progestin-only pills
-                    # [https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3440515]
-                    # - study from United States from 2012)
-                    # TODO: get real data on this or find a better approximation
-                    costs = 0
-                    prob_progestin_only = 0.028
-                    for time_method_key in list(item_avail_dict.keys()):
-                        # costs of pills = prob_progestin_only of the price of
-                        # progestin-only pills + (1 - prob_progestin_only) of
-                        # the price of combined pills
-                        unit_cost = (prob_progestin_only * (1-time_method_key) +\
-                                     (1 - prob_progestin_only) * time_method_key) *\
-                                    float(in_df_resource_items_pkgs['Unit_Cost'].loc[
-                                              (in_df_resource_items_pkgs['Contraceptive_Method'] == i[1]) &
-                                              (in_df_resource_items_pkgs['Item_Code'] == time_method_key)])
-                        costs = costs + (unit_cost * item_avail_dict[time_method_key])
                 else:
                     item_avail_dict = in_df_cons_avail_by_time_and_method.loc[
                         i, 'Item_Available_summation'
                     ]
-                    costs = 0
                     for time_method_key in list(item_avail_dict.keys()):
                         unit_cost = float(in_df_resource_items_pkgs['Unit_Cost'].loc[
-                                (in_df_resource_items_pkgs['Contraceptive_Method'] == i[1]) &
-                                (in_df_resource_items_pkgs['Item_Code'] == time_method_key)])
+                                (in_df_resource_items_pkgs['Intervention_Pkg'] == get_intervention_pkg_name(i[1]))
+                                & (in_df_resource_items_pkgs['Item_Code'] == time_method_key)])
                         costs = costs + (unit_cost * item_avail_dict[time_method_key])
                 l_costs.append(costs)
             return l_costs
 
         # timeitprint("calc costs",
         #             functools.partial(calculate_costs,
-        #                               resource_items_pkgs_contraception_only_df,
+        #                               resource_items_pkgs_df,
         #                               cons_avail_grouped_by_time_and_method_df,
         #                               mean_use_df),
         #             6000)
         # 26.302437201999055 s for 6000 repetitions
         cons_avail_grouped_by_time_and_method_df['Costs'] =\
-            calculate_costs(resource_items_pkgs_contraception_only_df,
+            calculate_costs(resource_items_pkgs_df,
                             cons_avail_grouped_by_time_and_method_df,
                             mean_use_df)
 
