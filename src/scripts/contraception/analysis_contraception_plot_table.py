@@ -22,6 +22,18 @@ TimePeriods_starts = [2022, 2031, 2041, 2051]
 # order of contraceptives for the table
 contraceptives_order = ['pill', 'IUD', 'injections', 'implant', 'male_condom',
                         'female_sterilization', 'other_modern']
+# ##### '2022-10-13T165132'
+# => cons_availability = "all"
+# => start_date = Date(2010, 1, 1); end_date = Date(2050, 12, 31)
+# seed = 2022
+# and pop_size = 20
+# after rounding up the numbers of items removed
+# ##### '2022-10-13T105006'
+# => cons_availability = "all"
+# => start_date = Date(2010, 1, 1); end_date = Date(2099, 12, 31)
+# seed = 2022
+# and pop_size = 50
+# before rounding up the numbers of items removed
 # ##### '2022-09-14T105623' or '2022-09-14T105620' (datestamp = .._v1 or ..v2)
 # logFile_xx = 'run_analysis_contraception__' + datestamp_xx_log + '.log'
 # => cons_availability = "all"
@@ -121,8 +133,6 @@ if not ('use_output' in locals() or 'use_output' in globals()):
     use_output = "mean"
 
 # TODO: finish
-
-# TODO: Remove the underscores from the names of contraception methods
 
 # TODO: Footnote marks manually into the table in the manuscript, at least so
 #  far.
