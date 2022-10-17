@@ -39,9 +39,9 @@ class RunAnalysisCo(BaseScenario):
             # Core Modules
             demography.Demography(resourcefilepath=self.resources),
             enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
-            symptommanager.SymptomManager(resourcefilepath=resources),
-            healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
-            healthsystem.HealthSystem(resourcefilepath=resources,
+            symptommanager.SymptomManager(resourcefilepath=self.resources),
+            healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
+            healthsystem.HealthSystem(resourcefilepath=self.resources,
                                       cons_availability="all",
                                       disable=False), # <-- HealthSystem functioning
 
