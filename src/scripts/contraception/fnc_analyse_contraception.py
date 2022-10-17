@@ -436,7 +436,7 @@ def analyse_contraception(in_datestamp, in_log_file,
             if in_d == dict({4: 2, 5: 2, 8: 2, 9: 2, 10: 0.1, 11: 0.2, 12: 0.5}):
                 return 'implant'
             if in_d == dict(
-                {5: 2, 9: 3, 14: 1, 15: 1, 16: 1, 17: 1, 18: 2, 19: 3, 20: 3, 21: 1, 22: 2, 23: 8, 24: 2}
+                {5: 2, 9: 3, 14: 1, 15: 1, 16: 1, 17: 0.02, 18: 2, 19: 3, 20: 3, 21: 1, 22: 2, 23: 8, 24: 2}
             ):
                 return 'female_sterilization'
             else:
@@ -534,9 +534,9 @@ def analyse_contraception(in_datestamp, in_log_file,
                 # condoms)
                 costs = 0
                 if (i[1] == "male_condom") | (i[1] == "other_modern"):
-                    unit_cost = float(in_df_resource_items_pkgs['Unit_Cost']
-                                      .loc[in_df_resource_items_pkgs['Contraceptive_Method']
-                                           == i[1]])
+                    unit_cost = float(in_df_resource_items_pkgs['Unit_Cost'].loc[
+                                          in_df_resource_items_pkgs['Intervention_Pkg']
+                                          == get_intervention_pkg_name(i[1])])
                     # costs = unit_cost *
                     # nmb of years within the time period (tp_len) *
                     # 2/3 of 365.25 days as approximation of number of condom used per year *
