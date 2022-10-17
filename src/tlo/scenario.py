@@ -266,7 +266,7 @@ class DrawGenerator:
         self.draws = self.setup_draws()
 
     def setup_draws(self):
-        assert self.scenario.number_of_draws > 0, "Number of draws must be greater than one"
+        assert self.scenario.number_of_draws > 0, "Number of draws must be greater than 0"
         assert self.scenario.runs_per_draw > 0, "Number of samples/draw must be greater than 0"
         if self.scenario.draw_parameters(1, self.scenario.rng) is None:
             assert self.scenario.number_of_draws == 1, "Number of draws should equal one if no variable parameters"
