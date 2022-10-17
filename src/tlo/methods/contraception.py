@@ -262,7 +262,8 @@ class Contraception(Module):
         birth."""
 
         self.sim.population.props.at[person_id, 'is_pregnant'] = False
-        self.select_contraceptive_following_birth(person_id)
+        person_age = self.sim.population.props.at[person_id, 'age_years']
+        self.select_contraceptive_following_birth(person_id, person_age)
 
     def process_params(self):
         """Process parameters that have been read-in."""
@@ -278,6 +279,8 @@ class Contraception(Module):
         def initial_method_use():
             """Generate the distribution of method use by age for the start of the simulation."""
             p_method = self.parameters['Method_Use_In_2010'].set_index('age').rename_axis('age_years')
+            # Prevent women below 30 years having 'female_sterilization'
+            p_method.loc[p_method.index < 30, 'female_sterilization'] = 0.0
 
             # Normalise so that the sum within each age is 1.0
 
@@ -317,7 +320,7 @@ class Contraception(Module):
                     p_init_this_year[a] = p_init_by_method * age_effect.at[a] * year_effect.at[year, a]
                 p_init_this_year_df = pd.DataFrame.from_dict(p_init_this_year, orient='index')
 
-                # Prevent women younger than 30 years having 'female_sterilization'
+                # Prevent women below 30 years having 'female_sterilization'
                 p_init_this_year_df.loc[p_init_this_year_df.index < 30, 'female_sterilization'] = 0.0
 
                 # Check correct format of age/method data-frame
@@ -503,12 +506,19 @@ class Contraception(Module):
 
         return processed_params
 
-    def select_contraceptive_following_birth(self, mother_id):
+    def select_contraceptive_following_birth(self, mother_id, mother_age):
         """Initiation of mother's contraception after birth."""
 
         # Allocate the woman to a contraceptive status
         probs = self.processed_params['p_start_after_birth']
-        new_contraceptive = self.rng.choice(probs.index, p=probs.values)
+        # Prevent women below 30 years having 'female_sterilization'
+        if mother_age < 30:
+            probs_below30 = probs.copy()
+            probs_below30.loc['female_sterilization'] = 0.0
+            probs_below30 = probs_below30 / probs_below30.sum()
+            new_contraceptive = self.rng.choice(probs_below30.index, p=probs_below30.values)
+        else:
+            new_contraceptive = self.rng.choice(probs.index, p=probs.values)
 
         # Do the change in contraceptive
         self.schedule_batch_of_contraceptive_changes(ids=[mother_id], old=['not_using'], new=[new_contraceptive])
