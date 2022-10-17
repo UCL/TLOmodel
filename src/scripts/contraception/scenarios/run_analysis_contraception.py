@@ -42,7 +42,8 @@ class RunAnalysisCo(BaseScenario):
             symptommanager.SymptomManager(resourcefilepath=resources),
             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
             healthsystem.HealthSystem(resourcefilepath=resources,
-                                      disable=False),  # <-- HealthSystem functioning
+                                      cons_availability="all",
+                                      disable=False), # <-- HealthSystem functioning
 
             # - Contraception and replacement for Labour etc.
             contraception.Contraception(resourcefilepath=self.resources,
