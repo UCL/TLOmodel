@@ -109,6 +109,7 @@ def analyse_contraception(in_datestamp, in_log_file,
         plt.legend(['Total women age 15-49 years', 'Not Using Contraception', 'Using Contraception'])
         plt.savefig(outputpath / ('Contraception Use' + in_datestamp + '.png'), format='png')
         # plt.show()
+        print("Fig: Contraception Use Over time saved.")
 
     # %% Plot Contraception Use By Method Over time:
     if in_plot_use_time_method_bool:
@@ -155,6 +156,7 @@ def analyse_contraception(in_datestamp, in_log_file,
                     'other_modern', 'periodic_abstinence', 'withdrawal', 'other_traditional'])
         plt.savefig(outputpath / ('Contraception Use By Method' + in_datestamp + '.png'), format='png')
         # plt.show()
+        print("Fig: Contraception Use By Method Over time saved.")
 
     # %% Plot Pregnancies Over time:
     if in_plot_pregnancies_bool:
@@ -186,6 +188,7 @@ def analyse_contraception(in_datestamp, in_log_file,
         plt.legend(['total', 'pregnant', 'not_pregnant'])
         plt.savefig(outputpath / ('Pregnancies Over Time' + in_datestamp + '.png'), format='png')
         # plt.show()
+        print("Fig: Pregnancies Over time saved.")
 
     # %% Calculate Use and Consumables Costs of Contraception methods within
     # some time periods:
@@ -356,6 +359,8 @@ def analyse_contraception(in_datestamp, in_log_file,
         # Add length of time periods to mean_use_df
         mean_use_df['tp_len'] = mean_use_df.index.map(calculate_tp_len)
 
+        print("Calculations of Contraception Methods Use finished.")
+
 #  ###### CONSUMABLES ##########################################################
         # Load Consumables results
         cons_df = log_df['tlo.methods.healthsystem']['Consumables'].copy()
@@ -399,6 +404,8 @@ def analyse_contraception(in_datestamp, in_log_file,
 
         # Limit consumables data to those which were processed (contraception
         # was given to a woman as all items were available)
+        # TODO: make it to work with essential and optional items
+        #  (here we assume that all requested items are essential)
         cons_processed_df = cons_df.loc[cons_df['Item_NotAvailable'] == "{}"].copy()
 
         # Assign a contraceptive method to each record according to the request.
@@ -436,6 +443,7 @@ def analyse_contraception(in_datestamp, in_log_file,
                 raise ValueError(
                     "There is an unrecognised request: " + str(in_d) + "."
                 )
+
         cons_processed_df['Contraceptive_Method'] = \
             cons_processed_df['Request'].apply(get_contraceptive_method_for_request)
 
@@ -588,6 +596,8 @@ def analyse_contraception(in_datestamp, in_log_file,
         cons_costs_by_time_and_method_df =\
             cons_costs_by_time_and_method_df\
                 .append(sum_costs_all_times(cons_costs_by_time_and_method_df))
+
+        print("Calculations of Consumables Costs finished.")
 
     return co_output_use_modern_tp_df, co_output_percentage_use_df,\
            cons_costs_by_time_and_method_df
