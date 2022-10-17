@@ -11,10 +11,10 @@ time_start = time.time()
 ################################################################################
 # TO SET:
 # for the output figures
-datestamp_without = '2022_09_14_v1'
-datestamp_with = '2022_09_14_v2'  # TODO: need data
-datestamp_without_log = '2022-09-14T105623'
-datestamp_with_log = '2022-09-14T105620'  # TODO: need data
+datestamp_without = '2022_10_14'
+datestamp_with = '2022_10_14'  # TODO: need data
+datestamp_without_log = '2022-10-14T223057'
+datestamp_with_log = '2022-10-14T223057'  # TODO: need data
 logFile_without = 'run_analysis_contraception__' + datestamp_without_log + '.log'
 logFile_with = 'run_analysis_contraception__' + datestamp_with_log + '.log'
 # which years we want to summarise for the table of use and costs
@@ -22,6 +22,12 @@ TimePeriods_starts = [2022, 2031, 2041, 2051]
 # order of contraceptives for the table
 contraceptives_order = ['pill', 'IUD', 'injections', 'implant', 'male_condom',
                         'female_sterilization', 'other_modern']
+# ##### '2022-10-14T223057'
+# => cons_availability = "all"
+# => start_date = Date(2010, 1, 1); end_date = Date(2099, 12, 31)
+# seed = 2022
+# and pop_size = 50000
+# after rounding up the numbers of items removed
 # ##### '2022-10-13T165132'
 # => cons_availability = "all"
 # => start_date = Date(2010, 1, 1); end_date = Date(2050, 12, 31)
