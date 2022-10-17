@@ -15,6 +15,7 @@ from matplotlib import dates as mdates
 from matplotlib import pyplot as plt
 from collections import Counter
 from tlo.analysis.utils import parse_log_file
+import time
 
 
 def analyse_contraception(in_datestamp, in_log_file,
@@ -59,8 +60,13 @@ def analyse_contraception(in_datestamp, in_log_file,
 
     # Load without simulating again - parse the simulation logfile to get the
     # output dataframes
+    time_before_log = time.time()
     log_df = parse_log_file('outputs/' + in_log_file)
+    time_after_log = time.time()
+    print("time of loading the log:")
+    print(time_after_log - time_before_log)
 
+    time_before_figs = time.time()
     # %% Plot Contraception Use Over time:
     if in_plot_use_time_bool:
         years = mdates.YearLocator()  # every year
@@ -90,7 +96,7 @@ def analyse_contraception(in_datestamp, in_log_file,
         # plt.gca().set_xlim(Date(2010, 1, 1), Date(2013, 1, 1))
         plt.legend(['Total women age 15-49 years', 'Not Using Contraception', 'Using Contraception'])
         plt.savefig(outputpath / ('Contraception Use' + in_datestamp + '.png'), format='png')
-        plt.show()
+        # plt.show()
 
     # %% Plot Contraception Use By Method Over time:
     if in_plot_use_time_method_bool:
@@ -136,7 +142,7 @@ def analyse_contraception(in_datestamp, in_log_file,
         plt.legend(['pill', 'IUD', 'injections', 'implant', 'male_condom', 'female_sterilization',
                     'other_modern', 'periodic_abstinence', 'withdrawal', 'other_traditional'])
         plt.savefig(outputpath / ('Contraception Use By Method' + in_datestamp + '.png'), format='png')
-        plt.show()
+        # plt.show()
 
     # %% Plot Pregnancies Over time:
     if in_plot_pregnancies_bool:
@@ -167,7 +173,11 @@ def analyse_contraception(in_datestamp, in_log_file,
         # plt.gca().set_xlim(Date(2010, 1, 1), Date(2013, 1, 1))
         plt.legend(['total', 'pregnant', 'not_pregnant'])
         plt.savefig(outputpath / ('Pregnancies Over Time' + in_datestamp + '.png'), format='png')
-        plt.show()
+        # plt.show()
+
+    time_after_figs = time.time()
+    print("time to plot figs:")
+    print(time_after_figs - time_before_figs)
 
     # %% Calculate Use and Consumables Costs of Contraception methods within
     # some time periods:
@@ -224,11 +234,11 @@ def analyse_contraception(in_datestamp, in_log_file,
             # time period starts should be ordered
             assert all(in_l_time_period_start[i] <= in_l_time_period_start[i+1]
                        for i in range(len(in_l_time_period_start) - 1))
-            # all records in input should be from the required time periods
-            assert all((in_l_time_period_start[0] <= in_l_year[j]) &
-                       (in_l_year[j] < in_l_time_period_start[-1])
-                       for j in range(len(in_l_year))
-                       )
+            # # all records in input should be from the required time periods
+            # assert all((in_l_time_period_start[0] <= in_l_year[j]) &
+            #            (in_l_year[j] < in_l_time_period_start[-1])
+            #            for j in range(len(in_l_year))
+            #            )
             l_time_period = []
             for y in in_l_year:
                 time_period_i = next(i for i, v in enumerate(in_l_time_period_start) if v > y)
