@@ -649,6 +649,28 @@ class Contraception(Module):
         for _woman_id, _old, _new in zip(ids, old, new):
             # Does this change require an HSI?
             is_a_switch = _old != _new
+            if _old == 'female_sterilization':
+                # Log
+                logger.info(key='debug_f_sterilisation_decrease',
+                            data={
+                                'woman_id': _woman_id,
+                                'age_years': df.at[_woman_id, 'age_years'],
+                                'switch_from': _old,
+                                'switch_to': _new,
+                            },
+                            description='female_sterilization within schedule_batch_of_contraceptive_changes'
+                            )
+            if is_a_switch:
+                logger.info(key='debug_f_sterilisation_decrease',
+                            data={
+                                'woman_id': _woman_id,
+                                'age_years': df.at[_woman_id, 'age_years'],
+                                'switch_from': _old,
+                                'switch_to': _new,
+                            },
+                            description='tried to switch from f. sterilisation'
+                            )
+                assert _old != 'female_sterilization'
             reqs_appt = _new in self.states_that_may_require_HSI_to_switch_to if is_a_switch \
                 else _new in self.states_that_may_require_HSI_to_maintain_on
             if (not is_a_switch) & reqs_appt:
