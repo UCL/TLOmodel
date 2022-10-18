@@ -71,10 +71,12 @@ class Contraception(Module):
         'Prob_Switch_From_And_To': Parameter(Types.DATA_FRAME,
                                              'The probability of switching to a new method, by method, conditional that'
                                              ' the woman will switch to a new method.'),
-        'days_between_appts_for_maintenance': Parameter(Types.INT,
+        'days_between_appts_for_maintenance': Parameter(Types.LIST,
                                                         'The number of days between successive family planning '
                                                         'appointments for women that are maintaining the use of a '
-                                                        'method.'),
+                                                        'method (for each method in'
+                                                        'sorted(self.states_that_may_require_HSI_to_maintain_on), i.e.'
+                                                        '[IUD, implant, injections, other_modern, pill]).'),
         'age_specific_fertility_rates': Parameter(
             Types.DATA_FRAME, 'Data table from official source (WPP) for age-specific fertility rates and calendar '
                               'period'),
@@ -195,13 +197,17 @@ class Contraception(Module):
         )
 
         # 3) Give a notional date on which the last appointment occurred for those that need them
-        needs_appts = females1549 & df['co_contraception'].isin(self.states_that_may_require_HSI_to_switch_to)
-        df.loc[needs_appts, 'co_date_of_last_fp_appt'] = pd.Series([
-            random_date(
-                self.sim.date - pd.DateOffset(days=self.parameters['days_between_appts_for_maintenance']),
+        needs_appts = females1549 & df['co_contraception'].isin(self.states_that_may_require_HSI_to_maintain_on)
+        states_to_maintain_on = sorted(self.states_that_may_require_HSI_to_maintain_on)
+        df.loc[needs_appts, 'co_date_of_last_fp_appt'] = df.loc[needs_appts, 'co_contraception'].astype('string').apply(
+            lambda _co_contraception: random_date(
+                self.sim.date - pd.DateOffset(
+                    days=self.parameters['days_between_appts_for_maintenance']
+                    [states_to_maintain_on.index(_co_contraception)]),
                 self.sim.date - pd.DateOffset(days=1),
-                self.rng) for _ in range(len(needs_appts))
-        ])
+                self.rng
+            )
+        )
 
     def initialise_simulation(self, sim):
         """
@@ -508,37 +514,16 @@ class Contraception(Module):
         """Get the item_code for each contraceptive"""
 
         get_items_from_pkg = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
-        get_items_from_name = self.sim.modules['HealthSystem'].get_item_code_from_item_name
 
         _cons_codes = dict()
         _cons_codes['pill'] = get_items_from_pkg('Pill')
         _cons_codes['male_condom'] = get_items_from_pkg('Male condom')
         _cons_codes['other_modern'] = get_items_from_pkg('Female Condom')  # NB. The consumable female condom is used
         # for the contraceptive state of "other_modern method"
-
-        _cons_codes['IUD'] = [get_items_from_name('IUD, Copper T-380A')]
-        _cons_codes['injections'] = [get_items_from_name(item) for item in
-                                     ['Depot-Medroxyprogesterone Acetate 150 mg - 3 monthly',
-                                      'Povidone iodine, solution, 10 %, 5 ml per injection',
-                                      'Syringe, Autodisable SoloShot IX ']]
-
-        _cons_codes['implant'] = [get_items_from_name(item) for item in
-                                  ['Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml',
-                                   'Povidone iodine, solution, 10 %, 5 ml per injection',
-                                   'Jadelle (implant), box of 2_CMST',
-                                   'Implanon (Etonogestrel 68 mg)',
-                                   'Suture pack']]
-
-        _cons_codes['female_sterilization'] = [get_items_from_name(item) for item in
-                                               ['Atropine sulphate, injection, 1 mg in 1 ml ampoule',
-                                                'Diazepam, injection, 5 mg/ml, in 2 ml ampoule',
-                                                'Lidocaine, injection, 1 % in 20 ml vial',
-                                                'Lidocaine, spray, 10%, 500 ml bottle',
-                                                'Tape, adhesive, 2.5 cm wide, zinc oxide, 5 m roll',
-                                                'Paracetamol, tablet, 500 mg',
-                                                'Povidone iodine, solution, 10 %, 5 ml per injection',
-                                                'Suture pack',
-                                                'Gauze, absorbent 90cm x 40m_each_CMST']]
+        _cons_codes['IUD'] = get_items_from_pkg('IUD')
+        _cons_codes['injections'] = get_items_from_pkg('Injectable')
+        _cons_codes['implant'] = get_items_from_pkg('Implant')
+        _cons_codes['female_sterilization'] = get_items_from_pkg('Female sterilization')
 
         assert set(_cons_codes.keys()) == set(self.states_that_may_require_HSI_to_switch_to)
         return _cons_codes
@@ -554,18 +539,23 @@ class Contraception(Module):
 
         df = self.sim.population.props
         date_today = self.sim.date
-        days_between_appts = self.parameters['days_between_appts_for_maintenance']
 
         date_of_last_appt = df.loc[ids, "co_date_of_last_fp_appt"].to_dict()
+        states_to_maintain_on = sorted(self.states_that_may_require_HSI_to_maintain_on)
 
         for _woman_id, _old, _new in zip(ids, old, new):
             # Does this change require an HSI?
             is_a_switch = _old != _new
             reqs_appt = _new in self.states_that_may_require_HSI_to_switch_to if is_a_switch \
                 else _new in self.states_that_may_require_HSI_to_maintain_on
-            due_appt = pd.isnull(date_of_last_appt[_woman_id]) or (
-                (date_today - date_of_last_appt[_woman_id]).days >= days_between_appts
-            )
+            if (not is_a_switch) & (_old in self.states_that_may_require_HSI_to_maintain_on):
+                due_appt = (pd.isnull(date_of_last_appt[_woman_id]) or
+                            (date_today - date_of_last_appt[_woman_id]).days >=
+                            self.parameters['days_between_appts_for_maintenance']
+                            [states_to_maintain_on.index(_old)]
+                            )
+            # else:
+            #     due_appt = False
             do_appt = self.use_healthsystem and reqs_appt and (is_a_switch or due_appt)
 
             # If the new method requires an HSI to be implemented, schedule the HSI:
