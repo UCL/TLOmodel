@@ -711,4 +711,11 @@ if __name__ == "__main__":
     # Original values
     results_folder = outputspath / 'long_run_all_diseases_Sc0-2022-10-19T113404Z'
 
+    # Without using healthsystem
+    results_folder = outputspath / 'long_run_all_diseases_Sc1-2022-10-19T131039Z'
+
+    # Using healthsystem but with perfect consumables availability
+
+
+
     apply(results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
