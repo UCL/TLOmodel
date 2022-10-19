@@ -717,5 +717,7 @@ if __name__ == "__main__":
     # Using healthsystem but with perfect consumables availability
     results_folder = outputspath / 'long_run_all_diseases_Sc2-2022-10-19T131403Z'
 
+    # With lower fertility for 20-24, 25-29
+    results_folder = outputspath / 'long_run_all_diseases_Sc3-2022-10-19T132724Z'
 
     apply(results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
