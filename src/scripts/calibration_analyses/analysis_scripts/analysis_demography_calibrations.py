@@ -198,21 +198,47 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                  },
         }
         """
-        axes = [fig.add_subplot(211), fig.add_subplot(212)]
-        labels = ['F', 'M']
-        width = 0.2
-        x = np.arange(len(list(make_age_grp_types().categories)))  # the label locations
-        for i, sex in enumerate(labels):
-            for t, key in enumerate(data[sex]):
-                axes[i].bar(x=x + (t - 1) * width * 1.2, label=key, height=data[sex][key] / 1e6, color=colors[key],
-                            width=width)
-            axes[i].set_title(f"{sexname(sex)}: {str(year)}")
-            axes[i].set_ylabel('Population Size (millions)')
+        ax = fig.add_subplot(111)
 
-        axes[1].set_xlabel('Age Group')
-        plt.xticks(x, list(make_age_grp_types().categories), rotation=90)
-        axes[1].legend()
-        fig.tight_layout()
+        # reformat data to ensure axes align
+        sources = data['M'].keys()
+        dat = {_sex: pd.concat(
+            {_source: data['M'][_source] for _source in sources}, axis=1
+        ) for _sex in ['M', 'F']
+        }
+
+        # use horizontal bar chart functions (barh) to plot the pyramid for the Model outputs
+        ax.barh(dat['M'].index, data['M']['Model'].values / 1e3, alpha=1.0, label='Model', color=colors['Model'])
+        ax.barh(dat['F'].index, -data['F']['Model'].values / 1e3, alpha=1.0, label='_', color='cornflowerblue')
+
+        # use plot to overlay the comparison data sources (whatever is available from 'WPP' and/or 'Census')
+        for _dat_source in sorted(set(sources).intersection(['WPP', 'Census'])):
+            ax.plot(data['M'][_dat_source].values / 1e3, dat['M'].index, label=_dat_source, color=colors[_dat_source])
+            ax.plot(-data['F'][_dat_source].values / 1e3, dat['F'].index, label='_', color=colors[_dat_source])
+
+        ax.axvline(0.0, 0.0, color='black')
+
+        # label the plot with titles and correct the x axis tick labels (replace negative values with positive)
+        ax.legend()
+        ax.set_ylabel('Age Groups')
+        ax.set_xlabel('Population (1000s)')
+
+        ax.text(x=1e3, y=10, s="Males", fontdict={'size': 15}, ha='right')
+        ax.text(x=-1e3, y=10, s="Females", fontdict={'size': 15}, ha='left')
+
+        # reverse order of legend
+        handles, labels = ax.get_legend_handles_labels()
+        ax.legend(handles[::-1], labels[::-1] , loc='upper right')
+
+        locs = np.array([-2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2]) * 1e3
+        ax.set_xticks(locs)
+        ax.set_xticklabels(np.round(np.sqrt(locs ** 2)).astype(int))
+
+        ax.set_axisbelow(True)
+        # ax.yaxis.grid(color='gray', linestyle='dashed')
+        ax.grid()
+
+        return ax
 
     # Get Age/Sex Breakdown of population (with scaling)
     calperiods, calperiodlookup = make_calendar_period_lookup()
@@ -263,7 +289,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
             # Simple plot of population pyramid
             fig = plt.figure()
-            plot_population_pyramid(data=pops, fig=fig)
+            ax = plot_population_pyramid(data=pops, fig=fig)
+            ax.set_title(f'Population Pyramid in {year}')
             fig.savefig(make_graph_file_name(f"Pop_Size_{year}"))
             fig.show()
             plt.close(fig)
