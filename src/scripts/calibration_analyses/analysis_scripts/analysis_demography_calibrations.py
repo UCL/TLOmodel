@@ -185,8 +185,36 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # %% Population Pyramid
     # Population Pyramid at two time points
 
-    # Get Age/Sex Breakdown of population (with scaling)
+    def plot_population_pyramid(data, fig):
+        """Plot a population pyramid on the specified figure. Data is of the form:
+        {
+           'F': {
+                    'Model': pd.Series(index_age_groups),
+                    'WPP': pd.Series(index=age_groups)
+                 },
+           'M': {
+                    'Model': pd.Series(index_age_groups),
+                    'WPP': pd.Series(index=age_groups)
+                 },
+        }
+        """
+        axes = [fig.add_subplot(211), fig.add_subplot(212)]
+        labels = ['F', 'M']
+        width = 0.2
+        x = np.arange(len(list(make_age_grp_types().categories)))  # the label locations
+        for i, sex in enumerate(labels):
+            for t, key in enumerate(data[sex]):
+                axes[i].bar(x=x + (t - 1) * width * 1.2, label=key, height=data[sex][key] / 1e6, color=colors[key],
+                            width=width)
+            axes[i].set_title(f"{sexname(sex)}: {str(year)}")
+            axes[i].set_ylabel('Population Size (millions)')
 
+        axes[1].set_xlabel('Age Group')
+        plt.xticks(x, list(make_age_grp_types().categories), rotation=90)
+        axes[1].legend()
+        fig.tight_layout()
+
+    # Get Age/Sex Breakdown of population (with scaling)
     calperiods, calperiodlookup = make_calendar_period_lookup()
 
     def get_mean_pop_by_age_for_sex_and_year(sex, year):
@@ -234,23 +262,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     pops[sex]['Census'] = cens.loc[cens['Sex'] == sex].groupby(by='Age_Grp')['Count'].sum()
 
             # Simple plot of population pyramid
-            fig, axes = plt.subplots(ncols=1, nrows=2, sharey=True, sharex=True)
-            labels = ['F', 'M']
-            width = 0.2
-            x = np.arange(len(list(make_age_grp_types().categories)))  # the label locations
-            for i, sex in enumerate(labels):
-                for t, key in enumerate(pops[sex]):
-                    axes[i].bar(x=x + (t - 1) * width * 1.2, label=key, height=pops[sex][key] / 1e6, color=colors[key],
-                                width=width)
-                axes[i].set_title(f"{sexname(sex)}: {str(year)}")
-                axes[i].set_ylabel('Population Size (millions)')
-
-            axes[1].set_xlabel('Age Group')
-            plt.xticks(x, list(make_age_grp_types().categories), rotation=90)
-            axes[1].legend()
-            fig.tight_layout()
-            plt.savefig(make_graph_file_name(f"Pop_Size_{year}"))
-            plt.show()
+            fig = plt.figure()
+            plot_population_pyramid(data=pops, fig=fig)
+            fig.savefig(make_graph_file_name(f"Pop_Size_{year}"))
+            fig.show()
             plt.close(fig)
 
         except pd.core.base.DataError:
@@ -502,6 +517,37 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
+
+    # Plot with respect to age, averaged in the five year periods:
+
+    model_asfr = asfr.unstack() \
+                     .droplevel(axis=1, level=0) \
+                     .groupby(by=asfr.index.levels[0].map(calperiodlookup)) \
+                     .mean() \
+                     .stack()
+
+    data_asfr = wpp.loc[
+        wpp.Variant.isin(['WPP_Estimates', 'WPP_Medium variant']), ['Age_Grp', 'Period', 'asfr']
+    ].groupby(by=['Age_Grp', 'Period'])['asfr'].mean().unstack().T
+
+    fig, axs = plt.subplots(nrows=2, sharex=True, sharey=True)
+    for ax, _period in zip(axs, ['2010-2014', '2015-2019']):
+        to_plot = pd.concat([model_asfr.loc[_period], data_asfr.loc[_period]], axis=1)
+        ax.plot(to_plot.index, to_plot[_period], label='WPP', color=colors['WPP'])
+        ax.plot(to_plot.index, to_plot['mean'], label='Model', color=colors['Model'])
+        ax.fill_between(to_plot.index, to_plot['lower'], to_plot['upper'], color=colors['Model'], alpha=0.2)
+        ax.set_xlabel(f'Age at Pregnancy')
+        ax.set_ylabel('Live births per woman')
+        ax.set_title(f'{_period}')
+        ax.legend()
+    fig.suptitle('Live Births Per Woman Per Woman')
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name("asfr_model_vs_data_average_by_age"))
+    fig.show()
+    plt.close(fig)
+
+
+
     # %% All-Cause Deaths
     #  todo - fix this -- only do summarize after the groupbys
     #  Get Model output (aggregating by year before doing the summarize)
@@ -708,16 +754,19 @@ if __name__ == "__main__":
     outputspath = Path('./outputs/tbh03@ic.ac.uk')
     rfp = Path('./resources')
 
-    # Original values
-    results_folder = outputspath / 'long_run_all_diseases_Sc0-2022-10-19T113404Z'
+    # Long run
+    results_folder = outputspath / 'long_run_all_diseases-2022-10-17T084325Z'
 
-    # Without using healthsystem
-    results_folder = outputspath / 'long_run_all_diseases_Sc1-2022-10-19T131039Z'
-
-    # Using healthsystem but with perfect consumables availability
-    results_folder = outputspath / 'long_run_all_diseases_Sc2-2022-10-19T131403Z'
-
-    # With lower fertility for 20-24, 25-29
-    results_folder = outputspath / 'long_run_all_diseases_Sc3-2022-10-19T132724Z'
+    # # Original values
+    # results_folder = outputspath / 'long_run_all_diseases_Sc0-2022-10-19T113404Z'
+    #
+    # # Without using healthsystem
+    # results_folder = outputspath / 'long_run_all_diseases_Sc1-2022-10-19T131039Z'
+    #
+    # # Using healthsystem but with perfect consumables availability
+    # results_folder = outputspath / 'long_run_all_diseases_Sc2-2022-10-19T131403Z'
+    #
+    # # With lower fertility for 20-24, 25-29
+    # results_folder = outputspath / 'long_run_all_diseases_Sc3-2022-10-19T132724Z'
 
     apply(results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
