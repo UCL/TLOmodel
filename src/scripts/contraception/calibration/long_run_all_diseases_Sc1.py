@@ -1,7 +1,8 @@
 """
-  NO CHANGES
 
-```tlo batch-submit src/scripts/contraception/calibration/long_run_all_diseases_Sc0.py```
+   CONTRACEPTION DOES NOT USE HEALTHSYSTEM
+
+```tlo batch-submit src/scripts/contraception/calibration/long_run_all_diseases_Sc1.py```
 
 """
 import pandas as pd
@@ -37,7 +38,7 @@ class LongRun(BaseScenario):
         }
 
     def modules(self):
-        return fullmodel(resourcefilepath=self.resources)
+        return fullmodel(resourcefilepath=self.resources, contraception_use_healthsystem=False)
 
     def draw_parameters(self, draw_number, rng):
         return  # Using default parameters in all cases

@@ -708,8 +708,7 @@ if __name__ == "__main__":
     outputspath = Path('./outputs/tbh03@ic.ac.uk')
     rfp = Path('./resources')
 
-    # Find results folder (most recent run generated using that scenario_filename)
-    scenario_filename = 'long_run_all_diseases.py'
-    results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
+    # Original values
+    results_folder = outputspath / 'long_run_all_diseases_Sc0-2022-10-19T113404Z'
 
     apply(results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)

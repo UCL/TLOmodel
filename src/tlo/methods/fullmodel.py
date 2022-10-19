@@ -45,7 +45,8 @@ def fullmodel(
     healthsystem_disable: Optional[bool] = False,
     healthsystem_mode_appt_constraints: Optional[int] = 1,
     healthsystem_capabilities_coefficient: Optional[float] = None,
-    healthsystem_record_hsi_event_details: Optional[bool] = False
+    healthsystem_record_hsi_event_details: Optional[bool] = False,
+    contraception_use_healthsystem: Optional[bool] = True,
 ) -> List[Module]:
     """Return the modules that should be registered in a run of the `Full Model`."""
 
@@ -80,7 +81,8 @@ def fullmodel(
         ])
     else:
         all_modules.extend([
-            contraception.Contraception(resourcefilepath=resourcefilepath, use_healthsystem=True),
+            contraception.Contraception(resourcefilepath=resourcefilepath,
+                                        use_healthsystem=contraception_use_healthsystem),
             pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
             care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
             labour.Labour(resourcefilepath=resourcefilepath),
