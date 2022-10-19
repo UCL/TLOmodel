@@ -1,12 +1,6 @@
 """
-This file defines a batch run of a large population for a long time with all disease modules and full use of HSIs
-It's used for calibrations (demographic patterns, health burdens and healthsystem usage)
 
-Run on the batch system using:
-```tlo batch-submit src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py```
-
-or locally using:
-    ```tlo scenario-run src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py```
+```tlo batch-submit src/scripts/contraception/calibration/long_run_all_diseases_Sc0.py```
 
 """
 import pandas as pd
