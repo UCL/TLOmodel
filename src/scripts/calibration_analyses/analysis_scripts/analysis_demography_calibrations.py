@@ -228,7 +228,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # reverse order of legend
         handles, labels = ax.get_legend_handles_labels()
-        ax.legend(handles[::-1], labels[::-1] , loc='upper right')
+        ax.legend(handles[::-1], labels[::-1], loc='upper right')
 
         locs = np.array([-2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2]) * 1e3
         ax.set_xticks(locs)
@@ -545,7 +545,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-
     # Plot with respect to age, averaged in the five year periods:
 
     model_asfr = asfr.unstack() \
@@ -564,7 +563,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.plot(to_plot.index, to_plot[_period], label='WPP', color=colors['WPP'])
         ax.plot(to_plot.index, to_plot['mean'], label='Model', color=colors['Model'])
         ax.fill_between(to_plot.index, to_plot['lower'], to_plot['upper'], color=colors['Model'], alpha=0.2)
-        ax.set_xlabel(f'Age at Conception')
+        ax.set_xlabel('Age at Conception')
         ax.set_ylabel('Live births per woman-year')
         ax.set_title(f'{_period}')
         ax.legend()
@@ -573,8 +572,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.savefig(make_graph_file_name("asfr_model_vs_data_average_by_age"))
     fig.show()
     plt.close(fig)
-
-
 
     # %% All-Cause Deaths
     #  todo - fix this -- only do summarize after the groupbys
@@ -782,19 +779,8 @@ if __name__ == "__main__":
     outputspath = Path('./outputs/tbh03@ic.ac.uk')
     rfp = Path('./resources')
 
-    # Long run
-    results_folder = outputspath / 'long_run_all_diseases-2022-10-17T084325Z'
-
-    # # Original values
-    # results_folder = outputspath / 'long_run_all_diseases_Sc0-2022-10-19T113404Z'
-    #
-    # # Without using healthsystem
-    # results_folder = outputspath / 'long_run_all_diseases_Sc1-2022-10-19T131039Z'
-    #
-    # # Using healthsystem but with perfect consumables availability
-    # results_folder = outputspath / 'long_run_all_diseases_Sc2-2022-10-19T131403Z'
-    #
-    # With lower fertility for 20-24, 25-29
-    # results_folder = outputspath / 'long_run_all_diseases_Sc3-2022-10-19T132724Z'
+    # Find results folder (most recent run generated using that scenario_filename)
+    scenario_filename = 'long_run_all_diseases.py'
+    results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
 
     apply(results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)

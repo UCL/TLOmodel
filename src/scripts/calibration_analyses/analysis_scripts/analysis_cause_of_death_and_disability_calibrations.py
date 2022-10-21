@@ -22,8 +22,8 @@ from tlo.analysis.utils import (
     make_calendar_period_lookup,
     make_calendar_period_type,
     order_of_cause_of_death_label,
-    summarize,
     plot_clustered_stacked,
+    summarize,
 )
 
 PREFIX_ON_FILENAME = '2'
@@ -193,7 +193,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             ax.text(5.2, 11_000, 'GBD || Model', horizontalalignment='left',  verticalalignment='bottom', fontsize=8)
             fig.show()
             plt.close(fig)
-
 
         # %% Plots of age-breakdown of outcomes patten for each cause:
 
