@@ -41,7 +41,7 @@ log_config = {
 
 # Basic arguments required for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2049, 12, 31)
+end_date = Date(2020, 12, 31)
 pop_size = 20000
 
 # This creates the Simulation instance for this run. Because we've passed the `seed` and
@@ -292,3 +292,19 @@ plt.legend(['total', 'pregnant', 'not_pregnant'])
 plt.savefig(outputpath / ('Pregnancies Over Time' + datestamp + '.png'), format='png')
 plt.show()
 
+# %% Female sterilization over time by 15-30, 30-49 age groups
+years = mdates.YearLocator()  # every year
+months = mdates.MonthLocator()  # every month
+years_fmt = mdates.DateFormatter('%Y')
+
+# Load Model Results
+con_df = log_df['tlo.methods.contraception']['contraception_use_summary_by_age'].set_index('date')
+Model_Years = pd.to_datetime(con_df.index)
+Model_total = con_df.sum(axis=1)
+Model_female_sterilization15_19 = con_df['co_contraception=female_sterilization|age_range=15-19']
+Model_female_sterilization20_24 = con_df['co_contraception=female_sterilization|age_range=20-24']
+Model_female_sterilization25_29 = con_df['co_contraception=female_sterilization|age_range=25-29']
+Model_female_sterilization30_34 = con_df['co_contraception=female_sterilization|age_range=30-34']
+Model_female_sterilization35_39 = con_df['co_contraception=female_sterilization|age_range=35-39']
+Model_female_sterilization40_44 = con_df['co_contraception=female_sterilization|age_range=40-44']
+Model_female_sterilization45_49 = con_df['co_contraception=female_sterilization|age_range=45-49']
