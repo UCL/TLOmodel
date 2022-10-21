@@ -430,7 +430,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _x = _df \
             .assign(year=_df['date'].dt.year) \
             .set_index('year') \
-            .drop(columns=['date'])
+            .drop(columns=['date'])\
+            .sort_index()
 
         # restore the multi-index that had to be flattened to pass through the logger"
         _x = unflatten_flattened_multi_index_in_logging(_x)
@@ -507,7 +508,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     )
 
     # Compute age-specific fertility rates
-    asfr = summarize(births_by_mother_age_at_pregnancy.div(num_adult_women))
+    asfr = summarize(births_by_mother_age_at_pregnancy.div(num_adult_women)).sort_index()
 
     # Get the age-specific fertility rates of the WPP source
     wpp = pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_ASFR_WPP.csv')
@@ -533,7 +534,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax[i].fill_between(model.index, model[(0, 'lower', _agegrp)], model[(0, 'upper', _agegrp)],
                            color='r', alpha=0.2)
         ax[i].set_ylim(0, 0.4)
-        ax[i].set_title(f'Age at Pregnancy: {_agegrp}y', fontsize=6)
+        ax[i].set_title(f'Age at Conception: {_agegrp}y', fontsize=6)
         ax[i].set_xlabel('Year')
         ax[i].set_ylabel('Live births per woman')
 
@@ -563,11 +564,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.plot(to_plot.index, to_plot[_period], label='WPP', color=colors['WPP'])
         ax.plot(to_plot.index, to_plot['mean'], label='Model', color=colors['Model'])
         ax.fill_between(to_plot.index, to_plot['lower'], to_plot['upper'], color=colors['Model'], alpha=0.2)
-        ax.set_xlabel(f'Age at Pregnancy')
-        ax.set_ylabel('Live births per woman')
+        ax.set_xlabel(f'Age at Conception')
+        ax.set_ylabel('Live births per woman-year')
         ax.set_title(f'{_period}')
         ax.legend()
-    fig.suptitle('Live Births Per Woman Per Woman')
+    fig.suptitle('Live Births By Age of Mother At Conception')
     fig.tight_layout()
     fig.savefig(make_graph_file_name("asfr_model_vs_data_average_by_age"))
     fig.show()
@@ -793,7 +794,7 @@ if __name__ == "__main__":
     # # Using healthsystem but with perfect consumables availability
     # results_folder = outputspath / 'long_run_all_diseases_Sc2-2022-10-19T131403Z'
     #
-    # # With lower fertility for 20-24, 25-29
+    # With lower fertility for 20-24, 25-29
     # results_folder = outputspath / 'long_run_all_diseases_Sc3-2022-10-19T132724Z'
 
     apply(results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
