@@ -783,7 +783,7 @@ if __name__ == "__main__":
     rfp = Path('./resources')
 
     # Long run
-    results_folder = outputspath / 'long_run_all_diseases-2022-10-17T084325Z'
+    # results_folder = outputspath / 'long_run_all_diseases-2022-10-17T084325Z'
 
     # # Original values
     # results_folder = outputspath / 'long_run_all_diseases_Sc0-2022-10-19T113404Z'
@@ -796,5 +796,8 @@ if __name__ == "__main__":
     #
     # With lower fertility for 20-24, 25-29
     # results_folder = outputspath / 'long_run_all_diseases_Sc3-2022-10-19T132724Z'
+
+    # With lower fertility for 20-24, 25-29 AND HIGHER FOR 30+
+    # results_folder = outputspath / 'long_run_all_diseases_Sc4-2022-10-21T092107Z'
 
     apply(results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
