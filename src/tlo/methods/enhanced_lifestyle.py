@@ -360,37 +360,6 @@ class Lifestyle(Module):
         :param population: the population of individuals
         """
         df = population.props  # a shortcut to the data-frame storing data for individuals
-
-        # # -------------------- DEFAULTS ------------------------------------------------------------
-        #
-        # df.loc[df.is_alive, 'li_urban'] = False
-        # df.loc[df.is_alive, 'li_wealth'] = 3
-        # df.loc[df.is_alive, 'li_bmi'] = 0
-        # df.loc[df.is_alive, 'li_exposed_to_campaign_weight_reduction'] = False
-        # df.loc[df.is_alive, 'li_low_ex'] = False
-        # df.loc[df.is_alive, 'li_exposed_to_campaign_exercise_increase'] = False
-        # df.loc[df.is_alive, 'li_high_salt'] = False
-        # df.loc[df.is_alive, 'li_exposed_to_campaign_salt_reduction'] = False
-        # df.loc[df.is_alive, 'li_high_sugar'] = False
-        # df.loc[df.is_alive, 'li_exposed_to_campaign_sugar_reduction'] = False
-        # df.loc[df.is_alive, 'li_tob'] = False
-        # df.loc[df.is_alive, 'li_date_not_tob'] = pd.NaT
-        # df.loc[df.is_alive, 'li_exposed_to_campaign_quit_smoking'] = False
-        # df.loc[df.is_alive, 'li_ex_alc'] = False
-        # df.loc[df.is_alive, 'li_exposed_to_campaign_alcohol_reduction'] = False
-        # df.loc[df.is_alive, 'li_mar_stat'] = 1
-        # df.loc[df.is_alive, 'li_in_ed'] = False
-        # df.loc[df.is_alive, 'li_unimproved_sanitation'] = True
-        # df.loc[df.is_alive, 'li_no_access_handwashing'] = True
-        # df.loc[df.is_alive, 'li_no_clean_drinking_water'] = True
-        # df.loc[df.is_alive, 'li_wood_burn_stove'] = True
-        # df.loc[df.is_alive, 'li_date_trans_to_urban'] = pd.NaT
-        # df.loc[df.is_alive, 'li_date_acquire_improved_sanitation'] = pd.NaT
-        # df.loc[df.is_alive, 'li_date_acquire_access_handwashing'] = pd.NaT
-        # df.loc[df.is_alive, 'li_date_acquire_clean_drinking_water'] = pd.NaT
-        # df.loc[df.is_alive, 'li_date_acquire_non_wood_burn_stove'] = pd.NaT
-        # df.loc[df.is_alive, 'li_is_sexworker'] = False
-        # df.loc[df.is_alive, 'li_is_circ'] = False
         # todo: express all rates per year and divide by 4 inside program
 
         # initialise all properties using linear models
@@ -1920,9 +1889,13 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         all_lm_keys = self.module.models.get_lm_keys()
         # log summary of each lifestyle property
+        # NB: In addition to logging properties by sex and age groups, there are some properties that requires
+        # individual's urban or rural status. define and log these properties separately
+        cat_by_rural_urban_props = ['li_wealth', 'li_bmi', 'li_ex_alc', 'li_wood_burn_stove',
+                                    'li_unimproved_sanitation', 'li_no_clean_drinking_water']
         for _property in all_lm_keys:
-            # for wealth level log separately for rular and urban
-            if _property == 'li_wealth':
+            if _property in cat_by_rural_urban_props:
+                # log all properties that are also categorised by rural or urban in addition to ex and age groups
                 data = df.loc[df.is_alive].groupby(by=[
                     df.loc[df.is_alive, 'li_urban'],
                     df.loc[df.is_alive, 'sex'],
@@ -1934,7 +1907,7 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     data=flatten_multi_index_series_into_dict_for_logging(data)
                 )
             else:
-                # log all properties
+                # log all other remaining properties
                 data = df.loc[df.is_alive].groupby(by=[
                     df.loc[df.is_alive, 'sex'],
                     df.loc[df.is_alive, _property],
