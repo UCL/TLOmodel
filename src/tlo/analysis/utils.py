@@ -11,6 +11,7 @@ from typing import Callable, Dict, Iterable, List, Optional, TextIO, Union
 
 import git
 import matplotlib.colors as mcolors
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import squarify
@@ -867,3 +868,45 @@ def get_root_path(starter_path: Optional[Path] = None) -> Path:
         return get_git_root(starter_path)
     else:
         raise OSError("File Not Found")
+
+
+def plot_clustered_stacked(dfall, ax, color_for_column_map=None, legends=True, H="/", **kwargs):
+    """Given a dict of dataframes, with identical columns and index, create a clustered stacked bar plot.
+    * H is the hatch used for identification of the different dataframe.
+    * color_for_column_map should return a color for every column in the dataframes
+    * legends=False, suppresses generation of the legends
+    From: https://stackoverflow.com/questions/22787209/how-to-have-clusters-of-stacked-bars"""
+
+    n_df = len(dfall)
+    n_col = len(list(dfall.values())[0].columns)
+    n_ind = len(list(dfall.values())[0].index)
+
+    for i, df in enumerate(dfall.values()):  # for each data frame
+        ax = df.plot.bar(
+            stacked=True,
+            ax=ax,
+            legend=False,
+            color=[color_for_column_map(_label) for _label in df.columns],
+            **kwargs
+        )
+
+    _handles, _labels = ax.get_legend_handles_labels()  # get the handles we want to modify
+    for i in range(0, n_df * n_col, n_col):  # len(h) = n_col * n_df
+        for j, pa in enumerate(_handles[i: i+n_col]):
+            for rect in pa.patches:  # for each index
+                rect.set_x(rect.get_x() + 1 / float(n_df + 1) * i / float(n_col))
+                rect.set_hatch(H * int(i / n_col))  # edited part
+                rect.set_width(1 / float(n_df + 1))
+
+    ax.set_xticks((np.arange(0, 2 * n_ind, 2) + 1 / float(n_df + 1)) / 2.)
+    ax.set_xticklabels(df.index, rotation=0)
+
+    if legends:
+        # Add invisible data to add another legend
+        n = []
+        for i in range(n_df):
+            n.append(ax.bar(0, 0, color="gray", hatch=H * i))
+
+        l1 = ax.legend(_handles[:n_col], _labels[:n_col], loc=[1.01, 0.5])
+        _ = plt.legend(n, dfall.keys(), loc=[1.01, 0.1])
+        ax.add_artist(l1)
