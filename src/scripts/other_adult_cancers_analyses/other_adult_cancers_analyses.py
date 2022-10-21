@@ -16,21 +16,15 @@ import numpy as np
 import pandas as pd
 
 from tlo import Date, Simulation
-from tlo.analysis.utils import make_age_grp_types, parse_log_file
+from tlo.analysis.utils import compare_number_of_deaths, make_age_grp_types, parse_log_file
 from tlo.methods import (
-    care_of_women_during_pregnancy,
-    contraception,
     demography,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    labour,
-    newborn_outcomes,
-    oesophagealcancer,
     other_adult_cancers,
-    postnatal_supervisor,
-    pregnancy_supervisor,
+    simplified_births,
     symptommanager,
 )
 
@@ -46,29 +40,24 @@ resourcefilepath = Path("./resources")
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
-popsize = 10000
+popsize = 20_000
 
 
-def run_sim(service_availability):
+def run_sim(allow_hsi):
     # Establish the simulation object and set the seed
     sim = Simulation(start_date=start_date, seed=0)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=service_availability),
+                                           disable=(allow_hsi is True),
+                                           disable_and_reject_all=(allow_hsi is False)),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                  other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath),
-                 oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath)
                  )
 
     # Establish the logger
@@ -107,9 +96,9 @@ def get_summary_stats(logfile):
     counts_by_cascade = pd.DataFrame(summary)
 
     # 3) DALYS wrt age (total over whole simulation)
-    dalys = output['tlo.methods.healthburden']['dalys']
+    dalys = output['tlo.methods.healthburden']['dalys_stacked']
     dalys = dalys.groupby(by=dalys['age_range']).sum()
-    dalys = dalys.set_index(make_age_grp_types().categories)
+    dalys = dalys.set_index(make_age_grp_types().categories).drop(columns=['year'])
 
     # 4) DEATHS wrt age (total over whole simulation)
     # get the deaths dataframe
@@ -143,14 +132,16 @@ def get_summary_stats(logfile):
 # %% Run the simulation with and without interventions being allowed
 
 # With interventions:
-logfile_with_healthsystem = run_sim(service_availability=['*'])
+logfile_with_healthsystem = run_sim(allow_hsi=True)
 results_with_healthsystem = get_summary_stats(logfile_with_healthsystem)
 
 # Without interventions:
-logfile_no_healthsystem = run_sim(service_availability=[])
+logfile_no_healthsystem = run_sim(allow_hsi=False)
 results_no_healthsystem = get_summary_stats(logfile_no_healthsystem)
 
 # %% Produce Summary Graphs:
+
+CAUSE_NAME = 'Cancer (Other)'
 
 # Examine Counts by Stage Over Time
 counts = results_no_healthsystem['total_counts_by_stage_over_time']
@@ -180,12 +171,13 @@ plt.show()
 
 # Examine DALYS (summed over whole simulation)
 results_no_healthsystem['dalys'].plot.bar(
-    y=['YLD_OtherAdultCancer_0', 'YLL_OtherAdultCancer_OtherAdultCancer'],
+    y=[CAUSE_NAME],
     stacked=True)
 plt.xlabel('Age-group')
 plt.ylabel('DALYS')
 plt.legend()
 plt.title("With No Health System")
+plt.tight_layout()
 plt.show()
 
 # Examine Deaths (summed over whole simulation)
@@ -199,7 +191,7 @@ totdeaths.plot.bar()
 plt.title('Deaths due to Other Adult Cancer')
 plt.xlabel('Age-group')
 plt.ylabel('Total Deaths During Simulation')
-# plt.gca().get_legend().remove()
+plt.tight_layout()
 plt.show()
 
 # Compare Deaths - with and without the healthsystem functioning - sum over age and time
@@ -248,3 +240,23 @@ prev_per_100k = 1e5 * counts.sum() / totpopsize
 
 # ** 5-year survival following treatment
 # See separate file
+
+# ** Comparison to the number of deaths in the GBD calibration dataset
+comparison = compare_number_of_deaths(logfile=logfile_with_healthsystem, resourcefilepath=resourcefilepath)
+comparison = comparison.rename(columns={'model': 'model_with_healthsystem'})
+
+# Add in the model run without healthsystem
+x = compare_number_of_deaths(logfile=logfile_no_healthsystem, resourcefilepath=resourcefilepath)['model']
+x.name = 'model_no_healthsystem'
+comparison = pd.concat([comparison, x], axis=1)
+
+comparison = comparison.loc[('2010-2014', slice(None), slice(None), CAUSE_NAME)]
+comparison = comparison.fillna(0.0)
+comparison.index = comparison.index.droplevel([0, 3])
+
+fig, axs = plt.subplots(nrows=2, sharex=True)
+for ax, sex in zip(axs, ('M', 'F')):
+    comparison.loc[sex].plot(use_index=True, ax=ax)
+    ax.set_ylabel('Deaths per year')
+    ax.set_title(f"{sex}")
+plt.show()
