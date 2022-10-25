@@ -43,10 +43,12 @@ class RunAnalysisCo(BaseScenario):
             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
             healthsystem.HealthSystem(resourcefilepath=self.resources,
                                       cons_availability="all",
-                                      disable=False), # <-- HealthSystem functioning
+                                      disable=False),  # <-- HealthSystem functioning
 
             # - Contraception and replacement for Labour etc.
             contraception.Contraception(resourcefilepath=self.resources,
+                                        # interventions_start_date=Date(2016, 1, 1),  # if needs to be changed
+                                        # the default date is Date(2023, 1, 1)
                                         use_healthsystem=True),  # <-- using HealthSystem
             contraception.SimplifiedPregnancyAndLabour(),
 
