@@ -53,7 +53,7 @@ class Contraception(Module):
         'Interventions_Pop': Parameter(Types.DATA_FRAME,
                                        'Pop (population scale contraception intervention) intervention multiplier.'),
         'Interventions_PPFP': Parameter(Types.DATA_FRAME,
-                                        'PPFP (post-partum family planning) intervention multiplier.'),
+                                       'PPFP (post-partum family planning) intervention multiplier.'),
         'Initiation_ByAge': Parameter(Types.DATA_FRAME,
                                       'The effect of age on the probability of starting use of contraceptive (add one '
                                       'for multiplicative effect).'),
