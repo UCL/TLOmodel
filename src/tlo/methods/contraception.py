@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import DateOffset, Module, Parameter, Property, Types, logging, Date
 from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.healthsystem import HSI_Event
@@ -50,9 +50,9 @@ class Contraception(Module):
                                          'Probability per month of a women who is not using any contraceptive method of'
                                          ' starting use of a method, by method.'),
         'Interventions_Pop': Parameter(Types.DATA_FRAME,
-                                         'Pop (population scale contraception intervention) intervention multiplier'),
+                                       'Pop (population scale contraception intervention) intervention multiplier'),
         'Interventions_PPFP': Parameter(Types.DATA_FRAME,
-                                       'PPFP (post-partum family planning) intervention multiplier'),
+                                        'PPFP (post-partum family planning) intervention multiplier'),
         'Initiation_ByAge': Parameter(Types.DATA_FRAME,
                                       'The effect of age on the probability of starting use of contraceptive (add one '
                                       'for multiplicative effect).'),
@@ -121,14 +121,20 @@ class Contraception(Module):
                                             )
     }
 
-    def __init__(self, name=None, resourcefilepath=None, use_healthsystem=True, use_interventions=True, run_update_contraceptive=True):
+    def __init__(self, name=None, resourcefilepath=None, use_healthsystem=True, use_interventions=True,
+                 interventions_start_date=Date(2023, 1, 1), run_update_contraceptive=True):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
         self.use_healthsystem = use_healthsystem  # if True: initiation and switches to contraception require an HSI;
         # if False: initiation and switching do not occur through an HSI
 
-        self.use_interventions = use_interventions  # if True: interventions are on, if False interventions are off
+        self.use_interventions = use_interventions  # if True: interventions are on from the date 'interventions_start',
+        # if False interventions are off
+        self.interventions_start_date = interventions_start_date  # a date when interventions are assumed to be
+        # implemented
+        self.interventions_on = False  # if False/True: interventions off/on at the time; starts as False, changes to
+        # True on 'interventions_start_date' if 'use_interventions' True
 
         self.run_update_contraceptive = run_update_contraceptive  # If 'False' prevents any logic occurring for
         #                                                           updating/changing/maintaining contraceptive methods.
@@ -261,6 +267,12 @@ class Contraception(Module):
         This is called by `on_birth` in this module and by Labour/Pregnancy modules for births that do result in live
         birth."""
 
+        # Check whether it is appropriate and time to implement interventions
+        if self.use_interventions and not self.interventions_on and self.sim.date == self.interventions_start_date:
+            # Update module parameters to enable interventions
+            self.processed_params = self.process_params()
+            self.interventions_on = True
+
         self.sim.population.props.at[person_id, 'is_pregnant'] = False
         person_age = self.sim.population.props.at[person_id, 'age_years']
         self.select_contraceptive_following_birth(person_id, person_age)
@@ -268,7 +280,10 @@ class Contraception(Module):
     def process_params(self):
         """Process parameters that have been read-in."""
 
-        processed_params = dict()
+        if self.sim.date < self.interventions_start_date:
+            processed_params = dict()
+        else:
+            processed_params = self.processed_params
 
         def expand_to_age_years(values_by_age_groups, ages_by_year):
             _d = dict(zip(['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49'], values_by_age_groups))
@@ -294,14 +309,14 @@ class Contraception(Module):
             return p_method
 
         def contraception_initiation():
-            """Generate the probability per month of a women initiating onto each contraceptive, by the age (in whole
+            """Generate the probability per month of a woman initiating onto each contraceptive, by the age (in whole
              years)."""
 
             # Probability of initiation by method per month (average over all ages)
             p_init_by_method = self.parameters['Initiation_ByMethod'].loc[0].drop('not_using')
 
             # Pop intervention multiplier:
-            if self.use_interventions:
+            if self.use_interventions & (self.sim.date >= self.interventions_start_date):
                 p_init_by_method = p_init_by_method.mul(self.parameters['Interventions_Pop'].loc[0])
 
             # Effect of age
@@ -414,7 +429,7 @@ class Contraception(Module):
             probs = self.parameters['Initiation_AfterBirth'].loc[0]
 
             # PPFP intervention multiplier:
-            if self.use_interventions:
+            if self.use_interventions & (self.sim.date >= self.interventions_start_date):
                 probs = self.parameters['Initiation_AfterBirth'].loc[0].drop('not_using')
                 probs = probs.mul(self.parameters['Interventions_PPFP'].loc[0])
                 not_using = pd.Series((1 - probs.sum()), index=['not_using'])
@@ -495,14 +510,18 @@ class Contraception(Module):
 
             return p_pregnancy_with_contraception_per_month.mul(scaling_factor_on_monthly_risk_of_pregnancy(), axis=0)
 
-        processed_params['initial_method_use'] = initial_method_use()
-        processed_params['p_start_per_month'] = contraception_initiation()
-        processed_params['p_switch_from_per_month'], processed_params['p_switching_to'] = contraception_switch()
-        processed_params['p_stop_per_month'] = contraception_stop()
-        processed_params['p_start_after_birth'] = contraception_initiation_after_birth()
+        # parameters to be processed only in the beginning
+        if self.sim.date < self.interventions_start_date:
+            processed_params['initial_method_use'] = initial_method_use()
+            processed_params['p_switch_from_per_month'], processed_params['p_switching_to'] = contraception_switch()
+            processed_params['p_stop_per_month'] = contraception_stop()
 
-        processed_params['p_pregnancy_no_contraception_per_month'] = pregnancy_no_contraception()
-        processed_params['p_pregnancy_with_contraception_per_month'] = pregnancy_with_contraception()
+            processed_params['p_pregnancy_no_contraception_per_month'] = pregnancy_no_contraception()
+            processed_params['p_pregnancy_with_contraception_per_month'] = pregnancy_with_contraception()
+
+        # parameters to be processed in the beginning and when the interventions are implemented
+        processed_params['p_start_per_month'] = contraception_initiation()
+        processed_params['p_start_after_birth'] = contraception_initiation_after_birth()
 
         return processed_params
 
@@ -674,7 +693,15 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         self.run_update_contraceptive = run_update_contraceptive  # (Provided for testing only)
 
     def apply(self, population):
-        """Determine who will become pregnant and update contraceptive method."""
+        """If it's appropriate and time to implement interventions, update module parameters.
+        Determine who will become pregnant and update contraceptive method."""
+
+        # Check whether it is appropriate and time to implement interventions
+        if self.module.use_interventions and not self.module.interventions_on and\
+            self.sim.date == self.module.interventions_start_date:
+            # Update module parameters to enable interventions
+            self.module.processed_params = self.module.process_params()
+            self.module.interventions_on = True
 
         # Determine who will become pregnant, given current contraceptive method
         if self.run_do_pregnancy:
