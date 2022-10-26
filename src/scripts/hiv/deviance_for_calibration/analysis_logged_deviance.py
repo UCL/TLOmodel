@@ -5,7 +5,7 @@ save outputs for plotting (file: output_plots_tb.py)
 
 import datetime
 import pickle
-# import random
+import random
 from pathlib import Path
 
 from tlo import Date, Simulation, logging
@@ -36,7 +36,7 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2025, 1, 1)
+end_date = Date(2022, 1, 1)
 popsize = 10000
 
 scenario = 0
@@ -60,8 +60,8 @@ log_config = {
 
 # Register the appropriate modules
 # need to call epi before tb to get bcg vax
-# seed = random.randint(0, 50000)
-seed = 32  # set seed for reproducibility
+seed = random.randint(0, 50000)
+# seed = 32  # set seed for reproducibility
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
 sim.register(
     demography.Demography(resourcefilepath=resourcefilepath),
@@ -71,7 +71,7 @@ sim.register(
         resourcefilepath=resourcefilepath,
         service_availability=["*"],  # all treatment allowed
         mode_appt_constraints=0,  # mode of constraints to do with officer numbers and time
-        cons_availability="all",  # mode for consumable constraints (if ignored, all consumables available)
+        cons_availability="default",  # mode for consumable constraints (if ignored, all consumables available)
         ignore_priority=False,  # do not use the priority information in HSI event to schedule
         capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
         use_funded_or_actual_staffing="funded_plus",  # actual: use numbers/distribution of staff available currently
@@ -89,6 +89,7 @@ sim.register(
 )
 
 # set the scenario
+sim.modules["Tb"].parameters["beta"] = 1.8
 sim.modules["Tb"].parameters["scenario"] = scenario
 sim.modules["Tb"].parameters["scenario_start_date"] = Date(2023, 1, 1)
 sim.modules["Tb"].parameters["scenario_SI"] = "b"
