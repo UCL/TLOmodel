@@ -60,8 +60,8 @@ log_config = {
 
 # Register the appropriate modules
 # need to call epi before tb to get bcg vax
-seed = random.randint(0, 50000)
-# seed = 32  # set seed for reproducibility
+# seed = random.randint(0, 50000)
+seed = 41728  # set seed for reproducibility
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
 sim.register(
     demography.Demography(resourcefilepath=resourcefilepath),
@@ -93,6 +93,13 @@ sim.modules["Tb"].parameters["beta"] = 1.8
 sim.modules["Tb"].parameters["scenario"] = scenario
 sim.modules["Tb"].parameters["scenario_start_date"] = Date(2023, 1, 1)
 sim.modules["Tb"].parameters["scenario_SI"] = "b"
+
+# to cluster tests in positive people
+sim.modules["Hiv"].parameters["rr_test_hiv_positive"] = 3  # default 1.5
+# to account for people starting-> defaulting, or not getting cons
+# this not used now if perfect referral testing->treatment
+sim.modules["Hiv"].parameters["treatment_initiation_adjustment"] = 3  # default 1.5
+
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)

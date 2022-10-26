@@ -1033,10 +1033,11 @@ class Hiv(Module):
                     tclose=None,
                 )
 
-            # if mother known HIV+, schedule test for infant in 6 weeks (EI
+            # if mother known HIV+, schedule virological test for infant in 6 weeks (EI
             if mother.hv_diagnosed and \
                 df.at[child_id, "is_alive"] and (
                 self.rng.random_sample() < params["prob_anc_test_at_delivery"]):
+
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_TestAndRefer(
                         person_id=child_id,
@@ -1046,6 +1047,20 @@ class Hiv(Module):
                     topen=self.sim.date + pd.DateOffset(weeks=6),
                     tclose=None,
                 )
+
+                # todo add serological hiv test for infant
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=HSI_Hiv_TestAndRefer(
+                        person_id=child_id,
+                        module=self,
+                        referred_from='Infant_testing'),
+                    priority=1,
+                    topen=self.sim.date + pd.DateOffset(months=9),
+                    tclose=None,
+                )
+
+
+                # todo add infant NVP prophylaxis
 
     def report_daly_values(self):
         """Report DALYS for HIV, based on current symptomatic state of persons."""
@@ -1213,11 +1228,13 @@ class Hiv(Module):
             )
 
         # Consider if the person will be referred to start ART
-        if df.loc[person_id, "age_years"] <= 15:
-            starts_art = 1
-        else:
-            starts_art = self.rng.random_sample() < self.prob_art_start_after_test(self.sim.date.year)
+        # if df.loc[person_id, "age_years"] <= 15:
+        #     starts_art = 1
+        # else:
+        #     starts_art = self.rng.random_sample() < self.prob_art_start_after_test(self.sim.date.year)
 
+        # todo perfect referral testing to treatment
+        starts_art = 1
         if starts_art:
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Hiv_StartOrContinueTreatment(person_id=person_id, module=self),
@@ -1235,21 +1252,22 @@ class Hiv(Module):
                 priority=0,
             )
 
-    def prob_art_start_after_test(self, year):
-        """ returns the probability of starting ART after a positive HIV test
-        this value for initiation will be higher than the current reported coverage levels
-        to account for defaulters
-        """
-        prob_art = self.parameters["prob_start_art_or_vs"]
-        current_year = year if year <= 2025 else 2025
-
-        # use iloc to index by position as index will change by year
-        return_prob = prob_art.loc[
-                          (prob_art.year == current_year) &
-                          (prob_art.age == "adults"),
-                          "prob_art_if_dx"].values[0] * self.parameters["treatment_initiation_adjustment"]
-
-        return return_prob
+    # todo put back in if need default testing->treatment not due to cons availability
+    # def prob_art_start_after_test(self, year):
+    #     """ returns the probability of starting ART after a positive HIV test
+    #     this value for initiation will be higher than the current reported coverage levels
+    #     to account for defaulters
+    #     """
+    #     prob_art = self.parameters["prob_start_art_or_vs"]
+    #     current_year = year if year <= 2025 else 2025
+    #
+    #     # use iloc to index by position as index will change by year
+    #     return_prob = prob_art.loc[
+    #                       (prob_art.year == current_year) &
+    #                       (prob_art.age == "adults"),
+    #                       "prob_art_if_dx"].values[0] * self.parameters["treatment_initiation_adjustment"]
+    #
+    #     return return_prob
 
     def prob_viral_suppression(self, year, age_of_person):
         """ returns the probability of viral suppression once on ART
@@ -1506,12 +1524,22 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
             test_rates = p["hiv_testing_rates"]
 
             # reduce testing rates to account for additional testing through ANC/symptoms
+            # testing_rate_children = test_rates.loc[
+            #                             test_rates.year == current_year, "annual_testing_rate_children"
+            #                         ].values[0] * 0.6
+            # testing_rate_adults = test_rates.loc[
+            #                           test_rates.year == current_year, "annual_testing_rate_adults"
+            #                       ].values[0] * 0.6
+
+            # todo don't reduce testing rates to account for cons constraints
             testing_rate_children = test_rates.loc[
                                         test_rates.year == current_year, "annual_testing_rate_children"
-                                    ].values[0] * 0.6
+                                    ].values[0]
             testing_rate_adults = test_rates.loc[
                                       test_rates.year == current_year, "annual_testing_rate_adults"
-                                  ].values[0] * 0.6
+                                  ].values[0]
+
+
             random_draw = rng.random_sample(size=len(df))
 
             child_tests_idx = df.loc[
@@ -2249,20 +2277,31 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 self.module.stops_treatment(person_id)
 
             p = self.module.parameters["probability_of_seeking_further_art_appointment_if_drug_not_available"]
-            if self.module.rng.random_sample() >= p:
-                return
 
-            # If person 'decides to' seek another appointment, schedule a new HSI appointment for tomorrow.
-            # NB. With a probability of 1.0, this will keep occurring, and the person will never give-up coming back to
-            # pick-up medication.
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                hsi_event=HSI_Hiv_StartOrContinueTreatment(
-                    person_id=person_id, module=self.module
-                ),
-                topen=self.sim.date + pd.DateOffset(days=1),
-                tclose=self.sim.date + pd.DateOffset(days=15),
-                priority=0,
-            )
+            if self.module.rng.random_sample() >= p:
+                # if defaulting, seek another testing appointment in 6 months
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=HSI_Hiv_TestAndRefer(
+                        person_id=person_id, module=self.module
+                    ),
+                    topen=self.sim.date + pd.DateOffset(months=6),
+                    priority=0,
+                )
+
+            else:
+                # If person 'decides to' seek another treatment appointment,
+                # schedule a new HSI appointment for tomorrow.
+                # NB. With a probability of 1.0, this will keep occurring,
+                # and the person will never give-up coming back to
+                # pick-up medication.
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=HSI_Hiv_StartOrContinueTreatment(
+                        person_id=person_id, module=self.module
+                    ),
+                    topen=self.sim.date + pd.DateOffset(days=1),
+                    tclose=self.sim.date + pd.DateOffset(days=15),
+                    priority=0,
+                )
 
         # also screen for tb
         if "Tb" in self.sim.modules:
