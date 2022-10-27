@@ -948,17 +948,18 @@ class NewbornOutcomes(Module):
         """
         df = self.sim.population.props
         child_id = int(child_id)
+        mother_id = df.at[child_id, 'mother_id']
 
         if 'Hiv' in self.sim.modules:
-            if not df.at[child_id, 'hv_diagnosed']:
+            if not df.at[child_id, 'hv_diagnosed'] and (df.at[child_id, 'nb_pnc_check'] == 1) and \
+             df.at[mother_id, 'hv_diagnosed']:
 
-                if df.at[child_id, 'nb_pnc_check'] == 1:
-                    for days in 0, 41:
-                        self.sim.modules['HealthSystem'].schedule_hsi_event(
-                            HSI_Hiv_TestAndRefer(person_id=child_id, module=self.sim.modules['Hiv']),
-                            topen=self.sim.date + pd.DateOffset(days=days),
-                            tclose=None,
-                            priority=0
+                for days in 0, 41:
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(
+                        HSI_Hiv_TestAndRefer(person_id=child_id, module=self.sim.modules['Hiv']),
+                        topen=self.sim.date + pd.DateOffset(days=days),
+                        tclose=None,
+                        priority=0
                         )
 
     def assessment_and_initiation_of_neonatal_resus(self, hsi_event):
