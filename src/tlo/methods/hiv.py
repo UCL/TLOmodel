@@ -410,7 +410,7 @@ class Hiv(Module):
                 name="aids_symptoms",
                 odds_ratio_health_seeking_in_adults=10.0,  # High chance of seeking care when aids_symptoms onset
                 odds_ratio_health_seeking_in_children=10.0,
-            )  # High chance of seeking care when aids_symptoms onset
+            )
         )
 
     def pre_initialise_population(self):
@@ -911,18 +911,23 @@ class Hiv(Module):
 
         # First - line ART for adults(age > "ART_age_cutoff_older_child")
         self.item_codes_for_consumables_required['First-line ART regimen: adult'] = {
-            hs.get_item_code_from_item_name("First-line ART regimen: adult"): 1,
+            hs.get_item_code_from_item_name("First-line ART regimen: adult"): 1}
+        self.item_codes_for_consumables_required['First-line ART regimen: adult: cotrimoxazole'] = {
             hs.get_item_code_from_item_name("Cotrimoxizole, 960mg pppy"): 1}
 
+        # todo change cons code for cotrim (from package to item)
+        # todo move cotrim to separate item to become optional in get_cons call
         # ART for older children aged ("ART_age_cutoff_younger_child" < age <= "ART_age_cutoff_older_child"):
         self.item_codes_for_consumables_required['First line ART regimen: older child'] = {
-            **hs.get_item_codes_from_package_name("Cotrimoxazole for children"),
-            **{hs.get_item_code_from_item_name("First line ART regimen: older child"): 1}}
+            hs.get_item_code_from_item_name("First line ART regimen: older child"): 1}
+        self.item_codes_for_consumables_required['First line ART regimen: older child: cotrimoxazole'] = {
+            hs.get_item_code_from_item_name("Sulfamethoxazole + trimethropin, tablet 400 mg + 80 mg"): 1}
 
         # ART for younger children aged (age < "ART_age_cutoff_younger_child"):
         self.item_codes_for_consumables_required['First line ART regimen: young child'] = {
-            **hs.get_item_codes_from_package_name("Cotrimoxazole for children"),
-            **{hs.get_item_code_from_item_name("First line ART regimen: young child"): 1}}
+            hs.get_item_code_from_item_name("First line ART regimen: young child"): 1}
+        self.item_codes_for_consumables_required['First line ART regimen: young child: cotrimoxazole'] = {
+            hs.get_item_code_from_item_name("Sulfamethoxazole + trimethropin, oral suspension, 240 mg, 100 ml"): 1}
 
         # 7) Define the DxTests
         # HIV Rapid Diagnostic Test:
@@ -1033,32 +1038,38 @@ class Hiv(Module):
                     tclose=None,
                 )
 
-            # if mother known HIV+, schedule virological test for infant in 6 weeks (EI
-            if mother.hv_diagnosed and \
-                df.at[child_id, "is_alive"] and (
-                self.rng.random_sample() < params["prob_anc_test_at_delivery"]):
+        # if mother known HIV+, schedule virological test for infant in 6 weeks (EI
+        if mother.hv_diagnosed and df.at[child_id, "is_alive"]:
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi_event=HSI_Hiv_TestAndRefer(
+                    person_id=child_id,
+                    module=self,
+                    referred_from='Infant_testing'),
+                priority=1,
+                topen=self.sim.date + pd.DateOffset(weeks=6),
+                tclose=None,
+            )
 
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    hsi_event=HSI_Hiv_TestAndRefer(
-                        person_id=child_id,
-                        module=self,
-                        referred_from='Infant_testing'),
-                    priority=1,
-                    topen=self.sim.date + pd.DateOffset(weeks=6),
-                    tclose=None,
-                )
+            # todo add serological hiv tests for infant
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi_event=HSI_Hiv_TestAndRefer(
+                    person_id=child_id,
+                    module=self,
+                    referred_from='Infant_testing'),
+                priority=1,
+                topen=self.sim.date + pd.DateOffset(months=9),
+                tclose=None,
+            )
 
-                # todo add serological hiv test for infant
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    hsi_event=HSI_Hiv_TestAndRefer(
-                        person_id=child_id,
-                        module=self,
-                        referred_from='Infant_testing'),
-                    priority=1,
-                    topen=self.sim.date + pd.DateOffset(months=9),
-                    tclose=None,
-                )
-
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi_event=HSI_Hiv_TestAndRefer(
+                    person_id=child_id,
+                    module=self,
+                    referred_from='Infant_testing'),
+                priority=1,
+                topen=self.sim.date + pd.DateOffset(months=18),
+                tclose=None,
+            )
 
                 # todo add infant NVP prophylaxis
 
@@ -1237,7 +1248,8 @@ class Hiv(Module):
         starts_art = 1
         if starts_art:
             self.sim.modules["HealthSystem"].schedule_hsi_event(
-                HSI_Hiv_StartOrContinueTreatment(person_id=person_id, module=self),
+                HSI_Hiv_StartOrContinueTreatment(person_id=person_id, module=self,
+                                                 facility_level_of_this_hsi="1a"),
                 topen=self.sim.date,
                 tclose=None,
                 priority=0,
@@ -1316,9 +1328,10 @@ class Hiv(Module):
         # Set that the person is no longer on ART
         df.at[person_id, "hv_art"] = "not"
 
-        # refer for another test and referral in 6 months
+        # refer for another treatment again in one month
         self.sim.modules["HealthSystem"].schedule_hsi_event(
-            HSI_Hiv_TestAndRefer(person_id=person_id, module=self),
+            HSI_Hiv_StartOrContinueTreatment(person_id=person_id, module=self,
+                                             facility_level_of_this_hsi="1a"),
             topen=self.sim.date + pd.DateOffset(months=1),
             tclose=None,
             priority=0,
@@ -1533,21 +1546,31 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
             # todo don't reduce testing rates to account for cons constraints
             testing_rate_children = test_rates.loc[
-                                        test_rates.year == current_year, "annual_testing_rate_children"
-                                    ].values[0]
+                test_rates.year == current_year, "annual_testing_rate_children"
+            ].values[0]
             testing_rate_adults = test_rates.loc[
-                                      test_rates.year == current_year, "annual_testing_rate_adults"
-                                  ].values[0]
-
+                test_rates.year == current_year, "annual_testing_rate_adults"
+            ].values[0]
 
             random_draw = rng.random_sample(size=len(df))
 
-            child_tests_idx = df.loc[
-                df.is_alive
-                & ~df.hv_diagnosed
-                & (df.age_years < 15)
-                & (random_draw < testing_rate_children)
-                ].index
+            # child_tests_idx = df.loc[
+            #     df.is_alive
+            #     & ~df.hv_diagnosed
+            #     & (df.age_years < 15)
+            #     & (random_draw < testing_rate_children)
+            #     ].index
+
+            # todo skew child testing towards those at highest risk
+            # relative probability of testing - this may skew testing rates higher or lower than moh reports
+            rr_of_test = self.module.lm["lm_spontaneous_test_12m"].predict(df[df.is_alive & (df.age_years < 15)])
+            mean_prob_test = (rr_of_test * testing_rate_children).mean()
+            scaled_prob_test = (rr_of_test * testing_rate_children) / mean_prob_test
+            overall_prob_test = scaled_prob_test * testing_rate_children
+
+            random_draw = rng.random_sample(size=len(df[df.is_alive & (df.age_years < 15)]))
+            child_tests_idx = df.loc[df.is_alive & (df.age_years < 15) & (random_draw < overall_prob_test)].index
+
 
             # adult testing trends also informed by demographic characteristics
             # relative probability of testing - this may skew testing rates higher or lower than moh reports
@@ -1948,7 +1971,8 @@ class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
         ):
             # Continue on Treatment - and schedule an HSI for a continuation appointment today
             self.sim.modules["HealthSystem"].schedule_hsi_event(
-                HSI_Hiv_StartOrContinueTreatment(person_id=person_id, module=m),
+                HSI_Hiv_StartOrContinueTreatment(person_id=person_id, module=m,
+                                                 facility_level_of_this_hsi="1a"),
                 topen=self.sim.date,
                 tclose=self.sim.date + pd.DateOffset(days=14),
                 priority=0,
@@ -2102,8 +2126,16 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                                 priority=0,
                             )
         else:
-            # Test was not possible, so do nothing:
+            # Test was not possible, set blank footprint and schedule another test
             ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({"VCTNegative": 1})
+
+            # todo add repeat appt for HIV test
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                HSI_Hiv_TestAndRefer(person_id=person_id, module=self),
+                topen=self.sim.date + pd.DateOffset(months=1),
+                tclose=None,
+                priority=0,
+            )
 
         # Return the footprint. If it should be suppressed, return a blank footprint.
         if self.suppress_footprint:
@@ -2214,19 +2246,22 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
         self.sim.population.props.at[self.target, "hv_is_on_prep"] = False
 
 
+# todo make facility level modifiable
 class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
-    def __init__(self, module, person_id):
+
+    def __init__(self, module, person_id, facility_level_of_this_hsi):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Hiv)
 
         self.TREATMENT_ID = "Hiv_Treatment"
         self.EXPECTED_APPT_FOOTPRINT = self._make_appt_footprint_according_age_and_patient_status(person_id)
-        self.ACCEPTED_FACILITY_LEVEL = '1a'
-
+        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
+        self.counter_for_drugs_not_available = 0
         self.counter_for_did_not_run = 0
 
     def apply(self, person_id, squeeze_factor):
         """This is a Health System Interaction Event - start or continue HIV treatment for 6 more months"""
+
         df = self.sim.population.props
         person = df.loc[person_id]
         art_status_at_beginning_of_hsi = person["hv_art"]
@@ -2269,10 +2304,23 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 self.sim.date + pd.DateOffset(months=6),
             )
         else:
+            # todo add logger for drugs not available
+            person_details_for_tx = {
+                'age': person['age_years'],
+                'facility_level': self.ACCEPTED_FACILITY_LEVEL,
+                'number_appts': self.counter_for_drugs_not_available,
+                'district': person['district_of_residence'],
+                'person_id': person_id,
+                'drugs_available': drugs_were_available,
+            }
+            logger.info(key='hiv_arv_NA', data=person_details_for_tx)
+
             # As drugs were not available, the person will default to being off ART (...if they were on ART at the
             # beginning of the HSI.)
             # NB. If the person was not on ART at the beginning of the HSI, then there is no need to stop them (which
             #  causes a new AIDSOnsetEvent to be scheduled.)
+            self.counter_for_drugs_not_available += 1  # The current appointment is included in the count.
+
             if art_status_at_beginning_of_hsi != "not":
                 self.module.stops_treatment(person_id)
 
@@ -2289,19 +2337,36 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 )
 
             else:
+                # todo change repeat visit to one month later (not one day)
+                # todo this allows for cons availability to change
                 # If person 'decides to' seek another treatment appointment,
-                # schedule a new HSI appointment for tomorrow.
+                # schedule a new HSI appointment for next month
                 # NB. With a probability of 1.0, this will keep occurring,
                 # and the person will never give-up coming back to
                 # pick-up medication.
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    hsi_event=HSI_Hiv_StartOrContinueTreatment(
-                        person_id=person_id, module=self.module
-                    ),
-                    topen=self.sim.date + pd.DateOffset(days=1),
-                    tclose=self.sim.date + pd.DateOffset(days=15),
-                    priority=0,
-                )
+                # todo if person has already tried unsuccessfully to get ART at level 1a 3 times
+                #  then refer to level 1b
+                if self.counter_for_drugs_not_available <= 3:
+                    # repeat attempt for ARVs at level 1a
+                    self.sim.modules["HealthSystem"].schedule_hsi_event(
+                        hsi_event=HSI_Hiv_StartOrContinueTreatment(
+                            person_id=person_id, module=self.module,
+                            facility_level_of_this_hsi="1a"
+                        ),
+                        topen=self.sim.date + pd.DateOffset(months=1),
+                        priority=0,
+                    )
+
+                else:
+                    # refer to higher facility level
+                    self.sim.modules["HealthSystem"].schedule_hsi_event(
+                        hsi_event=HSI_Hiv_StartOrContinueTreatment(
+                            person_id=person_id, module=self.module,
+                            facility_level_of_this_hsi="1b"
+                        ),
+                        topen=self.sim.date + pd.DateOffset(days=1),
+                        priority=0,
+                    )
 
         # also screen for tb
         if "Tb" in self.sim.modules:
@@ -2378,17 +2443,26 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         p = self.module.parameters
 
         if age_of_person < p["ART_age_cutoff_young_child"]:
-            # Formulation for children
+            # Formulation for young children
+            # todo add cotrim as optional
             drugs_available = self.get_consumables(
-                item_codes=self.module.item_codes_for_consumables_required['First line ART regimen: young child'])
+                item_codes=self.module.item_codes_for_consumables_required['First line ART regimen: young child'],
+                optional_item_codes=self.module.item_codes_for_consumables_required[
+                    'First line ART regimen: young child: cotrimoxazole'])
+
         elif age_of_person <= p["ART_age_cutoff_older_child"]:
-            # Formulation for children
+            # Formulation for older children
             drugs_available = self.get_consumables(
-                item_codes=self.module.item_codes_for_consumables_required['First line ART regimen: older child'])
+                item_codes=self.module.item_codes_for_consumables_required['First line ART regimen: older child'],
+                optional_item_codes=self.module.item_codes_for_consumables_required[
+                    'First line ART regimen: older child: cotrimoxazole'])
+
         else:
             # Formulation for adults
             drugs_available = self.get_consumables(
-                item_codes=self.module.item_codes_for_consumables_required['First-line ART regimen: adult'])
+                item_codes=self.module.item_codes_for_consumables_required['First-line ART regimen: adult'],
+                optional_item_codes=self.module.item_codes_for_consumables_required[
+                    'First-line ART regimen: adult: cotrimoxazole'])
 
         return drugs_available
 
@@ -2419,7 +2493,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             # schedule HSI
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Hiv_StartOrContinueTreatment(
-                    person_id=person_id, module=self.module
+                    person_id=person_id, module=self.module, facility_level_of_this_hsi="1a"
                 ),
                 topen=self.sim.date + pd.DateOffset(days=14),
                 tclose=self.sim.date + pd.DateOffset(days=21),

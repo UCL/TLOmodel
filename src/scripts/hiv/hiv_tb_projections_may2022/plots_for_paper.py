@@ -2185,12 +2185,18 @@ average_cons_availability = cons_full.groupby(["item_code", "Facility_Level"])["
 
 def get_item_codes_from_package_name(lookup_df: pd.DataFrame, package: str) -> dict:
 
-    return int(pd.unique(lookup_df.loc[lookup_df["Intervention_Pkg"] == package, "Item_Code"]))
+    return items_list.loc[
+        items_list['Intervention_Pkg'] == package, ['Item_Code']]
 
 
 def get_item_code_from_item_name(lookup_df: pd.DataFrame, item: str) -> int:
     """Helper function to provide the item_code (an int) when provided with the name of the item"""
     return int(pd.unique(lookup_df.loc[lookup_df["Items"] == item, "Item_Code"])[0])
+
+
+
+
+
 
 
 item_codes_dict = dict()
@@ -2236,9 +2242,64 @@ ax = sns.heatmap(df_heatmap, annot=True)
 # plt.tight_layout()
 plt.xlabel('Facility level')
 plt.ylabel('')
-plt.savefig(outputspath / "cons_availability.png", bbox_inches='tight')
+plt.savefig(outputspath / "TB_cons_availability.png", bbox_inches='tight')
 plt.show()
 
 
 
+
+######### HIV
+hiv_item_codes_dict = dict()
+
+# diagnostics
+hiv_item_codes_dict["blood_tube"] = get_item_code_from_item_name(items_list, "Blood collecting tube, 5 ml")
+hiv_item_codes_dict["gloves"] = get_item_code_from_item_name(items_list, "Disposables gloves, powder free, 100 pieces per box")
+hiv_item_codes_dict["HIV_test"] = get_item_code_from_item_name(items_list, "Test, HIV EIA Elisa")
+hiv_item_codes_dict["viral_load"] = get_item_code_from_item_name(items_list, "VL Test")
+hiv_item_codes_dict["circumcision"] = get_item_code_from_item_name(items_list, "male circumcision kit, consumables (10 procedures)_1_IDA")
+hiv_item_codes_dict["prep"] = get_item_code_from_item_name(items_list,
+                                                                 "Tenofovir (TDF)/Emtricitabine (FTC), tablet, 300/200 mg")
+
+# treatment
+hiv_item_codes_dict["hiv_tx_adult"] = get_item_code_from_item_name(items_list, "First-line ART regimen: adult")
+hiv_item_codes_dict["cotrim_adult"] = get_item_code_from_item_name(items_list, "Cotrimoxizole, 960mg pppy")
+hiv_item_codes_dict["hiv_tx_older_child"] = get_item_code_from_item_name(items_list, "First line ART regimen: older child")
+hiv_item_codes_dict["cotrim_older_child"] = get_item_code_from_item_name(items_list, "Sulfamethoxazole + trimethropin, tablet 400 mg + 80 mg")
+hiv_item_codes_dict["hiv_tx_young_child"] = get_item_code_from_item_name(items_list, "First line ART regimen: young child")
+hiv_item_codes_dict["cotrim_young_child"] = get_item_code_from_item_name(items_list, "Sulfamethoxazole + trimethropin, oral suspension, 240 mg, 100 ml")
+
+# select item codes from item_codes_dict
+selected_cons_availability = average_cons_availability[average_cons_availability["item_code"].isin(hiv_item_codes_dict.values())]
+# remove level 0
+selected_cons_availability = selected_cons_availability.loc[selected_cons_availability.Facility_Level != "0"]
+# remove level 4
+selected_cons_availability = selected_cons_availability.loc[selected_cons_availability.Facility_Level != "4"]
+
+# replace item code with item name
+selected_cons_availability.loc[selected_cons_availability.item_code == 40, "item_code"] = "Blood tube"
+selected_cons_availability.loc[selected_cons_availability.item_code == 135, "item_code"] = "Gloves"
+selected_cons_availability.loc[selected_cons_availability.item_code == 196, "item_code"] = "HIV test"
+selected_cons_availability.loc[selected_cons_availability.item_code == 190, "item_code"] = "Viral load"
+selected_cons_availability.loc[selected_cons_availability.item_code == 197, "item_code"] = "Circumcision"
+selected_cons_availability.loc[selected_cons_availability.item_code == 1191, "item_code"] = "PrEP"
+selected_cons_availability.loc[selected_cons_availability.item_code == 2671, "item_code"] = "HIV tx adult"
+selected_cons_availability.loc[selected_cons_availability.item_code == 204, "item_code"] = "Cotrim adult"
+selected_cons_availability.loc[selected_cons_availability.item_code == 2672, "item_code"] = "HIV tx older child"
+selected_cons_availability.loc[selected_cons_availability.item_code == 162, "item_code"] = "Cotrim older child"
+selected_cons_availability.loc[selected_cons_availability.item_code == 2673, "item_code"] = "HIV tx young child"
+selected_cons_availability.loc[selected_cons_availability.item_code == 202, "item_code"] = "Cotrim young child"
+
+
+df_heatmap = selected_cons_availability.pivot_table(
+    values='available_prop',
+    index='item_code',
+    columns='Facility_Level',
+    aggfunc=np.mean)
+
+ax = sns.heatmap(df_heatmap, annot=True)
+plt.tight_layout()
+plt.xlabel('Facility level')
+plt.ylabel('')
+plt.savefig(outputspath / "HIV_cons_availability.png", bbox_inches='tight')
+plt.show()
 

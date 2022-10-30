@@ -1037,6 +1037,32 @@ class Tb(Module):
                 ]
         )
 
+        # todo add in mdr cases on incorrect treatment - will continue to transmit infection
+        if strain == "mdr":
+            mdr_smear_pos_on_wrong_tx = len(
+            df.loc[
+                df.is_alive
+                & (df.tb_inf == "active")
+                & (df.tb_strain == strain)
+                & df.tb_on_treatment
+                & (df.tb_treatment_regimen != "tb_mdrtx")
+                & df.tb_smear
+                ]
+            )
+            n_smear_pos = n_smear_pos + mdr_smear_pos_on_wrong_tx
+
+            mdr_smear_neg_on_wrong_tx = len(
+            df.loc[
+                df.is_alive
+                & (df.tb_inf == "active")
+                & (df.tb_strain == strain)
+                & df.tb_on_treatment
+                & (df.tb_treatment_regimen != "tb_mdrtx")
+                & ~df.tb_smear
+                ]
+            )
+            n_smear_neg = n_smear_neg + mdr_smear_neg_on_wrong_tx
+
         if n_smear_pos > 0:
 
             # identify susceptible people, not currently with active tb infection
@@ -1071,10 +1097,55 @@ class Tb(Module):
 
             df.loc[idx_new_infection, "tb_strain"] = strain
 
-            print("new tb cases", idx_new_infection)
-
             # schedule onset of active tb, time now up to 1 year
             for person_id in idx_new_infection:
+                date_progression = now + pd.DateOffset(
+                    days=rng.randint(0, 365)
+                )
+
+                # set date of active tb - properties will be updated at TbActiveEvent every month
+                df.at[person_id, "tb_scheduled_date_active"] = date_progression
+
+    def import_tb_cases(self, population, strain):
+        """
+        select individuals to be infected by importation of infection - strain-specific
+        risk of infection NOT weighted by individual risk factors
+        assign scheduled date of active tb onset
+        update properties as needed
+        symptoms and smear status are assigned in the TbActiveEvent
+        """
+        df = population.props
+        rng = self.rng
+        now = self.sim.date
+        p = self.parameters
+
+        # apply risk to all, some will already be infected/scheduled for infection
+        # in that case, second infection will not do anything
+        susc_idx = df.loc[
+            df.is_alive
+            ].index
+
+        #  probability of infection
+        p_infection = 0.001
+
+        # New infections:
+        will_be_infected = (
+            self.rng.random_sample(len(p_infection)) < p_infection
+        )
+        idx_new_infection = will_be_infected[will_be_infected].index
+
+        df.loc[idx_new_infection, "tb_strain"] = strain
+
+        # schedule onset of active tb, time now up to 1 year
+        # if already active -> do nothing
+        # if already scheduled active -> do nothing
+        for person_id in idx_new_infection:
+            if df.at[person_id, "tb_inf"] == "active":
+                return
+
+            # if person doesn't already have scheduled date active...
+            if df.at[person_id, "tb_scheduled_date_active"] == pd.NaT:
+
                 date_progression = now + pd.DateOffset(
                     days=rng.randint(0, 365)
                 )
@@ -1516,16 +1587,22 @@ class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
 
-        # ds-tb cases
-        # the outcome of this will be an updated df with new tb cases
+        # transmission ds-tb
         self.module.assign_active_tb(population, strain="ds")
 
         # transmission mdr-tb, around 1% of total tb incidence
         self.module.assign_active_tb(population, strain="mdr")
 
+        # todo importation of new ds cases - independent of current prevalence
+        # self.module.import_tb_cases(population, strain="ds")
+
+        # todo importation of new mdr cases - independent of current prevalence
+        # self.module.import_tb_cases(population, strain="mdr")
+
 
 class TbTreatmentAndRelapseEvents(RegularEvent, PopulationScopeEventMixin):
-    """ This event runs each month and calls two functions:
+    """ This event runs each month and calls three functions:
+    * scheduling TB screening for the general population
     * ending treatment if end of treatment regimen has been reached
     * determining who will relapse after a primary infection
     """
@@ -1651,6 +1728,9 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
                                               active_testing_rates.year == year),
                                           "treatment_coverage"].values[
                                           0] / 100
+        # todo multiply testing rate by average treatment availability to match treatment coverage
+        current_active_testing_rate = current_active_testing_rate * (1/0.6)
+
         # current_active_testing_rate = active_testing_rates.loc[
         #                                   (
         #                                       active_testing_rates.year == year),

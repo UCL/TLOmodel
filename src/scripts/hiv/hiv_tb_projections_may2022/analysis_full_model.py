@@ -23,8 +23,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 2)
-popsize = 5000
+end_date = Date(2016, 1, 1)
+popsize = 10000
 
 scenario = 0
 
@@ -52,17 +52,28 @@ sim.register(*fullmodel(
     symptommanager_spurious_symptoms=True,
     healthsystem_disable=False,
     healthsystem_mode_appt_constraints=0,  # no constraints
-    healthsystem_cons_availability="all",  # all cons always available
+    healthsystem_cons_availability="default",  # all cons always available
     healthsystem_beds_availability="all",  # all beds always available
-    healthsystem_ignore_priority=True,  # ignore priority in HSI scheduling
+    healthsystem_ignore_priority=False,  # ignore priority in HSI scheduling
     healthsystem_use_funded_or_actual_staffing="funded_plus",  # daily capabilities of staff
-    healthsystem_capabilities_coefficient=None,  # if 'None' set to ratio of init 2010 pop
+    healthsystem_capabilities_coefficient=1.0,  # if 'None' set to ratio of init 2010 pop
     healthsystem_record_hsi_event_details=False
 ))
 
 # set the scenario
+sim.modules["Tb"].parameters["beta"] = 1.8
 sim.modules["Tb"].parameters["scenario"] = scenario
-# sim.modules["Tb"].parameters["scenario_start_date"] = Date(2011, 1, 1)
+sim.modules["Tb"].parameters["scenario_start_date"] = Date(2023, 1, 1)
+sim.modules["Tb"].parameters["scenario_SI"] = "a"
+
+# to cluster tests in positive people
+sim.modules["Hiv"].parameters["rr_test_hiv_positive"] = 10  # default 1.5
+# to account for people starting-> defaulting, or not getting cons
+# this not used now if perfect referral testing->treatment
+sim.modules["Hiv"].parameters["treatment_initiation_adjustment"] = 3  # default 1.5
+# assume all defaulting is due to cons availability
+sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_6_months"] = 1.0
+sim.modules["Hiv"].parameters["probability_of_seeking_further_art_appointment_if_drug_not_available"] = 1.0
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
@@ -71,14 +82,10 @@ sim.simulate(end_date=end_date)
 # parse the results
 output = parse_log_file(sim.log_filepath)
 
-# # save the results, argument 'wb' means write using binary mode. use 'rb' for reading file
-# with open(outputpath / "default_run.pickle", "wb") as f:
-#     # Pickle the 'data' dictionary using the highest protocol available.
-#     pickle.dump(dict(output), f, pickle.HIGHEST_PROTOCOL)
-#
-# with open(outputpath / "default_run.pickle", "rb") as f:
-#     output = pickle.load(f)
-tmp=output["tlo.methods.tb"]
+# save the results, argument 'wb' means write using binary mode. use 'rb' for reading file
+with open(outputpath / "default_run.pickle", "wb") as f:
+    # Pickle the 'data' dictionary using the highest protocol available.
+    pickle.dump(dict(output), f, pickle.HIGHEST_PROTOCOL)
 
-hs = output["tlo.methods.healthsystem.summary"]["Consumables"]
-hsi = output["tlo.methods.healthsystem.summary"]["HSI_Event"]
+with open(outputpath / "default_run.pickle", "rb") as f:
+    output = pickle.load(f)
