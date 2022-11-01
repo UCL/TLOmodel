@@ -577,8 +577,6 @@ class Contraception(Module):
         states_to_maintain_on = sorted(self.states_that_may_require_HSI_to_maintain_on)
 
         for _woman_id, _old, _new in zip(ids, old, new):
-            # if _new == 'female_sterilization':
-            #     assert df.loc[_woman_id, 'age_years'] >= 30
             # Does this change require an HSI?
             is_a_switch = _old != _new
             reqs_appt = _new in self.states_that_may_require_HSI_to_switch_to if is_a_switch \
@@ -783,6 +781,14 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         pp = self.module.processed_params
         rng = self.module.rng
 
+        pp_switch_to_30plus_matrix = pp['p_switching_to']
+        # Prevent women below 30 years having 'female_sterilization'
+        pp_switch_to_below30_matrix = pp['p_switching_to'].copy()
+        pp_switch_to_below30_matrix.loc['female_sterilization', :] = 0.0
+        for c in pp_switch_to_below30_matrix.columns:
+            pp_switch_to_below30_matrix.loc[:, c] =\
+                pp_switch_to_below30_matrix.loc[:, c] / pp_switch_to_below30_matrix.loc[:, c].sum()
+
         # Get the probability of discontinuation for each individual (depends on age and current method)
         prob = df.loc[individuals_using, ['age_years', 'co_contraception']].apply(
             lambda row: pp['p_stop_per_month'][self.sim.date.year].at[row.age_years, row.co_contraception],
@@ -811,16 +817,19 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         # Randomly select who will switch contraceptive and who will remain on their current contraceptive
         will_switch = switch_prob > rng.random_sample(size=len(individuals_eligible_for_continue_or_switch))
         switch_idx = individuals_eligible_for_continue_or_switch[will_switch]
+        switch_idx_below30 = switch_idx[df.loc[switch_idx, 'age_years'] < 30]
+        switch_idx_30plus = switch_idx.drop(switch_idx_below30)
         continue_idx = individuals_eligible_for_continue_or_switch[~will_switch]
 
         # For that do switch, select the new contraceptive using switching matrix
-        new_co = transition_states(df.loc[switch_idx, 'co_contraception'], pp['p_switching_to'], rng)
-
-        # ... but don't allow female sterilization to any woman below 30 (instead, they will continue on current method)
-        to_not_switch_to_sterilization = \
-            new_co.index[(new_co == 'female_sterilization') & (df.loc[new_co.index, 'age_years'] < 30)]
-        new_co = new_co.drop(to_not_switch_to_sterilization)
-        continue_idx = continue_idx.append([to_not_switch_to_sterilization])
+        new_co_30plus = transition_states(
+            df.loc[switch_idx_30plus, 'co_contraception'], pp_switch_to_30plus_matrix, rng
+        )
+        new_co_below30 = transition_states(
+            df.loc[switch_idx_below30, 'co_contraception'], pp_switch_to_below30_matrix, rng
+        )
+        new_co = [new_co_30plus, new_co_below30]
+        new_co = pd.concat(new_co)
 
         # Do the contraceptive change for those switching
         if len(new_co) > 0:
