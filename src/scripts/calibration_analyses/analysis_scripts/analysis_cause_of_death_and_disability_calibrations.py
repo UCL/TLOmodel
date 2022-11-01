@@ -229,11 +229,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     ax[row].set_title(f"{cause}: {sexname(sex)}, {period}")
                     ax[row].legend()
 
+                fig.patch.set_edgecolor(get_color_cause_of_death_label(cause))
+                fig.patch.set_linewidth(8)
                 fig.tight_layout()
-                plt.savefig(make_graph_file_name(
+                fig.savefig(make_graph_file_name(
                     f"{what}_{period}_AgeAndSexSpecificLineGraph_{reformat_cause(cause)}")
                 )
-                plt.show()
+                fig.show()
                 plt.close(fig)
 
             except KeyError:
