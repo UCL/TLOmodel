@@ -1575,6 +1575,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         print(self.sim.modules["Hiv"].parameters["hiv_testing_rates"]["annual_testing_rate_children"])
 
 
+# todo make this monthly
 class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
     """The Tb Regular Poll Event for assigning active infections
     * selects people for active infection and schedules onset of active tb
