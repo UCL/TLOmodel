@@ -631,207 +631,216 @@ def colors_in_matplotlib() -> tuple:
     )
 
 
-def _define_coarse_appts() -> pd.DataFrame:
-    """Define which appointment types fall into which 'coarse appointment' category, the order of the categories and the
-    colour of the category.
-    Names of colors are selected with reference to: https://i.stack.imgur.com/lFZum.png"""
-    return pd.DataFrame.from_records(
-        [
-            {
-                'category': 'Outpatient',
-                'appt_types': ['Under5OPD', 'Over5OPD'],
-                'color': 'magenta'
-            },
-            {
-                'category': 'Con w/ DCSA',
-                'appt_types': ['ConWithDCSA'],
-                'color': 'crimson'},
-            {
-                'category': 'A & E',
-                'appt_types': ['AccidentsandEmerg'],
-                'color': 'forestgreen'},
-            {
-                'category': 'Inpatient',
-                'appt_types': ['InpatientDays', 'IPAdmission'],
-                'color': 'mediumorchid'},
-            {
-                'category': 'RMNCH',
-                'appt_types': ['AntenatalFirst', 'ANCSubsequent', 'NormalDelivery', 'CompDelivery', 'Csection', 'EPI',
-                               'FamPlan', 'U5Malnutr'],
-                'color': 'gold'},
-            {
-                'category': 'HIV/AIDS',
-                'appt_types': ['VCTNegative', 'VCTPositive', 'MaleCirc', 'NewAdult', 'EstMedCom', 'EstNonCom', 'PMTCT',
-                               'Peds'],
-                'color': 'darkturquoise'},
-            {
-                'category': 'Tb',
-                'appt_types': ['TBNew', 'TBFollowUp'],
-                'color': 'y'},
-            {
-                'category': 'Dental',
-                'appt_types': ['DentAccidEmerg', 'DentSurg', 'DentalU5', 'DentalO5'],
-                'color': 'rosybrown'},
-            {
-                'category': 'Mental Health',
-                'appt_types': ['MentOPD', 'MentClinic'],
-                'color': 'lightsalmon'},
-            {
-                'category': 'Surgery / Radiotherapy',
-                'appt_types': ['MajorSurg', 'MinorSurg', 'Radiotherapy'],
-                'color': 'orange'},
-            {
-                'category': 'STI',
-                'appt_types': ['STI'],
-                'color': 'slateblue'},
-            {
-                'category': 'Lab / Diagnostics',
-                'appt_types': ['LabHaem', 'LabPOC', 'LabParasit', 'LabBiochem', 'LabMicrobio', 'LabMolec', 'LabTBMicro',
-                               'LabSero', 'LabCyto', 'LabTrans', 'Ultrasound', 'Mammography', 'MRI', 'Tomography',
-                               'DiagRadio'],
-                'color': 'dodgerblue'}
-        ]
-    ).set_index('category')
+_APPT_TYPE_TO_COARSE_APPT_TYPE_MAP = {
+    'Under5OPD': 'Outpatient',
+    'Over5OPD': 'Outpatient',
+    'ConWithDCSA': 'Con w/ DCSA',
+    'AccidentsandEmerg': 'A & E',
+    'InpatientDays': 'Inpatient',
+    'IPAdmission': 'Inpatient',
+    'AntenatalFirst': 'RMNCH',
+    'ANCSubsequent': 'RMNCH',
+    'NormalDelivery': 'RMNCH',
+    'CompDelivery': 'RMNCH',
+    'Csection': 'RMNCH',
+    'EPI': 'RMNCH',
+    'FamPlan': 'RMNCH',
+    'U5Malnutr': 'RMNCH',
+    'VCTNegative': 'HIV/AIDS',
+    'VCTPositive': 'HIV/AIDS',
+    'MaleCirc': 'HIV/AIDS',
+    'NewAdult': 'HIV/AIDS',
+    'EstMedCom': 'HIV/AIDS',
+    'EstNonCom': 'HIV/AIDS',
+    'PMTCT': 'HIV/AIDS',
+    'Peds': 'HIV/AIDS',
+    'TBNew': 'Tb',
+    'TBFollowUp': 'Tb',
+    'DentAccidEmerg': 'Dental',
+    'DentSurg': 'Dental',
+    'DentalU5': 'Dental',
+    'DentalO5': 'Dental',
+    'MentOPD': 'Mental Health',
+    'MentClinic': 'Mental Health',
+    'MajorSurg': 'Surgery / Radiotherapy',
+    'MinorSurg': 'Surgery / Radiotherapy',
+    'Radiotherapy': 'Surgery / Radiotherapy',
+    'STI': 'STI',
+    'LabHaem': 'Lab / Diagnostics',
+    'LabPOC': 'Lab / Diagnostics',
+    'LabParasit': 'Lab / Diagnostics',
+    'LabBiochem': 'Lab / Diagnostics',
+    'LabMicrobio': 'Lab / Diagnostics',
+    'LabMolec': 'Lab / Diagnostics',
+    'LabTBMicro': 'Lab / Diagnostics',
+    'LabSero': 'Lab / Diagnostics',
+    'LabCyto': 'Lab / Diagnostics',
+    'LabTrans': 'Lab / Diagnostics',
+    'Ultrasound': 'Lab / Diagnostics',
+    'Mammography': 'Lab / Diagnostics',
+    'MRI': 'Lab / Diagnostics',
+    'Tomography': 'Lab / Diagnostics',
+    'DiagRadio': 'Lab / Diagnostics'
+}
+
+
+_COARSE_APPT_TYPE_TO_COLOR_MAP = {
+    'Outpatient': 'magenta',
+    'Con w/ DCSA': 'crimson',
+    'A & E': 'forestgreen',
+    'Inpatient': 'mediumorchid',
+    'RMNCH': 'gold',
+    'HIV/AIDS': 'darkturquoise',
+    'Tb': 'y',
+    'Dental': 'rosybrown',
+    'Mental Health': 'lightsalmon',
+    'Surgery / Radiotherapy': 'orange',
+    'STI': 'slateblue',
+    'Lab / Diagnostics': 'dodgerblue'
+}
 
 
 def get_coarse_appt_type(appt_type: str) -> str:
-    """Return the `coarser` categorization of appt_types for a given appt_type. """
-    for coarse_appt_types, row in _define_coarse_appts().iterrows():
-        if appt_type in row['appt_types']:
-            return coarse_appt_types
+    """Return the `coarser` categorization of appt_types for a given appt_type."""
+    return _APPT_TYPE_TO_COARSE_APPT_TYPE_MAP.get(appt_type, None)
 
 
 def order_of_coarse_appt(_coarse_appt: Union[str, pd.Index]) -> Union[int, pd.Index]:
     """Define a standard order for the coarse appointment types."""
-    order = _define_coarse_appts().index
+    ordered_coarse_appts = list(_COARSE_APPT_TYPE_TO_COLOR_MAP.values())
     if isinstance(_coarse_appt, str):
-        return tuple(order).index(_coarse_appt)
+        return ordered_coarse_appts.index(_coarse_appt)
     else:
-        return order[order.isin(_coarse_appt)]
+        return pd.Index(ordered_coarse_appts.index(c) for c in _coarse_appt)
 
 
 def get_color_coarse_appt(coarse_appt_type: str) -> str:
-    """Return the colour (as matplotlib string) assigned to this appointment type. Returns `np.nan` if appointment-type
-    is not recognised.
-    Names of colors are selected with reference to: https://i.stack.imgur.com/lFZum.png"""
-    colors = _define_coarse_appts().color
-    if coarse_appt_type in colors.index:
-        return colors.loc[coarse_appt_type]
-    else:
-        return np.nan
+    """Return the colour (as matplotlib string) assigned to this appointment type. 
+
+    Returns `np.nan` if appointment-type is not recognised.
+
+    Names of colors are selected with reference to: https://i.stack.imgur.com/lFZum.png
+    """
+    return _COARSE_APPT_TYPE_TO_COLOR_MAP.get(coarse_appt_type, np.nan)
 
 
-def _define_short_treatment_ids() -> pd.Series:
-    """Define the order of the short treatment_ids and the color for each.
-    Names of colors are selected with reference to: https://matplotlib.org/stable/gallery/color/named_colors.html"""
-    return pd.Series({
-        'FirstAttendance*': 'darkgrey',
-        'Inpatient*': 'silver',
+_SHORT_TREATMENT_ID_TO_COLOR_MAP = {
+    'FirstAttendance*': 'darkgrey',
+    'Inpatient*': 'silver',
 
-        'Contraception*': 'darkseagreen',
-        'AntenatalCare*': 'green',
-        'DeliveryCare*': 'limegreen',
-        'PostnatalCare*': 'springgreen',
+    'Contraception*': 'darkseagreen',
+    'AntenatalCare*': 'green',
+    'DeliveryCare*': 'limegreen',
+    'PostnatalCare*': 'springgreen',
 
-        'Alri*': 'darkorange',
-        'Diarrhoea*': 'tan',
-        'Undernutrition*': 'gold',
-        'Epi*': 'darkgoldenrod',
+    'Alri*': 'darkorange',
+    'Diarrhoea*': 'tan',
+    'Undernutrition*': 'gold',
+    'Epi*': 'darkgoldenrod',
 
-        'Hiv*': 'deepskyblue',
-        'Malaria*': 'lightsteelblue',
-        'Measles*': 'cornflowerblue',
-        'Tb*': 'mediumslateblue',
-        'Schisto*': 'skyblue',
+    'Hiv*': 'deepskyblue',
+    'Malaria*': 'lightsteelblue',
+    'Measles*': 'cornflowerblue',
+    'Tb*': 'mediumslateblue',
+    'Schisto*': 'skyblue',
 
-        'CardioMetabolicDisorders*': 'brown',
+    'CardioMetabolicDisorders*': 'brown',
 
-        'BladderCancer*': 'orchid',
-        'BreastCancer*': 'mediumvioletred',
-        'OesophagealCancer*': 'deeppink',
-        'ProstateCancer*': 'hotpink',
-        'OtherAdultCancer*': 'palevioletred',
+    'BladderCancer*': 'orchid',
+    'BreastCancer*': 'mediumvioletred',
+    'OesophagealCancer*': 'deeppink',
+    'ProstateCancer*': 'hotpink',
+    'OtherAdultCancer*': 'palevioletred',
 
-        'Depression*': 'indianred',
-        'Epilepsy*': 'red',
+    'Depression*': 'indianred',
+    'Epilepsy*': 'red',
 
-        'Rti*': 'lightsalmon',
-    })
+    'Rti*': 'lightsalmon',
+}
 
 
-def order_of_short_treatment_ids(_short_treatment_id: Union[str, pd.Index]) -> Union[int, pd.Index]:
+def _standardize_short_treatment_id(short_treatment_id):
+    return short_treatment_id.replace('_*', '*').rstrip('*') + '*'
+
+
+def order_of_short_treatment_ids(
+    short_treatment_id: Union[str, pd.Index]
+) -> Union[int, pd.Index]:
     """Define a standard order for short treatment_ids."""
-    order = _define_short_treatment_ids().index
-    if isinstance(_short_treatment_id, str):
-        return tuple(order).index(_short_treatment_id.replace('_*', '*'))
+    ordered_short_treatment_ids = list(_SHORT_TREATMENT_ID_TO_COLOR_MAP.values())
+    if isinstance(short_treatment_id, str):
+        return ordered_short_treatment_ids.index(
+            _standardize_short_treatment_id(short_treatment_id)
+        )
     else:
-        return order[order.isin(_short_treatment_id)]
+        return pd.Index(
+            ordered_short_treatment_ids.index(_standardize_short_treatment_id(i))
+            for i in short_treatment_id
+        )
 
 
 def get_color_short_treatment_id(short_treatment_id: str) -> str:
-    """Return the colour (as matplotlib string) assigned to this shorted TREATMENT_ID. Returns `np.nan` if treatment_id
-    is not recognised."""
-    colors = _define_short_treatment_ids()
-    _short_treatment_ids_with_trailing_asterix = short_treatment_id.replace('_*', '*').rstrip('*') + '*'
-    if _short_treatment_ids_with_trailing_asterix in colors.index:
-        return colors.loc[_short_treatment_ids_with_trailing_asterix]
-    else:
-        return np.nan
+    """Return the colour (as matplotlib string) assigned to this shorted TREATMENT_ID.
+
+    Returns `np.nan` if treatment_id is not recognised.
+    """
+    return _SHORT_TREATMENT_ID_TO_COLOR_MAP.get(
+        _standardize_short_treatment_id(short_treatment_id), np.nan
+    )
 
 
-def _define_cause_of_death_labels() -> pd.Series:
-    """Define the order of the cause_of_death_labels and the color for each.
-    Names of colors are selected with reference to: https://matplotlib.org/stable/gallery/color/named_colors.html"""
-    return pd.Series({
-        'Maternal Disorders': 'green',
-        'Neonatal Disorders': 'springgreen',
-        'Congenital birth defects': 'mediumaquamarine',
+_CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP = {
+    'Maternal Disorders': 'green',
+    'Neonatal Disorders': 'springgreen',
+    'Congenital birth defects': 'mediumaquamarine',
 
-        'Lower respiratory infections': 'darkorange',
-        'Childhood Diarrhoea': 'tan',
+    'Lower respiratory infections': 'darkorange',
+    'Childhood Diarrhoea': 'tan',
 
-        'AIDS': 'deepskyblue',
-        'Malaria': 'lightsteelblue',
-        'Measles': 'cornflowerblue',
-        'non_AIDS_TB': 'mediumslateblue',
+    'AIDS': 'deepskyblue',
+    'Malaria': 'lightsteelblue',
+    'Measles': 'cornflowerblue',
+    'non_AIDS_TB': 'mediumslateblue',
 
-        'Heart Disease': 'sienna',
-        'Kidney Disease': 'chocolate',
-        'Diabetes': 'peru',
-        'Stroke': 'burlywood',
+    'Heart Disease': 'sienna',
+    'Kidney Disease': 'chocolate',
+    'Diabetes': 'peru',
+    'Stroke': 'burlywood',
 
-        'Cancer (Bladder)': 'deeppink',
-        'Cancer (Breast)': 'darkmagenta',
-        'Cancer (Oesophagus)': 'mediumvioletred',
-        'Cancer (Other)': 'crimson',
-        'Cancer (Prostate)': 'hotpink',
+    'Cancer (Bladder)': 'deeppink',
+    'Cancer (Breast)': 'darkmagenta',
+    'Cancer (Oesophagus)': 'mediumvioletred',
+    'Cancer (Other)': 'crimson',
+    'Cancer (Prostate)': 'hotpink',
 
-        'Depression / Self-harm': 'goldenrod',
-        'Epilepsy': 'gold',
+    'Depression / Self-harm': 'goldenrod',
+    'Epilepsy': 'gold',
 
-        'Transport Injuries': 'lightsalmon',
+    'Transport Injuries': 'lightsalmon',
 
-        'Other': 'dimgrey',
-    })
+    'Other': 'dimgrey',
+}
 
 
-def order_of_cause_of_death_label(_cause_of_death_label: Union[str, pd.Index]) -> Union[int, pd.Index]:
+def order_of_cause_of_death_label(
+    cause_of_death_label: Union[str, pd.Index]
+) -> Union[int, pd.Index]:
     """Define a standard order for Cause-of-Death labels."""
-    order = _define_cause_of_death_labels().index
-    if isinstance(_cause_of_death_label, str):
-        return tuple(order).index(_cause_of_death_label)
+    ordered_cause_of_death_labels = list(_CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP.values())
+    if isinstance(cause_of_death_label, str):
+        return ordered_cause_of_death_labels.index(cause_of_death_label)
     else:
-        return pd.Index(sorted(_cause_of_death_label, key=order_of_cause_of_death_label))
+        return pd.Index(
+            ordered_cause_of_death_labels.index(c) for c in cause_of_death_label
+        )
 
 
 def get_color_cause_of_death_label(cause_of_death_label: str) -> str:
-    """Return the colour (as matplotlib string) assigned to this shorted Cause-of-Death Label. Returns `np.nan` if
-    label is not recognised."""
-    colors = _define_cause_of_death_labels()
-    if cause_of_death_label in colors.index:
-        return colors.loc[cause_of_death_label]
-    else:
-        return np.nan
+    """Return the colour (as matplotlib string) assigned to this Cause-of-Death Label.
+
+    Returns `np.nan` if label is not recognised.
+    """
+    return _CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP.get(cause_of_death_label, np.nan)
 
 
 def squarify_neat(sizes: np.array, label: np.array, colormap: Callable, numlabels=5, **kwargs):
