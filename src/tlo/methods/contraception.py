@@ -82,6 +82,8 @@ class Contraception(Module):
             Types.DATA_FRAME, 'Data table from official source (WPP) for age-specific fertility rates and calendar '
                               'period'),
 
+        'pop_2010': Parameter(Types.DATA_FRAME, 'Population in 2010'),
+
         'scaling_factor_on_monthly_risk_of_pregnancy': Parameter(
             Types.LIST, "Scaling factor (by age-group: 15-19, 20-24, ..., 45-49) on the monthly risk of pregnancy and "
                         "contraceptive failure rate. This value is found through calibration so that, at the beginning "
@@ -182,6 +184,17 @@ class Contraception(Module):
         # Import the Age-specific fertility rate data from WPP
         self.parameters['age_specific_fertility_rates'] = \
             pd.read_csv(Path(self.resourcefilepath) / 'demography' / 'ResourceFile_ASFR_WPP.csv')
+
+        # Import 2010 pop and count numbs of women 15-49 & 30-49
+        self.parameters['pop_2010'] = \
+            pd.read_csv(Path(self.resourcefilepath) / 'demography' / 'ResourceFile_Population_2010.csv')
+
+        pop_2010 = self.parameters['pop_2010'].copy()
+        female1549_in_2010 = \
+            pop_2010.loc[(pop_2010.Sex == 'F') & (pop_2010.Age >= 15) & (pop_2010.Age < 50),
+                         ['Age', 'Count']].groupby('Age').sum()
+        self.parameters['n_female1549_in_2010'] = female1549_in_2010.sum()
+        self.parameters['n_female3049_in_2010'] = female1549_in_2010.loc[female1549_in_2010.index >= 30].sum()
 
     def pre_initialise_population(self):
         """Process parameters before initialising population and simulation"""
@@ -360,12 +373,32 @@ class Contraception(Module):
             # Columns = "current method"; Row = "new method"
             switching_matrix = self.parameters['Prob_Switch_From_And_To'].set_index('switchfrom').transpose()
 
-            assert set(switching_matrix.columns) == (
-                self.all_contraception_states - {"not_using", "female_sterilization"})
-            assert set(switching_matrix.index) == (self.all_contraception_states - {"not_using"})
-            assert np.isclose(1.0, switching_matrix.sum(axis=0)).all()
+            # Prevent women below 30 years having 'female_sterilization'
+            switching_matrix_below30 = switching_matrix.copy()
+            switching_matrix_below30.loc['female_sterilization', :] = 0.0
+            switching_matrix_below30 = switching_matrix_below30.apply(lambda col: col / col.sum())
 
-            return p_switch_from, switching_matrix
+            assert set(switching_matrix_below30.columns) == (
+                self.all_contraception_states - {"not_using", "female_sterilization"})
+            assert set(switching_matrix_below30.index) == (self.all_contraception_states - {"not_using"})
+            assert np.isclose(1.0, switching_matrix_below30.sum(axis=0)).all()
+
+            # Increase prob of 'female_sterilization' in older women accordingly
+            new_fs_probs_30plus = switching_matrix.loc['female_sterilization', :] /\
+                                  float(
+                                      self.parameters['n_female3049_in_2010'] / self.parameters['n_female1549_in_2010']
+                                  )
+            switching_matrix_except_fs = switching_matrix.loc[switching_matrix.index != 'female_sterilization']
+            switching_matrix_30plus = switching_matrix_except_fs.apply(lambda col: col / col.sum())
+            switching_matrix_30plus = switching_matrix_30plus * (1 - new_fs_probs_30plus)
+            switching_matrix_30plus = switching_matrix_30plus.append(new_fs_probs_30plus)
+
+            assert set(switching_matrix_30plus.columns) == (
+                self.all_contraception_states - {"not_using", "female_sterilization"})
+            assert set(switching_matrix_30plus.index) == (self.all_contraception_states - {"not_using"})
+            assert np.isclose(1.0, switching_matrix_30plus.sum(axis=0)).all()
+
+            return p_switch_from, switching_matrix_below30, switching_matrix_30plus
 
         def contraception_stop():
             """Get the probability per month of a woman stopping use of contraceptive method."""
@@ -437,12 +470,30 @@ class Contraception(Module):
                 probs = not_using.append(probs)
 
             # Scale so that the probability of all outcomes sum to 1.0
-            p_start_after_birth = probs / probs.sum()
+            probs = probs / probs.sum()
 
-            assert set(p_start_after_birth.index) == self.all_contraception_states
-            assert np.isclose(1.0, p_start_after_birth.sum())
+            # assert set(p_start_after_birth.index) == self.all_contraception_states
+            # assert np.isclose(1.0, p_start_after_birth.sum())
 
-            return p_start_after_birth
+            # Prevent women below 30 years having 'female_sterilization'
+            probs_below30 = probs.copy()
+            probs_below30['female_sterilization'] = 0.0
+            p_start_after_birth_below30 = probs_below30 / probs_below30.sum()
+
+            assert set(p_start_after_birth_below30.index) == self.all_contraception_states
+            assert np.isclose(1.0, p_start_after_birth_below30.sum())
+
+            # Increase prob of 'female_sterilization' in older women accordingly
+            probs_30plus = probs.copy()
+            probs_30plus['female_sterilization'] =\
+                probs.loc['female_sterilization'] /\
+                (self.parameters['n_female3049_in_2010'] / self.parameters['n_female1549_in_2010'])
+            p_start_after_birth_30plus = probs_30plus / probs_30plus.sum()
+
+            assert set(p_start_after_birth_30plus.index) == self.all_contraception_states
+            assert np.isclose(1.0, p_start_after_birth_30plus.sum())
+
+            return p_start_after_birth_below30, p_start_after_birth_30plus
 
         def scaling_factor_on_monthly_risk_of_pregnancy():
             """A scaling factor on the monthly risk of pregnancy, chosen to give the correct number of live-births
@@ -514,7 +565,9 @@ class Contraception(Module):
         # parameters to be processed only in the beginning
         if self.sim.date < self.interventions_start_date:
             processed_params['initial_method_use'] = initial_method_use()
-            processed_params['p_switch_from_per_month'], processed_params['p_switching_to'] = contraception_switch()
+            processed_params['p_switch_from_per_month'],\
+                processed_params['p_switching_to_below30'], processed_params['p_switching_to_30plus'] =\
+                contraception_switch()
             processed_params['p_stop_per_month'] = contraception_stop()
 
             processed_params['p_pregnancy_no_contraception_per_month'] = pregnancy_no_contraception()
@@ -522,7 +575,8 @@ class Contraception(Module):
 
         # parameters to be processed in the beginning and when the interventions are implemented
         processed_params['p_start_per_month'] = contraception_initiation()
-        processed_params['p_start_after_birth'] = contraception_initiation_after_birth()
+        processed_params['p_start_after_birth_below30'], processed_params['p_start_after_birth_30plus'] =\
+            contraception_initiation_after_birth()
 
         return processed_params
 
@@ -530,17 +584,17 @@ class Contraception(Module):
         """Initiation of mother's contraception after birth."""
 
         # Allocate the woman to a contraceptive status
-        probs = self.processed_params['p_start_after_birth']
-        # Prevent women below 30 years having 'female_sterilization'
+        probs_below30 = self.processed_params['p_start_after_birth_below30']
+        probs_30plus = self.processed_params['p_start_after_birth_30plus']
+
         if mother_age < 30:
-            probs_below30 = probs.copy()
-            probs_below30.loc['female_sterilization'] = 0.0
-            probs_below30 = probs_below30 / probs_below30.sum()
             new_contraceptive = self.rng.choice(probs_below30.index, p=probs_below30.values)
         else:
-            new_contraceptive = self.rng.choice(probs.index, p=probs.values)
+            new_contraceptive = self.rng.choice(probs_30plus.index, p=probs_30plus.values)
 
         # Do the change in contraceptive
+        if new_contraceptive == 'female_sterilization':
+            assert mother_age >= 30
         self.schedule_batch_of_contraceptive_changes(ids=[mother_id], old=['not_using'], new=[new_contraceptive])
 
     def get_item_code_for_each_contraceptive(self):
@@ -782,13 +836,8 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         pp = self.module.processed_params
         rng = self.module.rng
 
-        pp_switch_to_30plus_matrix = pp['p_switching_to']
-        # Prevent women below 30 years having 'female_sterilization'
-        pp_switch_to_below30_matrix = pp['p_switching_to'].copy()
-        pp_switch_to_below30_matrix.loc['female_sterilization', :] = 0.0
-        for c in pp_switch_to_below30_matrix.columns:
-            pp_switch_to_below30_matrix.loc[:, c] =\
-                pp_switch_to_below30_matrix.loc[:, c] / pp_switch_to_below30_matrix.loc[:, c].sum()
+        pp_switch_to_below30_matrix = pp['p_switching_to_below30']
+        pp_switch_to_30plus_matrix = pp['p_switching_to_30plus']
 
         # Get the probability of discontinuation for each individual (depends on age and current method)
         prob = df.loc[individuals_using, ['age_years', 'co_contraception']].apply(
@@ -823,13 +872,13 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         continue_idx = individuals_eligible_for_continue_or_switch[~will_switch]
 
         # For that do switch, select the new contraceptive using switching matrix
-        new_co_30plus = transition_states(
-            df.loc[switch_idx_30plus, 'co_contraception'], pp_switch_to_30plus_matrix, rng
-        )
         new_co_below30 = transition_states(
             df.loc[switch_idx_below30, 'co_contraception'], pp_switch_to_below30_matrix, rng
         )
-        new_co = [new_co_30plus, new_co_below30]
+        new_co_30plus = transition_states(
+            df.loc[switch_idx_30plus, 'co_contraception'], pp_switch_to_30plus_matrix, rng
+        )
+        new_co = [new_co_below30, new_co_30plus]
         new_co = pd.concat(new_co)
 
         # Do the contraceptive change for those switching
