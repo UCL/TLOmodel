@@ -710,7 +710,7 @@ def get_coarse_appt_type(appt_type: str) -> str:
 
 def order_of_coarse_appt(_coarse_appt: Union[str, pd.Index]) -> Union[int, pd.Index]:
     """Define a standard order for the coarse appointment types."""
-    ordered_coarse_appts = list(COARSE_APPT_TYPE_TO_COLOR_MAP.values())
+    ordered_coarse_appts = list(COARSE_APPT_TYPE_TO_COLOR_MAP.keys())
     if isinstance(_coarse_appt, str):
         return ordered_coarse_appts.index(_coarse_appt)
     else:
@@ -770,7 +770,7 @@ def order_of_short_treatment_ids(
     short_treatment_id: Union[str, pd.Index]
 ) -> Union[int, pd.Index]:
     """Define a standard order for short treatment_ids."""
-    ordered_short_treatment_ids = list(SHORT_TREATMENT_ID_TO_COLOR_MAP.values())
+    ordered_short_treatment_ids = list(SHORT_TREATMENT_ID_TO_COLOR_MAP.keys())
     if isinstance(short_treatment_id, str):
         return ordered_short_treatment_ids.index(
             _standardize_short_treatment_id(short_treatment_id)
@@ -829,7 +829,7 @@ def order_of_cause_of_death_label(
     cause_of_death_label: Union[str, pd.Index]
 ) -> Union[int, pd.Index]:
     """Define a standard order for Cause-of-Death labels."""
-    ordered_cause_of_death_labels = list(CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP.values())
+    ordered_cause_of_death_labels = list(CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP.keys())
     if isinstance(cause_of_death_label, str):
         return ordered_cause_of_death_labels.index(cause_of_death_label)
     else:
@@ -949,7 +949,7 @@ def compute_mean_across_runs(
         counter values.
 
     :return: Dictionary keyed by `draw` with counter values corresponding to mean
-        of counters across all runs for each draw. 
+        of counters across all runs for each draw.
     """
     summed_counters_by_draw = defaultdict(Counter)
     num_runs_by_draw = Counter()
