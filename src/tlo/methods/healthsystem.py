@@ -569,12 +569,12 @@ class HealthSystem(Module):
 
         self._hsi_event_count_log_period = hsi_event_count_log_period
         if hsi_event_count_log_period in {"day", "month", "year", "simulation"}:
-            # Counters for binning HSI events run (by hex hashes of event details) over
+            # Counters for binning HSI events run (by unique integer keys) over
             # simulation period specified by hsi_event_count_log_period and cumulative
             # counts over previous log periods
             self._hsi_event_counts_log_period = Counter()
             self._hsi_event_counts_cumulative = Counter()
-            # Dictionary for recording mapping from hex hashes to HSI event details
+            # Dictionary mapping from HSI event details to unique integer keys
             self._hsi_event_details = dict()
         elif hsi_event_count_log_period is not None:
             raise ValueError(
@@ -693,10 +693,10 @@ class HealthSystem(Module):
         if self._hsi_event_count_log_period is not None:
             logger_summary.info(
                 key="hsi_event_details",
-                description="Map from hashes to HSI event detail dictionaries",
+                description="Map from integer keys to HSI event detail dictionaries",
                 data={
-                    "map_from_hashes_to_event_details": {
-                        k: v._asdict() for k, v in self._hsi_event_details.items()
+                    "hsi_event_key_to_event_details": {
+                        k: d._asdict() for d, k in self._hsi_event_details.items()
                     }
                 }
             )
@@ -1348,9 +1348,10 @@ class HealthSystem(Module):
         )
         if did_run:
             if self._hsi_event_count_log_period is not None:
-                event_details_hash = hex(hash(event_details))
-                self._hsi_event_counts_log_period[event_details_hash] += 1
-                self._hsi_event_details[event_details_hash] = event_details
+                event_details_key = self._hsi_event_details.setdefault(
+                    event_details, len(self._hsi_event_details)
+                )
+                self._hsi_event_counts_log_period[event_details_key] += 1
             self._summary_counter.record_hsi_event(
                 treatment_id=event_details.treatment_id,
                 appt_footprint=event_details.appt_footprint,
@@ -1455,9 +1456,10 @@ class HealthSystem(Module):
             key="hsi_event_counts",
             description=(
                 f"Counts of the HSI events that have run in this "
-                f"{self._hsi_event_count_log_period} keyed by hashes of event details."
+                f"{self._hsi_event_count_log_period} with keys corresponding to integer"
+                f" keys recorded in dictionary in hsi_event_details log entry."
             ),
-            data={"hsi_event_hashes_to_counts": dict(self._hsi_event_counts_log_period)},
+            data={"hsi_event_key_to_counts": dict(self._hsi_event_counts_log_period)},
         )
         self._hsi_event_counts_cumulative += self._hsi_event_counts_log_period
         self._hsi_event_counts_log_period.clear()
@@ -1633,8 +1635,9 @@ class HealthSystem(Module):
             )
             return Counter(
                 {
-                    self._hsi_event_details[event_details_hash]: count
-                    for event_details_hash, count in total_hsi_event_counts.items()
+                    event_details: total_hsi_event_counts[event_details_key]
+                    for event_details, event_details_key
+                    in self._hsi_event_details.items()
                 }
             )
 
