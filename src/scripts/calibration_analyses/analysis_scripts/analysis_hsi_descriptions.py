@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 
 import numpy as np
@@ -8,11 +8,13 @@ from matplotlib import pyplot as plt
 
 from tlo import Date
 from tlo.analysis.utils import (
+    bin_hsi_event_details,
+    COARSE_APPT_TYPE_TO_COLOR_MAP,
+    compute_mean_across_runs,
     extract_results,
     get_coarse_appt_type,
-    get_color_coarse_appt,
     get_color_short_treatment_id,
-    order_of_coarse_appt,
+    plot_stacked_bar_chart,
     squarify_neat,
     summarize,
     unflatten_flattened_multi_index_in_logging,
@@ -128,69 +130,50 @@ def figure1_distribution_of_hsi_event_by_treatment_id(results_folder: Path, outp
 
 def figure2_appointments_used(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     """ 'Figure 2': The Appointments Used"""
-
-    make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_Fig2_{stub}.png"  # noqa: E731
-
-    def get_counts_of_appt_type_by_treatment_id_short(_df):
-        return formatting_hsi_df(_df) \
-            .drop(columns=['date', 'TREATMENT_ID', 'Facility_Level']) \
-            .melt(id_vars=['TREATMENT_ID_SHORT'], var_name='Appt_Type', value_name='Num') \
-            .groupby(by=['TREATMENT_ID_SHORT', 'Appt_Type'])['Num'].sum()
-
-    counts_of_appt_by_treatment_id_short = summarize(
-        extract_results(
+    # Get counts of number of HSI events run for each treatment ID and coarse
+    # appointment type pair, taking mean across scenario runs and scaling by population
+    # scale factor
+    counts_by_treatment_id_and_coarse_appt_type = compute_mean_across_runs(
+        bin_hsi_event_details(
             results_folder,
-            module='tlo.methods.healthsystem',
-            key='HSI_Event',
-            custom_generate_series=get_counts_of_appt_type_by_treatment_id_short,
-            do_scaling=True
-        ),
-        only_mean=True,
-        collapse_columns=True,
-    )
-
-    # PLOT TOTALS BY COARSE APPT_TYPE
-    counts_of_coarse_appt_by_treatment_id_short = \
-        counts_of_appt_by_treatment_id_short.unstack()\
-                                            .groupby(axis=1,
-                                                     by=(
-                                                         counts_of_appt_by_treatment_id_short.index.levels[1].map(
-                                                             get_coarse_appt_type))
-                                                     )\
-                                            .sum()
-
-    counts_of_coarse_appt_by_treatment_id_short = counts_of_coarse_appt_by_treatment_id_short[
-        sorted(counts_of_coarse_appt_by_treatment_id_short.columns, key=order_of_coarse_appt)
-    ]
-
-    # PLOT TOTALS BY COARSE APPT_TYPE
-    counts_of_coarse_appt_by_treatment_id_short = \
-        counts_of_appt_by_treatment_id_short \
-        .unstack() \
-        .groupby(axis=1, by=counts_of_appt_by_treatment_id_short.index.levels[1].map(get_coarse_appt_type)).sum()
-
-    counts_of_coarse_appt_by_treatment_id_short = counts_of_coarse_appt_by_treatment_id_short[
-        sorted(counts_of_coarse_appt_by_treatment_id_short.columns, key=order_of_coarse_appt)
-    ]
-
-    fig, ax = plt.subplots()
+            lambda event_details, count: sum(
+                [
+                    Counter({
+                        (
+                            event_details["treatment_id"].split("_")[0],
+                            get_coarse_appt_type(appt_type)
+                        ):
+                        count * appt_number
+                    })
+                    for appt_type, appt_number in event_details["appt_footprint"]
+                ],
+                Counter()
+            ),
+            *TARGET_PERIOD,
+            True
+        )
+    )[0]
     name_of_plot = 'Appointment Types Used'
-    (
-        counts_of_coarse_appt_by_treatment_id_short / 1e6
-    ).plot.bar(
-        ax=ax, stacked=True,
-        color=[get_color_coarse_appt(_appt) for _appt in counts_of_coarse_appt_by_treatment_id_short.columns]
+    fig, ax = plt.subplots()
+    plot_stacked_bar_chart(
+        ax,
+        counts_by_treatment_id_and_coarse_appt_type,
+        COARSE_APPT_TYPE_TO_COLOR_MAP,
+        count_scale=1e-6
     )
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
+    ax.tick_params(axis='x', labelrotation=90)
     ax.legend(ncol=2, prop={'size': 8}, loc='upper left')
     ax.set_ylabel('Number of appointments (millions)')
     ax.set_xlabel('TREATMENT_ID (Short)')
     ax.set_ylim(0, 80)
     ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
     fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-    fig.show()
+    fig.savefig(
+        output_folder
+        / f"{PREFIX_ON_FILENAME}_Fig2_{name_of_plot.replace(' ', '_')}.png"
+    )
     plt.close(fig)
 
 
