@@ -212,6 +212,10 @@ def analyse_contraception(in_datestamp, in_log_file,
                             'women_total']
                            ].copy()
         co_use_modern_df['year'] = co_use_modern_df['date'].dt.year
+        print("\n")
+        print("Years simulated:",
+              co_use_modern_df.loc[1, 'year'], "-", co_use_modern_df.loc[co_use_modern_df.shape[0]-1, 'year'])
+        print("\n")
 
         # Keep only records within required time periods and assign the time
         # periods they belong to
