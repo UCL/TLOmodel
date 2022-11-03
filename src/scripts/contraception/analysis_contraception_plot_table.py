@@ -9,12 +9,12 @@ import time
 time_start = time.time()
 
 ################################################################################
-# TO SET:
+# TO SET:  # TODO: update with final runs
 # for the output figures
-datestamp_without = '2022_10_14'
-datestamp_with = '2022_10_14'  # TODO: need data
-datestamp_without_log = '2022-10-14T223057'
-datestamp_with_log = '2022-10-14T223057'  # TODO: need data
+datestamp_without = '2022_10_13'
+datestamp_with = '2022_10_13'  # TODO: need data
+datestamp_without_log = '2022-10-13T165132'
+datestamp_with_log = '2022-10-13T165132'  # TODO: need data
 logFile_without = 'run_analysis_contraception__' + datestamp_without_log + '.log'
 logFile_with = 'run_analysis_contraception__' + datestamp_with_log + '.log'
 # which years we want to summarise for the table of use and costs
@@ -22,17 +22,33 @@ TimePeriods_starts = [2022, 2031, 2041, 2051]
 # order of contraceptives for the table
 contraceptives_order = ['pill', 'IUD', 'injections', 'implant', 'male_condom',
                         'female_sterilization', 'other_modern']
-# ##### '2022-10-14T223057'
+################################################################################
+# ##### '2022-11-03T141459Z' TODO: update
 # => cons_availability = "all"
 # => start_date = Date(2010, 1, 1); end_date = Date(2099, 12, 31)
 # seed = 2022
 # and pop_size = 50000
-# after rounding up the numbers of items removed
+# after rounding up the numbers of items removed; no intervention;
+# f. steril only in women 30+ (except during pop initiation, 20+ then)
+# ##### '2022-11-03T115101Z' TODO: update
+# => cons_availability = "all"
+# => start_date = Date(2010, 1, 1); end_date = Date(2099, 12, 31)
+# seed = 2022
+# and pop_size = 50000
+# after rounding up the numbers of items removed; no intervention;
+# f. steril only in women 30+
+# ##### '2022-11-03T114550Z' TODO: update
+# => cons_availability = "all"
+# => start_date = Date(2010, 1, 1); end_date = Date(2099, 12, 31)
+# seed = 2022
+# and pop_size = 50000
+# after rounding up the numbers of items removed; interventions since 2023;
+# f. steril only in women 30+
 # ##### '2022-10-13T165132'
 # => cons_availability = "all"
 # => start_date = Date(2010, 1, 1); end_date = Date(2050, 12, 31)
 # seed = 2022
-# and pop_size = 20
+# and pop_size = 20 => running time: ~12.13467526435852 s
 # after rounding up the numbers of items removed
 # ##### '2022-10-13T105006'
 # => cons_availability = "all"
@@ -40,27 +56,6 @@ contraceptives_order = ['pill', 'IUD', 'injections', 'implant', 'male_condom',
 # seed = 2022
 # and pop_size = 50
 # before rounding up the numbers of items removed
-# ##### '2022-09-14T105623' or '2022-09-14T105620' (datestamp = .._v1 or ..v2)
-# logFile_xx = 'run_analysis_contraception__' + datestamp_xx_log + '.log'
-# => cons_availability = "all"
-# => start_date = Date(2010, 1, 1); end_date = Date(2099, 12, 31)
-# seed = 2022
-# and pop_size = 50000
-# => running time: 7.15e-06 s until analysis, 27.7 s loading the log, 22 mins
-# each analysis; total time: 42.5 mins
-# ##### '2022-09-10T181844'
-# logFile_xx = 'contraception_analysis__' + datestamp_xx_log + '.log'
-# => cons_availability = "all"
-# => start_date = Date(2010, 1, 1); end_date = Date(2099, 12, 31)
-# seed = 0
-# and pop_size = 20 => running time: ~12.13467526435852 s (incl. only one analysis, no figs)
-# ##### '2022-08-29T160006'
-# logFile_xx = 'contraception_analysis__' + datestamp_xx_log + '.log'
-# => cons_availability = "default"
-# => start_date = Date(2010, 1, 1); end_date = Date(2099, 12, 31)
-# it is prepared so it can be run max to Date(2099, 12, 31), no longer
-# seed = 0
-# and pop_size = 20
 ################################################################################
 
 
@@ -102,14 +97,16 @@ use_without_df, percentage_use_without_df, costs_without_df = do_without_analysi
 # timeitprint("one analysis performance only", do_without_analysis)
 # 11.47628352700849 for test data ('2022-09-10T181844')
 
+print("\n")
 print("COSTS")
 print(costs_without_df)
-print(list(costs_without_df.columns))
 #
+print("\n")
 print("MEAN USE")
 fullprint(use_without_df)
 print(list(use_without_df.columns))
-
+#
+print("\n")
 print("MEAN PERCENTAGE USE")
 fullprint(percentage_use_without_df)
 print(list(percentage_use_without_df.columns))
@@ -120,11 +117,11 @@ use_with_df, percentage_use_with_df, costs_with_df =\
     a_co.analyse_contraception(
         datestamp_with, logFile_with,
         # %% Plot Contraception Use Over time?
-        True,
+        False,
         # %% Plot Contraception Use By Method Over time?
-        True,
+        False,
         # %% Plot Pregnancies Over time?
-        True,
+        False,
         # Calculate Use and Consumables Costs of Contraception methods within
         # some time periods?
         True, TimePeriods_starts
@@ -201,7 +198,7 @@ use_costs_table_df = combine_use_costs_with_without_interv(
 
 # use_costs_table_df = use_without_val_perc_df  # TODO: remove
 
-
+print("\n")
 print("TABLE")
 fullprint(use_costs_table_df)
 
