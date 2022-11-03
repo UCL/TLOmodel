@@ -307,11 +307,8 @@ class Contraception(Module):
         def initial_method_use():
             """Generate the distribution of method use by age for the start of the simulation."""
             p_method = self.parameters['Method_Use_In_2010'].set_index('age').rename_axis('age_years')
-            # Prevent women below 30 years having 'female_sterilization'
-            p_method.loc[p_method.index < 30, 'female_sterilization'] = 0.0
 
             # Normalise so that the sum within each age is 1.0
-
             p_method = p_method.div(p_method.sum(axis=1), axis=0)
             assert np.isclose(1.0, p_method.sum(axis=1)).all()
 
