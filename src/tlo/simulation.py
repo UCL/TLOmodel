@@ -248,12 +248,12 @@ class Simulation:
         for module in self.modules.values():
             module.on_simulation_end()
 
+        logger.info(key='info', data=f'simulate() {time.time() - start} s')
+
         # complete logging
         if self.output_file:
             self.output_file.flush()
             self.output_file.close()
-
-        logger.info(key='info', data=f'simulate() {time.time() - start} s')
 
     def schedule_event(self, event, date):
         """Schedule an event to happen on the given future date.
