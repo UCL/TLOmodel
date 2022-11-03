@@ -5,17 +5,19 @@ import gzip
 import json
 import os
 import pickle
+from collections import Counter, defaultdict
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Callable, Dict, Iterable, List, Optional, TextIO, Union
+from typing import Callable, Dict, Iterable, List, Optional, TextIO, Tuple, Union
 
 import git
 import matplotlib.colors as mcolors
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import squarify
 
-from tlo import logging, util
+from tlo import logging, util, Date
 from tlo.logging.reader import LogData
 from tlo.util import create_age_range_lookup
 
@@ -715,7 +717,7 @@ def order_of_coarse_appt(_coarse_appt: Union[str, pd.Index]) -> Union[int, pd.In
 
 
 def get_color_coarse_appt(coarse_appt_type: str) -> str:
-    """Return the colour (as matplotlib string) assigned to this appointment type. 
+    """Return the colour (as matplotlib string) assigned to this appointment type.
 
     Returns `np.nan` if appointment-type is not recognised.
 
@@ -876,3 +878,133 @@ def get_root_path(starter_path: Optional[Path] = None) -> Path:
         return get_git_root(starter_path)
     else:
         raise OSError("File Not Found")
+
+
+def bin_hsi_event_details(
+    results_folder: Path,
+    get_counter_from_event_details: callable,
+    start_date: Date,
+    end_date: Date,
+    do_scaling: bool = False
+) -> Dict[Tuple[int, int], Counter]:
+    """Bin logged HSI event details into dictionary of counters for each draw and run.
+
+    :param results_folder: Path to folder containing scenario outputs.
+    :param get_counter_from_event_details: Callable which when passed and event details
+        dictionary and count returns a Counter instance keyed by properties to bin
+        over.
+    :param start_date: Start date to filter log entries by when accumulating counts.
+    :param end_date: End date to filter log entries by when accumulating counts.
+    :param do_scaling: Whether to scale counts by population scaling factor value
+        recorded in `tlo.methods.population` log.
+
+    :return: Dictionary keyed by `(draw, run)` tuples with corresponding values the
+        counters containing the binned event detail property counts for the
+        corresponding scenario draw and run.
+    """
+    scenario_info = get_scenario_info(results_folder)
+    binned_counts_by_draw_and_run = {}
+    for draw in range(scenario_info["number_of_draws"]):
+        for run in range(scenario_info["runs_per_draw"]):
+            scaling_factor = 1 if not do_scaling else load_pickled_dataframes(
+                results_folder, draw, run, 'tlo.methods.population'
+            )['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
+            hsi_event_counts = load_pickled_dataframes(
+                results_folder, draw, run, "tlo.methods.healthsystem.summary"
+            )["tlo.methods.healthsystem.summary"]["hsi_event_counts"]
+            hsi_event_counts = hsi_event_counts[
+                hsi_event_counts['date'].between(start_date, end_date)
+            ]
+            hsi_event_counts_sum = sum(
+                [
+                    Counter(d)
+                    for d in hsi_event_counts["hsi_event_key_to_counts"].values
+                ],
+                start=Counter()
+            )
+            hsi_event_details = load_pickled_dataframes(
+                results_folder, draw, run, "tlo.methods.healthsystem.summary"
+            )[
+                "tlo.methods.healthsystem.summary"
+            ]["hsi_event_details"]["hsi_event_key_to_event_details"][0]
+            binned_counts_by_draw_and_run[draw, run] = sum(
+                (
+                    get_counter_from_event_details(
+                        hsi_event_details[key], count * scaling_factor
+                    )
+                    for key, count in hsi_event_counts_sum.items()
+                ),
+                Counter()
+            )
+    return binned_counts_by_draw_and_run
+
+
+def compute_mean_across_runs(
+    counters_by_draw_and_run: Dict[Tuple[int, int], Counter]
+) -> Dict[int, Counter]:
+    """Compute mean across scenario runs of dict of counters keyed by draw and run.
+
+    :param counters_by_draw_and_run: Dictionary keyed by `(draw, run)` tuples with
+        counter values.
+
+    :return: Dictionary keyed by `draw` with counter values corresponding to mean
+        of counters across all runs for each draw. 
+    """
+    summed_counters_by_draw = defaultdict(Counter)
+    num_runs_by_draw = Counter()
+    for (draw, _), counter in counters_by_draw_and_run.items():
+        summed_counters_by_draw[draw] += counter
+        num_runs_by_draw[draw] += 1
+    return {
+        draw: Counter(
+            {key: count / num_runs_by_draw[draw] for key, count in counter.items()}
+        )
+        for draw, counter in summed_counters_by_draw.items()
+    }
+
+
+def plot_stacked_bar_chart(
+    ax: plt.Axes,
+    binned_counts: Counter,
+    inner_group_cmap: Optional[Dict] = None,
+    bar_width: float = 0.5,
+    count_scale: float = 1.
+):
+    """Plot a stacked bar chart using count data binned over two levels of grouping.
+
+    :param ax: Matplotlib axis to add bar chart to.
+    :param binned_counts: Counts keyed by pair of string keys corresponding to inner
+        and outer groups binning performed over.
+    :param inner_group_cmap: Map from inner group keys to colors to plot corresponding
+        bars with. If ``None`` the default color cycle will be used.
+    :param bar_width: Width of each bar as a proportion of space between bars.
+    :param count_scale: Scaling factor to multiply all counts by.
+    """
+    outer_groups = sorted(set(outer_group for outer_group, _ in binned_counts))
+    if inner_group_cmap is None:
+        inner_groups = sorted(set(inner_group for _, inner_group in binned_counts))
+    else:
+        inner_groups = list(inner_group_cmap.keys())
+    cumulative_counts = Counter({outer_group: 0 for outer_group in outer_groups})
+    for inner_group in inner_groups:
+        counts = Counter(
+            {
+                outer_group: binned_counts[outer_group, inner_group] * count_scale
+                for outer_group in outer_groups
+            }
+        )
+        if sum(counts.values()) > 0:
+            ax.bar(
+                list(counts.keys()),
+                list(counts.values()),
+                bottom=list(
+                    cumulative_counts[outer_group] for outer_group in outer_groups
+                ),
+                label=inner_group,
+                color=(
+                    None if inner_group_cmap is None else inner_group_cmap[inner_group]
+                ),
+                width=bar_width,
+            )
+        cumulative_counts += counts
+    ax.legend()
