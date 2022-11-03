@@ -8,6 +8,7 @@ import pickle
 from collections import Counter, defaultdict
 from collections.abc import Mapping
 from pathlib import Path
+from types import MappingProxyType
 from typing import Callable, Dict, Iterable, List, Optional, TextIO, Tuple, Union
 
 import git
@@ -633,7 +634,7 @@ def colors_in_matplotlib() -> tuple:
     )
 
 
-_APPT_TYPE_TO_COARSE_APPT_TYPE_MAP = {
+APPT_TYPE_TO_COARSE_APPT_TYPE_MAP = MappingProxyType({
     'Under5OPD': 'Outpatient',
     'Over5OPD': 'Outpatient',
     'ConWithDCSA': 'Con w/ DCSA',
@@ -683,10 +684,10 @@ _APPT_TYPE_TO_COARSE_APPT_TYPE_MAP = {
     'MRI': 'Lab / Diagnostics',
     'Tomography': 'Lab / Diagnostics',
     'DiagRadio': 'Lab / Diagnostics'
-}
+})
 
 
-_COARSE_APPT_TYPE_TO_COLOR_MAP = {
+COARSE_APPT_TYPE_TO_COLOR_MAP = MappingProxyType({
     'Outpatient': 'magenta',
     'Con w/ DCSA': 'crimson',
     'A & E': 'forestgreen',
@@ -699,17 +700,17 @@ _COARSE_APPT_TYPE_TO_COLOR_MAP = {
     'Surgery / Radiotherapy': 'orange',
     'STI': 'slateblue',
     'Lab / Diagnostics': 'dodgerblue'
-}
+})
 
 
 def get_coarse_appt_type(appt_type: str) -> str:
     """Return the `coarser` categorization of appt_types for a given appt_type."""
-    return _APPT_TYPE_TO_COARSE_APPT_TYPE_MAP.get(appt_type, None)
+    return APPT_TYPE_TO_COARSE_APPT_TYPE_MAP.get(appt_type, None)
 
 
 def order_of_coarse_appt(_coarse_appt: Union[str, pd.Index]) -> Union[int, pd.Index]:
     """Define a standard order for the coarse appointment types."""
-    ordered_coarse_appts = list(_COARSE_APPT_TYPE_TO_COLOR_MAP.values())
+    ordered_coarse_appts = list(COARSE_APPT_TYPE_TO_COLOR_MAP.values())
     if isinstance(_coarse_appt, str):
         return ordered_coarse_appts.index(_coarse_appt)
     else:
@@ -723,10 +724,10 @@ def get_color_coarse_appt(coarse_appt_type: str) -> str:
 
     Names of colors are selected with reference to: https://i.stack.imgur.com/lFZum.png
     """
-    return _COARSE_APPT_TYPE_TO_COLOR_MAP.get(coarse_appt_type, np.nan)
+    return COARSE_APPT_TYPE_TO_COLOR_MAP.get(coarse_appt_type, np.nan)
 
 
-_SHORT_TREATMENT_ID_TO_COLOR_MAP = {
+SHORT_TREATMENT_ID_TO_COLOR_MAP = MappingProxyType({
     'FirstAttendance*': 'darkgrey',
     'Inpatient*': 'silver',
 
@@ -758,7 +759,7 @@ _SHORT_TREATMENT_ID_TO_COLOR_MAP = {
     'Epilepsy*': 'red',
 
     'Rti*': 'lightsalmon',
-}
+})
 
 
 def _standardize_short_treatment_id(short_treatment_id):
@@ -769,7 +770,7 @@ def order_of_short_treatment_ids(
     short_treatment_id: Union[str, pd.Index]
 ) -> Union[int, pd.Index]:
     """Define a standard order for short treatment_ids."""
-    ordered_short_treatment_ids = list(_SHORT_TREATMENT_ID_TO_COLOR_MAP.values())
+    ordered_short_treatment_ids = list(SHORT_TREATMENT_ID_TO_COLOR_MAP.values())
     if isinstance(short_treatment_id, str):
         return ordered_short_treatment_ids.index(
             _standardize_short_treatment_id(short_treatment_id)
@@ -786,12 +787,12 @@ def get_color_short_treatment_id(short_treatment_id: str) -> str:
 
     Returns `np.nan` if treatment_id is not recognised.
     """
-    return _SHORT_TREATMENT_ID_TO_COLOR_MAP.get(
+    return SHORT_TREATMENT_ID_TO_COLOR_MAP.get(
         _standardize_short_treatment_id(short_treatment_id), np.nan
     )
 
 
-_CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP = {
+CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP = MappingProxyType({
     'Maternal Disorders': 'green',
     'Neonatal Disorders': 'springgreen',
     'Congenital birth defects': 'mediumaquamarine',
@@ -821,14 +822,14 @@ _CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP = {
     'Transport Injuries': 'lightsalmon',
 
     'Other': 'dimgrey',
-}
+})
 
 
 def order_of_cause_of_death_label(
     cause_of_death_label: Union[str, pd.Index]
 ) -> Union[int, pd.Index]:
     """Define a standard order for Cause-of-Death labels."""
-    ordered_cause_of_death_labels = list(_CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP.values())
+    ordered_cause_of_death_labels = list(CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP.values())
     if isinstance(cause_of_death_label, str):
         return ordered_cause_of_death_labels.index(cause_of_death_label)
     else:
@@ -842,7 +843,7 @@ def get_color_cause_of_death_label(cause_of_death_label: str) -> str:
 
     Returns `np.nan` if label is not recognised.
     """
-    return _CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP.get(cause_of_death_label, np.nan)
+    return CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP.get(cause_of_death_label, np.nan)
 
 
 def squarify_neat(sizes: np.array, label: np.array, colormap: Callable, numlabels=5, **kwargs):
