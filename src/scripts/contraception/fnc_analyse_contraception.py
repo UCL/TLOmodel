@@ -22,9 +22,10 @@ def analyse_contraception(in_datestamp, in_log_file,
                           in_plot_use_time_bool,
                           in_plot_use_time_method_bool,
                           in_plot_pregnancies_bool,
-                          in_calc_use_costs_bool,
-                          in_required_time_period_starts=[],
-                          in_use_output="mean"):
+                          in_contraceptives_order,
+                          in_calc_use_costs_bool, in_required_time_period_starts=[],
+                          in_use_output="mean"
+                          ):
     """
     Performs analysis of contraception for pre-simulated data (data given by
     'in_log_file'), saves figure(s) and/or calculates contraception use and
@@ -50,6 +51,7 @@ def analyse_contraception(in_datestamp, in_log_file,
     :param in_use_output: "mean" or "max", according to which output of numbers,
         and percentage of women using contraception methods we want to display
         in the table (default: "mean")
+    :param in_contraceptives_order: list of modern contraceptives
 
     :return: Three data frames by time periods:
         number of women using contraception methods,
@@ -206,11 +208,11 @@ def analyse_contraception(in_datestamp, in_log_file,
         # 'periodic_abstinence', 'pill', 'withdrawal']:
         co_use_df = log_df['tlo.methods.contraception']['contraception_use_summary']
         co_use_df['women_total'] = co_use_df.sum(axis=1)
-        co_use_modern_df = co_use_df.loc[:,
-                           ['date', 'IUD', 'female_sterilization', 'implant',
-                            'injections', 'male_condom', 'other_modern', 'pill',
-                            'women_total']
-                           ].copy()
+        cols_to_keep = in_contraceptives_order.copy()
+        cols_to_keep.append('date')
+        cols_to_keep.append('women_total')
+        co_use_modern_df = co_use_df.loc[:, cols_to_keep].copy()
+        co_use_modern_df['co_modern_total'] = co_use_modern_df.loc[:, in_contraceptives_order].sum(axis=1)
         co_use_modern_df['year'] = co_use_modern_df['date'].dt.year
         print("\n")
         print("Years simulated:",
@@ -286,10 +288,13 @@ def analyse_contraception(in_datestamp, in_log_file,
             df_percentage_use.iloc[:, :-1] = df_percentage_use.iloc[:, :-1]\
                 .div(df_percentage_use['women_total'], axis=0).mul(100, axis=0)
             # we can exclude the column with women_total as it is no more
-            # needed, but it's nicely seen in it, that it does work
-            return df_percentage_use
+            # needed
+            return df_percentage_use.loc[:, df_percentage_use.columns != 'women_total']
 
         co_percentage_use_df = create_percentage_use_df(co_use_modern_tp_df)
+        # Remove women_total from co_use_modern_tp_df too
+        co_use_modern_tp_df =\
+            co_use_modern_tp_df.loc[:, co_use_modern_tp_df.columns != 'women_total']
 
         def sum_use_all_times(in_df_use_by_tp, in_output_type):
             """
@@ -306,7 +311,7 @@ def analyse_contraception(in_datestamp, in_log_file,
             sum_tp = (str(y_first) + "-" + str(y_last))
             l_summation = []
             for c in in_df_use_by_tp:
-                # outputs (min/max) for contraceptives and women_total within all times
+                # outputs (min/max) for contraceptives within all times
                 if in_output_type == "mean":
                     l_summation.append(in_df_use_by_tp[c].mean())
                 if in_output_type == "max":
@@ -355,7 +360,10 @@ def analyse_contraception(in_datestamp, in_log_file,
             co_output_percentage_use_df.index.name = mean_use_df.index.name =\
             'Time_Period'
 
-        # Add a column with the nmb of years within the time periods
+        print("Calculations of Contraception Methods Use finished.")
+
+#  ###### CONSUMABLES ##########################################################
+        # Add a column with the nmb of years within the time periods to mean_use_df
         def calculate_tp_len(in_tp_as_string):
             l_start_end_tp = [int(x) for x in in_tp_as_string.split("-")]
             return l_start_end_tp[1] - l_start_end_tp[0] + 1
@@ -363,9 +371,6 @@ def analyse_contraception(in_datestamp, in_log_file,
         # Add length of time periods to mean_use_df
         mean_use_df['tp_len'] = mean_use_df.index.map(calculate_tp_len)
 
-        print("Calculations of Contraception Methods Use finished.")
-
-#  ###### CONSUMABLES ##########################################################
         # Load Consumables results
         cons_df = log_df['tlo.methods.healthsystem']['Consumables'].copy()
         cons_df['date'] = pd.to_datetime(cons_df['date'])
@@ -728,8 +733,10 @@ def analyse_contraception(in_datestamp, in_log_file,
 
 
 if __name__ == '__main__':
-    analyse_contraception(in_datestamp, in_output_file,
-                          in_plot_use_time_bool, in_plot_use_time_method_bool,
+    analyse_contraception(in_datestamp, in_log_file,
+                          in_plot_use_time_bool,
+                          in_plot_use_time_method_bool,
                           in_plot_pregnancies_bool,
-                          in_calc_use_costs_bool,
-                          in_required_time_period_starts)
+                          in_contraceptives_order,
+                          in_calc_use_costs_bool, in_required_time_period_starts,
+                          in_use_output)
