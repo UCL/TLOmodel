@@ -1,6 +1,5 @@
 """
-This file defines a batch run of the analysis_contraception
-It's used to create figure(s) and table(s)
+This file defines a batch run to get sims results to be used by the analysis_contraception_plot_table.
 Run on the remote batch system using:
 ```tlo batch-submit src/scripts/contraception/scenarios/run_analysis_contraception.py```
 or locally using:
