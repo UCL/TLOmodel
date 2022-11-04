@@ -18,7 +18,7 @@ import numpy as np
 import pandas as pd
 import squarify
 
-from tlo import logging, util, Date
+from tlo import Date, logging, util
 from tlo.logging.reader import LogData
 from tlo.util import create_age_range_lookup
 
