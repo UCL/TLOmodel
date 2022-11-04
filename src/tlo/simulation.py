@@ -251,14 +251,15 @@ class Simulation:
         logger.info(key='info', data=f'simulate() {time.time() - start} s')
 
         # From Python logging.shutdown
-        try:
-            self.output_file.acquire()
-            self.output_file.flush()
-            self.output_file.close()
-        except (OSError, ValueError):
-            pass
-        finally:
-            self.output_file.release()
+        if self.output_file:
+            try:
+                self.output_file.acquire()
+                self.output_file.flush()
+                self.output_file.close()
+            except (OSError, ValueError):
+                pass
+            finally:
+                self.output_file.release()
 
     def schedule_event(self, event, date):
         """Schedule an event to happen on the given future date.
