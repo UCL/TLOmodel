@@ -833,9 +833,6 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         pp = self.module.processed_params
         rng = self.module.rng
 
-        pp_switch_to_below30_matrix = pp['p_switching_to_below30']
-        pp_switch_to_30plus_matrix = pp['p_switching_to_30plus']
-
         # Get the probability of discontinuation for each individual (depends on age and current method)
         prob = df.loc[individuals_using, ['age_years', 'co_contraception']].apply(
             lambda row: pp['p_stop_per_month'][self.sim.date.year].at[row.age_years, row.co_contraception],
@@ -870,10 +867,10 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
 
         # For that do switch, select the new contraceptive using switching matrix
         new_co_below30 = transition_states(
-            df.loc[switch_idx_below30, 'co_contraception'], pp_switch_to_below30_matrix, rng
+            df.loc[switch_idx_below30, 'co_contraception'], pp['p_switching_to_below30'], rng
         )
         new_co_30plus = transition_states(
-            df.loc[switch_idx_30plus, 'co_contraception'], pp_switch_to_30plus_matrix, rng
+            df.loc[switch_idx_30plus, 'co_contraception'], pp['p_switching_to_30plus'], rng
         )
         new_co = [new_co_below30, new_co_30plus]
         new_co = pd.concat(new_co)
