@@ -80,7 +80,7 @@ tlo.methods.healthseekingbehaviour module
 
      METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>}
 
-     force_any_symptom_to_lead_to_healthcareseeking : <property object at 0x7fb1a27e8720>
+     force_any_symptom_to_lead_to_healthcareseeking : <property object at 0x7f91951ab0e0>
 
      **Functions (defined or overridden in class HealthSeekingBehaviour):**
 

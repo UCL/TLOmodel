@@ -182,6 +182,7 @@
 
 <span class="kn">import</span> <span class="nn">git</span>
 <span class="kn">import</span> <span class="nn">matplotlib.colors</span> <span class="k">as</span> <span class="nn">mcolors</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">squarify</span>
@@ -1038,6 +1039,48 @@
         <span class="k">return</span> <span class="n">get_git_root</span><span class="p">(</span><span class="n">starter_path</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">OSError</span><span class="p">(</span><span class="s2">&quot;File Not Found&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="plot_clustered_stacked"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.plot_clustered_stacked">[docs]</a><span class="k">def</span> <span class="nf">plot_clustered_stacked</span><span class="p">(</span><span class="n">dfall</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">color_for_column_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">legends</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">H</span><span class="o">=</span><span class="s2">&quot;/&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Given a dict of dataframes, with identical columns and index, create a clustered stacked bar plot.</span>
+<span class="sd">    * H is the hatch used for identification of the different dataframe.</span>
+<span class="sd">    * color_for_column_map should return a color for every column in the dataframes</span>
+<span class="sd">    * legends=False, suppresses generation of the legends</span>
+<span class="sd">    From: https://stackoverflow.com/questions/22787209/how-to-have-clusters-of-stacked-bars&quot;&quot;&quot;</span>
+
+    <span class="n">n_df</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">dfall</span><span class="p">)</span>
+    <span class="n">n_col</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">dfall</span><span class="o">.</span><span class="n">values</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+    <span class="n">n_ind</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">dfall</span><span class="o">.</span><span class="n">values</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">df</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">dfall</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>  <span class="c1"># for each data frame</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span>
+            <span class="n">stacked</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+            <span class="n">legend</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">color</span><span class="o">=</span><span class="p">[</span><span class="n">color_for_column_map</span><span class="p">(</span><span class="n">_label</span><span class="p">)</span> <span class="k">for</span> <span class="n">_label</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">],</span>
+            <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span>
+
+    <span class="n">_handles</span><span class="p">,</span> <span class="n">_labels</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_legend_handles_labels</span><span class="p">()</span>  <span class="c1"># get the handles we want to modify</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_df</span> <span class="o">*</span> <span class="n">n_col</span><span class="p">,</span> <span class="n">n_col</span><span class="p">):</span>  <span class="c1"># len(h) = n_col * n_df</span>
+        <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">pa</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">_handles</span><span class="p">[</span><span class="n">i</span><span class="p">:</span> <span class="n">i</span><span class="o">+</span><span class="n">n_col</span><span class="p">]):</span>
+            <span class="k">for</span> <span class="n">rect</span> <span class="ow">in</span> <span class="n">pa</span><span class="o">.</span><span class="n">patches</span><span class="p">:</span>  <span class="c1"># for each index</span>
+                <span class="n">rect</span><span class="o">.</span><span class="n">set_x</span><span class="p">(</span><span class="n">rect</span><span class="o">.</span><span class="n">get_x</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">n_df</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">i</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">n_col</span><span class="p">))</span>
+                <span class="n">rect</span><span class="o">.</span><span class="n">set_hatch</span><span class="p">(</span><span class="n">H</span> <span class="o">*</span> <span class="nb">int</span><span class="p">(</span><span class="n">i</span> <span class="o">/</span> <span class="n">n_col</span><span class="p">))</span>  <span class="c1"># edited part</span>
+                <span class="n">rect</span><span class="o">.</span><span class="n">set_width</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">n_df</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">n_ind</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">n_df</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span> <span class="o">/</span> <span class="mf">2.</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xticklabels</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">legends</span><span class="p">:</span>
+        <span class="c1"># Add invisible data to add another legend</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_df</span><span class="p">):</span>
+            <span class="n">n</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ax</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;gray&quot;</span><span class="p">,</span> <span class="n">hatch</span><span class="o">=</span><span class="n">H</span> <span class="o">*</span> <span class="n">i</span><span class="p">))</span>
+
+        <span class="n">l1</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">_handles</span><span class="p">[:</span><span class="n">n_col</span><span class="p">],</span> <span class="n">_labels</span><span class="p">[:</span><span class="n">n_col</span><span class="p">],</span> <span class="n">loc</span><span class="o">=</span><span class="p">[</span><span class="mf">1.01</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">])</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dfall</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">loc</span><span class="o">=</span><span class="p">[</span><span class="mf">1.01</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">])</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">add_artist</span><span class="p">(</span><span class="n">l1</span><span class="p">)</span></div>
 </pre></div>
 
            </div>
@@ -1050,7 +1093,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Oct 10, 2022.
+        Last updated on Nov 05, 2022.
       </span>
 
     </p>

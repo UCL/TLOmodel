@@ -180,29 +180,27 @@ Azure Batch.</p>
 <div class="section" id="setup">
 <h2>Setup<a class="headerlink" href="#setup" title="Permalink to this heading">¶</a></h2>
 <ol class="arabic">
-<li><p>Install Azure CLI <a class="reference external" href="https://docs.microsoft.com/en-us/cli/azure/install-azure-cli">https://docs.microsoft.com/en-us/cli/azure/install-azure-cli</a></p></li>
-<li><p>Checkout &amp; pull TLOmodel master branch</p></li>
+<li><p><a class="reference external" href="https://docs.microsoft.com/en-us/cli/azure/install-azure-cli">Install the Azure command line interface</a></p></li>
+<li><p>If you have not already done so ensure you have followed the instructions to set up a <code class="docutils literal notranslate"><span class="pre">tlo</span></code> <a class="reference external" href="https://docs.conda.io/en/latest/">Conda</a> environment in <a class="reference internal" href="readme.html"><span class="doc">Getting Started</span></a>.</p></li>
 <li><p>Open Terminal (MacOS) or Anaconda Prompt (Windows)</p></li>
-<li><p>Change directory to the TLOmodel repository</p></li>
-<li><p>Activate the Conda environment: <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">activate</span> <span class="pre">tlo38</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-r</span> <span class="pre">requirements\base.txt</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-e</span> <span class="pre">.</span></code></p></li>
+<li><p>Activate the <code class="docutils literal notranslate"><span class="pre">tlo</span></code> environment by running <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">activate</span> <span class="pre">tlo</span></code></p></li>
 <li><dl>
-<dt>Extra steps on Windows</dt><dd><ul>
-<li><p>Run the following command, changing the path to where the Conda environment is installed:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">C</span><span class="p">:</span>\<span class="n">Users</span>\<span class="n">Public</span>\<span class="n">miniconda3</span>\<span class="n">envs</span>\<span class="n">tlo</span>\<span class="n">Scripts</span>\<span class="n">pywin32_postinstall</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">install</span>
+<dt><em>Extra step for Windows only</em></dt><dd><ul>
+<li><p>Run the following command:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">%</span><span class="n">CONDA_PREFIX</span><span class="o">%</span>\<span class="n">Scripts</span>\<span class="n">pywin32_postinstall</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">install</span>
 </pre></div>
 </div>
 </li>
-<li><p>There will be some output, ending with <em>“The pywin32 extensions were successfully installed.”</em></p></li>
+<li><p>If successful, there will be some output, ending with <em>“The pywin32 extensions were successfully installed.”</em></p></li>
 </ul>
 </dd>
 </dl>
 </li>
-<li><p>Copy the file <code class="docutils literal notranslate"><span class="pre">tlo.example.com</span></code> to <code class="docutils literal notranslate"><span class="pre">tlo.conf</span></code>, and fill in the fields as required (you will need to ask the team for the details here).</p></li>
-<li><p>In Terminal/Anaconda Prompt check the following command runs: <code class="docutils literal notranslate"><span class="pre">tlo</span></code></p></li>
+<li><p>Change the working directory to the root directory of the <code class="docutils literal notranslate"><span class="pre">TLOmodel</span></code> repository</p></li>
+<li><p>Copy the file <code class="docutils literal notranslate"><span class="pre">tlo.example.conf</span></code> to <code class="docutils literal notranslate"><span class="pre">tlo.conf</span></code>, and fill in the fields as required (you will need to ask the team for the details here).</p></li>
+<li><p>In the terminal check the following command runs: <code class="docutils literal notranslate"><span class="pre">tlo</span></code></p></li>
 <li><p>Login to Azure with <code class="docutils literal notranslate"><span class="pre">az</span> <span class="pre">login</span> <span class="pre">--tenant</span> <span class="pre">1faf88fe-a998-4c5b-93c9-210a11d9a5c2</span></code></p></li>
-<li><p>In Terminal/Anaconda Prompt run: <code class="docutils literal notranslate"><span class="pre">tlo</span> <span class="pre">batch-list</span></code></p></li>
+<li><p>In the terminal run: <code class="docutils literal notranslate"><span class="pre">tlo</span> <span class="pre">batch-list</span></code></p></li>
 </ol>
 </div>
 <div class="section" id="creating-a-scenario">
@@ -305,7 +303,7 @@ Azure Batch.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Oct 10, 2022.
+        Last updated on Nov 05, 2022.
       </span>
 
     </p>

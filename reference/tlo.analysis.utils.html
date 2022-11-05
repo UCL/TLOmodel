@@ -459,6 +459,16 @@ N.B. The package <cite>squarify</cite> is required.</p>
 location from which to begin search; if omitted the location of this file is used.</p>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.analysis.utils.plot_clustered_stacked">
+<span class="sig-name descname"><span class="pre">plot_clustered_stacked</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dfall</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color_for_column_map</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">legends</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">H</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'/'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#plot_clustered_stacked"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.plot_clustered_stacked" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a dict of dataframes, with identical columns and index, create a clustered stacked bar plot.
+* H is the hatch used for identification of the different dataframe.
+* color_for_column_map should return a color for every column in the dataframes
+* legends=False, suppresses generation of the legends
+From: <a class="reference external" href="https://stackoverflow.com/questions/22787209/how-to-have-clusters-of-stacked-bars">https://stackoverflow.com/questions/22787209/how-to-have-clusters-of-stacked-bars</a></p>
+</dd></dl>
+
 </div>
 
 
@@ -476,7 +486,7 @@ location from which to begin search; if omitted the location of this file is use
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Oct 10, 2022.
+        Last updated on Nov 05, 2022.
       </span>
 
     </p>
