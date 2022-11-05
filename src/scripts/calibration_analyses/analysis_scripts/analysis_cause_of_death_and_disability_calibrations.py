@@ -22,6 +22,7 @@ from tlo.analysis.utils import (
     make_calendar_period_lookup,
     make_calendar_period_type,
     order_of_cause_of_death_label,
+    plot_clustered_stacked,
     summarize,
 )
 
@@ -111,9 +112,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # groupby, sum and divide by five to give the average number of deaths per year within the five year period:
         results = results.groupby(['period', 'sex', 'age_grp', 'label']).sum().div(5.0)
 
-        # todo - the grouping should be inside the function for the extraction like done in
+        # todo - this grouping could be inside the function for the extraction like done in
         #  `analysis_effect_of_each_treatment`...?
-        # todo - use colormap
 
         # %% Load the cause-of-deaths mappers and use them to populate the 'label' for gbd outputs
         if what == 'Deaths':
@@ -156,33 +156,41 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         reformat_cause = lambda x: x.replace(' / ', '_')  # noqa: E731
 
         # %% Make figures of overall summaries of outcomes by cause
+        def _sort_columns(df):
+            """ Reverse the standard order of the columns so that 'Other' is at base"""
+            return df[reversed(order_of_cause_of_death_label(df.columns))]  #
 
-        for _i, sex in enumerate(sexes):
+        for sex in sexes:
+            _dat = {_dat: outcome_by_age_pt[_dat].loc[sex].loc[:, pd.IndexSlice['mean']].pipe(_sort_columns)
+                    for _dat in outcome_by_age_pt.keys()}
 
-            fig, axes = plt.subplots(ncols=2, nrows=1, sharey=True, sharex=True)
-            for row, dat in enumerate(dats):
-                ax = axes[row]
-                df = outcome_by_age_pt[dat].loc[sex].loc[:, pd.IndexSlice['mean']] / 1e3
-                df = df[reversed(order_of_cause_of_death_label(df.columns))]  # Reverse the standard order so that
-                #                                                               'Other' is at base
+            fig, ax = plt.subplots()
+            plot_clustered_stacked(ax=ax,
+                                   dfall=_dat,
+                                   color_for_column_map=get_color_cause_of_death_label,
+                                   legends=False,
+                                   H='',
+                                   edgecolor='black',
+                                   linewidth=0.4,
+                                   )
+            ax.set_title(f'{sexname(sex)}', fontsize=18)
+            ax.set_xlabel('Age Group')
+            ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
+            ax.set_ylabel(f"{what} per year\n(thousands)")
+            ax.set_ylim([0, 25_000])
+            ax.set_yticks(np.arange(0, 25_000, 5_000))
+            ax.grid(axis='y')
 
-                df.plot.bar(stacked=True, ax=ax,
-                            color=[get_color_cause_of_death_label(_label) for _label in df.columns])
-                ax.set_xlabel('Age Group')
-                ax.set_ylabel(f"{what} per year\n(thousands)")
-                ax.set_title(f"{dat}")
-                ax.get_legend().remove()
-                ax.grid(axis='y')
-
-            # Create figure legend and remove duplicated entries
+            # Create figure legend and remove duplicated entries, but keep the first entries
             handles, labels = ax.get_legend_handles_labels()
-            lgd = dict(zip(labels, handles))
-            fig.legend(reversed(lgd.values()), reversed(lgd.keys()), loc="center right", ncol=1, fontsize=6)
+            lgd = dict()
+            for k, v in zip(labels, handles):
+                lgd.setdefault(k, v)
+            ax.legend(reversed(lgd.values()), reversed(lgd.keys()), loc="upper right", ncol=2, fontsize=8)
 
-            fig.suptitle(f'{sexname(sex)}', fontsize=18)
             fig.tight_layout()
-
             fig.savefig(make_graph_file_name(f"{what}_{period}_{sex}_StackedBars_ModelvsGBD"))
+            ax.text(5.2, 11_000, 'GBD || Model', horizontalalignment='left',  verticalalignment='bottom', fontsize=8)
             fig.show()
             plt.close(fig)
 
@@ -221,11 +229,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     ax[row].set_title(f"{cause}: {sexname(sex)}, {period}")
                     ax[row].legend()
 
+                fig.patch.set_edgecolor(get_color_cause_of_death_label(cause))
+                fig.patch.set_linewidth(8)
                 fig.tight_layout()
-                plt.savefig(make_graph_file_name(
+                fig.savefig(make_graph_file_name(
                     f"{what}_{period}_AgeAndSexSpecificLineGraph_{reformat_cause(cause)}")
                 )
-                plt.show()
+                fig.show()
                 plt.close(fig)
 
             except KeyError:
