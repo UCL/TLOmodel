@@ -9,8 +9,8 @@ from matplotlib import pyplot as plt
 
 from tlo import Date
 from tlo.analysis.utils import (
-    bin_hsi_event_details,
     COARSE_APPT_TYPE_TO_COLOR_MAP,
+    bin_hsi_event_details,
     compute_mean_across_runs,
     compute_mean_across_runs_where_nonzero,
     extract_results,
