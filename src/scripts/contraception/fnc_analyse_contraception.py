@@ -214,7 +214,6 @@ def analyse_contraception(in_datestamp, in_log_file,
         co_use_modern_df = co_use_df.loc[:, cols_to_keep].copy()
         co_use_modern_df['co_modern_total'] = co_use_modern_df.loc[:, in_contraceptives_order].sum(axis=1)
         co_use_modern_df['year'] = co_use_modern_df['date'].dt.year
-        print()
         print("Nmb of women at the initiation:", co_use_df['women_total'][0])
         print("Years simulated:",
               co_use_modern_df.loc[1, 'year'], "-", co_use_modern_df.loc[co_use_modern_df.shape[0]-1, 'year'])
