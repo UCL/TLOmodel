@@ -185,8 +185,62 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # %% Population Pyramid
     # Population Pyramid at two time points
 
-    # Get Age/Sex Breakdown of population (with scaling)
+    def plot_population_pyramid(data, fig):
+        """Plot a population pyramid on the specified figure. Data is of the form:
+        {
+           'F': {
+                    'Model': pd.Series(index_age_groups),
+                    'WPP': pd.Series(index=age_groups)
+                 },
+           'M': {
+                    'Model': pd.Series(index_age_groups),
+                    'WPP': pd.Series(index=age_groups)
+                 },
+        }
+        """
+        ax = fig.add_subplot(111)
 
+        # reformat data to ensure axes align
+        sources = data['M'].keys()
+        dat = {_sex: pd.concat(
+            {_source: data['M'][_source] for _source in sources}, axis=1
+        ) for _sex in ['M', 'F']
+        }
+
+        # use horizontal bar chart functions (barh) to plot the pyramid for the Model outputs
+        ax.barh(dat['M'].index, data['M']['Model'].values / 1e3, alpha=1.0, label='Model', color=colors['Model'])
+        ax.barh(dat['F'].index, -data['F']['Model'].values / 1e3, alpha=1.0, label='_', color='cornflowerblue')
+
+        # use plot to overlay the comparison data sources (whatever is available from 'WPP' and/or 'Census')
+        for _dat_source in sorted(set(sources).intersection(['WPP', 'Census'])):
+            ax.plot(data['M'][_dat_source].values / 1e3, dat['M'].index, label=_dat_source, color=colors[_dat_source])
+            ax.plot(-data['F'][_dat_source].values / 1e3, dat['F'].index, label='_', color=colors[_dat_source])
+
+        ax.axvline(0.0, 0.0, color='black')
+
+        # label the plot with titles and correct the x axis tick labels (replace negative values with positive)
+        ax.legend()
+        ax.set_ylabel('Age Groups')
+        ax.set_xlabel('Population (1000s)')
+
+        ax.text(x=1e3, y=10, s="Males", fontdict={'size': 15}, ha='right')
+        ax.text(x=-1e3, y=10, s="Females", fontdict={'size': 15}, ha='left')
+
+        # reverse order of legend
+        handles, labels = ax.get_legend_handles_labels()
+        ax.legend(handles[::-1], labels[::-1], loc='upper right')
+
+        locs = np.array([-2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2]) * 1e3
+        ax.set_xticks(locs)
+        ax.set_xticklabels(np.round(np.sqrt(locs ** 2)).astype(int))
+
+        ax.set_axisbelow(True)
+        # ax.yaxis.grid(color='gray', linestyle='dashed')
+        ax.grid()
+
+        return ax
+
+    # Get Age/Sex Breakdown of population (with scaling)
     calperiods, calperiodlookup = make_calendar_period_lookup()
 
     def get_mean_pop_by_age_for_sex_and_year(sex, year):
@@ -234,23 +288,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     pops[sex]['Census'] = cens.loc[cens['Sex'] == sex].groupby(by='Age_Grp')['Count'].sum()
 
             # Simple plot of population pyramid
-            fig, axes = plt.subplots(ncols=1, nrows=2, sharey=True, sharex=True)
-            labels = ['F', 'M']
-            width = 0.2
-            x = np.arange(len(list(make_age_grp_types().categories)))  # the label locations
-            for i, sex in enumerate(labels):
-                for t, key in enumerate(pops[sex]):
-                    axes[i].bar(x=x + (t - 1) * width * 1.2, label=key, height=pops[sex][key] / 1e6, color=colors[key],
-                                width=width)
-                axes[i].set_title(f"{sexname(sex)}: {str(year)}")
-                axes[i].set_ylabel('Population Size (millions)')
-
-            axes[1].set_xlabel('Age Group')
-            plt.xticks(x, list(make_age_grp_types().categories), rotation=90)
-            axes[1].legend()
-            fig.tight_layout()
-            plt.savefig(make_graph_file_name(f"Pop_Size_{year}"))
-            plt.show()
+            fig = plt.figure()
+            ax = plot_population_pyramid(data=pops, fig=fig)
+            ax.set_title(f'Population Pyramid in {year}')
+            fig.savefig(make_graph_file_name(f"Pop_Size_{year}"))
+            fig.show()
             plt.close(fig)
 
         except pd.core.base.DataError:
@@ -388,7 +430,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _x = _df \
             .assign(year=_df['date'].dt.year) \
             .set_index('year') \
-            .drop(columns=['date'])
+            .drop(columns=['date'])\
+            .sort_index()
 
         # restore the multi-index that had to be flattened to pass through the logger"
         _x = unflatten_flattened_multi_index_in_logging(_x)
@@ -465,7 +508,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     )
 
     # Compute age-specific fertility rates
-    asfr = summarize(births_by_mother_age_at_pregnancy.div(num_adult_women))
+    asfr = summarize(births_by_mother_age_at_pregnancy.div(num_adult_women)).sort_index()
 
     # Get the age-specific fertility rates of the WPP source
     wpp = pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_ASFR_WPP.csv')
@@ -491,7 +534,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax[i].fill_between(model.index, model[(0, 'lower', _agegrp)], model[(0, 'upper', _agegrp)],
                            color='r', alpha=0.2)
         ax[i].set_ylim(0, 0.4)
-        ax[i].set_title(f'Age at Pregnancy: {_agegrp}y', fontsize=6)
+        ax[i].set_title(f'Age at Conception: {_agegrp}y', fontsize=6)
         ax[i].set_xlabel('Year')
         ax[i].set_ylabel('Live births per woman')
 
@@ -499,6 +542,34 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.legend((l1[0], l2[0]), ('WPP', 'Model'), 'lower right')
     fig.tight_layout()
     fig.savefig(make_graph_file_name("asfr_model_vs_data"))
+    fig.show()
+    plt.close(fig)
+
+    # Plot with respect to age, averaged in the five year periods:
+
+    model_asfr = asfr.unstack() \
+                     .droplevel(axis=1, level=0) \
+                     .groupby(by=asfr.index.levels[0].map(calperiodlookup)) \
+                     .mean() \
+                     .stack()
+
+    data_asfr = wpp.loc[
+        wpp.Variant.isin(['WPP_Estimates', 'WPP_Medium variant']), ['Age_Grp', 'Period', 'asfr']
+    ].groupby(by=['Age_Grp', 'Period'])['asfr'].mean().unstack().T
+
+    fig, axs = plt.subplots(nrows=2, sharex=True, sharey=True)
+    for ax, _period in zip(axs, ['2010-2014', '2015-2019']):
+        to_plot = pd.concat([model_asfr.loc[_period], data_asfr.loc[_period]], axis=1)
+        ax.plot(to_plot.index, to_plot[_period], label='WPP', color=colors['WPP'])
+        ax.plot(to_plot.index, to_plot['mean'], label='Model', color=colors['Model'])
+        ax.fill_between(to_plot.index, to_plot['lower'], to_plot['upper'], color=colors['Model'], alpha=0.2)
+        ax.set_xlabel('Age at Conception')
+        ax.set_ylabel('Live births per woman-year')
+        ax.set_title(f'{_period}')
+        ax.legend()
+    fig.suptitle('Live Births By Age of Mother At Conception')
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name("asfr_model_vs_data_average_by_age"))
     fig.show()
     plt.close(fig)
 
