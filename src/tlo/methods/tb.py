@@ -766,8 +766,11 @@ class Tb(Module):
             hs.get_item_code_from_item_name("Cat. II Patient Kit A2")
 
         # mdr treatment
+        # todo change to item code 181
+        # self.item_codes_for_consumables_required['tb_mdrtx'] = {
+        #     hs.get_item_code_from_item_name("Category IV"): 1}
         self.item_codes_for_consumables_required['tb_mdrtx'] = {
-            hs.get_item_code_from_item_name("Category IV"): 1}
+            hs.get_item_code_from_item_name("Treatment: second-line drugs"): 1}
 
         # ipt
         self.item_codes_for_consumables_required['tb_ipt'] = {
@@ -1123,10 +1126,16 @@ class Tb(Module):
         # in that case, second infection will not do anything
         susc_idx = df.loc[
             df.is_alive
-            ].index
+        ].index
+
+        # weight risk by individual characteristics
+        # Compute chance that each susceptible person becomes infected:
+        rr_of_infection = self.lm["active_tb"].predict(
+            df.loc[susc_idx]
+        )
 
         #  probability of infection
-        p_infection = 0.001
+        p_infection = rr_of_infection * 0.001
 
         # New infections:
         will_be_infected = (
@@ -1145,7 +1154,6 @@ class Tb(Module):
 
             # if person doesn't already have scheduled date active...
             if df.at[person_id, "tb_scheduled_date_active"] == pd.NaT:
-
                 date_progression = now + pd.DateOffset(
                     days=rng.randint(0, 365)
                 )
@@ -1584,7 +1592,7 @@ class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(years=1))
+        super().__init__(module, frequency=DateOffset(months=1))
 
     def apply(self, population):
 
@@ -1595,7 +1603,7 @@ class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
         self.module.assign_active_tb(population, strain="mdr")
 
         # todo importation of new ds cases - independent of current prevalence
-        # self.module.import_tb_cases(population, strain="ds")
+        self.module.import_tb_cases(population, strain="ds")
 
         # todo importation of new mdr cases - independent of current prevalence
         # self.module.import_tb_cases(population, strain="mdr")
