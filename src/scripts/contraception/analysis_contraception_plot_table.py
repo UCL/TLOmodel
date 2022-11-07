@@ -163,10 +163,7 @@ def combine_use_costs_with_without_interv(
                                    ['Without interventions', 'With Pop and PPFP interventions'],
                                    [str(use_output).capitalize() + ' number of women using (%)', 'Costs']
                                ]))
-    in_co_order.append('co_modern_total')
-    in_co_order.append('co_modern_interv_total')
-    df_combined = df_combined.loc[:, in_co_order].transpose()
-    return df_combined
+    return df_combined.loc[:, :].transpose()
 
 
 use_costs_table_df = combine_use_costs_with_without_interv(
@@ -174,6 +171,14 @@ use_costs_table_df = combine_use_costs_with_without_interv(
     use_with_df, use_with_val_perc_df, costs_with_df,
     contraceptives_order
 )
+
+# Change the names of totals
+use_costs_table_df = use_costs_table_df.rename(
+    index={'co_modern_total': 'modern contraceptives total',
+           'co_modern_interv_total': 'modern contraceptives & interventions total'}
+)
+# Remove the underscores from the names of contraception methods
+use_costs_table_df.index = use_costs_table_df.index.map(lambda s: s.replace("_", " "))
 
 if print_bool:
     print("\n")
