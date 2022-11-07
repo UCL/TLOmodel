@@ -133,7 +133,8 @@ class Alri(Module):
     all_symptoms = sorted({
         'cough',
         'difficult_breathing',
-        'cyanosis','fever',
+        'cyanosis',
+        'fever',
         'tachypnoea',
         'chest_indrawing',
         'danger_signs'
