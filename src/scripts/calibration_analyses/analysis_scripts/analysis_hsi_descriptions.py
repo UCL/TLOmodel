@@ -11,9 +11,11 @@ from tlo.analysis.utils import (
     bin_hsi_event_details,
     COARSE_APPT_TYPE_TO_COLOR_MAP,
     compute_mean_across_runs,
+    compute_mean_across_runs_where_nonzero,
     extract_results,
     get_coarse_appt_type,
     get_color_short_treatment_id,
+    order_of_short_treatment_ids,
     plot_stacked_bar_chart,
     squarify_neat,
     summarize,
@@ -183,72 +185,110 @@ def figure3_fraction_of_time_of_hcw_used_by_treatment(results_folder: Path, outp
 
     make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_Fig3_{stub}.png"  # noqa: E731
 
-    def get_share_of_time_for_hw_by_short_treatment_id(_df):
-        appts = formatting_hsi_df(_df) \
-            .drop(columns=['date', 'TREATMENT_ID']) \
-            .melt(id_vars=['Facility_Level', 'TREATMENT_ID_SHORT'], var_name='Appt_Type', value_name='Num') \
-            .groupby(by=['TREATMENT_ID_SHORT', 'Facility_Level', 'Appt_Type'])['Num'].sum() \
-            .reset_index()
-
-        # Find the time of each HealthCareWorker (HCW) for each appointment at each level
-        att = pd.pivot_table(
-            pd.read_csv(
-                resourcefilepath / 'healthsystem' / 'human_resources' / 'definitions' /
-                'ResourceFile_Appt_Time_Table.csv'
-            ),
-            index=['Appt_Type_Code', 'Facility_Level'],
-            columns='Officer_Category',
-            values='Time_Taken_Mins',
-            fill_value=0.0
-        ).reset_index()
-
-        m = appts.merge(att,
-                        left_on=['Appt_Type', 'Facility_Level'],
-                        right_on=['Appt_Type_Code', 'Facility_Level'],
-                        how='left') \
-            .drop(columns=['Facility_Level', 'Appt_Type', 'Appt_Type_Code']) \
-            .set_index('TREATMENT_ID_SHORT')
-
-        return m.apply(lambda row: row * row['Num'], axis=1) \
-            .drop(columns='Num') \
-            .groupby(level=0).sum() \
-            .apply(lambda col: col / col.sum(), axis=0) \
-            .stack()
-
-    share_of_time_for_hw_by_short_treatment_id = summarize(
-        extract_results(
-            results_folder,
-            module='tlo.methods.healthsystem',
-            key='HSI_Event',
-            custom_generate_series=get_share_of_time_for_hw_by_short_treatment_id,
-            do_scaling=False
-        ),
-        only_mean=True,
-        collapse_columns=True
+    appointment_time_table = pd.read_csv(
+        resourcefilepath
+        / 'healthsystem'
+        / 'human_resources'
+        / 'definitions'
+        / 'ResourceFile_Appt_Time_Table.csv',
+        index_col=["Appt_Type_Code", "Facility_Level", "Officer_Category"]
     )
 
-    def drop_zero_rows(ser):
-        return ser.drop(ser[ser == 0].index)
+    appt_type_facility_level_officer_category_to_appt_time = (
+        appointment_time_table.Time_Taken_Mins.to_dict()
+    )
+
+    officer_categories = appointment_time_table.index.levels[
+        appointment_time_table.index.names.index("Officer_Category")
+    ].to_list()
+
+    times_by_officer_category_treatment_id_per_run = bin_hsi_event_details(
+        results_folder,
+        lambda event_details, count: sum(
+            [
+                Counter({
+                    (
+                        officer_category,
+                        event_details["treatment_id"].split("_")[0]
+                    ):
+                    count
+                    * appt_number
+                    * appt_type_facility_level_officer_category_to_appt_time.get(
+                        (
+                            appt_type,
+                            event_details["facility_level"],
+                            officer_category
+                        ),
+                        0
+                    )
+                    for officer_category in officer_categories
+                })
+                for appt_type, appt_number in event_details["appt_footprint"]
+            ],
+            Counter()
+        ),
+        *TARGET_PERIOD,
+        False
+    )
+
+    time_proportions_by_officer_category_treatment_id_per_run = {}
+
+    for run_key, times_by_officer_category_treatment_id in (
+        times_by_officer_category_treatment_id_per_run.items()
+    ):
+        total_times_per_officer_category = Counter()
+        for (officer_cat, _), time in times_by_officer_category_treatment_id.items():
+            total_times_per_officer_category[officer_cat] += time
+        time_proportions_by_officer_category_treatment_id_per_run[run_key] = Counter({
+            (officer_category, treatment_id):
+            time / total_times_per_officer_category[officer_category]
+            for (officer_category, treatment_id), time
+            in times_by_officer_category_treatment_id.items()
+        })
+
+    time_proportions_by_officer_category_treatment_id = compute_mean_across_runs_where_nonzero(
+        time_proportions_by_officer_category_treatment_id_per_run
+    )[0]
+
+    time_proportions_by_officer_category_then_treatment_id = defaultdict(dict)
+    for (officer_category, treatment_id), proportion in (
+        time_proportions_by_officer_category_treatment_id.items()
+    ):
+        time_proportions_by_officer_category_then_treatment_id[
+            officer_category
+        ][
+            treatment_id
+        ] = proportion
+
+    for officer_category in time_proportions_by_officer_category_then_treatment_id:
+        time_proportions_by_officer_category_then_treatment_id[
+            officer_category
+        ] = dict(
+            sorted(
+                time_proportions_by_officer_category_then_treatment_id[officer_category].items(),
+                key=lambda key_value: order_of_short_treatment_ids(key_value[0])
+            )
+        )
 
     # all_cadres = share_of_time_for_hw_by_short_treatment_id.index.levels[1]
     cadres_to_plot = ['DCSA', 'Nursing_and_Midwifery', 'Clinical', 'Pharmacy']
 
     fig, ax = plt.subplots(nrows=2, ncols=2)
     name_of_plot = 'Proportion of Time Used For Selected Cadre by TREATMENT_ID (Short)'
-    for _cadre, _ax in zip(cadres_to_plot, ax.reshape(-1)):
-        _x = drop_zero_rows(share_of_time_for_hw_by_short_treatment_id.loc[(slice(None), _cadre)])
+    for cadre, ax in zip(cadres_to_plot, ax.flat):
+        p_by_treatment_id = time_proportions_by_officer_category_then_treatment_id[cadre]
         squarify_neat(
-            sizes=_x.values,
-            label=_x.index,
+            sizes=list(p_by_treatment_id.values()),
+            label=list(p_by_treatment_id.keys()),
             colormap=get_color_short_treatment_id,
             numlabels=4,
             alpha=1,
             pad=True,
-            ax=_ax,
+            ax=ax,
             text_kwargs={'color': 'black', 'size': 8},
         )
-        _ax.set_axis_off()
-        _ax.set_title(f'{_cadre}', {'size': 10, 'color': 'black'})
+        ax.set_axis_off()
+        ax.set_title(f'{cadre}', {'size': 10, 'color': 'black'})
     fig.suptitle(name_of_plot, fontproperties={'size': 12})
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
@@ -553,7 +593,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
 if __name__ == "__main__":
 
-    results_folder = Path('./outputs') / 'long_run-2022-07-21T101707Z'  # small run created for test purposes (locally)
+    results_folder = Path('./outputs') / 'long_run-2022-10-12T173904Z'  # small run created for test purposes (locally)
 
     apply(
         results_folder=results_folder,
