@@ -53,11 +53,11 @@ use_without_df, percentage_use_without_df, costs_without_df =\
     a_co.analyse_contraception(
         datestamp_without, logFile_without,
         # %% Plot Contraception Use Over time?
-        False,
+        True,
         # %% Plot Contraception Use By Method Over time?
-        False,
+        True,
         # %% Plot Pregnancies Over time?
-        False,
+        True,
         # List of modern methods
         contraceptives_order,
         # Calculate Use and Consumables Costs of Contraception methods within
@@ -76,11 +76,11 @@ if do_interv_analysis:
         a_co.analyse_contraception(
             datestamp_with, logFile_with,
             # %% Plot Contraception Use Over time?
-            False,
+            True,
             # %% Plot Contraception Use By Method Over time?
-            False,
+            True,
             # %% Plot Pregnancies Over time?
-            False,
+            True,
             # List of modern methods
             contraceptives_order,
             # Calculate Use and Consumables Costs of Contraception methods within
