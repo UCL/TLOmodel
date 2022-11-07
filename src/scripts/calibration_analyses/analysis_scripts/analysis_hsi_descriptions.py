@@ -1,3 +1,4 @@
+import argparse
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -593,10 +594,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
 if __name__ == "__main__":
 
-    results_folder = Path('./outputs') / 'long_run-2022-10-12T173904Z'  # small run created for test purposes (locally)
+    parser = argparse.ArgumentParser("Analyse logged HSI event data from scenario run")
+    parser.add_argument(
+        "--results-folder",
+        type=Path,
+        help="Path to folder containing results of scenario to perform analysis for"
+    )
+    args = parser.parse_args()
 
     apply(
-        results_folder=results_folder,
-        output_folder=results_folder,
+        results_folder=args.results_folder,
+        output_folder=args.results_folder,
         resourcefilepath=Path('./resources')
     )
