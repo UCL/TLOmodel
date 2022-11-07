@@ -36,7 +36,7 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2028, 1, 1)
+end_date = Date(2035, 1, 1)
 popsize = 100000
 
 scenario = 0
@@ -89,16 +89,19 @@ sim.register(
 )
 
 # set the scenario
-sim.modules["Tb"].parameters["beta"] = 2.4
+sim.modules["Tb"].parameters["beta"] = 0.5
 sim.modules["Tb"].parameters["scenario"] = scenario
 sim.modules["Tb"].parameters["scenario_start_date"] = Date(2023, 1, 1)
-sim.modules["Tb"].parameters["scenario_SI"] = "b"
+sim.modules["Tb"].parameters["scenario_SI"] = "z"
 
 # to cluster tests in positive people
-sim.modules["Hiv"].parameters["rr_test_hiv_positive"] = 8  # default 1.5
+sim.modules["Hiv"].parameters["rr_test_hiv_positive"] = 1.1  # default 1.5
+
 # to account for people starting-> defaulting, or not getting cons
 # this not used now if perfect referral testing->treatment
-sim.modules["Hiv"].parameters["treatment_initiation_adjustment"] = 3  # default 1.5
+# affects the prob of art start once diagnosed
+sim.modules["Hiv"].parameters["treatment_initiation_adjustment"] = 1  # default 1.5
+
 # assume all defaulting is due to cons availability
 sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_6_months"] = 1.0
 sim.modules["Hiv"].parameters["probability_of_seeking_further_art_appointment_if_drug_not_available"] = 1.0
