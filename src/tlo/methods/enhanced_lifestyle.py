@@ -440,6 +440,7 @@ class EduPropertyInitialiser:
         # create a new dataframe to hold results
         edu_df = pd.DataFrame(data=df[['li_in_ed', 'li_ed_lev']].copy(), index=df.index)
 
+        edu_df['li_ed_lev'] = 1
         # select individuals who are alive and 5+ years
         age_gte5 = df.index[(df.age_years >= 5) & df.is_alive]
 
@@ -1430,6 +1431,7 @@ class LifestyleModels:
             age13_to_secondary = rng.random_sample(len(age13_in_primary)) < prob_secondary
             edu_trans.loc[age13_in_primary[age13_to_secondary], 'li_ed_lev'] = 3
 
+
             # those who did not go on to secondary education are no longer in education
             edu_trans.loc[age13_in_primary[~age13_to_secondary], 'li_in_ed'] = False
 
@@ -1441,7 +1443,6 @@ class LifestyleModels:
 
             # randomly select some individuals to leave education
             now_not_in_ed = rng.random_sample(len(in_ed)) < p_leave_ed
-
             edu_trans.loc[in_ed[now_not_in_ed], 'li_in_ed'] = False
 
             # everyone leaves education at age 20
@@ -1893,8 +1894,40 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # individual's urban or rural status. define and log these properties separately
         cat_by_rural_urban_props = ['li_wealth', 'li_bmi', 'li_ex_alc', 'li_wood_burn_stove',
                                     'li_unimproved_sanitation', 'li_no_clean_drinking_water']
+        # these properties are applicable to individuals 15+ years
+        log_by_age_15up = ['li_low_ex', 'li_mar_stat', 'li_ex_alc', 'li_bmi', 'li_tob']
+
         for _property in all_lm_keys:
-            if _property in cat_by_rural_urban_props:
+            if _property in log_by_age_15up:
+                if _property in cat_by_rural_urban_props:
+                    data = df.loc[df.is_alive & (df.age_years >= 15)].groupby(by=[
+                        df.loc[df.is_alive & (df.age_years >= 15), 'li_urban'],
+                        df.loc[df.is_alive & (df.age_years >= 15), 'sex'],
+                        df.loc[df.is_alive & (df.age_years >= 15), _property],
+                        df.loc[df.is_alive & (df.age_years >= 15), 'age_range'],
+                    ]).size()
+                else:
+                    data = df.loc[df.is_alive & (df.age_years >= 15)].groupby(by=[
+                        df.loc[df.is_alive & (df.age_years >= 15), 'sex'],
+                        df.loc[df.is_alive & (df.age_years >= 15), _property],
+                        df.loc[df.is_alive & (df.age_years >= 15), 'age_range'],
+                    ]).size()
+
+            elif _property == 'li_in_ed':
+                data = df.loc[df.is_alive & df.age_years.between(5, 19)].groupby(by=[
+                    df.loc[df.is_alive & df.age_years.between(5, 19), 'sex'],
+                    df.loc[df.is_alive & df.age_years.between(5, 19), _property],
+                    df.loc[df.is_alive & df.age_years.between(5, 19), 'age_range'],
+                ]).size()
+
+            elif _property == 'li_is_sexworker':
+                data = df.loc[df.is_alive & (df.age_years.between(15, 49))].groupby(by=[
+                    df.loc[df.is_alive & (df.age_years.between(15, 49)), 'sex'],
+                    df.loc[df.is_alive & (df.age_years.between(15, 49)), _property],
+                    df.loc[df.is_alive & (df.age_years.between(15, 49)), 'age_range'],
+                ]).size()
+
+            elif _property in cat_by_rural_urban_props:
                 # log all properties that are also categorised by rural or urban in addition to ex and age groups
                 data = df.loc[df.is_alive].groupby(by=[
                     df.loc[df.is_alive, 'li_urban'],
@@ -1902,10 +1935,7 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     df.loc[df.is_alive, _property],
                     df.loc[df.is_alive, 'age_range'],
                 ]).size()
-                logger.info(
-                    key=_property,
-                    data=flatten_multi_index_series_into_dict_for_logging(data)
-                )
+
             else:
                 # log all other remaining properties
                 data = df.loc[df.is_alive].groupby(by=[
@@ -1913,7 +1943,8 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     df.loc[df.is_alive, _property],
                     df.loc[df.is_alive, 'age_range'],
                 ]).size()
-                logger.info(
-                    key=_property,
-                    data=flatten_multi_index_series_into_dict_for_logging(data)
-                )
+            # log data
+            logger.info(
+                key=_property,
+                data=flatten_multi_index_series_into_dict_for_logging(data)
+            )
