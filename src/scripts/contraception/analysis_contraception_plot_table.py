@@ -1,5 +1,3 @@
-import numpy as np
-
 import fnc_analyse_contraception as a_co
 import pandas as pd
 # import collections
@@ -11,10 +9,10 @@ time_start = time.time()
 ################################################################################
 # TO SET:  # TODO: update with final sims
 # for the output figures
-datestamp_without = '2022_11_04'
-datestamp_with = '2022_11_04'  # TODO: update after new calibration
-datestamp_without_log = '2022-11-07T144634'
-datestamp_with_log = '2022-11-04T175536'  # TODO: update after new calibration
+datestamp_without = '2022_11_04'  # TODO: update with final sim
+datestamp_with = '2022_11_04'  # TODO: update with final sim
+datestamp_without_log = '2022-11-07T144634'  # TODO: update with final sim
+datestamp_with_log = '2022-11-04T175536'  # TODO: update with final sim
 logFile_without = 'run_analysis_contraception__' + datestamp_without_log + '.log'
 logFile_with = 'run_analysis_contraception__' + datestamp_with_log + '.log'
 # which years we want to summarise for the table of use and costs
@@ -23,70 +21,11 @@ TimePeriods_starts = [2022, 2031, 2041, 2051]
 contraceptives_order = ['pill', 'IUD', 'injections', 'implant', 'male_condom',
                         'female_sterilization', 'other_modern']
 # Do you want prints to see costs, use, percentage use and table?
-# If not only the output table will be saved in outputs folder.
+# If False, no output is printed, but the output table is still saved in the 'outputs' folder.
 print_bool = False
-# parameter only for test runs (if False, skips the second analysis; needs to be True for the final run)
+# parameter only for test runs (if False, skips the second analysis and uses the outputs from the 1st analysis instead)
+# needs to be True for the final run
 do_interv_analysis = True
-################################################################################
-# ##### '2022-11-04T165807Z'  # TODO: update when finished
-# => cons_availability = "all"
-# => start_date = Date(2010, 1, 1); end_date = Date(2099, 12, 31)
-# seed = 2022
-# and pop_size = 50000
-# after rounding up the numbers of items removed; no intervention;
-# f. steril only in women 30+ (except during pop initiation, 20+ then);
-# using the new version of ResoureFile_Consumables_Items_and_Packages
-# ##### '2022-11-04T175536'
-# => cons_availability = "all"
-# => start_date = Date(2010, 1, 1); end_date = Date(2050, 12, 31)
-# seed = 2022
-# and pop_size = 2000 => running time of 1 analysis & only table: 20.291696548461914 s
-# after rounding up the numbers of items removed; interventions since 2023;
-# f. steril only in women 30+ (except during pop initiation, 20+ then);
-# using the new version of ResoureFile_Consumables_Items_and_Packages;
-# PR-ed version on 4th Nov to ForEvaToMerge
-# ##### '2022-11-07T144634'
-# => cons_availability = "all"
-# => start_date = Date(2010, 1, 1); end_date = Date(2050, 12, 31)
-# seed = 2022
-# and pop_size = 2000 => running time of 2 analysis & only table: 20.291696548461914 s
-# after rounding up the numbers of items removed; no intervention;
-# f. steril only in women 30+ (except during pop initiation, 20+ then);
-# using the new version of ResoureFile_Consumables_Items_and_Packages;
-# PR-ed version on 4th Nov to ForEvaToMerge
-# ##### '2022-11-03T141744'
-# => cons_availability = "all"
-# => start_date = Date(2010, 1, 1); end_date = Date(2099, 12, 31)
-# seed = 2022
-# and pop_size = 50000
-# after rounding up the numbers of items removed; no intervention;
-# f. steril only in women 30+ (except during pop initiation, 20+ then)
-# ##### '2022-11-03T115327'
-# => cons_availability = "all"
-# => start_date = Date(2010, 1, 1); end_date = Date(2099, 12, 31)
-# seed = 2022
-# and pop_size = 50000
-# after rounding up the numbers of items removed; no intervention;
-# f. steril only in women 30+
-# ##### '2022-11-03T114819'
-# => cons_availability = "all"
-# => start_date = Date(2010, 1, 1); end_date = Date(2099, 12, 31)
-# seed = 2022
-# and pop_size = 50000
-# after rounding up the numbers of items removed; interventions since 2023;
-# f. steril only in women 30+
-# ##### '2022-10-13T165132'
-# => cons_availability = "all"
-# => start_date = Date(2010, 1, 1); end_date = Date(2050, 12, 31)
-# seed = 2022
-# and pop_size = 20 => running time of 1 analysis & only table: 6.688109636306763 s
-# after rounding up the numbers of items removed
-# ##### '2022-10-13T105006'
-# => cons_availability = "all"
-# => start_date = Date(2010, 1, 1); end_date = Date(2099, 12, 31)
-# seed = 2022
-# and pop_size = 50
-# before rounding up the numbers of items removed
 ################################################################################
 
 
