@@ -1,5 +1,3 @@
-import numpy as np
-
 import fnc_analyse_contraception as a_co
 import pandas as pd
 # import collections
@@ -9,12 +7,12 @@ import time
 time_start = time.time()
 
 ################################################################################
-# TO SET:
+# TO SET:  # TODO: update with final sims
 # for the output figures
-datestamp_without = '2022_10_14'
-datestamp_with = '2022_10_14'  # TODO: need data
-datestamp_without_log = '2022-10-14T223057'
-datestamp_with_log = '2022-10-14T223057'  # TODO: need data
+datestamp_without = '2022_11_04'  # TODO: update with final sim
+datestamp_with = '2022_11_04'  # TODO: update with final sim
+datestamp_without_log = '2022-11-07T144634'  # TODO: update with final sim
+datestamp_with_log = '2022-11-04T175536'  # TODO: update with final sim
 logFile_without = 'run_analysis_contraception__' + datestamp_without_log + '.log'
 logFile_with = 'run_analysis_contraception__' + datestamp_with_log + '.log'
 # which years we want to summarise for the table of use and costs
@@ -22,45 +20,12 @@ TimePeriods_starts = [2022, 2031, 2041, 2051]
 # order of contraceptives for the table
 contraceptives_order = ['pill', 'IUD', 'injections', 'implant', 'male_condom',
                         'female_sterilization', 'other_modern']
-# ##### '2022-10-14T223057'
-# => cons_availability = "all"
-# => start_date = Date(2010, 1, 1); end_date = Date(2099, 12, 31)
-# seed = 2022
-# and pop_size = 50000
-# after rounding up the numbers of items removed
-# ##### '2022-10-13T165132'
-# => cons_availability = "all"
-# => start_date = Date(2010, 1, 1); end_date = Date(2050, 12, 31)
-# seed = 2022
-# and pop_size = 20
-# after rounding up the numbers of items removed
-# ##### '2022-10-13T105006'
-# => cons_availability = "all"
-# => start_date = Date(2010, 1, 1); end_date = Date(2099, 12, 31)
-# seed = 2022
-# and pop_size = 50
-# before rounding up the numbers of items removed
-# ##### '2022-09-14T105623' or '2022-09-14T105620' (datestamp = .._v1 or ..v2)
-# logFile_xx = 'run_analysis_contraception__' + datestamp_xx_log + '.log'
-# => cons_availability = "all"
-# => start_date = Date(2010, 1, 1); end_date = Date(2099, 12, 31)
-# seed = 2022
-# and pop_size = 50000
-# => running time: 7.15e-06 s until analysis, 27.7 s loading the log, 22 mins
-# each analysis; total time: 42.5 mins
-# ##### '2022-09-10T181844'
-# logFile_xx = 'contraception_analysis__' + datestamp_xx_log + '.log'
-# => cons_availability = "all"
-# => start_date = Date(2010, 1, 1); end_date = Date(2099, 12, 31)
-# seed = 0
-# and pop_size = 20 => running time: ~12.13467526435852 s (incl. only one analysis, no figs)
-# ##### '2022-08-29T160006'
-# logFile_xx = 'contraception_analysis__' + datestamp_xx_log + '.log'
-# => cons_availability = "default"
-# => start_date = Date(2010, 1, 1); end_date = Date(2099, 12, 31)
-# it is prepared so it can be run max to Date(2099, 12, 31), no longer
-# seed = 0
-# and pop_size = 20
+# Do you want prints to see costs, use, percentage use and table?
+# If False, no output is printed, but the output table is still saved in the 'outputs' folder.
+print_bool = False
+# parameter only for test runs (if False, skips the second analysis and uses the outputs from the 1st analysis instead)
+# needs to be True for the final run
+do_interv_analysis = True
 ################################################################################
 
 
@@ -81,69 +46,75 @@ def timeitprint(in_what_measures, in_fnc, in_timeit_rep_nmb=1):  # TODO: remove
 
 # Use and Consumables Costs of Contraception methods Over time
 # WITHOUT interventions:
-def do_without_analysis():  # TODO: temporarily as a function (to allow better measurement of running time)
-    out_use_without_df, out_percentage_use_without_df, out_costs_without_df =\
-        a_co.analyse_contraception(
-            datestamp_without, logFile_without,
-            # %% Plot Contraception Use Over time?
-            False,
-            # %% Plot Contraception Use By Method Over time?
-            False,
-            # %% Plot Pregnancies Over time?
-            False,
-            # Calculate Use and Consumables Costs of Contraception methods within
-            # some time periods?
-            True, TimePeriods_starts
-        )
-    return out_use_without_df, out_percentage_use_without_df, out_costs_without_df
-
-
-use_without_df, percentage_use_without_df, costs_without_df = do_without_analysis()
-# timeitprint("one analysis performance only", do_without_analysis)
-# 11.47628352700849 for test data ('2022-09-10T181844')
-
-print("COSTS")
-print(costs_without_df)
-print(list(costs_without_df.columns))
-#
-print("MEAN USE")
-fullprint(use_without_df)
-print(list(use_without_df.columns))
-
-print("MEAN PERCENTAGE USE")
-fullprint(percentage_use_without_df)
-print(list(percentage_use_without_df.columns))
-
-# # Use and Consumables Costs of Contraception methods Over time
-# WITH interventions:  # TODO: need the data
-use_with_df, percentage_use_with_df, costs_with_df =\
+print()
+print("analysis without interventions in progress")
+print('--------------------')
+use_without_df, percentage_use_without_df, costs_without_df =\
     a_co.analyse_contraception(
-        datestamp_with, logFile_with,
+        datestamp_without, logFile_without,
         # %% Plot Contraception Use Over time?
         True,
         # %% Plot Contraception Use By Method Over time?
         True,
         # %% Plot Pregnancies Over time?
         True,
+        # List of modern methods
+        contraceptives_order,
         # Calculate Use and Consumables Costs of Contraception methods within
         # some time periods?
         True, TimePeriods_starts
+        # and default: in_use_output="mean"
     )
-# use_with_df = use_without_df
-# percentage_use_with_df = percentage_use_without_df
-# costs_with_df = costs_without_df
+
+if do_interv_analysis:
+    # Use and Consumables Costs of Contraception methods Over time
+    # WITH interventions:
+    print()
+    print("analysis with interventions in progress")
+    print('--------------------')
+    use_with_df, percentage_use_with_df, costs_with_df =\
+        a_co.analyse_contraception(
+            datestamp_with, logFile_with,
+            # %% Plot Contraception Use Over time?
+            True,
+            # %% Plot Contraception Use By Method Over time?
+            True,
+            # %% Plot Pregnancies Over time?
+            True,
+            # List of modern methods
+            contraceptives_order,
+            # Calculate Use and Consumables Costs of Contraception methods within
+            # some time periods?
+            True, TimePeriods_starts
+        )
+else:
+    use_with_df = use_without_df
+    percentage_use_with_df = percentage_use_without_df
+    costs_with_df = costs_without_df
+
+if print_bool:
+    print("\n")
+    print("COSTS WITHOUT")
+    print(costs_without_df)
+    print()
+    print("\n")
+    print("COSTS WITH")
+    print(costs_with_df)
+    #
+    print("\n")
+    print("MEAN USE WITHOUT")
+    fullprint(use_without_df)
+    print(list(use_without_df.columns))
+    #
+    print("\n")
+    print("MEAN PERCENTAGE USE WITHOUT")
+    fullprint(percentage_use_without_df)
+    print(list(percentage_use_without_df.columns))
 
 # %% Plot Use and Consumables Costs of Contraception methods Over time
 # with and without intervention:
 if not ('use_output' in locals() or 'use_output' in globals()):
     use_output = "mean"
-
-# TODO: finish
-
-# TODO: Footnote marks manually into the table in the manuscript, at least so
-#  far.
-
-# DF.rename_axis('Contraception method', axis=1)
 
 use_without_val_perc_df =\
     use_without_df.round(2).astype(str) +\
@@ -167,29 +138,32 @@ def combine_use_costs_with_without_interv(
             [(in_df_use_without, in_df_use_perc_without, in_df_costs_without),
              (in_df_use_with, in_df_use_perc_with, in_df_costs_with)]:
             # use nmb (perc)
-            data.append(list(in_df_use_perc.loc[tp, :]))
+            l_tp_use = list(in_df_use_perc.loc[tp, :])
+            l_tp_use.append('--')
+            data.append(l_tp_use)
             # costs
             l_tp_costs = []
             for meth in in_df_use.columns:
                 if meth in list(in_df_costs.loc[tp].index.get_level_values('Contraceptive_Method')):
                     l_tp_costs.append(round(float(in_df_costs.loc[(tp, meth), :]), 2))
                 else:
-                    if meth == 'women_total':
+                    if meth == 'co_modern_total':
                         l_tp_costs.append(round(sum(l_tp_costs), 2))
                     else:
                         l_tp_costs.append(0)
+            l_tp_costs.append('-tba-')  # TODO: to be added -> sum total costs and interv
             data.append(l_tp_costs)
+    table_cols = list(in_df_use_without.columns)
+    table_cols.append('co_modern_interv_total')
     df_combined = pd.DataFrame(data[:],
-                               columns=pd.Index(in_df_use_without.columns,
-                                                name='Contraception method'),
+                               columns=pd.Index(table_cols,
+                                                name='Contraception method'),  # TODO: maybe remove?
                                index=pd.MultiIndex.from_product([
                                    in_df_use_without.index,
                                    ['Without interventions', 'With Pop and PPFP interventions'],
                                    [str(use_output).capitalize() + ' number of women using (%)', 'Costs']
                                ]))
-    in_co_order.append('women_total')
-    df_combined = df_combined.loc[:, in_co_order].transpose()
-    return df_combined
+    return df_combined.loc[:, :].transpose()
 
 
 use_costs_table_df = combine_use_costs_with_without_interv(
@@ -198,12 +172,18 @@ use_costs_table_df = combine_use_costs_with_without_interv(
     contraceptives_order
 )
 
+# Change the names of totals
+use_costs_table_df = use_costs_table_df.rename(
+    index={'co_modern_total': 'modern contraceptives total',
+           'co_modern_interv_total': 'modern contraceptives & interventions total'}
+)
+# Remove the underscores from the names of contraception methods
+use_costs_table_df.index = use_costs_table_df.index.map(lambda s: s.replace("_", " "))
 
-# use_costs_table_df = use_without_val_perc_df  # TODO: remove
-
-
-print("TABLE")
-fullprint(use_costs_table_df)
+if print_bool:
+    print("\n")
+    print("TABLE")
+    fullprint(use_costs_table_df)
 
 output_table_file = r"outputs/output_table_" + use_output + "-use_costs" +\
                     "__" + datestamp_without_log + "_" + datestamp_with_log +\
@@ -212,9 +192,12 @@ writer = pd.ExcelWriter(output_table_file)
 # Mean use rounded to two decimals for the table
 use_costs_table_df.to_excel(writer, index_label=use_costs_table_df.columns.name)
 
-# reverse_mean_percentage_use.round(2)
 writer.save()
+print("\n")
+print("Tab: Contraception Use (total & percentage) & Costs within Time Periods With and Without Interventions saved.")
 
 time_end = time.time()
-print("total time incl. two analysis, all plots for both data & creating the table:")
+
+print("\n")
+print("running time (s):")
 print(time_end - time_start)
