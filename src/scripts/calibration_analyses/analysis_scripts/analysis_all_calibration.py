@@ -8,6 +8,9 @@ import analysis_demography_calibrations
 import analysis_hsi_descriptions
 import plot_legends
 
+from scripts.calibration_analyses.analysis_scripts import (
+    analysis_compare_appt_usage_real_and_simulation,
+)
 from tlo.analysis.utils import get_scenario_outputs
 
 
@@ -22,6 +25,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath)
 
     analysis_hsi_descriptions.apply(
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath)
+
+    analysis_compare_appt_usage_real_and_simulation.apply(
         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath)
 
     # Plot the legends
