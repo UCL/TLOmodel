@@ -935,7 +935,7 @@ class Hiv(Module):
         # HIV Rapid Diagnostic Test:
         # NB. The rapid test is assumed to be 100% specific and sensitive. This is used to guarantee that all persons
         #  that start ART are truly HIV-pos.
-        # todo option to add blood tube and gloves as optional item codes?
+        # todo option to add blood tube and gloves as optional item codes
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             hiv_rapid_test=DxTest(
                 property='hv_inf',
