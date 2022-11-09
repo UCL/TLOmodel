@@ -888,6 +888,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
                         self.sim.modules["HealthSystem"].schedule_hsi_event(
                             treat, priority=1, topen=self.sim.date, tclose=None
                         )
+        return ACTUAL_APPT_FOOTPRINT
 
     def did_not_run(self):
         logger.debug(key='message',
