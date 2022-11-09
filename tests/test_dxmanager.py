@@ -307,21 +307,20 @@ def test_create_dx_tests_with_consumable_useage_given_by_item_code_only(bundle):
 
 
 def test_dx_tests_with_optional_consumable(bundle):
-    """Check that DxTest can be specified with optional consumables, the availability of which does not affect the
-    result."""
+    """Check that DxTest can be specified with optional consumables, the non-availability of which does not block
+     getting the result."""
     sim = bundle.simulation
     hsi_event = bundle.hsi_event
     item_code_for_consumable_that_is_not_available = bundle.item_code_for_consumable_that_is_not_available
-    item_code_for_consumable_that_is_available = bundle.item_code_for_consumable_that_is_available
 
-    # Defie the DxTests
+    # Define the DxTests
     my_test_with_item_code_not_available_and_mandatory = DxTest(
         item_codes=item_code_for_consumable_that_is_not_available,
         property='mi_status'
     )
 
     my_test_with_item_code_not_available_and_optional = DxTest(
-        optional_item_codes=item_code_for_consumable_that_is_available,
+        optional_item_codes=item_code_for_consumable_that_is_not_available,
         property='mi_status'
     )
 
