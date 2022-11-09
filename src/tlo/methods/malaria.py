@@ -779,8 +779,8 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
         assert isinstance(module, Malaria)
 
         self.TREATMENT_ID = "Malaria_Test"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"ConWithDCSA": 1})
-        self.ACCEPTED_FACILITY_LEVEL = '0'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Under5OPD": 1})
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
 
     def apply(self, person_id, squeeze_factor):
 
@@ -791,6 +791,10 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
         # Ignore this event if the person is no longer alive:
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
+
+        # change footprint to Over5OPD if person over 5 years
+        if df.at[person_id, "age_years"] >= 5:
+            ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
 
         district = df.at[person_id, "district_num_of_residence"]
         logger.debug(key='message',
