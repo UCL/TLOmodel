@@ -939,7 +939,10 @@ class Hiv(Module):
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             hiv_rapid_test=DxTest(
                 property='hv_inf',
-                item_codes=self.item_codes_for_consumables_required['hiv_rapid_test']
+                item_codes=self.item_codes_for_consumables_required['hiv_rapid_test'],
+                optional_item_codes=[
+                    self.item_codes_for_consumables_required['blood_tube'],
+                    self.item_codes_for_consumables_required['gloves']]
             )
         )
 
@@ -949,7 +952,10 @@ class Hiv(Module):
                 property='hv_inf',
                 sensitivity=1.0,
                 specificity=1.0,
-                item_codes=self.item_codes_for_consumables_required['hiv_early_infant_test']
+                item_codes=self.item_codes_for_consumables_required['hiv_early_infant_test'],
+                optional_item_codes=[
+                    self.item_codes_for_consumables_required['blood_tube'],
+                    self.item_codes_for_consumables_required['gloves']]
             )
         )
 
