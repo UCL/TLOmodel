@@ -704,8 +704,9 @@ class Hiv(Module):
         df.loc[art_idx, "hv_diagnosed"] = True
 
         # all those on ART need to have event scheduled for continuation/cessation of treatment
+        # todo change this window to 1-90 days (3-monthly prescribing)
         for person in art_idx:
-            days = self.rng.randint(low=100, high=200, size=1, dtype=np.int64)[0]
+            days = self.rng.randint(low=1, high=90, size=1, dtype=np.int64)[0]
             self.sim.schedule_event(
                 Hiv_DecisionToContinueTreatment(person_id=person, module=self),
                 self.sim.date + pd.to_timedelta(days),
@@ -1939,9 +1940,10 @@ class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
             df.at[person_id, "hv_is_on_prep"] = False
 
 
+# todo change this decision to every 3 months
 class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
     """Helper event that is used to 'decide' if someone on Treatment should continue on Treatment.
-    This event is scheduled by 'HSI_Hiv_StartOrContinueTreatment' 6 months after it is run.
+    This event is scheduled by 'HSI_Hiv_StartOrContinueTreatment' 3 months after it is run.
     """
 
     def __init__(self, module, person_id):
@@ -1962,7 +1964,7 @@ class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
         # Determine if this appointment is actually attended by the person who has already started on ART
         if (
             m.rng.random_sample()
-            < m.parameters["probability_of_being_retained_on_art_every_6_months"]
+            < m.parameters["probability_of_being_retained_on_art_every_3_months"]
         ):
             # Continue on Treatment - and schedule an HSI for a continuation appointment today
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -2304,11 +2306,12 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         if drugs_were_available:
             # If person has been placed/continued on ART, schedule 'decision about whether to continue on Treatment for
             # 6 months later
+            # todo change to 3 months for decision to continue
             self.sim.schedule_event(
                 Hiv_DecisionToContinueTreatment(
                     person_id=person_id, module=self.module
                 ),
-                self.sim.date + pd.DateOffset(months=6),
+                self.sim.date + pd.DateOffset(months=3),
             )
         else:
             # todo add logger for drugs not available
