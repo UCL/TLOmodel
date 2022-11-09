@@ -2,10 +2,10 @@
 This file defines a batch run through which the hiv and tb modules are run across a grid of parameter values
 
 check the batch configuration gets generated without error:
-tlo scenario-run --draw-only src/scripts/hiv/hiv_tb_projections_may2022/scenario0.py
+tlo scenario-run --draw-only src/scripts/hiv/PaperProjectionsNov2022/test_runs.py
 
 Run on the batch system using:
-tlo batch-submit src/scripts/hiv/hiv_tb_projections_may2022/scenario0.py
+tlo batch-submit src/scripts/hiv/PaperProjectionsNov2022/test_runs.py
 
 Display information about a job:
 tlo batch-job tlo_q1_demo-123 --tasks
@@ -13,10 +13,7 @@ tlo batch-job tlo_q1_demo-123 --tasks
 Download result files for a completed job:
 tlo batch-download scenario1-2022-04-20T112503Z
 
-9th June
-Job ID: scenario0-2022-06-09T170155Z
-
-
+Job ID:
 
 """
 
@@ -60,9 +57,9 @@ class TestScenario(BaseScenario):
                 symptommanager_spurious_symptoms=True,
                 healthsystem_disable=False,
                 healthsystem_mode_appt_constraints=0,  # no constraints
-                healthsystem_cons_availability="all",  # all cons always available
+                healthsystem_cons_availability="default",  # default cons available
                 healthsystem_beds_availability="all",  # all beds always available
-                healthsystem_ignore_priority=True,  # ignore priority in HSI scheduling
+                healthsystem_ignore_priority=False,  # ignore priority in HSI scheduling
                 healthsystem_use_funded_or_actual_staffing="funded_plus",  # daily capabilities of staff
                 healthsystem_capabilities_coefficient=1.0,  # if 'None' set to ratio of init 2010 pop
                 healthsystem_record_hsi_event_details=False

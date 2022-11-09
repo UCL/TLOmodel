@@ -1122,7 +1122,7 @@ class Tb(Module):
                 # set date of active tb - properties will be updated at TbActiveEvent every month
                 df.at[person_id, "tb_scheduled_date_active"] = date_progression
 
-    def import_tb_cases(self, population, strain):
+    def import_tb_cases(self, population, strain, import_rate):
         """
         select individuals to be infected by importation of infection - strain-specific
         risk of infection NOT weighted by individual risk factors
@@ -1133,7 +1133,6 @@ class Tb(Module):
         df = population.props
         rng = self.rng
         now = self.sim.date
-        p = self.parameters
 
         # apply risk to all, some will already be infected/scheduled for infection
         # in that case, second infection will not do anything
@@ -1147,8 +1146,9 @@ class Tb(Module):
             df.loc[susc_idx]
         )
 
+        # todo make this a parameter
         #  probability of infection
-        p_infection = rr_of_infection * 0.0005
+        p_infection = rr_of_infection * import_rate
 
         # New infections:
         will_be_infected = (
@@ -1614,10 +1614,10 @@ class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
         self.module.assign_active_tb(population, strain="mdr")
 
         # todo importation of new ds cases - independent of current prevalence
-        self.module.import_tb_cases(population, strain="ds")
+        self.module.import_tb_cases(population, strain="ds", import_rate=0.0005)
 
         # todo importation of new mdr cases - independent of current prevalence
-        # self.module.import_tb_cases(population, strain="mdr")
+        self.module.import_tb_cases(population, strain="mdr", import_rate=0.0005 * 0.1)
 
 
 class TbTreatmentAndRelapseEvents(RegularEvent, PopulationScopeEventMixin):
@@ -2679,6 +2679,8 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         new_tb_cases = len(
             df[(df.tb_date_active >= (now - DateOffset(months=self.repeat)))]
         )
+        # todo remove
+        print(new_tb_cases)
 
         # number of latent cases
         new_latent_cases = len(

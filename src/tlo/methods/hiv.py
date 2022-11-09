@@ -1110,6 +1110,7 @@ class Hiv(Module):
         df = self.sim.population.props
         params = self.parameters
 
+        # todo add infant prophylaxis to suppress risk
         if df.at[mother_id, "hv_art"] == "on_VL_suppressed":
             monthly_prob_mtct_bf = params["monthly_prob_mtct_bf_treated"]
         else:
