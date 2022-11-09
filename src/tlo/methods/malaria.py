@@ -788,6 +788,8 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
         params = self.module.parameters
         hs = self.sim.modules["HealthSystem"]
 
+        ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
+
         # Ignore this event if the person is no longer alive:
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
