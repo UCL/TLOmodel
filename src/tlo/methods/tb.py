@@ -2680,7 +2680,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[(df.tb_date_active >= (now - DateOffset(months=self.repeat)))]
         )
         # todo remove
-        print(new_tb_cases)
+        # print(new_tb_cases)
 
         # number of latent cases
         new_latent_cases = len(
