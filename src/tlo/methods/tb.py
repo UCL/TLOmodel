@@ -1135,7 +1135,7 @@ class Tb(Module):
         )
 
         #  probability of infection
-        p_infection = rr_of_infection * 0.001
+        p_infection = rr_of_infection * 0.0005
 
         # New infections:
         will_be_infected = (
@@ -1533,12 +1533,12 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
                 p["second_line_test"] = "sputum"
 
         # introduce consumables and HR constraints
-        if (scenario == 2) or (scenario == 3):
+        if (scenario == 1) or (scenario == 4):
             # list only things that change: constraints on consumables and personnel
             new_parameters = {
                 # 'mode_appt_constraints': 2,  # hard constraints
                 # 'ignore_priority': False,  # If True do not use priority info in HSI event to schedule
-                'cons_availability': 'default',  # use cons availability from LMIS
+                'cons_availability': 'all',  # use cons availability from LMIS
                 # 'beds_availability': 'default',  # use bed availability in resourcefile
                 # 'use_funded_or_actual_staffing': 'actual',  # use actual staff distribution
             }
@@ -1579,8 +1579,6 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
 
                 # retention on IPT (PLHIV)
                 self.sim.modules["Tb"].parameters["prob_retained_ipt_6_months"] = 0.99
-
-        print(self.sim.modules["Hiv"].parameters["hiv_testing_rates"]["annual_testing_rate_children"])
 
 
 # todo make this monthly
