@@ -37,11 +37,11 @@ class TestScenario(BaseScenario):
         self.end_date = Date(2036, 1, 1)
         self.pop_size = 100000
         self.number_of_draws = 5
-        self.runs_per_draw = 3
+        self.runs_per_draw = 1
 
     def log_configuration(self):
         return {
-            "filename": "scenario0",
+            "filename": "test_tb_transmission",
             "directory": "./outputs",
             "custom_levels": {
                 "*": logging.WARNING,

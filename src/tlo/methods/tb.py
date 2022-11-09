@@ -823,6 +823,18 @@ class Tb(Module):
         incidence_year = (inc_estimates.loc[
             (inc_estimates.year == self.sim.date.year), "incidence_per_100k"
         ].values[0]) / 100000
+        incidence_month = incidence_year / 12
+
+        # todo change to assign only for first month of simulation
+        # self.assign_baseline_active_tb(
+        #     population,
+        #     strain="ds",
+        # incidence=incidence_year)
+        #
+        # self.assign_baseline_active_tb(
+        #     population,
+        #     strain="mdr",
+        # incidence=incidence_year * p['prop_mdr2010'])
 
         self.assign_baseline_active_tb(
             population,
@@ -832,7 +844,7 @@ class Tb(Module):
         self.assign_baseline_active_tb(
             population,
             strain="mdr",
-        incidence=incidence_year * p['prop_mdr2010'])
+        incidence=incidence_month * p['prop_mdr2010'])
 
         self.send_for_screening_general(
             population
@@ -849,7 +861,8 @@ class Tb(Module):
         sim.schedule_event(TbActiveEvent(self), sim.date + DateOffset(days=0))
         sim.schedule_event(TbTreatmentAndRelapseEvents(self), sim.date + DateOffset(months=1))
         sim.schedule_event(TbSelfCureEvent(self), sim.date + DateOffset(months=1))
-        sim.schedule_event(TbActiveCasePoll(self), sim.date + DateOffset(years=1))
+        # todo start transmission model in Feb 2010
+        sim.schedule_event(TbActiveCasePoll(self), sim.date + DateOffset(months=1))
 
         # log at the end of the year
         sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(days=364))

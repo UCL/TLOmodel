@@ -322,10 +322,10 @@ class Hiv(Module):
             "Probability that someone who has initiated on prep will attend an appointment and be on prep "
             "for the next 3 months, until the next appointment.",
         ),
-        "probability_of_being_retained_on_art_every_6_months": Parameter(
+        "probability_of_being_retained_on_art_every_3_months": Parameter(
             Types.REAL,
             "Probability that someone who has initiated on treatment will attend an appointment and be on "
-            "treatment for next 6 months, until the next appointment.",
+            "treatment for next 3 months, until the next appointment.",
         ),
         "probability_of_seeking_further_art_appointment_if_drug_not_available": Parameter(
             Types.REAL,
