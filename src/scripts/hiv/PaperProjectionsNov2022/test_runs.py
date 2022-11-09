@@ -71,7 +71,7 @@ class TestScenario(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         return {
             'Tb': {
-                'beta': [0.115, 0.125, 0.12, 0.105, 0.13][draw_number]
+                'beta': [0.18, 0.20, 0.22, 0.24, 0.26, 0.28, 0.3][draw_number]
             },
         }
 
