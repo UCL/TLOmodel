@@ -46,7 +46,7 @@ class RunAnalysisCo(BaseScenario):
 
             # - Contraception and replacement for Labour etc.
             contraception.Contraception(resourcefilepath=self.resources,
-                                        use_interventions=False,
+                                        use_interventions=True,
                                         interventions_start_date=Date(2016, 1, 1),  # if needs to be changed
                                         # the default date is Date(2023, 1, 1)
                                         use_healthsystem=True),  # <-- using HealthSystem
