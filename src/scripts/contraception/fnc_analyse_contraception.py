@@ -14,7 +14,9 @@ import pandas as pd
 from matplotlib import dates as mdates
 from matplotlib import pyplot as plt
 from collections import Counter
+
 from tlo.analysis.utils import parse_log_file
+from tlo.methods import contraception
 import functools
 
 
@@ -85,11 +87,32 @@ def analyse_contraception(in_datestamp, in_log_file,
     # %% Caclulate annual Pop and PPFP intervention costs:
     if in_calc_annual_intervention_costs_bool:
         # Load Population Totals (Demography Model Results)
+            # females 15-49 by year:
         demog_df_f = log_df['tlo.methods.demography']['age_range_f'].set_index('date')
+        demog_df_f['15-49'] = demog_df_f.loc[:,['15-19','20-24','25-29','30-34','35-39','40-44','45-49']].sum(axis=1)
         print(demog_df_f)
-        females_by_year = pd.to_datetime(demog_df_f.index)
-        print(females_by_year)
-    #    Model_total = demog_df.sum(axis=1)
+            # males 15-49 by year:
+        demog_df_m = log_df['tlo.methods.demography']['age_range_m'].set_index('date')
+        demog_df_m['15-49'] = demog_df_m.loc[:,['15-19','20-24','25-29','30-34','35-39','40-44','45-49']].sum(axis=1)
+        print(demog_df_m)
+            # total females & males 15-49 as both targetted by Pop and PPFP interventions, by year:
+        popsize = demog_df_f['15-49'] + demog_df_m['15-49']
+        popsize = pd.DataFrame(popsize)
+        print(popsize)
+            # Calculate ratio of population compared to 2016 as base year (when PPFP and Pop interventions start):
+        popsize['ratio'] = popsize.loc[:,'15-49'] / popsize.loc['2016-01-01 00:00:00','15-49']
+        print(popsize)
+            # Mulitply PPFP and Pop intervention costs by this ratio for each year:
+        # TODO: was trying to pull these parameters from contracption.py but not managing too - perhaps not worth it and just hard code for now:
+        # ppfp_intervention_cost = tlo.methods.contraception.Contraception.process_params(['ppfp_intervention_cost'])
+        ppfp_intervention_cost = 146000000  # cost of PPFP intervention for whole population of Malawi in 2016 (MWK - Malawi Kwacha)
+        pop_intervention_cost = 1300000000  # cost of Pop intervention for whole population of Malawi in 2016 (MWK - Malawi Kwacha)
+        print(ppfp_intervention_cost)
+        print(pop_intervention_cost)
+        popsize['ppfp_intervention_cost'] = popsize['ratio'] * ppfp_intervention_cost
+        popsize['pop_intervention_cost'] = popsize['ratio'] * pop_intervention_cost
+        popsize['interventions_total'] = popsize['ppfp_intervention_cost'] + popsize['pop_intervention_cost']
+        print(popsize)
 
     # %% Plot Contraception Use Over time:
     if in_plot_use_time_bool:
