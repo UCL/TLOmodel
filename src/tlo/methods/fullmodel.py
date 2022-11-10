@@ -11,6 +11,7 @@ from tlo.methods import (
     contraception,
     demography,
     depression,
+    deviance_measure,
     diarrhoea,
     enhanced_lifestyle,
     epi,
@@ -64,6 +65,7 @@ def fullmodel(
         symptommanager.SymptomManager(
             resourcefilepath=resourcefilepath,
             spurious_symptoms=symptommanager_spurious_symptoms),
+        deviance_measure.Deviance(resourcefilepath=resourcefilepath)
     ])
 
     # HealthSystem and the Expanded Programme on Immunizations

@@ -34,9 +34,7 @@ import random
 import pandas as pd
 from tlo import Date, logging
 from tlo.methods.fullmodel import fullmodel
-from tlo.scenario import BaseScenario
 
-from tlo.methods import deviance_measure
 from tlo.scenario import BaseScenario
 
 number_of_draws = 20
@@ -74,9 +72,7 @@ class TestScenario(BaseScenario):
         }
 
     def modules(self):
-        return [
-            deviance_measure.Deviance(resourcefilepath=self.resources),
-            fullmodel(
+        return fullmodel(
                 resourcefilepath=self.resources,
                 use_simplified_births=False,
                 symptommanager_spurious_symptoms=True,
@@ -89,7 +85,6 @@ class TestScenario(BaseScenario):
                 healthsystem_capabilities_coefficient=1.0,  # if 'None' set to ratio of init 2010 pop
                 healthsystem_record_hsi_event_details=False
             ),
-        ]
 
     def draw_parameters(self, draw_number, rng):
 
