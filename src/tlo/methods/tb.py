@@ -865,7 +865,7 @@ class Tb(Module):
         sim.schedule_event(TbActiveCasePoll(self), sim.date + DateOffset(months=1))
 
         # log at the end of the year
-        sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(days=364))
+        sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(years=1))
 
         # 2) Scenario change
         sim.schedule_event(ScenarioSetupEvent(self), self.parameters["scenario_start_date"])
@@ -1617,7 +1617,7 @@ class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
         self.module.import_tb_cases(population, strain="ds", import_rate=0.0005)
 
         # todo importation of new mdr cases - independent of current prevalence
-        self.module.import_tb_cases(population, strain="mdr", import_rate=0.0005 * 0.1)
+        self.module.import_tb_cases(population, strain="mdr", import_rate=0.0005 * 0.05)
 
 
 class TbTreatmentAndRelapseEvents(RegularEvent, PopulationScopeEventMixin):

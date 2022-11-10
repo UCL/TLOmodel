@@ -112,10 +112,10 @@ class Deviance(Module):
             (data_tb_who.year >= 2010), "incidence_per_100k"
         ]
 
-        # TB latent data (Houben & Dodd 2016)
-        data_tb_latent = pd.read_excel(xls_tb, sheet_name="latent_TB2014_summary")
-        data_tb_latent_all_ages = data_tb_latent.loc[data_tb_latent.Age_group == "0_80"]
-        self.data_dict["who_tb_latent_prev"] = data_tb_latent_all_ages.proportion_latent_TB.values[0]
+        # # TB latent data (Houben & Dodd 2016)
+        # data_tb_latent = pd.read_excel(xls_tb, sheet_name="latent_TB2014_summary")
+        # data_tb_latent_all_ages = data_tb_latent.loc[data_tb_latent.Age_group == "0_80"]
+        # self.data_dict["who_tb_latent_prev"] = data_tb_latent_all_ages.proportion_latent_TB.values[0]
 
         # TB mortality per 100k excluding HIV: 2010-2017
         self.data_dict["who_tb_deaths_per_100k"] = data_tb_who.loc[
@@ -150,7 +150,7 @@ class Deviance(Module):
         self.model_dict["TB_active_inc_per100k"] = (tb["num_new_active_tb"] / pop) * 100000
 
         # tb latent prevalence 2014
-        self.model_dict["TB_latent_prev"] = tb["tbPrevLatent"][4]
+        # self.model_dict["TB_latent_prev"] = tb["tbPrevLatent"][4]
 
         # ------------------ DEATHS ------------------ #
         # convert dict to df for easier processing
@@ -351,10 +351,10 @@ class Deviance(Module):
         )
 
         hiv_beta = self.sim.modules["Hiv"].parameters["beta"]
-        # tb_beta = self.sim.modules["Tb"].parameters["transmission_rate"]
+        tb_beta = self.sim.modules["Tb"].parameters["beta"]
 
-        # return_values = [calibration_score, hiv_beta, tb_beta]
-        return_values = [calibration_score, hiv_beta]
+        return_values = [calibration_score, hiv_beta, tb_beta]
+        # return_values = [calibration_score, hiv_beta]
 
         return return_values
 
@@ -368,6 +368,6 @@ class Deviance(Module):
             description="Deviance measure for HIV and TB",
             data={"deviance_measure": deviance_measure[0],
                   "hiv_transmission_rate": deviance_measure[1],
-                  # "tb_transmission_rate": deviance_measure[2]
+                  "tb_transmission_rate": deviance_measure[2]
                   }
         )

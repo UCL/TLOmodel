@@ -11,7 +11,7 @@ Display information about a job:
 tlo batch-job tlo_q1_demo-123 --tasks
 
 Download result files for a completed job:
-tlo batch-download scenario1-2022-04-20T112503Z
+tlo batch-download test_runs-2022-11-09T162246Z
 
 Job ID:
 

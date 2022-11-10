@@ -3,21 +3,21 @@
 from pathlib import Path
 
 import pandas as pd
-from scipy.stats import qmc
+import scipy.stats as sc
 
 number_of_draws = 20
 
 # set up LHC sampler
-sampler = qmc.LatinHypercube(d=2)
+sampler = sc.qmc.LatinHypercube(d=2)
 sample = sampler.random(n=number_of_draws)
 
-l_bounds = [0.08, 15]
-u_bounds = [0.18, 21]
-sampled_params = pd.DataFrame(qmc.scale(sample, l_bounds, u_bounds))
+l_bounds = [0.10, 0.18]  # hiv then tb
+u_bounds = [0.15, 0.20]
+sampled_params = pd.DataFrame(sc.qmc.scale(sample, l_bounds, u_bounds))
 
-# write to csv
+# write to excel
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
-writer = pd.ExcelWriter(outputpath / ("LHC_Samples" + ".xlsx"))
-sampled_params.to_excel(writer, sheet_name="LHC_samples")
-writer.save()
+with pd.ExcelWriter(outputpath / ("LHC_Samples_Nov2022" + ".xlsx"), engine='openpyxl') as writer:
+    sampled_params.to_excel(writer, sheet_name='Sheet1', index=False)
+    writer.save()
