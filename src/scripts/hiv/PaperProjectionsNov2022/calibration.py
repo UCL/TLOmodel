@@ -33,8 +33,19 @@ import random
 
 import pandas as pd
 from tlo import Date, logging
-from tlo.methods.fullmodel import fullmodel
-
+from tlo.methods import (
+    demography,
+    deviance_measure,
+    enhanced_lifestyle,
+    epi,
+    healthburden,
+    healthseekingbehaviour,
+    healthsystem,
+    hiv,
+    simplified_births,
+    symptommanager,
+    tb,
+)
 from tlo.scenario import BaseScenario
 
 number_of_draws = 20
@@ -72,19 +83,29 @@ class TestScenario(BaseScenario):
         }
 
     def modules(self):
-        return fullmodel(
+        return [
+            demography.Demography(resourcefilepath=self.resources),
+            simplified_births.SimplifiedBirths(resourcefilepath=self.resources),
+            enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
+            healthsystem.HealthSystem(
                 resourcefilepath=self.resources,
-                use_simplified_births=False,
-                symptommanager_spurious_symptoms=True,
-                healthsystem_disable=False,
-                healthsystem_mode_appt_constraints=0,  # no constraints
-                healthsystem_cons_availability="default",  # all cons always available
-                healthsystem_beds_availability="all",  # all beds always available
-                healthsystem_ignore_priority=False,  # ignore priority in HSI scheduling
-                healthsystem_use_funded_or_actual_staffing="funded_plus",  # daily capabilities of staff
-                healthsystem_capabilities_coefficient=1.0,  # if 'None' set to ratio of init 2010 pop
-                healthsystem_record_hsi_event_details=False
+                service_availability=["*"],  # all treatment allowed
+                mode_appt_constraints=0,  # mode of constraints to do with officer numbers and time
+                cons_availability="default",  # mode for consumable constraints (if ignored, all consumables available)
+                ignore_priority=False,  # do not use the priority information in HSI event to schedule
+                capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
+                disable=False,  # disables the healthsystem (no constraints and no logging) and every HSI runs
+                disable_and_reject_all=False,  # disable healthsystem and no HSI runs
+                store_hsi_events_that_have_run=False,  # convenience function for debugging
             ),
+            symptommanager.SymptomManager(resourcefilepath=self.resources),
+            healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
+            healthburden.HealthBurden(resourcefilepath=self.resources),
+            epi.Epi(resourcefilepath=self.resources),
+            hiv.Hiv(resourcefilepath=self.resources),
+            tb.Tb(resourcefilepath=self.resources),
+            deviance_measure.Deviance(resourcefilepath=self.resources),
+        ]
 
     def draw_parameters(self, draw_number, rng):
 
@@ -93,7 +114,7 @@ class TestScenario(BaseScenario):
                 'beta': self.sampled_parameters.hiv_Nov22[draw_number],
             },
             'Tb': {
-                'transmission_rate': self.sampled_parameters.tb_Nov22[draw_number],
+                'beta': self.sampled_parameters.tb_Nov22[draw_number],
             },
         }
 
