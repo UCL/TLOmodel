@@ -11,8 +11,8 @@ time_start = time.time()
 # for the output figures
 datestamp_without = '2022_11_08'  # TODO: update with final sim
 datestamp_with = '2022_11_08'  # TODO: update with final sim
-datestamp_without_log = '2022-11-09T212650'  # TODO: update with final sim
-datestamp_with_log = '22022-11-09T212650'  # TODO: update with final sim
+datestamp_without_log = '2022-11-10T091728'  # TODO: update with final sim
+datestamp_with_log = '2022-11-10T091728'  # TODO: update with final sim
 logFile_without = 'run_analysis_contraception__' + datestamp_without_log + '.log'
 logFile_with = 'run_analysis_contraception__' + datestamp_with_log + '.log'
 # which years we want to summarise for the table of use and costs
@@ -22,10 +22,10 @@ contraceptives_order = ['pill', 'IUD', 'injections', 'implant', 'male_condom',
                         'female_sterilization', 'other_modern']
 # Do you want prints to see costs, use, percentage use and table?
 # If False, no output is printed, but the output table is still saved in the 'outputs' folder.
-print_bool = False
+print_bool = True
 # parameter only for test runs (if False, skips the second analysis and uses the outputs from the 1st analysis instead)
 # needs to be True for the final run
-do_interv_analysis = False
+do_interv_analysis = True
 ################################################################################
 
 
@@ -52,6 +52,8 @@ print('--------------------')
 use_without_df, percentage_use_without_df, costs_without_df =\
     a_co.analyse_contraception(
         datestamp_without, logFile_without,
+        # %% Plot Contraception Pop and PPFP Intervention Costs over time?
+        True,
         # %% Plot Contraception Use Over time?
         True,
         # %% Plot Contraception Use By Method Over time?
@@ -75,6 +77,8 @@ if do_interv_analysis:
     use_with_df, percentage_use_with_df, costs_with_df =\
         a_co.analyse_contraception(
             datestamp_with, logFile_with,
+            # %% Plot Contraception Pop and PPFP Intervention Costs over time?
+            True,
             # %% Plot Contraception Use Over time?
             True,
             # %% Plot Contraception Use By Method Over time?
