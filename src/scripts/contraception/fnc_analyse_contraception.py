@@ -24,7 +24,7 @@ def analyse_contraception(in_datestamp, in_log_file,
                           in_plot_use_time_method_bool,
                           in_plot_pregnancies_bool,
                           in_contraceptives_order,
-                          in_calc_use_costs_bool, in_required_time_period_starts=[],
+                          in_calc_use_costs_bool, in_required_time_period_starts=[2010],
                           in_use_output="mean"
                           ):
     """
