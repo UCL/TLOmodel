@@ -29,8 +29,9 @@ class Deviance(Module):
         self.model_dict = dict()
 
     # INIT_DEPENDENCIES = {'Demography', 'Hiv', 'Tb'}
-    INIT_DEPENDENCIES = {'fullmodel'}
+    INIT_DEPENDENCIES = {}
 
+    ADDITIONAL_DEPENDENCIES = {'Demography', 'Hiv', 'Tb'}
     # Declare Metadata
     METADATA = {}
 
