@@ -5,7 +5,7 @@ check the batch configuration gets generated without error:
 tlo scenario-run --draw-only src/scripts/hiv/PaperProjectionsNov2022/calibration.py
 
 Test the scenario starts running without problems:
-tlo scenario-run src/scripts/hiv/deviance_for_calibration/calibration_script.py
+tlo scenario-run src/scripts/hiv/PaperProjectionsNov2022/calibration.py
 
 or execute a single run:
 tlo scenario-run src/scripts/hiv/deviance_for_calibration/calibration_script.py --draw 1 0
@@ -14,13 +14,13 @@ Run on the batch system using:
 tlo batch-submit src/scripts/hiv/PaperProjectionsNov2022/calibration.py
 
 10th Nov 2022:
-Job ID: calibration_script-2022-02-16T202042Z
+Job ID: calibration-2022-11-10T201529Z
 
 Display information about a job:
 tlo batch-job tlo_q1_demo-123 --tasks
 
 Download result files for a completed job:
-tlo batch-download calibration_script-2022-04-12T190518Z
+tlo batch-download calibration-2022-11-10T201529Z
 
 12th Apr 2022
 Job ID: calibration_script-2022-04-12T190518Z
@@ -36,10 +36,7 @@ from tlo import Date, logging
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
 
-from tlo.methods import (
-    fullmodel,
-    deviance_measure,
-)
+from tlo.methods import deviance_measure
 from tlo.scenario import BaseScenario
 
 number_of_draws = 20
@@ -78,6 +75,7 @@ class TestScenario(BaseScenario):
 
     def modules(self):
         return [
+            deviance_measure.Deviance(resourcefilepath=self.resources),
             fullmodel(
                 resourcefilepath=self.resources,
                 use_simplified_births=False,
@@ -91,7 +89,6 @@ class TestScenario(BaseScenario):
                 healthsystem_capabilities_coefficient=1.0,  # if 'None' set to ratio of init 2010 pop
                 healthsystem_record_hsi_event_details=False
             ),
-            deviance_measure.Deviance(resourcefilepath=self.resources),
         ]
 
     def draw_parameters(self, draw_number, rng):
