@@ -1,11 +1,11 @@
 {
   "scenario_script_path": "src/scripts/hiv/PaperProjectionsNov2022/calibration.py",
-  "scenario_seed": 6245,
+  "scenario_seed": 35168,
   "runs_per_draw": 3,
   "draws": [
     {
       "draw_number": 0,
-      "draw_seed": 47631621,
+      "draw_seed": 762138361,
       "parameters": {
         "Hiv": {
           "beta": 0.142248112735498
@@ -17,7 +17,7 @@
     },
     {
       "draw_number": 1,
-      "draw_seed": 656890142,
+      "draw_seed": 624422417,
       "parameters": {
         "Hiv": {
           "beta": 0.1349040537502659
@@ -29,7 +29,7 @@
     },
     {
       "draw_number": 2,
-      "draw_seed": 57871010,
+      "draw_seed": 1790401445,
       "parameters": {
         "Hiv": {
           "beta": 0.1382192273243478
@@ -41,7 +41,7 @@
     },
     {
       "draw_number": 3,
-      "draw_seed": 340428914,
+      "draw_seed": 288746777,
       "parameters": {
         "Hiv": {
           "beta": 0.1119298184555028
@@ -53,7 +53,7 @@
     },
     {
       "draw_number": 4,
-      "draw_seed": 989517456,
+      "draw_seed": 1618968418,
       "parameters": {
         "Hiv": {
           "beta": 0.1017298488430142
@@ -65,7 +65,7 @@
     },
     {
       "draw_number": 5,
-      "draw_seed": 898359099,
+      "draw_seed": 962280061,
       "parameters": {
         "Hiv": {
           "beta": 0.1097163104673857
@@ -77,7 +77,7 @@
     },
     {
       "draw_number": 6,
-      "draw_seed": 946266811,
+      "draw_seed": 537812552,
       "parameters": {
         "Hiv": {
           "beta": 0.1446681505663063
@@ -89,7 +89,7 @@
     },
     {
       "draw_number": 7,
-      "draw_seed": 1531718277,
+      "draw_seed": 168067402,
       "parameters": {
         "Hiv": {
           "beta": 0.1209206566566698
@@ -101,7 +101,7 @@
     },
     {
       "draw_number": 8,
-      "draw_seed": 718746219,
+      "draw_seed": 1404865299,
       "parameters": {
         "Hiv": {
           "beta": 0.1459643929416613
@@ -113,7 +113,7 @@
     },
     {
       "draw_number": 9,
-      "draw_seed": 1810585124,
+      "draw_seed": 1852696497,
       "parameters": {
         "Hiv": {
           "beta": 0.1296706453594568
@@ -125,7 +125,7 @@
     },
     {
       "draw_number": 10,
-      "draw_seed": 12548959,
+      "draw_seed": 1163302770,
       "parameters": {
         "Hiv": {
           "beta": 0.1135062354910566
@@ -137,7 +137,7 @@
     },
     {
       "draw_number": 11,
-      "draw_seed": 229191543,
+      "draw_seed": 105714045,
       "parameters": {
         "Hiv": {
           "beta": 0.1191673182671232
@@ -149,7 +149,7 @@
     },
     {
       "draw_number": 12,
-      "draw_seed": 567682172,
+      "draw_seed": 397807185,
       "parameters": {
         "Hiv": {
           "beta": 0.1243066041026916
@@ -161,7 +161,7 @@
     },
     {
       "draw_number": 13,
-      "draw_seed": 110873089,
+      "draw_seed": 1160768348,
       "parameters": {
         "Hiv": {
           "beta": 0.1268745139119971
@@ -173,7 +173,7 @@
     },
     {
       "draw_number": 14,
-      "draw_seed": 239773510,
+      "draw_seed": 203538191,
       "parameters": {
         "Hiv": {
           "beta": 0.1047627531173167
@@ -185,7 +185,7 @@
     },
     {
       "draw_number": 15,
-      "draw_seed": 1371987043,
+      "draw_seed": 817563923,
       "parameters": {
         "Hiv": {
           "beta": 0.1479934948909806
@@ -197,7 +197,7 @@
     },
     {
       "draw_number": 16,
-      "draw_seed": 796093715,
+      "draw_seed": 820723469,
       "parameters": {
         "Hiv": {
           "beta": 0.1367527078329227
@@ -209,7 +209,7 @@
     },
     {
       "draw_number": 17,
-      "draw_seed": 1908078613,
+      "draw_seed": 1240558087,
       "parameters": {
         "Hiv": {
           "beta": 0.1168212571372782
@@ -221,7 +221,7 @@
     },
     {
       "draw_number": 18,
-      "draw_seed": 2068279663,
+      "draw_seed": 1026313905,
       "parameters": {
         "Hiv": {
           "beta": 0.1321428973252851
@@ -233,7 +233,7 @@
     },
     {
       "draw_number": 19,
-      "draw_seed": 1591061939,
+      "draw_seed": 1266830714,
       "parameters": {
         "Hiv": {
           "beta": 0.1070159461183625
