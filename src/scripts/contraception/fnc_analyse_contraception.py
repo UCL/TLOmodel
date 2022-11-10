@@ -83,12 +83,12 @@ def analyse_contraception(in_datestamp, in_log_file,
     log_df = parse_log_file('outputs/' + in_log_file)
 
     # %% Caclulate annual Pop and PPFP intervention costs:
-    #if in_calc_annual_intervention_costs_bool:
-    #    # Load Population Totals (Demography Model Results)
-    #    demog_df_f = log_df['tlo.methods.demography']['age_range_f']
-    #    print(demog_df_f)
-    #    females_by_year = pd.to_datetime(demog_df_f.index)
-    #    print(females_by_year)
+    if in_calc_annual_intervention_costs_bool:
+        # Load Population Totals (Demography Model Results)
+        demog_df_f = log_df['tlo.methods.demography']['age_range_f'].set_index('date')
+        print(demog_df_f)
+        females_by_year = pd.to_datetime(demog_df_f.index)
+        print(females_by_year)
     #    Model_total = demog_df.sum(axis=1)
 
     # %% Plot Contraception Use Over time:
@@ -744,6 +744,7 @@ def analyse_contraception(in_datestamp, in_log_file,
 
 if __name__ == '__main__':
     analyse_contraception(in_datestamp, in_log_file,
+                          in_calc_annual_intervention_costs_bool,
                           in_plot_use_time_bool,
                           in_plot_use_time_method_bool,
                           in_plot_pregnancies_bool,
