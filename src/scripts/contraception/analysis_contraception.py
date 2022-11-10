@@ -42,7 +42,7 @@ log_config = {
 # Basic arguments required for the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2020, 12, 31)
-pop_size = 20000
+pop_size = 50000
 
 # This creates the Simulation instance for this run. Because we've passed the `seed` and
 # `log_config` arguments, these will override the default behaviour.
