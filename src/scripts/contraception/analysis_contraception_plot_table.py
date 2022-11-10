@@ -9,9 +9,9 @@ time_start = time.time()
 ################################################################################
 # TO SET:  # TODO: update with final sims
 # for the output figures
-datestamp_without = '2022_11_08'  # TODO: update with final sim
-datestamp_with = '2022_11_08'  # TODO: update with final sim
-datestamp_without_log = '2022-11-10T091728'  # TODO: update with final sim
+datestamp_without = '2022_11_10'  # TODO: update with final sim
+datestamp_with = '2022_11_10'  # TODO: update with final sim
+datestamp_without_log = '2022-11-10T113617'  # TODO: update with final sim
 datestamp_with_log = '2022-11-10T091728'  # TODO: update with final sim
 logFile_without = 'run_analysis_contraception__' + datestamp_without_log + '.log'
 logFile_with = 'run_analysis_contraception__' + datestamp_with_log + '.log'
