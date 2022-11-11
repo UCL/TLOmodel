@@ -956,7 +956,7 @@ def test_hsi_art_stopped_if_healthsystem_cannot_run_hsi_and_no_restart(seed):
 
     # schedule each person  a treatment
     sim.modules['HealthSystem'].schedule_hsi_event(
-        HSI_Hiv_StartOrContinueTreatment(person_id=0, module=sim.modules['Hiv'],facility_level_of_this_hsi="1a"),
+        HSI_Hiv_StartOrContinueTreatment(person_id=0, module=sim.modules['Hiv'], facility_level_of_this_hsi="1a"),
         topen=sim.date,
         tclose=sim.date + pd.DateOffset(days=1),
         priority=0
