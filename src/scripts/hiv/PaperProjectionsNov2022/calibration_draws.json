@@ -1,11 +1,11 @@
 {
   "scenario_script_path": "src/scripts/hiv/PaperProjectionsNov2022/calibration.py",
-  "scenario_seed": 35168,
+  "scenario_seed": 16919,
   "runs_per_draw": 3,
   "draws": [
     {
       "draw_number": 0,
-      "draw_seed": 762138361,
+      "draw_seed": 840638695,
       "parameters": {
         "Hiv": {
           "beta": 0.142248112735498
@@ -17,7 +17,7 @@
     },
     {
       "draw_number": 1,
-      "draw_seed": 624422417,
+      "draw_seed": 1245336234,
       "parameters": {
         "Hiv": {
           "beta": 0.1349040537502659
@@ -29,7 +29,7 @@
     },
     {
       "draw_number": 2,
-      "draw_seed": 1790401445,
+      "draw_seed": 107373682,
       "parameters": {
         "Hiv": {
           "beta": 0.1382192273243478
@@ -41,7 +41,7 @@
     },
     {
       "draw_number": 3,
-      "draw_seed": 288746777,
+      "draw_seed": 1390047914,
       "parameters": {
         "Hiv": {
           "beta": 0.1119298184555028
@@ -53,7 +53,7 @@
     },
     {
       "draw_number": 4,
-      "draw_seed": 1618968418,
+      "draw_seed": 1895233453,
       "parameters": {
         "Hiv": {
           "beta": 0.1017298488430142
@@ -65,7 +65,7 @@
     },
     {
       "draw_number": 5,
-      "draw_seed": 962280061,
+      "draw_seed": 1594882153,
       "parameters": {
         "Hiv": {
           "beta": 0.1097163104673857
@@ -77,7 +77,7 @@
     },
     {
       "draw_number": 6,
-      "draw_seed": 537812552,
+      "draw_seed": 586529220,
       "parameters": {
         "Hiv": {
           "beta": 0.1446681505663063
@@ -89,7 +89,7 @@
     },
     {
       "draw_number": 7,
-      "draw_seed": 168067402,
+      "draw_seed": 1489562120,
       "parameters": {
         "Hiv": {
           "beta": 0.1209206566566698
@@ -101,7 +101,7 @@
     },
     {
       "draw_number": 8,
-      "draw_seed": 1404865299,
+      "draw_seed": 562076752,
       "parameters": {
         "Hiv": {
           "beta": 0.1459643929416613
@@ -113,7 +113,7 @@
     },
     {
       "draw_number": 9,
-      "draw_seed": 1852696497,
+      "draw_seed": 840347172,
       "parameters": {
         "Hiv": {
           "beta": 0.1296706453594568
@@ -125,7 +125,7 @@
     },
     {
       "draw_number": 10,
-      "draw_seed": 1163302770,
+      "draw_seed": 712307657,
       "parameters": {
         "Hiv": {
           "beta": 0.1135062354910566
@@ -137,7 +137,7 @@
     },
     {
       "draw_number": 11,
-      "draw_seed": 105714045,
+      "draw_seed": 20894023,
       "parameters": {
         "Hiv": {
           "beta": 0.1191673182671232
@@ -149,7 +149,7 @@
     },
     {
       "draw_number": 12,
-      "draw_seed": 397807185,
+      "draw_seed": 1353849046,
       "parameters": {
         "Hiv": {
           "beta": 0.1243066041026916
@@ -161,7 +161,7 @@
     },
     {
       "draw_number": 13,
-      "draw_seed": 1160768348,
+      "draw_seed": 604307084,
       "parameters": {
         "Hiv": {
           "beta": 0.1268745139119971
@@ -173,7 +173,7 @@
     },
     {
       "draw_number": 14,
-      "draw_seed": 203538191,
+      "draw_seed": 362505846,
       "parameters": {
         "Hiv": {
           "beta": 0.1047627531173167
@@ -185,7 +185,7 @@
     },
     {
       "draw_number": 15,
-      "draw_seed": 817563923,
+      "draw_seed": 1554776151,
       "parameters": {
         "Hiv": {
           "beta": 0.1479934948909806
@@ -197,7 +197,7 @@
     },
     {
       "draw_number": 16,
-      "draw_seed": 820723469,
+      "draw_seed": 2124770518,
       "parameters": {
         "Hiv": {
           "beta": 0.1367527078329227
@@ -209,7 +209,7 @@
     },
     {
       "draw_number": 17,
-      "draw_seed": 1240558087,
+      "draw_seed": 1181242614,
       "parameters": {
         "Hiv": {
           "beta": 0.1168212571372782
@@ -221,7 +221,7 @@
     },
     {
       "draw_number": 18,
-      "draw_seed": 1026313905,
+      "draw_seed": 1747221158,
       "parameters": {
         "Hiv": {
           "beta": 0.1321428973252851
@@ -233,7 +233,7 @@
     },
     {
       "draw_number": 19,
-      "draw_seed": 1266830714,
+      "draw_seed": 908739107,
       "parameters": {
         "Hiv": {
           "beta": 0.1070159461183625
@@ -243,5 +243,7 @@
         }
       }
     }
-  ]
+  ],
+  "commit": "b724e7eb9ae09d07493cfde7135367c36664265a",
+  "github": "https://github.com/UCL/TLOmodel/blob/b724e7eb9ae09d07493cfde7135367c36664265a/src/scripts/hiv/PaperProjectionsNov2022/calibration.py"
 }

@@ -20,10 +20,10 @@ Display information about a job:
 tlo batch-job tlo_q1_demo-123 --tasks
 
 Download result files for a completed job:
-tlo batch-download calibration-2022-11-10T201529Z
+tlo batch-download calibration-2022-11-10T210128Z
 
 12th Apr 2022
-Job ID: calibration_script-2022-04-12T190518Z
+Job ID: calibration-2022-11-10T210128Z
 
 
 """

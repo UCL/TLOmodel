@@ -36,8 +36,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
-popsize = 1000
+end_date = Date(2036, 1, 1)
+popsize = 100000
 
 scenario = 0
 
@@ -89,7 +89,8 @@ sim.register(
 )
 
 # set the scenario
-sim.modules["Tb"].parameters["beta"] = 0.195
+sim.modules["Hiv"].parameters["beta"] = 0.13214
+sim.modules["Tb"].parameters["beta"] = 0.18931
 sim.modules["Tb"].parameters["scenario"] = scenario
 sim.modules["Tb"].parameters["scenario_start_date"] = Date(2023, 1, 1)
 sim.modules["Tb"].parameters["scenario_SI"] = "z"
