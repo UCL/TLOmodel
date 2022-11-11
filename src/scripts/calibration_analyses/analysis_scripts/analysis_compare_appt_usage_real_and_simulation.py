@@ -147,6 +147,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     name_of_plot = 'Model vs Real average annual usage by appt type\n[All Facility Levels]'
     fig, ax = plt.subplots()
     ax.stem(rel_diff_all_levels.index, rel_diff_all_levels.values, bottom=1.0, label='All levels')
+    for idx in rel_diff_all_levels.index:
+        if not pd.isna(rel_diff_all_levels[idx]):
+            ax.text(idx, rel_diff_all_levels[idx]*(1+0.2), round(rel_diff_all_levels[idx], 1),
+                    ha='left', fontsize=8)
     format_and_save(fig, ax, name_of_plot)
 
     # Plot Simulation vs Real usage (At each level) (trimmed to 0.1 and 10)
