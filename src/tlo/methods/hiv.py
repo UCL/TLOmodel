@@ -426,17 +426,17 @@ class Hiv(Module):
             Predictor("age_years").when("<15", 0.0).when("<49", 1.0).otherwise(0.0),
             Predictor("sex").when("F", p["rr_sex_f"]),
             Predictor("li_is_circ").when(True, p["rr_circumcision"]),
-            Predictor("hv_is_on_prep")
-                .when(True, 1.0 - p["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"]),
+            Predictor("hv_is_on_prep").
+            when(True, 1.0 - p["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"]),
             Predictor("li_urban").when(False, p["rr_rural"]),
             Predictor("li_wealth", conditions_are_mutually_exclusive=True)
-                .when(2, p["rr_windex_poorer"])
-                .when(3, p["rr_windex_middle"])
-                .when(4, p["rr_windex_richer"])
-                .when(5, p["rr_windex_richest"]),
+            .when(2, p["rr_windex_poorer"])
+            .when(3, p["rr_windex_middle"])
+            .when(4, p["rr_windex_richer"])
+            .when(5, p["rr_windex_richest"]),
             Predictor("li_ed_lev", conditions_are_mutually_exclusive=True)
-                .when(2, p["rr_edlevel_primary"])
-                .when(3, p["rr_edlevel_secondary"]),
+            .when(2, p["rr_edlevel_primary"])
+            .when(3, p["rr_edlevel_secondary"]),
             Predictor("hv_behaviour_change").when(True, p["rr_behaviour_change"]),
         )
 
@@ -446,14 +446,14 @@ class Hiv(Module):
                 "age_years",
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True)
-                .when("<20", p["infection_to_death_weibull_scale_1519"])
-                .when(".between(20, 24)", p["infection_to_death_weibull_scale_2024"])
-                .when(".between(25, 29)", p["infection_to_death_weibull_scale_2529"])
-                .when(".between(30, 34)", p["infection_to_death_weibull_scale_3034"])
-                .when(".between(35, 39)", p["infection_to_death_weibull_scale_3539"])
-                .when(".between(40, 44)", p["infection_to_death_weibull_scale_4044"])
-                .when(".between(45, 49)", p["infection_to_death_weibull_scale_4549"])
-                .when(">= 50", p["infection_to_death_weibull_scale_4549"])
+            .when("<20", p["infection_to_death_weibull_scale_1519"])
+            .when(".between(20, 24)", p["infection_to_death_weibull_scale_2024"])
+            .when(".between(25, 29)", p["infection_to_death_weibull_scale_2529"])
+            .when(".between(30, 34)", p["infection_to_death_weibull_scale_3034"])
+            .when(".between(35, 39)", p["infection_to_death_weibull_scale_3539"])
+            .when(".between(40, 44)", p["infection_to_death_weibull_scale_4044"])
+            .when(".between(45, 49)", p["infection_to_death_weibull_scale_4549"])
+            .when(">= 50", p["infection_to_death_weibull_scale_4549"])
         )
 
         self.lm["shape_parameter_for_infection_to_death"] = LinearModel.multiplicative(
@@ -461,14 +461,14 @@ class Hiv(Module):
                 "age_years",
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True)
-                .when("<20", p["infection_to_death_weibull_shape_1519"])
-                .when(".between(20, 24)", p["infection_to_death_weibull_shape_2024"])
-                .when(".between(25, 29)", p["infection_to_death_weibull_shape_2529"])
-                .when(".between(30, 34)", p["infection_to_death_weibull_shape_3034"])
-                .when(".between(35, 39)", p["infection_to_death_weibull_shape_3539"])
-                .when(".between(40, 44)", p["infection_to_death_weibull_shape_4044"])
-                .when(".between(45, 49)", p["infection_to_death_weibull_shape_4549"])
-                .when(">= 50", p["infection_to_death_weibull_shape_4549"])
+            .when("<20", p["infection_to_death_weibull_shape_1519"])
+            .when(".between(20, 24)", p["infection_to_death_weibull_shape_2024"])
+            .when(".between(25, 29)", p["infection_to_death_weibull_shape_2529"])
+            .when(".between(30, 34)", p["infection_to_death_weibull_shape_3034"])
+            .when(".between(35, 39)", p["infection_to_death_weibull_shape_3539"])
+            .when(".between(40, 44)", p["infection_to_death_weibull_shape_4044"])
+            .when(".between(45, 49)", p["infection_to_death_weibull_shape_4549"])
+            .when(">= 50", p["infection_to_death_weibull_shape_4549"])
         )
 
         # -- Linear Models for the Uptake of Services
@@ -704,7 +704,7 @@ class Hiv(Module):
         df.loc[art_idx, "hv_diagnosed"] = True
 
         # all those on ART need to have event scheduled for continuation/cessation of treatment
-        # todo change this window to 1-90 days (3-monthly prescribing)
+        # this window is 1-90 days (3-monthly prescribing)
         for person in art_idx:
             days = self.rng.randint(low=1, high=90, size=1, dtype=np.int64)[0]
             self.sim.schedule_event(
@@ -889,7 +889,7 @@ class Hiv(Module):
         hs = self.sim.modules["HealthSystem"]
 
         # updated consumables listing
-        # todo remove blood tube and gloves from HIV test packages
+        # blood tube and gloves are optional items
         self.item_codes_for_consumables_required['hiv_rapid_test'] = \
             hs.get_item_code_from_item_name("Test, HIV EIA Elisa")
 
@@ -917,9 +917,8 @@ class Hiv(Module):
         self.item_codes_for_consumables_required['First-line ART regimen: adult: cotrimoxazole'] = {
             hs.get_item_code_from_item_name("Cotrimoxizole, 960mg pppy"): 1}
 
-        # todo change cons code for cotrim (from package to item)
-        # todo move cotrim to separate item to become optional in get_cons call
         # ART for older children aged ("ART_age_cutoff_younger_child" < age <= "ART_age_cutoff_older_child"):
+        # cotrim is separate item - optional in get_cons call
         self.item_codes_for_consumables_required['First line ART regimen: older child'] = {
             hs.get_item_code_from_item_name("First line ART regimen: older child"): 1}
         self.item_codes_for_consumables_required['First line ART regimen: older child: cotrimoxazole'] = {
@@ -935,7 +934,6 @@ class Hiv(Module):
         # HIV Rapid Diagnostic Test:
         # NB. The rapid test is assumed to be 100% specific and sensitive. This is used to guarantee that all persons
         #  that start ART are truly HIV-pos.
-        # todo option to add blood tube and gloves as optional item codes
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             hiv_rapid_test=DxTest(
                 property='hv_inf',
@@ -1036,7 +1034,7 @@ class Hiv(Module):
             # usually performed by care_of_women_during_pregnancy module
             if not mother.hv_diagnosed and \
                 mother.is_alive and (
-                self.rng.random_sample() < params["prob_anc_test_at_delivery"]):
+                    self.rng.random_sample() < params["prob_anc_test_at_delivery"]):
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_TestAndRefer(
                         person_id=mother_id,
@@ -1047,7 +1045,7 @@ class Hiv(Module):
                     tclose=None,
                 )
 
-        # if mother known HIV+, schedule virological test for infant in 6 weeks (EI
+        # if mother known HIV+, schedule virological test for infant in 6wks, 9mths, 18mths
         if mother.hv_diagnosed and df.at[child_id, "is_alive"]:
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 hsi_event=HSI_Hiv_TestAndRefer(
@@ -1059,7 +1057,6 @@ class Hiv(Module):
                 tclose=None,
             )
 
-            # todo add serological hiv tests for infant
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 hsi_event=HSI_Hiv_TestAndRefer(
                     person_id=child_id,
@@ -1080,7 +1077,7 @@ class Hiv(Module):
                 tclose=None,
             )
 
-                # todo add infant NVP prophylaxis
+        # todo add infant NVP prophylaxis
 
     def report_daly_values(self):
         """Report DALYS for HIV, based on current symptomatic state of persons."""
@@ -1249,14 +1246,11 @@ class Hiv(Module):
             )
 
         # Consider if the person will be referred to start ART
-        # todo imperfect referral testing to treatment
         if df.loc[person_id, "age_years"] <= 15:
             starts_art = 1
         else:
             starts_art = self.rng.random_sample() < self.prob_art_start_after_test(self.sim.date.year)
 
-        # todo perfect referral testing to treatment
-        # starts_art = 1
         if starts_art:
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Hiv_StartOrContinueTreatment(person_id=person_id, module=self,
@@ -1275,7 +1269,6 @@ class Hiv(Module):
                 priority=0,
             )
 
-    # todo put back in if need default testing->treatment not due to cons availability
     def prob_art_start_after_test(self, year):
         """ returns the probability of starting ART after a positive HIV test
         this value for initiation will be higher than the current reported coverage levels
@@ -1338,16 +1331,6 @@ class Hiv(Module):
 
         # Set that the person is no longer on ART
         df.at[person_id, "hv_art"] = "not"
-
-        # # todo repeat tx appt in 1 month
-        # # refer for another treatment again in 1 month
-        # self.sim.modules["HealthSystem"].schedule_hsi_event(
-        #     HSI_Hiv_StartOrContinueTreatment(person_id=person_id, module=self,
-        #                                      facility_level_of_this_hsi="1a"),
-        #     topen=self.sim.date + pd.DateOffset(months=1),
-        #     tclose=None,
-        #     priority=0,
-        # )
 
     def per_capita_testing_rate(self):
         """this calculates the numbers of hiv tests performed in each time period
@@ -1548,15 +1531,6 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
             # extract annual testing rates from MoH Reports
             test_rates = p["hiv_testing_rates"]
 
-            # reduce testing rates to account for additional testing through ANC/symptoms
-            # testing_rate_children = test_rates.loc[
-            #                             test_rates.year == current_year, "annual_testing_rate_children"
-            #                         ].values[0] * 0.6
-            # testing_rate_adults = test_rates.loc[
-            #                           test_rates.year == current_year, "annual_testing_rate_adults"
-            #                       ].values[0] * 0.6
-
-            # todo don't reduce testing rates to account for cons constraints
             testing_rate_children = test_rates.loc[
                 test_rates.year == current_year, "annual_testing_rate_children"
             ].values[0]
@@ -1564,7 +1538,6 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 test_rates.year == current_year, "annual_testing_rate_adults"
             ].values[0]
 
-            # todo skew child testing towards those at highest risk
             # relative probability of testing - this may skew testing rates higher or lower than moh reports
             rr_of_test = self.module.lm["lm_spontaneous_test_12m"].predict(df[df.is_alive & (df.age_years < 15)])
             mean_prob_test = (rr_of_test * testing_rate_children).mean()
@@ -1573,7 +1546,6 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
             random_draw = rng.random_sample(size=len(df[df.is_alive & (df.age_years < 15)]))
             child_tests_idx = df.loc[df.is_alive & (df.age_years < 15) & (random_draw < overall_prob_test)].index
-
 
             # adult testing trends also informed by demographic characteristics
             # relative probability of testing - this may skew testing rates higher or lower than moh reports
@@ -1748,7 +1720,7 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
 
         # need to delay onset of AIDS (non-tb) to compensate for AIDS-TB
         if (self.cause == "AIDS_non_TB") and (
-            self.sim.modules["Hiv"].rng.rand() < self.sim.modules["Hiv"].parameters["prop_delayed_aids_onset"]):
+                self.sim.modules["Hiv"].rng.rand() < self.sim.modules["Hiv"].parameters["prop_delayed_aids_onset"]):
 
             # redraw time to aids and reschedule
             months_to_aids = int(
@@ -1824,12 +1796,12 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
         # Do nothing if person is now on ART and VL suppressed (non VL suppressed has no effect)
         # only if no current TB infection
         if (df.at[person_id, "hv_art"] == "on_VL_suppressed") and (
-            df.at[person_id, "tb_inf"] != "active"):
+                df.at[person_id, "tb_inf"] != "active"):
             return
 
         # off ART, no TB infection
         if (df.at[person_id, "hv_art"] != "on_VL_suppressed") and (
-            df.at[person_id, "tb_inf"] != "active"):
+                df.at[person_id, "tb_inf"] != "active"):
             # cause is HIV (no TB)
             self.sim.modules["Demography"].do_death(
                 individual_id=person_id,
@@ -1947,7 +1919,6 @@ class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
             df.at[person_id, "hv_is_on_prep"] = False
 
 
-# todo change this decision to every 3 months
 class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
     """Helper event that is used to 'decide' if someone on Treatment should continue on Treatment.
     This event is scheduled by 'HSI_Hiv_StartOrContinueTreatment' 3 months after it is run.
@@ -1986,7 +1957,6 @@ class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
             # Defaults to being off Treatment
             m.stops_treatment(person_id)
 
-            # todo repeat tx appt in 1 month
             # refer for another treatment again in 1 month
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Hiv_StartOrContinueTreatment(person_id=person_id, module=self,
@@ -1995,7 +1965,6 @@ class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
                 tclose=None,
                 priority=0,
             )
-
 
 
 # ---------------------------------------------------------------------------
@@ -2144,7 +2113,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
             # Test was not possible, set blank footprint and schedule another test
             ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({"VCTNegative": 1})
 
-            # todo add repeat appt for HIV test
+            # repeat appt for HIV test
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Hiv_TestAndRefer(person_id=person_id, module=self.module, referred_from='HIV_test'),
                 topen=self.sim.date + pd.DateOffset(months=1),
@@ -2261,7 +2230,6 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
         self.sim.population.props.at[self.target, "hv_is_on_prep"] = False
 
 
-# todo make facility level modifiable
 class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id, facility_level_of_this_hsi):
@@ -2288,7 +2256,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         assert person["hv_diagnosed"]
 
         if art_status_at_beginning_of_hsi == "not":
-            # todo remove confirmatory test
+            # todo could make confirmatory test optional
             # # Do a confirmatory test and do not run the rest of the event if negative.
             # # NB. It is assumed that the sensitivity and specificity of the rapid test is perfect.
             # test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
@@ -2311,9 +2279,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             drugs_were_available = self.do_at_continuation(person_id)
 
         if drugs_were_available:
-            # If person has been placed/continued on ART, schedule 'decision about whether to continue on Treatment for
-            # 6 months later
-            # todo change to 3 months for decision to continue
+            # If person has been placed/continued on ART, schedule 'decision about whether to continue on Treatment
             self.sim.schedule_event(
                 Hiv_DecisionToContinueTreatment(
                     person_id=person_id, module=self.module
@@ -2321,7 +2287,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 self.sim.date + pd.DateOffset(months=3),
             )
         else:
-            # todo add logger for drugs not available
+            # logger for drugs not available
             person_details_for_tx = {
                 'age': person['age_years'],
                 'facility_level': self.ACCEPTED_FACILITY_LEVEL,
@@ -2344,16 +2310,8 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             p = self.module.parameters["probability_of_seeking_further_art_appointment_if_drug_not_available"]
 
             if self.module.rng.random_sample() >= p:
-                # todo remove this repeat test
-                # if defaulting, seek another testing appointment in 6 months
-                # self.sim.modules["HealthSystem"].schedule_hsi_event(
-                #     hsi_event=HSI_Hiv_TestAndRefer(
-                #         person_id=person_id, module=self.module
-                #     ),
-                #     topen=self.sim.date + pd.DateOffset(months=6),
-                #     priority=0,
-                # )
-                # todo add in referral straight back to tx
+
+                # add in referral straight back to tx
                 # if defaulting, seek another treatment appointment in 6 months
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_StartOrContinueTreatment(
@@ -2365,14 +2323,12 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 )
 
             else:
-                # todo change repeat visit to one month later (not one day)
-                # todo this allows for cons availability to change
                 # If person 'decides to' seek another treatment appointment,
                 # schedule a new HSI appointment for next month
                 # NB. With a probability of 1.0, this will keep occurring,
                 # and the person will never give-up coming back to
                 # pick-up medication.
-                # todo if person has already tried unsuccessfully to get ART at level 1a 2 times
+                # if person has already tried unsuccessfully to get ART at level 1a 2 times
                 #  then refer to level 1b
                 if self.counter_for_drugs_not_available <= 2:
                     # repeat attempt for ARVs at level 1a
@@ -2472,7 +2428,6 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         if age_of_person < p["ART_age_cutoff_young_child"]:
             # Formulation for young children
-            # todo add cotrim as optional
             drugs_available = self.get_consumables(
                 item_codes=self.module.item_codes_for_consumables_required['First line ART regimen: young child'],
                 optional_item_codes=self.module.item_codes_for_consumables_required[
@@ -2816,117 +2771,6 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             data=prev_by_age_and_sex,
             description="Prevalence of HIV split by age and sex",
         )
-
-        # male_prev_1524 = len(
-        #     df[df.hv_inf & df.is_alive & df.age_years.between(15, 24) & (df.sex == "M")]
-        # ) / len(df[df.is_alive & df.age_years.between(15, 24) & (df.sex == "M")]) if len(
-        #     df[df.is_alive & df.age_years.between(15, 24) & (df.sex == "M")]) else 0
-        #
-        # male_prev_2549 = len(
-        #     df[df.hv_inf & df.is_alive & df.age_years.between(25, 49) & (df.sex == "M")]
-        # ) / len(df[df.is_alive & df.age_years.between(25, 49) & (df.sex == "M")]) if len(
-        #     df[df.is_alive & df.age_years.between(25, 49) & (df.sex == "M")]) else 0
-        #
-        # female_prev_1524 = len(
-        #     df[df.hv_inf & df.is_alive & df.age_years.between(15, 24) & (df.sex == "F")]
-        # ) / len(df[df.is_alive & df.age_years.between(15, 24) & (df.sex == "F")]) if len(
-        #     df[df.is_alive & df.age_years.between(15, 24) & (df.sex == "F")]) else 0
-        #
-        # female_prev_2549 = len(
-        #     df[df.hv_inf & df.is_alive & df.age_years.between(25, 49) & (df.sex == "F")]
-        # ) / len(df[df.is_alive & df.age_years.between(25, 49) & (df.sex == "F")]) if len(
-        #     df[df.is_alive & df.age_years.between(25, 49) & (df.sex == "F")]) else 0
-        #
-        # total_prev = len(
-        #     df[df.hv_inf & df.is_alive]
-        # ) / len(df[df.is_alive])
-        #
-        # # incidence by age-group and sex
-        # n_new_infections_male_1524 = len(
-        #     df.loc[
-        #         df.age_years.between(15, 24)
-        #         & (df.sex == "M")
-        #         & df.is_alive
-        #         & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
-        #         ]
-        # )
-        # denom_male_1524 = len(df[
-        #                           df.is_alive
-        #                           & (df.sex == "M")
-        #                           & df.age_years.between(15, 24)])
-        # male_inc_1524 = n_new_infections_male_1524 / denom_male_1524 if denom_male_1524 else 0
-        #
-        # n_new_infections_male_2549 = len(
-        #     df.loc[
-        #         df.age_years.between(25, 49)
-        #         & (df.sex == "M")
-        #         & df.is_alive
-        #         & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
-        #         ]
-        # )
-        # denom_male_2549 = len(df[
-        #                           df.is_alive
-        #                           & (df.sex == "M")
-        #                           & df.age_years.between(25, 49)])
-        # male_inc_2549 = n_new_infections_male_2549 / denom_male_2549 if denom_male_2549 else 0
-        #
-        # n_new_infections_male_1549 = len(
-        #     df.loc[
-        #         df.age_years.between(15, 49)
-        #         & (df.sex == "M")
-        #         & df.is_alive
-        #         & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
-        #         ]
-        # )
-        #
-        # n_new_infections_female_1524 = len(
-        #     df.loc[
-        #         df.age_years.between(15, 24)
-        #         & (df.sex == "F")
-        #         & df.is_alive
-        #         & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
-        #         ]
-        # )
-        # denom_female_1524 = len(df[
-        #                             df.is_alive
-        #                             & (df.sex == "F")
-        #                             & df.age_years.between(15, 24)])
-        # female_inc_1524 = n_new_infections_female_1524 / denom_female_1524 if denom_female_1524 else 0
-        #
-        # n_new_infections_female_2549 = len(
-        #     df.loc[
-        #         df.age_years.between(25, 49)
-        #         & (df.sex == "F")
-        #         & df.is_alive
-        #         & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
-        #         ]
-        # )
-        # denom_female_2549 = len(df[
-        #                             df.is_alive
-        #                             & (df.sex == "F")
-        #                             & df.age_years.between(25, 49)])
-        # female_inc_2549 = n_new_infections_female_2549 / denom_female_2549 if denom_female_2549 else 0
-        #
-        # logger.info(
-        #     key="infections_by_2age_groups_and_sex",
-        #     data={
-        #         "male_prev_1524": male_prev_1524,
-        #         "male_prev_2549": male_prev_2549,
-        #         "female_prev_1524": female_prev_1524,
-        #         "female_prev_2549": female_prev_2549,
-        #         "total_prev": total_prev,
-        #         "n_new_infections_male_1524": n_new_infections_male_1524,
-        #         "n_new_infections_male_2549": n_new_infections_male_2549,
-        #         "n_new_infections_male_1549": n_new_infections_male_1549,
-        #         "n_new_infections_female_1524": n_new_infections_female_1524,
-        #         "n_new_infections_female_2549": n_new_infections_female_2549,
-        #         "male_inc_1524": male_inc_1524,
-        #         "male_inc_2549": male_inc_2549,
-        #         "female_inc_1524": female_inc_1524,
-        #         "female_inc_2549": female_inc_2549,
-        #     },
-        #     description="HIV infections split by 2 age-groups age and sex",
-        # )
 
         # ------------------------------------ TESTING ------------------------------------
         # testing can happen through lm[spontaneous_testing] or symptom-driven or ANC or TB
