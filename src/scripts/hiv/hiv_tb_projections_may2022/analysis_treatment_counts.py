@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from tlo import Date
-from tlo.analysis.utils import extract_results, summarize, get_scenario_outputs
+from tlo.analysis.utils import extract_results, get_scenario_outputs, summarize
 
 # Declare period for which the results will be generated (defined inclusively)
 TARGET_PERIOD = (Date(2023, 1, 1), Date(2035, 12, 31))

@@ -2,18 +2,19 @@
 
 
 import datetime
-from pathlib import Path
 import os
+from pathlib import Path
 
+import lacroix
 import matplotlib.lines as mlines
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from matplotlib.gridspec import GridSpec
 import seaborn as sns
-import lacroix
+from matplotlib.gridspec import GridSpec
 
+from tlo import Date
 from tlo.analysis.utils import (
     compare_number_of_deaths,
     extract_params,
@@ -23,7 +24,6 @@ from tlo.analysis.utils import (
     load_pickled_dataframes,
     summarize,
 )
-from tlo import Date
 
 resourcefilepath = Path("./resources")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")

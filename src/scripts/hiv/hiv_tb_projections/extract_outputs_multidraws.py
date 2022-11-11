@@ -7,9 +7,10 @@ import seaborn as sns
 
 from tlo.analysis.utils import (
     extract_results,
+    get_scenario_info,
     get_scenario_outputs,
     load_pickled_dataframes,
-    summarize, get_scenario_info,
+    summarize,
 )
 
 outputspath = Path("./outputs/t.mangal@imperial.ac.uk")

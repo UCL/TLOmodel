@@ -1,13 +1,13 @@
 
+import os
 from pathlib import Path
 
 import matplotlib.pylab as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import os
-from tlo import Date
 
+from tlo import Date
 from tlo.analysis.utils import (
     compare_number_of_deaths,
     extract_params,
@@ -17,7 +17,6 @@ from tlo.analysis.utils import (
     load_pickled_dataframes,
     summarize,
 )
-
 
 outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
 

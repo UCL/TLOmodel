@@ -19,10 +19,10 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     hiv,
+    rti,
     simplified_births,
     symptommanager,
     tb,
-    rti,
 )
 
 # Where will outputs go

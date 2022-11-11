@@ -25,6 +25,7 @@ tlo batch-download calibration_script-2022-04-12T190518Z
 """
 
 import random
+
 import numpy as np
 
 from tlo import Date, logging
