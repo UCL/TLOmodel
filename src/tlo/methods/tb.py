@@ -191,10 +191,6 @@ class Tb(Module):
             Types.REAL, "relative risk of relapse for HIV-positive people"
         ),
         # ------------------ active disease ------------------ #
-        "scaling_factor_WHO": Parameter(
-            Types.REAL,
-            "scaling factor applied to WHO estimates to account for the impact of interventions in place",
-        ),
         "duration_active_disease_years": Parameter(
             Types.REAL, "duration of active disease from onset to cure or death"
         ),
