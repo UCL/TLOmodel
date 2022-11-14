@@ -1,0 +1,14 @@
+{
+  "scenario_script_path": "src/scripts/contraception/scenarios/run_analysis_contraception.py",
+  "scenario_seed": 2022,
+  "runs_per_draw": 1,
+  "draws": [
+    {
+      "draw_number": 0,
+      "draw_seed": 40194941,
+      "parameters": null
+    }
+  ],
+  "commit": "b2cda2cd01abba64d3899148aad7560d81ff7d72",
+  "github": "https://github.com/UCL/TLOmodel/blob/b2cda2cd01abba64d3899148aad7560d81ff7d72/src/scripts/contraception/scenarios/run_analysis_contraception.py"
+}
