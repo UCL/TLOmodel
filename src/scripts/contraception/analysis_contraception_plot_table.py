@@ -16,7 +16,7 @@ datestamp_with_log = '2022-11-10T091728'  # TODO: update with final sim
 logFile_without = 'run_analysis_contraception__' + datestamp_without_log + '.log'
 logFile_with = 'run_analysis_contraception__' + datestamp_with_log + '.log'
 # which years we want to summarise for the table of use and costs
-TimePeriods_starts = [2010, 2016, 2020, 2030]
+TimePeriods_starts = [2023, 2031, 2041, 2051]
 # order of contraceptives for the table
 contraceptives_order = ['pill', 'IUD', 'injections', 'implant', 'male_condom',
                         'female_sterilization', 'other_modern']
