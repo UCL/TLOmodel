@@ -1118,7 +1118,6 @@ class Hiv(Module):
         df = self.sim.population.props
         params = self.parameters
 
-        # todo add infant prophylaxis to suppress risk
         if df.at[mother_id, "hv_art"] == "on_VL_suppressed":
             monthly_prob_mtct_bf = params["monthly_prob_mtct_bf_treated"]
         else:
@@ -1695,6 +1694,11 @@ class HivInfectionDuringBreastFeedingEvent(Event, IndividualScopeEventMixin):
         if df.at[person_id, "nb_breastfeeding_status"] == "none":
             return
 
+        # todo add effect of NVP prophylaxis
+        # If child is on NVP for HIV prophylaxis, no further action
+        if df.at[person_id, "hv_is_on_prep"]:
+            return
+
         # Onset the infection for this person (which will schedule progression etc)
         self.module.do_new_infection(person_id)
 
@@ -2193,7 +2197,10 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = '1a'
 
     def apply(self, person_id, squeeze_factor):
-        """Start infant prophylaxis for this infant lasting 18 months"""
+        """
+        Start infant prophylaxis for this infant lasting for duration of breastfeeding
+        or up to 18 months
+        """
 
         df = self.sim.population.props
         person = df.loc[person_id]
@@ -2203,6 +2210,11 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
             (not person["is_alive"])
             or (person["hv_diagnosed"])
         ):
+            return
+
+        # if breastfeeding has ceased or child >18 months, no further prophylaxis required
+        if (df.at[person_id, "nb_breastfeeding_status"] == "none")\
+                or (df.at[person_id, "age_years"] >= 1.5):
             return
 
         # Check that infant prophylaxis is available and if it is, initiate:
@@ -2223,7 +2235,7 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
             # infant does not get NVP
             df.at[person_id, "hv_is_on_prep"] = False
 
-            # Schedule repeat visit for on week's time
+            # Schedule repeat visit for one week's time
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 hsi_event=HSI_Hiv_StartInfantProphylaxis(
                     person_id=person_id,
