@@ -908,6 +908,11 @@ class Hiv(Module):
         self.item_codes_for_consumables_required['prep'] = {
             hs.get_item_code_from_item_name("Tenofovir (TDF)/Emtricitabine (FTC), tablet, 300/200 mg"): 1}
 
+        # todo add consumable
+        # infant NVP given in 3-monthly dosages
+        self.item_codes_for_consumables_required['infant_prep'] = {
+            hs.get_item_code_from_item_name("Nevirapine, oral solution, 10 mg/ml"): 1}
+
         # First - line ART for adults(age > "ART_age_cutoff_older_child")
         self.item_codes_for_consumables_required['First-line ART regimen: adult'] = {
             hs.get_item_code_from_item_name("First-line ART regimen: adult"): 1}
@@ -1044,6 +1049,17 @@ class Hiv(Module):
 
         # if mother known HIV+, schedule virological test for infant in 6wks, 9mths, 18mths
         if mother.hv_diagnosed and df.at[child_id, "is_alive"]:
+
+            # todo add infant NVP prophylaxis
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi_event=HSI_Hiv_StartInfantProphylaxis(
+                    person_id=child_id,
+                    module=self),
+                priority=1,
+                topen=self.sim.date,
+                tclose=None,
+            )
+
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 hsi_event=HSI_Hiv_TestAndRefer(
                     person_id=child_id,
@@ -1073,8 +1089,6 @@ class Hiv(Module):
                 topen=self.sim.date + pd.DateOffset(months=18),
                 tclose=None,
             )
-
-        # todo add infant NVP prophylaxis
 
     def report_daly_values(self):
         """Report DALYS for HIV, based on current symptomatic state of persons."""
@@ -2166,6 +2180,63 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
                 tclose=None,
                 priority=0,
             )
+
+
+# todo add infant prophylaxis
+class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, Hiv)
+
+        self.TREATMENT_ID = "Hiv_Prevention_Infant"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Under5OPD": 1, "VCTNegative": 1})
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
+
+    def apply(self, person_id, squeeze_factor):
+        """Start infant prophylaxis for this infant lasting 18 months"""
+
+        df = self.sim.population.props
+        person = df.loc[person_id]
+
+        # Do not run if the child is not alive or is diagnosed with hiv
+        if (
+            (not person["is_alive"])
+            or (person["hv_diagnosed"])
+        ):
+            return
+
+        # Check that infant prophylaxis is available and if it is, initiate:
+        if self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['infant_prep']):
+            df.at[person_id, "hv_is_on_prep"] = True
+
+            # Schedule repeat visit for 3 months time
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi_event=HSI_Hiv_StartInfantProphylaxis(
+                    person_id=person_id,
+                    module=self.module),
+                priority=1,
+                topen=self.sim.date,
+                tclose=None,
+            )
+
+        else:
+            # infant does not get NVP
+            df.at[person_id, "hv_is_on_prep"] = False
+
+            # Schedule repeat visit for on week's time
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi_event=HSI_Hiv_StartInfantProphylaxis(
+                    person_id=person_id,
+                    module=self.module),
+                priority=1,
+                topen=self.sim.date + pd.DateOffset(weeks=1),
+                tclose=None,
+            )
+
+    def never_ran(self, *args, **kwargs):
+        """This is called if this HSI was never run.
+        Default the person to being off PrEP"""
+        self.sim.population.props.at[self.target, "hv_is_on_prep"] = False
 
 
 class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
