@@ -1592,10 +1592,12 @@ class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
         self.module.assign_active_tb(population, strain="mdr")
 
         # importation of new ds cases - independent of current prevalence
-        self.module.import_tb_cases(population, strain="ds", import_rate=0.0005)
+        # todo change import_rate from 0.0005 to 0.001
+        self.module.import_tb_cases(population, strain="ds", import_rate=0.002)
 
+        # todo change rate to 0.001*0.02
         # importation of new mdr cases - independent of current prevalence
-        self.module.import_tb_cases(population, strain="mdr", import_rate=0.0005 * 0.05)
+        self.module.import_tb_cases(population, strain="mdr", import_rate=0.002 * 0.01)
 
 
 class TbTreatmentAndRelapseEvents(RegularEvent, PopulationScopeEventMixin):
@@ -2612,6 +2614,7 @@ class TbDeathEvent(Event, IndividualScopeEventMixin):
         )
 
         # use linear model to determine whether this person will die:
+        # todo change death rate for treated to 10.7%
         rng = self.module.rng
         result = self.module.lm["death_rate"].predict(df.loc[[person_id]], rng=rng)
 
