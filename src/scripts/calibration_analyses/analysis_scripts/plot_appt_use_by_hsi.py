@@ -1,7 +1,5 @@
-from collections import defaultdict
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 import squarify
 from matplotlib import pyplot as plt
@@ -9,16 +7,10 @@ from matplotlib import pyplot as plt
 from tlo import Date
 from tlo.analysis.utils import (
     extract_results,
-    get_coarse_appt_type,
-    get_color_coarse_appt,
-    get_color_short_treatment_id,
-    order_of_coarse_appt,
-    squarify_neat,
     summarize,
-    unflatten_flattened_multi_index_in_logging,
 )
 
-PREFIX_ON_FILENAME = '3'
+PREFIX_ON_FILENAME = '5'
 
 # Declare period for which the results will be generated (defined inclusively)
 TARGET_PERIOD = (Date(2010, 1, 1), Date(2010, 12, 31))
@@ -101,23 +93,26 @@ def figure2_appointments_used(results_folder: Path, output_folder: Path, resourc
              'IPAdmission', 'InpatientDays', 'MaleCirc',
              'MentalAll', 'NewAdult', 'OPD', 'Peds', 'TBNew',
              'U5Malnutr', 'VCTTests']
-    fig, ax = plt.subplots(len(appts), sharey=False)
+    fig, axs = plt.subplots(len(appts), 1, figsize=(10, 40))
     name_of_figure = 'Proportion of Appointment Use by TREATMENT_ID per Appointment Type'
     for idx in range(len(appts)):
         df_to_plot = counts_of_appt_by_treatment_id[
             (counts_of_appt_by_treatment_id.Appt_Type == appts[idx]) &
             (counts_of_appt_by_treatment_id.Count > 0)].copy()
+        df_to_plot = df_to_plot.sort_values(by=['Count'], ascending=False)  # sort count in descending order
         name_of_subplot = appts[idx]
-        ax[idx] = squarify.plot(
-            sizes=df_to_plot.Count,
-            label=df_to_plot.TREATMENT_ID,
-            alpha=1,
-            pad=True,
-            ax=ax[idx],
-            text_kwargs={'color': 'black', 'size': 8},
-        )
-        ax[idx].set_axis_off()
-        ax[idx].set_title(name_of_subplot, {'size': 12, 'color': 'black'})
+        axs[idx] = squarify.plot(sizes=df_to_plot.Count, label=df_to_plot.TREATMENT_ID[:3],  # label top 3
+                                 alpha=0.75, pad=True, ax=axs[idx],
+                                 text_kwargs={'color': 'black', 'size': 12})
+        axs[idx].axis('off')
+        axs[idx].invert_xaxis()
+        axs[idx].legend(handles=axs[idx].containers[0][3:10],  # legend for top 10
+                        labels=list(df_to_plot.TREATMENT_ID[3:10]),
+                        handlelength=1, handleheight=1, fontsize=10,
+                        title='Unlabelled Treatment ID', title_fontsize=11,
+                        ncol=1, loc='center left', bbox_to_anchor=(1, 0.5))
+        axs[idx].set_title(name_of_subplot, {'size': 13, 'color': 'black'})
+    fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_figure.replace(' ', '_')))
     fig.show()
     plt.close(fig)
