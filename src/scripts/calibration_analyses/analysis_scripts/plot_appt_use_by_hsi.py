@@ -105,9 +105,10 @@ def figure2_appointments_used(results_folder: Path, output_folder: Path, resourc
     name_of_figure = 'Proportion of Appointment Use by TREATMENT_ID per Appointment Type'
     for idx in range(len(appts)):
         df_to_plot = counts_of_appt_by_treatment_id[
-            counts_of_appt_by_treatment_id.Appt_Type == appts[idx]].copy()
+            (counts_of_appt_by_treatment_id.Appt_Type == appts[idx]) &
+            (counts_of_appt_by_treatment_id.Count > 0)].copy()
         name_of_subplot = appts[idx]
-        squarify.plot(
+        ax[idx] = squarify.plot(
             sizes=df_to_plot.Count,
             label=df_to_plot.TREATMENT_ID,
             alpha=1,
