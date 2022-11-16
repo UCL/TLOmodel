@@ -13,7 +13,7 @@ from tlo.analysis.utils import (
 PREFIX_ON_FILENAME = '5'
 
 # Declare period for which the results will be generated (defined inclusively)
-TARGET_PERIOD = (Date(2010, 1, 1), Date(2010, 12, 31))
+TARGET_PERIOD = (Date(2015, 1, 1), Date(2019, 12, 31))
 
 
 def drop_outside_period(_df):
