@@ -2183,33 +2183,36 @@ class Models:
     def prob_die_of_alri(self,
                          age_exact_years: float,
                          sex: str,
-                         pathogen: str,
+                         bacterial_infection: bool,
                          disease_type: str,
+                         all_symptoms: List[str],
                          SpO2_level: str,
                          complications: List[str],
-                         danger_signs: bool,
                          un_clinical_acute_malnutrition: str,
                          ) -> float:
         """Returns the probability that such a case of ALRI will be lethal (if untreated)."""
         p = self.p
+        df = self.module.sim.population.props
 
-        # Death does not occur if there are no complications
-        if 0 == len(complications):
-            return 0.0
+        # base group is CXR- without complications, fast-breathing or cough/cold only
 
         def get_odds_of_death(age_in_whole_months):
             """Returns odds of death given age in whole months."""
+
             def get_odds_of_death_for_under_two_month_old(age_in_whole_months):
-                return p[f'base_odds_death_ALRI_{_age_}'] * \
-                       (p[f'or_death_ALRI_{_age_}_by_month_increase_in_age'] ** age_in_whole_months)
+                return p[f'base_odds_death_ALRI_{_age_}']
 
             def get_odds_of_death_for_over_two_month_old(age_in_whole_months):
-                return p[f'base_odds_death_ALRI_{_age_}'] * \
-                       (p[f'or_death_ALRI_{_age_}_by_month_increase_in_age'] ** (age_in_whole_months - 2))
+                if 2 <= age_in_whole_months <= 5:
+                    return p[f'base_odds_death_ALRI_{_age_}'] * p[f'or_death_ALRI_{_age_}_in_2_5mo']
+                elif 6 <= age_in_whole_months <= 11:
+                    return p[f'base_odds_death_ALRI_{_age_}'] * p[f'or_death_ALRI_{_age_}_in_6_11mo']
+                else:
+                    return p[f'base_odds_death_ALRI_{_age_}']
 
-            return get_odds_of_death_for_under_two_month_old(age_in_whole_months=age_in_whole_months) \
-                if age_in_whole_months < 2 \
-                else get_odds_of_death_for_over_two_month_old(age_in_whole_months=age_in_whole_months)
+            return get_odds_of_death_for_under_two_month_old(age_in_whole_months=age_in_whole_months) if \
+                age_in_whole_months < 2 else \
+                get_odds_of_death_for_over_two_month_old(age_in_whole_months=age_in_whole_months)
 
         age_in_whole_months = int(np.floor(age_exact_years * 12.0))
         is_under_two_months_old = age_in_whole_months < 2
@@ -2219,11 +2222,24 @@ class Models:
         odds_death = get_odds_of_death(age_in_whole_months=age_in_whole_months)
 
         # Modify odds of death based on other factors:
-        if danger_signs:
-            odds_death *= p[f'or_death_ALRI_{_age_}_very_severe_pneumonia']
+        if 'danger_signs' in all_symptoms:
+            odds_death *= p[f'or_death_ALRI_{_age_}_danger_signs']
 
-        if pathogen == 'P.jirovecii':
-            odds_death *= p[f'or_death_ALRI_{_age_}_P.jirovecii']
+        if SpO2_level == '<90%':
+            odds_death *= p[f'or_death_ALRI_{_age_}_SpO2<90%']
+        elif SpO2_level == '90-92%':
+            odds_death *= p[f'or_death_ALRI_{_age_}_SpO2_90_92%']
+
+        if 'bacteraemia' in complications:
+            odds_death *= 2.51  # Kumar et al 2020 INCLEN study (neonates)
+        # if 'bacteraemia' in complications:
+        #     odds_death *= 5.03  # Koh et al 2017 - ref Risk factors for mortality in children with pneumonia admitted to the pediatric intensive care unit
+
+        if disease_type == 'pneumonia':
+            odds_death *= 2.79  # ref Florin et al 2021 - Development and Internal Validation of a Prediction Model to Risk Stratify Children With Suspected Community-Acquired Pneumonia
+
+        if any(pc in ['pleural_effusion', 'empyema', 'pneumothorax', 'lung_abscess'] for pc in complications):
+            odds_death *= 2.55  # ref Wei et al 2019 - Risk Factors for Severe Community-aquired Pneumonia Among Children Hospitalized With CAP Younger Than 5 Years of Age
 
         if not is_under_two_months_old:
             if sex == 'F':
@@ -2232,19 +2248,70 @@ class Models:
             if un_clinical_acute_malnutrition == 'SAM':
                 odds_death *= p[f'or_death_ALRI_{_age_}_SAM']
 
-        if SpO2_level == '<90%':
-            odds_death *= p['or_death_ALRI_SpO2<90%']
-        elif SpO2_level == '90-92%':
-            odds_death *= p['or_death_ALRI_SpO2_90_92%']
+            if 'chest_indrawing' in all_symptoms:
+                odds_death *= p[f'or_death_ALRI_{_age_}_chest_indrawing']
 
-        if 'sepsis' in complications:
-            odds_death *= p['or_death_ALRI_sepsis']
+        if 'respiratory_distress' in all_symptoms:
+            odds_death *= 1.65
 
-        if 'pneumothorax' in complications:
-            odds_death *= p['or_death_ALRI_pneumothorax']
+        # Adjust the natural risk of death for those uncomplicated CXR- viral causes, without severe symptoms
+        if 0 == len(complications) and (
+            disease_type == 'other_alri' and not any(symptom in [
+                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms)
+                and bacterial_infection not in self.module.pathogens['bacterial']):
+            return min(1.0, 0.25 * to_prob(odds_death))
 
-        return min(1.0, p['scaler_on_risk_of_death'] * to_prob(odds_death))  # Return the probability of death,
-        #                                                                      with scaling.
+        # Adjust the natural risk of death for those uncomplicated CXR- bacterial causes, without severe symptoms
+        elif 0 == len(complications) and (
+            disease_type == 'other_alri' and not any(symptom in [
+                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms)
+                and bacterial_infection in self.module.pathogens['bacterial']):
+            return min(1.0, 0.5 * to_prob(odds_death))
+
+        # Adjust the natural risk of death for those uncomplicated CXR- viral causes, with severe symptoms
+        elif 0 == len(complications) and (
+            disease_type == 'other_alri' and any(symptom in [
+                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms)
+                and bacterial_infection not in self.module.pathogens['bacterial']):
+            return min(1.0, 0.75 * to_prob(odds_death))
+
+        # Adjust the natural risk of death for those uncomplicated CXR- bacterial causes, with severe symptoms
+        elif 0 == len(complications) and (
+            disease_type == 'other_alri' and any(symptom in [
+                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms)
+                and bacterial_infection in self.module.pathogens['bacterial']):
+            return min(1.0, to_prob(odds_death))
+
+        # Adjust the natural risk of death for those uncomplicated CXR+ viral causes, without severe symptoms
+        elif 0 == len(complications) and (
+            disease_type == 'pneumonia' and not any(symptom in [
+                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms)
+                and bacterial_infection not in self.module.pathogens['bacterial']):
+            return min(1.0, 1.25 * to_prob(odds_death))
+
+        # Adjust the natural risk of death for those uncomplicated CXR+ bacterial causes, without severe symptoms
+        elif 0 == len(complications) and (
+            disease_type == 'pneumonia' and not any(symptom in [
+                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms)
+                and bacterial_infection in self.module.pathogens['bacterial']):
+            return min(1.0, 1.5 * to_prob(odds_death))
+
+        # Adjust the natural risk of death for those uncomplicated CXR+ viral causes, with severe symptoms
+        elif 0 == len(complications) and (
+            disease_type == 'pneumonia' and any(symptom in [
+                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms)
+                and bacterial_infection not in self.module.pathogens['bacterial']):
+            return min(1.0, 1.75 * to_prob(odds_death))
+
+        elif 0 == len(complications) and (
+            disease_type == 'pneumonia' and any(symptom in [
+                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms)
+                and bacterial_infection in self.module.pathogens['bacterial']):
+            return min(1.0, 2 * to_prob(odds_death))
+
+        else:
+            return min(1.0, 2.25 * to_prob(odds_death))  # Return the probability of death,
+            #                                                                      with scaling.
 
     def treatment_fails(self, **kwargs) -> bool:
         """Determine whether a treatment fails or not: Returns `True` if the treatment fails."""
@@ -2569,40 +2636,43 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
         # could affect this episode.
         episode_end = date_of_outcome + DateOffset(days=params['days_between_treatment_and_cure'])
 
-        # ----------------------------------- Clinical Symptoms -----------------------------------
-        symptoms_for_uncomplicated_disease = models.symptoms_for_disease(disease_type=disease_type)
-
         # ----------------------------------- Complications  -----------------------------------
         complications = models.get_complications_that_onset(
             disease_type=disease_type,
+            age_exact_years=age_exact_years,
             primary_path_is_bacterial=(pathogen in self.module.pathogens['bacterial']),
             has_secondary_bacterial_inf=pd.notnull(bacterial_coinfection)
         )
 
         oxygen_saturation = models.get_oxygen_saturation(complication_set=complications)
 
-        def get_symptoms_for_complications(complications: set, oxygen_saturation: str) -> set:
-            """Return the set of symptoms consistent with the set of complications that are onset."""
-            symptoms_for_complications = set()
-            for complication in complications:
-                symptoms_for_complications = symptoms_for_complications.union(
-                    models.symptoms_for_complication(complication=complication, oxygen_saturation=oxygen_saturation))
-            return symptoms_for_complications
+        # def get_symptoms_for_complications(disease_type:str, complications: set, oxygen_saturation: str) -> set:
+        #     """Return the set of symptoms consistent with the set of complications that are onset."""
+        #     symptoms_for_complications = set()
+        #     for complication in complications:
+        #         symptoms_for_complications = symptoms_for_complications.union(
+        #             models.symptoms_for_complication(disease_type=disease_type,
+        #                                              complication=complication,
+        #                                              oxygen_saturation=oxygen_saturation))
+        #     return symptoms_for_complications
 
-        symptoms_for_complications = get_symptoms_for_complications(complications=complications,
-                                                                    oxygen_saturation=oxygen_saturation)
-
-        all_symptoms = sorted(symptoms_for_uncomplicated_disease.union(symptoms_for_complications))
+        # ----------------------------------- Clinical Symptoms -----------------------------------
+        # apply signs and symptoms for uncomplicated cases or for complicated cases
+        all_symptoms = \
+            models.symptoms_for_uncomplicated_disease(disease_type=disease_type) if len(complications) == 0 else \
+                models.symptoms_for_complicated_disease(disease_type=disease_type, complications=complications,
+                                                        oxygen_saturation=oxygen_saturation)
 
         # ----------------------------------- Whether Will Die  -----------------------------------
         will_die = models.will_die_of_alri(
             age_exact_years=age_exact_years,
             sex=sex,
-            pathogen=pathogen,
+            bacterial_infection=any(
+                b_patho in [pathogen, bacterial_coinfection] for b_patho in self.module.pathogens['bacterial']),
             disease_type=disease_type,
             SpO2_level=oxygen_saturation,
             complications=complications,
-            danger_signs=('danger_signs' in all_symptoms),
+            all_symptoms=all_symptoms,
             un_clinical_acute_malnutrition=un_clinical_acute_malnutrition,
         )
 
@@ -2663,7 +2733,7 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
         # Log the complications to the tracker
         if set(chars['complications']).intersection(['pneumothorax', 'pleural_effusion', 'empyema', 'lung_abscess']):
             self.module.logging_event.new_pulmonary_complication_case()
-        if 'sepsis' in chars['complications']:
+        if 'bacteraemia' in chars['complications']:
             self.module.logging_event.new_systemic_complication_case()
         if 'hypoxaemia' in chars['complications']:
             self.module.logging_event.new_hypoxaemic_case()
@@ -2972,7 +3042,8 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
         ].to_list()
         return 'Staph_aureus' in infections
 
-    def _get_imci_classification_based_on_symptoms(self, child_is_younger_than_2_months: bool, symptoms: list) -> str:
+    def _get_imci_classification_based_on_symptoms(self, child_is_younger_than_2_months: bool, symptoms: list,
+                                                   facility_level: str) -> str:
         """Based on age and symptoms, classify WHO-pneumonia severity. This is regarded as the *TRUE* classification
          based on symptoms. It will return one of: {
              'fast_breathing_pneumonia',
@@ -2980,8 +3051,14 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
              'chest_indrawing_pneumonia,
              'cough_or_cold'
         }."""
+        # person_id = self.target
+        # if self.sim.population.props.loc[person_id, ['un_clinical_acute_malnutrition'] == 'SAM']:
+        #     return 'danger_signs_pneumonia'
+        # else:
+
         return self.module.get_imci_classification_based_on_symptoms(
-            child_is_younger_than_2_months=child_is_younger_than_2_months, symptoms=symptoms)
+            child_is_younger_than_2_months=child_is_younger_than_2_months, symptoms=symptoms,
+            facility_level=facility_level)
 
     @staticmethod
     def _get_imci_classification_by_SpO2_measure(oxygen_saturation: bool) -> str:
@@ -3119,7 +3196,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
 
         imci_classification_based_on_symptoms = self._get_imci_classification_based_on_symptoms(
             child_is_younger_than_2_months=child_is_younger_than_2_months,
-            symptoms=symptoms)
+            symptoms=symptoms, facility_level=facility_level)
 
         imci_classification_by_SpO2_measure = self._get_imci_classification_by_SpO2_measure(
             oxygen_saturation=oxygen_saturation)
@@ -3595,7 +3672,7 @@ class AlriIncidentCase_Lethal_DangerSigns_Pneumonia(AlriIncidentCase):
 
         assert 'danger_signs_pneumonia' == self.module.get_imci_classification_based_on_symptoms(
             child_is_younger_than_2_months=df.at[person_id, 'age_exact_years'] < (2.0 / 12.0),
-            symptoms=self.sim.modules['SymptomManager'].has_what(person_id)
+            symptoms=self.sim.modules['SymptomManager'].has_what(person_id), facility_level='2'
         )
 
 
@@ -3626,7 +3703,8 @@ class AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia(AlriIncidentCase):
 
         assert 'fast_breathing_pneumonia' == \
                self.module.get_imci_classification_based_on_symptoms(
-                   child_is_younger_than_2_months=False, symptoms=self.sim.modules['SymptomManager'].has_what(person_id)
+                   child_is_younger_than_2_months=False,
+                   symptoms=self.sim.modules['SymptomManager'].has_what(person_id), facility_level='2'
                )
 
 
