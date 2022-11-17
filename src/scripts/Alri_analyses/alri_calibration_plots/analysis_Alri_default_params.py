@@ -10,6 +10,7 @@ import datetime
 from pathlib import Path
 
 import pandas as pd
+import random
 from matplotlib import pyplot as plt
 
 from tlo import Date, Simulation, logging
@@ -50,8 +51,10 @@ log_config = {
     }
 }
 
+seed = random.randint(0, 50000)
+
 # Establish the simulation object
-sim = Simulation(start_date=start_date, log_config=log_config, show_progress_bar=True)
+sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
 
 # run the simulation
 sim.register(
