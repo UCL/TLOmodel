@@ -28,7 +28,7 @@ from tlo.methods.alri import (
 )
 from tlo.util import sample_outcome
 
-MODEL_POPSIZE = 15_000
+MODEL_POPSIZE = 30_000
 MIN_SAMPLE_OF_NEW_CASES = 200
 NUM_REPS_FOR_EACH_CASE = 20
 
@@ -77,6 +77,11 @@ sim1 = get_sim(popsize=MODEL_POPSIZE)
 alri_module_with_perfect_diagnosis = sim1.modules['Alri']
 _make_hw_diagnosis_perfect(alri_module_with_perfect_diagnosis)
 hsi_with_perfect_diagnosis = HSI_Alri_Treatment(module=alri_module_with_perfect_diagnosis, person_id=None)
+
+# Alri module with perfect diagnosis and perfect treatment
+sim2 = get_sim(popsize=MODEL_POPSIZE)
+alri_module_with_perfect_treatment_and_diagnosis = sim2.modules['Alri']
+_make_treatment_and_diagnosis_perfect(alri_module_with_perfect_treatment_and_diagnosis)
 
 
 def generate_case_mix() -> pd.DataFrame:
@@ -151,24 +156,528 @@ def generate_case_mix() -> pd.DataFrame:
     return pd.DataFrame(overall_case_mix)
 
 
+# ------------------------------------------------------------------
+# generate the dataframe with the cases
 df = generate_case_mix()
 
-# ------------------------------------------------------------------
-# Verify the number of complications
+# Verify the numbers of the natural history
 
 # group by disease type: pneumonia vs other_alri
 df_by_group = df.groupby('disease_type')
 df_pneumonia = df_by_group.get_group('pneumonia')
 df_other_alri = df_by_group.get_group('other_alri')
 
-# total complications per group
-df_pneumonia['complications'].apply(lambda x: 1 if len(x) != 0 else 0).sum()
-df_other_alri['complications'].apply(lambda x: 1 if len(x) != 0 else 0).sum()
-
 # total cases per group
 total_pneumonia_cases = df_pneumonia.index.size
 total_other_alri_cases = df_other_alri.index.size
 total_alri_cases = df.index.size
+
+# # # # # # # # # # PARAMETER VALUES FOR RESOURCE FILE # # # # # # # # # #
+
+# # # # # # # # Get the proportions from the natural history output to estimate parameter values # # # # # # # #
+
+# PARAMETER - proportion_pneumonia_in_alri
+prop_abnormal_cxr = total_pneumonia_cases / total_alri_cases
+
+# proportion under 2 months old
+under_2_months = df.loc[df['age_exact_years'] < 2.0 / 12.0].index.size
+prop_under_2mo = under_2_months / df.index.size
+
+# PARAMETER - proportion_bacterial_infection_in_pneumonia
+bacterial_infection_pneumonia = df_pneumonia[['pathogen', 'bacterial_coinfection']].apply(lambda x: 1 if (
+    (x[0] in sim0.modules['Alri'].pathogens['bacterial']) or pd.notnull(x[1])) else 0, axis=1).sum()
+
+bacterial_inf_in_pneumonia = bacterial_infection_pneumonia / total_pneumonia_cases
+
+# PARAMETER - proportion_bacterial_infection_in_other_alri
+bacterial_infection_other_alri = df_other_alri[['pathogen', 'bacterial_coinfection']].apply(lambda x: 1 if (
+    (x[0] in sim0.modules['Alri'].pathogens['bacterial']) or pd.notnull(x[1])) else 0, axis=1).sum()
+
+prop_bacterial_inf_in_other_alri = bacterial_infection_other_alri / total_other_alri_cases
+
+# --------------------------------------------------------
+# Parameter values for OTHER ALRI
+# number of cases NOT included in the model of mortality
+no_mortality_cases = df[['symptoms', 'disease_type', 'complications']].apply(
+    lambda x: 1 if not any(s in ['chest_indrawing', 'danger_signs', 'respiratory_distress'] for s in x[0]) and
+                   (x[1] == 'other_alri') and (len(x[2]) == 0) else 0, axis=1).sum()
+
+# the proportion of cases not in the mortality model / (assumed not sought care, for adjustmnet of params)
+prop_no_mortality = no_mortality_cases / total_other_alri_cases
+
+# denominator for uncomplicated other alri
+total_uncomplicated_other_alri = df_other_alri['complications'].apply(lambda x: 1 if (len(x) == 0) else 0).sum()
+
+# get the proportion of danger signs in non-hypoxaemic, non-bacteraemic other alri
+tot_ds_in_uncomplicated_other_alri = df_other_alri[['complications', 'symptoms']].apply(
+    lambda x: 1 if (len(x[0]) == 0) and 'danger_signs' in x[1] else 0, axis=1).sum()
+
+# PARAMETER - prob_danger_signs_in_other_alri (before applying complications)
+prop_ds_in_uncomplicated_other_alri = tot_ds_in_uncomplicated_other_alri / total_uncomplicated_other_alri
+
+# # # CHECK IF CALIBRATED --- TODO: check this
+
+# proportion of general danger signs from other alri ( may or may not have respiratory distress)
+# PCV13 data tab general_ds_all_level, m - 12.98% - 16.68% (without missing) on average in all ALRI - 1.24x more in CXR+
+# should be between minimum 11.78% to max ~ 15.15% in Other ALRI (at least)
+total_ds_other_alri = df_other_alri['symptoms'].apply(lambda x: 1 if 'danger_signs' in x else 0).sum()
+prop_ds_other_alri = total_ds_other_alri / total_other_alri_cases  # 0.16551
+
+# proportion of all danger signs (ds and rd) from other alri
+# PCV13 data tab sev_signs_rd - 22.93% - 28.45% (without missing) on average in all ALRI - 1.24x more in CXR+
+# should be between 20.823% to max 25.836% in other ALRI (at least)
+total_ds_and_rd_other_alri = df_other_alri['symptoms'].apply(
+    lambda x: 1 if 'danger_signs' in x or 'respiratory_distress' in x else 0).sum()
+prop_ds_and_rd_other_alri = total_ds_and_rd_other_alri / total_other_alri_cases  # 0.3142
+
+# Check for chest-indrawing in other alri ---------
+# get the proportion of chest indrawing in non-complicated other alri
+tot_ci_in_uncomplicated_other_alri = df_other_alri[['complications', 'symptoms']].apply(
+    lambda x: 1 if (len(x[0]) == 0) and 'chest_indrawing' in x[1] else 0, axis=1).sum()
+# should be 49.07% as input value
+prop_ci_in_uncomplicated_other_alri = tot_ci_in_uncomplicated_other_alri / total_uncomplicated_other_alri  # 0.56065
+
+# # # CHECK IF CALIBRATED ---
+# proportion of chest indrawing from other alri regardless of SpO2 level
+# PCV13 data tab chest_all_level - 50.59% - 62.93% (without missing) on average in all ALRI - 1.161x more in CXR+
+# should be between minimum 47.375% to max 58.93% in other ALRI
+# Or 0.85 (Rees et al 2020) * 0.75 = 0.6375 --- keep as max value
+total_ci_other_alri = df_other_alri['symptoms'].apply(lambda x: 1 if 'chest_indrawing' in x else 0).sum()
+prop_ci_other_alri = total_ci_other_alri / total_other_alri_cases  # 0.61214 todo: too low
+
+# -----------------------------------------------
+# # # # # NOW CHECK FOR PNEUMONIA GROUP # # # # #
+
+# number of cases assumed not seeking care (no complications with only fast-breathing)
+no_mortality_cases_pneum = df_pneumonia[['symptoms', 'complications']].apply(
+    lambda x: 1 if ('chest_indrawing' not in x[0] or 'danger_signs' not in x[0])
+    and (len(x[1]) == 0) else 0, axis=1).sum()
+
+# the proportion of cases not in the mortality model / (assumed not sought care, for adjustmnet of parameters)
+prop_no_mortality_pneum = no_mortality_cases / total_pneumonia_cases
+
+# denominator for uncomplicated pneumonia
+total_uncomplicated_pneumonia = df_pneumonia['complications'].apply(lambda x: 1 if (len(x) == 0) else 0).sum()
+# denominator for complicated pneumonia
+total_complicated_pneumonia = df_pneumonia['complications'].apply(lambda x: 1 if (len(x) != 0) else 0).sum()
+prop_complicated_pneumonia = total_complicated_pneumonia / total_pneumonia_cases  # 0.4517
+
+# get the proportion of danger signs in uncomplicated pneumonia
+tot_ds_in_uncomplicated_pneumonia = df_pneumonia[['complications', 'symptoms']].apply(
+    lambda x: 1 if (len(x[0]) == 0) and 'danger_signs' in x[1] else 0, axis=1).sum()
+
+# PARAMETER - prob_danger_signs_in_pneumonia (before applying complications) - input value = 0.1403
+prop_ds_in_uncomplicated_pneumonia = tot_ds_in_uncomplicated_pneumonia / total_uncomplicated_pneumonia  # 0.15919
+
+# get the proportion of chest-indrawing in uncomplicated pneumonia group
+tot_ci_in_uncomplicated_pneumonia = df_pneumonia[['complications', 'symptoms']].apply(
+    lambda x: 1 if (len(x[0]) == 0) and 'chest_indrawing' in x[1] else 0, axis=1).sum()
+total_uncomplicated_pneumonia = df_pneumonia['complications'].apply(lambda x: 1 if (len(x) == 0) else 0).sum()
+
+# confirm this equals prob_chest_indrawing_in_pneumonia (before applying complications) - input value 56.97%
+prop_ci_in_uncompliced_pneumonia = tot_ci_in_uncomplicated_pneumonia / total_uncomplicated_pneumonia  # 0.641
+
+# Target proportion of chest indrawing in complicated pneumonia ~ 68.42% or higher (or 74% target)
+tot_ci_in_complicated_pneumonia = df_pneumonia[['complications', 'symptoms']].apply(
+    lambda x: 1 if (len(x[0]) != 0) and 'chest_indrawing' in x[1] else 0, axis=1).sum()
+prop_ci_in_complicated_pneumonia = tot_ci_in_complicated_pneumonia / total_complicated_pneumonia  # 0.7867
+
+# # # CHECK IF CALIBRATED
+# proportion of danger signs in CXR+ -- ~ 0.28 * 0.26148 (overlap) = 20.678 use as MAX
+# PCV13 data tab general_ds_all_level, m - 12.98% - 16.68% (without missing) on average in all ALRI - 1.24x more in CXR+
+# should be between 0.1462% to 18.78% in Pneumonia (based on PCV13)
+# Then adjust to the non-ALRI in SpO2>=93% in PCV13 - 0.1878*(1-0.273)*1.1747+(0.1878*0.273) = 0.212833 (USE AS MAX)
+# (based on general danger signs / may or may not have respiratory distress)
+danger_signs_in_pneumonia = df_pneumonia['symptoms'].apply(lambda x: 1 if 'danger_signs' in x else 0).sum()
+prop_danger_signs_in_pneumonia = danger_signs_in_pneumonia / total_pneumonia_cases  # 0.21711
+
+# proportion of all danger signs (general ds and rd) in CXR+
+# PCV13 data tab sev_signs_rd - 22.93% - 28.45% (without missing) on average in all ALRI - 1.24x more in CXR+
+# should be between minimum 25.821% to 32.037% in other ALRI (at least)
+ds_and_rd_in_pneumonia = df_pneumonia['symptoms'].apply(lambda x: 1 if ('danger_signs' in x or 'respiratory_distress' in x) else 0).sum()
+prop_ds_and_rd_in_pneumonia = ds_and_rd_in_pneumonia / total_pneumonia_cases  # 0.39972
+
+# proportion of chest_indrawing in CXR+ regardless of SpO2 level
+# PCV13 data tab chest_all_level - 50.59% - 62.93% (without missing) on average in all ALRI - 1.161x more in CXR+
+# should be between minimum 55% to 68.42% in Pneumonia (based on PCV13) - AT LEAST
+chest_indrawing_in_pneumonia = df_pneumonia['symptoms'].apply(lambda x: 1 if 'chest_indrawing' in x else 0).sum()
+prop_chest_indrawing_in_pneumonia = chest_indrawing_in_pneumonia / total_pneumonia_cases  # 0.7069 todo: too low?
+
+# ------------------------------------------------------------------
+# CHECK IF CALIBRATED - Symptom-based classification of pneumonia # # # # # # # # # # # #
+# must keep fast-breathing pneumonia at at least ~ 33 %
+
+# general danger signs only (with or without resp distress)
+gn_danger_signs_pneumonia = df['symptoms'].apply(lambda x: 1 if 'danger_signs' in x else 0).sum()
+# danger_signs_pneumonia = df['symptoms'].apply(
+#     lambda x: 1 if ('danger_signs' in x) or ('respiratory_distress' in x) else 0).sum()
+
+danger_signs_pneumonia = df['symptoms'].apply(
+    lambda x: 1 if ('danger_signs' in x) or all(s in x for s in ['respiratory_distress', 'chest_indrawing']) else 0).sum()
+
+chest_indrawing_pneumonia = df['symptoms'].apply(
+    lambda x: 1 if 'chest_indrawing' in x and 'danger_signs' not in x and 'respiratory_distress' not in x else 0).sum()
+fast_breathing_pneumonia = df['symptoms'].apply(
+    lambda x: 1 if 'tachypnoea' in x and 'danger_signs' not in x and 'respiratory_distress' not in x and
+                   'chest_indrawing' not in x else 0).sum()
+
+prop_gn_danger_signs_pneumonia_class = gn_danger_signs_pneumonia / total_alri_cases
+
+prop_danger_signs_pneumonia_class = danger_signs_pneumonia / total_alri_cases  # 0.329013
+prop_chest_indrawing_pneumonia_class = chest_indrawing_pneumonia / total_alri_cases  # 0.366031
+prop_fast_breathing_pneumonia_class = fast_breathing_pneumonia / total_alri_cases   # 0.231768
+prop_cough_cold = 1 - (prop_danger_signs_pneumonia_class + prop_chest_indrawing_pneumonia_class + prop_fast_breathing_pneumonia_class)  # 0.07318
+
+prop_non_severe = 1 - (prop_danger_signs_pneumonia_class + prop_chest_indrawing_pneumonia_class)  # 0.304955    # should be at least 33%
+
+# -------------------------------------------------------------
+# # # # CALIBRATION CHECK # # # #
+# get the proportion of SpO2<90% in each classification group
+
+# FAST-BREATHING PNEUMONIA CLASSIFICATION ------------------------------------------------
+# SpO2<90% in fast-breathing pneumonia -- ~ 2.89% - 3.07% (PCV13 data - tab classification3 oxygensat_3levels, (m vs -) row)
+tot_fast_breathing_SpO2_below90 = df[['oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if (x[0] == '<90%') and 'tachypnoea' in x[1] and
+    'danger_signs' not in x[1] and 'respiratory_distress' not in x[1] and 'chest_indrawing' not in x[1] else 0, axis=1).sum()
+prop_fb_spo2_below_90 = tot_fast_breathing_SpO2_below90 / fast_breathing_pneumonia  # 0.01889
+
+prop_SpO2_below90_in_non_sev_pneumonia = df[['oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if (x[0] == '<90%') and 'danger_signs' not in x[1] and 'respiratory_distress' not in x[1]
+                   and 'chest_indrawing' not in x[1] else 0,
+    axis=1).sum() / (total_alri_cases - (chest_indrawing_pneumonia + danger_signs_pneumonia))  # 0.016
+
+# SpO2 <93% should be ~8% - in fast-breathing pneumonia (ref: hypoxaemia prevalence study)
+# ~9.01% - 9.56% (PCV13 data - tab classification3 oxygensat_3levels, (m vs -) row)
+tot_fast_breathing_SpO2_below93 = df[['oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if (x[0] != '>=93%') and 'tachypnoea' in x[1] and
+    'danger_signs' not in x[1] and 'respiratory_distress' not in x[1] and 'chest_indrawing' not in x[1] else 0, axis=1).sum()
+prop_SpO2_below93_in_fb_pneumonia = tot_fast_breathing_SpO2_below93 / fast_breathing_pneumonia  # 0.0836
+
+# SpO2 <93% should be ~8% - in fast-breathing pneumonia (ref: hypoxaemia prevalence study)
+# include those classified as cough or cold
+prop_SpO2_below90_in_non_sev_pneumonia_all_ds = df[['oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if (x[0] == '<90%') and 'danger_signs' not in x[1] and 'respiratory_distress' not in x[1]
+                   and 'chest_indrawing' not in x[1] else 0, axis=1).sum() / (
+    total_alri_cases - (chest_indrawing_pneumonia + danger_signs_pneumonia))  # 0.01678
+
+prop_SpO2_below93_in_non_sev_pneumonia_all_ds = df[['oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if (x[0] != '>=93%') and 'danger_signs' not in x[1] and 'respiratory_distress' not in x[1] and
+                   'chest_indrawing' not in x[1] else 0, axis=1).sum() / (
+    total_alri_cases - (chest_indrawing_pneumonia + danger_signs_pneumonia))  # 0.074
+
+# CHEST-INDRAWING PNEUMONIA CLASSIFICATION ------------------------------------------------
+# SpO2<90% in chest indrawing pneumonia
+# keep between 7.44% - 8.58%
+# (PCV13 data - tab chest_all_level oxygensat_3levels if ( general_ds_all_level!=1 & resp_distress2!=1) ,m ro, (m vs -) row) - use ~ 7.5% as minimum
+# CAP MAX AT 10.1% ----- 0.0858 * 1.17474 (adjust for those non-ALRI cases in PCV13) = 0.10079
+tot_chest_indrawing_SpO2_below90 = df[['oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if (x[0] == '<90%') and 'chest_indrawing' in x[1] and ('danger_signs' not in x[1] and 'respiratory_distress' not in x[1]) else 0, axis=1).sum()
+prop_ci_spo2_below_90 = tot_chest_indrawing_SpO2_below90 / chest_indrawing_pneumonia  # ~ 0.0943
+
+# SpO2 <93% in chest indrawing pneumonia
+# keep between 15.79% - 18.22%
+# (PCV13 data - tab chest_all_level oxygensat_93 if ( general_ds_all_level!=1 & resp_distress2!=1), (m vs -) row) - use ~16% as minimum
+# CAP MAX AT 21.4%% ----- 0.1822 * 1.17474 (adjust for those non-ALRI cases in PCV13) = 0.21403
+tot_chest_indrawing_SpO2_below93 = df[['oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if (x[0] != '>=93%') and 'chest_indrawing' in x[1] and ('danger_signs' not in x[1] and 'respiratory_distress' not in x[1]) else 0, axis=1).sum()
+prop_SpO2_below93_in_ci_pneumonia = tot_chest_indrawing_SpO2_below93 / chest_indrawing_pneumonia  # ~ 0.22479 todo: little too high?
+
+# DANGER-SIGNS PNEUMONIA CLASSIFICATION ------------------------------------------------
+# SpO2<90% in general danger signs pneumonia
+# PCV13 data tab general_ds_all_level oxygensat_3levels, (m vs -) row)
+# Keep between 17.36% - 19.72% (without missing) on average in all ALRI - 1.24x more in CXR+
+# CAP MAX AT 23.2% ----- 0.1972 * 1.17474 (adjust for those non-ALRI cases in PCV13) = 0.23165
+tot_danger_signs_SpO2_below90 = df[['oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if (x[0] == '<90%') and 'danger_signs' in x[1] else 0, axis=1).sum()
+prop_ds_spo2_below_90 = tot_danger_signs_SpO2_below90 / gn_danger_signs_pneumonia  # 0.21886  # todo: too high? - but OK?
+# prevalence of hypoxaemia in hospitalised children with severe pneumonia was 40% in Bangladesh study Rahman et al 2021
+
+
+# should be between 15.765% to max 17.91% in Other ALRI (no hard cap)
+tot_danger_signs_SpO2_below90_other = df_other_alri[['oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if (x[0] == '<90%') and 'danger_signs' in x[1] else 0, axis=1).sum()
+prop_ds_spo2_below_90_other = tot_danger_signs_SpO2_below90_other / df_other_alri['symptoms'].apply(
+    lambda x: 1 if 'danger_signs' in x else 0).sum()  # 0.16981
+
+# should be between 19.55% to max 22.21% in Pneumonia (no hard cap)
+tot_danger_signs_SpO2_below90_pneum = df_pneumonia[['oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if (x[0] == '<90%') and 'danger_signs' in x[1] else 0, axis=1).sum()
+prop_ds_spo2_below_90_pneum = tot_danger_signs_SpO2_below90_pneum / df_pneumonia['symptoms'].apply(
+    lambda x: 1 if 'danger_signs' in x else 0).sum()  # 0.27
+
+# SpO2 <93% in general danger signs alri -------------
+# PCV13 data tab general_ds_all_level oxygensat_93, (m vs -) row)
+# keep between 27.46% - 31.19% (PCV13 data - tab general_ds_all_level oxygensat_93, (m vs -) row) - use 27.5% as minimum
+# CAP MAX AT 36.7% ----- 0.3119 * 1.17474 (adjust for thos non-ALRI cases in PCV13) = 0.366
+tot_gn_danger_signs_SpO2_below93 = df[['oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if (x[0] != '>=93%') and 'danger_signs' in x[1] else 0, axis=1).sum()
+prop_SpO2_below93_in_gn_ds_pneumonia = tot_gn_danger_signs_SpO2_below93 / gn_danger_signs_pneumonia  # 0.3605
+
+# should be between 24.94% to max 28.32% in Other ALRI (no hard cap)
+tot_gn_danger_signs_SpO2_below93_other = df_other_alri[['oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if (x[0] != '>=93%') and 'danger_signs' in x[1] else 0, axis=1).sum()
+prop_gn_ds_spo2_below93_other = tot_gn_danger_signs_SpO2_below93_other / df_other_alri['symptoms'].apply(
+    lambda x: 1 if 'danger_signs' in x else 0).sum()  # 0.28
+
+# should be between 30.92% to max 35.12% in Pneumonia (no hard cap)
+tot_gn_danger_signs_SpO2_below93_pneum = df_pneumonia[['oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if (x[0] != '>=93%') and 'danger_signs' in x[1] else 0, axis=1).sum()
+prop_gn_ds_spo2_below93_pneum = tot_gn_danger_signs_SpO2_below93_pneum / df_pneumonia['symptoms'].apply(
+    lambda x: 1 if 'danger_signs' in x else 0).sum()  # 0.44381
+
+# SpO2 <93% in all danger signs alri - general ds + rd -------------
+# add resp distress in the cases
+# PCV13 data tab sev_signs_rd oxygensat_93, (m vs -) row) -- 29.09% - 32.61%
+# CAP MAX at 38.5% ---- 0.3261 * 1.1747 (count for thos non-ALRI cases in PCV13) = 0.383
+tot_all_danger_signs_SpO2_below93 = df[['oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if (x[0] != '>=93%') and ('danger_signs' in x[1] or 'respiratory_distress' in x[1]) else 0, axis=1).sum()
+prop_SpO2_below93_in_all_ds_pneumonia = tot_all_danger_signs_SpO2_below93 / danger_signs_pneumonia  # 0.39659 todo: too high - but OK?
+
+# SpO2 <93% should be ~ < 41% in chest indrawing and danger signs pneumonia  - USE AS MAXIMUM VALE (cap at 35%)
+tot_ci_or_ds_SpO2_below93 = df[['oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if (x[0] != '>=93%') and ('chest_indrawing' in x[1] or 'danger_signs' in x[1]or 'respiratory_distress' in x[1]) else 0, axis=1).sum()
+prop_SpO2_below93_in_ci_or_ds_pneumonia = tot_ci_or_ds_SpO2_below93 / (
+    danger_signs_pneumonia + chest_indrawing_pneumonia)  # 0.306115
+
+# overall SpO2<93% (PREVALENCE ~28% in Lancet for Africa) -- input value 0.237
+tot_SpO2_below93 = df['oxygen_saturation'].apply(lambda x: 1 if (x != '>=93%') else 0).sum()
+prop_SpO2_below93 = tot_SpO2_below93 / total_alri_cases
+
+# Prevalence of hypoxaemia SpO2<93% in the PCV13 data is ~ 15.21% - 17.04% - tab classification3 oxygensat_93, (m vs -) row
+# PCV13 data - SpO2 <93% in chest indrawing and danger signs pneumonia is -->  2300+954 / 10204+2594 (without missing values) = 25.426%
+# PCV13 data - SpO2 <93% in chest indrawing and danger signs pneumonia is -->  2300+954 / 11303+3029 (with missing values) = 22.7%
+# --- 22.7% - 25.426% vs 41% in the Lancet systematic review
+# 0.227 / 0.41 = 0.5537, or 0.25426 / 0.41 = 0.62 fraction difference between PCV13 data and the Lancet systematic review for proportion of hypoxaemia in chest-indrawing and danger signs pneumonia
+# if multiplying 0.5537 by the hypoxaemia prevalence input (28%) = 15.5% ~~~~ similar to the prevalence in the PCV13 data
+# if multiplying 0.64 by the hypoxaemia prevalence input (28%) = 17.36% ~~~~ similar to the prevalence in the PCV13 data
+
+# or 0.1521 / 0.28 = 0.543, or 0.1704 / 0.28 = 0.6085 fraction difference in the prevalence of hypoxaemia between PCV13 and Lancet
+# if multiplying 0.543 by the hypoxaemia prevalence input (22.7% ) = 12.32% ~~~~ similar to the prevalence in the PCV13 data (15.21%)
+# if multiplying 0.608 by the hypoxaemia prevalence input (25.426% ) = 15.47% ~~~~ similar to the prevalence in the PCV13 data (15.21%)
+
+# NOTE USE fraction = 0.6085 TO CHECK THE OUTPUTS
+
+# -----------------------------------------------------------------------------------------------------------------
+# CALIBRATION CHECK - Check the signs and symptoms in SpO2 levels -------------------------------------------------
+# in ALL ALRI cases
+total_SpO2_below90 = df['oxygen_saturation'].apply(lambda x: 1 if x == '<90%' else 0).sum()
+total_SpO2_90_92 = df['oxygen_saturation'].apply(lambda x: 1 if x == '90-92%' else 0).sum()
+# in Pneumonia group
+total_SpO2_below90_pneumonia = df_pneumonia['oxygen_saturation'].apply(lambda x: 1 if x == '<90%' else 0).sum()
+total_SpO2_90_92_pneumonia = df_pneumonia['oxygen_saturation'].apply(lambda x: 1 if x == '90-92%' else 0).sum()
+
+# # # # # # SpO2 < 90% # # # # # #
+# chest indrawing in SpO2<90% input value 0.837 PCV13 //
+# Cap at max value ~ 89.28% (PCV13 data, removed missing values, with missing values 0.8370)
+prop_ci_in_SpO2_below90 = df[['oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if (x[0] == '<90%') and 'chest_indrawing' in x[1] else 0, axis=1).sum() / total_SpO2_below90  # 0.8875
+
+# breakdown by disease type
+# Pneumonia group
+prop_ci_in_SpO2_below90_pneum = df_pneumonia[['oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if (x[0] == '<90%') and 'chest_indrawing' in x[1] else 0, axis=1).sum() / total_SpO2_below90_pneumonia  # 0.9001
+# Other ALRI group
+prop_ci_in_SpO2_below90_other = df_other_alri[['oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if (x[0] == '<90%') and 'chest_indrawing' in x[1] else 0, axis=1).sum() / \
+                                df_other_alri['oxygen_saturation'].apply(lambda x: 1 if x == '<90%' else 0).sum()  # 0.871038
+
+# danger_signs in SpO2<90% input value 0.3041 // Cap at max value ~ 33.95% (PCV13 data, removed missing values)
+prop_ds_in_SpO2_below90 = df[['oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if (x[0] == '<90%') and 'danger_signs' in x[1] else 0, axis=1).sum() / total_SpO2_below90  # 0.35485
+
+# resp. distress in SpO2<90% input value 0.4373 // Cap at max value ~ 48.57% (PCV13 data, removed missing values)
+prop_rd_in_SpO2_below90 = df[['oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if (x[0] == '<90%') and 'respiratory_distress' in x[1] else 0, axis=1).sum() / total_SpO2_below90  # 0.4924
+
+# # # # # # SpO2 between 90-92% # # # # # #
+# chest indrawing in SpO2 90-92% input value 0.445 //
+# Cap at max value ~ 77.91% (PCV13 data, removed missing values, with missing values, 63.33)
+# should keep between 0.445 and 0.6333
+prop_ci_in_SpO2_90_92 = df[['oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if (x[0] == '90-92%') and 'chest_indrawing' in x[1] else 0, axis=1).sum() / total_SpO2_90_92  # 0.7589
+
+# danger_signs in SpO2 90-92% input value 0.168 // Cap at max value ~ 21.44% (PCV13 data, removed missing values)
+prop_ds_in_SpO2_90_92 = df[['oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if (x[0] == '90-92%') and 'danger_signs' in x[1] else 0, axis=1).sum() / total_SpO2_90_92  # 0.22127
+
+# resp. distress in SpO2 90-92% input value 0.2501 // Cap at max value ~ 33.20% (PCV13 data, removed missing values)
+prop_rd_in_SpO2_90_92 = df[['oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if (x[0] == '90-92%') and 'respiratory_distress' in x[1] else 0, axis=1).sum() / total_SpO2_90_92  # 0.32455
+
+# # # # # # Overall hypoxaemia / SpO2 <93% # # # # # #
+# keep between: 53.7% and 73.26% (CAP MAX 83%)
+# chest indrawing in SpO2 <93% should be ~ 53.7% (from McCollum WHO study) depends on the prop of SpO2<90 / 90-92%
+# or ~ 73.26% (PCV13 data, including missing values in denominator, ~ 83.85% removed missing values)
+# tab chest_all_level oxygensat_93, col
+prop_ci_in_SpO2_below93 = df[['oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if (x[0] != '>=93%') and 'chest_indrawing' in x[1] else 0, axis=1).sum() / (
+                              total_SpO2_below90 + total_SpO2_90_92)  # 0.822
+
+# keep between 20.3% and 25.4% (CAP MAX 28%)
+# danger_signs in SpO2 <93% should be ~ 22.5% (from McCollum WHO study) depends on the prop of SpO2<90 / 90-92%
+# or ~ 23.43% (PCV13 data, including missing values in analyses, ~ 27.95% removed missing values)
+# tab general_ds_all_level oxygensat_93, col
+prop_ds_in_SpO2_below93 = df[['oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if (x[0] != '>=93%') and 'danger_signs' in x[1] else 0, axis=1).sum() / (
+                              total_SpO2_below90 + total_SpO2_90_92)  # 0.2868
+
+# keep between 34.13% (PCV13 data, including missing values in analyses, ~ 41.37% removed missing values)
+# respiratory distress in SpO2 <93% should be <41%
+prop_rd_in_SpO2_below93 = df[['oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if (x[0] != '>=93%') and 'respiratory_distress' in x[1] else 0, axis=1).sum() / (
+                              total_SpO2_below90 + total_SpO2_90_92)  # 0.40692
+
+# ------------------------------------------------------------------------------------------------------------
+# CALIBRATION CHECK:
+
+# NO HYPOXAEMIA
+
+# chest indrawing -------------
+# NO HYPOXAEMIA
+# chest indrawing in the SpO2>=93% - should be at least 56.71% (PCV 13 data - tab chest_all_level oxygensat_93, col)
+# or at least 66.72%
+prop_ci_in_normal_SpO2 = df[['oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if (x[0] == '>=93%') and 'chest_indrawing' in x[1] else 0, axis=1).sum() / \
+                         (total_alri_cases - (total_SpO2_below90 + total_SpO2_90_92))  # 0.5998
+
+# ALL CASES
+# chest indrawing in all cases should be at least 62.93% (PCV13 data, overall prob chest indrawing)
+# 0.6293 * 1.1747 = 73.92% CAP MAX AT 74%
+# AVERAGE should be around= 0.74 * 0.4215(CXR+) + 0.6375 * (1-0.4215) = 67.85%
+prob_ci_in_all_alri = df['symptoms'].apply(
+    lambda x: 1 if 'chest_indrawing' in x else 0).sum() / total_alri_cases  # 0.6521 TODO: too low?
+
+# GENERAL DANGER SIGNS -------------
+# NO HYPOXAEMIA
+# danger signs in the SpO2>=93% --- should be at least 7.38% (PCV 13 data, cap max at 11.73% removed missing values)
+# keep max of 16% = 11.73% * 1.1747
+prop_ds_in_normal_SpO2 = df[['oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if (x[0] == '>=93%') and 'danger_signs' in x[1] else 0, axis=1).sum() / \
+                         (total_alri_cases - (total_SpO2_below90 + total_SpO2_90_92))  # 0.15665
+# ALL CASES
+# general danger signs in all cases should be at least 16.68% (PCV13 data, overall prob general_ds_all_level)
+prob_ds_in_all_alri = df['symptoms'].apply(
+    lambda x: 1 if 'danger_signs' in x else 0).sum() / total_alri_cases  # 0.1873
+
+# resp distress in the SpO2>=93% --- input value: 0.086 in other alri and 0.1225 in pneumonia
+# keep max 11.06 % - 17.22% (PCV 13 data, with missing) or adjusted for non-ALRI cases in PCV13 - 12.99% - 20.23%
+prop_rd_in_normal_SpO2 = df[['oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if (x[0] == '>=93%') and 'respiratory_distress' in x[1] else 0, axis=1).sum() / \
+                         (total_alri_cases - (total_SpO2_below90 + total_SpO2_90_92))  # 0.195288
+
+# respiratory distress in pneumonia group should be a maximum of 35% (or 18% as target input value?)
+prob_rd_in_pneumonia = df_pneumonia['symptoms'].apply(
+    lambda x: 1 if 'respiratory_distress' in x else 0).sum() / total_pneumonia_cases  # 0.286418
+
+# respiratory distress in other alri group should be a maximum of 25% (or 15% as target input value?)
+prob_rd_in_other_alri = df_other_alri['symptoms'].apply(
+    lambda x: 1 if 'respiratory_distress' in x else 0).sum() / total_other_alri_cases  # 0.21491
+
+# respiratory distress in all cases should be ~ max 22.15% (PCV13 data, overall prob resp distress2)
+prob_rd_in_all_alri = df['symptoms'].apply(
+    lambda x: 1 if 'respiratory_distress' in x else 0).sum() / total_alri_cases  # 0.2451
+# -------------------------------------------------------------------------------------------------------------
+
+# -------------------------------------------------------------------------------------------------------------
+# check for signs/symptoms for pulmonary complications
+total_pulmonary_complicated_alri = df['complications'].apply(lambda x: 1 if any(
+    e in ['empyema', 'lung_abscess', 'pneumothorax'] for e in x) else 0).sum()
+
+total_pc_and_hypoxaemic_alri = df_pneumonia['complications'].apply(lambda x: 1 if any(
+    e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax', 'hypoxaemia'] for e in x) else 0).sum()
+
+total_complicated_alri = df['complications'].apply(lambda x: 1 if (len(x) != 0) else 0).sum()
+
+# input value ~ 74%  - PARAMETER prob_chest_indrawing_in_pulmonary_complications
+prop_ci_in_pulmonary_complications = df[['complications', 'symptoms']].apply(
+    lambda x: 1 if any(e in ['empyema', 'lung_abscess', 'pneumothorax'] for e in x[0]) and
+    ('chest_indrawing' in x[1]) else 0, axis=1).sum() / total_pulmonary_complicated_alri  # 0.794
+
+# input value ~ 28%  - PARAMETER prob_danger_signs_in_pulmonary_complications
+# reduce 28% by the fraction (0.28 / prop_ds_in_pulmonary_complications)
+prop_ds_in_pulmonary_complications = df[['complications', 'symptoms']].apply(
+    lambda x: 1 if any(e in ['lung_abscess', 'pneumothorax'] for e in x[0]) and
+                   'danger_signs' in x[1] else 0, axis=1).sum() / total_pulmonary_complicated_alri  # 0.3452
+
+SpO2_below90_with_pc = df[['complications', 'oxygen_saturation']].apply(
+    lambda x: 1 if any(e in ['empyema', 'lung_abscess', 'pneumothorax', 'bacteraemia'] for e in x[0]) and x[1] == '<90%' else 0, axis=1).sum()
+
+ci_in_SpO2_below90_with_pc = df[['complications', 'oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if any(e in ['empyema', 'lung_abscess', 'pneumothorax', 'bacteraemia'] for e in x[0]) and x[1] == '<90%' and 'chest_indrawing' in x[2] else 0, axis=1).sum()
+
+SpO2_below90_no_pc = df[['complications', 'oxygen_saturation']].apply(
+    lambda x: 1 if not any(e in ['empyema', 'lung_abscess', 'pneumothorax', 'bacteraemia'] for e in x[0]) and x[1] == '<90%' else 0, axis=1).sum()
+
+ci_in_SpO2_below90_no_pc = df[['complications', 'oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if not any(e in ['empyema', 'lung_abscess', 'pneumothorax', 'bacteraemia'] for e in x[0]) and x[1] == '<90%' and 'chest_indrawing' in x[2] else 0, axis=1).sum()
+
+# --------------------
+SpO2_90_92_no_pc = df[['complications', 'oxygen_saturation']].apply(
+    lambda x: 1 if not any(e in ['empyema', 'lung_abscess', 'pneumothorax', 'bacteraemia'] for e in x[0]) and x[1] == '90-92%' else 0, axis=1).sum()
+ds_in_SpO2_90_92_no_pc = df[['complications', 'oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if not any(e in ['empyema', 'lung_abscess', 'pneumothorax', 'bacteraemia'] for e in x[0]) and x[1] == '90-92%' and 'danger_signs' in x[2] else 0, axis=1).sum()
+
+
+SpO2_90_92_with_pc = df[['complications', 'oxygen_saturation']].apply(
+    lambda x: 1 if any(e in ['empyema', 'lung_abscess', 'pneumothorax', 'bacteraemia'] for e in x[0]) and x[1] == '90-92%' else 0, axis=1).sum()
+
+ds_in_SpO2_90_92_with_pc = df[['complications', 'oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if any(e in ['empyema', 'lung_abscess', 'pneumothorax', 'bacteraemia'] for e in x[0]) and x[1] == '90-92%' and 'danger_signs' in x[2] else 0, axis=1).sum()
+
+ci_in_SpO2_90_92_with_pc = df[['complications', 'oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if any(e in ['empyema', 'lung_abscess', 'pneumothorax', 'bacteraemia'] for e in x[0]) and x[1] == '90-92%' and 'chest_indrawing' in x[2] else 0, axis=1).sum()
+
+prop_ci_in_hypoxaemia_without_pc = df_pneumonia[['complications', 'symptoms']].apply(
+    lambda x: 1 if not any(
+        e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[0]) and 'hypoxaemia' in x[0] and
+                   'chest_indrawing' in x[1] else 0, axis=1).sum() / df_pneumonia['oxygen_saturation'].apply(
+    lambda x: 1 if x != '>=93%' else 0).sum()
+
+prop_ci_in_hypoxaemia_with_pc = df[['complications', 'symptoms']].apply(
+    lambda x: 1 if any(
+        e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[0]) and 'hypoxaemia' in x[0] and
+                   'chest_indrawing' in x[1] else 0, axis=1).sum() / (total_SpO2_below90 + total_SpO2_90_92)
+
+# proportion of pulmonary complications + hypoxaemia
+total_complicated_pneumonia = df_pneumonia['complications'].apply(lambda x: 1 if any(
+    e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x) else 0).sum()
+
+# check fast breathing in complicated alri
+tot_fb_pneum_class_in_complicated_alri = df[['complications', 'symptoms']].apply(
+    lambda x: 1 if (len(x[0]) != 0) and (
+        'tachypnoea' in x[1] and 'danger_signs' not in x[1] and 'chest_indrawing' not in x[1]) else 0, axis=1).sum()
+prop_fb_pneum_class_in_complicated_alri = tot_fb_pneum_class_in_complicated_alri / df['complications'].apply(
+    lambda x: 1 if (len(x) != 0) else 0).sum()
+
+# proportion of danger signs
+
+
+prop_cxr_in_non_severe = df[['symptoms', 'disease_type']].apply(
+    lambda x: 1 if ('danger_signs' not in x[0]) and 'pneumonia' in x[1] else 0, axis=1).sum() / (
+                             fast_breathing_symptom + chest_indrawing_symptom)
+prop_cxr_in_danger_signs = df[['symptoms', 'disease_type']].apply(
+    lambda x: 1 if ('danger_signs' in x[0] and 'pneumonia' in x[1]) else 0, axis=1).sum() / danger_signs_symptom
+
+tot_chest_ind_pneumo_SpO2_above90 = df[['oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if (x[0] != '<90%') and 'chest_indrawing' in x[1] else 0, axis=1).sum()
+prop_chest_ind_pneumo_SpO2_above90 = tot_chest_ind_pneumo_SpO2_above90 / total_alri_cases
+
+tot_danger_sign_pneumo_SpO2_above90 = df[['oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if (x[0] != '<90%') and 'danger_signs' in x[1] else 0, axis=1).sum()
+prop_danger_sign_pneumo_SpO2_above90 = tot_danger_sign_pneumo_SpO2_above90 / total_alri_cases
+
+tot_fast_bre_pneumo_SpO2_above90 = df[['oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if (x[0] != '<90%') and 'tachypnoea' in x[1] else 0, axis=1).sum()
+
+prop_fast_bre_pneumo_SpO2_above90 = tot_fast_bre_pneumo_SpO2_above90 / total_alri_cases
+
+tot_SpO2_below90 = df['oxygen_saturation'].apply(
+    lambda x: 1 if (x == '<90%') else 0).sum()
+prop_tot_SpO2_below90 = tot_SpO2_below90 / total_alri_cases
+
+# total complications per group
+df_pneumonia['complications'].apply(lambda x: 1 if len(x) != 0 else 0).sum()
+df_other_alri['complications'].apply(lambda x: 1 if len(x) != 0 else 0).sum()
 
 # total complications in all ALRIs
 total_alri_complications = df['complications'].apply(lambda x: 1 if len(x) != 0 else 0).sum()
@@ -176,17 +685,43 @@ prop_complicated_alri = total_alri_complications / total_alri_cases
 
 # pulmonary complications in pneumonia group
 total_pulmonary_complicated_pneum = df_pneumonia['complications'].apply(lambda x: 1 if any(
-    e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pmeumothorax'] for e in x) else 0).sum()
+    e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x) else 0).sum()
 prop_pulmonary_complicated_pneumonia = total_pulmonary_complicated_pneum / total_pneumonia_cases
+total_pleural_effusion = df_pneumonia['complications'].apply(lambda x: 1 if 'pleural_effusion' in x else 0).sum()
+total_empyema = df_pneumonia['complications'].apply(lambda x: 1 if 'empyema' in x else 0).sum()
+total_pneumothorax = df_pneumonia['complications'].apply(lambda x: 1 if 'pneumothorax' in x else 0).sum()
+total_lung_abscess = df_pneumonia['complications'].apply(lambda x: 1 if 'lung_abscess' in x else 0).sum()
 
-# sepsis in pneumonia group
-total_sepsis = df_pneumonia['complications'].apply(lambda x: 1 if 'sepsis' in x else 0).sum()
+total_lung_abscess_only = df_pneumonia['complications'].apply(lambda
+                                                                  x: 1 if 'pleural_effusion' not in x and 'empyema' not in x and 'pneumothorax' not in x and 'lung_abscess' in x else 0).sum()
+total_pneumothorax_only = df_pneumonia['complications'].apply(lambda
+                                                                  x: 1 if 'pleural_effusion' not in x and 'empyema' not in x and 'lung_abscess' not in x and 'pneumothorax' in x else 0).sum()
+total_empyema_only = df_pneumonia['complications'].apply(lambda
+                                                             x: 1 if 'pleural_effusion' not in x and 'pneumothorax' not in x and 'lung_abscess' not in x and 'empyema' in x else 0).sum()
+total_pleural_effusion_only = df_pneumonia['complications'].apply(lambda
+                                                                      x: 1 if 'empyema' not in x and 'pneumothorax' not in x and 'lung_abscess' not in x and 'pleural_effusion' in x else 0).sum()
+total_no_pleural_effusion = df_pneumonia['complications'].apply(lambda x: 1 if any(
+    e in ['empyema', 'lung_abscess', 'pneumothorax'] for e in x) and 'pleural_effusion' not in x else 0).sum()
+
+# bacteraemia in pneumonia group
+total_bacteraemia = df['complications'].apply(lambda x: 1 if 'bacteraemia' in x else 0).sum()
+total_bacteraemia_with_pc = df['complications'].apply(lambda x: 1 if 'bacteraemia' in x and any(
+    e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x) else 0).sum()
+total_bacteraemia_without_pc = df_pneumonia['complications'].apply(lambda x: 1 if 'bacteraemia' in x and not any(
+    e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x) else 0).sum()
+total_bacteraemia_other_alri = df_other_alri['complications'].apply(lambda x: 1 if 'bacteraemia' in x else 0).sum()
+
+bacterial_infection_lung_abscess = df[['pathogen', 'bacterial_coinfection', 'complications']].apply(lambda x: 1 if (
+    ((x[0] in sim0.modules['Alri'].pathogens['bacterial']) or pd.notnull(x[1])) and 'empyema' in x[2]) else 0,
+                                                                                                    axis=1).sum()
+
+prop_bacteraemia_in_alri = total_bacteraemia / total_alri_cases
 
 # hypoxaemia in pneumonia group
 tot_hypox_pneumonia = df_pneumonia['complications'].apply(lambda x: 1 if 'hypoxaemia' in x else 0).sum()
 prop_hypox_pneumonia = tot_hypox_pneumonia / total_pneumonia_cases
 
-# hypoxaemia in pneumonia group
+# hypoxaemia in other alri group
 tot_hypox_other_alri = df_other_alri['complications'].apply(lambda x: 1 if 'hypoxaemia' in x else 0).sum()
 prop_hypox_other_alri = tot_hypox_other_alri / total_other_alri_cases
 
@@ -194,71 +729,70 @@ prop_hypox_other_alri = tot_hypox_other_alri / total_other_alri_cases
 tot_hypox_all_alri = df['complications'].apply(lambda x: 1 if 'hypoxaemia' in x else 0).sum()
 prop_hypox_alri = tot_hypox_all_alri / total_alri_cases
 
-# no sepsis and pulmonary complications in other_alri
-assert df_other_alri['complications'].apply(lambda x: 1 if 'sepsis' in x else 0).sum() == 0
+# no pulmonary complications in other_alri
 assert df_other_alri['complications'].apply(lambda x: 1 if any(
     e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pmeumothorax'] for e in x) else 0).sum() == 0
-
-# # # # # # # # # # # # # # # # # Symptoms # # # # # # # # # # # # # # # # #
-
-# check if the symptoms match the classification
-
-# proportion of danger signs
-
-danger_signs_symptom = df['symptoms'].apply(lambda x: 1 if 'danger_signs' in x else 0).sum()
-chest_indrawing_symptom = df['symptoms'].apply(lambda x: 1 if 'chest_indrawing' in x and
-                                                              'danger_signs' not in x else 0).sum()
-fast_breathing_symptom = df['symptoms'].apply(lambda x: 1 if 'tachypnoea' in x and 'danger_signs' not in x and
-                                                             'chest_indrawing' not in x else 0).sum()
-prop_danger_signs_alri = danger_signs_symptom / total_alri_cases
-prop_chest_indrawing_alri = chest_indrawing_symptom / total_alri_cases
-prop_fast_breathing_alri = fast_breathing_symptom / total_alri_cases
-
-# danger signs in CXR+
-danger_signs_in_pneumonia = df_pneumonia['symptoms'].apply(lambda x: 1 if 'danger_signs' in x else 0).sum()
-prop_danger_signs_in_pneumonia = danger_signs_in_pneumonia / total_pneumonia_cases
-
-# danger signs in CXR-
-danger_signs_in_other_alri = df_other_alri['symptoms'].apply(lambda x: 1 if 'danger_signs' in x else 0).sum()
-prop_danger_signs_in_other_alri = danger_signs_in_other_alri / total_other_alri_cases
 
 # check the proportions of dangers signs in complications
 
 # proportion danger signs in hypoxaemia in pneumonia (CXR+)
-total_ds_in_hypoxaemia_pneumonia = df_pneumonia[['complications', 'symptoms']].apply(lambda x: 1 if ('hypoxaemia' in x[0] and 'danger_signs' in x[1]) else 0, axis=1).sum()
+total_ds_in_hypoxaemia_pneumonia = df_pneumonia[['complications', 'symptoms']].apply(
+    lambda x: 1 if ('hypoxaemia' in x[0] and 'danger_signs' in x[1]) else 0, axis=1).sum()
 prop_total_ds_hypoxaemia_pneum = total_ds_in_hypoxaemia_pneumonia / tot_hypox_pneumonia
-total_ds_in_no_hypoxaemia_pneumonia = df_pneumonia[['complications', 'symptoms']].apply(lambda x: 1 if ('hypoxaemia' not in x[0] and 'danger_signs' in x[1]) else 0, axis=1).sum()
+total_ds_in_no_hypoxaemia_pneumonia = df_pneumonia[['complications', 'symptoms']].apply(
+    lambda x: 1 if ('hypoxaemia' not in x[0] and 'danger_signs' in x[1]) else 0, axis=1).sum()
+prop_total_ds_in_no_hypoxaemia_pneum = total_ds_in_no_hypoxaemia_pneumonia / tot_hypox_pneumonia
 
-# danger signs in sepsis
-total_ds_in_sepsis_pneumonia = df_pneumonia[['complications', 'symptoms']].apply(lambda x: 1 if ('sepsis' in x[0] and 'danger_signs' in x[1]) else 0, axis=1).sum()
-assert total_ds_in_sepsis_pneumonia == total_sepsis
+# danger signs in pulmonary complications
+total_ds_in_pc_pneumonia = df_pneumonia[['complications', 'symptoms']].apply(lambda x: 1 if (('pleural_effusion' in x[
+    0] or 'lung_abscess' in x[0] or 'empyema' in x[0] or 'pneumothorax' in x[0]) and 'danger_signs' in x[1]) else 0,
+                                                                             axis=1).sum()
+total_pc_pneumonia = df_pneumonia['complications'].apply(lambda x: 1 if (
+    'pleural_effusion' in x or 'lung_abscess' in x or 'empyema' in x or 'pneumothorax' in x) else 0).sum()
+prop_ds_in_pc_pneumonia = total_ds_in_pc_pneumonia / total_pc_pneumonia
+
+# danger signs in bacteraemia
+total_ds_in_bacteraemia_pneumonia = df_pneumonia[['complications', 'symptoms']].apply(
+    lambda x: 1 if ('bacteraemia' in x[0] and 'danger_signs' in x[1]) else 0, axis=1).sum()
+total_bacteraemia_pneum = df_pneumonia['complications'].apply(lambda x: 1 if 'bacteraemia' in x else 0).sum()
+prop_ds_in_bacteraemia_pneum = total_ds_in_bacteraemia_pneumonia / total_bacteraemia_pneum
+
+# total ds in all complications in pneumonia
+total_complicated_pneumo = tot_hypox_pneumonia + total_bacteraemia_pneum + total_pc_pneumonia
+total_ds_in_complicated_pneum = total_ds_in_bacteraemia_pneumonia + total_ds_in_pc_pneumonia + total_ds_in_hypoxaemia_pneumonia
+prop_ds_in_complicated_pneumonia = total_ds_in_complicated_pneum / total_complicated_pneumo
 
 # proportion danger signs in hypoxaemia in pneumonia (CXR+)
-total_ds_in_hypoxaemia_other_alri = df_other_alri[['complications', 'symptoms']].apply(lambda x: 1 if ('hypoxaemia' in x[0] and 'danger_signs' in x[1]) else 0, axis=1).sum()
+total_ds_in_hypoxaemia_other_alri = df_other_alri[['complications', 'symptoms']].apply(
+    lambda x: 1 if ('hypoxaemia' in x[0] and 'danger_signs' in x[1]) else 0, axis=1).sum()
 prop_total_ds_hypoxaemia_other_alri = total_ds_in_hypoxaemia_other_alri / tot_hypox_other_alri
 
-
 # proportion danger signs in hypoxaemia in all ALRI
-total_ds_in_hypoxaemia = df[['complications', 'symptoms']].apply(lambda x: 1 if ('hypoxaemia' in x[0] and 'danger_signs' in x[1]) else 0, axis=1).sum()
+total_ds_in_hypoxaemia = df[['complications', 'symptoms']].apply(
+    lambda x: 1 if ('hypoxaemia' in x[0] and 'danger_signs' in x[1]) else 0, axis=1).sum()
 prop_total_ds_hypoxaemia_alri = total_ds_in_hypoxaemia / tot_hypox_all_alri
 
-total_ds_in_spo2_90 = df[['oxygen_saturation', 'symptoms']].apply(lambda x: 1 if (x[0] == '<90%' and 'danger_signs' in x[1]) else 0, axis=1).sum()
-total_no_ds_spo2_90 = df[['oxygen_saturation', 'symptoms']].apply(lambda x: 1 if (x[0] == '<90%' and not 'danger_signs' in x[1]) else 0, axis=1).sum()
+total_ds_in_spo2_90 = df[['oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if (x[0] == '<90%' and 'danger_signs' in x[1]) else 0, axis=1).sum()
+total_no_ds_spo2_90 = df[['oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if (x[0] == '<90%' and not 'danger_signs' in x[1]) else 0, axis=1).sum()
 total_SpO2_90 = df['oxygen_saturation'].apply(lambda x: 1 if '<90%' in x else 0).sum()
 prop_total_ds_in_spo2_90 = total_ds_in_spo2_90 / total_SpO2_90  # 0.44 --> this means only 44% of SpO2<90% displayed danger signs, while 56% do Not have danger signs
 
+total_danger_signs_and_SpO2_90 = df[['oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if (x[0] == '<90%' or 'danger_signs' in x[1]) else 0, axis=1).sum()
+prop_SpO2_90_in_all_ds_pneumo = total_SpO2_90 / total_danger_signs_and_SpO2_90  # 0.453
+prop_SpO2_90_with_ds_in_all_ds_pneumo = total_ds_in_spo2_90 / total_danger_signs_and_SpO2_90  # 0.1756
+prop_SpO2_90_without_ds_in_all_ds_pneumo = total_no_ds_spo2_90 / total_danger_signs_and_SpO2_90  # 0.2776  ---> this means 27.7% of SpO2<90% without danger signs would not be detected by perfect hw performance
 
-total_danger_signs_and_SpO2_90 = df[['oxygen_saturation', 'symptoms']].apply(lambda x: 1 if (x[0] == '<90%' or 'danger_signs' in x[1]) else 0, axis=1).sum()
-prop_SpO2_90_in_all_ds_pneumo = total_SpO2_90 / total_danger_signs_and_SpO2_90  # 0.42
-prop_SpO2_90_with_ds_in_all_ds_pneumo = total_ds_in_spo2_90 / total_danger_signs_and_SpO2_90  # 0.1879
-prop_SpO2_90_without_ds_in_all_ds_pneumo = total_no_ds_spo2_90 / total_danger_signs_and_SpO2_90  # 0.237  ---> this means 23.7% of SpO2<90% without danger signs would not be detected by perfect hw performance
+total_danger_signs_and_without_SpO2_90 = df[['oxygen_saturation', 'symptoms']].apply(
+    lambda x: 1 if (x[0] != '<90%' and 'danger_signs' in x[1]) else 0, axis=1).sum()
+prop_no_SpO2_90_in_all_ds_pneumo = total_danger_signs_and_without_SpO2_90 / total_danger_signs_and_SpO2_90  # 0.5467
 
-total_danger_signs_and_without_SpO2_90 = df[['oxygen_saturation', 'symptoms']].apply(lambda x: 1 if (x[0] != '<90%' and 'danger_signs' in x[1]) else 0, axis=1).sum()
-prop_no_SpO2_90_in_all_ds_pneumo = total_danger_signs_and_without_SpO2_90 / total_danger_signs_and_SpO2_90  # 0.575
+# 0.1757 (SpO2 with danger signs) + 0.277 (SpO2 without danger signs) + 0.5467 (danger signs without SpO2) = 1
 
-# 0.188 (SpO2 with danger signs) + 0.237 (SpO2 without danger signs) + 0.575 (danger signs without SpO2) = 1
-
-total_cold = df['symptoms'].apply(lambda x: 1 if 'danger_signs' not in x and 'tachypnoea' not in x and 'chest_indrawing' not in x else 0).sum()
+total_cold = df['symptoms'].apply(
+    lambda x: 1 if 'danger_signs' not in x and 'tachypnoea' not in x and 'chest_indrawing' not in x else 0).sum()
 prop_cold = total_cold / total_alri_cases
 
 total_cold_in_complications = df[['complications', 'symptoms']].apply(
@@ -269,9 +803,14 @@ prop_cold_in_complications = total_cold_in_complications / total_alri_complicati
 
 total_cold_in_hypoxaemia = df[['complications', 'symptoms']].apply(
     lambda x: 1 if ('hypoxaemia' in x[0] and 'danger_signs' not in x[1] and 'tachypnoea'
-                   not in x[1] and 'chest_indrawing' not in x[1]) else 0, axis=1).sum()
+                    not in x[1] and 'chest_indrawing' not in x[1]) else 0, axis=1).sum()
 
 prop_cold_in_hypoxaemia = total_cold_in_hypoxaemia / tot_hypox_all_alri  # 0.043
 
+total_ci_in_pulmonary_compl = df[['complications', 'symptoms']].apply(
+    lambda x: 1 if ('pleural_effusion' in x[0] and 'danger_signs' not in x[1] and 'chest_indrawing' in x[1]) else 0,
+    axis=1).sum()
+total_ds_in_pulmonary_compl = df[['complications', 'symptoms']].apply(
+    lambda x: 1 if ('pleural_effusion' in x[0] and 'danger_signs' in x[1]) else 0, axis=1).sum()
 
-# todo: what is the ovrall treatement failure in danger signs pneumonia - check for spo2<90 vs >90%
+# todo: what is the overall treatement failure in danger signs pneumonia - check for spo2<90 vs >90%
