@@ -127,7 +127,7 @@ class Alri(Module):
                        'cough_or_cold'}
 
     all_symptoms = {
-        'cough', 'difficult_breathing', 'fever', 'tachypnoea', 'chest_indrawing', 'danger_signs'
+        'cough', 'difficult_breathing', 'fever', 'tachypnoea', 'chest_indrawing', 'danger_signs', 'respiratory_distress'
     }
 
     # Declare the Alri complications:
@@ -136,7 +136,7 @@ class Alri(Module):
         'pleural_effusion',
         'empyema',
         'lung_abscess',
-        'sepsis',
+        'bacteraemia',
         'hypoxaemia'
     })
 
@@ -1505,7 +1505,8 @@ class Alri(Module):
         self.logging_event.new_seeking_care()
 
     @staticmethod
-    def get_imci_classification_based_on_symptoms(child_is_younger_than_2_months: bool, symptoms: list) -> str:
+    def get_imci_classification_based_on_symptoms(child_is_younger_than_2_months: bool, symptoms: list,
+                                                  facility_level: str) -> str:
         """Based on age and symptoms, classify WHO-pneumonia severity. This is regarded as the *TRUE* classification
          based on symptoms. It will return one of: {
              'fast_breathing_pneumonia',
@@ -1513,23 +1514,54 @@ class Alri(Module):
              'chest_indrawing_pneumonia,
              'cough_or_cold'
         }."""
-        if child_is_younger_than_2_months:
-            if ('chest_indrawing' in symptoms) or ('danger_signs' in symptoms):
-                return 'danger_signs_pneumonia'
-            elif 'tachypnoea' in symptoms:
-                return 'fast_breathing_pneumonia'
+
+        # # # For hospital classification # # #
+        if facility_level in ('1b', '2', '3'):
+            # young infants classifications
+            if child_is_younger_than_2_months:
+                # if any(s in ['danger_signs', 'respiratory_distress', 'chest_indrawing'] for s in symptoms):
+                if ('danger_signs' in symptoms) or ('respiratory_distress' in symptoms) or ('chest_indrawing' in symptoms):
+                    return 'danger_signs_pneumonia'
+                elif 'tachypnoea' in symptoms:
+                    return 'fast_breathing_pneumonia'
+                else:
+                    return 'cough_or_cold'
+            # 2-59 months old classifications
             else:
-                return 'cough_or_cold'
+                # if any(s in ['danger_signs', 'respiratory_distress'] for s in symptoms):
+                if ('danger_signs' in symptoms) or ('respiratory_distress' in symptoms):
+                    return 'danger_signs_pneumonia'
+                elif 'chest_indrawing' in symptoms:
+                    return 'chest_indrawing_pneumonia'
+                elif 'tachypnoea' in symptoms:
+                    return 'fast_breathing_pneumonia'
+                else:
+                    return 'cough_or_cold'
+
+        # # # For village clinics and health centres classification # # #
+        elif facility_level in ('0', '1a'):
+            # young infants classifications
+            if child_is_younger_than_2_months:
+                # if any(s in ['danger_signs', 'chest_indrawing'] for s in symptoms):
+                if ('danger_signs' in symptoms) or ('chest_indrawing' in symptoms):
+                    return 'danger_signs_pneumonia'
+                elif 'tachypnoea' in symptoms:
+                    return 'fast_breathing_pneumonia'
+                else:
+                    return 'cough_or_cold'
+            # 2-59 months old classifications
+            else:
+                if 'danger_signs' in symptoms:
+                    return 'danger_signs_pneumonia'
+                elif 'chest_indrawing' in symptoms:
+                    return 'chest_indrawing_pneumonia'
+                elif 'tachypnoea' in symptoms:
+                    return 'fast_breathing_pneumonia'
+                else:
+                    return 'cough_or_cold'
 
         else:
-            if 'danger_signs' in symptoms:
-                return 'danger_signs_pneumonia'
-            elif 'chest_indrawing' in symptoms:
-                return 'chest_indrawing_pneumonia'
-            elif 'tachypnoea' in symptoms:
-                return 'fast_breathing_pneumonia'
-            else:
-                return 'cough_or_cold'
+            raise ValueError(f'Unrecognised facility level {facility_level}')
 
     # @staticmethod
     def _ultimate_treatment_indicated_for_patient(self, classification_for_treatment_decision, age_exact_years,
@@ -1784,7 +1816,8 @@ class Models:
 
         return dict({'rr': rr, 'adjusted_p': adjusted_p})
 
-    def get_complications_that_onset(self, disease_type, primary_path_is_bacterial, has_secondary_bacterial_inf):
+    def get_complications_that_onset(self, disease_type, age_exact_years,
+                                     primary_path_is_bacterial, has_secondary_bacterial_inf):
         """Determine the set of complication for this person"""
         p = self.p
 
@@ -1797,56 +1830,101 @@ class Models:
             prop_case_group=p['proportion_pneumonia_in_alri'],
             prevalence=p['prev_hypoxaemia_in_alri'])
 
-        # get the probabilities of sepsis by presence of pulmonary complicated pneumonia
-        rr_and_base_prob_bacteraemia = self.get_prob_of_outcome_in_baseline_group(
-            or_value=p['or_bacteraemia_and_hypoxaemia_in_pulmonary_complicated_pneumonia'],
-            prob_ref=p['assumed_prev_bacteraemia_in_non_pc_pneumonia'],
-            prop_case_group=p['prob_pulmonary_complications_in_pneumonia'],
-            prevalence=p['prob_bacteraemia_in_pneumonia'])
+        # get the probabilities of hypoxaemia by presence of atalectasis in other alri
+        rr_and_base_prob_hypoxaemia_in_atalectasis = self.get_prob_of_outcome_in_baseline_group(
+            or_value=p['or_hypoxaemia_in_abnormal_CXR'],
+            prob_ref=p['assumed_prev_hypoxaemia_in_uncomplicated_other_alri'],
+            prop_case_group=p['prob_atelectasis_in_bronchiolitis'],
+            prevalence=rr_and_prob_hypoxaemia_in_other_alri['adjusted_p'])
 
-        # get the probabilities of hypoxaemia by presence of pulmonary complicated pneumonia
-        rr_and_base_prob_hypoxaemia = self.get_prob_of_outcome_in_baseline_group(
-            or_value=p['or_bacteraemia_and_hypoxaemia_in_pulmonary_complicated_pneumonia'],
+        # get the probabilities of hypoxaemia by presence of PC in Pneumonia # OR = 2.236 ref Kamal Masarweh et al 2021
+        rr_and_base_prob_hypoxaemia_in_non_pc = self.get_prob_of_outcome_in_baseline_group(
+            or_value=p['or_hypoxaemia_in_pc_pneumonia'],
             prob_ref=p['assumed_prev_hypoxaemia_in_non_pc_pneumonia'],
             prop_case_group=p['prob_pulmonary_complications_in_pneumonia'],
             prevalence=rr_and_prob_hypoxaemia_in_other_alri['adjusted_p'] * rr_and_prob_hypoxaemia_in_other_alri['rr'])
-        # to get prevalence of hypoxaemia in pneumonia (CXR+)
 
-        # # # # # # # # #
+        # get the probabilities of bacteraemia in other alri knowing the prevalence, OR for CXR+, and CXR+/- proportion
+        rr_and_prob_bacteraemia_in_other_alri = self.get_prob_of_outcome_in_baseline_group(
+            or_value=p['or_bacteraemia_in_abnormal_CXR'],
+            prob_ref=p['assumed_prev_bacteraemia_in_normal_CXR'],
+            prop_case_group=p['proportion_pneumonia_in_alri'],
+            prevalence=p['prev_bacteraemia_in_alri'])
+
+        # get the probabilities of bacteraemia by presence of pulmonary complicated pneumonia
+        rr_and_base_prob_bacteraemia = self.get_prob_of_outcome_in_baseline_group(
+            or_value=p['or_bacteraemia_in_pc_pneumonia'],
+            prob_ref=p['assumed_prev_bacteraemia_in_non_pc_pneumonia'],
+            prop_case_group=p['prob_pulmonary_complications_in_pneumonia'],
+            prevalence=rr_and_prob_bacteraemia_in_other_alri['adjusted_p'] *
+                       rr_and_prob_bacteraemia_in_other_alri['rr'])  # to get prevalence of bacteraemia in CXR+
+
+        # Sort the probabilities to the disease types
         # For 'pneumonia' disease
         if disease_type == 'pneumonia':
 
-            # probabilities for local pulmonary complications
+            # # get the probability of hypoxaemia in Pneumonia group
+            # probs['hypoxaemia'] = \
+            #     rr_and_prob_hypoxaemia_in_other_alri['adjusted_p'] * rr_and_prob_hypoxaemia_in_other_alri['rr']
+
+            # get probabilities for local pulmonary complications
             if p['prob_pulmonary_complications_in_pneumonia'] > self.rng.random_sample():
 
                 # get the probabilities for each pulmonary complication
-                for c in ['pneumothorax', 'pleural_effusion', 'lung_abscess', 'empyema']:
-                    probs[c] += p[f'prob_{c}_in_pulmonary_complicated_pneumonia']
+                for c in ['pleural_effusion', 'pneumothorax']:  # regardless of bacterial/viral/fungal pathogen
+                    probs[c] = p[f'prob_{c}_in_pulmonary_complicated_pneumonia']
+
+                for c in ['empyema', 'lung_abscess']:
+                    if primary_path_is_bacterial or has_secondary_bacterial_inf:
+                        if probs['pleural_effusion'] > self.rng.random_sample():
+                            probs['empyema'] = p[f'prob_empyema_in_pulmonary_complicated_pneumonia'] * \
+                                               (1 / p['proportion_bacterial_infection_in_pneumonia'])
+                        probs['lung_abscess'] = p[f'prob_lung_abscess_in_pulmonary_complicated_pneumonia'] * \
+                                                (1 / p['proportion_bacterial_infection_in_pneumonia'])
+                    else:
+                        probs[c] = 0
 
                 # get the probability of bacteraemia in pulmonary complicated pneumonia
                 if primary_path_is_bacterial or has_secondary_bacterial_inf:
-                    probs['sepsis'] += \
+                    probs['bacteraemia'] = \
                         rr_and_base_prob_bacteraemia['adjusted_p'] * rr_and_base_prob_bacteraemia['rr'] * \
-                        p['prob_progression_to_sepsis_with_bacteraemia']
+                        (1 / p['proportion_bacterial_infection_in_pneumonia'])
+                    # proportion of bacterial infection/co-infection in pneumonia from model output
 
-                # get the probability of hypoxaemia in pulmonary complicated pneumonia
-                probs['hypoxaemia'] += rr_and_base_prob_hypoxaemia['adjusted_p'] * rr_and_base_prob_hypoxaemia['rr']
+                # get the probability of hypoxaemia pulmonary complicated pneumonia
+                probs['hypoxaemia'] = rr_and_base_prob_hypoxaemia_in_non_pc['adjusted_p'] * \
+                                      rr_and_base_prob_hypoxaemia_in_non_pc['rr']
 
             # if no pulmonary complication is present
             else:
-                # probability of hypoxaemia in non-pulmonary complicated pneumonia
-                probs['hypoxaemia'] += rr_and_base_prob_hypoxaemia['adjusted_p']
-
-                # probability of sepsis in non-pulmonary complicated pneumonia
+                # get the probability of bacteraemia in non-pulmonary complicated pneumonia
                 if primary_path_is_bacterial or has_secondary_bacterial_inf:
-                    probs['sepsis'] += rr_and_base_prob_bacteraemia['adjusted_p'] * \
-                                       p['prob_progression_to_sepsis_with_bacteraemia']
+                    probs['bacteraemia'] = rr_and_base_prob_bacteraemia['adjusted_p'] * \
+                                           (1 / p['proportion_bacterial_infection_in_pneumonia'])
+
+                # get the probability of hypoxaemia in non-pulmonary complicated pneumonia
+                probs['hypoxaemia'] = rr_and_base_prob_hypoxaemia_in_non_pc['adjusted_p']
 
         # # # # # # # # #
         # For 'other_alri' disease
         elif disease_type == 'other_alri':
-            # only hypoxaemia is modelled for other alri
-            probs['hypoxaemia'] += rr_and_prob_hypoxaemia_in_other_alri['adjusted_p']
+            # apply probability of complications in bronchiolitis (other alri in < 2 years)
+            if age_exact_years < 2:
+                probs['pneumothorax'] = p['prob_atelectasis_in_bronchiolitis']
+                if probs['pneumothorax'] > self.rng.random_sample():
+                    probs['hypoxaemia'] = rr_and_base_prob_hypoxaemia_in_atalectasis['adjusted_p'] * \
+                                          rr_and_base_prob_hypoxaemia_in_atalectasis['rr']
+                else:
+                    probs['hypoxaemia'] = rr_and_base_prob_hypoxaemia_in_atalectasis['adjusted_p']
+            else:
+                # probability of hypoxaemia in other ALRI for over 2 years of age
+                probs['hypoxaemia'] = rr_and_prob_hypoxaemia_in_other_alri['adjusted_p']
+
+            # probability of bacteraemia in other ALRI
+            if primary_path_is_bacterial or has_secondary_bacterial_inf:
+                probs['bacteraemia'] = rr_and_prob_bacteraemia_in_other_alri['adjusted_p'] * \
+                                       (1 / p['proportion_bacterial_infection_in_other_alri'])
+                # proportion of bacterial infection/co-infection in other alri from model output
 
         # determine which complications are onset:
         complications = {c for c, p in probs.items() if p > self.rng.random_sample()}
@@ -1864,58 +1942,239 @@ class Models:
         else:
             return '>=93%'
 
-    def symptoms_for_disease(self, disease_type) -> set:
+    def symptoms_for_uncomplicated_disease(self, disease_type) -> set:
         """Determine set of symptom (before complications) for a given instance of disease"""
         p = self.p
 
         assert disease_type in self.module.disease_types
 
+        # apply main ALRI symptoms
         probs = {
             symptom: p[f'prob_{symptom}_in_{disease_type}']
             for symptom in [
-                'cough', 'difficult_breathing', 'fever', 'tachypnoea',
-                'chest_indrawing', 'danger_signs']
+                'cough', 'difficult_breathing', 'fever', 'tachypnoea', 'chest_indrawing']
         }
-
-        # determine which symptoms are onset:
+        # determine which main symptoms are onset:
         symptoms = {s for s, p in probs.items() if p > self.rng.random_sample()}
 
-        return symptoms
+        # apply probability of respiratory distress based on the presence of chest-indrawing
+        probs_rd = defaultdict(float)
 
-    def symptoms_for_complication(self, complication, oxygen_saturation):
+        # get the probability of resp. distress without chest-indrawing (base group) and the relative risk from the OR
+        rr_and_prob_rd_in_alri_without_ci = self.get_prob_of_outcome_in_baseline_group(
+            or_value=p['or_respiratory_distress_in_alri_with_chest_indrawing'],
+            prob_ref=p['prob_respiratory_distress_in_no_chest_indrawing_SpO2>=93%'],
+            prop_case_group=p[f'prob_chest_indrawing_in_{disease_type}'],
+            prevalence=p[f'prob_respiratory_distress_in_{disease_type}'])
+
+        # get the probability of danger signs without respiratory distress (base group) and the RR from the OR
+        rr_and_prob_ds_in_alri_without_rd = self.get_prob_of_outcome_in_baseline_group(
+            or_value=p['or_danger_signs_in_alri_with_respiratory_distress'],
+            prob_ref=p['prob_danger_signs_in_no_respiratory_distress_SpO2>=93%'],
+            prop_case_group=p[f'prob_respiratory_distress_in_{disease_type}'],
+            prevalence=p[f'prob_danger_signs_in_{disease_type}'])
+
+        if 'chest_indrawing' in symptoms:
+            probs_rd = {'respiratory_distress':
+                            rr_and_prob_rd_in_alri_without_ci['adjusted_p'] * rr_and_prob_rd_in_alri_without_ci['rr']}
+        else:
+            probs_rd = {'respiratory_distress': rr_and_prob_rd_in_alri_without_ci['adjusted_p']}
+
+        # determine which symptoms are onset:
+        symptoms_rd = {s for s, p in probs_rd.items() if p > self.rng.random_sample()}
+
+        # apply probability of danger signs based on the presence of respiratory distress
+        probs_ds = defaultdict(float)
+
+        if 'respiratory_distress' in symptoms_rd:
+            probs_ds = {
+                'danger_signs': rr_and_prob_ds_in_alri_without_rd['adjusted_p'] *
+                                rr_and_prob_ds_in_alri_without_rd['rr'],
+            }
+        else:
+            probs_ds = {'danger_signs': rr_and_prob_ds_in_alri_without_rd['adjusted_p']}
+
+        # determine which symptoms are onset:
+        symptoms_ds = {s for s, p in probs_ds.items() if p > self.rng.random_sample()}
+
+        # return all the symptoms:
+        all_symptoms = symptoms.union(symptoms_rd.union(symptoms_ds))
+
+        return all_symptoms
+
+    def symptoms_for_complicated_disease(self, disease_type, complications, oxygen_saturation) -> set:
         """Probability of each symptom for a person given a complication"""
         p = self.p
 
-        probs = defaultdict(float)
+        # apply main ALRI symptoms
+        probs = {
+            symptom: p[f'prob_{symptom}_in_{disease_type}']
+            for symptom in [
+                'cough', 'difficult_breathing', 'fever', 'tachypnoea']
+        }
+        probs.update({
+            symptom: to_prob(to_odds(p[f'prob_{symptom}_in_{disease_type}']) * p[f'or_{symptom}_in_complicated_alri'])
+            for symptom in [
+                'fever', 'tachypnoea']
+        })
 
-        if complication == 'hypoxaemia':
-            if oxygen_saturation == '<90%':
-                probs = {
-                    'danger_signs': p['prob_danger_signs_in_SpO2<90%'],
-                    'chest_indrawing': p['prob_chest_indrawing_in_SpO2<90%']
-                }
-            elif oxygen_saturation == '90-92%':
-                probs = {
-                    'danger_signs': p['prob_danger_signs_in_SpO2_90-92%'],
-                    'chest_indrawing': p['prob_chest_indrawing_in_SpO2_90-92%']
-                }
+        # determine which main symptoms are onset:
+        general_symptoms = {s for s, p in probs.items() if p > self.rng.random_sample()}
 
-        elif complication == 'sepsis':
-            probs = {
-                'danger_signs': p['prob_danger_signs_in_sepsis']
+        # set of dictionaries storing probability of symptoms for hypoxaemia
+        probs_hypo = defaultdict(float)
+        probs_hypo_ci = defaultdict(float)
+        probs_hypo_rd = defaultdict(float)
+        probs_hypo_ds = defaultdict(float)
+
+        # set of dictionaries storing probability of symptoms for pulmonary complications (PE and Emp)
+        probs_pc = defaultdict(float)
+        probs_pc_ci = defaultdict(float)
+        probs_pc_rd = defaultdict(float)
+        probs_pc_ds = defaultdict(float)
+
+        # set of dictionaries storing probability of symptoms for pulmonary complications (PE and Emp)
+        probs_spc = defaultdict(float)
+        probs_spc_ci = defaultdict(float)
+        probs_spc_rd = defaultdict(float)
+        probs_spc_ds = defaultdict(float)
+
+        if 'hypoxaemia' in complications:  # with or without pulmonary complications
+            oxygensat = oxygen_saturation if oxygen_saturation == '<90%' else '_90-92%'
+
+            # get the probability of resp. distress without chest-indrawing (base group) and the RR from the OR
+            rr_and_prob_rd_in_hypoxaemic_alri_without_ci = self.get_prob_of_outcome_in_baseline_group(
+                or_value=p['or_respiratory_distress_in_alri_with_chest_indrawing'],
+                prob_ref=p[f'prob_respiratory_distress_in_no_chest_indrawing_SpO2{oxygensat}'],
+                prop_case_group=p[f'prob_chest_indrawing_in_SpO2{oxygensat}'],
+                prevalence=p[f'prob_respiratory_distress_in_SpO2{oxygensat}'])
+
+            # get the probability of danger signs without resp distress (base group) and the RR from the OR
+            rr_and_prob_ds_in_hypoxaemic_alri_without_rd = self.get_prob_of_outcome_in_baseline_group(
+                or_value=p['or_danger_signs_in_alri_with_respiratory_distress'],
+                prob_ref=p[f'prob_danger_signs_in_no_respiratory_distress_SpO2{oxygensat}'],
+                prop_case_group=p[f'prob_respiratory_distress_in_SpO2{oxygensat}'],
+                prevalence=p[f'prob_danger_signs_in_SpO2{oxygensat}'])
+
+            # apply probability of chest indrawing
+            probs_hypo_ci = {
+                'chest_indrawing': p[f'prob_chest_indrawing_in_SpO2{oxygensat}']
             }
 
-        if complication in ('pneumothorax', 'pleural_effusion', 'lung_abscess', 'empyema'):
-            # use the probability of danger signs and chest indrawing from hypoxaemia SpO2 < 90%
-            probs = {
-                'danger_signs': p['prob_danger_signs_in_SpO2<90%'],
-                'chest_indrawing': p['prob_chest_indrawing_in_SpO2<90%'],
-            }
+            if probs_hypo_ci['chest_indrawing'] > self.rng.random_sample():
+                probs_hypo_rd = {'respiratory_distress': rr_and_prob_rd_in_hypoxaemic_alri_without_ci['adjusted_p'] *
+                                                         rr_and_prob_rd_in_hypoxaemic_alri_without_ci['rr']}
+            else:
+                probs_hypo_rd = {'respiratory_distress': rr_and_prob_rd_in_hypoxaemic_alri_without_ci['adjusted_p']}
 
-        # determine which symptoms are onset:
-        symptoms = {s for s, p in probs.items() if p > self.rng.random_sample()}
+            if probs_hypo_rd['respiratory_distress'] > self.rng.random_sample():
+                probs_hypo_ds = {'danger_signs': rr_and_prob_ds_in_hypoxaemic_alri_without_rd['adjusted_p'] *
+                                                 rr_and_prob_ds_in_hypoxaemic_alri_without_rd['rr']}
+            else:
+                probs_hypo_ds = {'danger_signs': rr_and_prob_ds_in_hypoxaemic_alri_without_rd['adjusted_p']}
 
-        return symptoms
+        # determine which symptoms are onset from hypoxaemia:
+        probs_hypo.update(probs_hypo_ci)
+        probs_hypo.update(probs_hypo_rd)
+        probs_hypo.update(probs_hypo_ds)
+
+        symptoms_hypoxaemia = {s for s, p in probs_hypo.items() if p > self.rng.random_sample()}
+
+        # pulmonary complications - PE and Emp can mimic non-severe pneumonia:
+        for pc in ['pleural_effusion', 'empyema']:
+            if pc in complications:
+                # get the probability of resp. distress without chest-indrawing (base group) and the RR from the OR
+                rr_and_prob_rd_in_pc_alri_without_ci = self.get_prob_of_outcome_in_baseline_group(
+                    or_value=p['or_respiratory_distress_in_alri_with_chest_indrawing'],
+                    prob_ref=p[f'prob_respiratory_distress_in_no_chest_indrawing_pc'],
+                    prop_case_group=p[f'prob_chest_indrawing_in_pulmonary_complications'],
+                    prevalence=p[f'prob_respiratory_distress_in_pulmonary_complications'])
+
+                # get the probability of danger signs without respiratory distress (base group) and the RR from the OR
+                rr_and_prob_ds_in_pc_alri_without_rd = self.get_prob_of_outcome_in_baseline_group(
+                    or_value=p['or_danger_signs_in_alri_with_respiratory_distress'],
+                    prob_ref=p[f'prob_danger_signs_in_no_respiratory_distress_pc'],
+                    prop_case_group=p[f'prob_respiratory_distress_in_pulmonary_complications'],
+                    prevalence=p[f'prob_danger_signs_in_pulmonary_complications'])
+
+                # apply probability of chest indrawing
+                probs_pc_ci = {
+                    'chest_indrawing': p[f'prob_chest_indrawing_in_pulmonary_complications']
+                }
+
+                if probs_pc_ci['chest_indrawing'] > self.rng.random_sample():
+                    probs_pc_rd = {'respiratory_distress': rr_and_prob_rd_in_pc_alri_without_ci['adjusted_p'] *
+                                                           rr_and_prob_rd_in_pc_alri_without_ci['rr']}
+                else:
+                    probs_pc_rd = {'respiratory_distress': rr_and_prob_rd_in_pc_alri_without_ci['adjusted_p']}
+
+                if probs_pc_rd['respiratory_distress'] > self.rng.random_sample():
+                    probs_pc_ds = {'danger_signs': rr_and_prob_ds_in_pc_alri_without_rd['adjusted_p'] *
+                                                   rr_and_prob_ds_in_pc_alri_without_rd['rr']}
+                else:
+                    probs_pc_ds = {'danger_signs': rr_and_prob_ds_in_pc_alri_without_rd['adjusted_p']}
+
+        # determine which symptoms are onset from pulmonary complications:
+        probs_pc.update(probs_pc_ci)  # add chest indrawing
+        probs_pc.update(probs_pc_rd)  # add respiratory distress
+        probs_pc.update(probs_pc_ds)  # add danger signs
+
+        symptoms_pc = {s for s, p in probs_pc.items() if p > self.rng.random_sample()}
+
+        # severe pulmonary complications - LA and Pth:
+        for spc in ['lung_abscess', 'pneumothorax']:
+            if spc in complications:
+                # get the probability of resp. distress without chest-indrawing (base group) and the RR from the OR
+                rr_and_prob_rd_in_spc_alri_without_ci = self.get_prob_of_outcome_in_baseline_group(
+                    or_value=p['or_respiratory_distress_in_alri_with_chest_indrawing'],
+                    prob_ref=to_prob(to_odds(p['prob_respiratory_distress_in_no_chest_indrawing_SpO2<90%']) *
+                                     p['or_severe_symptoms_in_severe_pulmonary_complications']),
+                    prop_case_group=to_prob(to_odds(p['prob_chest_indrawing_in_SpO2<90%']) *
+                                            p['or_severe_symptoms_in_severe_pulmonary_complications']),
+                    prevalence=to_prob(to_odds(p['prob_respiratory_distress_in_SpO2<90%']) *
+                                       p['or_severe_symptoms_in_severe_pulmonary_complications']))
+
+                # get the probability of danger signs without respiratory distress (base group) and the RR from the OR
+                rr_and_prob_ds_in_spc_alri_without_rd = self.get_prob_of_outcome_in_baseline_group(
+                    or_value=p['or_danger_signs_in_alri_with_respiratory_distress'],
+                    prob_ref=to_prob(to_odds(p[f'prob_danger_signs_in_no_respiratory_distress_SpO2<90%']) *
+                                     p['or_severe_symptoms_in_severe_pulmonary_complications']),
+                    prop_case_group=to_prob(to_odds(p['prob_respiratory_distress_in_pulmonary_complications']) *
+                                            p['or_severe_symptoms_in_severe_pulmonary_complications']),
+                    prevalence=to_prob(to_odds(p['prob_danger_signs_in_pulmonary_complications']) *
+                                       p['or_severe_symptoms_in_severe_pulmonary_complications']))
+
+                # apply probability of chest indrawing
+                probs_spc_ci = {
+                    'chest_indrawing': p[f'prob_chest_indrawing_in_pulmonary_complications']
+                }
+
+                if probs_spc_ci['chest_indrawing'] > self.rng.random_sample():
+                    probs_spc_rd = {'respiratory_distress': rr_and_prob_rd_in_spc_alri_without_ci['adjusted_p'] *
+                                                            rr_and_prob_rd_in_spc_alri_without_ci['rr']}
+                else:
+                    probs_spc_rd = {'respiratory_distress': rr_and_prob_rd_in_spc_alri_without_ci['adjusted_p']}
+
+                if probs_spc_rd['respiratory_distress'] > self.rng.random_sample():
+                    probs_spc_ds = {'danger_signs': rr_and_prob_ds_in_spc_alri_without_rd['adjusted_p'] *
+                                                    rr_and_prob_ds_in_spc_alri_without_rd['rr']}
+                else:
+                    probs_spc_ds = {'danger_signs': rr_and_prob_ds_in_spc_alri_without_rd['adjusted_p']}
+
+        # determine which symptoms are onset from pulmonary complications:
+        probs_spc.update(probs_spc_ci)  # add chest indrawing
+        probs_spc.update(probs_spc_rd)  # add respiratory distress
+        probs_spc.update(probs_spc_ds)  # add danger signs
+
+        symptoms_spc = {s for s, p in probs_spc.items() if p > self.rng.random_sample()}
+
+        # join pulmonary complications
+        symptoms_all_pc = symptoms_pc.union(symptoms_spc)
+
+        # return all the symptoms:
+        all_symptoms = general_symptoms.union(symptoms_hypoxaemia.union(symptoms_all_pc))
+
+        return all_symptoms
 
     def will_die_of_alri(self, **kwargs) -> bool:
         """Determine if person will die from Alri"""
