@@ -145,7 +145,10 @@ class Alri(Module):
         'Amoxicillin_tablet_or_suspension_3days',
         'Amoxicillin_tablet_or_suspension_5days',
         'Amoxicillin_tablet_or_suspension_7days',
-        '1st_line_IV_antibiotics',
+        '1st_line_IV_ampicillin_gentamicin',
+        '1st_line_IV_benzylpenicillin_gentamicin',
+        '2nd_line_IV_ceftriaxone',
+        '2nd_line_IV_flucloxacillin_gentamicin',
     })
 
     PARAMETERS = {
@@ -1188,7 +1191,7 @@ class Alri(Module):
         }
 
         # Antibiotic therapy for severe pneumonia - ampicillin package
-        self.consumables_used_in_hsi['1st_line_IV_antibiotics'] = {
+        self.consumables_used_in_hsi['1st_line_IV_ampicillin_gentamicin'] = {
             get_item_code(item='Ampicillin injection 500mg, PFR_each_CMST'):
                 lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
                                                           {1: 3.73, 2: 5.6, 4: 8, 12: 16, 36: 24, np.inf: 40}
@@ -1202,7 +1205,7 @@ class Alri(Module):
         }
 
         # # Antibiotic therapy for severe pneumonia - benzylpenicillin package when ampicillin is not available
-        self.consumables_used_in_hsi['Benzylpenicillin_gentamicin_therapy_for_severe_pneumonia'] = {
+        self.consumables_used_in_hsi['1st_line_IV_benzylpenicillin_gentamicin'] = {
             get_item_code(item='Benzylpenicillin 3g (5MU), PFR_each_CMST'):
                 lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
                                                           {1: 2, 2: 5, 4: 8, 12: 15, 36: 24, np.inf: 34}
@@ -1216,7 +1219,7 @@ class Alri(Module):
         }
 
         # Second line of antibiotics for severe pneumonia, if Staph not suspected
-        self.consumables_used_in_hsi['Ceftriaxone_therapy_for_severe_pneumonia'] = {
+        self.consumables_used_in_hsi['2nd_line_IV_ceftriaxone'] = {
             get_item_code(item='Ceftriaxone 1g, PFR_each_CMST'):
                 lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
                                                           {4: 1.5, 12: 3, 36: 5, np.inf: 7}
@@ -1226,7 +1229,7 @@ class Alri(Module):
         }
 
         # Second line of antibiotics for severe pneumonia, if Staph is suspected
-        self.consumables_used_in_hsi['2nd_line_Antibiotic_therapy_for_severe_staph_pneumonia'] = {
+        self.consumables_used_in_hsi['2nd_line_IV_flucloxacillin_gentamicin'] = {
             get_item_code(item='Flucloxacillin 250mg, vial, PFR_each_CMST'):
                 lambda _age: get_dosage_for_age_in_months(int(_age * 12.0),
                                                           {2: 21, 4: 22.4, 12: 37.3, 36: 67.2, 60: 93.3, np.inf: 140}
@@ -1442,6 +1445,7 @@ class Alri(Module):
         SpO2_level = person.ri_SpO2_level
         symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
         imci_symptom_based_classification = self.get_imci_classification_based_on_symptoms(
+            facility_level='2',
             child_is_younger_than_2_months=person.age_exact_years < (2.0 / 12.0),
             symptoms=symptoms,
         )
@@ -1455,30 +1459,20 @@ class Alri(Module):
             imci_symptom_based_classification=imci_symptom_based_classification,
             SpO2_level=SpO2_level,
             disease_type=disease_type,
-            any_complications=len(complications) > 0,
+            age_exact_years=person.age_exact_years,
+            complications=complications,
             symptoms=symptoms,
             hiv_infected_and_not_on_art=hiv_infected_and_not_on_art,
             un_clinical_acute_malnutrition=un_clinical_acute_malnutrition,
             antibiotic_provided=antibiotic_provided,
             oxygen_provided=oxygen_provided,
         )
-        # # for inpatients provide 2nd line IV antibiotic if 1st line failed
-        # if treatment_fails and antibiotic_provided == '1st_line_antibiotics':
-        #     if HSI_Alri_Treatment._has_staph_aureus():
-        #         second_line_available = HSI_Alri_Treatment._get_cons(
-        #             '2nd_line_Antibiotic_therapy_for_severe_staph_pneumonia')
-        #     else:
-        #         second_line_available = HSI_Alri_Treatment._get_cons('Ceftriaxone_therapy_for_severe_pneumonia')
-        #
-        #     if second_line_available:
-        #         treatment_fails = \
-        #             self.parameters['tf_2nd_line_antibiotic_for_severe_pneumonia'] > self.rng.random_sample()
 
         # store the information of the first appointment
         self.store_treatment_info = {'person_id': person_id, 'antibiotic_provided': antibiotic_provided}
 
         # Cancel death (if there is one) if the treatment does not fail (i.e. it works) and return indication of
-        # sucesss of failure.
+        # sucesss or failure.
         if not treatment_fails:
             self.cancel_death_and_schedule_cure(person_id)
             return 'success'
@@ -1573,46 +1567,126 @@ class Alri(Module):
          the second is assumed to be a drop-in replacement with the same effectiveness etc., and is used only when the
          first is found to be not available."""
         p = self.parameters
-        rng = self.rng
 
-        if classification_for_treatment_decision == 'fast_breathing_pneumonia':
-            return {
-                'antibiotic_indicated': (
-                    'Amoxicillin_tablet_or_suspension_7days' if age_exact_years < 2.0 / 12.0
-                    else 'Amoxicillin_tablet_or_suspension_3days',  # <-- # <-- First choice antibiotic
-                ),
-                'oxygen_indicated': False
-            }
+        # Change this variable when looking into the benefit of using SpO2 <93% as indication for oxygen
+        oxygen_indicated = oxygen_saturation == '<90%' if p['apply_oxygen_indication_to_SpO2_measurement'] == '<90%' \
+            else oxygen_saturation != '>=93%' if p['apply_oxygen_indication_to_SpO2_measurement'] == '<93%' else False
 
+        # turn on/off parameter to allow the use of pulse oximetry on non-severe classifications
+        # turn ON to allow the use of pulse oximetry in non-severe cases to detect SpO2 between 90-92%
+        # turn OFF for testing purposes - e.g. testing each treatment efficacy on each classification
+        allow_use_oximeter_for_non_severe = p['allow_use_oximetry_for_non_severe_classifications']
+
+        # treatment for cough or cold classification
+        if classification_for_treatment_decision == "cough_or_cold":
+            if allow_use_oximeter_for_non_severe:
+                # if oxygen is indicated based on SpO2 measure by a pulse oximeter, treat as inpatient
+                if use_oximeter and oxygen_indicated:
+                    return {
+                        'antibiotic_indicated': (
+                            '1st_line_IV_ampicillin_gentamicin',  # <-- # <-- First choice antibiotic
+                            '1st_line_IV_benzylpenicillin_gentamicin',
+                            # <-- If the first choice not available
+                        ),
+                        'oxygen_indicated': oxygen_indicated
+                    }
+                else:
+                    return {
+                        'antibiotic_indicated': (
+                            '',  # <-- First choice antibiotic -- none for cough_or_cold
+                        ),
+                        'oxygen_indicated': False
+                    }
+            else:
+                return {
+                    'antibiotic_indicated': (
+                        '',  # <-- First choice antibiotic -- none for cough_or_cold
+                    ),
+                    'oxygen_indicated': False
+                }
+
+        # treatment for fast-breathing pneumonia classification
+        elif classification_for_treatment_decision == 'fast_breathing_pneumonia':
+            if allow_use_oximeter_for_non_severe:
+                if use_oximeter and oxygen_indicated:
+                    # if oxygen is indicated based on SpO2 measure by a pulse oximeter, treat as inpatient
+                    return {
+                        'antibiotic_indicated': (
+                            '1st_line_IV_ampicillin_gentamicin',  # <-- # <-- First choice antibiotic
+                            '1st_line_IV_benzylpenicillin_gentamicin',
+                            # <-- If the first choice not available
+                        ),
+                        'oxygen_indicated': oxygen_indicated
+                    }
+                else:
+                    # if no pulse oximeter is used / or no oxygen indication give the standard treatment
+                    return {
+                        'antibiotic_indicated': (
+                            'Amoxicillin_tablet_or_suspension_7days' if age_exact_years < 2.0 / 12.0
+                            else 'Amoxicillin_tablet_or_suspension_3days',  # <-- # <-- First choice antibiotic
+                        ),
+                        'oxygen_indicated': False
+                    }
+            else:
+                return {
+                    'antibiotic_indicated': (
+                        'Amoxicillin_tablet_or_suspension_7days' if age_exact_years < 2.0 / 12.0
+                        else 'Amoxicillin_tablet_or_suspension_3days',  # <-- # <-- First choice antibiotic
+                    ),
+                    'oxygen_indicated': False
+                }
+
+        # treatment for chest-indrawing pneumonia classification
         elif classification_for_treatment_decision == 'chest_indrawing_pneumonia':
-            return {
-                'antibiotic_indicated': (
-                    'Amoxicillin_tablet_or_suspension_5days',   # <-- # <-- First choice antibiotic
-                ),
-                'oxygen_indicated': False
-            }
+            if allow_use_oximeter_for_non_severe:
+                if use_oximeter and oxygen_indicated:
+                    # if oxygen is indicated based on SpO2 measure by a pulse oximeter, treat as inpatient
+                    return {
+                        'antibiotic_indicated': (
+                            '1st_line_IV_ampicillin_gentamicin',  # <-- # <-- First choice antibiotic
+                            '1st_line_IV_benzylpenicillin_gentamicin',
+                            # <-- If the first choice not available
+                        ),
+                        'oxygen_indicated': oxygen_indicated
+                    }
+                else:
+                    # if no pulse oximeter is used / or no oxygen indication give the standard treatment
+                    return {
+                        'antibiotic_indicated': (
+                            'Amoxicillin_tablet_or_suspension_5days',  # <-- # <-- First choice antibiotic
+                        ),
+                        'oxygen_indicated': False
+                    }
+            else:
+                return {
+                    'antibiotic_indicated': (
+                        'Amoxicillin_tablet_or_suspension_5days',  # <-- # <-- First choice antibiotic
+                    ),
+                    'oxygen_indicated': False
+                }
 
+        # treatment for danger signs pneumonia classification
         elif classification_for_treatment_decision == 'danger_signs_pneumonia':
             if use_oximeter:
-                oxygen_indicated = oxygen_saturation == '<90%'
+                oxygen_indicated = oxygen_indicated
+                return {
+                    'antibiotic_indicated': (
+                        '1st_line_IV_ampicillin_gentamicin',  # <-- # <-- First choice antibiotic
+                        '1st_line_IV_benzylpenicillin_gentamicin',  # <-- If the first choice not available
+                        '2nd_line_IV_ceftriaxone',  # <-- If the first line choices not available
+                    ),
+                    'oxygen_indicated': oxygen_indicated
+                }
             else:
-                oxygen_indicated = p['prob_hw_decision_for_oxygen_provision_when_po_unavailable'] > rng.random_sample()
-
-            return {
-                'antibiotic_indicated': (
-                    '1st_line_IV_antibiotics',  # <-- # <-- First choice antibiotic
-                    'Benzylpenicillin_gentamicin_therapy_for_severe_pneumonia'  # <-- If the first choice not available
-                ),
-                'oxygen_indicated': oxygen_indicated
-            }
-
-        elif classification_for_treatment_decision == "cough_or_cold":
-            return {
-                'antibiotic_indicated': (
-                    '',  # <-- First choice antibiotic
-                ),
-                'oxygen_indicated': False
-            }
+                # if no oximeter available, oxygen indication is determined by the heath worker's decision
+                return {
+                    'antibiotic_indicated': (
+                        '1st_line_IV_ampicillin_gentamicin',  # <-- # <-- First choice antibiotic
+                        '1st_line_IV_benzylpenicillin_gentamicin',  # <-- If the first choice not available
+                    ),
+                    'oxygen_indicated':
+                        p['prob_hw_decision_for_oxygen_provision_when_po_unavailable'] > self.rng.random_sample()
+                }
 
         else:
             raise ValueError(f'Classification not recognised: {classification_for_treatment_decision}')
@@ -2323,8 +2397,9 @@ class Models:
                               imci_symptom_based_classification: str,
                               SpO2_level: str,
                               disease_type: str,
-                              any_complications: bool,
-                              symptoms: List[str],
+                              age_exact_years: float,
+                              symptoms: list,
+                              complications: list,
                               hiv_infected_and_not_on_art: bool,
                               un_clinical_acute_malnutrition: str,
                               antibiotic_provided: str,
@@ -2338,27 +2413,67 @@ class Models:
 
         p = self.p
 
+        def _group_antibiotic(antibiotic_provided):
+            if antibiotic_provided.startswith('1st_line_IV'):
+                return '1st_line_IV_antibiotics'
+            elif antibiotic_provided.startswith('2nd_line_IV'):
+                return '2nd_line_IV_antibiotics'
+            elif antibiotic_provided.startswith('Amoxicillin'):
+                return 'oral_antibiotics'
+            elif antibiotic_provided == '':
+                return ''
+            else:
+                raise ValueError(f'{antibiotic_provided} not in any group')
+
+        antibiotic_provided_grp = _group_antibiotic(antibiotic_provided)
+
         needs_oxygen = SpO2_level == '<90%'
+        might_need_oxygen = SpO2_level == '90-92%'
 
         def modify_failure_risk_when_does_not_get_oxygen_but_needs_oxygen(_risk):
             """Define the effect size for the increase in the risk of treatment failure if a person need oxygen but does
              not receive it. The parameter is an odds ratio, so to use it with the risk, there has to be conversion
              between odds and probabilities."""
-            or_if_does_not_get_oxygen_but_needs_oxygen = 1.0 / p['or_mortality_improved_oxygen_systems']
-            return to_prob(to_odds(_risk) * or_if_does_not_get_oxygen_but_needs_oxygen)
+            age_in_whole_months = int(np.floor(age_exact_years * 12.0))
+            is_under_two_months_old = age_in_whole_months < 2
+            _age_ = "age<2mo" if is_under_two_months_old else "age2_59mo"
+
+            # if the risk of treatmnet failure is already 1.0 with oxygen provided, return that value
+            if _risk == 1.0:
+                return _risk
+
+            elif needs_oxygen:
+                or_if_does_not_get_oxygen_but_needs_oxygen = 1.0 / p['or_mortality_improved_oxygen_systems']
+                return min(1.0, to_prob(to_odds(_risk) * or_if_does_not_get_oxygen_but_needs_oxygen))
+
+            elif might_need_oxygen:
+                # first calculate the relative ORs between or_death for SpO2< 90% and 90-92%
+                relative_or_mortality_in_low_ox_sat = \
+                    p[f'or_death_ALRI_{_age_}_SpO2<90%'] / p[f'or_death_ALRI_{_age_}_SpO2_90_92%']
+                # convert OR mortality of improved oxygen systems to likelihood (%)
+                convert_or_into_likelihood = 1 - p['or_mortality_improved_oxygen_systems']
+                p_tsuccess_for_oxygen_provided_to_SpO2_90_92 = \
+                    convert_or_into_likelihood / relative_or_mortality_in_low_ox_sat
+                # this returns in likelihood % -- convert back to OR
+                assumed_or_tf_if_oxygen_provided_to_SpO2_90_92 = 1 - p_tsuccess_for_oxygen_provided_to_SpO2_90_92
+                or_if_does_not_get_oxygen_but_might_need_oxygen = 1.0 / assumed_or_tf_if_oxygen_provided_to_SpO2_90_92
+                return min(1.0, to_prob(to_odds(_risk) * or_if_does_not_get_oxygen_but_might_need_oxygen))
 
         def _treatment_failure_oral_antibiotics(risk_tf_oral_antibiotics):
-            """Return the risk of treatment failure by oral antibiotics"""
+            """Return the risk of treatment failure by oral antibiotics for non-severe pneumonia classification"""
 
             risk_tf_oral_antibiotics = risk_tf_oral_antibiotics
 
-            if SpO2_level == '<90%' and not oxygen_provided:
+            if SpO2_level == '<90%':
+                risk_tf_oral_antibiotics *= p['or_tf_oral_antibiotics_if_SpO2<90%']
+
+            if SpO2_level == '90-92%':
                 risk_tf_oral_antibiotics = to_prob(
-                    to_odds(risk_tf_oral_antibiotics * p['or_tf_oral_antibiotics_if_SpO2<90%']))
+                        to_odds(risk_tf_oral_antibiotics) * p['or_tf_oral_antibiotics_if_SpO2_90_92%'])
 
             if un_clinical_acute_malnutrition in ('MAM', 'SAM'):
                 risk_tf_oral_antibiotics = to_prob(
-                    to_odds(risk_tf_oral_antibiotics * p['or_tf_oral_antibiotics_if_malnutrition']))
+                    to_odds(risk_tf_oral_antibiotics) * p['or_tf_oral_antibiotics_if_malnutrition'])
 
             # if 'ma_is_infected' and not 'ma_tx':
             #     risk_tf_oral_antibiotics = to_prob(
@@ -2369,130 +2484,205 @@ class Models:
             if disease_type == 'pneumonia':
                 risk_tf_oral_antibiotics *= p['rr_tf_1st_line_antibiotics_if_abnormal_CXR']
 
-            return risk_tf_oral_antibiotics
+            if any(c in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for c in complications):
+                risk_tf_oral_antibiotics *= p['rr_tf_1st_line_antibiotics_if_any_pulmonary_complications']
+
+            # return risk_tf_oral_antibiotics
+            return min(1.0, risk_tf_oral_antibiotics)
 
         def _treatment_failure_IV_antibiotics():
-            """Return the risk of treatment failure by parenteral antibiotics"""
+            """Return the risk of treatment failure by parenteral antibiotics for severe pneumonia classification"""
 
             # Baseline risk of treatment failure ( ref group: non-need oxygen or if oxygen is also provided)
-            risk_tf_1st_line_antibiotics = p['tf_1st_line_antibiotic_for_severe_pneumonia']
+            risk_tf_iv_antibiotics = p['tf_2nd_line_antibiotic_for_severe_pneumonia'] if \
+                antibiotic_provided_grp == '2nd_line_IV_antibiotics' \
+                else p['tf_1st_line_antibiotic_for_severe_pneumonia']
+
+            if 'danger_signs' in symptoms:
+                risk_tf_iv_antibiotics *= p['rr_tf_1st_line_antibiotics_if_general_danger_signs']
 
             if SpO2_level == "<90%":
-                risk_tf_1st_line_antibiotics *= p['rr_tf_1st_line_antibiotics_if_SpO2<90%']
+                risk_tf_iv_antibiotics *= p['rr_tf_1st_line_antibiotics_if_SpO2<90%']
 
             if disease_type == 'pneumonia':
-                risk_tf_1st_line_antibiotics *= p['rr_tf_1st_line_antibiotics_if_abnormal_CXR']
+                risk_tf_iv_antibiotics *= p['rr_tf_1st_line_antibiotics_if_abnormal_CXR']
+
+            if any(c in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for c in complications):
+                risk_tf_iv_antibiotics *= p['rr_tf_1st_line_antibiotics_if_any_pulmonary_complications']
 
             # The effect of HIV
             if hiv_infected_and_not_on_art:
-                risk_tf_1st_line_antibiotics *= p['rr_tf_1st_line_antibiotics_if_HIV/AIDS']
+                risk_tf_iv_antibiotics *= p['rr_tf_1st_line_antibiotics_if_HIV/AIDS']
 
             # The effect of acute malnutrition
             if un_clinical_acute_malnutrition == 'MAM':
-                risk_tf_1st_line_antibiotics *= p['rr_tf_1st_line_antibiotics_if_MAM']
+                risk_tf_iv_antibiotics *= p['rr_tf_1st_line_antibiotics_if_MAM']
             elif un_clinical_acute_malnutrition == 'SAM':
-                risk_tf_1st_line_antibiotics *= p['rr_tf_1st_line_antibiotics_if_SAM']
+                risk_tf_iv_antibiotics *= p['rr_tf_1st_line_antibiotics_if_SAM']
 
-            if needs_oxygen and not oxygen_provided:
-                # Elevate risk, according to odds ratio "or_if_no_oxygen"
-                risk_tf_1st_line_antibiotics = \
-                    modify_failure_risk_when_does_not_get_oxygen_but_needs_oxygen(risk_tf_1st_line_antibiotics)
+            # # Baseline risk of treatment failure ( ref group: non-need oxygen or if oxygen is also provided)
+            # odds_tf_1st_line_antibiotics = to_odds(p['tf_1st_line_antibiotic_for_severe_pneumonia'])
+            #
+            # if age_exact_years < 1:
+            #     odds_tf_1st_line_antibiotics *= 1.66
+            #
+            # if imci_symptom_based_classification == 'danger_signs_pneumonia':
+            #     odds_tf_1st_line_antibiotics *= 1.93
+            #
+            # if SpO2_level != ">=93%":
+            #     odds_tf_1st_line_antibiotics *= 1.78
+            #
+            # if 'bacteraemia' in complications:
+            #     odds_tf_1st_line_antibiotics *= 3.06
+            #
+            # if any(c in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for c in complications):
+            #     odds_tf_1st_line_antibiotics *= 2.31 this is RR
+            #
+            # # The effect of HIV
+            # if hiv_infected_and_not_on_art:
+            #     odds_tf_1st_line_antibiotics *= 3.45
+            #
+            # # The effect of acute malnutrition
+            # if un_clinical_acute_malnutrition == 'SAM':
+            #     odds_tf_1st_line_antibiotics *= 1.94
+            #
+            # risk_tf_iv_antibiotics = to_prob(odds_tf_1st_line_antibiotics)
 
-            return min(1.0, risk_tf_1st_line_antibiotics)
+            return min(1.0, risk_tf_iv_antibiotics)
 
         def _prob_treatment_fails_when_danger_signs_pneumonia():
             """Return probability treatment fails when the true classification (by symptoms)
              is danger_signs_pneumonia."""
-            if antibiotic_provided == '':
+
+            if antibiotic_provided_grp == '':
                 return 1.0  # If no antibiotic is provided the treatment fails
 
-            elif antibiotic_provided == '1st_line_IV_antibiotics':
+            elif antibiotic_provided_grp in ('1st_line_IV_antibiotics', '2nd_line_IV_antibiotics'):
                 # danger_signs_pneumonia given 1st line IV antibiotic:
-                return _treatment_failure_IV_antibiotics()
-
-            elif antibiotic_provided in self.module.antibiotics:
-                # danger_signs_pneumonia given oral antibiotics (probably due to misdiagnosis)
-                if needs_oxygen:
-                    if not oxygen_provided:
-                        return _treatment_failure_IV_antibiotics() * \
-                               (1 / p['rr_tf_if_given_parenteral_antibiotics_for_pneumonia_with_SpO2<90%'])
-                    else:
-                        raise ValueError(f'Oxygen is not provided to non-severe classifications given oral antibiotics'
-                                         f'{antibiotic_provided}, {imci_symptom_based_classification}, {SpO2_level}')
+                iv_tf_ = _treatment_failure_IV_antibiotics()
+                if any([needs_oxygen, might_need_oxygen]) and not oxygen_provided:
+                    return modify_failure_risk_when_does_not_get_oxygen_but_needs_oxygen(iv_tf_)
                 else:
-                    # oral antibiotic given to danger signs pneumonia with SpO2>=90%
-                    return max(p['tf_oral_amoxicillin_only_for_severe_pneumonia_with_SpO2>=90%'],
-                                 (_treatment_failure_IV_antibiotics() *
-                                  (1 / p['rr_tf_if_given_parenteral_antibiotics_for_pneumonia_with_SpO2<90%'])))
+                    return iv_tf_
+
+            # danger_signs_pneumonia given oral antibiotics (probably due to misdiagnosis) with or without SpO2<90%
+            elif antibiotic_provided_grp == 'oral_antibiotics':
+                # get the TF of IV antibiotics without oxygen provision
+                iv_tf_ = modify_failure_risk_when_does_not_get_oxygen_but_needs_oxygen(
+                    _treatment_failure_IV_antibiotics()) if any([needs_oxygen, might_need_oxygen]) \
+                    else _treatment_failure_IV_antibiotics()
+
+                average_oral_tf = _treatment_failure_oral_antibiotics(
+                    p['tf_7day_amoxicillin_for_fast_breathing_pneumonia_in_young_infants']) if \
+                    antibiotic_provided.endswith('7days') else _treatment_failure_oral_antibiotics(
+                    p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%']) if \
+                    antibiotic_provided.endswith('3days') and ('chest_indrawing' not in symptoms) else \
+                    _treatment_failure_oral_antibiotics(p['tf_3day_amoxicillin_for_chest_indrawing_with_SpO2>=90%']) if\
+                    antibiotic_provided.endswith('3days') and ('chest_indrawing' in symptoms) else \
+                    _treatment_failure_oral_antibiotics(p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%'])
+
+                # fraction to adjust for the differences in the TF model for oral vs IV
+                fraction = average_oral_tf / iv_tf_ if (iv_tf_ != 0) else 1
+
+                oral_tf_ = iv_tf_ * (1 / (0.5 * fraction))
+                return oral_tf_
             else:
-                raise ValueError(f'Unrecognised antibiotic.')
+                raise ValueError(f'Unrecognised antibiotic {antibiotic_provided_grp}')
 
         def _prob_treatment_fails_when_fast_breathing_pneumonia():
             """Return probability treatment fails when the true classification (by symptoms)
              is fast_breathing_pneumonia."""
-            if antibiotic_provided == '':
+            if antibiotic_provided_grp == '':
                 return 1.0  # If no antibiotic is provided the treatment fails
 
             # If symptom-based classification == fast-breathing pneum with SpO2<90% - give IV antibiotics + oxygen
-            elif antibiotic_provided == '1st_line_IV_antibiotics':
-                # considered danger_signs_pneumonia given 1st line IV antibiotic:
-                return _treatment_failure_oral_antibiotics(
+            elif antibiotic_provided_grp in ('1st_line_IV_antibiotics', '2nd_line_IV_antibiotics'):
+
+                # base TF for SpO2<90% or SpO2>=90%
+                iv_tf_ = _treatment_failure_oral_antibiotics(
                     p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%']) * \
-                       p['rr_tf_if_given_parenteral_antibiotics_for_pneumonia_with_SpO2<90%']
+                         p['rr_tf_if_given_parenteral_antibiotics_for_pneumonia_with_SpO2<90%'] if needs_oxygen \
+                    else _treatment_failure_oral_antibiotics(
+                    p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%']) * \
+                         p['rr_tf_if_given_parenteral_antibiotics_for_pneumonia_with_SpO2>=90%']
+                # adjust the TF base on oxygen provision
+                if any([needs_oxygen, might_need_oxygen]) and not oxygen_provided:
+                    return modify_failure_risk_when_does_not_get_oxygen_but_needs_oxygen(iv_tf_)
+                else:
+                    return iv_tf_
 
             # oral antibiotics
-            elif antibiotic_provided == 'Amoxicillin_tablet_or_suspension_3days':
+            elif antibiotic_provided_grp == 'oral_antibiotics':
                 return _treatment_failure_oral_antibiotics(
-                    p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%'])
+                    p['tf_7day_amoxicillin_for_fast_breathing_pneumonia_in_young_infants']) if \
+                    age_exact_years < 1 / 6 else \
+                    _treatment_failure_oral_antibiotics(p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%'])
 
-            elif antibiotic_provided == 'Amoxicillin_tablet_or_suspension_7days':
-                return _treatment_failure_oral_antibiotics(
-                    p['tf_7day_amoxicillin_for_fast_breathing_pneumonia_in_young_infants'])
             else:
-                raise ValueError(f'Unrecognised antibiotic{antibiotic_provided}.')
+                raise ValueError(f'Unrecognised antibiotic{antibiotic_provided_grp}.')
 
         def _prob_treatment_fails_when_chest_indrawing_pneumonia():
             """Return probability treatment fails when the true classification (by symptoms)
             is chest_indrawing_pneumonia."""
 
-            if antibiotic_provided == '':
+            if antibiotic_provided_grp == '':
                 return 1.0  # If no antibiotic is provided the treatment fails
 
             # oral antibiotics
-            elif antibiotic_provided == 'Amoxicillin_tablet_or_suspension_3days':
-                return _treatment_failure_oral_antibiotics(p['tf_3day_amoxicillin_for_chest_indrawing_with_SpO2>=90%'])
-            elif antibiotic_provided == 'Amoxicillin_tablet_or_suspension_5days':
-                return _treatment_failure_oral_antibiotics(
-                    p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%'])
+            elif antibiotic_provided_grp == 'oral_antibiotics':
+                if antibiotic_provided == 'Amoxicillin_tablet_or_suspension_3days':
+                    return _treatment_failure_oral_antibiotics(
+                        p['tf_3day_amoxicillin_for_chest_indrawing_with_SpO2>=90%'])
+                elif antibiotic_provided == 'Amoxicillin_tablet_or_suspension_5days':
+                    return _treatment_failure_oral_antibiotics(
+                        p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%'])
+                # return _treatment_failure_oral_antibiotics(
+                #     p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%'])
 
-            # If symptom-based classification == chest-indrawing pneum with SpO2<90% - give IV antibiotics + oxygen
-            elif antibiotic_provided == '1st_line_IV_antibiotics':
-                # considered danger_signs_pneumonia given 1st line IV antibiotic:
-                return _treatment_failure_oral_antibiotics(
+            # 1st line IV antibiotic:
+            elif antibiotic_provided_grp in ('1st_line_IV_antibiotics', '2nd_line_IV_antibiotics'):
+                # base TF for SpO2<90% or SpO2>=90%
+                iv_tf_ = _treatment_failure_oral_antibiotics(
                     p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%']) * \
-                       p['rr_tf_if_given_parenteral_antibiotics_for_pneumonia_with_SpO2<90%']
+                         p['rr_tf_if_given_parenteral_antibiotics_for_pneumonia_with_SpO2<90%'] if needs_oxygen \
+                    else _treatment_failure_oral_antibiotics(
+                    p['tf_3day_amoxicillin_for_chest_indrawing_with_SpO2>=90%']) * \
+                         p['rr_tf_if_given_parenteral_antibiotics_for_pneumonia_with_SpO2>=90%']
+                # adjust the TF base on oxygen provision
+                if any([needs_oxygen, might_need_oxygen]) and not oxygen_provided:
+                    return modify_failure_risk_when_does_not_get_oxygen_but_needs_oxygen(iv_tf_)
+                else:
+                    return iv_tf_
 
             else:
-                raise ValueError(f'Unrecognised antibiotic{antibiotic_provided}.')
+                raise ValueError(f'Unrecognised antibiotic{antibiotic_provided_grp}.')
 
         def _prob_treatment_fails_when_cough_or_cold():
             """Return probability treatment fails when the true classification (by symptoms) is "cough_or_cold."""
-            if antibiotic_provided == '':
+            if antibiotic_provided_grp == '':
                 return 1.0
 
-            # If symptom-based classification == cough/cold classification with SpO2<90% - give IV antibiotics + oxygen
-            elif antibiotic_provided == '1st_line_IV_antibiotics':
-                # considered danger_signs_pneumonia given 1st line IV antibiotic:
-                return _treatment_failure_oral_antibiotics(
-                    p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%']) * \
-                       p['rr_tf_if_given_parenteral_antibiotics_for_pneumonia_with_SpO2<90%']
-
             # oral antibiotics (use TF for most non-severe pneumonia treatment)
-            elif antibiotic_provided in self.module.antibiotics:
+            elif antibiotic_provided_grp == 'oral_antibiotics':
                 return _treatment_failure_oral_antibiotics(
                     p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%'])
+
+            # If symptom-based classification == cough/cold classification with SpO2<90% - give IV antibiotics + oxygen
+            elif antibiotic_provided_grp in ('1st_line_IV_antibiotics', '2nd_line_IV_antibiotics'):
+                iv_tf_ = _treatment_failure_oral_antibiotics(
+                    p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%']) * \
+                         p['rr_tf_if_given_parenteral_antibiotics_for_pneumonia_with_SpO2<90%'] if needs_oxygen \
+                    else _treatment_failure_oral_antibiotics(
+                    p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%']) * \
+                         p['rr_tf_if_given_parenteral_antibiotics_for_pneumonia_with_SpO2>=90%']
+                # adjust the TF base on oxygen provision
+                if any([needs_oxygen, might_need_oxygen]) and not oxygen_provided:
+                    return modify_failure_risk_when_does_not_get_oxygen_but_needs_oxygen(iv_tf_)
+                else:
+                    return iv_tf_
+
             else:
-                raise ValueError(f'Unrecognised antibiotic{antibiotic_provided}.')
+                raise ValueError(f'Unrecognised antibiotic{antibiotic_provided_grp}.')
 
         if imci_symptom_based_classification == 'danger_signs_pneumonia':
             return min(1.0, _prob_treatment_fails_when_danger_signs_pneumonia())
@@ -2508,6 +2698,7 @@ class Models:
 
         else:
             raise ValueError('Unrecognised imci_symptom_based_classification.')
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
@@ -3264,7 +3455,30 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                     oxygen_provided=oxygen_provided
                 )
                 if treatment_outcome == 'failure':
-                    self._schedule_follow_up_following_treatment_failure()
+                    # for inpatients provide 2nd line IV antibiotic if 1st line failed
+                    if antibiotic_provided.startswith('1st_line_IV'):
+                        # if Staph is suspected
+                        if self._has_staph_aureus():
+                            second_line_available = self._get_cons('2nd_line_IV_flucloxacillin_gentamicin')
+                            if second_line_available:
+                                self.module.do_effects_of_treatment_and_return_outcome(
+                                    person_id=self.target,
+                                    antibiotic_provided='2nd_line_IV_flucloxacillin_gentamicin',
+                                    oxygen_provided=oxygen_provided
+                                )
+                        else:
+                            # if 1st line IV fails
+                            second_line_available = self._get_cons('2nd_line_IV_ceftriaxone')
+                            if second_line_available:
+                                self.module.do_effects_of_treatment_and_return_outcome(
+                                    person_id=self.target,
+                                    antibiotic_provided='2nd_line_IV_ceftriaxone',
+                                    oxygen_provided=oxygen_provided
+                                )
+
+                    # oral antibiotics failure - seek follow-up appointment
+                    elif antibiotic_provided.startswith('Amoxicillin_tablet'):
+                        self._schedule_follow_up_following_treatment_failure()
 
         def _do_if_fast_breathing_pneumonia():
             """What to do if classification is `fast_breathing`."""
@@ -3342,32 +3556,29 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
         """Things to do for a patient who is having this HSI following a failure of an earlier treatment.
         A further drug will be used but this will have no effect on the chance of the person dying."""
 
-        random_sample = self.module.rng.random_sample
-        p = self.module.parameters
+        return
 
-        # Ascertain the treatment according to the previous treatment failure
-        previous_treatment = self.module.store_treatment_info['antibiotic_provided']
-
+        # p = self.module.parameters
+        #
+        # # Ascertain the treatment according to the previous treatment failure
+        # previous_treatment = self.module.store_treatment_info['antibiotic_provided']
+        #
         # if previous_treatment == '':  # and imci assessment is non-severe
-        #     # provide oral antibiotics ad treat outpatient
+        #     # provide oral antibiotics and treat outpatient
         #     antibiotic_indicated = self._get_cons('Amoxicillin_tablet_or_suspension_5days')
         #     if antibiotic_indicated:
-        #         if p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%'] > random_sample():
+        #         if p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%'] > self.module.rng.random_sample():
         #             self.module.cancel_death_and_schedule_cure(self.target)
         #
-        # elif previous_treatment == '1st_line_antibiotics':
-        #     # provide 2nd line iv antibiotic
-        #     if self._has_staph_aureus():
-        #         antibiotic_indicated = self._get_cons('2nd_line_Antibiotic_therapy_for_severe_staph_pneumonia')
-        #     else:
-        #         antibiotic_indicated = self._get_cons('Ceftriaxone_therapy_for_severe_pneumonia')
-        #     if antibiotic_indicated:
-        #         if p['tf_2nd_line_antibiotic_for_severe_pneumonia'] > random_sample():
-        #             self.module.cancel_death_and_schedule_cure(self.target)
-        #
+        #     # Attempt treatment:
+        #     self._assess_and_treat(age_exact_years=person.age_exact_years,
+        #                            symptoms=symptoms,
+        #                            oxygen_saturation=person.ri_SpO2_level,
+        #                            )
+
         # elif previous_treatment in self.module.antibiotics:
         #     self._refer_to_become_inpatient()
-        #     antibiotic_indicated = self._get_cons('1st_line_IV_antibiotics')
+        #     antibiotic_indicated = self._get_cons('IV_ampicillin_and_gentamicin')
         #     if antibiotic_indicated:
         #         if p['tf_1st_line_antibiotic_for_severe_pneumonia'] > random_sample():
         #             self.module.cancel_death_and_schedule_cure(self.target)
@@ -3718,6 +3929,7 @@ def _make_hw_diagnosis_perfect(alri_module):
     p['sensitivity_of_classification_of_severe_pneumonia_facility_level1'] = 1.0
     p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level2'] = 1.0
     p['sensitivity_of_classification_of_severe_pneumonia_facility_level2'] = 1.0
+    p['prob_hw_decision_for_oxygen_provision_when_po_unavailable'] = 1.0
 
 
 def _make_treatment_perfect(alri_module):
@@ -3731,9 +3943,6 @@ def _make_treatment_perfect(alri_module):
     p['tf_3day_amoxicillin_for_chest_indrawing_with_SpO2>=90%'] = 0.0
     p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%'] = 0.0
     p['tf_7day_amoxicillin_for_fast_breathing_pneumonia_in_young_infants'] = 0.0
-    p['tf_oral_amoxicillin_only_for_severe_pneumonia_with_SpO2>=90%'] = 0.0
-    p['tf_oral_amoxicillin_only_for_severe_pneumonia_with_SpO2<90%'] = 0.0
-    p['tf_oral_amoxicillin_only_for_non_severe_pneumonia_with_SpO2<90%'] = 0.0
 
 
 def _make_treatment_ineffective(alri_module):
@@ -3747,9 +3956,6 @@ def _make_treatment_ineffective(alri_module):
     p['tf_3day_amoxicillin_for_chest_indrawing_with_SpO2>=90%'] = 1.0
     p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%'] = 1.0
     p['tf_7day_amoxicillin_for_fast_breathing_pneumonia_in_young_infants'] = 1.0
-    p['tf_oral_amoxicillin_only_for_severe_pneumonia_with_SpO2>=90%'] = 1.0
-    p['tf_oral_amoxicillin_only_for_severe_pneumonia_with_SpO2<90%'] = 1.0
-    p['tf_oral_amoxicillin_only_for_non_severe_pneumonia_with_SpO2<90%'] = 1.0
 
 
 def _make_treatment_and_diagnosis_perfect(alri_module):
