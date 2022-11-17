@@ -10,7 +10,7 @@ The disease is manifested as either pneumonia or other alri (including bronchiol
 
 During an episode (prior to recovery - either naturally or cured with treatment), symptoms are manifested
 and there may be complications (e.g. local pulmonary complication: pleural effusion, empyema, lung abscess,
-pneumothorax; and/or systemic complications: sepsis; and/or complications regarding oxygen exchange: hypoxaemia.
+pneumothorax; and/or systemic complications: bacteraemia; and/or complications regarding oxygen exchange: hypoxaemia.
 The complications are onset at the time of disease onset.
 
 The individual may recover naturally or die. The risk of death depends on the type of disease and the presence of some
@@ -387,18 +387,30 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'prevalence of hypoxaemia in all ALRI'
                       ),
-        'proportion_pneumonia_in_alri':
-            Parameter(Types.REAL,
-                      'porportion of pneumonia in ALRI cases, 1 - this proportion is the other_alri group'
-                      ),
 
         'or_hypoxaemia_in_abnormal_CXR':
             Parameter(Types.REAL,
                       'Odds ratio of hypoxaemia in CXR+ compared to ref CXR-'
                       ),
+        'or_hypoxaemia_in_pc_pneumonia':
+            Parameter(Types.REAL,
+                      'Odds ratio of hypoxaemia in in pulmonary complicated pneumonia compared to non-pc pneumonia'
+                      ),
         'assumed_prev_hypoxaemia_in_normal_CXR':
             Parameter(Types.REAL,
                       'assumed prevalence of hypoxaemia in CXR- / captured in other ALRI group'
+                      ),
+        'prev_bacteraemia_in_alri':
+            Parameter(Types.REAL,
+                      'prevalence of bacteraemia in all ALRI'
+                      ),
+        'assumed_prev_bacteraemia_in_normal_CXR':
+            Parameter(Types.REAL,
+                      'assumed prevalence of bacteraemia in CXR- / captured in other ALRI group'
+                      ),
+        'or_bacteraemia_in_abnormal_CXR':
+            Parameter(Types.REAL,
+                      'odds ratio of bacteraemia in CXR+ / captured in pneumonia group vs CXR- (ref)'
                       ),
         'assumed_prev_bacteraemia_in_non_pc_pneumonia':
             Parameter(Types.REAL,
@@ -408,22 +420,22 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'assumed prevalence of hypoxaemia in non-pulmonary complicated pneumonia'
                       ),
-
-        'prob_bacteraemia_in_pneumonia':
+        'or_bacteraemia_in_pc_pneumonia':
             Parameter(Types.REAL,
-                      'probability of bacteraemia in pneumonia'
-                      ),
-        'prob_progression_to_sepsis_with_bacteraemia':
-            Parameter(Types.REAL,
-                      'probability of progression to sepsis from bactereamia'
-                      ),
-        'or_bacteraemia_and_hypoxaemia_in_pulmonary_complicated_pneumonia':
-            Parameter(Types.REAL,
-                      'odds ratio bactereamia and/or hypoxaemia if already complicated with pulmonary complications'
+                      'odds ratio bactereamia if already complicated with pulmonary complications'
                       ),
         'proportion_hypoxaemia_with_SpO2<90%':
             Parameter(Types.REAL,
                       'proportion of hypoxaemic children with SpO2 <90%'
+                      ),
+        'prob_atelectasis_in_bronchiolitis':
+            Parameter(Types.REAL,
+                      'probability of atalectasis in other alri in children under-2 years '
+                      ),
+
+        'assumed_prev_hypoxaemia_in_uncomplicated_other_alri':
+            Parameter(Types.REAL,
+                      'assumed prevalence of hypoxaemia in uncomplicated other alri'
                       ),
 
         # Risk of death parameters -----
@@ -436,19 +448,18 @@ class Alri(Module):
                       'baseline odds of death from ALRI for young infants aged 0 month and severe pneumonia '
                       '(base group)'
                       ),
-        'or_death_ALRI_age<2mo_very_severe_pneumonia':
+        'or_death_ALRI_age<2mo_danger_signs':
             Parameter(Types.REAL,
-                      'odds ratio of death from ALRI for young infants with very severe pneumonia'
+                      'odds ratio of death from ALRI for young infants with any danger signs'
                       ),
-        'or_death_ALRI_age<2mo_P.jirovecii':
+        'or_death_ALRI_age<2mo_SpO2<90%':
             Parameter(Types.REAL,
-                      'odds ratio of death from ALRI for young infants with P. jirovecii infection'
+                      'odds ratio of death from ALRI for young infants with SpO2<90%'
                       ),
-        'or_death_ALRI_age<2mo_by_month_increase_in_age':
+        'or_death_ALRI_age<2mo_SpO2_90_92%':
             Parameter(Types.REAL,
-                      'odds ratio of death from ALRI for young infants by 1 month increase in age (1 month olds)'
+                      'odds ratio of death from ALRI for young infants with SpO2 between 90-92%'
                       ),
-
         'base_odds_death_ALRI_age2_59mo':
             Parameter(Types.REAL,
                       'baseline odds of death from ALRI for children aged 2 months, male, no SAM, '
@@ -458,42 +469,35 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'odds ratio of death from ALRI for children who are female'
                       ),
-        'or_death_ALRI_age2_59mo_very_severe_pneumonia':
+        'or_death_ALRI_age2_59mo_chest_indrawing':
             Parameter(Types.REAL,
-                      'odds ratio of death from ALRI for children with very severe pneumonia'
+                      'odds ratio of death from ALRI for children with chest wall indrawing'
                       ),
-        'or_death_ALRI_age2_59mo_P.jirovecii':
+        'or_death_ALRI_age2_59mo_danger_signs':
             Parameter(Types.REAL,
-                      'odds ratio of death from ALRI for children with P. jirovecii infection'
+                      'odds ratio of death from ALRI for children with any danger signs'
                       ),
-        'or_death_ALRI_age2_59mo_by_month_increase_in_age':
+        'or_death_ALRI_age2_59mo_in_2_5mo':
             Parameter(Types.REAL,
-                      'odds ratio of death from ALRI by 1 month increase in age for 2 to 59 months olds'
+                      'odds ratio of death from ALRI for 2-5mo (12-59 ref) for 2 to 59 months olds'
+                      ),
+        'or_death_ALRI_age2_59mo_in_6_11mo':
+            Parameter(Types.REAL,
+                      'odds ratio of death from ALRI for 6-11mo (12-59 ref) for 2 to 59 months olds'
                       ),
         'or_death_ALRI_age2_59mo_SAM':
             Parameter(Types.REAL,
                       'odds ratio of death from ALRI for children with severe acute malnutrition'
                       ),
-
-        'or_death_ALRI_SpO2<90%':
+        'or_death_ALRI_age2_59mo_SpO2<90%':
             Parameter(Types.REAL,
-                      'odds ratio of death from ALRI for children with oxygen saturation < 90%, '
-                      'base group: SpO2 <=93%'
-
-                      ),
-        'or_death_ALRI_SpO2_90_92%':
-            Parameter(Types.REAL,
-                      'odds ratio of death from ALRI for children with oxygen saturation between 09 to 92%, '
+                      'odds ratio of death from ALRI for children aged 2 to 59 months with oxygen saturation <90%, '
                       'base group: SpO2 <=93%'
                       ),
-        'or_death_ALRI_sepsis':
+        'or_death_ALRI_age2_59mo_SpO2_90_92%':
             Parameter(Types.REAL,
-                      'odds ratio of death from ALRI for children with complication of sepsis (compared to if not)'
-                      ),
-        'or_death_ALRI_pneumothorax':
-            Parameter(Types.REAL,
-                      'odds ratio of death from ALRI for children with complication of pneumothorax (compared to if '
-                      'not)'
+                      'odds ratio of death from ALRI for children aged 2 to 59 months with '
+                      'oxygen saturation between 90 to 92%, base group: SpO2 <=93%'
                       ),
 
         # Probability of symptom development -----
@@ -547,10 +551,7 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'probability of any danger signs in bronchiolitis or other alri'
                       ),
-        'prob_danger_signs_in_sepsis':
-            Parameter(Types.REAL,
-                      'probability of any danger signs in ALRI complicated by sepsis'
-                      ),
+
         'prob_danger_signs_in_SpO2<90%':
             Parameter(Types.REAL,
                       'probability of any danger signs in children with SpO2 <90%'
@@ -566,6 +567,18 @@ class Alri(Module):
         'prob_chest_indrawing_in_SpO2_90-92%':
             Parameter(Types.REAL,
                       'probability of chest indrawing in children with SpO2 between 90-92%'
+                      ),
+        'prob_danger_signs_in_pulmonary_complications':
+            Parameter(Types.REAL,
+                      'probability of danger signs in pneumonia with pulmonary complications'
+                      ),
+        'prob_chest_indrawing_in_pulmonary_complications':
+            Parameter(Types.REAL,
+                      'probability of chest indrawing in pneumonia with pulmonary complications'
+                      ),
+        'or_severe_symptoms_in_severe_pulmonary_complications':
+            Parameter(Types.REAL,
+                      'increase odds ratio of severe symptoms in severe pulmonary complicated pneumonia'
                       ),
 
         # Parameters governing the effects of vaccine ----------------
@@ -598,11 +611,15 @@ class Alri(Module):
         'days_between_treatment_and_cure':
             Parameter(Types.INT, 'number of days between any treatment being given in an HSI and the cure occurring.'
                       ),
-
         'tf_1st_line_antibiotic_for_severe_pneumonia':
             Parameter(Types.REAL,
                       'Risk of treatment failure for a person with danger_signs_pneumonia being treated with first line'
                       'intravenous antibiotics'
+                      ),
+        'rr_tf_1st_line_antibiotics_if_general_danger_signs':
+            Parameter(Types.REAL,
+                      'Relative Risk for treatment failure for persons with danger signs pneumonia being treated with '
+                      'first line intravenous antibiotics if the person has any general danger signs'
                       ),
         'rr_tf_1st_line_antibiotics_if_SpO2<90%':
             Parameter(Types.REAL,
@@ -629,9 +646,20 @@ class Alri(Module):
                       'Relative Risk for treatment failure for persons with danger_signs_pneumonia being treated with '
                       'first line intravenous antibiotics if the person has HIV and is not currently being treated.'
                       ),
+        'rr_tf_1st_line_antibiotics_if_any_pulmonary_complications':
+            Parameter(Types.REAL,
+                      'Relative Risk for treatment failure for patients being treated with '
+                      'first line intravenous antibiotics if the patient has a pulmonary complication'
+                      ),
         'or_mortality_improved_oxygen_systems':
             Parameter(Types.REAL,
                       'Odds Ratio for the effect of oxygen provision to a person that needs oxygen who receives it, '
+                      'compares to a patient who does not. N.B. The inverse of this is used to reflect the increase in '
+                      'odds of death for a patient that needs oxygen but does not receive it.'
+                      ),
+        'or_tf_oral_antibiotics_if_SpO2_90_92%':
+            Parameter(Types.REAL,
+                      'Odds Ratio for the effect of oxygen provision to a person with SpO2 90-92% '
                       'compares to a patient who does not. N.B. The inverse of this is used to reflect the increase in '
                       'odds of death for a patient that needs oxygen but does not receive it.'
                       ),
@@ -654,22 +682,6 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'probability of treatment failure by day 6 or relapse by day 14 of 5-day course amoxicillin for '
                       'treating chest-indrawing pneumonia without hypoxaemia (SpO2>=90%)'
-                      ),
-        'tf_oral_amoxicillin_only_for_severe_pneumonia_with_SpO2>=90%':
-            Parameter(Types.REAL,
-                      'probability of treatment failure by day 2 for oral amoxicillin given to severe pneumonia '
-                      '(danger-signs)  without hypoxaemia (SpO2>=93%)'
-                      ),
-        'tf_oral_amoxicillin_only_for_non_severe_pneumonia_with_SpO2<90%':
-            Parameter(Types.REAL,
-                      'probability of treatment failure or relapse'
-                      'for oral amoxicillin given to non-severe pneumonia (fast-breathing or chest-indrawing) with'
-                      ' hypoxaemia (SpO2<90%)'
-                      ),
-        'tf_oral_amoxicillin_only_for_severe_pneumonia_with_SpO2<90%':
-            Parameter(Types.REAL,
-                      'probability of treatment failure or relapsefor oral amoxicillin given to severe pneumonia '
-                      '(danger-signs) with hypoxaemia (SpO2<90%)'
                       ),
         'tf_2nd_line_antibiotic_for_severe_pneumonia':
             Parameter(Types.REAL,
@@ -732,6 +744,17 @@ class Alri(Module):
                       'availability; "Yes" forces them to be available; "No" forces them to not be available',
                       categories=['Yes', 'No', 'Default']
                       ),
+        'apply_oxygen_indication_to_SpO2_measurement':
+            Parameter(Types.CATEGORICAL,
+                      'SpO2 measurement level for oxygen indication '
+                      '<90% (current policy) or 90-92% (potential policy)',
+                      categories=['<90%', '<93%']
+                      ),
+        'allow_use_oximetry_for_non_severe_classifications':
+            Parameter(Types.BOOL,
+                      'Turn on/off the use of pulse oximetry on non-severe classifications in assigning treatment '
+                      'to determine the SpO2 level for oxygen indication. The default is False (0)'
+                      ),
         'prob_hw_decision_for_oxygen_provision_when_po_unavailable':
             Parameter(Types.REAL,
                       'sensitivity of health worker decision in oxygen provision for danger signs penumonia '
@@ -753,6 +776,99 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'tmp param'
                       ),
+
+        'rr_tf_oral_antibiotics_if_general_danger_signs':
+            Parameter(Types.REAL,
+                      'tmp param'
+                      ),
+        'rr_tf_if_given_parenteral_antibiotics_for_pneumonia_with_SpO2>=90%':
+            Parameter(Types.REAL,
+                      'relative risk of treatment failure if non-severe pneumonia with SpO2>90% '
+                      'were given parenteral antibiotics'
+                      ),
+        'prob_respiratory_distress_in_pneumonia':
+            Parameter(Types.REAL,
+                      'tmp param'
+                      ),
+        'prob_respiratory_distress_in_other_alri':
+            Parameter(Types.REAL,
+                      'tmp param'
+                      ),
+        'prob_respiratory_distress_in_SpO2<90%':
+            Parameter(Types.REAL,
+                      'tmp param'
+                      ),
+        'prob_respiratory_distress_in_SpO2_90-92%':
+            Parameter(Types.REAL,
+                      'tmp param'
+                      ),
+        'prob_respiratory_distress_in_pulmonary_complications':
+            Parameter(Types.REAL,
+                      'tmp param'
+                      ),
+        'or_danger_signs_in_alri_with_respiratory_distress':
+            Parameter(Types.REAL,
+                      'tmp param'
+                      ),
+        'prob_danger_signs_in_no_respiratory_distress_SpO2>=93%':
+            Parameter(Types.REAL,
+                      'tmp param'
+                      ),
+        'or_respiratory_distress_in_alri_with_chest_indrawing':
+            Parameter(Types.REAL,
+                      'tmp param'
+                      ),
+        'prob_respiratory_distress_in_no_chest_indrawing_SpO2>=93%':
+            Parameter(Types.REAL,
+                      'tmp param'
+                      ),
+        'prob_danger_signs_in_no_respiratory_distress_SpO2<90%':
+            Parameter(Types.REAL,
+                      'tmp param'
+                      ),
+        'prob_respiratory_distress_in_no_chest_indrawing_SpO2<90%':
+            Parameter(Types.REAL,
+                      'tmp param'
+                      ),
+        'prob_danger_signs_in_no_respiratory_distress_SpO2_90-92%':
+            Parameter(Types.REAL,
+                      'tmp param'
+                      ),
+        'prob_respiratory_distress_in_no_chest_indrawing_SpO2_90-92%':
+            Parameter(Types.REAL,
+                      'tmp param'
+                      ),
+        'or_fever_in_complicated_alri':
+            Parameter(Types.REAL,
+                      'tmp param'
+                      ),
+        'or_tachypnoea_in_complicated_alri':
+            Parameter(Types.REAL,
+                      'tmp param'
+                      ),
+        'prob_respiratory_distress_in_no_chest_indrawing_pc':
+            Parameter(Types.REAL,
+                      'tmp param'
+                      ),
+        'prob_danger_signs_in_no_respiratory_distress_pc':
+            Parameter(Types.REAL,
+                      'tmp param'
+                      ),
+
+        # parameters values derived from the model output
+        'proportion_pneumonia_in_alri':
+            Parameter(Types.REAL,
+                      'proportion of pneumonia in the ALRI cases (pneumonia/other_alri)'
+                      ),
+        'proportion_bacterial_infection_in_pneumonia':
+            Parameter(Types.REAL,
+                      'proportion of cases with a primary or secondary bacterial infection in pneumonia group'
+                      ),
+        'proportion_bacterial_infection_in_other_alri':
+            Parameter(Types.REAL,
+                      'proportion of cases with a primary or secondary bacterial infection in other ALRI group'
+                      ),
+
     }
 
     PROPERTIES = {
