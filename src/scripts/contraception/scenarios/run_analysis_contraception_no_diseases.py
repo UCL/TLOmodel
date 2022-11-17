@@ -1,9 +1,9 @@
 """
 This file defines a batch run to get sims results to be used by the analysis_contraception_plot_table.
 Run on the remote batch system using:
-```tlo batch-submit src/scripts/contraception/scenarios/run_analysis_contraception.py```
+```tlo batch-submit src/scripts/contraception/scenarios/run_analysis_contraception_no_diseases.py```
 or locally using:
-```tlo scenario-run src/scripts/contraception/scenarios/run_analysis_contraception.py```
+```tlo scenario-run src/scripts/contraception/scenarios/run_analysis_contraception_no_diseases.py```
 """
 
 from tlo import Date, logging
@@ -15,7 +15,7 @@ from tlo.scenario import BaseScenario
 class RunAnalysisCo(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 2022
+        self.seed = 0
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2050, 12, 31)
         self.pop_size = 20000  # <- recommended population size for the runs is 50k
@@ -24,7 +24,7 @@ class RunAnalysisCo(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'run_analysis_contraception',  # <- (specified only for local running)
+            'filename': 'run_analysis_contraception_no_diseases',  # <- (specified only for local running)
             'directory': './outputs',  # <- (specified only for local running)
             'custom_levels': {
                 '*': logging.WARNING,
