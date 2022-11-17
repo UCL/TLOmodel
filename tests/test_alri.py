@@ -214,7 +214,8 @@ def test_integrity_of_linear_models(sim_hs_all_consumables):
     for patho in alri_module.all_pathogens:
         for coinf in (alri_module.pathogens['bacterial'] + [np.nan]):
             for disease_type in alri_module.disease_types:
-                res = models.get_complications_that_onset(disease_type=disease_type,
+                res = models.get_complications_that_onset(age_exact_years=1,
+                                                          disease_type=disease_type,
                                                           primary_path_is_bacterial=(
                                                               patho in sim.modules['Alri'].pathogens['bacterial']
                                                           ),
@@ -225,13 +226,12 @@ def test_integrity_of_linear_models(sim_hs_all_consumables):
 
     # --- symptoms_for_disease
     for disease_type in alri_module.disease_types:
-        res = models.symptoms_for_disease(disease_type)
+        res = models.symptoms_for_uncomplicated_disease(disease_type)
         assert isinstance(res, set)
         assert all([s in sim.modules['SymptomManager'].symptom_names for s in res])
 
-    # --- symptoms_for_complication
-    for complication in alri_module.complications:
-        res = models.symptoms_for_complication(complication, oxygen_saturation='<90%')
+    # --- symptoms_for_complications
+        res = models.symptoms_for_complicated_disease(disease_type, alri_module.complications, oxygen_saturation='<90%')
         assert isinstance(res, set)
         assert all([s in sim.modules['SymptomManager'].symptom_names for s in res])
 
@@ -241,27 +241,28 @@ def test_integrity_of_linear_models(sim_hs_all_consumables):
         sex,
         pathogen,
         disease_type,
+        symptoms,
         SpO2_level,
         complications,
-        danger_signs,
         un_clinical_acute_malnutrition
     ) in itertools.product(
         range(0, 5, 1),
         ('F', 'M'),
         alri_module.all_pathogens,
         alri_module.disease_types,
+        [[_s] for _s in alri_module.all_symptoms],
         ['<90%', '90-92%', '>=93%'],
         alri_module.complications,
-        [False, True],
         ['MAM', 'SAM', 'well']
     ):
         res = models.will_die_of_alri(age_exact_years=age_exact_years,
                                       sex=sex,
-                                      pathogen=pathogen,
+                                      bacterial_infection=(
+                                          pathogen in sim.modules['Alri'].pathogens['bacterial']),
                                       disease_type=disease_type,
+                                      all_symptoms=symptoms,
                                       SpO2_level=SpO2_level,
                                       complications=[complications],
-                                      danger_signs=danger_signs,
                                       un_clinical_acute_malnutrition=un_clinical_acute_malnutrition
                                       )
         assert isinstance(res, (bool, np.bool_))
@@ -294,7 +295,8 @@ def test_integrity_of_linear_models(sim_hs_all_consumables):
         imci_symptom_based_classification,
         SpO2_level,
         disease_type,
-        any_complications,
+        age_exact_years,
+        complications,
         symptoms,
         hiv_infected_and_not_on_art,
         un_clinical_acute_malnutrition,
@@ -304,7 +306,8 @@ def test_integrity_of_linear_models(sim_hs_all_consumables):
         ('fast_breathing_pneumonia', 'danger_signs_pneumonia', 'chest_indrawing_pneumonia', 'cough_or_cold'),
         ('<90%', '90-92%', '>=93%'),
         alri_module.disease_types,
-        (False, True),
+        (0, 1, 2, 3, 4),
+        [[_s] for _s in alri_module.complications],
         [[_s] for _s in alri_module.all_symptoms],
         (False, True),
         ('MAM', 'SAM', 'well'),
@@ -313,9 +316,10 @@ def test_integrity_of_linear_models(sim_hs_all_consumables):
     ):
         kwargs = {
             'imci_symptom_based_classification': imci_symptom_based_classification,
+            'age_exact_years': age_exact_years,
             'SpO2_level': SpO2_level,
             'disease_type': disease_type,
-            'any_complications': any_complications,
+            'complications': complications,
             'symptoms': symptoms,
             'hiv_infected_and_not_on_art': hiv_infected_and_not_on_art,
             'un_clinical_acute_malnutrition': un_clinical_acute_malnutrition,
@@ -898,7 +902,7 @@ def test_do_effects_of_alri_treatment(sim_hs_all_consumables):
 
     # Run the 'do_alri_treatment' function (as if from the HSI)
     sim.modules['Alri'].do_effects_of_treatment_and_return_outcome(person_id=person_id,
-                                                                   antibiotic_provided='1st_line_IV_antibiotics',
+                                                                   antibiotic_provided='1st_line_IV_ampicillin_gentamicin',
                                                                    oxygen_provided=True)
 
     # Run the death event that was originally scheduled) - this should have no effect and the person should not die
@@ -1079,11 +1083,11 @@ def test_treatment_pathway_if_all_consumables_mild_case(tmpdir, seed):
                                       incident_case_event=AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia,
                                       treatment_effect='perfectly_effective')
 
-    # - If Treatment Does Not Work --> One follow-up as an inpatient.
+    # - If Treatment Does Not Work --> One follow-up as an outpatient and screen for inpatient.
     assert [
                ('FirstAttendance_NonEmergency', '0'),
                ('Alri_Pneumonia_Treatment_Outpatient', '0'),
-               ('Alri_Pneumonia_Treatment_Inpatient_Followup', '1a'),  # follow-up as in-patient at next level up.
+               ('Alri_Pneumonia_Treatment_Outpatient_Followup', '1a'),  # follow-up as out-patient at next level up.
            ] == generate_hsi_sequence(sim=get_sim(seed=seed, tmpdir=tmpdir, cons_available='all'),
                                       incident_case_event=AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia,
                                       treatment_effect='perfectly_ineffective')
@@ -1113,7 +1117,7 @@ def test_treatment_pathway_if_all_consumables_severe_case(seed, tmpdir):
                ('FirstAttendance_Emergency', '1b'),
                ('Alri_Pneumonia_Treatment_Outpatient', '1b'),
                ('Alri_Pneumonia_Treatment_Inpatient', '1b'),
-               ('Alri_Pneumonia_Treatment_Inpatient_Followup', '1b')
+               # ('Alri_Pneumonia_Treatment_Inpatient_Followup', '1b')
            ] == generate_hsi_sequence(sim=get_sim(seed=seed, tmpdir=tmpdir, cons_available='all'),
                                       incident_case_event=AlriIncidentCase_Lethal_DangerSigns_Pneumonia,
                                       treatment_effect='perfectly_ineffective',
@@ -1137,7 +1141,7 @@ def test_treatment_pathway_if_all_consumables_severe_case(seed, tmpdir):
                ('FirstAttendance_Emergency', '1b'),
                ('Alri_Pneumonia_Treatment_Outpatient', '1b'),
                ('Alri_Pneumonia_Treatment_Inpatient', '1b'),
-               ('Alri_Pneumonia_Treatment_Inpatient_Followup', '1b'),
+               # ('Alri_Pneumonia_Treatment_Inpatient_Followup', '1b'),
            ] == generate_hsi_sequence(sim=get_sim(seed=seed, tmpdir=tmpdir, cons_available='all'),
                                       incident_case_event=AlriIncidentCase_Lethal_DangerSigns_Pneumonia,
                                       age_of_person_under_2_months=True,
@@ -1156,7 +1160,7 @@ def test_treatment_pathway_if_no_consumables_mild_case(seed, tmpdir):
                ('Alri_Pneumonia_Treatment_Outpatient', '1a'),  # <-- referral due to lack of consumables
                ('Alri_Pneumonia_Treatment_Outpatient', '1b'),  # <-- referral due to lack of consumables
                ('Alri_Pneumonia_Treatment_Outpatient', '2'),  # <-- referral due to lack of consumables
-               ('Alri_Pneumonia_Treatment_Inpatient_Followup', '2'),  # <-- follow-up because treatment not successful
+               # ('Alri_Pneumonia_Treatment_Outpatient_Followup', '2'),  # <-- follow-up because treatment not successful
            ] == generate_hsi_sequence(sim=get_sim(seed=seed, tmpdir=tmpdir, cons_available='none'),
                                       incident_case_event=AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia,
                                       treatment_effect='perfectly_ineffective')
@@ -1172,7 +1176,7 @@ def test_treatment_pathway_if_no_consumables_severe_case(seed, tmpdir):
                ('Alri_Pneumonia_Treatment_Outpatient', '1b'),
                ('Alri_Pneumonia_Treatment_Inpatient', '1b'),
                ('Alri_Pneumonia_Treatment_Inpatient', '2'),  # <-- referral due to lack of consumables
-               ('Alri_Pneumonia_Treatment_Inpatient_Followup', '2'),  # <-- follow-up because treatment not successful
+               # ('Alri_Pneumonia_Treatment_Inpatient_Followup', '2'),  # <-- follow-up because treatment not successful
            ] == generate_hsi_sequence(sim=get_sim(seed=seed, tmpdir=tmpdir, cons_available='none'),
                                       incident_case_event=AlriIncidentCase_Lethal_DangerSigns_Pneumonia)
 
