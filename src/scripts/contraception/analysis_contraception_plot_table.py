@@ -21,7 +21,7 @@ contraceptives_order = ['pill', 'IUD', 'injections', 'implant', 'male_condom',
                         'female_sterilization', 'other_modern']
 # Do you want prints to see costs, use, percentage use and table?
 # If False, no output is printed, but the output table is still saved in the 'outputs' folder.
-print_bool = True
+print_bool = False
 # parameter only for test runs (if False, skips the second analysis and uses the outputs from the 1st analysis instead)
 # needs to be True for the final run
 do_interv_analysis = True
@@ -96,7 +96,7 @@ else:
     use_with_df = use_without_df
     percentage_use_with_df = percentage_use_without_df
     costs_with_df = costs_without_df
-
+    ID_with = ID_without + "_again"
 if print_bool:
     print("\n")
     print("COSTS WITHOUT")
