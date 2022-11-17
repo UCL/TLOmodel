@@ -1,11 +1,13 @@
 """This script will generate a table that describes a representative mix of all the IncidentCases that are created, and
  the associated diagnosis and risk of death for each under various conditions of treatments/non-treatment."""
-
+import random
 from pathlib import Path
 from typing import List
+from tlo.util import random_date, sample_outcome
 
 import pandas as pd
 from matplotlib import pyplot as plt
+import matplotlib.colors as mcolors
 
 from tlo import Date, Simulation
 from tlo.methods import (
@@ -32,7 +34,11 @@ MODEL_POPSIZE = 15_000
 MIN_SAMPLE_OF_NEW_CASES = 200
 NUM_REPS_FOR_EACH_CASE = 20
 
-_facility_level = '2'  # <-- assumes that the diagnosis/treatment occurs at this level
+_facility_level = '1a'  # <-- assumes that the diagnosis/treatment occurs at this level
+
+# Helper function for conversion between odds and probabilities
+to_odds = lambda pr: pr / (1.0 - pr)  # noqa: E731
+to_prob = lambda odds: odds / (1.0 + odds)  # noqa: E731
 
 
 def get_sim(popsize):
@@ -52,7 +58,7 @@ def get_sim(popsize):
         ),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                  cons_availability='all',
+                                  cons_availability='default',
                                   ),
         alri.Alri(resourcefilepath=resourcefilepath),
         AlriPropertiesOfOtherModules(),
@@ -171,24 +177,27 @@ def treatment_efficacy(
     # Decide which hsi configuration to use:
     if hw_dx_perfect:
         hsi = hsi_with_perfect_diagnosis
+        alri_module = alri_module_with_perfect_diagnosis
     else:
         hsi = hsi_with_imperfect_diagnosis_and_imperfect_treatment
+        alri_module = alri_module_with_imperfect_diagnosis_and_imperfect_treatment
 
     # Get Treatment classification
     classification_for_treatment_decision = hsi._get_disease_classification_for_treatment_decision(
         age_exact_years=age_exact_years,
         symptoms=symptoms,
         oxygen_saturation=oxygen_saturation,
-        facility_level=_facility_level,
+        facility_level='1a',
         use_oximeter=oximeter_available,
     )
 
-    imci_symptom_based_classification = hsi._get_imci_classification_based_on_symptoms(
+    imci_symptom_based_classification = alri_module_with_perfect_diagnosis.get_imci_classification_based_on_symptoms(
         child_is_younger_than_2_months=(age_exact_years < 2.0 / 12.0),
-        symptoms=symptoms
+        symptoms=symptoms, facility_level='2'
     )
 
-    ultimate_treatment = alri_module_with_perfect_treatment_and_diagnosis._ultimate_treatment_indicated_for_patient(
+    # Get the treatment selected based on classification given
+    ultimate_treatment = alri_module._ultimate_treatment_indicated_for_patient(
         classification_for_treatment_decision=classification_for_treatment_decision,
         age_exact_years=age_exact_years,
         use_oximeter=oximeter_available,
@@ -208,11 +217,27 @@ def treatment_efficacy(
         imci_symptom_based_classification=imci_symptom_based_classification,
         SpO2_level=oxygen_saturation,
         disease_type=disease_type,
-        any_complications=len(complications) > 0,
+        age_exact_years=age_exact_years,
         symptoms=symptoms,
+        complications=complications,
         hiv_infected_and_not_on_art=False,
         un_clinical_acute_malnutrition='well',
     )
+
+    # for inpatients provide 2nd line IV antibiotic if 1st line failed
+    if ultimate_treatment['antibiotic_indicated'][0].startswith('1st_line_IV'):
+        treatment_fails = treatment_fails * (alri_module.models._prob_treatment_fails(
+            antibiotic_provided='2nd_line_IV_flucloxacillin_gentamicin',
+            oxygen_provided=ultimate_treatment['oxygen_indicated'] if oxygen_available else False,
+            imci_symptom_based_classification=imci_symptom_based_classification,
+            SpO2_level=oxygen_saturation,
+            disease_type=disease_type,
+            age_exact_years=age_exact_years,
+            symptoms=symptoms,
+            complications=complications,
+            hiv_infected_and_not_on_art=False,
+            un_clinical_acute_malnutrition='well',
+        ))
 
     # Return percentage probability of treatment success
     return 100.0 * (1.0 - treatment_fails)
@@ -232,11 +257,11 @@ def generate_table():
             'prob_die_if_no_treatment': alri_module_with_perfect_diagnosis.models.prob_die_of_alri(
                 age_exact_years=x.age_exact_years,
                 sex=x.sex,
-                pathogen=x.pathogen,
+                bacterial_infection=x.pathogen,
                 disease_type=x.disease_type,
                 SpO2_level=x.oxygen_saturation,
                 complications=x.complications,
-                danger_signs='danger_signs' in x.symptoms,
+                all_symptoms=x.symptoms,
                 un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
             ),
 
@@ -518,11 +543,13 @@ if __name__ == "__main__":
     # UNDER PERFECT HW DX
     risk_of_death = summarize_by(
         df=table,
-        by=['oxygen_saturation', 'classification_for_treatment_decision_with_oximeter_perfect_accuracy'],
+        by=['oxygen_saturation', 'classification_for_treatment_decision_without_oximeter_perfect_accuracy'],
         columns=[
             'prob_die_if_no_treatment',
             'treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx',
             'treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_perfect_hw_dx',
+            'treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx',
+            'treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_perfect_hw_dx',
         ]
     ).assign(
         fraction_of_deaths=lambda df: (
@@ -531,8 +558,30 @@ if __name__ == "__main__":
     )
     print(f"{risk_of_death=}")
 
-    # Examine risk of death and treatment effectiveness for "danger_signs_pneumonia" & SpO2<90%
-    treatment_effectiveness = summarize_by(
+    # risk of deaths if no treatment
+    (risk_of_death.fraction * risk_of_death.prob_die_if_no_treatment).sum()  # 0.0342 -- 3.42%
+
+    # risk of death with treatment with oximeter_and_oxygen_perfect_hw_dx
+    (risk_of_death.fraction * risk_of_death.prob_die_if_no_treatment * (
+        (100 - risk_of_death.treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx) / 100)
+     ).sum()  # 0.00604 -- 0.06% deaths
+
+    # examine risk of death by chest-indrawing
+    risk_of_death1 = summarize_by(
+        df=table,
+        by=['oxygen_saturation', 'classification_for_treatment_decision_without_oximeter_perfect_accuracy'],
+        columns=[
+            'prob_die_if_no_treatment',
+            'treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx',
+            'treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_perfect_hw_dx',
+            'treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx',
+            'treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_perfect_hw_dx',
+        ]
+    ).loc[("<90%", "chest_indrawing_pneumonia")]
+    print(f"{risk_of_death1=}")
+
+    # Examine risk of death and treatment effectiveness for SpO2<90% (considered danger_signs_pneumonia by oximetry)
+    treatment_effectiveness_SpO2_lt90 = summarize_by(
         df=table,
         by=['oxygen_saturation', 'classification_for_treatment_decision_with_oximeter_perfect_accuracy'],
         columns=[
@@ -544,7 +593,37 @@ if __name__ == "__main__":
             'treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_perfect_hw_dx',
         ]
     ).loc[("<90%", "danger_signs_pneumonia")]
-    print(f"{treatment_effectiveness}")
+    print(f"{treatment_effectiveness_SpO2_lt90}")
+
+    # Examine risk of death and treatment effectiveness for all "danger_signs_pneumonia" (with and without SpO2<90%)
+    treatment_effectiveness_all_ds_and_low_os = summarize_by(
+        df=table,
+        by=['classification_for_treatment_decision_with_oximeter_perfect_accuracy'],
+        columns=[
+            'prob_die_if_no_treatment',
+            'treatment_efficacy_if_perfect_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx',
+            'treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx',
+            'treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_perfect_hw_dx',
+            'treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx',
+            'treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_perfect_hw_dx',
+        ]
+    ).loc["danger_signs_pneumonia"]
+    print(f"{treatment_effectiveness_all_ds_and_low_os}")
+
+    # Examine risk of death and treatment effectiveness for non-severe pneumonia (symptom only) & SpO2<90%
+    treatment_effectiveness_non_severe_low_os = summarize_by(
+        df=table,
+        by=['oxygen_saturation', 'has_danger_signs'],
+        columns=[
+            'prob_die_if_no_treatment',
+            'treatment_efficacy_if_perfect_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx',
+            'treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx',
+            'treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_perfect_hw_dx',
+            'treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx',
+            'treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_perfect_hw_dx',
+        ]
+    ).loc["<90%", False]  #'chest_indrawing_pneumonia', 'cough_or_cold', 'fast_breathing_pneumonia'
+    print(f"{treatment_effectiveness_non_severe_low_os}")
 
     # ------
     # Look at where a person would receive a different diagnoses with/without oximeter
@@ -584,24 +663,33 @@ if __name__ == "__main__":
     # ... under assumptions of (i) normal treatment and normal dx accuracy; (ii) normal treatment and perfect dx
     # accuracy
 
-    disease_classification = table["classification_for_treatment_decision_with_oximeter_perfect_accuracy"]
-    # disease_classification = table['classification_for_treatment_decision_without_oximeter_perfect_accuracy']
-    low_oxygen = (table["oxygen_saturation"] == "<90%").replace({True: 'SpO2<90%', False: "SpO2>=90%"})
+    # disease_classification = table["classification_for_treatment_decision_with_oximeter_perfect_accuracy"]
+    disease_classification = table['classification_for_treatment_decision_without_oximeter_perfect_accuracy']
+    # low_oxygen = (table["oxygen_saturation"] == "<90%").replace({True: 'SpO2<90%', False: "SpO2>=90%"})
+    low_oxygen = (table["oxygen_saturation"])
+    fraction = risk_of_death['fraction']
+    number_cases = table.groupby(by=[disease_classification, low_oxygen]).size()
+
     res = {
         "Perfect HW Dx Accuracy": {
-            "No Treatment": table['prob_die_if_no_treatment'].groupby(by=[disease_classification, low_oxygen]).sum(),
+            # "No Treatment": table['prob_die_if_no_treatment'].groupby(by=[disease_classification, low_oxygen]).sum(),
             "Antiobiotics only": (
                 table['prob_die_if_no_treatment'] *
                 (1.0 -
                  table['treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_perfect_hw_dx'] / 100.0
                  )).groupby(by=[disease_classification, low_oxygen]).sum(),
-            "+ oxygen": (
+            "+ oxygen only": (
                 table['prob_die_if_no_treatment'] *
                 (1.0 -
                  table['treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_perfect_hw_dx']
                  / 100.0
                  )).groupby(by=[disease_classification, low_oxygen]).sum(),
-            "+ oximeter": (
+            "+ oximeter only": (
+                table['prob_die_if_no_treatment'] *
+                (1.0 -
+                 table['treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx'] / 100.0
+                 )).groupby(by=[disease_classification, low_oxygen]).sum(),
+            "+ oximeter & oxygen": (
                 table['prob_die_if_no_treatment'] *
                 (1.0 -
                  table['treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx'] / 100.0
@@ -609,19 +697,24 @@ if __name__ == "__main__":
         },
 
         "Normal HW Dx Accuracy": {
-            "No Treatment": table['prob_die_if_no_treatment'].groupby(by=[disease_classification, low_oxygen]).sum(),
+            # "No Treatment": table['prob_die_if_no_treatment'].groupby(by=[disease_classification, low_oxygen]).sum(),
             "Antiobiotics only": (
                 table['prob_die_if_no_treatment'] *
                 (1.0 -
                  table['treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_imperfect_hw_dx'] / 100.0
                  )).groupby(by=[disease_classification, low_oxygen]).sum(),
-            "+ oxygen": (
+            "+ oxygen only": (
                 table['prob_die_if_no_treatment'] *
                 (1.0 -
                  table['treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_imperfect_hw_dx']
                  / 100.0
                  )).groupby(by=[disease_classification, low_oxygen]).sum(),
-            "+ oximeter": (
+            "+ oximeter only": (
+                table['prob_die_if_no_treatment'] *
+                (1.0 -
+                 table['treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_imperfect_hw_dx'] / 100.0
+                 )).groupby(by=[disease_classification, low_oxygen]).sum(),
+            "+ oximeter & oxygen": (
                 table['prob_die_if_no_treatment'] *
                 (1.0 -
                  table['treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_imperfect_hw_dx'] / 100.0
@@ -629,19 +722,425 @@ if __name__ == "__main__":
         }
     }
 
+    from matplotlib.collections import LineCollection
+    import numpy as np
+
     results = (100_000 / len(table)) * pd.concat({k: pd.DataFrame(v) for k, v in res.items()}, axis=1)
+
+    # reorder the index:
+    reorderlist = list()
+    if results.index.size == 12:
+        reorderlist = [('cough_or_cold', '>=93%'),
+                   ('cough_or_cold', '90-92%'),
+                   ('cough_or_cold', '<90%'),
+                   ('fast_breathing_pneumonia', '>=93%'),
+                   ('fast_breathing_pneumonia', '90-92%'),
+                   ('fast_breathing_pneumonia', '<90%'),
+                   ('chest_indrawing_pneumonia', '>=93%'),
+                   ('chest_indrawing_pneumonia', '90-92%'),
+                   ('chest_indrawing_pneumonia', '<90%'),
+                   ('danger_signs_pneumonia', '>=93%'),
+                   ('danger_signs_pneumonia', '90-92%'),
+                   ('danger_signs_pneumonia', '<90%'),
+                   ]
+    elif results.index.size == 5:
+        reorderlist = [('cough_or_cold', 'SpO2>=90%'),
+                       ('fast_breathing_pneumonia', 'SpO2>=90%'),
+                       ('chest_indrawing_pneumonia', 'SpO2>=90%'),
+                       ('danger_signs_pneumonia', 'SpO2>=90%'),
+                       ('danger_signs_pneumonia', 'SpO2<90%')
+                       ]
+    else:
+        raise ValueError(f'Index size not recognised {results.index.size}')
+
+    results.reindex(reorderlist)
+    results = results.iloc[pd.Categorical(results.index, reorderlist).argsort(ascending=False)]
+
+    # index = results.index.tolist()  -- > copy this to match the multiindex
+
+    assign_colors = {('cough_or_cold', '>=93%'): '#fa8405',
+                     ('cough_or_cold', '90-92%'): 'gold',
+                     ('cough_or_cold', '<90%'): 'navajowhite',
+                     ('fast_breathing_pneumonia', '>=93%'): 'navy',
+                     ('fast_breathing_pneumonia', '90-92%'): 'blue',
+                     ('fast_breathing_pneumonia', '<90%'): 'skyblue',
+                     ('chest_indrawing_pneumonia', '>=93%'): 'darkgreen',
+                     ('chest_indrawing_pneumonia', '90-92%'): 'seagreen',
+                     ('chest_indrawing_pneumonia', '<90%'): 'mediumaquamarine',
+                     ('danger_signs_pneumonia', '>=93%'): 'darkred',
+                     ('danger_signs_pneumonia', '90-92%'): 'orangered',
+                     ('danger_signs_pneumonia', '<90%'): 'darksalmon',
+                     }
+
+    # assign_colors = {('cough_or_cold', 'SpO2>=90%'): 'orange',
+    #                  ('fast_breathing_pneumonia', 'SpO2>=90%'): 'blue',
+    #                  ('chest_indrawing_pneumonia', 'SpO2>=90%'): 'darkgreen',
+    #                  ('danger_signs_pneumonia', 'SpO2>=90%'): 'red',
+    #                  ('danger_signs_pneumonia', 'SpO2<90%'): 'salmon'
+    #                  }
+
     fig, axs = plt.subplots(ncols=2, nrows=1, sharey=True, )
     for i, ix in enumerate(results.columns.levels[0]):
         ax = axs[i]
-        results.loc[:, (ix, slice(None))].T.plot.bar(stacked=True, ax=ax, legend=False)
+        # results.loc[:, (ix, slice(None))].T.plot.bar(stacked=True, ax=ax, legend=False)
+        results.loc[:, (ix, slice(None))].T.plot.bar(stacked=True, ax=ax, legend=False, color=results.index.map(assign_colors)
+                                                     )  # color=results.index.map(assign_colors)
         ax.set_xticklabels(results.loc[:, (ix, slice(None))].columns.levels[1])
-        ax.set_xlabel('Treatment Assumption')
+        ax.set_xlabel('Treatment package')
         ax.set_ylabel('Deaths per 100,000 cases of ALRI')
         ax.set_title(f"{ix}", fontsize=10)
         ax.grid(axis='y')
     handles, labels = axs[-1].get_legend_handles_labels()
-    ax.legend(reversed(handles), reversed(labels), title='Case Type', loc='upper left', fontsize=8)
-    fig.suptitle('Deaths to Alri Under Different Treatments', fontsize=14)
+    ax.legend(reversed(handles), reversed(labels), title='Case Type', loc='upper left', bbox_to_anchor=(1, 1), fontsize=7)
+    # fig.suptitle('Deaths Under Different Interventions Combinations', fontsize=14, fontweight='semibold')
+    fig.suptitle('Deaths under HC classification for treatment decision', fontsize=13, fontweight='semibold')
     fig.tight_layout()
     fig.show()
     plt.close(fig)
+
+    # cfr
+    number_cases = table.groupby(by=[disease_classification, low_oxygen]).size()
+    will_die = (table['prob_die_if_no_treatment'] * (
+        1.0 - table['treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_perfect_hw_dx'] / 100.0)
+                ).groupby(by=[disease_classification, low_oxygen]).sum()
+
+    # will_die = (table['prob_die_if_no_treatment']).groupby(by=[disease_classification, low_oxygen]).sum()
+
+    cfr = will_die / number_cases
+    overall_cfr = cfr.mean()  # should be ~ 5.2% (95%CI 4.9-5.5) ref: Agweyu et al.2018 (Lancet) - hospital only
+    prop_death = will_die / will_die.sum()
+
+    # get the CFR for each classification
+    # cfr_no_treatment = res['Normal HW Dx Accuracy']['No Treatment'] / number_cases
+
+    under2mo = table[["age_exact_years", 'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+        lambda x: 1 if (x[0] < 1 / 6) and (x[1] == 'danger_signs_pneumonia') else 0, axis=1).sum()
+
+    # -------------------------------------------------------------------------------------------------------------
+    # Scale the treatment failure for 1 st line IV antibiotics for danger_signs_pneumonia - to get the baseline TF
+
+    df = table.drop(table[table.age_exact_years < 1 / 6].index)
+
+    ds_pneumonia = (df["classification_for_treatment_decision_without_oximeter_perfect_accuracy"] == 'danger_signs_pneumonia').sum()
+    # ds_pneumonia = (df["treatment_failure_with_oximeter_only"] == True).sum()
+
+    # get the no risk
+    not_risked = df[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+                     'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+        lambda x: 1 if ((x[0] != '<90%') and ('danger_signs' not in x[1]) and (x[2] != 'pneumonia') and not any(
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3])) and
+                       (x[4] == 'danger_signs_pneumonia') else 0, axis=1).sum()
+    # get with risk
+    with_risk = df[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+                     'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+        lambda x: 1 if ((x[0] == '<90%') or ('danger_signs' in x[1]) or (x[2] == 'pneumonia') or any(
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3])) and
+                       (x[4] == 'danger_signs_pneumonia') else 0, axis=1).sum()
+
+    prop_not_risked = not_risked / ds_pneumonia
+
+    # get the SpO2 without any other signs
+    below90SpO2_only = df[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+                           'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+        lambda x: 1 if (x[0] == '<90%') and ('danger_signs' not in x[1]) and (x[2] != 'pneumonia') and not any(
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
+                       (x[4] == 'danger_signs_pneumonia') else 0, axis=1).sum()
+
+    prop_below90SpO2_only = below90SpO2_only / ds_pneumonia
+
+    # get the danger signs without any other signs
+    ds_only = df[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+                  'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+        lambda x: 1 if (x[0] != '<90%') and ('danger_signs' in x[1]) and (x[2] != 'pneumonia') and not any(
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
+                       (x[4] == 'danger_signs_pneumonia') else 0, axis=1).sum()
+
+    prop_ds_only = ds_only / ds_pneumonia
+
+    # get the CXR+ without any other signs
+    abnormal_cxr_only = df[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+                            'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+        lambda x: 1 if (x[0] != '<90%') and ('danger_signs' not in x[1]) and (x[2] == 'pneumonia') and not any(
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
+                       (x[4] == 'danger_signs_pneumonia') else 0, axis=1).sum()
+
+    prop_abnormal_cxr_only = abnormal_cxr_only / ds_pneumonia
+
+    # get the pulmonary complications without any other signs
+    pc_only = df[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+                  'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+        lambda x: 1 if (x[0] != '<90%') and ('danger_signs' not in x[1]) and (x[2] != 'pneumonia') and any(
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
+                       (x[4] == 'danger_signs_pneumonia') else 0, axis=1).sum()
+
+    prop_pc_only = pc_only / ds_pneumonia
+
+    # get the SpO2 with danger sign
+    below90SpO2_and_ds = df[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+                             'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+        lambda x: 1 if (x[0] == '<90%') and ('danger_signs' in x[1]) and (x[2] != 'pneumonia') and not any(
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
+                       (x[4] == 'danger_signs_pneumonia') else 0, axis=1).sum()
+
+    prop_below90SpO2_and_ds = below90SpO2_and_ds / ds_pneumonia
+
+    # get the SpO2 with ds and pc
+    below90SpO2_and_ds_and_pc = df[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+                                    'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+        lambda x: 1 if (x[0] == '<90%') and ('danger_signs' in x[1]) and (x[2] != 'pneumonia') and any(
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
+                       (x[4] == 'danger_signs_pneumonia') else 0, axis=1).sum()
+
+    prop_below90SpO2_and_ds_and_pc = below90SpO2_and_ds_and_pc / ds_pneumonia
+
+    # get SpO2 and CXR+
+    below90SpO2_and_abnormal_cxr = df[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+                                       'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+        lambda x: 1 if (x[0] == '<90%') and ('danger_signs' not in x[1]) and (x[2] == 'pneumonia') and not any(
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
+                       (x[4] == 'danger_signs_pneumonia') else 0, axis=1).sum()
+
+    prop_below90SpO2_and_abnormal_cxr = below90SpO2_and_abnormal_cxr / ds_pneumonia
+
+    below90SpO2_and_pc = df[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+                             'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+        lambda x: 1 if (x[0] == '<90%') and ('danger_signs' not in x[1]) and (x[2] != 'pneumonia') and any(
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
+                       (x[4] == 'danger_signs_pneumonia') else 0, axis=1).sum()
+
+    prop_below90SpO2_pc = below90SpO2_and_pc / ds_pneumonia
+
+    below90SpO2_and_abnormal_cxr_and_pc = df[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+                                              'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+        lambda x: 1 if (x[0] == '<90%') and ('danger_signs' not in x[1]) and (x[2] == 'pneumonia') and any(
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
+                       (x[4] == 'danger_signs_pneumonia') else 0, axis=1).sum()
+
+    prop_below90SpO2_and_abnormal_cxr_and_pc = below90SpO2_and_abnormal_cxr_and_pc / ds_pneumonia
+
+    # get the SpO2 + danger sign + CXR+
+    below90SpO2_and_ds_and_abnormal_cxr = df[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+                                              'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+        lambda x: 1 if (x[0] == '<90%') and ('danger_signs' in x[1]) and (x[2] == 'pneumonia') and not any(
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
+                       (x[4] == 'danger_signs_pneumonia') else 0, axis=1).sum()
+
+    prop_below90SpO2_and_ds_and_abnormal_cxr = below90SpO2_and_ds_and_abnormal_cxr / ds_pneumonia
+
+    # get the SpO2 + danger sign + CXR+ + pc
+    below90SpO2_and_ds_and_abnormal_cxr_and_pc = df[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+                                                     'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+        lambda x: 1 if (x[0] == '<90%') and ('danger_signs' in x[1]) and (x[2] == 'pneumonia') and any(
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
+                       (x[4] == 'danger_signs_pneumonia') else 0, axis=1).sum()
+
+    prop_below90SpO2_and_ds_and_abnormal_cxr_and_pc = below90SpO2_and_ds_and_abnormal_cxr_and_pc / ds_pneumonia
+
+    # get the danger sign + CXR+
+    ds_and_abnormal_cxr = df[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+                              'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+        lambda x: 1 if (x[0] != '<90%') and ('danger_signs' in x[1]) and (x[2] == 'pneumonia') and not any(
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
+                       (x[4] == 'danger_signs_pneumonia') else 0, axis=1).sum()
+
+    prop_ds_and_abnormal_cxr = ds_and_abnormal_cxr / ds_pneumonia
+
+    # get the danger sign + pc
+    ds_and_pc = df[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+                    'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+        lambda x: 1 if (x[0] != '<90%') and ('danger_signs' in x[1]) and (x[2] != 'pneumonia') and any(
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
+                       (x[4] == 'danger_signs_pneumonia') else 0, axis=1).sum()
+
+    prop_ds_and_pc = ds_and_pc / ds_pneumonia
+
+    # get danger sign + CXR+ + pc
+    ds_and_abnormal_cxr_and_pc = df[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+                                     'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+        lambda x: 1 if (x[0] != '<90%') and ('danger_signs' in x[1]) and (x[2] == 'pneumonia') and any(
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
+                       (x[4] == 'danger_signs_pneumonia') else 0, axis=1).sum()
+
+    prop_ds_and_abnormal_cxr_and_pc = ds_and_abnormal_cxr_and_pc / ds_pneumonia
+
+    # get CXR+ and pc
+    abnormal_cxr_and_pc = df[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+                              'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+        lambda x: 1 if (x[0] != '<90%') and ('danger_signs' not in x[1]) and (x[2] == 'pneumonia') and any(
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
+                       (x[4] == 'danger_signs_pneumonia') else 0, axis=1).sum()
+
+    prop_abnormal_cxr_and_pc = abnormal_cxr_and_pc / ds_pneumonia
+
+    risk_cases = abnormal_cxr_and_pc + \
+                      ds_and_abnormal_cxr_and_pc + \
+                      ds_and_abnormal_cxr + \
+                      below90SpO2_and_ds_and_abnormal_cxr_and_pc + \
+                      below90SpO2_and_ds_and_abnormal_cxr + \
+                      below90SpO2_and_ds + \
+                      below90SpO2_and_pc + \
+                      below90SpO2_and_abnormal_cxr + \
+                      pc_only + \
+                      abnormal_cxr_only + \
+                      ds_only + \
+                      below90SpO2_only + \
+                 ds_and_pc + \
+                 below90SpO2_and_abnormal_cxr_and_pc + below90SpO2_and_ds_and_pc
+
+    # unscaled TF
+    unscaled_tf_no_risk = 0.171
+    unscaled_tf_below90SpO2_only = unscaled_tf_no_risk * 1.28
+    unscaled_tf_ds_only = unscaled_tf_no_risk * 1.55
+    unscaled_tf_abnormal_cxr_only = unscaled_tf_no_risk * 1.71
+    unscaled_tf_pc_only = unscaled_tf_no_risk * 2.31
+    unscaled_tf_below90SpO2_and_ds = unscaled_tf_no_risk * 1.28 * 1.55
+    unscaled_tf_below90SpO2_and_abnormal_cxr = unscaled_tf_no_risk * 1.28 * 1.71
+    unscaled_tf_below90SpO2_and_pc = unscaled_tf_no_risk * 1.28 * 2.31
+    unscaled_tf_below90SpO2_and_ds_and_abnormal_cxr = unscaled_tf_no_risk * 1.28 * 1.55 * 1.71
+    unscaled_tf_below90SpO2_and_ds_and_abnormal_cxr_and_pc = unscaled_tf_no_risk * 1.28 * 1.55 * 1.71 * 2.31
+    unscaled_tf_below90SpO2_and_abnormal_cxr_and_pc = unscaled_tf_no_risk * 1.28 * 1.71 * 2.31
+    unscaled_tf_below90SpO2_and_ds_and_pc = unscaled_tf_no_risk * 1.28 * 1.55 * 2.31
+    unscaled_tf_ds_and_pc = unscaled_tf_no_risk * 1.55 * 2.31
+    unscaled_tf_ds_and_abnormal_cxr = unscaled_tf_no_risk * 1.55 * 1.71
+    unscaled_tf_ds_and_abnormal_cxr_and_pc = unscaled_tf_no_risk * 1.55 * 1.71 * 2.31
+    unscaled_tf_abnormal_cxr_and_pc = unscaled_tf_no_risk * 1.71 * 2.31
+
+    total_unscaled = ((unscaled_tf_no_risk * (ds_pneumonia - risk_cases)) + (
+        unscaled_tf_below90SpO2_only * below90SpO2_only) + (
+        unscaled_tf_ds_only * ds_only) + (
+        unscaled_tf_abnormal_cxr_only * abnormal_cxr_only) + (
+        unscaled_tf_pc_only * pc_only) + (
+        unscaled_tf_below90SpO2_and_ds * below90SpO2_and_ds) + (
+        unscaled_tf_below90SpO2_and_abnormal_cxr * below90SpO2_and_abnormal_cxr) + (
+        unscaled_tf_below90SpO2_and_pc * below90SpO2_and_pc) + (unscaled_tf_ds_and_pc * ds_and_pc) + (
+        unscaled_tf_below90SpO2_and_ds_and_abnormal_cxr * below90SpO2_and_ds_and_abnormal_cxr) + (
+        unscaled_tf_below90SpO2_and_abnormal_cxr_and_pc * below90SpO2_and_abnormal_cxr_and_pc) + (
+        unscaled_tf_below90SpO2_and_ds_and_pc + below90SpO2_and_ds_and_pc) + (
+        unscaled_tf_below90SpO2_and_ds_and_abnormal_cxr_and_pc * below90SpO2_and_ds_and_abnormal_cxr_and_pc) + (
+        unscaled_tf_ds_and_abnormal_cxr * ds_and_abnormal_cxr) + (
+        unscaled_tf_ds_and_abnormal_cxr_and_pc * ds_and_abnormal_cxr_and_pc) + (
+        unscaled_tf_abnormal_cxr_and_pc * abnormal_cxr_and_pc)) / ds_pneumonia
+
+    scaling_factor = 0.171 / total_unscaled
+    baseline_tf = 0.171 * scaling_factor  # base line TF is 0.0684
+
+    # ----------------------------------------------------------------------------------------------------------
+    # Now get the baseline treatment failure for oral antibiotics to treat non-severe pneumonia
+
+    fb_pneumonia = (
+        df["classification_for_treatment_decision_with_oximeter_perfect_accuracy"] == 'fast_breathing_pneumonia').sum()
+    ci_pneumonia = (
+        df["classification_for_treatment_decision_with_oximeter_perfect_accuracy"] == 'chest_indrawing_pneumonia').sum()
+
+    non_sev_pneumonia = fb_pneumonia + ci_pneumonia
+
+    classification = ['fast_breathing_pneumonia', 'chest_indrawing_pneumonia']
+
+    # get the no risk
+    non_sev_not_risked = df[['oxygen_saturation', 'disease_type', 'complications',
+                     'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+        lambda x: 1 if ((x[0] == '>=93%') and (x[1] != 'pneumonia') and not any(
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[2])) and
+                       (x[3] == 'fast_breathing_pneumonia' or x[3] == 'chest_indrawing_pneumonia') else 0, axis=1).sum()
+    # get with risk
+    non_sev_with_risk = df[['oxygen_saturation', 'disease_type', 'complications',
+                    'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+        lambda x: 1 if ((x[0] != '>=93%') or (x[1] == 'pneumonia') or any(
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[2])) and
+                       (x[3] == 'fast_breathing_pneumonia' or x[3] == 'chest_indrawing_pneumonia') else 0, axis=1).sum()
+
+    prop_non_sev_not_risked = non_sev_not_risked / non_sev_pneumonia
+
+    # get the SpO2 without any other signs
+    non_sev_below93SpO2_only = df[['oxygen_saturation', 'disease_type', 'complications',
+                                   'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+        lambda x: 1 if (x[0] != '>=93%') and (x[1] != 'pneumonia') and not any(
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[2]) and
+                       (x[3] == 'fast_breathing_pneumonia' or x[3] == 'chest_indrawing_pneumonia') else 0, axis=1).sum()
+
+    prop_non_sev_below93SpO2_only = non_sev_below93SpO2_only / non_sev_pneumonia
+
+    # get the CXR+ without any other signs
+    non_sev_abnormal_cxr_only = df[['oxygen_saturation', 'disease_type', 'complications',
+                                    'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+        lambda x: 1 if (x[0] == '>=93%') and (x[1] == 'pneumonia') and not any(
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[2]) and
+                       (x[3] == 'fast_breathing_pneumonia' or x[3] == 'chest_indrawing_pneumonia') else 0, axis=1).sum()
+
+    prop_non_sev_abnormal_cxr_only = non_sev_abnormal_cxr_only / non_sev_pneumonia
+
+    # get the pulmonary complications without any other signs
+    non_sev_pc_only = df[['oxygen_saturation', 'disease_type', 'complications',
+                          'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+        lambda x: 1 if (x[0] == '>=93%') and (x[1] != 'pneumonia') and any(
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[2]) and
+                       (x[3] == 'fast_breathing_pneumonia' or x[3] == 'chest_indrawing_pneumonia') else 0, axis=1).sum()
+
+    prop_non_sev_pc_only = non_sev_pc_only / non_sev_pneumonia
+
+    # get the SpO2 with ds and pc
+    non_sev_below93SpO2_and_pc = df[['oxygen_saturation', 'disease_type', 'complications',
+                                     'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+        lambda x: 1 if (x[0] != '>=93%') and (x[1] != 'pneumonia') and any(
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[2]) and
+                       (x[3] == 'fast_breathing_pneumonia' or x[3] == 'chest_indrawing_pneumonia') else 0, axis=1).sum()
+
+    prop_non_sev_below93SpO2_and_pc = non_sev_below93SpO2_and_pc / non_sev_pneumonia
+
+    # get SpO2 and CXR+
+    non_sev_below93SpO2_and_abnormal_cxr = df[['oxygen_saturation', 'disease_type', 'complications',
+                                       'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+        lambda x: 1 if (x[0] != '>=93%') and (x[1] == 'pneumonia') and not any(
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[2]) and
+                       (x[3] == 'fast_breathing_pneumonia' or x[3] == 'chest_indrawing_pneumonia') else 0, axis=1).sum()
+
+    prop_non_sev_below93SpO2_and_abnormal_cxr = non_sev_below93SpO2_and_abnormal_cxr / non_sev_pneumonia
+
+    # get the SpO2 <93 + CXR+ + PC
+    non_sev_below93SpO2_and_abnormal_cxr_and_pc = df[
+        ['oxygen_saturation', 'disease_type', 'complications',
+         'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+        lambda x: 1 if (x[0] != '>=93%') and (x[1] == 'pneumonia') and any(
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[2]) and
+                       (x[3] == 'fast_breathing_pneumonia' or x[3] == 'chest_indrawing_pneumonia') else 0, axis=1).sum()
+
+    prop_non_sev_below93SpO2_and_abnormal_cxr_and_pc = non_sev_below93SpO2_and_abnormal_cxr_and_pc / non_sev_pneumonia
+
+    # get CXR+ + pc
+    non_sev_abnormal_cxr_and_pc = df[['oxygen_saturation', 'disease_type', 'complications',
+                                     'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+        lambda x: 1 if (x[0] == '>=93%') and (x[1] == 'pneumonia') and any(
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[2]) and
+                       (x[3] == 'fast_breathing_pneumonia' or x[3] == 'chest_indrawing_pneumonia') else 0, axis=1).sum()
+
+    prop_non_sev_abnormal_cxr_and_pc = non_sev_abnormal_cxr_and_pc / non_sev_pneumonia
+
+    non_sev_risk_cases = non_sev_abnormal_cxr_and_pc + \
+                         non_sev_below93SpO2_and_abnormal_cxr_and_pc + \
+                         non_sev_below93SpO2_and_abnormal_cxr + \
+                         non_sev_below93SpO2_only + \
+                         non_sev_below93SpO2_and_pc + \
+                         non_sev_pc_only + \
+                         non_sev_abnormal_cxr_only
+
+    # unscaled TF
+    unscaled_tf_non_sev_no_risk = 0.108
+    unscaled_tf_non_sev_below93SpO2_only = unscaled_tf_non_sev_no_risk * 1.695
+    unscaled_tf_non_sev_abnormal_cxr_only = unscaled_tf_non_sev_no_risk * 1.71
+    unscaled_tf_non_sev_pc_only = unscaled_tf_non_sev_no_risk * 2.31
+    unscaled_tf_non_sev_below93SpO2_and_abnormal_cxr = unscaled_tf_non_sev_no_risk * 1.695 * 1.71
+    unscaled_tf_non_sev_below93SpO2_and_pc = unscaled_tf_non_sev_no_risk * 1.695 * 2.31
+    unscaled_tf_non_sev_below93SpO2_and_abnormal_cxr_and_pc = unscaled_tf_non_sev_no_risk * 1.695 * 1.71 * 2.31
+    unscaled_tf_non_sev_abnormal_cxr_and_pc = unscaled_tf_non_sev_no_risk * 1.71 * 2.31
+
+    total_unscaled_non_sev = ((unscaled_tf_non_sev_no_risk * non_sev_not_risked) + (
+        unscaled_tf_non_sev_below93SpO2_only * non_sev_below93SpO2_only) + (
+        unscaled_tf_non_sev_abnormal_cxr_only * non_sev_abnormal_cxr_only) + (
+        unscaled_tf_non_sev_pc_only * non_sev_pc_only) + (
+        unscaled_tf_non_sev_below93SpO2_and_abnormal_cxr * non_sev_below93SpO2_and_abnormal_cxr) + (
+        unscaled_tf_non_sev_below93SpO2_and_pc * non_sev_below93SpO2_and_pc) + (
+        unscaled_tf_non_sev_below93SpO2_and_abnormal_cxr_and_pc * non_sev_below93SpO2_and_abnormal_cxr_and_pc) + (
+        unscaled_tf_non_sev_abnormal_cxr_and_pc * non_sev_abnormal_cxr_and_pc)) / non_sev_pneumonia
+
+    scaling_factor_non_sev = 0.1045 / total_unscaled_non_sev
+    baseline_tf_oral_antibiotics = 0.1045 * scaling_factor_non_sev  # base line TF is 0.0684
