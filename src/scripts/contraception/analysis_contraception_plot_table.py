@@ -15,7 +15,7 @@ datestamp_with_log = '2022-11-04T175536' #50K: '2022-11-13T180430'  # TODO: upda
 logFile_without = 'run_analysis_contraception__' + datestamp_without_log + '.log'
 logFile_with = 'run_analysis_contraception__' + datestamp_with_log + '.log'
 # which years we want to summarise for the table of use and costs
-TimePeriods_starts = [2022, 2031, 2041, 2051]
+TimePeriods_starts = [2023, 2031, 2041, 2051]
 # order of contraceptives for the table
 contraceptives_order = ['pill', 'IUD', 'injections', 'implant', 'male_condom',
                         'female_sterilization', 'other_modern']
