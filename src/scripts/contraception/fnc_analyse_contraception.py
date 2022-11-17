@@ -16,8 +16,6 @@ from matplotlib import pyplot as plt
 from collections import Counter
 
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import contraception
-import functools
 
 
 def analyse_contraception(in_datestamp, in_log_file,
@@ -26,7 +24,7 @@ def analyse_contraception(in_datestamp, in_log_file,
                           in_plot_use_time_method_bool,
                           in_plot_pregnancies_bool,
                           in_contraceptives_order,
-                          in_calc_use_costs_bool, in_required_time_period_starts=[2010],
+                          in_calc_use_costs_bool, in_required_time_period_starts=[],
                           in_use_output="mean"
                           ):
     """
@@ -90,29 +88,31 @@ def analyse_contraception(in_datestamp, in_log_file,
             # females 15-49 by year:
         demog_df_f = log_df['tlo.methods.demography']['age_range_f'].set_index('date')
         demog_df_f['15-49'] = demog_df_f.loc[:,['15-19','20-24','25-29','30-34','35-39','40-44','45-49']].sum(axis=1)
-        print(demog_df_f)
+        # print("demog_df_f")
+        # print(demog_df_f)
             # males 15-49 by year:
         demog_df_m = log_df['tlo.methods.demography']['age_range_m'].set_index('date')
         demog_df_m['15-49'] = demog_df_m.loc[:,['15-19','20-24','25-29','30-34','35-39','40-44','45-49']].sum(axis=1)
-        print(demog_df_m)
+        # print("demog_df_m")
+        # print(demog_df_m)
             # total females & males 15-49 as both targetted by Pop and PPFP interventions, by year:
         popsize = demog_df_f['15-49'] + demog_df_m['15-49']
         popsize = pd.DataFrame(popsize)
-        print(popsize)
+        # print(popsize)
             # Calculate ratio of population compared to 2016 as base year (when PPFP and Pop interventions start):
         popsize['ratio'] = popsize.loc[:,'15-49'] / popsize.loc['2016-01-01 00:00:00','15-49']
-        print(popsize)
+        # print(popsize)
             # Mulitply PPFP and Pop intervention costs by this ratio for each year:
         # TODO: was trying to pull these parameters from contracption.py but not managing too - perhaps not worth it and just hard code for now:
         # ppfp_intervention_cost = tlo.methods.contraception.Contraception.process_params(['ppfp_intervention_cost'])
         ppfp_intervention_cost = 146000000  # cost of PPFP intervention for whole population of Malawi in 2016 (MWK - Malawi Kwacha)
         pop_intervention_cost = 1300000000  # cost of Pop intervention for whole population of Malawi in 2016 (MWK - Malawi Kwacha)
-        print(ppfp_intervention_cost)
-        print(pop_intervention_cost)
+        # print(ppfp_intervention_cost)
+        # print(pop_intervention_cost)
         popsize['ppfp_intervention_cost'] = popsize['ratio'] * ppfp_intervention_cost
         popsize['pop_intervention_cost'] = popsize['ratio'] * pop_intervention_cost
         popsize['interventions_total'] = popsize['ppfp_intervention_cost'] + popsize['pop_intervention_cost']
-        print(popsize)
+        # print(popsize)
 
     # %% Plot Contraception Use Over time:
     if in_plot_use_time_bool:
@@ -229,10 +229,14 @@ def analyse_contraception(in_datestamp, in_log_file,
     # some time periods:
     if in_calc_use_costs_bool:
         # time period starts should be given as input
-        assert in_required_time_period_starts != []
+        assert in_required_time_period_starts != [],\
+            "The calculations of use and costs are requested (ie input 'in_calc_use_costs_bool' set as True, " +\
+            "but no periods starts are provided (ie input 'TimePeriods_starts' is empty)."
         # time period starts should be ordered
         assert all(in_required_time_period_starts[i] <= in_required_time_period_starts[i + 1]
-                   for i in range(len(in_required_time_period_starts) - 1))
+                   for i in range(len(in_required_time_period_starts) - 1)),\
+            "The 'TimePeriods_starts' needs to be in chronological order."
+
 
 #  ###### USE ##################################################################
         # Load Contraception Use Results
