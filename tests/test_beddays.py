@@ -948,11 +948,11 @@ def test_in_patient_appt_included_and_logged(tmpdir, seed):
     expectation = pd.concat(
         [
             pd.DataFrame(index=[date_of_admission],
-                         data={k: num_persons * v for k, v in footprint.items()}),
-            pd.DataFrame(index=[date_of_admission],
                          data={k: num_persons * v for k, v in IN_PATIENT_ADMISSION.items()}),
             pd.DataFrame(index=pd.date_range(date_of_admission, date_of_discharge),
-                         data={k: num_persons * v for k, v in IN_PATIENT_DAY.items()})
+                         data={k: num_persons * v for k, v in IN_PATIENT_DAY.items()}),
+            pd.DataFrame(index=[date_of_admission],
+                         data={k: num_persons * v for k, v in footprint.items()}),
         ], axis=1).fillna(0).astype(int)
 
     pd.testing.assert_frame_equal(appts_freq_by_date, expectation,
