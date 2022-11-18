@@ -1,3 +1,4 @@
+import argparse
 from collections import Counter
 from pathlib import Path
 
@@ -10,7 +11,6 @@ from tlo.analysis.utils import (
     bin_hsi_event_details,
     compute_mean_across_runs,
     extract_results,
-    get_coarse_appt_type,
     summarize,
 )
 
@@ -125,16 +125,16 @@ def figure2_appointments_used(results_folder: Path, output_folder: Path, resourc
 def figure5_proportion_of_hsi_events_per_appt_type(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     """ Figure 5: Proportion of hsi events for each appointment type """
 
-    # get the data frame of counts of appointments by treatment id
-    counts_by_treatment_id_and_coarse_appt_type = compute_mean_across_runs(
+    # get the data frame of counts of hsi events by treatment id and appt type
+    counts_by_treatment_id_and_appt_type = compute_mean_across_runs(
         bin_hsi_event_details(
             results_folder,
             lambda event_details, count: sum(
                 [
                     Counter({
                         (
-                            event_details["treatment_id"].split("_")[0],
-                            get_coarse_appt_type(appt_type)
+                            event_details["treatment_id"],
+                            appt_type
                         ):
                         count * appt_number
                     })
@@ -147,8 +147,10 @@ def figure5_proportion_of_hsi_events_per_appt_type(results_folder: Path, output_
         )
     )[0]
 
+    counts_by_treatment_id_and_appt_type.to_csv(output_folder/'df.csv')
+
     # plot per appointment type
-    name_of_figure = 'Proportion of Appointment Use by TREATMENT_ID per Appointment Type'
+    # name_of_figure = 'Proportion of Appointment Use by TREATMENT_ID per Appointment Type'
 
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
@@ -160,11 +162,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
 
 if __name__ == "__main__":
-
-    results_folder = Path('./outputs') / 'tlo_output_from_server'  # small run created for test purposes (locally)
+    parser = argparse.ArgumentParser("Analyse logged HSI event data from scenario run")
+    parser.add_argument(
+        "--results-folder",
+        type=Path,
+        help="Path to folder containing results of scenario to perform analysis for"
+    )
+    args = parser.parse_args()
 
     apply(
-        results_folder=results_folder,
-        output_folder=results_folder,
+        results_folder=args.results_folder,
+        output_folder=args.results_folder,
         resourcefilepath=Path('./resources')
     )
