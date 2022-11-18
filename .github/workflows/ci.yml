@@ -31,12 +31,13 @@ jobs:
         run: |
           set -e
           # Find all test files and generate their list in JSON format
-          VAR_FILES="::set-output name=matrix::{\"include\":["
+          VAR_FILES="{\"include\":["
           for file in tests/test_*.py; do
               VAR_FILES="${VAR_FILES}{\"file\":\"${file}\"},"
           done
           VAR_FILES="${VAR_FILES}]}"
-          echo "${VAR_FILES}"
+          echo $VAR_FILES
+          echo "matrix=${VAR_FILES}" >> $GITHUB_OUTPUT
 
   test:
     needs: gen-test-matrix

@@ -42,7 +42,7 @@ eval "$(/home/${username}/miniconda3/condabin/conda shell.bash hook)"
 conda create -p "${conda_env_root}/${commit_dir}" --clone tlo
 conda activate "${conda_env_root}/${commit_dir}"
 pip uninstall -y tlo  # remove the existing tlo installation (we cloned the virtual environment)
-pip install --use-feature=in-tree-build "${worktree_dir}"  # install tlo from the worktree
+pip install --use-feature=in-tree-build -e "${worktree_dir}"  # install tlo from the worktree
 
 # working directory is the commit directory
 cd "${worktree_dir}"

@@ -6,7 +6,7 @@ graft requirements
 include README.rst
 include .bumpversion.cfg
 include .coveragerc
-include tox.ini .travis.yml
+include tox.ini
 include tlo.example.conf
 
 exclude .editorconfig

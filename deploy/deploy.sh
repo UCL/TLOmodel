@@ -2,10 +2,10 @@
 
 set -e
 
-REGISTRY_NAME="tlomodel"
+REGISTRY_NAME="tlob1acr"
 REGISTRY_URL="${REGISTRY_NAME}.azurecr.io"
 IMAGE_NAME="tlo"
-IMAGE_TAG="1.0"
+IMAGE_TAG="1.1"
 IMAGE_FULL_NAME="${IMAGE_NAME}:${IMAGE_TAG}"
 
 # Documentation at

@@ -11,6 +11,7 @@ from typing import Callable, Dict, Iterable, List, Optional, TextIO, Union
 
 import git
 import matplotlib.colors as mcolors
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import squarify
@@ -601,11 +602,12 @@ def get_filtered_treatment_ids(depth: Optional[int] = None) -> List[str]:
     """Return a list of treatment_ids that are defined in the model, filtered to a specified depth."""
 
     def filter_treatments(_treatments: Iterable[str], depth: int = 1) -> List[str]:
-        """Reduce an iterable of `TREATMENT_IDs` by ignoring difference beyond a certain depth of specification.
-        The TREATMENT_ID is defined with each increasing level of specification separated by a `_`. """
+        """Reduce an iterable of `TREATMENT_IDs` by ignoring difference beyond a certain depth of specification and
+        adding '_*' to the end to serve as a wild-card.
+        N.B., The TREATMENT_ID is defined with each increasing level of specification separated by a `_`. """
         return sorted(list(set(
             [
-                "".join(f"{x}_" for i, x in enumerate(t.split('_')) if i < depth).rstrip('_') + '*'
+                "".join(f"{x}_" for i, x in enumerate(t.split('_')) if i < depth).rstrip('_') + '_*'
                 for t in set(_treatments)
             ]
         )))
@@ -657,12 +659,12 @@ def _define_coarse_appts() -> pd.DataFrame:
                 'category': 'RMNCH',
                 'appt_types': ['AntenatalFirst', 'ANCSubsequent', 'NormalDelivery', 'CompDelivery', 'Csection', 'EPI',
                                'FamPlan', 'U5Malnutr'],
-                'color': 'darkturquoise'},
+                'color': 'gold'},
             {
                 'category': 'HIV/AIDS',
                 'appt_types': ['VCTNegative', 'VCTPositive', 'MaleCirc', 'NewAdult', 'EstMedCom', 'EstNonCom', 'PMTCT',
                                'Peds'],
-                'color': 'gold'},
+                'color': 'darkturquoise'},
             {
                 'category': 'Tb',
                 'appt_types': ['TBNew', 'TBFollowUp'],
@@ -670,11 +672,11 @@ def _define_coarse_appts() -> pd.DataFrame:
             {
                 'category': 'Dental',
                 'appt_types': ['DentAccidEmerg', 'DentSurg', 'DentalU5', 'DentalO5'],
-                'color': 'red'},
+                'color': 'rosybrown'},
             {
                 'category': 'Mental Health',
                 'appt_types': ['MentOPD', 'MentClinic'],
-                'color': 'orangered'},
+                'color': 'lightsalmon'},
             {
                 'category': 'Surgery / Radiotherapy',
                 'appt_types': ['MajorSurg', 'MinorSurg', 'Radiotherapy'],
@@ -731,7 +733,6 @@ def _define_short_treatment_ids() -> pd.Series:
         'AntenatalCare*': 'green',
         'DeliveryCare*': 'limegreen',
         'PostnatalCare*': 'springgreen',
-        'PostnatalSupervisor*': 'mediumaquamarine',  # todo <-- remove this when it's gone from code.
 
         'Alri*': 'darkorange',
         'Diarrhoea*': 'tan',
@@ -763,7 +764,7 @@ def order_of_short_treatment_ids(_short_treatment_id: Union[str, pd.Index]) -> U
     """Define a standard order for short treatment_ids."""
     order = _define_short_treatment_ids().index
     if isinstance(_short_treatment_id, str):
-        return tuple(order).index(_short_treatment_id)
+        return tuple(order).index(_short_treatment_id.replace('_*', '*'))
     else:
         return order[order.isin(_short_treatment_id)]
 
@@ -772,8 +773,9 @@ def get_color_short_treatment_id(short_treatment_id: str) -> str:
     """Return the colour (as matplotlib string) assigned to this shorted TREATMENT_ID. Returns `np.nan` if treatment_id
     is not recognised."""
     colors = _define_short_treatment_ids()
-    if short_treatment_id in colors.index:
-        return colors.loc[short_treatment_id]
+    _short_treatment_ids_with_trailing_asterix = short_treatment_id.replace('_*', '*').rstrip('*') + '*'
+    if _short_treatment_ids_with_trailing_asterix in colors.index:
+        return colors.loc[_short_treatment_ids_with_trailing_asterix]
     else:
         return np.nan
 
@@ -794,15 +796,19 @@ def _define_cause_of_death_labels() -> pd.Series:
         'Measles': 'cornflowerblue',
         'non_AIDS_TB': 'mediumslateblue',
 
-        'Heart Disease': 'sienna',  # brown-ish
-        'Kidney Disease': 'chocolate',  # brown-ish
-        'Diabetes': 'peru',  # brown-ish
-        'Stroke': 'burlywood',  # brown-ish
+        'Heart Disease': 'sienna',
+        'Kidney Disease': 'chocolate',
+        'Diabetes': 'peru',
+        'Stroke': 'burlywood',
 
-        'Cancer': 'deeppink',
+        'Cancer (Bladder)': 'deeppink',
+        'Cancer (Breast)': 'darkmagenta',
+        'Cancer (Oesophagus)': 'mediumvioletred',
+        'Cancer (Other)': 'crimson',
+        'Cancer (Prostate)': 'hotpink',
 
-        'Depression / Self-harm': 'indianred',
-        'Epilepsy': 'red',
+        'Depression / Self-harm': 'goldenrod',
+        'Epilepsy': 'gold',
 
         'Transport Injuries': 'lightsalmon',
 
@@ -816,7 +822,7 @@ def order_of_cause_of_death_label(_cause_of_death_label: Union[str, pd.Index]) -
     if isinstance(_cause_of_death_label, str):
         return tuple(order).index(_cause_of_death_label)
     else:
-        return order[order.isin(_cause_of_death_label)]
+        return pd.Index(sorted(_cause_of_death_label, key=order_of_cause_of_death_label))
 
 
 def get_color_cause_of_death_label(cause_of_death_label: str) -> str:
@@ -862,3 +868,45 @@ def get_root_path(starter_path: Optional[Path] = None) -> Path:
         return get_git_root(starter_path)
     else:
         raise OSError("File Not Found")
+
+
+def plot_clustered_stacked(dfall, ax, color_for_column_map=None, legends=True, H="/", **kwargs):
+    """Given a dict of dataframes, with identical columns and index, create a clustered stacked bar plot.
+    * H is the hatch used for identification of the different dataframe.
+    * color_for_column_map should return a color for every column in the dataframes
+    * legends=False, suppresses generation of the legends
+    From: https://stackoverflow.com/questions/22787209/how-to-have-clusters-of-stacked-bars"""
+
+    n_df = len(dfall)
+    n_col = len(list(dfall.values())[0].columns)
+    n_ind = len(list(dfall.values())[0].index)
+
+    for i, df in enumerate(dfall.values()):  # for each data frame
+        ax = df.plot.bar(
+            stacked=True,
+            ax=ax,
+            legend=False,
+            color=[color_for_column_map(_label) for _label in df.columns],
+            **kwargs
+        )
+
+    _handles, _labels = ax.get_legend_handles_labels()  # get the handles we want to modify
+    for i in range(0, n_df * n_col, n_col):  # len(h) = n_col * n_df
+        for j, pa in enumerate(_handles[i: i+n_col]):
+            for rect in pa.patches:  # for each index
+                rect.set_x(rect.get_x() + 1 / float(n_df + 1) * i / float(n_col))
+                rect.set_hatch(H * int(i / n_col))  # edited part
+                rect.set_width(1 / float(n_df + 1))
+
+    ax.set_xticks((np.arange(0, 2 * n_ind, 2) + 1 / float(n_df + 1)) / 2.)
+    ax.set_xticklabels(df.index, rotation=0)
+
+    if legends:
+        # Add invisible data to add another legend
+        n = []
+        for i in range(n_df):
+            n.append(ax.bar(0, 0, color="gray", hatch=H * i))
+
+        l1 = ax.legend(_handles[:n_col], _labels[:n_col], loc=[1.01, 0.5])
+        _ = plt.legend(n, dfall.keys(), loc=[1.01, 0.1])
+        ax.add_artist(l1)

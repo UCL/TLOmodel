@@ -6,6 +6,8 @@ import pandas as pd
 from tlo import Date
 from tlo.analysis.utils import extract_results, get_scenario_outputs, summarize
 
+PREFIX_ON_FILENAME = '4'
+
 # Declare period for which the results will be generated (defined inclusively)
 TARGET_PERIOD = (Date(2015, 1, 1), Date(2019, 12, 31))
 
@@ -129,8 +131,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _fig.tight_layout()
         _fig.savefig(make_graph_file_name(_name_of_plot.replace('\n', '_').replace(' ', '_')))
         _fig.show()
+        plt.close(_fig)
 
-    make_graph_file_name = lambda stub: output_folder / f"{stub}.png"  # noqa: E731
+    make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}.png"  # noqa: E731
 
     simulation_usage = get_simulation_usage(results_folder)
 
@@ -144,6 +147,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     name_of_plot = 'Model vs Real average annual usage by appt type\n[All Facility Levels]'
     fig, ax = plt.subplots()
     ax.stem(rel_diff_all_levels.index, rel_diff_all_levels.values, bottom=1.0, label='All levels')
+    for idx in rel_diff_all_levels.index:
+        if not pd.isna(rel_diff_all_levels[idx]):
+            ax.text(idx, rel_diff_all_levels[idx]*(1+0.2), round(rel_diff_all_levels[idx], 1),
+                    ha='left', fontsize=8)
     format_and_save(fig, ax, name_of_plot)
 
     # Plot Simulation vs Real usage (At each level) (trimmed to 0.1 and 10)
