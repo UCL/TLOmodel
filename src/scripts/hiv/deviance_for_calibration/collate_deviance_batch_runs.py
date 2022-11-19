@@ -18,7 +18,7 @@ outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
 # run in terminal: tlo batch-download calibration_script-2021-12-20T144906Z
 
 # 0) Find results_folder associated with a given batch_file (and get most recent [-1])
-results_folder = get_scenario_outputs("calibration.py", outputspath)[0]
+results_folder = get_scenario_outputs("calibration.py", outputspath)[-1]
 
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results_folder)
@@ -38,7 +38,7 @@ extracted = extract_results(
     key="deviance_measure",
     column="deviance_measure",
 )
-extracted.to_csv(outputspath / ("full_LHC_outputs_Nov2022" + ".csv"))
+extracted.to_csv(outputspath / ("full_LHC_outputs_Nov2022_200k" + ".csv"))
 
 # 3) Get summary of the results for that log-element
 res = summarize(extracted, only_mean=True).iloc[-1]
@@ -48,7 +48,7 @@ res.name = "z"
 params['draw'] = params.index
 combined_output = params.pivot(index="draw", columns="module_param", values="value")
 combined_output["deviance"] = res.values
-combined_output.to_csv(outputspath / ("LHC_outputsNov022" + ".csv"))
+combined_output.to_csv(outputspath / ("LHC_outputsNov022_200k" + ".csv"))
 
 
 # plot the deviance against parameters

@@ -36,8 +36,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2019, 1, 1)
-popsize = 200000
+end_date = Date(2035, 1, 1)
+popsize = 100000
 
 scenario = 0
 
@@ -89,11 +89,15 @@ sim.register(
 )
 
 # set the scenario
-sim.modules["Hiv"].parameters["beta"] = 0.12967
-sim.modules["Tb"].parameters["beta"] = 0.19299
+sim.modules["Hiv"].parameters["beta"] = 0.129671
+sim.modules["Tb"].parameters["beta"] = 0.24
 sim.modules["Tb"].parameters["scenario"] = scenario
 sim.modules["Tb"].parameters["scenario_start_date"] = Date(2023, 1, 1)
 sim.modules["Tb"].parameters["scenario_SI"] = "z"
+
+sim.modules["Tb"].parameters["rr_tb_hiv"] = 5  # default 13
+# rr relapse if HIV+ 4.7
+sim.modules["Tb"].parameters["rr_tb_aids"] = 26  # default 26
 
 # to cluster tests in positive people
 sim.modules["Hiv"].parameters["rr_test_hiv_positive"] = 1.1  # default 1.5

@@ -32,6 +32,7 @@ import os
 import random
 
 import pandas as pd
+import numpy as np
 
 from tlo import Date, logging
 from tlo.methods import (
@@ -49,8 +50,8 @@ from tlo.methods import (
 )
 from tlo.scenario import BaseScenario
 
-number_of_draws = 20
-runs_per_draw = 3
+number_of_draws = 26
+runs_per_draw = 5
 
 
 class TestScenario(BaseScenario):
@@ -112,10 +113,12 @@ class TestScenario(BaseScenario):
 
         return {
             'Hiv': {
-                'beta': self.sampled_parameters.hiv_Nov22[draw_number],
+                # 'beta': self.sampled_parameters.hiv_Nov22[draw_number],
+                'beta': 0.115,
             },
             'Tb': {
-                'beta': self.sampled_parameters.tb_Nov22[draw_number],
+                # 'beta': self.sampled_parameters.tb_Nov22[draw_number],
+                'beta': np.linspace(0.16, 0.28, num=self.number_of_draws)[draw_number],
             },
         }
 

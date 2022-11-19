@@ -1,249 +1,319 @@
 {
   "scenario_script_path": "src/scripts/hiv/PaperProjectionsNov2022/calibration.py",
-  "scenario_seed": 30070,
-  "runs_per_draw": 3,
+  "scenario_seed": 34216,
+  "runs_per_draw": 5,
   "draws": [
     {
       "draw_number": 0,
-      "draw_seed": 1535596127,
+      "draw_seed": 2144538412,
       "parameters": {
         "Hiv": {
-          "beta": 0.142248112735498
+          "beta": 0.115
         },
         "Tb": {
-          "beta": 0.1813871546943961
+          "beta": 0.16
         }
       }
     },
     {
       "draw_number": 1,
-      "draw_seed": 1088952043,
+      "draw_seed": 724111962,
       "parameters": {
         "Hiv": {
-          "beta": 0.1349040537502659
+          "beta": 0.115
         },
         "Tb": {
-          "beta": 0.1875673586216438
+          "beta": 0.1648
         }
       }
     },
     {
       "draw_number": 2,
-      "draw_seed": 1633124290,
+      "draw_seed": 1236340390,
       "parameters": {
         "Hiv": {
-          "beta": 0.1382192273243478
+          "beta": 0.115
         },
         "Tb": {
-          "beta": 0.1866103367182269
+          "beta": 0.1696
         }
       }
     },
     {
       "draw_number": 3,
-      "draw_seed": 1066476503,
+      "draw_seed": 2068311295,
       "parameters": {
         "Hiv": {
-          "beta": 0.1119298184555028
+          "beta": 0.115
         },
         "Tb": {
-          "beta": 0.1912110737726846
+          "beta": 0.1744
         }
       }
     },
     {
       "draw_number": 4,
-      "draw_seed": 1840802133,
+      "draw_seed": 756359458,
       "parameters": {
         "Hiv": {
-          "beta": 0.1017298488430142
+          "beta": 0.115
         },
         "Tb": {
-          "beta": 0.1887874570324928
+          "beta": 0.1792
         }
       }
     },
     {
       "draw_number": 5,
-      "draw_seed": 1601328348,
+      "draw_seed": 196462799,
       "parameters": {
         "Hiv": {
-          "beta": 0.1097163104673857
+          "beta": 0.115
         },
         "Tb": {
-          "beta": 0.1988506979897273
+          "beta": 0.184
         }
       }
     },
     {
       "draw_number": 6,
-      "draw_seed": 1027978742,
+      "draw_seed": 393400256,
       "parameters": {
         "Hiv": {
-          "beta": 0.1446681505663063
+          "beta": 0.115
         },
         "Tb": {
-          "beta": 0.1829026489541546
+          "beta": 0.18880000000000002
         }
       }
     },
     {
       "draw_number": 7,
-      "draw_seed": 1436946019,
+      "draw_seed": 550064558,
       "parameters": {
         "Hiv": {
-          "beta": 0.1209206566566698
+          "beta": 0.115
         },
         "Tb": {
-          "beta": 0.1932889942729827
+          "beta": 0.19360000000000002
         }
       }
     },
     {
       "draw_number": 8,
-      "draw_seed": 317864749,
+      "draw_seed": 1823409155,
       "parameters": {
         "Hiv": {
-          "beta": 0.1459643929416613
+          "beta": 0.115
         },
         "Tb": {
-          "beta": 0.1900734259694831
+          "beta": 0.19840000000000002
         }
       }
     },
     {
       "draw_number": 9,
-      "draw_seed": 2016616338,
+      "draw_seed": 1195456896,
       "parameters": {
         "Hiv": {
-          "beta": 0.1296706453594568
+          "beta": 0.115
         },
         "Tb": {
-          "beta": 0.1929922576456854
+          "beta": 0.20320000000000002
         }
       }
     },
     {
       "draw_number": 10,
-      "draw_seed": 324156744,
+      "draw_seed": 1487736225,
       "parameters": {
         "Hiv": {
-          "beta": 0.1135062354910566
+          "beta": 0.115
         },
         "Tb": {
-          "beta": 0.19465783406502
+          "beta": 0.20800000000000002
         }
       }
     },
     {
       "draw_number": 11,
-      "draw_seed": 1351937746,
+      "draw_seed": 1960596999,
       "parameters": {
         "Hiv": {
-          "beta": 0.1191673182671232
+          "beta": 0.115
         },
         "Tb": {
-          "beta": 0.1802364099068669
+          "beta": 0.21280000000000002
         }
       }
     },
     {
       "draw_number": 12,
-      "draw_seed": 971499488,
+      "draw_seed": 908958554,
       "parameters": {
         "Hiv": {
-          "beta": 0.1243066041026916
+          "beta": 0.115
         },
         "Tb": {
-          "beta": 0.1853282428311455
+          "beta": 0.21760000000000002
         }
       }
     },
     {
       "draw_number": 13,
-      "draw_seed": 1133602434,
+      "draw_seed": 1435815536,
       "parameters": {
         "Hiv": {
-          "beta": 0.1268745139119971
+          "beta": 0.115
         },
         "Tb": {
-          "beta": 0.1997775392014322
+          "beta": 0.22240000000000001
         }
       }
     },
     {
       "draw_number": 14,
-      "draw_seed": 36502707,
+      "draw_seed": 1131603474,
       "parameters": {
         "Hiv": {
-          "beta": 0.1047627531173167
+          "beta": 0.115
         },
         "Tb": {
-          "beta": 0.1844955913858693
+          "beta": 0.2272
         }
       }
     },
     {
       "draw_number": 15,
-      "draw_seed": 570104519,
+      "draw_seed": 827989390,
       "parameters": {
         "Hiv": {
-          "beta": 0.1479934948909806
+          "beta": 0.115
         },
         "Tb": {
-          "beta": 0.1969623963901366
+          "beta": 0.23200000000000004
         }
       }
     },
     {
       "draw_number": 16,
-      "draw_seed": 829003161,
+      "draw_seed": 468156317,
       "parameters": {
         "Hiv": {
-          "beta": 0.1367527078329227
+          "beta": 0.115
         },
         "Tb": {
-          "beta": 0.1951100036746291
+          "beta": 0.2368
         }
       }
     },
     {
       "draw_number": 17,
-      "draw_seed": 2084900637,
+      "draw_seed": 924901805,
       "parameters": {
         "Hiv": {
-          "beta": 0.1168212571372782
+          "beta": 0.115
         },
         "Tb": {
-          "beta": 0.1835003488617455
+          "beta": 0.24160000000000004
         }
       }
     },
     {
       "draw_number": 18,
-      "draw_seed": 1410345417,
+      "draw_seed": 532579832,
       "parameters": {
         "Hiv": {
-          "beta": 0.1321428973252851
+          "beta": 0.115
         },
         "Tb": {
-          "beta": 0.1893106964396891
+          "beta": 0.2464
         }
       }
     },
     {
       "draw_number": 19,
-      "draw_seed": 69655908,
+      "draw_seed": 1450240367,
       "parameters": {
         "Hiv": {
-          "beta": 0.1070159461183625
+          "beta": 0.115
         },
         "Tb": {
-          "beta": 0.1976735332939901
+          "beta": 0.25120000000000003
+        }
+      }
+    },
+    {
+      "draw_number": 20,
+      "draw_seed": 753533124,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.115
+        },
+        "Tb": {
+          "beta": 0.256
+        }
+      }
+    },
+    {
+      "draw_number": 21,
+      "draw_seed": 614890548,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.115
+        },
+        "Tb": {
+          "beta": 0.26080000000000003
+        }
+      }
+    },
+    {
+      "draw_number": 22,
+      "draw_seed": 1616040101,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.115
+        },
+        "Tb": {
+          "beta": 0.26560000000000006
+        }
+      }
+    },
+    {
+      "draw_number": 23,
+      "draw_seed": 482472252,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.115
+        },
+        "Tb": {
+          "beta": 0.27040000000000003
+        }
+      }
+    },
+    {
+      "draw_number": 24,
+      "draw_seed": 1562864362,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.115
+        },
+        "Tb": {
+          "beta": 0.2752
+        }
+      }
+    },
+    {
+      "draw_number": 25,
+      "draw_seed": 398826399,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.115
+        },
+        "Tb": {
+          "beta": 0.28
         }
       }
     }
-  ],
-  "commit": "930372a94c09fb72998a8747d3c3def462f047c3",
-  "github": "https://github.com/UCL/TLOmodel/blob/930372a94c09fb72998a8747d3c3def462f047c3/src/scripts/hiv/PaperProjectionsNov2022/calibration.py"
+  ]
 }
