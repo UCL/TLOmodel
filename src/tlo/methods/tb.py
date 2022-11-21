@@ -1100,10 +1100,10 @@ class Tb(Module):
 
             df.loc[idx_new_infection, "tb_strain"] = strain
 
-            # schedule onset of active tb, time now up to 1 year
+            # schedule onset of active tb within one month
             for person_id in idx_new_infection:
                 date_progression = now + pd.DateOffset(
-                    days=rng.randint(0, 365)
+                    days=rng.randint(0, 30)
                 )
 
                 # set date of active tb - properties will be updated at TbActiveEvent every month
@@ -1144,17 +1144,18 @@ class Tb(Module):
 
         df.loc[idx_new_infection, "tb_strain"] = strain
 
-        # schedule onset of active tb, time now up to 1 year
+        # schedule onset of active tb
         # if already active -> do nothing
         # if already scheduled active -> do nothing
         for person_id in idx_new_infection:
             if df.at[person_id, "tb_inf"] == "active":
                 return
 
+            # importation occurs within this month
             # if person doesn't already have scheduled date active...
             if df.at[person_id, "tb_scheduled_date_active"] == pd.NaT:
                 date_progression = now + pd.DateOffset(
-                    days=rng.randint(0, 365)
+                    days=rng.randint(0, 30)
                 )
 
                 # set date of active tb - properties will be updated at TbActiveEvent every month
@@ -1592,10 +1593,10 @@ class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
         self.module.assign_active_tb(population, strain="mdr")
 
         # importation of new ds cases - independent of current prevalence
-        self.module.import_tb_cases(population, strain="ds", import_rate=0.0005)
+        self.module.import_tb_cases(population, strain="ds", import_rate=0.00005)
 
         # importation of new mdr cases - independent of current prevalence
-        self.module.import_tb_cases(population, strain="mdr", import_rate=0.0005 * 0.05)
+        self.module.import_tb_cases(population, strain="mdr", import_rate=0.00005 * 0.02)
 
 
 class TbTreatmentAndRelapseEvents(RegularEvent, PopulationScopeEventMixin):
