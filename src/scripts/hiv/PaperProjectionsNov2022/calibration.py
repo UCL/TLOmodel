@@ -50,7 +50,7 @@ from tlo.methods import (
 )
 from tlo.scenario import BaseScenario
 
-number_of_draws = 26
+number_of_draws = 21
 runs_per_draw = 5
 
 
@@ -114,11 +114,11 @@ class TestScenario(BaseScenario):
         return {
             'Hiv': {
                 # 'beta': self.sampled_parameters.hiv_Nov22[draw_number],
-                'beta': 0.115,
+                'beta': 0.129671,
             },
             'Tb': {
                 # 'beta': self.sampled_parameters.tb_Nov22[draw_number],
-                'beta': np.linspace(0.16, 0.28, num=self.number_of_draws)[draw_number],
+                'beta': np.linspace(0.25, 0.45, num=self.number_of_draws)[draw_number],
             },
         }
 
