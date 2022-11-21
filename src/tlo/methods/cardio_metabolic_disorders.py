@@ -1696,7 +1696,7 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
         assert isinstance(module, CardioMetabolicDisorders)
 
         self.TREATMENT_ID = 'CardioMetabolicDisorders_Treatment'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 0, 'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '2'
 
         self.event = ev
