@@ -15,7 +15,7 @@ from tlo.analysis.utils import (
 PREFIX_ON_FILENAME = '5'
 
 # Declare period for which the results will be generated (defined inclusively)
-TARGET_PERIOD = (Date(2010, 1, 1), Date(2010, 1, 31))
+TARGET_PERIOD = (Date(2015, 1, 1), Date(2019, 12, 31))
 
 
 def figure5_proportion_of_hsi_events_per_appt_type(results_folder: Path, output_folder: Path, resourcefilepath: Path):
