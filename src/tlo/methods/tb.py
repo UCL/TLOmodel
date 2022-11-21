@@ -1593,6 +1593,8 @@ class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=1))
 
     def apply(self, population):
+        p = self.module.parameters
+
         # transmission ds-tb
         self.module.assign_active_tb(population, strain="ds")
 
@@ -1600,12 +1602,11 @@ class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
         self.module.assign_active_tb(population, strain="mdr")
 
         # importation of new ds cases - independent of current prevalence
-        # todo change import_rate from 0.0005 to 0.001
-        self.module.import_tb_cases(population, strain="ds", import_rate=0.00005)
+        self.module.import_tb_cases(population, strain="ds", import_rate=p["importation_rate_ds"])
 
-        # todo change rate to 0.001*0.02
         # importation of new mdr cases - independent of current prevalence
-        self.module.import_tb_cases(population, strain="mdr", import_rate=0.00005 * 0.02)
+        self.module.import_tb_cases(population, strain="mdr", import_rate=p["importation_rate_mdr"])
+
 
 
 class TbTreatmentAndRelapseEvents(RegularEvent, PopulationScopeEventMixin):
