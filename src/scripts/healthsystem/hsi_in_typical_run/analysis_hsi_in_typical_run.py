@@ -11,7 +11,7 @@ from matplotlib.cm import get_cmap
 
 from tlo.analysis.utils import get_scenario_outputs, load_pickled_dataframes
 
-scenario_filename = 'scenario_hsi_in_typical_run.py'
+scenario_filename = 'long_run_all_diseases.py'
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/bshe@ic.ac.uk')
