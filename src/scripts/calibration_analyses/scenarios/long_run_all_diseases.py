@@ -42,7 +42,9 @@ class LongRun(BaseScenario):
         }
 
     def modules(self):
-        return fullmodel(resourcefilepath=self.resources)
+        return fullmodel(resourcefilepath=self.resources,
+                         healthsystem_hsi_event_count_log_period="month"
+                         )
 
     def draw_parameters(self, draw_number, rng):
         return  # Using default parameters in all cases
