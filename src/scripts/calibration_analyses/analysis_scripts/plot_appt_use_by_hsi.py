@@ -7,10 +7,7 @@ import squarify
 from matplotlib import pyplot as plt
 
 from tlo import Date
-from tlo.analysis.utils import (
-    bin_hsi_event_details,
-    compute_mean_across_runs,
-)
+from tlo.analysis.utils import bin_hsi_event_details, compute_mean_across_runs
 
 PREFIX_ON_FILENAME = '5'
 
