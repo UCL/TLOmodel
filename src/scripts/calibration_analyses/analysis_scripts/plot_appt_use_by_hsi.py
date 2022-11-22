@@ -45,6 +45,9 @@ def figure5_proportion_of_hsi_events_per_appt_type(results_folder: Path, output_
     counter_to_df['TREATMENT_ID'], counter_to_df['Appt_Type'] = zip(*counter_to_df['index'])
     counter_to_df = counter_to_df.rename(columns={0: 'Count'}).drop(columns='index').copy()
 
+    # get avg annual count
+    counter_to_df['Count'] = counter_to_df['Count']/5
+
     # plot per appointment type
     # rename some appts to be consistent in comparison with real data
     appt_dict = {'Under5OPD': 'OPD',
