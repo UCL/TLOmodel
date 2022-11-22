@@ -20,7 +20,7 @@ class LongRun(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2099, 12, 31)
+        self.end_date = Date(2011, 12, 31)
         self.pop_size = 50_000  # <- recommended population size for the runs
         self.number_of_draws = 1  # <- one scenario
         self.runs_per_draw = 1  # <- repeated this many times
@@ -34,8 +34,8 @@ class LongRun(BaseScenario):
                 'tlo.methods.demography': logging.INFO,
                 #'tlo.methods.demography.detail': logging.WARNING,
                 #'tlo.methods.healthburden': logging.INFO,
-                'tlo.methods.healthsystem': logging.INFO,
-                #'tlo.methods.healthsystem.summary': logging.INFO,
+                #'tlo.methods.healthsystem': logging.INFO,
+                'tlo.methods.healthsystem.summary': logging.INFO,
                 "tlo.methods.contraception": logging.INFO,
             }
         }
