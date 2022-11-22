@@ -21,7 +21,7 @@ class LongRun(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = self.start_date + pd.DateOffset(years=20)
+        self.end_date = Date(2099, 12, 31)
         self.pop_size = 20_000
         self.number_of_draws = 1
         self.runs_per_draw = 1  # <- repeated this many times
