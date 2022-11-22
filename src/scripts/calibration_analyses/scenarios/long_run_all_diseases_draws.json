@@ -9,6 +9,6 @@
       "parameters": null
     }
   ],
-  "commit": "db2c2980f33b6c22f5723f5a367dd743db2d12b5",
-  "github": "https://github.com/UCL/TLOmodel/blob/db2c2980f33b6c22f5723f5a367dd743db2d12b5/src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py"
+  "commit": "0643de0709354e3513f8eec623f36f7b0d0b36c5",
+  "github": "https://github.com/UCL/TLOmodel/blob/0643de0709354e3513f8eec623f36f7b0d0b36c5/src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py"
 }
