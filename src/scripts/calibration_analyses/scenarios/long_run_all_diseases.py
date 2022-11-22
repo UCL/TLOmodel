@@ -21,7 +21,7 @@ class LongRun(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = self.start_date + pd.DateOffset(years=10)
+        self.end_date = Date(2099, 12, 31)
         self.pop_size = 20_000
         self.number_of_draws = 1
         self.runs_per_draw = 1  # <- repeated this many times
@@ -36,7 +36,7 @@ class LongRun(BaseScenario):
                 #'tlo.methods.demography.detail': logging.WARNING,
                 #'tlo.methods.healthburden': logging.INFO,
                 #'tlo.methods.healthsystem': logging.INFO,
-                'tlo.methods.healthsystem.summary': logging.INFO,
+                #'tlo.methods.healthsystem.summary': logging.INFO,
                 "tlo.methods.contraception": logging.INFO,
             }
         }
