@@ -157,7 +157,6 @@ def to_age_group(_ages: pd.Series):
 def get_scenario_outputs(scenario_filename: str, outputs_dir: Path) -> list:
     """Returns paths of folders associated with a batch_file, in chronological order."""
     stub = scenario_filename.rstrip('.py')
-    f: os.DirEntry
     folders = [Path(f.path) for f in os.scandir(outputs_dir) if f.is_dir() and f.name.startswith(stub)]
     folders.sort()
     return folders
@@ -169,7 +168,6 @@ def get_scenario_info(scenario_output_dir: Path) -> dict:
     TODO: read the JSON file to get further information
     """
     info = dict()
-    f: os.DirEntry
     draw_folders = [f for f in os.scandir(scenario_output_dir) if f.is_dir()]
 
     info['number_of_draws'] = len(draw_folders)
@@ -206,7 +204,6 @@ def extract_params(results_folder: Path) -> Optional[pd.DataFrame]:
     """
 
     try:
-        f: os.DirEntry
         # Get the paths for the draws
         draws = [f for f in os.scandir(results_folder) if f.is_dir()]
 
@@ -394,7 +391,6 @@ def create_pickles_locally(scenario_output_dir, compressed_file_name_prefix=None
                 t.write(s.read())
         return target
 
-    f: os.DirEntry
     draw_folders = [f for f in os.scandir(scenario_output_dir) if f.is_dir()]
     for draw_folder in draw_folders:
         run_folders = [f for f in os.scandir(draw_folder) if f.is_dir()]
