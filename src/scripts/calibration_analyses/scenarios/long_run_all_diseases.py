@@ -21,10 +21,10 @@ class LongRun(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = self.start_date + pd.DateOffset(years=10)
+        self.end_date = self.start_date + pd.DateOffset(months=1)
         self.pop_size = 20_000
         self.number_of_draws = 1
-        self.runs_per_draw = 10
+        self.runs_per_draw = 1
 
     def log_configuration(self):
         return {
@@ -38,11 +38,14 @@ class LongRun(BaseScenario):
                 'tlo.methods.healthsystem': logging.INFO,
                 'tlo.methods.healthsystem.summary': logging.INFO,
                 "tlo.methods.contraception": logging.INFO,
+                'tlo.methods.hsi_generic_first_appts': logging.INFO,
             }
         }
 
     def modules(self):
-        return fullmodel(resourcefilepath=self.resources)
+        return fullmodel(resourcefilepath=self.resources,
+                         healthsystem_hsi_event_count_log_period="month"
+                         )
 
     def draw_parameters(self, draw_number, rng):
         return  # Using default parameters in all cases
