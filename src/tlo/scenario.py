@@ -327,11 +327,13 @@ class SampleRunner:
 
         sim.make_initial_population(n=self.scenario.pop_size)
         sim.simulate(end_date=self.scenario.end_date)
-        outputs = parse_log_file(sim.log_filepath)
-        for key, output in outputs.items():
-            if key.startswith("tlo."):
-                with open(Path(log_config["directory"]) / f"{key}.pickle", "wb") as f:
-                    pickle.dump(output, f)
+
+        if sim.log_filepath is not None:
+            outputs = parse_log_file(sim.log_filepath)
+            for key, output in outputs.items():
+                if key.startswith("tlo."):
+                    with open(Path(log_config["directory"]) / f"{key}.pickle", "wb") as f:
+                        pickle.dump(output, f)
 
     def run(self):
         # this method will execute all runs of each draw, so we save output in directory
