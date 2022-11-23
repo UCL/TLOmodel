@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def _parse_log_file_inner_loop(filepath, level: int = logging.INFO):
+def _parse_log_file_inner_loop(filepath, level):
     """Parses the log file and returns dictionary of dataframes"""
     log_data = LogData()
     with open(filepath) as log_file:
@@ -41,11 +41,12 @@ def _parse_log_file_inner_loop(filepath, level: int = logging.INFO):
     return output_logs
 
 
-def parse_log_file(log_filepath):
+def parse_log_file(log_filepath, level: int = logging.INFO):
     """Parses logged output from a TLO run, split it into smaller logfiles and returns a class containing paths to
     these split logfiles.
 
     :param log_filepath: file path to log file
+    :param level: parse everything from the given level
     :return: a class containing paths to split logfiles
     """
     print(f'Processing log file {log_filepath}')
@@ -79,7 +80,7 @@ def parse_log_file(log_filepath):
         file_handle.close()
 
     # return an object that accepts as an argument a dictionary containing paths to split logfiles
-    return LogsDict({name: handle.name for name, handle in module_name_to_filehandle.items()})
+    return LogsDict({name: handle.name for name, handle in module_name_to_filehandle.items()}, level)
 
 
 def write_log_to_excel(filename, log_dataframes):
@@ -537,7 +538,7 @@ class LogsDict(Mapping):
             }
     """
 
-    def __init__(self, file_names_and_paths):
+    def __init__(self, file_names_and_paths, level):
         super().__init__()
         # initialise class with module-specific log files paths
         self._logfile_names_and_paths: Dict[str, str] = file_names_and_paths
@@ -545,13 +546,15 @@ class LogsDict(Mapping):
         # create a dictionary that will contain cached data
         self._results_cache: Dict[str, Dict] = dict()
 
+        self._level = level
+
     def __getitem__(self, key, cache=True):
         # check if the requested key is found in a dictionary containing module name and log file paths. if key
         # is found, return parsed logs else return KeyError
         if key in self._logfile_names_and_paths:
             # check if key is found in cache
             if key not in self._results_cache:
-                result_df = _parse_log_file_inner_loop(self._logfile_names_and_paths[key])
+                result_df = _parse_log_file_inner_loop(self._logfile_names_and_paths[key], self._level)
                 # get metadata for the selected log file and merge it all with the selected key
                 result_df[key]['_metadata'] = result_df['_metadata']
                 if not cache:  # check if caching is disallowed

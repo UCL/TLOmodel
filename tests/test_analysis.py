@@ -5,7 +5,7 @@ from typing import List
 import numpy as np
 import pandas as pd
 
-from tlo import Date, Module, Simulation, logging
+from tlo import Date, Module, Simulation, logging, DateOffset, Property, Types
 from tlo.analysis.utils import (
     colors_in_matplotlib,
     flatten_multi_index_series_into_dict_for_logging,
@@ -20,6 +20,7 @@ from tlo.analysis.utils import (
     parse_log_file,
     unflatten_flattened_multi_index_in_logging,
 )
+from tlo.events import RegularEvent, PopulationScopeEventMixin
 from tlo.methods import demography
 from tlo.methods.fullmodel import fullmodel
 
@@ -33,6 +34,67 @@ def test_parse_log():
 
     assert 'tlo.methods.epilepsy' in output
     assert set(output['tlo.methods.epilepsy'].keys()) == {'incidence_epilepsy', 'epilepsy_logging', '_metadata'}
+
+
+def test_parse_log_levels(tmpdir):
+    # setup a toy simulation to test logging
+    logger = logging.getLogger('tlo.methods.dummy')
+    start_date = Date(2010, 1, 1)
+    end_date = Date(2011, 1, 1)
+    pop_size = 100
+
+    class DummyEvent(RegularEvent, PopulationScopeEventMixin):
+        def apply(self, population):
+            logger.info(key="info_level1", data={'number': np.random.randint(0, 100)})
+            logger.info(key="info_level2", data={'number': np.random.randint(0, 100)})
+            logger.debug(key="debug_level", data={'number': np.random.randint(0, 100)})
+
+    class Dummy(Module):
+        PROPERTIES = {'dummy': Property(Types.INT, description='dummy')}
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def on_birth(self, mother, child):
+            pass
+
+        def initialise_simulation(self, sim: Simulation):
+            sim.schedule_event(DummyEvent(self, frequency=DateOffset(months=1)), start_date)
+
+    # test parsing when log level is INFO
+    sim = Simulation(start_date=start_date, log_config={'filename': 'temp', 'directory': tmpdir})
+    sim.register(Dummy())
+    logger.setLevel(logging.INFO)
+    sim.make_initial_population(n=pop_size)
+    sim.simulate(end_date=end_date)
+    output = parse_log_file(sim.log_filepath)
+
+    # At INFO level
+    assert len(output['tlo.methods.dummy']['_metadata']['tlo.methods.dummy']) == 2  # should have two tables
+
+    # tables should be at level INFO
+    for k, v in output['tlo.methods.dummy']['_metadata']['tlo.methods.dummy'].items():
+        assert v['level'] == 'INFO'
+
+    # test parsing when log level is DEBUG
+    sim = Simulation(start_date=start_date, log_config={'filename': 'temp2', 'directory': tmpdir})
+    sim.register(Dummy())
+    logger.setLevel(logging.DEBUG)
+    sim.make_initial_population(n=pop_size)
+    sim.simulate(end_date=end_date)
+    output = parse_log_file(sim.log_filepath, level=logging.INFO)  # we're parsing everything above INFO level
+
+    # logged DEBUG but parsed at INFO levels
+    assert len(output['tlo.methods.dummy']['_metadata']['tlo.methods.dummy']) == 2
+    assert 'debug_level' not in output['tlo.methods.dummy']
+
+    # logged DEBUG and parsed at DEBUG level
+    output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
+    assert len(output['tlo.methods.dummy']['_metadata']['tlo.methods.dummy']) == 3
+    assert 'debug_level' in output['tlo.methods.dummy']
 
 
 def test_flattening_and_unflattening_multiindex(tmpdir):
