@@ -124,8 +124,10 @@ def run_sim(tmpdir,
         )
         sim.modules['Contraception'].processed_params['p_switch_from_per_month'] *= 0.0
 
-        sim.modules['Contraception'].processed_params['p_start_after_birth']['not_using'] = 1.0
-        sim.modules['Contraception'].processed_params['p_start_after_birth'][list(states - {'not_using'})] = 0.0
+        sim.modules['Contraception'].processed_params['p_start_after_birth_below30']['not_using'] = 1.0
+        sim.modules['Contraception'].processed_params['p_start_after_birth_30plus']['not_using'] = 1.0
+        sim.modules['Contraception'].processed_params['p_start_after_birth_below30'][list(states - {'not_using'})] = 0.0
+        sim.modules['Contraception'].processed_params['p_start_after_birth_30plus'][list(states - {'not_using'})] = 0.0
 
     if equalised_risk_of_preg is not None:
         sim.modules['Contraception'].processed_params['p_pregnancy_no_contraception_per_month'].loc[:, :] = \
