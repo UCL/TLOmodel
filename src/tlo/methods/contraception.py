@@ -488,9 +488,6 @@ class Contraception(Module):
             # Scale so that the probability of all outcomes sum to 1.0
             probs = probs / probs.sum()
 
-            # assert set(p_start_after_birth.index) == self.all_contraception_states
-            # assert np.isclose(1.0, p_start_after_birth.sum())
-
             # Prevent women below 30 years having 'female_sterilization'
             probs_below30 = probs.copy()
             probs_below30['female_sterilization'] = 0.0
