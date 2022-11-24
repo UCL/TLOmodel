@@ -4,10 +4,6 @@ This file is to analyse the proportions of symptoms re. HSI_GenericEmergencyFirs
 
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-import pandas as pd
-from matplotlib.cm import get_cmap
-
 from tlo import Date
 from tlo.analysis.utils import get_scenario_outputs, load_pickled_dataframes
 
@@ -33,11 +29,11 @@ symptom['year'] = symptom.date.dt.year.copy()
 symptom.drop(columns='date', inplace=True)
 symptom = symptom.groupby(['year', 'message']).size().reset_index(name='count')
 symptom = symptom.groupby('message')['count'].mean().reset_index()
-symptom['per cent'] = symptom['count']/symptom['count'].sum()
+symptom['per cent'] = 100 * symptom['count']/symptom['count'].sum()
 
 # get the counts relating to RTI module basing on that RTI has two symptoms: injury and severe_trauma
 symptom_rti = symptom[
     symptom.message.isin(['injury', 'severe_trauma', 'injury|severe_trauma', 'severe_trauma|injury'])].copy()
 
 # proportion of RTI counts
-percent_rti = symptom_rti['count'].sum()/symptom['count'].sum()
+percent_rti = 100 * symptom_rti['count'].sum()/symptom['count'].sum()
