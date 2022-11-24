@@ -261,6 +261,8 @@ class Simulation:
             finally:
                 self.output_file.release()
 
+            logging.shutdown()
+
     def schedule_event(self, event, date):
         """Schedule an event to happen on the given future date.
 
