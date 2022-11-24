@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def _parse_log_file_inner_loop(filepath, level: int = logging.INFO):
+def _parse_log_file_inner_loop(filepath, level):
     """Parses the log file and returns dictionary of dataframes"""
     log_data = LogData()
     with gzip.open(filepath, 'rt') as log_file:
@@ -41,11 +41,12 @@ def _parse_log_file_inner_loop(filepath, level: int = logging.INFO):
     return output_logs
 
 
-def parse_log_file(log_filepath, keep_existing=False):
-    """Parses logged output from a TLO run, split it into smaller logfiles and returns a dict-like to access those log
-    files. Can handle both gzipped and uncompressed log files. Looks for a gzip file first.
+def parse_log_file(log_filepath, level: int = logging.INFO, keep_existing=False):
+    """Parses logged output from a TLO run, split it into smaller logfiles and returns a class containing paths to
+    these split logfiles.
 
     :param log_filepath: file path to log file
+    :param level: parse everything from the given level
     :param keep_existing: keep any existing module-specific log files and pickled dataframes
     :return: a class containing paths to split logfiles
     """
@@ -105,7 +106,7 @@ def parse_log_file(log_filepath, keep_existing=False):
     print('Finished writing module-specific log files.')
 
     # return an object that accepts as an argument a dictionary containing paths to split logfiles
-    return LogsDict(module_name_to_filename)
+    return LogsDict(module_name_to_filename, level)
 
 
 def write_log_to_excel(filename, log_dataframes):
@@ -182,7 +183,6 @@ def to_age_group(_ages: pd.Series):
 def get_scenario_outputs(scenario_filename: str, outputs_dir: Path) -> list:
     """Returns paths of folders associated with a batch_file, in chronological order."""
     stub = scenario_filename.rstrip('.py')
-    f: os.DirEntry
     folders = [Path(f.path) for f in os.scandir(outputs_dir) if f.is_dir() and f.name.startswith(stub)]
     folders.sort()
     return folders
@@ -194,7 +194,6 @@ def get_scenario_info(scenario_output_dir: Path) -> dict:
     TODO: read the JSON file to get further information
     """
     info = dict()
-    f: os.DirEntry
     draw_folders = [f for f in os.scandir(scenario_output_dir) if f.is_dir()]
 
     info['number_of_draws'] = len(draw_folders)
@@ -231,7 +230,6 @@ def extract_params(results_folder: Path) -> Optional[pd.DataFrame]:
     """
 
     try:
-        f: os.DirEntry
         # Get the paths for the draws
         draws = [f for f in os.scandir(results_folder) if f.is_dir()]
 
@@ -419,7 +417,6 @@ def create_pickles_locally(scenario_output_dir, compressed_file_name_prefix=None
                 t.write(s.read())
         return target
 
-    f: os.DirEntry
     draw_folders = [f for f in os.scandir(scenario_output_dir) if f.is_dir()]
     for draw_folder in draw_folders:
         run_folders = [f for f in os.scandir(draw_folder) if f.is_dir()]
@@ -563,13 +560,15 @@ class LogsDict(Mapping):
             }
     """
 
-    def __init__(self, file_names_and_paths):
+    def __init__(self, file_names_and_paths, level):
         super().__init__()
         # initialise class with module-specific log files paths
         self._logfile_names_and_paths: Dict[str, str] = file_names_and_paths
 
         # create a dictionary that will contain cached data
         self._results_cache: Dict[str, Dict] = dict()
+
+        self._level = level
 
     def __getitem__(self, key, cache=True):
         # check if the requested key is found in a dictionary containing module name and log file paths. if key
@@ -582,7 +581,7 @@ class LogsDict(Mapping):
                     result_df = pickle.load(open(self._logfile_names_and_paths[key], 'rb'))
                 else:
                     # if the pickled result doesn't exist, we need to create it
-                    result_df = _parse_log_file_inner_loop(self._logfile_names_and_paths[key])
+                    result_df = _parse_log_file_inner_loop(self._logfile_names_and_paths[key], self._level)
                     # get metadata for the selected log file and merge it all with the selected key
                     result_df[key]['_metadata'] = result_df['_metadata']
                     pickle_filename = str((Path(self._logfile_names_and_paths[key])).parent / (key + '.pickle'))
