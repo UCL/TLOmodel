@@ -18,40 +18,40 @@ from tlo.analysis.utils import (
     unflatten_flattened_multi_index_in_logging,
 )
 
+PREFIX_ON_FILENAME = '3'
 
-def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
-    """Description of the usage of healthcare system resources."""
+# Declare period for which the results will be generated (defined inclusively)
+TARGET_PERIOD = (Date(2010, 1, 1), Date(2010, 12, 31))
 
-    # Declare period for which the results will be generated (defined inclusively)
-    TARGET_PERIOD = (Date(2010, 1, 1), Date(2010, 12, 31))
 
-    # Declare path for output graphs from this script
-    make_graph_file_name = lambda stub: output_folder / f"{stub}.png"  # noqa: E731
+def drop_outside_period(_df):
+    """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
+    return _df.drop(index=_df.index[~_df['date'].between(*TARGET_PERIOD)])
 
-    # %% Declare helper functions
 
-    def drop_outside_period(_df):
-        """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
-        return _df.drop(index=_df.index[~_df['date'].between(*TARGET_PERIOD)])
+def formatting_hsi_df(_df):
+    """Standard formatting for the HSI_Event log."""
+    _df = _df.pipe(drop_outside_period) \
+        .drop(_df.index[~_df.did_run]) \
+        .reset_index(drop=True) \
+        .drop(columns=['Person_ID', 'Squeeze_Factor', 'Facility_ID', 'did_run'])
 
-    def formatting_hsi_df(_df):
-        """Standard formatting for the HSI_Event log."""
-        _df = _df.pipe(drop_outside_period) \
-                 .drop(_df.index[~_df.did_run]) \
-                 .reset_index(drop=True) \
-                 .drop(columns=['Person_ID', 'Squeeze_Factor', 'Facility_ID', 'did_run'])
+    # Unpack the dictionary in `Number_By_Appt_Type_Code`.
+    _df = _df.join(_df['Number_By_Appt_Type_Code'].apply(pd.Series).fillna(0.0)).drop(
+        columns='Number_By_Appt_Type_Code')
 
-        # Unpack the dictionary in `Number_By_Appt_Type_Code`.
-        _df = _df.join(_df['Number_By_Appt_Type_Code'].apply(pd.Series).fillna(0.0)).drop(
-            columns='Number_By_Appt_Type_Code')
+    # Produce coarse version of TREATMENT_ID (just first level, which is the module)
+    _df['TREATMENT_ID_SHORT'] = _df['TREATMENT_ID'].str.split('_').apply(lambda x: x[0])
 
-        # Produce coarse version of TREATMENT_ID (just first level, which is the module)
-        _df['TREATMENT_ID_SHORT'] = _df['TREATMENT_ID'].str.split('_').apply(lambda x: x[0])
+    return _df
 
-        return _df
 
-    # %% "Figure 1": The Distribution of HSI_Events that occur by TREATMENT_ID
-    # N.B. This uses the summary logger for speed. All other figures use the full logger as that is necessary.
+def figure1_distribution_of_hsi_event_by_treatment_id(results_folder: Path, output_folder: Path,
+                                                      resourcefilepath: Path):
+    """ 'Figure 1': The Distribution of HSI_Events that occur by TREATMENT_ID.
+    N.B. This uses the summary logger for speed. All other figures use the full logger as that is necessary."""
+
+    make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_Fig1_{stub}.png"  # noqa: E731
 
     def get_counts_of_hsi_by_treatment_id(_df):
         """Get the counts of the short TREATMENT_IDs occurring"""
@@ -106,6 +106,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
+    plt.close(fig)
 
     fig, ax = plt.subplots()
     name_of_plot = 'HSI Events by TREATMENT_ID (Short)'
@@ -122,10 +123,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
+    plt.close(fig)
 
-    # %% "Figure 2": The Appointments Used
 
-    # USING LONG LOGGER
+def figure2_appointments_used(results_folder: Path, output_folder: Path, resourcefilepath: Path):
+    """ 'Figure 2': The Appointments Used"""
+
+    make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_Fig2_{stub}.png"  # noqa: E731
 
     def get_counts_of_appt_type_by_treatment_id_short(_df):
         return formatting_hsi_df(_df) \
@@ -147,9 +151,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # PLOT TOTALS BY COARSE APPT_TYPE
     counts_of_coarse_appt_by_treatment_id_short = \
-        counts_of_appt_by_treatment_id_short \
-        .unstack() \
-        .groupby(axis=1, by=counts_of_appt_by_treatment_id_short.index.levels[1].map(get_coarse_appt_type)).sum()
+        counts_of_appt_by_treatment_id_short.unstack()\
+                                            .groupby(axis=1,
+                                                     by=(
+                                                         counts_of_appt_by_treatment_id_short.index.levels[1].map(
+                                                             get_coarse_appt_type))
+                                                     )\
+                                            .sum()
 
     counts_of_coarse_appt_by_treatment_id_short = counts_of_coarse_appt_by_treatment_id_short[
         sorted(counts_of_coarse_appt_by_treatment_id_short.columns, key=order_of_coarse_appt)
@@ -183,8 +191,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
+    plt.close(fig)
 
-    # %% "Figure 3": The Fraction of the time of each HCW used by each TREATMENT_ID (Short)
+
+def figure3_fraction_of_time_of_hcw_used_by_treatment(results_folder: Path, output_folder: Path,
+                                                      resourcefilepath: Path):
+    """ 'Figure 3': The Fraction of the time of each HCW used by each TREATMENT_ID (Short)"""
+
+    make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_Fig3_{stub}.png"  # noqa: E731
 
     def get_share_of_time_for_hw_by_short_treatment_id(_df):
         appts = formatting_hsi_df(_df) \
@@ -255,8 +269,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.suptitle(name_of_plot, fontproperties={'size': 12})
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
+    plt.close(fig)
 
-    # %% "Figure 4": The level of usage of the HealthSystem HR Resources
+
+def figure4_hr_use_overall(results_folder: Path, output_folder: Path, resourcefilepath: Path):
+    """ 'Figure 4': The level of usage of the HealthSystem HR Resources """
+
+    make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_Fig4_{stub}.png"  # noqa: E731
 
     def get_share_of_time_for_hw_in_each_facility_by_short_treatment_id(_df):
         _df = drop_outside_period(_df)
@@ -329,6 +348,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
+    plt.close(fig)
 
     fig, ax = plt.subplots()
     name_of_plot = 'Usage of Healthcare Worker Time (Average)'
@@ -356,6 +376,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
+    plt.close(fig)
 
     fig, ax = plt.subplots()
     name_of_plot = 'Usage of Healthcare Worker Time by Cadre and Facility_Level'
@@ -369,8 +390,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
+    plt.close(fig)
 
-    # %% "Figure 5": The level of usage of the Beds in the HealthSystem
+
+def figure5_bed_use(results_folder: Path, output_folder: Path, resourcefilepath: Path):
+    """ 'Figure 5': The level of usage of the Beds in the HealthSystem"""
+
+    make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_Fig5_{stub}.png"  # noqa: E731
 
     def get_frac_of_beddays_used(_df):
         _df = drop_outside_period(_df)
@@ -402,8 +428,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
+    plt.close(fig)
 
-    # %% "Figure 6": Usage of consumables in the HealthSystem
+
+def figure6_cons_use(results_folder: Path, output_folder: Path, resourcefilepath: Path):
+    """ 'Figure 6': Usage of consumables in the HealthSystem"""
+
+    make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_Fig6_{stub}.png"  # noqa: E731
 
     def get_counts_of_items_requested(_df):
         _df = drop_outside_period(_df)
@@ -455,6 +486,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
+    plt.close(fig)
 
     fig, ax = plt.subplots()
     name_of_plot = 'Consumables Not Available'
@@ -468,8 +500,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
+    plt.close(fig)
 
     # HSI affected by missing consumables
+
     def get_treatment_id_affecting_by_missing_consumables(_df):
         """Return frequency that a (short) TREATMENT_ID suffers from consumables not being available."""
         _df = drop_outside_period(_df)
@@ -490,7 +524,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     )
 
     fig, ax = plt.subplots()
-    name_of_plot = 'HSI Affected by Unavailable Consumables\n(by Short TREATMENT_ID)'
+    name_of_plot = 'HSI Affected by Unavailable Consumables (by Short TREATMENT_ID)'
     squarify_neat(
         sizes=treatment_id_affecting_by_missing_consumables.values,
         label=treatment_id_affecting_by_missing_consumables.index,
@@ -503,3 +537,43 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
+    plt.close(fig)
+
+
+def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
+    """Description of the usage of healthcare system resources."""
+
+    figure1_distribution_of_hsi_event_by_treatment_id(
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    )
+
+    figure2_appointments_used(
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    )
+
+    figure3_fraction_of_time_of_hcw_used_by_treatment(
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    )
+
+    figure4_hr_use_overall(
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    )
+
+    figure5_bed_use(
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    )
+
+    figure6_cons_use(
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    )
+
+
+if __name__ == "__main__":
+
+    results_folder = Path('./outputs') / 'long_run-2022-07-21T101707Z'  # small run created for test purposes (locally)
+
+    apply(
+        results_folder=results_folder,
+        output_folder=results_folder,
+        resourcefilepath=Path('./resources')
+    )

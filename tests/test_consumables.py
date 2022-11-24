@@ -535,6 +535,7 @@ def test_get_item_codes_from_package_name():
     )
 
     example_package_names = [
+        "Implant",
         "Measles rubella vaccine",
         "HPV vaccine",
         "Tetanus toxoid (pregnant women)"
@@ -546,7 +547,7 @@ def test_get_item_codes_from_package_name():
 
         res_from_lookup = \
             lookup_df.loc[lookup_df.Intervention_Pkg == _pkg_name].set_index('Item_Code').sort_index()[
-                'Expected_Units_Per_Case'].astype(int)
+                'Expected_Units_Per_Case'].astype(float)
 
         pd.testing.assert_series_equal(
             res_from_lookup.groupby(res_from_lookup.index).sum(),

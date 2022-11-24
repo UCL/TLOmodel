@@ -40,6 +40,7 @@ Contents
    readme
    azure_batch
    reference/index
+   background
    publications
    authors
    contributing

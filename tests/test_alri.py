@@ -220,19 +220,19 @@ def test_integrity_of_linear_models(sim_hs_all_consumables):
                                                           ),
                                                           has_secondary_bacterial_inf=pd.notnull(coinf)
                                                           )
-                assert isinstance(res, set)
+                assert isinstance(res, (set, list))
                 assert all([c in alri_module.complications for c in res])
 
     # --- symptoms_for_disease
     for disease_type in alri_module.disease_types:
         res = models.symptoms_for_disease(disease_type)
-        assert isinstance(res, set)
+        assert isinstance(res, (set, list))
         assert all([s in sim.modules['SymptomManager'].symptom_names for s in res])
 
     # --- symptoms_for_complication
     for complication in alri_module.complications:
         res = models.symptoms_for_complication(complication, oxygen_saturation='<90%')
-        assert isinstance(res, set)
+        assert isinstance(res, (set, list))
         assert all([s in sim.modules['SymptomManager'].symptom_names for s in res])
 
     # --- death
