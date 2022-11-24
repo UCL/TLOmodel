@@ -330,7 +330,7 @@ def test_woman_starting_contraceptive_after_birth(tmpdir, seed):
         sim.population.props.at[person_id, 'co_contraception'] = "not_using"
 
         # Run `select_contraceptive_following_birth`
-        sim.modules['Contraception'].select_contraceptive_following_birth(person_id)
+        sim.modules['Contraception'].select_contraceptive_following_birth(person_id, _props["age_years"])
 
         # Get new status
         co_after_birth.append(sim.population.props.at[person_id, 'co_contraception'])
