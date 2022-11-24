@@ -452,7 +452,7 @@ def analyse_contraception(in_datestamp: str, in_log_file: str, in_suffix: str,
 
             :return: Contraception method as string.
             """
-        # TODO: Create dictionaries for contraception methods from the ResourceFile (resource_items_pkgs_df)
+        # TODO: soft code this (use resource_items_pkgs_df)
             if in_d == dict({1: 8}):
                 return 'pill'
             if in_d == dict({2: 120}):
