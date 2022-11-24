@@ -37,6 +37,13 @@ class Playing22(BaseScenario):
             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
         ]
 
+    def draw_parameters(self, draw_number, rng):
+        return {
+            'Lifestyle': {
+                'init_p_urban': rng.randint(10, 20) / 100.0,
+            },
+        }
+
 
 if __name__ == '__main__':
     from tlo.cli import scenario_run
