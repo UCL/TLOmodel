@@ -1034,6 +1034,7 @@ class Hiv(Module):
         if "CareOfWomenDuringPregnancy" not in self.sim.modules:
             # if mother's HIV status not known, schedule test at delivery
             # usually performed by care_of_women_during_pregnancy module
+            # todo change prob_anc_test_at_delivery to 1 in resourcefile
             if not mother.hv_diagnosed and \
                 mother.is_alive and (
                     self.rng.random_sample() < params["prob_anc_test_at_delivery"]):
@@ -2030,8 +2031,9 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
         if not person["is_alive"]:
             return
 
-        # If the person has previously been diagnosed do nothing do not occupy any resources
-        if person["hv_diagnosed"]:
+        # todo add condition on treatment, so allow for repeat testing
+        # If person is diagnosed and on treatment do nothing do not occupy any resources
+        if person["hv_diagnosed"] and (person["hv_art"] != "on_VL_suppressed"):
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         # Run test
@@ -2406,8 +2408,6 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 # If person 'decides to' seek another treatment appointment,
                 # schedule a new HSI appointment for next month
                 # NB. With a probability of 1.0, this will keep occurring,
-                # and the person will never give-up coming back to
-                # pick-up medication.
                 # if person has already tried unsuccessfully to get ART at level 1a 2 times
                 #  then refer to level 1b
                 if self.counter_for_drugs_not_available <= 2:
@@ -2423,10 +2423,11 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
                 else:
                     # refer to higher facility level
+                    # todo change this to level 2
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         hsi_event=HSI_Hiv_StartOrContinueTreatment(
                             person_id=person_id, module=self.module,
-                            facility_level_of_this_hsi="1b"
+                            facility_level_of_this_hsi="2"
                         ),
                         topen=self.sim.date + pd.DateOffset(days=1),
                         priority=0,

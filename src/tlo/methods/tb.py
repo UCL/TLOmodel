@@ -817,23 +817,28 @@ class Tb(Module):
         df["tb_date_ipt"] = pd.NaT
 
         # # ------------------ infection status ------------------ #
+        # todo set incidence for full yr 2010 then run poll from jan 2011
         # WHO estimates of active TB for 2010
         # need an infected initial population
         inc_estimates = p["who_incidence_estimates"]
         incidence_year = (inc_estimates.loc[
             (inc_estimates.year == self.sim.date.year), "incidence_per_100k"
         ].values[0]) / 100000
-        incidence_month = incidence_year / 12
 
+        # todo change this back
+        # incidence_month = incidence_year / 12
+
+        # todo change to incidence month
         self.assign_baseline_active_tb(
             population,
             strain="ds",
             incidence=incidence_year)
 
+        # todo change to incidence month
         self.assign_baseline_active_tb(
             population,
             strain="mdr",
-            incidence=incidence_month * p['prop_mdr2010'])
+            incidence=incidence_year * p['prop_mdr2010'])
 
         self.send_for_screening_general(
             population
@@ -848,9 +853,9 @@ class Tb(Module):
 
         # 1) Regular events
         sim.schedule_event(TbActiveEvent(self), sim.date + DateOffset(days=0))
-        sim.schedule_event(TbTreatmentAndRelapseEvents(self), sim.date + DateOffset(months=1))
-        sim.schedule_event(TbSelfCureEvent(self), sim.date + DateOffset(months=1))
-        sim.schedule_event(TbActiveCasePoll(self), sim.date + DateOffset(months=1))
+        sim.schedule_event(TbTreatmentAndRelapseEvents(self), sim.date + DateOffset(days=0))
+        sim.schedule_event(TbSelfCureEvent(self), sim.date + DateOffset(days=0))
+        sim.schedule_event(TbActiveCasePoll(self), sim.date + DateOffset(years=1))
 
         # log at the end of the year
         sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(years=1))
@@ -967,10 +972,13 @@ class Tb(Module):
         update properties as needed
         symptoms and smear status are assigned in the TbActiveEvent
         """
+        # todo changed this to assign all 2010 tb cases
+        # todo may allow sufficient onward transmission so no big drops!
 
         df = population.props
         rng = self.rng
         now = self.sim.date
+        p = self.parameters
 
         # ------------------ infection status ------------------ #
         # identify eligible people, not currently with active tb infection
@@ -996,12 +1004,14 @@ class Tb(Module):
 
         df.loc[idx_new_infection, "tb_strain"] = strain
 
-        # schedule onset of active tb, time now up to 1 year
+        # todo change timeframe to one yr
+        # schedule onset of active tb, time now up to 1 yr
         for person_id in idx_new_infection:
             date_progression = now + pd.DateOffset(
                 days=rng.randint(0, 365)
             )
 
+            # todo reset
             # set date of active tb - properties will be updated at TbActiveEvent every month
             df.at[person_id, "tb_scheduled_date_active"] = date_progression
 
@@ -1100,9 +1110,6 @@ class Tb(Module):
 
             df.loc[idx_new_infection, "tb_strain"] = strain
 
-            # todo remove
-            print("transmitted", len(idx_new_infection))
-
             # todo change to within one month
             # schedule onset of active tb, time now up to 1 year
             for person_id in idx_new_infection:
@@ -1147,9 +1154,6 @@ class Tb(Module):
         idx_new_infection = will_be_infected[will_be_infected].index
 
         df.loc[idx_new_infection, "tb_strain"] = strain
-
-        # todo remove
-        print("importation", len(idx_new_infection))
 
         # schedule onset of active tb, time now up to 1 year
         # if already active -> do nothing
@@ -1606,7 +1610,6 @@ class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
 
         # importation of new mdr cases - independent of current prevalence
         self.module.import_tb_cases(population, strain="mdr", import_rate=p["importation_rate_mdr"])
-
 
 
 class TbTreatmentAndRelapseEvents(RegularEvent, PopulationScopeEventMixin):
@@ -2665,7 +2668,6 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         new_tb_cases = len(
             df[(df.tb_date_active >= (now - DateOffset(months=self.repeat)))]
         )
-
         # todo remove
         print(new_tb_cases)
 
@@ -2783,6 +2785,8 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 & (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
                 ]
         )
+        # todo remove
+        print("mdr", new_mdr_cases)
 
         if new_mdr_cases:
             prop_mdr = new_mdr_cases / new_tb_cases
