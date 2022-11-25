@@ -132,9 +132,6 @@ class HealthSeekingBehaviour(Module):
         * assemble the health-care seeking information from the registered symptoms
         """
 
-        # Define the linear models that govern healthcare seeking
-        self.define_linear_models()
-
         # Schedule the HealthSeekingBehaviourPoll
         self.theHealthSeekingBehaviourPoll = HealthSeekingBehaviourPoll(self)
         sim.schedule_event(self.theHealthSeekingBehaviourPoll, sim.date)
@@ -162,6 +159,9 @@ class HealthSeekingBehaviour(Module):
                 self.odds_ratio_health_seeking_in_adults[symptom.name] = (
                     symptom.odds_ratio_health_seeking_in_adults
                 )
+
+        # Define the linear models that govern healthcare seeking
+        self.define_linear_models()
 
     def on_birth(self, mother_id, child_id):
         """Nothing to handle on_birth
