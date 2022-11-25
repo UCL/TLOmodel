@@ -584,13 +584,15 @@ class LogsDict(Mapping):
                     result_df = _parse_log_file_inner_loop(self._logfile_names_and_paths[key], self._level)
                     # get metadata for the selected log file and merge it all with the selected key
                     result_df[key]['_metadata'] = result_df['_metadata']
+                    # pop the key for pickling
+                    result_df = result_df[key]
                     pickle_filename = str((Path(self._logfile_names_and_paths[key])).parent / (key + '.pickle'))
                     pickle.dump(result_df, open(pickle_filename, 'wb'))
                     self._logfile_names_and_paths[key] = pickle_filename
 
                 if not cache:  # check if caching is disallowed
-                    return result_df[key]
-                self._results_cache[key] = result_df[key]    # add key specific parsed results to cache
+                    return result_df
+                self._results_cache[key] = result_df    # add key specific parsed results to cache
             return self._results_cache[key]  # return the added results
 
         else:
