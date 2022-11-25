@@ -46,6 +46,8 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_healthcareseek
             self.sim.modules['SymptomManager'].register_symptom(
                 Symptom(
                     name='Symptom_that_does_cause_healthcare_seeking',
+                    odds_ratio_health_seeking_in_adults=1000000.0,  # <--- very high odds of seeking care
+                    odds_ratio_health_seeking_in_children=1000000.0  # <--- very high odds of seeking care
                 ),
             )
 
