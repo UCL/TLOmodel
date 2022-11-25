@@ -13,6 +13,8 @@ from tlo.methods import demography, enhanced_lifestyle, simplified_births
 
 
 def add_footnote(footnote: str):
+    """ A function that adds a footnote below each plot. Here we are explaining what a denominator for every
+    graph is """
     plt.figtext(0.5, 0.01, footnote, ha="center", fontsize=10,
                 bbox={"facecolor": "gray", "alpha": 0.3, "pad": 5})
 
@@ -22,8 +24,7 @@ class LifeStylePlots:
 
     def __init__(self, logs=None, path: str = None):
 
-        # create a dictionary for lifestyle property description to be used as plot descriptors. Here we are
-        # excluding two properties circumcision and sex workers as these are logged differently
+        # create a dictionary for lifestyle properties and their descriptions, to be used as plot descriptors.
         self.en_props = {'li_urban': ['currently urban', 'Denominator: Sum of all individuals per gender',
                                       'Denominator: Sum of all individuals in each age-group'],
 
@@ -54,9 +55,10 @@ class LifeStylePlots:
                                       'Denominator: Sum of all individuals aged between 5-19 in all age-group'
                                       ],
 
-                         'li_ed_lev': ['education level', 'Denominator: Sum of individuals in all education levels '
-                                                          'per gender',
-                                       'Denominator: Sum of individuals in all education levels in each age-group'],
+                         'li_ed_lev': ['education level', 'Denominator: Sum of individuals from age 0 in all '
+                                                          'education levels per gender',
+                                       'Denominator: Sum of individuals from age 0 in all education levels in each '
+                                       'age-group'],
 
                          'li_unimproved_sanitation': ['unimproved sanitation', 'Denominator: Sum of all individuals '
                                                                                'per urban or rural per gender',
@@ -72,7 +74,7 @@ class LifeStylePlots:
                                                         ],
                          'li_wood_burn_stove': ['wood burn stove', 'Denominator: Sum of all individuals per urban or '
                                                                    'rural per gender',
-                                                'Denominator: Sum of all individuals per urban or rural in ach '
+                                                'Denominator: Sum of all individuals per urban or rural in each '
                                                 'age-group'],
 
                          'li_no_access_handwashing': [' no access hand washing', 'Denominator: Sum of all individuals '
@@ -99,22 +101,22 @@ class LifeStylePlots:
                                              'Denominator: Sum of females in each age-group ranging from 15-49'],
                          }
 
-        # category description dictionary
+        # A dictionary to map properties and their description. Useful when setting plot legend
         self.categories_desc: dict = {
             'li_bmi': ["bmi category 1", "bmi category 2", "bmi category 3", "bmi category 4", "bmi category 5"],
             'li_wealth': ['wealth level 1', 'wealth level 2', 'wealth level 3', 'wealth level 4', 'wealth level 5'],
             'li_mar_stat': ['Never Married', 'Married', 'Divorced or Widowed'],
-            'li_ed_lev': ['Not in education', 'Primary edu', 'secondary education']
+            'li_ed_lev': ['No education', 'Primary edu', 'secondary education']
         }
 
-        # create a dictionary to hold individuals rural or urban state
+        # create a dictionary to defining individual's rural or urban state
         self._rural_urban_state = {
             'True': 'Urban',
             'False': 'Rural'
         }
 
         # define all properties that are categorised by rural or urban in addition to age and sex
-        self.cat_by_rural_urban_props = ['li_wealth', 'li_bmi', 'li_ex_alc', 'li_wood_burn_stove',
+        self.cat_by_rural_urban_props = ['li_wealth', 'li_bmi', 'li_low_ex', 'li_ex_alc', 'li_wood_burn_stove',
                                          'li_unimproved_sanitation',
                                          'li_no_clean_drinking_water']
 
@@ -159,7 +161,7 @@ class LifeStylePlots:
         # else [self.en_props[li_property]], bbox_to_anchor=(0.5, -0.27), loc='upper center')
         plt.gcf().autofmt_xdate()
 
-    # 1. GENDER PLOTS
+    # 1. PLOT BY GENDER
     # --------------------------------------------------------------------------------------------------------
     def plot_categorical_properties_by_gender(self, li_property: str, categories: list):
         """ a function to plot all categorical properties of lifestyle module grouped by gender. Available
@@ -187,7 +189,7 @@ class LifeStylePlots:
 
         3. education level
              education level is categorised as follows
-                    level 1: not in education
+                    level 1: no education
                     level 2: primary education
                     level 3 : secondary+ education )
 
@@ -228,8 +230,9 @@ class LifeStylePlots:
                 _cols_counter += 1
             # save and display plots
             add_footnote(f'{self.en_props[li_property][1]}')
+            plt.tight_layout()
             plt.savefig(self.outputpath / (
-                li_property + '_' + self._rural_urban_state[urban_rural] + self.datestamp + '.png'),
+                li_property + '_' + self.datestamp + '.png'),
                         format='png')
             plt.show()
 
@@ -256,6 +259,7 @@ class LifeStylePlots:
 
             # save and display plots for property categories by gender
             add_footnote(f'{self.en_props[li_property][1]}')
+            plt.tight_layout()
             plt.savefig(self.outputpath / (li_property + self.datestamp + '.png'), format='png')
             plt.show()
 
@@ -266,7 +270,7 @@ class LifeStylePlots:
 
         # set y-axis limit.
         y_lim: float = 0.8
-        if _property in ['li_no_access_handwashing', 'li_high_salt', 'li_wood_burn_stove']:
+        if _property in ['li_no_access_handwashing', 'li_high_salt', 'li_wood_burn_stove', 'li_in_ed']:
             y_lim = 1.0
 
         if _property in ['li_tob', 'li_ex_alc']:
@@ -306,6 +310,7 @@ class LifeStylePlots:
                 _cols_counter += 1
             # save and display plots for property categories by gender
             add_footnote(f'{self.en_props[_property][1]}')
+            plt.tight_layout()
             plt.savefig(self.outputpath / (_property + self.datestamp + '.png'), format='png')
             plt.show()
 
@@ -333,6 +338,7 @@ class LifeStylePlots:
                 _rows_counter += 1
             # save and display plots for property categories by gender
             add_footnote(f'{self.en_props[_property][1]}')
+            plt.tight_layout()
             plt.savefig(self.outputpath / (_property + self.datestamp + '.png'), format='png')
             plt.show()
 
@@ -408,11 +414,12 @@ class LifeStylePlots:
                                                axis=0)
 
                 # convert values to proportions
-                new_df = new_df.apply(lambda row: row / row.sum(), axis=0)
+                # new_df = new_df.apply(lambda row: row / row.sum(), axis=0)
                 new_df = new_df.apply(lambda row: row / row.sum(), axis=1)
                 # do plotting
                 ax = new_df.plot(kind='bar', stacked=True, ax=axes[_rows_counter],
-                                 title=f"{self._rural_urban_state[urban_rural]} {self.en_props[_property][0]}  categories",
+                                 title=f"{self._rural_urban_state[urban_rural]} {self.en_props[_property][0]} "
+                                       f" categories (Year 2021)",
                                  ylabel=f"{self.en_props[_property][0]} proportions", xlabel="Age Range",
                                  ylim=(0, 1))
                 ax.legend(self.categories_desc[_property], loc='upper right')
@@ -431,12 +438,11 @@ class LifeStylePlots:
             for cat in categories:
                 new_df[f'cat_{cat}'] = self.dfs[_property]['M'][cat].sum(axis=0) + self.dfs[_property]['F'][cat].sum(
                     axis=0)
-
             # convert values to proportions
-            new_df = new_df.apply(lambda row: row / row.sum(), axis=0)
+            # new_df = new_df.apply(lambda row: row / row.sum(), axis=0)
             new_df = new_df.apply(lambda row: row / row.sum(), axis=1)
             # do plotting
-            ax = new_df.plot(kind='bar', stacked=True, title=f"{self.en_props[_property][0]}  categories",
+            ax = new_df.plot(kind='bar', stacked=True, title=f"{self.en_props[_property][0]}  categories (Year 2021)",
                              ylabel=f"{self.en_props[_property][0]} proportions", xlabel="Age Range"
                              )
             ax.legend(self.categories_desc[_property], loc='upper right')
@@ -482,9 +488,9 @@ class LifeStylePlots:
                     axes[_rows_counter].bar(age_group, get_age_group_props, color='darkturquoise')
                     axes[_rows_counter].set_title(
                         f"{self._rural_urban_state[urban_rural]} {self.en_props[_property][0]}"
-                        f" by age groups")
+                        f" by age groups (Year 2021)")
                     axes[_rows_counter].set_ylabel(f"{self.en_props[_property][0]} proportions")
-                    axes[_rows_counter].set_ylim(0, 0.8 if not _property == 'li_wood_burn_stove' else 1.0)
+                    axes[_rows_counter].set_ylim(0, 1.0)
                     axes[_rows_counter].legend([self.en_props[_property][0]], loc='upper right')
                 _rows_counter += 1
 
@@ -492,31 +498,29 @@ class LifeStylePlots:
                 plt.xlabel("age groups")
             # save and display graph
             add_footnote(f'{self.en_props[_property][2]}')
+            plt.tight_layout()
             plt.savefig(self.outputpath / (_property + 'by_age_group' + self.datestamp + '.png'), format='png')
             plt.show()
 
         # 2. if property is not in a group of those that need plotting by urban and rural plot them by age category only
         else:
-            # create a list containing individuals age groups. age groups are the same for both males and females so
-            # either gender doesnt matter
-            get_age_group = self.dfs[_property]["M"]["True"].columns
-            # loop through age groups and get plot data
-            for age_group in get_age_group:
-                for _bool_value in ['True', 'False']:
-                    get_age_group_totals[_bool_value] = (self.dfs[_property]['M'][_bool_value][age_group] +
-                                                         self.dfs[_property]['F'][_bool_value][age_group])
+            # get individuals per each age group
+            for _bool_value in ['True', 'False']:
+                get_age_group_totals[_bool_value] = self.dfs[_property]['M'][_bool_value].sum(axis=0) + \
+                                                    self.dfs[_property]['F'][_bool_value].sum(axis=0)
 
-                get_age_group_props = get_age_group_totals['True'] / get_age_group_totals.sum(axis=1)
-
-                # do plotting
-                plt.bar(age_group, get_age_group_props, color='darkturquoise')
+            get_age_group_props = get_age_group_totals['True'] / get_age_group_totals.sum(axis=1)
+            # do plotting
+            get_age_group_props.plot.bar(color='darkturquoise')
             # set plot title, labels, legends and axis limit
-            plt.title(f"{self.en_props[_property][0]} by age groups")
+            plt.title(f"{self.en_props[_property][0]} by age groups (Year 2021)")
             plt.xlabel("age groups")
             plt.ylabel(f"{self.en_props[_property][0]} proportions")
             plt.ylim(0, 1 if not _property == 'li_is_sexworker' else 0.04)
             plt.legend([self.en_props[_property][0]], loc='upper right')
             add_footnote(f'{self.en_props[_property][2]}')
+
+            plt.tight_layout()
             plt.savefig(self.outputpath / (_property + 'by_age_group' + self.datestamp + '.png'), format='png')
             plt.show()
 
@@ -541,8 +545,7 @@ class LifeStylePlots:
         gender: str = 'M'  # key in the logs file for men circumcised
         max_ylim = 0.30  # define y limit in plot
 
-        # check property if it is not circumcision( if not circumcision then its female sex workers therefore we have
-        # to update gender and y limit values)
+        # check property if not circumcision. if true, update gender and y limit values
         if not _property == 'li_is_circ':
             gender = 'F'
             max_ylim = 0.01
@@ -558,6 +561,7 @@ class LifeStylePlots:
 
         # save and display plots
         add_footnote(f'{self.en_props[_property][1]}')
+        plt.tight_layout()
         plt.savefig(self.outputpath / (_property + self.datestamp + '.png'), format='png')
         plt.show()
 
@@ -588,7 +592,7 @@ def run():
 
     # Basic arguments required for the simulation
     start_date = Date(2010, 1, 1)
-    end_date = Date(2020, 1, 1)
+    end_date = Date(2050, 1, 1)
     pop_size = 20000
 
     # This creates the Simulation instance for this run. Because we"ve passed the `seed` and
@@ -616,18 +620,17 @@ def run():
 # catch warnings
 # pd.set_option('mode.chained_assignment', 'raise')
 # %% Run the Simulation
-# sim = run()
+sim = run()
 
 # %% read the results
-# output = parse_log_file(sim.log_filepath)
-output = parse_log_file(Path("./outputs/enhanced_lifestyle__2022-11-02T104952.log"))
+output = parse_log_file(sim.log_filepath)
+# output = parse_log_file(Path("./outputs/enhanced_lifestyle__2022-11-24T135421.log"))
 
 # construct a dict of dataframes using lifestyle logs
 logs_df = output['tlo.methods.enhanced_lifestyle']
 
 # initialise LifestylePlots class
 g_plots = LifeStylePlots(logs=logs_df, path="./outputs")
-
 # plot by gender
 # g_plots.display_all_categorical_and_non_categorical_plots_by_gender()
 

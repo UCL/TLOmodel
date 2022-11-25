@@ -321,7 +321,8 @@ class Lifestyle(Module):
             Types.CATEGORICAL, 'marital status {1:never, 2:current, 3:past (widowed or divorced)}', categories=[1, 2, 3]
         ),
         'li_in_ed': Property(Types.BOOL, 'currently in education'),
-        'li_ed_lev': Property(Types.CATEGORICAL, 'education level achieved as of now', categories=[1, 2, 3]),
+        'li_ed_lev': Property(Types.CATEGORICAL, 'education level achieved as of now', categories=[1, 2, 3],
+                              ordered=True),
         'li_unimproved_sanitation': Property(
             Types.BOOL, 'uninproved sanitation - anything other than own or ' 'shared latrine'
         ),
@@ -346,6 +347,12 @@ class Lifestyle(Module):
         )
 
         self.load_parameters_from_dataframe(dfd)
+
+        # load urban by distric data
+        p['init_p_urban'] = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Lifestyle_Enhanced.xlsx',
+                                          sheet_name='urban_rural_by_district').drop(columns=['rural', 'urban',
+                                                                                              'prop_rural'], axis=1)
+
         # Manually set dates for campaign starts for now todo - fix this
         p['start_date_campaign_exercise_increase'] = datetime.date(2010, 7, 1)
         p['start_date_campaign_quit_smoking'] = datetime.date(2010, 7, 1)
@@ -461,7 +468,6 @@ class EduPropertyInitialiser:
         dfx.loc[dfx['p_ed_lev_1'] > rnd_draw, 'li_ed_lev'] = 1
 
         edu_df.loc[age_gte5, 'li_ed_lev'] = dfx['li_ed_lev']
-        edu_df.loc[df.age_years < 5, 'li_ed_lev'] = 1
 
         edu_df.loc[df.age_years.between(5, 12) & (edu_df['li_ed_lev'] == 2) & df.is_alive, 'li_in_ed'] = True
         edu_df.loc[df.age_years.between(13, 19) & (edu_df['li_ed_lev'] == 3) & df.is_alive, 'li_in_ed'] = True
@@ -642,18 +648,36 @@ class LifestyleModels:
         self.date_last_run = now
 
     def rural_urban_linear_model(self) -> LinearModel:
-        """ a function to create linear model for rural urban properties. Here we are using additive linear model and
-        have no predictors hence the base probability is used as the final value for all individuals """
+        """ a function to create linear model for rural urban properties. Here we are using custom linear model and
+        assigning individuals rural urban status based on their district of origin """
 
-        # set baseline probability for all individuals
-        base_prob = self.params['init_p_urban']
+        def predict_rural_urban_status(self, df, rng=None, **externals) -> pd.Series:
+            """ a function to assign individuals rural, urban status
 
-        # create linear model
-        rural_urban_lm = LinearModel(LinearModelType.MULTIPLICATIVE,
-                                     base_prob
-                                     )
+            :param  self:   a reference to the calling custom linear model
+            :param  df:     population dataframe
+            :param  rng:    a random number generator
+            :param  externals: a dict containing any other variables passed on to this function """
+            # get access to module parameters
+            p = self.parameters
 
-        # return rural urban linear model
+            # generate a radom number
+            rnd_draw = pd.Series(data=rng.random_sample(size=len(df)), index=df.index, dtype=float)
+
+            # map district of residence to a series containing probabilities of becoming rural or urban
+            rural_urban_props = df['district_of_residence'].map(p['init_p_urban'].set_index('district')['prop_urban'])
+
+            # check all districts have been corectly mapped to their rural urban proportions
+            assert 0 == rural_urban_props.isna().sum(), 'some districts are not mapped to their rural urban values'
+
+            # get individual's rural urban status
+            rural_urban = rural_urban_props > rnd_draw
+
+            # return individual rural urban status
+            return rural_urban
+
+        # create and return wealth levels linear model
+        rural_urban_lm = LinearModel.custom(predict_rural_urban_status, parameters=self.params)
         return rural_urban_lm
 
     def wealth_level_linear_model(self) -> LinearModel:
@@ -1263,7 +1287,7 @@ class LifestyleModels:
             newly_not_tob_idx = tob_idx[random_draw < eff_rate_not_tob]
             tob_trans.loc[newly_not_tob_idx] = False
 
-            # setting below properties direclty here. perhaps I can do beter?
+            # setting below properties directly here. perhaps I can do beter?
             df.loc[newly_not_tob_idx, 'li_date_not_tob'] = externals['other']
             all_idx_campaign_quit_smoking = df.index[df.is_alive &
                                                      (externals['other'] == p['start_date_campaign_quit_smoking'])]
@@ -1416,7 +1440,6 @@ class LifestyleModels:
             age5_in_primary = rng.random_sample(len(age5)) < prob_primary
             edu_trans.loc[age5[age5_in_primary], 'li_ed_lev'] = 2
             edu_trans.loc[age5[age5_in_primary], 'li_in_ed'] = True
-
             # ---- SECONDARY EDUCATION
 
             # get thirteen year olds that are in primary education, any wealth level
@@ -1431,10 +1454,8 @@ class LifestyleModels:
             age13_to_secondary = rng.random_sample(len(age13_in_primary)) < prob_secondary
             edu_trans.loc[age13_in_primary[age13_to_secondary], 'li_ed_lev'] = 3
 
-
             # those who did not go on to secondary education are no longer in education
             edu_trans.loc[age13_in_primary[~age13_to_secondary], 'li_in_ed'] = False
-
             # ---- DROP OUT OF EDUCATION
 
             # baseline rate of leaving education then adjust for wealth level
@@ -1802,7 +1823,7 @@ class LifestyleModels:
 
             # those reaching age 15 allocated bmi 3
             age15_idx = df.index[df.is_alive & (df.age_exact_years >= 15) & (df.age_exact_years < 15.25)]
-            trans_bmi.loc[age15_idx] = 3
+            trans_bmi.loc[age15_idx] = 2
 
             # possible increase in category of bmi
             bmi_cat_1_to_4_idx = df.index[df.is_alive & (df.age_years >= 15) & df.li_bmi.isin(range(1, 5))]
@@ -1892,7 +1913,7 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # log summary of each lifestyle property
         # NB: In addition to logging properties by sex and age groups, there are some properties that requires
         # individual's urban or rural status. define and log these properties separately
-        cat_by_rural_urban_props = ['li_wealth', 'li_bmi', 'li_ex_alc', 'li_wood_burn_stove',
+        cat_by_rural_urban_props = ['li_wealth', 'li_bmi', 'li_low_ex', 'li_ex_alc', 'li_wood_burn_stove',
                                     'li_unimproved_sanitation', 'li_no_clean_drinking_water']
         # these properties are applicable to individuals 15+ years
         log_by_age_15up = ['li_low_ex', 'li_mar_stat', 'li_ex_alc', 'li_bmi', 'li_tob']
@@ -1917,7 +1938,7 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 data = df.loc[df.is_alive & df.age_years.between(5, 19)].groupby(by=[
                     df.loc[df.is_alive & df.age_years.between(5, 19), 'sex'],
                     df.loc[df.is_alive & df.age_years.between(5, 19), _property],
-                    df.loc[df.is_alive & df.age_years.between(5, 19), 'age_range'],
+                    df.loc[df.is_alive & df.age_years.between(5, 19), 'age_years'],
                 ]).size()
 
             elif _property == 'li_is_sexworker':
@@ -1943,6 +1964,7 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     df.loc[df.is_alive, _property],
                     df.loc[df.is_alive, 'age_range'],
                 ]).size()
+
             # log data
             logger.info(
                 key=_property,

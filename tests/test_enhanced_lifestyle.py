@@ -2,6 +2,7 @@ import os
 import time
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -61,6 +62,30 @@ def test_properties_and_dtypes(simulation):
     df = simulation.population.props
     orig = simulation.population.new_row
     assert (df.dtypes == orig.dtypes).all()
+
+
+def test_assign_rural_urban_by_district(simulation):
+    """ test linear model integrity in assigning individual rural urban status based on their districts """
+    # make an initial population
+    simulation.make_initial_population(n=1)
+
+    # Make this individual rural
+    df = simulation.population.props
+    df.loc[0, 'is_alive'] = True
+    df.loc[0, 'is_urban'] = False
+    df.loc[0, 'district_of_residence'] = 'Lilongwe'
+
+    # confirm an individual is rural
+    assert not df.loc[0, 'li_urban']
+
+    # reset district of residence to an urban district(Here we choose a district of residence with 1.0 urban
+    # probability i.e Lilongwe City), run the rural urban linear model and check the individual is now urban.
+    df.loc[0, 'district_of_residence'] = 'Lilongwe City'
+    rural_urban_lm = enhanced_lifestyle.LifestyleModels(simulation.modules['Lifestyle']).rural_urban_linear_model()
+    df.loc[df.is_alive, 'li_urban'] = rural_urban_lm.predict(df.loc[df.is_alive], rng=np.random)
+
+    # check an individual is now urban
+    assert df.loc[0, 'li_urban']
 
 
 def test_check_properties_daily_event():
