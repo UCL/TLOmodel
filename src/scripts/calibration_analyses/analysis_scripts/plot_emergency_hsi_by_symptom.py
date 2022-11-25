@@ -43,9 +43,9 @@ symp = {'alri': ['cough', 'difficult_breathing'],
         'chronic_syndrome': ['craving_sandwiches'],
         'mockitis': ['extreme_pain_in_the_nose'],
         'rti': ['severe_trauma'],
-        'hiv': ['aids_symptoms'],
+        # 'hiv': ['aids_symptoms'],
         'measles': ['encephalitis'],
-        'tb': ["fatigue", "night_sweats"],
+        # 'tb': ["fatigue", "night_sweats"],
         'other_cancer': ['early_other_adult_ca_symptom']}
 
 # other alri symptoms ['cyanosis', 'fever', 'tachypnoea', 'chest_indrawing', 'danger_signs']
@@ -68,7 +68,7 @@ for i in symptom.index:
 # the null message
 symptom.loc[symptom.message.isin([['']]), 'module'] = 'unknown'
 # simple message of one generic symptom
-symptom.module = symptom.module.fillna('generic')
+symptom.module = symptom.module.fillna('generic and others')
 
 # get counts of modules
 mod_by_symp = symptom.groupby('module')['count'].sum().reset_index()
