@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 from typing import List
 
+import numpy as np
 import pandas as pd
 from pandas import DateOffset
 
@@ -687,9 +688,11 @@ def test_everyone_seeks_care_for_symptom_with_high_odds_ratio_of_seeking_care(se
             pass
 
         def initialise_simulation(self, sim):
-            """Give person_id=0-500 both symptoms"""
+            """Give all persons the symptoms"""
+            df = self.sim.population.props
+            idx_all_alive_persons = df.loc[df.is_alive].index.to_list()
             self.sim.modules['SymptomManager'].change_symptom(
-                person_id=list(range(500)),
+                person_id=idx_all_alive_persons,
                 disease_module=self,
                 symptom_string='NonEmergencySymptom',
                 add_or_remove='+'
@@ -717,10 +720,29 @@ def test_everyone_seeks_care_for_symptom_with_high_odds_ratio_of_seeking_care(se
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date)
 
-    # Run the HealthSeeingBehaviourPoll
+    # Check that everyone has the symptom
+    df = sim.population.props
+    assert set(df.loc[df.is_alive].index) == set(sim.modules['SymptomManager'].who_has('NonEmergencySymptom'))
+
+    # Check that the linear model of health-care seeking show that the prob of seeking care is 1.0
+    hsb = sim.modules['HealthSeekingBehaviour']
+    assert np.allclose(
+        hsb.hsb_linear_models['children'].predict(df.loc[df.is_alive & (df.age_years < 15)]),
+        1.0,
+        atol=0.001
+    )
+    assert np.allclose(
+        hsb.hsb_linear_models['adults'].predict(df.loc[df.is_alive & (df.age_years >= 15)]),
+        1.0,
+        atol=0.001
+    )
+
+    # Check that all persons have the generic HSI when the simulation runs:
+    # - clear HealthSystem queue and run the HealthSeekingPoll
+    sim.modules['HealthSystem'].reset_queue()
     sim.modules['HealthSeekingBehaviour'].theHealthSeekingBehaviourPoll.run()
 
-    # Check that every person for whom the symptom was onset has been scheduled an HSI
+    # - check that every person for whom the symptom was onset has been scheduled an HSI
     for _person_id in range(500):
         # See what HSI are scheduled to occur for the person
         evs = [x[1].TREATMENT_ID for x in
