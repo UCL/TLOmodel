@@ -834,6 +834,7 @@ class Tb(Module):
             strain="ds",
             incidence=incidence_year)
 
+        # todo changes prop_mdr to 0.0186 (error in resourcefile)
         # todo change to incidence month
         self.assign_baseline_active_tb(
             population,
