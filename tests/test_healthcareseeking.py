@@ -745,7 +745,7 @@ def test_everyone_seeks_care_for_symptom_with_high_odds_ratio_of_seeking_care(se
     sim.modules['HealthSeekingBehaviour'].theHealthSeekingBehaviourPoll.run()
 
     # - check that every person for whom the symptom was onset has been scheduled an HSI
-    for _person_id in range(500):
+    for _person_id in df.loc[df.is_alive].index:
         evs = [x[1].TREATMENT_ID for x in
                sim.modules['HealthSystem'].sim.modules['HealthSystem'].find_events_for_person(_person_id)]
         assert 'FirstAttendance_NonEmergency' in evs, f"No FirstAttendance_NonEmergency for {_person_id=}"
