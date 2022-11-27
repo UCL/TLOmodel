@@ -41,20 +41,16 @@ def _parse_log_file_inner_loop(filepath, level):
     return output_logs
 
 
-def parse_log_file(log_filepath, level: int = logging.INFO, keep_existing=False):
+def parse_log_file(log_filepath, level: int = logging.INFO):
     """Parses logged output from a TLO run, split it into smaller logfiles and returns a class containing paths to
     these split logfiles.
 
     :param log_filepath: file path to log file
     :param level: parse everything from the given level
-    :param keep_existing: keep any existing module-specific log files and pickled dataframes
     :return: a class containing paths to split logfiles
     """
     print(f'Processing log file {log_filepath}')
     log_filepath = Path(log_filepath)
-    uuid_to_module_name: Dict[str, str] = dict()  # uuid to module name
-    module_name_to_filehandle: Dict[str, TextIO] = dict()  # module name to file handle
-
     log_directory = log_filepath.parent
     print(f'Writing module-specific log files to {log_directory}')
 
@@ -68,7 +64,14 @@ def parse_log_file(log_filepath, level: int = logging.INFO, keep_existing=False)
     else:
         log_file = open(log_filepath, 'r')
 
-    module_name_to_filename = {}
+    # each log line has a unique uuid mapping it to the module logger name; this dict stores the mapping
+    uuid_to_module_name: Dict[str, str] = dict()
+
+    # lookup to hold file handles for each module-specific log file we're writing
+    module_log_handle: Dict[str, TextIO] = dict()
+
+    # lookup passed to the LogsDict class, with module to module-specific log filenames
+    module_log_names = {}
 
     # iterate over each line in the logfile
     for line in log_file:
@@ -82,23 +85,28 @@ def parse_log_file(log_filepath, level: int = logging.INFO, keep_existing=False)
                 uuid_to_module_name[uuid] = module_name
                 # we only need to create the file if we don't already have one for this module
                 # and we only need to write the lines if we haven't already got a pickled version
-                pickle_file_name = str(log_directory / f"{module_name}.pickle")
-                if keep_existing and os.path.exists(pickle_file_name):
-                    module_name_to_filename[module_name] = pickle_file_name
+                pickle_file_name = log_directory / f"{module_name}.pickle"
+                module_log_name = log_directory / f"{module_name}.log.gz"
+                if os.path.exists(pickle_file_name):
+                    # pickle file exists for this module
+                    module_log_names[module_name] = str(pickle_file_name)
+                elif os.path.exists(module_log_name):
+                    # module-specific log file exists
+                    module_log_names[module_name] = str(module_log_name)
                 else:
-                    # the pickle file for this module doesn't exist. save the log lines to module-specific log file
-                    if module_name not in module_name_to_filehandle:
-                        module_name_to_filehandle[module_name] = gzip.open(
-                            log_directory / f"{module_name}.log.gz", mode="wt"
+                    # save the log lines to module-specific log file
+                    if module_name not in module_log_handle:
+                        module_log_handle[module_name] = gzip.open(
+                            module_log_name, mode="wt"
                         )
-                        module_name_to_filename[module_name] = module_name_to_filehandle[module_name].name
+                        module_log_names[module_name] = module_log_handle[module_name].name
             # if we need to save the output of these log line (i.e. we don't have the pickled file)
-            if uuid_to_module_name[uuid] in module_name_to_filehandle:
+            if uuid_to_module_name[uuid] in module_log_handle:
                 # copy line from log file to module-specific log file (both headers and non-header lines)
-                module_name_to_filehandle[uuid_to_module_name[uuid]].write(line)
+                module_log_handle[uuid_to_module_name[uuid]].write(line)
 
     # close all module-specific files
-    for file_handle in module_name_to_filehandle.values():
+    for file_handle in module_log_handle.values():
         file_handle.close()
 
     log_file.close()
@@ -106,7 +114,7 @@ def parse_log_file(log_filepath, level: int = logging.INFO, keep_existing=False)
     print('Finished writing module-specific log files.')
 
     # return an object that accepts as an argument a dictionary containing paths to split logfiles
-    return LogsDict(module_name_to_filename, level)
+    return LogsDict(module_log_names, level)
 
 
 def write_log_to_excel(filename, log_dataframes):
