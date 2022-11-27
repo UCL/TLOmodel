@@ -89,7 +89,7 @@ sim.register(
 
 # set the scenario
 sim.modules["Hiv"].parameters["beta"] = 0.129671
-sim.modules["Tb"].parameters["beta"] = 0.17
+sim.modules["Tb"].parameters["beta"] = 0.26
 sim.modules["Tb"].parameters["scenario"] = scenario
 sim.modules["Tb"].parameters["scenario_start_date"] = Date(2023, 1, 1)
 sim.modules["Tb"].parameters["scenario_SI"] = "z"
