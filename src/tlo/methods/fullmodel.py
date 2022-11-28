@@ -45,7 +45,7 @@ def fullmodel(
     healthsystem_disable: bool = False,
     healthsystem_mode_appt_constraints: int = 1,
     healthsystem_capabilities_coefficient: Optional[float] = None,
-    healthsystem_hsi_event_count_log_period: Optional[str] = None
+    healthsystem_hsi_event_count_log_period: Optional[str] = "month"
 ) -> List[Module]:
     """Return the modules that should be registered in a run of the `Full Model`."""
 
