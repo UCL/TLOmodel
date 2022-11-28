@@ -36,6 +36,8 @@ logger.setLevel(logging.INFO)
 logger_summary = logging.getLogger(f"{__name__}.summary")
 logger_summary.setLevel(logging.INFO)
 
+logger_contraception = logging.getLogger('tlo.methods.contraception')
+
 
 class FacilityInfo(NamedTuple):
     """Information about a specific health facility."""
@@ -223,6 +225,22 @@ class HSI_Event:
                                                          to_log=_to_log,
                                                          facility_info=self.facility_info,
                                                          treatment_id=self.TREATMENT_ID)
+
+        # If contraception applied (ie all essential items are available), do log the Availability of the Items:
+        if self.TREATMENT_ID.startswith('Contraception') & all([v for k, v in rtn.items() if k in _item_codes]):
+            items_available = {k: v for k, v in item_codes.items() if rtn[k]}
+            items_not_available = {k: v for k, v in item_codes.items() if not rtn[k]}
+            logger_contraception.debug(key='Contraception_consumables',
+                                      data={
+                                          'TREATMENT_ID': (self.TREATMENT_ID if self.TREATMENT_ID is not None else ""),
+                                          'Item_Available': str(items_available),
+                                          'Item_NotAvailable': str(items_not_available),
+                                      },
+                                      # NB. Casting the data to strings because
+                                      # logger complains with dict of varying sizes/keys
+                                      description=
+                                      "Record of each contraception consumable item when the contraceptive is applied."
+                                      )
 
         # Return result in expected format:
         if not return_individual_results:
