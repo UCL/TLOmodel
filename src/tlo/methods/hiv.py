@@ -1055,7 +1055,9 @@ class Hiv(Module):
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 hsi_event=HSI_Hiv_StartInfantProphylaxis(
                     person_id=child_id,
-                    module=self),
+                    module=self,
+                    referred_from="on_birth",
+                    repeat_visits=0),
                 priority=1,
                 topen=self.sim.date,
                 tclose=None,
@@ -2191,21 +2193,21 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
 # todo add infant prophylaxis
 # todo cap this at 5 repeat visits
 class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
-    def __init__(self, module, person_id):
+    def __init__(self, module, person_id, referred_from, repeat_visits):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Hiv)
 
         self.TREATMENT_ID = "Hiv_Prevention_Infant"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Under5OPD": 1, "VCTNegative": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.number_of_occurrences = 0
+        self.referred_from = referred_from
+        self.repeat_visits = repeat_visits
 
     def apply(self, person_id, squeeze_factor):
         """
         Start infant prophylaxis for this infant lasting for duration of breastfeeding
         or up to 18 months
         """
-        self.number_of_occurrences += 1  # The current appointment is included in the count.
 
         df = self.sim.population.props
         person = df.loc[person_id]
@@ -2226,29 +2228,36 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
         if self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['infant_prep']):
             df.at[person_id, "hv_is_on_prep"] = True
 
-            # Schedule repeat visit for 3 months time
+            # Schedule follow-up visit for 3 months time
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 hsi_event=HSI_Hiv_StartInfantProphylaxis(
                     person_id=person_id,
-                    module=self.module),
+                    module=self.module,
+                    referred_from="repeat3months",
+                    repeat_visits=0),
                 priority=1,
                 topen=self.sim.date,
                 tclose=None,
             )
 
-        elif self.number_of_occurrences <= 5:
-            # infant does not get NVP now but has repeat visit scheduled up to 5 times
-            df.at[person_id, "hv_is_on_prep"] = False
+        else:
+            if self.repeat_visits <= 4:
+                # infant does not get NVP now but has repeat visit scheduled up to 5 times
+                df.at[person_id, "hv_is_on_prep"] = False
 
-            # Schedule repeat visit for one week's time
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                hsi_event=HSI_Hiv_StartInfantProphylaxis(
-                    person_id=person_id,
-                    module=self.module),
-                priority=1,
-                topen=self.sim.date + pd.DateOffset(weeks=1),
-                tclose=None,
-            )
+                self.repeat_visits += 1
+
+                # Schedule repeat visit for one week's time
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=HSI_Hiv_StartInfantProphylaxis(
+                        person_id=person_id,
+                        module=self.module,
+                        referred_from="repeatNoCons",
+                        repeat_visits=self.repeat_visits),
+                    priority=1,
+                    topen=self.sim.date + pd.DateOffset(days=7),
+                    tclose=None,
+                )
 
     def never_ran(self, *args, **kwargs):
         """This is called if this HSI was never run.
