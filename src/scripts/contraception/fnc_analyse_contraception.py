@@ -234,11 +234,14 @@ def analyse_contraception(in_datestamp, in_log_file,
         assert in_required_time_period_starts != [],\
             "The calculations of use and costs are requested (ie input 'in_calc_use_costs_bool' set as True, " +\
             "but no periods starts are provided (ie input 'TimePeriods_starts' is empty)."
+
+        # this input needs to include at least 3 values
+        assert len(in_required_time_period_starts) > 2,\
+            "The input 'TimePeriods_starts' needs to include at least 3 years to define at least 2 time periods."
         # time period starts should be ordered
         assert all(in_required_time_period_starts[i] <= in_required_time_period_starts[i + 1]
                    for i in range(len(in_required_time_period_starts) - 1)),\
             "The 'TimePeriods_starts' needs to be in chronological order."
-
 
 #  ###### USE ##################################################################
         # Load Contraception Use Results
