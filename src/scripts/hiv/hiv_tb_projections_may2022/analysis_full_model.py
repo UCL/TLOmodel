@@ -35,7 +35,7 @@ log_config = {
     "custom_levels": {
         "*": logging.WARNING,
         "tlo.methods.hiv": logging.INFO,
-        "tlo.methods.tb": logging.DEBUG,
+        "tlo.methods.tb": logging.INFO,
         "tlo.methods.demography": logging.INFO,
         "tlo.methods.healthsystem.summary": logging.INFO,
     },
@@ -52,7 +52,7 @@ sim.register(*fullmodel(
     symptommanager_spurious_symptoms=True,
     healthsystem_disable=False,
     healthsystem_mode_appt_constraints=0,  # no constraints
-    healthsystem_cons_availability="default",  # all cons always available
+    healthsystem_cons_availability="default",  # if "all", all cons always available
     healthsystem_beds_availability="all",  # all beds always available
     healthsystem_ignore_priority=False,  # ignore priority in HSI scheduling
     healthsystem_use_funded_or_actual_staffing="funded_plus",  # daily capabilities of staff
@@ -60,20 +60,20 @@ sim.register(*fullmodel(
     healthsystem_record_hsi_event_details=False
 ))
 
-# set the scenario
-sim.modules["Tb"].parameters["beta"] = 1.8
-sim.modules["Tb"].parameters["scenario"] = scenario
-sim.modules["Tb"].parameters["scenario_start_date"] = Date(2023, 1, 1)
-sim.modules["Tb"].parameters["scenario_SI"] = "a"
-
-# to cluster tests in positive people
-sim.modules["Hiv"].parameters["rr_test_hiv_positive"] = 10  # default 1.5
-# to account for people starting-> defaulting, or not getting cons
-# this not used now if perfect referral testing->treatment
-sim.modules["Hiv"].parameters["treatment_initiation_adjustment"] = 3  # default 1.5
-# assume all defaulting is due to cons availability
-sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_6_months"] = 1.0
-sim.modules["Hiv"].parameters["probability_of_seeking_further_art_appointment_if_drug_not_available"] = 1.0
+# # set the scenario
+# sim.modules["Tb"].parameters["beta"] = 1.8
+# sim.modules["Tb"].parameters["scenario"] = scenario
+# sim.modules["Tb"].parameters["scenario_start_date"] = Date(2023, 1, 1)
+# sim.modules["Tb"].parameters["scenario_SI"] = "a"
+#
+# # to cluster tests in positive people
+# sim.modules["Hiv"].parameters["rr_test_hiv_positive"] = 10  # default 1.5
+# # to account for people starting-> defaulting, or not getting cons
+# # this not used now if perfect referral testing->treatment
+# sim.modules["Hiv"].parameters["treatment_initiation_adjustment"] = 3  # default 1.5
+# # assume all defaulting is due to cons availability
+# sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_6_months"] = 1.0
+# sim.modules["Hiv"].parameters["probability_of_seeking_further_art_appointment_if_drug_not_available"] = 1.0
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
