@@ -113,7 +113,7 @@ def analyse_contraception(in_datestamp, in_log_file,
         popsize['pop_intervention_cost'] = popsize['ratio'] * pop_intervention_cost
         popsize['interventions_total'] = popsize['ppfp_intervention_cost'] + popsize['pop_intervention_cost']
         # print(popsize)
-        print(popsize['ppfp_intervention_cost'])
+        # print(popsize['ppfp_intervention_cost'])
 
     # %% Plot Contraception Use Over time:
     if in_plot_use_time_bool:
