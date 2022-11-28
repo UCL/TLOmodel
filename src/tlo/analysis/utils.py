@@ -964,37 +964,6 @@ def compute_mean_across_runs(
     }
 
 
-def compute_mean_across_runs_where_nonzero(
-    counters_by_draw_and_run: Dict[Tuple[int, int], Counter]
-) -> Dict[int, Counter]:
-    """Compute mean across scenario runs of dict of counters keyed by draw and run.
-
-    Compared to ``compute_mean_across_runs` computes mean across only non-zero values.
-
-    :param counters_by_draw_and_run: Dictionary keyed by `(draw, run)` tuples with
-        counter values.
-
-    :return: Dictionary keyed by `draw` with counter values corresponding to mean
-        of counters across all runs for each draw, taking mean across only non-zero
-        values.
-    """
-    summed_counters_by_draw = defaultdict(Counter)
-    num_runs_by_draw_and_key = Counter()
-    for (draw, _), counter in counters_by_draw_and_run.items():
-        summed_counters_by_draw[draw] += counter
-        for key in counter:
-            num_runs_by_draw_and_key[draw, key] += 1
-    return {
-        draw: Counter(
-            {
-                key: count / num_runs_by_draw_and_key[draw, key]
-                for key, count in counter.items()
-            }
-        )
-        for draw, counter in summed_counters_by_draw.items()
-    }
-
-
 def plot_stacked_bar_chart(
     ax: plt.Axes,
     binned_counts: Counter,

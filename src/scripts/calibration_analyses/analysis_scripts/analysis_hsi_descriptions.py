@@ -12,7 +12,6 @@ from tlo.analysis.utils import (
     COARSE_APPT_TYPE_TO_COLOR_MAP,
     bin_hsi_event_details,
     compute_mean_across_runs,
-    compute_mean_across_runs_where_nonzero,
     extract_results,
     get_coarse_appt_type,
     get_color_short_treatment_id,
@@ -232,52 +231,55 @@ def figure3_fraction_of_time_of_hcw_used_by_treatment(results_folder: Path, outp
         False
     )
 
-    time_proportions_by_officer_category_treatment_id_per_run = {}
+    proportions_per_treatment_id_by_officer_category_for_all_runs = defaultdict(list)
 
-    for run_key, times_by_officer_category_treatment_id in (
+    for _, times_by_officer_category_treatment_id in (
         times_by_officer_category_treatment_id_per_run.items()
     ):
-        total_times_per_officer_category = Counter()
-        for (officer_cat, _), time in times_by_officer_category_treatment_id.items():
-            total_times_per_officer_category[officer_cat] += time
-        time_proportions_by_officer_category_treatment_id_per_run[run_key] = Counter({
-            (officer_category, treatment_id):
-            time / total_times_per_officer_category[officer_category]
-            for (officer_category, treatment_id), time
-            in times_by_officer_category_treatment_id.items()
-        })
+        total_times_by_officer_category = Counter()
+        times_per_treatment_id_by_officer_category = defaultdict(dict)
+        for (cat, treatment_id), time in times_by_officer_category_treatment_id.items():
+            total_times_by_officer_category[cat] += time
+            times_per_treatment_id_by_officer_category[cat][treatment_id] = time
+        for cat, times_per_treatment_id in (
+            times_per_treatment_id_by_officer_category.items()
+        ):
+            proportions_per_treatment_id_by_officer_category_for_all_runs[cat].append(
+                Counter(
+                    {
+                        treatment_id: time / total_times_by_officer_category[cat]
+                        for treatment_id, time in times_per_treatment_id.items()
+                    }
+                )
+            )
 
-    time_proportions_by_officer_category_treatment_id = compute_mean_across_runs_where_nonzero(
-        time_proportions_by_officer_category_treatment_id_per_run
-    )[0]
+    def mean_of_counters(counters):
+        sum_counters = sum(counters, Counter())
+        len_counters = len(counters)
+        return {key: value / len_counters for key, value in sum_counters.items()}
 
-    time_proportions_by_officer_category_then_treatment_id = defaultdict(dict)
-    for (officer_category, treatment_id), proportion in (
-        time_proportions_by_officer_category_treatment_id.items()
+    proportions_per_treatment_id_by_officer_category = {
+        officer_category: mean_of_counters(proportions_per_treatment_id_for_all_runs)
+        for officer_category, proportions_per_treatment_id_for_all_runs
+        in proportions_per_treatment_id_by_officer_category_for_all_runs.items()
+    }
+
+    for officer_category, proportions_per_treatment_id in (
+        proportions_per_treatment_id_by_officer_category.items()
     ):
-        time_proportions_by_officer_category_then_treatment_id[
-            officer_category
-        ][
-            treatment_id
-        ] = proportion
-
-    for officer_category in time_proportions_by_officer_category_then_treatment_id:
-        time_proportions_by_officer_category_then_treatment_id[
-            officer_category
-        ] = dict(
+        proportions_per_treatment_id_by_officer_category[officer_category] = dict(
             sorted(
-                time_proportions_by_officer_category_then_treatment_id[officer_category].items(),
+                proportions_per_treatment_id.items(),
                 key=lambda key_value: order_of_short_treatment_ids(key_value[0])
             )
         )
 
-    # all_cadres = share_of_time_for_hw_by_short_treatment_id.index.levels[1]
     cadres_to_plot = ['DCSA', 'Nursing_and_Midwifery', 'Clinical', 'Pharmacy']
 
     fig, ax = plt.subplots(nrows=2, ncols=2)
     name_of_plot = 'Proportion of Time Used For Selected Cadre by TREATMENT_ID (Short)'
     for cadre, ax in zip(cadres_to_plot, ax.flat):
-        p_by_treatment_id = time_proportions_by_officer_category_then_treatment_id[cadre]
+        p_by_treatment_id = proportions_per_treatment_id_by_officer_category[cadre]
         squarify_neat(
             sizes=list(p_by_treatment_id.values()),
             label=list(p_by_treatment_id.keys()),
