@@ -35,7 +35,7 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2013, 1, 1)
+end_date = Date(2035, 1, 1)
 popsize = 10000
 
 scenario = 0
@@ -47,7 +47,7 @@ log_config = {
     "custom_levels": {
         "*": logging.WARNING,
         # "tlo.methods.deviance_measure": logging.INFO,
-        # "tlo.methods.epi": logging.INFO,
+        "tlo.methods.epi": logging.INFO,
         "tlo.methods.hiv": logging.INFO,
         "tlo.methods.tb": logging.INFO,
         "tlo.methods.demography": logging.INFO,
