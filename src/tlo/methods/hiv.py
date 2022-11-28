@@ -2192,12 +2192,14 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Hiv_Prevention_Infant"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Under5OPD": 1, "VCTNegative": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.number_of_occurrences = 0
 
     def apply(self, person_id, squeeze_factor):
         """
         Start infant prophylaxis for this infant lasting for duration of breastfeeding
         or up to 18 months
         """
+        self.number_of_occurrences += 1  # The current appointment is included in the count.
 
         df = self.sim.population.props
         person = df.loc[person_id]
@@ -2207,12 +2209,12 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
             (not person["is_alive"])
             or (person["hv_diagnosed"])
         ):
-            return
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         # if breastfeeding has ceased or child >18 months, no further prophylaxis required
         if (df.at[person_id, "nb_breastfeeding_status"] == "none")\
                 or (df.at[person_id, "age_years"] >= 1.5):
-            return
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         # Check that infant prophylaxis is available and if it is, initiate:
         if self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['infant_prep']):
@@ -2228,8 +2230,8 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
                 tclose=None,
             )
 
-        else:
-            # infant does not get NVP
+        elif self.number_of_occurrences <= 5:
+            # infant does not get NVP now but has repeat visit scheduled up to 5 times
             df.at[person_id, "hv_is_on_prep"] = False
 
             # Schedule repeat visit for one week's time
@@ -2241,11 +2243,6 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
                 topen=self.sim.date + pd.DateOffset(weeks=1),
                 tclose=None,
             )
-
-    def never_ran(self, *args, **kwargs):
-        """This is called if this HSI was never run.
-        Default the person to being off PrEP"""
-        self.sim.population.props.at[self.target, "hv_is_on_prep"] = False
 
 
 class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
