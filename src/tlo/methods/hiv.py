@@ -2203,6 +2203,7 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
 
         df = self.sim.population.props
         person = df.loc[person_id]
+        print("infant NVP", person_id)
 
         # Do not run if the child is not alive or is diagnosed with hiv
         if (
