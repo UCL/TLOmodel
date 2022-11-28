@@ -6,6 +6,7 @@ a function 'analyse contraception' defined to be used for pre-simulated data
 use of contraception methods over time, pregnancies over time, and/or calculate
 data for a table of use and costs of contraception methods (if required)
 """
+import logging
 import timeit
 from pathlib import Path
 
@@ -80,7 +81,7 @@ def analyse_contraception(in_datestamp, in_log_file,
 
     # Load without simulating again - parse the simulation logfile to get the
     # output dataframes
-    log_df = parse_log_file('outputs/' + in_log_file)
+    log_df = parse_log_file('outputs/' + in_log_file, level=logging.DEBUG)
 
     # %% Caclulate annual Pop and PPFP intervention costs:
     if in_calc_annual_intervention_costs_bool:
@@ -410,7 +411,7 @@ def analyse_contraception(in_datestamp, in_log_file,
         mean_use_df['tp_len'] = mean_use_df.index.map(calculate_tp_len)
 
         # Load Consumables results
-        cons_df = log_df['tlo.methods.healthsystem']['Consumables'].copy()
+        cons_df = log_df['tlo.methods.contraception']['Contraception_consumables'].copy()
         cons_df['date'] = pd.to_datetime(cons_df['date'])
         cons_df['year'] = cons_df['date'].dt.year
 
