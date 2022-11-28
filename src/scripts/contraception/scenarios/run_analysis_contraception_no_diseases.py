@@ -6,6 +6,8 @@ or locally using:
 ```tlo scenario-run src/scripts/contraception/scenarios/run_analysis_contraception_no_diseases.py```
 """
 
+import pandas as pd
+
 from tlo import Date, logging
 from tlo.methods import contraception, demography, enhanced_lifestyle,\
     healthseekingbehaviour, healthsystem, hiv, symptommanager
@@ -17,8 +19,8 @@ class RunAnalysisCo(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2050, 12, 31)
-        self.pop_size = 20000  # <- recommended population size for the runs is 50k
+        self.end_date = self.start_date + pd.DateOffset(years=2)
+        self.pop_size = 2_000  # <- recommended population size for the runs is 50k
         self.number_of_draws = 1  # <- one scenario
         self.runs_per_draw = 1  # <- repeated this many times
 
