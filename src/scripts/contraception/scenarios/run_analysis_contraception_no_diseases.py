@@ -31,7 +31,6 @@ class RunAnalysisCo(BaseScenario):
             'custom_levels': {
                 '*': logging.WARNING,
                 "tlo.methods.contraception": logging.DEBUG,
-                # "tlo.methods.healthsystem": logging.INFO,
                 "tlo.methods.demography": logging.INFO
             }
         }
