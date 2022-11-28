@@ -152,8 +152,6 @@ plt.tight_layout()
 plt.savefig(outputpath / ("EPI_1" + datestamp + ".pdf"), format='pdf', bbox_inches='tight')
 plt.show()
 
-
-
 # Hep3 coverage
 plt.subplot(221)  # numrows, numcols, fignum
 plt.plot(coverage_data2010_years, coverage_data2010.HepB3*100)
