@@ -1052,7 +1052,9 @@ class Hiv(Module):
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 hsi_event=HSI_Hiv_StartInfantProphylaxis(
                     person_id=child_id,
-                    module=self),
+                    module=self,
+                    referred_from="on_birth",
+                    repeat_visits=0),
                 priority=1,
                 topen=self.sim.date,
                 tclose=None,
