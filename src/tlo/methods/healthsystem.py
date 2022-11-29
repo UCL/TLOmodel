@@ -1333,7 +1333,7 @@ class HealthSystem(Module):
         did_run: bool,
     ):
         """Write the log `HSI_Event` and add to the summary counter."""
-        logger.info(
+        logger.debug(
             key="HSI_Event",
             data={
                 'TREATMENT_ID': event_details.treatment_id,
