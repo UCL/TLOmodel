@@ -595,7 +595,7 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         gbd_deaths = self.module.parameters['gbd_causes_of_death_data']
 
         # Find the proportion of deaths to be represented by the OtherDeathPoll
-        return gbd_deaths[self.causes_to_represent].sum(axis=1)
+        return gbd_deaths[sorted(self.causes_to_represent)].sum(axis=1)
 
     def apply(self, population):
         """Randomly select some persons to die of the 'Other' tlo cause (the causes of death that are not represented
