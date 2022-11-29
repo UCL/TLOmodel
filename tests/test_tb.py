@@ -151,6 +151,7 @@ def test_natural_history(seed):
 
     # set very high incidence rates for poll
     sim.modules['Tb'].parameters['beta'] = 50
+    sim.modules["Tb"].parameters["rate_testing_active_tb"]["treatment_coverage"] = 100
 
     # Make the population
     sim.make_initial_population(n=popsize)

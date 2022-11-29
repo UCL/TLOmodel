@@ -1974,7 +1974,7 @@ class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
 
             # refer for another treatment again in 1 month
             self.sim.modules["HealthSystem"].schedule_hsi_event(
-                HSI_Hiv_StartOrContinueTreatment(person_id=person_id, module=self,
+                HSI_Hiv_StartOrContinueTreatment(person_id=person_id, module=m,
                                                  facility_level_of_this_hsi="1a"),
                 topen=self.sim.date + pd.DateOffset(months=1),
                 tclose=None,
@@ -2460,9 +2460,9 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         drugs_available = self.get_drugs(age_of_person=person["age_years"])
 
         if drugs_available:
-            # Assign person to be have suppressed or un-suppressed viral load
+            # Assign person to have suppressed or un-suppressed viral load
             # (If person is VL suppressed This will prevent the Onset of AIDS, or an AIDS death if AIDS has already
-            # onset,)
+            # onset)
             vl_status = self.determine_vl_status(
                 age_of_person=person["age_years"]
             )

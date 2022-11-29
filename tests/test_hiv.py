@@ -160,7 +160,7 @@ def test_generation_of_new_infection(seed):
     df = sim.population.props
 
     def any_hiv_infection_event_in_queue():
-        for date, _, _, event in sim.event_queue.queue:
+        for date, _, event in sim.event_queue.queue:
             if isinstance(event, hiv.HivInfectionEvent):
                 return True
 
