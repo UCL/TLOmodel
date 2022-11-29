@@ -1,4 +1,4 @@
-name: Reusable workflow for triggering tests with a pull-request comment
+name: Reusable workflow for triggering tests with an issue or pull-request comment
 
 on:
   workflow_call:
@@ -9,7 +9,7 @@ on:
         type: string
         default: ubuntu-latest
       keyword:
-        description: The keyword to appear after /run in PR comment to trigger workflow
+        description: The keyword to appear after /run in comment to trigger workflow
         required: true
         type: string
       description:
@@ -48,7 +48,7 @@ jobs:
   run_test_on_keyword_and_reply_with_result:
     runs-on: ${{ inputs.runs-on }}
     timeout-minutes: ${{ inputs.timeout-minutes }}
-    if: github.event.issue.pull_request && github.event.comment.body == format('/run {0}', inputs.keyword)
+    if: github.event.comment.body == format('/run {0}', inputs.keyword)
     steps:
     - name: Check permissions of commenting user
       id: has_permissions
@@ -76,19 +76,22 @@ jobs:
             comment_id: context.payload.comment.id,
             content: "rocket",
           });
-    - name: Get pull-request SHA
+    - name: Get SHA of last commit on default branch if issue or pull-request branch
       id: sha
       uses: actions/github-script@v6
       with:
         result-encoding: string
         script: |
+          if (!context.payload.pull_request) {
+            return context.sha;
+          };
           const { data: pr } = await github.rest.pulls.get({
             owner: context.issue.owner,
             repo: context.issue.repo,
             pull_number: context.issue.number,
           });
           return pr.head.sha;
-    - name: Checkout pull-request SHA
+    - name: Checkout SHA
       uses: actions/checkout@v3
       with:
         lfs: true
