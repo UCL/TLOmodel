@@ -79,31 +79,35 @@ def parse_log_file(log_filepath, level: int = logging.INFO):
         if line.startswith('{'):
             log_data_json = json.loads(line)
             uuid = log_data_json['uuid']
-            # if this is a header line (only header lines have a `type` key)
+
+            # if this a header for log entries (only headers have a `type` key)
             if 'type' in log_data_json:
                 module_name = log_data_json["module"]
+
+                # the uuid connects every log entry with a module and key - add to module lookup
                 uuid_to_module_name[uuid] = module_name
-                # we only need to create the file if we don't already have one for this module
-                # and we only need to write the lines if we haven't already got a pickled version
-                pickle_file_name = log_directory / f"{module_name}.pickle"
-                module_log_name = log_directory / f"{module_name}.log.gz"
-                if os.path.exists(pickle_file_name):
-                    # pickle file exists for this module
-                    module_log_names[module_name] = str(pickle_file_name)
-                elif os.path.exists(module_log_name):
-                    # module-specific log file exists
-                    module_log_names[module_name] = str(module_log_name)
-                else:
-                    # save the log lines to module-specific log file
-                    if module_name not in module_log_handle:
-                        module_log_handle[module_name] = gzip.open(
-                            module_log_name, mode="wt"
-                        )
-                        module_log_names[module_name] = module_log_handle[module_name].name
-            # if we need to save the output of these log line (i.e. we don't have the pickled file)
-            if uuid_to_module_name[uuid] in module_log_handle:
-                # copy line from log file to module-specific log file (both headers and non-header lines)
-                module_log_handle[uuid_to_module_name[uuid]].write(line)
+
+                # if this is the first header line we've encountered for this module
+                if module_name not in module_log_handle:
+                    # remove any existing log or pickled file for this module
+                    pickle_file_name = log_directory / f"{module_name}.pickle"
+                    if os.path.exists(pickle_file_name):
+                        print('Removing existing pickle file', pickle_file_name)
+                        os.remove(pickle_file_name)
+
+                    module_log_name = log_directory / f"{module_name}.log.gz"
+                    if os.path.exists(module_log_name):
+                        print('Removing existing module-specific log file', module_log_name)
+                        os.remove(module_log_name)
+
+                    # create a new module-specific log filehandle
+                    module_log_handle[module_name] = gzip.open(
+                        module_log_name, mode="wt"
+                    )
+                    module_log_names[module_name] = module_log_handle[module_name].name
+
+            # copy line from log file to module-specific log file (both headers and non-header lines)
+            module_log_handle[uuid_to_module_name[uuid]].write(line)
 
     # close all module-specific files
     for file_handle in module_log_handle.values():
