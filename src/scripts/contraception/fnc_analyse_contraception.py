@@ -6,6 +6,7 @@ a function 'analyse contraception' defined to be used for pre-simulated data
 use of contraception methods over time, pregnancies over time, and/or calculate
 data for a table of use and costs of contraception methods (if required)
 """
+import logging
 import timeit
 from pathlib import Path
 
@@ -80,7 +81,7 @@ def analyse_contraception(in_datestamp, in_log_file,
 
     # Load without simulating again - parse the simulation logfile to get the
     # output dataframes
-    log_df = parse_log_file('outputs/' + in_log_file)
+    log_df = parse_log_file('outputs/' + in_log_file, level=logging.DEBUG)
 
     # %% Caclulate annual Pop and PPFP intervention costs:
     if in_calc_annual_intervention_costs_bool:
@@ -233,11 +234,14 @@ def analyse_contraception(in_datestamp, in_log_file,
         assert in_required_time_period_starts != [],\
             "The calculations of use and costs are requested (ie input 'in_calc_use_costs_bool' set as True, " +\
             "but no periods starts are provided (ie input 'TimePeriods_starts' is empty)."
+
+        # this input needs to include at least 3 values
+        assert len(in_required_time_period_starts) > 2,\
+            "The input 'TimePeriods_starts' needs to include at least 3 years to define at least 2 time periods."
         # time period starts should be ordered
         assert all(in_required_time_period_starts[i] <= in_required_time_period_starts[i + 1]
                    for i in range(len(in_required_time_period_starts) - 1)),\
             "The 'TimePeriods_starts' needs to be in chronological order."
-
 
 #  ###### USE ##################################################################
         # Load Contraception Use Results
@@ -410,7 +414,7 @@ def analyse_contraception(in_datestamp, in_log_file,
         mean_use_df['tp_len'] = mean_use_df.index.map(calculate_tp_len)
 
         # Load Consumables results
-        cons_df = log_df['tlo.methods.healthsystem']['Consumables'].copy()
+        cons_df = log_df['tlo.methods.contraception']['Contraception_consumables'].copy()
         cons_df['date'] = pd.to_datetime(cons_df['date'])
         cons_df['year'] = cons_df['date'].dt.year
 

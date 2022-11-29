@@ -6,6 +6,8 @@ or locally using:
 ```tlo scenario-run src/scripts/contraception/scenarios/run_analysis_contraception_no_diseases.py```
 """
 
+import pandas as pd
+
 from tlo import Date, logging
 from tlo.methods import contraception, demography, enhanced_lifestyle,\
     healthseekingbehaviour, healthsystem, hiv, symptommanager
@@ -17,8 +19,8 @@ class RunAnalysisCo(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2050, 12, 31)
-        self.pop_size = 20000  # <- recommended population size for the runs is 50k
+        self.end_date = self.start_date + pd.DateOffset(years=2)
+        self.pop_size = 2_000  # <- recommended population size for the runs is 50k
         self.number_of_draws = 1  # <- one scenario
         self.runs_per_draw = 1  # <- repeated this many times
 
@@ -28,8 +30,7 @@ class RunAnalysisCo(BaseScenario):
             'directory': './outputs',  # <- (specified only for local running)
             'custom_levels': {
                 '*': logging.WARNING,
-                "tlo.methods.contraception": logging.INFO,
-                "tlo.methods.healthsystem": logging.INFO,
+                "tlo.methods.contraception": logging.DEBUG,
                 "tlo.methods.demography": logging.INFO
             }
         }
@@ -47,7 +48,7 @@ class RunAnalysisCo(BaseScenario):
 
             # - Contraception and replacement for Labour etc.
             contraception.Contraception(resourcefilepath=self.resources,
-                                        use_interventions=False,
+                                        use_interventions=False,  # default: False
                                         # interventions_start_date=Date(2016, 1, 1),  # if needs to be changed
                                         # the default date is Date(2023, 1, 1)
                                         use_healthsystem=True),  # <-- using HealthSystem
