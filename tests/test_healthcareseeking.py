@@ -617,8 +617,8 @@ def test_same_day_healthcare_seeking_when_using_force_healthcare_seeking(seed, t
             self.sim.modules['SymptomManager'].register_symptom(
                 Symptom(
                     name='Symptom_that_does_not_cause_emergency_healthcare_seeking',
-                    prob_seeks_emergency_appt_in_adults=False,
-                    prob_seeks_emergency_appt_in_children=False
+                    prob_seeks_emergency_appt_in_adults=0.0,
+                    prob_seeks_emergency_appt_in_children=0.0
                 ),
             )
 
