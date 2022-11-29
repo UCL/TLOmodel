@@ -65,7 +65,7 @@ def get_sim(tmpdir, seed, cons_available):
             'custom_levels': {
                 "*": logging.WARNING,
                 "tlo.methods.alri": logging.INFO,
-                "tlo.methods.healthsystem": logging.INFO
+                "tlo.methods.healthsystem": logging.DEBUG
             }
         }
     )

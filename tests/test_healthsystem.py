@@ -653,7 +653,7 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
         'filename': 'tmpfile',
         'directory': tmpdir,
         'custom_levels': {
-            "tlo.methods.healthsystem": logging.INFO,
+            "tlo.methods.healthsystem": logging.DEBUG,
             "tlo.methods.healthsystem.summary": logging.INFO
         }
     })
@@ -804,7 +804,7 @@ def test_summary_logger_generated_in_year_long_simulation(seed, tmpdir):
             'filename': 'tmpfile',
             'directory': tmpdir,
             'custom_levels': {
-                "tlo.methods.healthsystem": logging.INFO,
+                "tlo.methods.healthsystem": logging.DEBUG,
                 "tlo.methods.healthsystem.summary": logging.INFO
             }
         })
@@ -900,7 +900,7 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
         'filename': 'tmpfile',
         'directory': tmpdir,
         'custom_levels': {
-            "tlo.methods.healthsystem": logging.INFO,
+            "tlo.methods.healthsystem": logging.DEBUG,
         }
     })
 
@@ -990,7 +990,7 @@ def test_manipulation_of_service_availability(seed, tmpdir):
             'filename': 'tmpfile',
             'directory': tmpdir,
             'custom_levels': {
-                "tlo.methods.healthsystem": logging.INFO,
+                "tlo.methods.healthsystem": logging.DEBUG,
             }
         })
 

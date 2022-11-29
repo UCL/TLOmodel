@@ -926,7 +926,7 @@ def test_in_patient_appt_included_and_logged(tmpdir, seed):
         'filename': 'temp',
         'directory': tmpdir,
         'custom_levels': {
-            "tlo.methods.healthsystem": logging.INFO,
+            "tlo.methods.healthsystem": logging.DEBUG,
         }
     })
     sim.register(
