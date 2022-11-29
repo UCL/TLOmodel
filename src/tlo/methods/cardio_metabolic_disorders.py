@@ -341,7 +341,7 @@ class CardioMetabolicDisorders(Module):
             self.sim.modules['SymptomManager'].register_symptom(
                 Symptom(
                     name=f'{event}_damage',
-                    emergency_in_adults=True
+                    odds_emergency_care_seeking_in_adults=True
                 ),
             )
 

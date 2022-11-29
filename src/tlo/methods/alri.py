@@ -843,7 +843,7 @@ class Alri(Module):
                 if symptom_name == 'danger_signs':
                     self.sim.modules['SymptomManager'].register_symptom(
                         Symptom(name=symptom_name,
-                                emergency_in_children=True))
+                                odds_emergency_care_seeking_in_children=True))
                 elif symptom_name == 'chest_indrawing':
                     self.sim.modules['SymptomManager'].register_symptom(
                         Symptom(name=symptom_name,

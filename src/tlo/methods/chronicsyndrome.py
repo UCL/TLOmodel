@@ -118,7 +118,7 @@ class ChronicSyndrome(Module):
             ),
             Symptom(
                 name='craving_sandwiches',
-                emergency_in_adults=True,
+                odds_emergency_care_seeking_in_adults=True,
             )
         )
 
