@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+import numpy as np
 import pytest
 from pandas import DateOffset
 
@@ -43,25 +44,58 @@ def test_make_a_symptom():
     assert hasattr(symp, 'name')
     assert hasattr(symp, 'no_healthcareseeking_in_children')
     assert hasattr(symp, 'no_healthcareseeking_in_adults')
-    assert hasattr(symp, 'emergency_in_children')
-    assert hasattr(symp, 'emergency_in_adults')
+    assert hasattr(symp, 'prob_seeks_emergency_appt_in_children')
+    assert hasattr(symp, 'prob_seeks_emergency_appt_in_adults')
     assert hasattr(symp, 'odds_ratio_health_seeking_in_children')
     assert hasattr(symp, 'odds_ratio_health_seeking_in_adults')
 
     assert symp.no_healthcareseeking_in_children is False
     assert symp.no_healthcareseeking_in_adults is False
 
-    assert symp.emergency_in_children is False
-    assert symp.emergency_in_adults is False
+    assert symp.prob_seeks_emergency_appt_in_children == 0.0
+    assert symp.prob_seeks_emergency_appt_in_adults == 0.0
 
     assert symp.odds_ratio_health_seeking_in_children == 1.0
     assert symp.odds_ratio_health_seeking_in_adults == 1.0
 
 
+def test_emergency_symptom_defined_through_static_method():
+    """Check that can create an emergency symptom and that is has the expected properties by default"""
+    # Emergency in adults and children
+    symp = Symptom.emergency('emergency_symptom')
+    assert isinstance(symp, Symptom)
+    assert symp.no_healthcareseeking_in_children is False
+    assert symp.no_healthcareseeking_in_adults is False
+    assert symp.prob_seeks_emergency_appt_in_children == 1.0
+    assert symp.prob_seeks_emergency_appt_in_adults == 1.0
+    assert symp.odds_ratio_health_seeking_in_children is np.inf
+    assert symp.odds_ratio_health_seeking_in_adults is np.inf
+
+    # Emergency in adults only
+    symp = Symptom.emergency(name='emergency_symptom', which='adults')
+    assert isinstance(symp, Symptom)
+    assert symp.no_healthcareseeking_in_children is False
+    assert symp.no_healthcareseeking_in_adults is False
+    assert symp.prob_seeks_emergency_appt_in_children == 0.0
+    assert symp.prob_seeks_emergency_appt_in_adults == 1.0
+    assert symp.odds_ratio_health_seeking_in_children == 0.0
+    assert symp.odds_ratio_health_seeking_in_adults is np.inf
+
+    # Emergency in children only
+    symp = Symptom.emergency(name='emergency_symptom', which='children')
+    assert isinstance(symp, Symptom)
+    assert symp.no_healthcareseeking_in_children is False
+    assert symp.no_healthcareseeking_in_adults is False
+    assert symp.prob_seeks_emergency_appt_in_children == 1.0
+    assert symp.prob_seeks_emergency_appt_in_adults == 0.0
+    assert symp.odds_ratio_health_seeking_in_children is np.inf
+    assert symp.odds_ratio_health_seeking_in_adults == 0.0
+
+
 def test_register_duplicate_symptoms():
     symp = Symptom(name='symptom')
     symp_duplicate = Symptom(name='symptom')
-    symp_with_different_properties = Symptom(name='symptom', emergency_in_children=True)
+    symp_with_different_properties = Symptom.emergency(name='symptom')
     symp_with_different_name = Symptom(name='symptom_a')
 
     sm = symptommanager.SymptomManager(resourcefilepath=resourcefilepath)

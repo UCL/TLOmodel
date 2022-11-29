@@ -181,11 +181,7 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_emergency_heal
 
         def read_parameters(self, data_folder):
             self.sim.modules['SymptomManager'].register_symptom(
-                Symptom(
-                    name='Symptom_that_does_cause_emergency_healthcare_seeking',
-                    emergency_in_adults=True,
-                    emergency_in_children=True
-                ),
+                Symptom.emergency('Symptom_that_does_cause_emergency_healthcare_seeking')
             )
 
         def initialise_population(self, population):
@@ -351,7 +347,7 @@ def test_one_per_hsi_scheduled_per_day_when_emergency_and_non_emergency_symptoms
         def read_parameters(self, data_folder):
             self.sim.modules['SymptomManager'].register_symptom(
                 Symptom(name='NonEmergencySymptom'),
-                Symptom(name='EmergencySymptom', emergency_in_adults=True, emergency_in_children=True)
+                Symptom.emergency(name='EmergencySymptom'),
             )
 
         def initialise_population(self, population):
@@ -549,11 +545,7 @@ def test_same_day_healthcare_seeking_for_emergency_symptoms(seed, tmpdir):
 
         def read_parameters(self, data_folder):
             self.sim.modules['SymptomManager'].register_symptom(
-                Symptom(
-                    name='Symptom_that_does_cause_emergency_healthcare_seeking',
-                    emergency_in_adults=True,
-                    emergency_in_children=True
-                ),
+                Symptom('Symptom_that_does_cause_emergency_healthcare_seeking')
             )
 
         def initialise_population(self, population):
@@ -622,8 +614,8 @@ def test_same_day_healthcare_seeking_when_using_force_healthcare_seeking(seed, t
             self.sim.modules['SymptomManager'].register_symptom(
                 Symptom(
                     name='Symptom_that_does_not_cause_emergency_healthcare_seeking',
-                    emergency_in_adults=False,
-                    emergency_in_children=False
+                    prob_seeks_emergency_appt_in_adults=False,
+                    prob_seeks_emergency_appt_in_children=False
                 ),
             )
 
