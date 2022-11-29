@@ -245,8 +245,8 @@ class SymptomManager(Module):
                     name=generic_symptom_name,
                     odds_ratio_health_seeking_in_adults=odds_ratio_health_seeking_in_adults[generic_symptom_name],
                     odds_ratio_health_seeking_in_children=odds_ratio_health_seeking_in_children[generic_symptom_name],
-                    prob_seeks_emergency_appt_in_adults=False,
-                    prob_seeks_emergency_appt_in_children=False
+                    prob_seeks_emergency_appt_in_adults=0.0,
+                    prob_seeks_emergency_appt_in_children=0.0
                 )
             )
 
