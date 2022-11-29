@@ -993,9 +993,13 @@ class Tb(Module):
         rr_of_infection = self.lm["active_tb"].predict(
             df.loc[eligible]
         )
+        # todo add this scaling
+        # scale to get overall prevalence correct
+        scaled_rr_of_infection = rr_of_infection / rr_of_infection.mean()
 
+        # todo add scaled rr
         #  probability of infection
-        p_infection = (rr_of_infection * incidence)
+        p_infection = (scaled_rr_of_infection * incidence)
 
         # New infections:
         will_be_infected = (

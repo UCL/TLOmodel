@@ -2236,7 +2236,7 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
                     referred_from="repeat3months",
                     repeat_visits=0),
                 priority=1,
-                topen=self.sim.date,
+                topen=self.sim.date + DateOffset(months=3),
                 tclose=None,
             )
 
