@@ -1096,13 +1096,13 @@ class Tb(Module):
             rr_of_infection = self.lm["active_tb"].predict(
                 df.loc[susc_idx]
             )
-
+            # todo add brackets around n_smear_neg*0.2
             #  - probability of infection = beta * I/N
             # relative infectiousness of smear-negative is lower
             p_infection = (
                 rr_of_infection * p['beta'] *
                 (
-                    (n_smear_pos + n_smear_neg * 0.2) /
+                    (n_smear_pos + (n_smear_neg * 0.2)) /
                     (n_smear_pos + n_smear_neg + n_susc)
                 )
             )
@@ -1116,7 +1116,7 @@ class Tb(Module):
             df.loc[idx_new_infection, "tb_strain"] = strain
 
             # todo change to within one month
-            # schedule onset of active tb, time now up to 1 year
+            # schedule onset of active tb, time now up to 1 month
             for person_id in idx_new_infection:
                 date_progression = now + pd.DateOffset(
                     days=rng.randint(0, 30)
@@ -1128,7 +1128,7 @@ class Tb(Module):
     def import_tb_cases(self, population, strain, import_rate):
         """
         select individuals to be infected by importation of infection - strain-specific
-        risk of infection NOT weighted by individual risk factors
+        risk of infection is still weighted by individual risk factors
         assign scheduled date of active tb onset
         update properties as needed
         symptoms and smear status are assigned in the TbActiveEvent
