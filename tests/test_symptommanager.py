@@ -51,8 +51,8 @@ def test_make_a_symptom():
     assert symp.no_healthcareseeking_in_children is False
     assert symp.no_healthcareseeking_in_adults is False
 
-    assert symp.emergency_in_children is False
-    assert symp.emergency_in_adults is False
+    assert symp.prob_emergency_care_seeking_in_children == 1.0
+    assert symp.prob_emergency_care_seeking_in_adults == 1.0
 
     assert symp.odds_ratio_health_seeking_in_children == 1.0
     assert symp.odds_ratio_health_seeking_in_adults == 1.0

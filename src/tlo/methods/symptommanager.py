@@ -59,38 +59,39 @@ class Symptom:
         assert isinstance(no_healthcareseeking_in_adults, bool)
         assert isinstance(no_healthcareseeking_in_children, bool)
 
-        assert isinstance(prob_emergency_care_seeking_in_adults, bool)
-        assert isinstance(prob_emergency_care_seeking_in_children, bool)
-
         # Check logic of the arguments that are provided:
         # 1) if the symptom does not cause healthseeking behaviour, it should not be emergency or associated with an
         # odds ratio
         if no_healthcareseeking_in_children:
-            assert prob_emergency_care_seeking_in_children is False
+            assert prob_emergency_care_seeking_in_children is None
             assert odds_ratio_health_seeking_in_children is None
 
         if no_healthcareseeking_in_adults:
-            assert prob_emergency_care_seeking_in_adults is False
+            assert prob_emergency_care_seeking_in_adults is None
             assert odds_ratio_health_seeking_in_adults is None
 
         # 2) if the symptom is declared as an emergency, it cannot also have an odds ratio for health seeking
-        if prob_emergency_care_seeking_in_children:
+        if prob_emergency_care_seeking_in_children is not None:
             assert no_healthcareseeking_in_children is False
             assert odds_ratio_health_seeking_in_children is None
+            assert isinstance(prob_emergency_care_seeking_in_children, float)
+            assert 0 < prob_emergency_care_seeking_in_children
 
-        if prob_emergency_care_seeking_in_adults:
+        if prob_emergency_care_seeking_in_adults is not None:
             assert no_healthcareseeking_in_adults is False
             assert odds_ratio_health_seeking_in_adults is None
+            assert isinstance(prob_emergency_care_seeking_in_adults, float)
+            assert 0 < prob_emergency_care_seeking_in_adults
 
         # 3) if an odds-ratio is specified, it cannot have the emergency or the no-seeking flags
         if odds_ratio_health_seeking_in_children is not None:
-            assert prob_emergency_care_seeking_in_children is False
+            assert prob_emergency_care_seeking_in_children is None
             assert no_healthcareseeking_in_children is False
             assert isinstance(odds_ratio_health_seeking_in_children, float)
             assert 0 < odds_ratio_health_seeking_in_children
 
         if odds_ratio_health_seeking_in_adults is not None:
-            assert prob_emergency_care_seeking_in_adults is False
+            assert prob_emergency_care_seeking_in_adults is None
             assert no_healthcareseeking_in_adults is False
             assert isinstance(odds_ratio_health_seeking_in_adults, float)
             assert 0 < odds_ratio_health_seeking_in_adults
@@ -98,24 +99,39 @@ class Symptom:
         # If odds-ratios are not provided (and no other flags provided), default to values of 1.0
         if (
             (odds_ratio_health_seeking_in_children is None) &
-            (prob_emergency_care_seeking_in_children is False) &
+            (prob_emergency_care_seeking_in_children is None) &
             (no_healthcareseeking_in_children is False)
         ):
             odds_ratio_health_seeking_in_children = 1.0
 
         if (
             (odds_ratio_health_seeking_in_adults is None) &
-            (prob_emergency_care_seeking_in_adults is False) &
+            (prob_emergency_care_seeking_in_adults is None) &
             (no_healthcareseeking_in_adults is False)
         ):
             odds_ratio_health_seeking_in_adults = 1.0
+
+        # If prob emergency are not provided (and no other flags provided), default to values of 1.0
+        if (
+            (odds_ratio_health_seeking_in_children is None) &
+            (prob_emergency_care_seeking_in_children is None) &
+            (no_healthcareseeking_in_children is False)
+        ):
+            prob_emergency_care_seeking_in_children = 1.0
+
+        if (
+            (odds_ratio_health_seeking_in_adults is None) &
+            (prob_emergency_care_seeking_in_adults is None) &
+            (no_healthcareseeking_in_adults is False)
+        ):
+            prob_emergency_care_seeking_in_adults = 1.0
 
         # Store properties:
         self.name = name
         self.no_healthcareseeking_in_children = no_healthcareseeking_in_children
         self.no_healthcareseeking_in_adults = no_healthcareseeking_in_adults
-        self.emergency_in_adults = prob_emergency_care_seeking_in_adults
-        self.emergency_in_children = prob_emergency_care_seeking_in_children
+        self.prob_emergency_care_seeking_in_adults = prob_emergency_care_seeking_in_adults
+        self.prob_emergency_care_seeking_in_children = prob_emergency_care_seeking_in_children
         self.odds_ratio_health_seeking_in_adults = odds_ratio_health_seeking_in_adults
         self.odds_ratio_health_seeking_in_children = odds_ratio_health_seeking_in_children
 
