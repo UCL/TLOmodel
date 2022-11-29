@@ -115,8 +115,8 @@ class Mockitis(Module):
             Symptom(name='weird_sense_of_deja_vu'),  # will not trigger any health seeking behaviour
             Symptom(name='coughing_and_irritable'),  # will not trigger any health seeking behaviour
             Symptom(name='extreme_pain_in_the_nose',
-                    odds_emergency_care_seeking_in_adults=True,
-                    odds_emergency_care_seeking_in_children=True
+                    prob_emergency_care_seeking_in_adults=1.0,
+                    prob_emergency_care_seeking_in_children=1.0
                     )
         )
 

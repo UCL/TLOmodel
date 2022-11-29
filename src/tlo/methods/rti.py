@@ -1202,8 +1202,8 @@ class RTI(Module):
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(
                 name='severe_trauma',
-                odds_emergency_care_seeking_in_adults=True,
-                odds_emergency_care_seeking_in_children=True
+                prob_emergency_care_seeking_in_adults=1.0,
+                prob_emergency_care_seeking_in_children=1.0
             )
         )
         # create an injury lookup table to handle all assigning injuries/daly weights and daly weight changes. The table

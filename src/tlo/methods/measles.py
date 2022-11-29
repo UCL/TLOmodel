@@ -135,8 +135,8 @@ class Measles(Module):
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(
                 name='encephalitis',
-                odds_emergency_care_seeking_in_adults=True,
-                odds_emergency_care_seeking_in_children=True
+                prob_emergency_care_seeking_in_adults=1.0,
+                prob_emergency_care_seeking_in_children=1.0
             )
         )
 
