@@ -183,8 +183,8 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_emergency_heal
             self.sim.modules['SymptomManager'].register_symptom(
                 Symptom(
                     name='Symptom_that_does_cause_emergency_healthcare_seeking',
-                    prob_emergency_care_seeking_in_adults=1.0,
-                    prob_emergency_care_seeking_in_children=1.0
+                    emergency_in_adults=True,
+                    emergency_in_children=True
                 ),
             )
 
@@ -351,7 +351,7 @@ def test_one_per_hsi_scheduled_per_day_when_emergency_and_non_emergency_symptoms
         def read_parameters(self, data_folder):
             self.sim.modules['SymptomManager'].register_symptom(
                 Symptom(name='NonEmergencySymptom'),
-                Symptom(name='EmergencySymptom', prob_emergency_care_seeking_in_adults=1.0, prob_emergency_care_seeking_in_children=1.0)
+                Symptom(name='EmergencySymptom', emergency_in_adults=True, emergency_in_children=True)
             )
 
         def initialise_population(self, population):
@@ -551,8 +551,8 @@ def test_same_day_healthcare_seeking_for_emergency_symptoms(seed, tmpdir):
             self.sim.modules['SymptomManager'].register_symptom(
                 Symptom(
                     name='Symptom_that_does_cause_emergency_healthcare_seeking',
-                    prob_emergency_care_seeking_in_adults=1.0,
-                    prob_emergency_care_seeking_in_children=1.0
+                    emergency_in_adults=True,
+                    emergency_in_children=True
                 ),
             )
 
@@ -622,8 +622,8 @@ def test_same_day_healthcare_seeking_when_using_force_healthcare_seeking(seed, t
             self.sim.modules['SymptomManager'].register_symptom(
                 Symptom(
                     name='Symptom_that_does_not_cause_emergency_healthcare_seeking',
-                    prob_emergency_care_seeking_in_adults=False,
-                    prob_emergency_care_seeking_in_children=False
+                    emergency_in_adults=False,
+                    emergency_in_children=False
                 ),
             )
 

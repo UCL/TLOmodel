@@ -43,8 +43,8 @@ def test_make_a_symptom():
     assert hasattr(symp, 'name')
     assert hasattr(symp, 'no_healthcareseeking_in_children')
     assert hasattr(symp, 'no_healthcareseeking_in_adults')
-    assert hasattr(symp, 'prob_emergency_care_seeking_in_children')
-    assert hasattr(symp, 'prob_emergency_care_seeking_in_adults')
+    assert hasattr(symp, 'emergency_in_children')
+    assert hasattr(symp, 'emergency_in_adults')
     assert hasattr(symp, 'odds_ratio_health_seeking_in_children')
     assert hasattr(symp, 'odds_ratio_health_seeking_in_adults')
 
@@ -61,7 +61,7 @@ def test_make_a_symptom():
 def test_register_duplicate_symptoms():
     symp = Symptom(name='symptom')
     symp_duplicate = Symptom(name='symptom')
-    symp_with_different_properties = Symptom(name='symptom', prob_emergency_care_seeking_in_children=1.0)
+    symp_with_different_properties = Symptom(name='symptom', emergency_in_children=True)
     symp_with_different_name = Symptom(name='symptom_a')
 
     sm = symptommanager.SymptomManager(resourcefilepath=resourcefilepath)

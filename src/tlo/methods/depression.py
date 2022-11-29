@@ -327,7 +327,7 @@ class Depression(Module):
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(
                 name='Injuries_From_Self_Harm',
-                prob_emergency_care_seeking_in_adults=1.0
+                emergency_in_adults=True
             ),
         )
 
