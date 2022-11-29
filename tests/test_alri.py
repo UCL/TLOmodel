@@ -1047,7 +1047,9 @@ def generate_hsi_sequence(sim, incident_case_event, age_of_person_under_2_months
     sim.modules['Alri'].initialise_simulation = one_person_to_have_disease
     sim.simulate(end_date=Date(2010, 3, 1))
 
-    df = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']['HSI_Event'].set_index('date')
+    df = parse_log_file(
+        sim.log_filepath, level=logging.DEBUG
+    )['tlo.methods.healthsystem']['HSI_Event'].set_index('date')
 
     # Return list of tuples of TREATMENT_ID and Facility_Level
     mask = df.TREATMENT_ID.str.startswith('Alri_') | df.TREATMENT_ID.str.startswith('FirstAttendance_')

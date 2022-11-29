@@ -192,7 +192,7 @@ def test_run_in_mode_0_with_capacity(tmpdir, seed):
     check_dtypes(sim)
 
     # read the results
-    output = parse_log_file(sim.log_filepath)
+    output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
 
     # Do the checks for health system appts
     assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
@@ -234,7 +234,7 @@ def test_run_in_mode_0_no_capacity(tmpdir, seed):
     check_dtypes(sim)
 
     # read the results
-    output = parse_log_file(sim.log_filepath)
+    output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
 
     # Do the checks
     assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
@@ -276,7 +276,7 @@ def test_run_in_mode_1_with_capacity(tmpdir, seed):
     check_dtypes(sim)
 
     # read the results
-    output = parse_log_file(sim.log_filepath)
+    output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
 
     # Do the checks
     assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
@@ -318,7 +318,7 @@ def test_run_in_mode_1_with_no_capacity(tmpdir, seed):
     check_dtypes(sim)
 
     # read the results
-    output = parse_log_file(sim.log_filepath)
+    output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
 
     # Do the checks
     assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
@@ -362,7 +362,7 @@ def test_run_in_mode_2_with_capacity(tmpdir, seed):
     check_dtypes(sim)
 
     # read the results
-    output = parse_log_file(sim.log_filepath)
+    output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
 
     # Do the checks
     assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
@@ -406,7 +406,7 @@ def test_run_in_mode_2_with_no_capacity(tmpdir, seed):
     check_dtypes(sim)
 
     # read the results
-    output = parse_log_file(sim.log_filepath)
+    output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
 
     # Do the checks
     hsi_events = output['tlo.methods.healthsystem']['HSI_Event']
@@ -451,7 +451,7 @@ def test_run_in_with_hs_disabled(tmpdir, seed):
     check_dtypes(sim)
 
     # read the results
-    output = parse_log_file(sim.log_filepath)
+    output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
 
     # Do the checks
     assert 'HSI_Event' not in output['tlo.methods.healthsystem']  # HealthSystem no logging
@@ -496,7 +496,7 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir, seed)
     check_dtypes(sim)
 
     # read the results
-    output = parse_log_file(sim.log_filepath)
+    output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
 
     # Do the check for the occurrence of the GenericFirstAppt which is created by the HSB module
     assert 'FirstAttendance_NonEmergency' in output['tlo.methods.healthsystem']['HSI_Event']['TREATMENT_ID'].values
@@ -681,7 +681,7 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
     )
 
     sim.simulate(end_date=start_date + pd.DateOffset(years=2))
-    log = parse_log_file(sim.log_filepath)
+    log = parse_log_file(sim.log_filepath, level=logging.DEBUG)
 
     # Standard log:
     detailed_hsi_event = log["tlo.methods.healthsystem"]['HSI_Event']
@@ -999,7 +999,9 @@ def test_manipulation_of_service_availability(seed, tmpdir):
         sim.make_initial_population(n=500)
         sim.simulate(end_date=start_date + pd.DateOffset(days=7))
 
-        log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']
+        log = parse_log_file(
+            sim.log_filepath, level=logging.DEBUG
+        )['tlo.methods.healthsystem']
         if 'HSI_Event' in log:
             return set(log['HSI_Event']['TREATMENT_ID'].value_counts().to_dict().keys())
         else:
@@ -1132,7 +1134,9 @@ def test_hsi_run_on_same_day_if_scheduled_for_same_day(seed, tmpdir):
     sim.simulate(end_date=sim.start_date + pd.DateOffset(days=5))
 
     # Check that all events ran on the same day, the first day of the simulation.
-    log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']['HSI_Event']
+    log = parse_log_file(
+        sim.log_filepath, level=logging.DEBUG
+    )['tlo.methods.healthsystem']['HSI_Event']
     assert 4 == len(log)  # 3 HSI events should have occurred
     assert (log['date'] == sim.start_date).all()
     assert log['TREATMENT_ID'].to_list() == [

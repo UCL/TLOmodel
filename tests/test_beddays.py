@@ -939,7 +939,9 @@ def test_in_patient_appt_included_and_logged(tmpdir, seed):
     check_dtypes(sim)
 
     # Load the logged tracker for general beds
-    log_hsi = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']['HSI_Event']
+    log_hsi = parse_log_file(
+        sim.log_filepath, logging.DEBUG
+    )['tlo.methods.healthsystem']['HSI_Event']
     log_hsi.index = pd.to_datetime(log_hsi.date)
     appts_freq_by_date = log_hsi[
         'Number_By_Appt_Type_Code'].apply(pd.Series).fillna(0).astype(int).groupby(level=0).sum()
