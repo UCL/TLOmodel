@@ -19,7 +19,6 @@ from tlo.methods.hsi_generic_first_appts import (
     HSI_GenericFirstApptAtFacilityLevel0,
 )
 
-
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
@@ -93,9 +92,6 @@ class HealthSeekingBehaviour(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-        self.no_healthcareseeking_in_children = set()  # todo delete
-        self.no_healthcareseeking_in_adults = set()
-
         self.odds_ratio_health_seeking_in_children = dict()
         self.odds_ratio_health_seeking_in_adults = dict()
         self.prob_seeks_emergency_appt_in_children = dict()
@@ -105,8 +101,9 @@ class HealthSeekingBehaviour(Module):
         self.emergency_appt_linear_models = dict()
 
         # "force_any_symptom_to_lead_to_healthcareseeking"=True will mean that probability of health care seeking is 1.0
-        # for anyone with newly onset symptoms. Note that if this is not specified, then the value is taken from the
-        # ResourceFile.
+        # for anyone with newly onset symptoms (excepting symptoms explicitly declared to have no healthcareseeking
+        # behaviour).
+        # (Note that if this is not specified, then the value is taken from the ResourceFile.)
         if force_any_symptom_to_lead_to_healthcareseeking is not None:
             assert isinstance(force_any_symptom_to_lead_to_healthcareseeking, bool)
         self.arg_force_any_symptom_to_lead_to_healthcareseeking = force_any_symptom_to_lead_to_healthcareseeking
@@ -141,9 +138,7 @@ class HealthSeekingBehaviour(Module):
         # Assemble the health-care seeking information from the registered symptoms
         for symptom in self.sim.modules['SymptomManager'].all_registered_symptoms:
             # Children:
-            if symptom.no_healthcareseeking_in_children:
-                self.no_healthcareseeking_in_children.add(symptom.name)
-            else:
+            if not symptom.no_healthcareseeking_in_children:
                 self.odds_ratio_health_seeking_in_children[symptom.name] = (
                     symptom.odds_ratio_health_seeking_in_children
                 )
@@ -152,9 +147,7 @@ class HealthSeekingBehaviour(Module):
                 )
 
             # Adults:
-            if symptom.no_healthcareseeking_in_adults:
-                self.no_healthcareseeking_in_adults.add(symptom.name)
-            else:
+            if not symptom.no_healthcareseeking_in_adults:
                 self.odds_ratio_health_seeking_in_adults[symptom.name] = (
                     symptom.odds_ratio_health_seeking_in_adults
                 )
@@ -276,7 +269,6 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         # Define some shorter aliases
         module = self.module
         symptom_manager = self.sim.modules["SymptomManager"]
-        symptom_names = symptom_manager.symptom_names
         health_system = self.sim.modules["HealthSystem"]
         max_delay = module.parameters['max_days_delay_to_generic_HSI_after_symptoms']
         routine_hsi_event_class = HSI_GenericFirstApptAtFacilityLevel0
@@ -320,7 +312,8 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
             # Determine who will seek care:
             if module.force_any_symptom_to_lead_to_healthcareseeking:
                 # If forcing any person with symptoms to seek care, just find all those with any symptoms
-                will_seek_care = set(idx_where_true(self._has_any_symptoms(subgroup, symptom_names)))
+                # NB. This excludes symptoms declared to have no healthcareseeking behaviour.
+                will_seek_care = set(idx_where_true(self._has_any_symptoms(subgroup, hsb_model.keys())))
             else:
                 # If not forcing, run the linear model to predict which persons will seek care, from among those with
                 # symptoms that cause any degree of healthcare seeking.
@@ -332,7 +325,7 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                     )
                 )
 
-                # Force the addition to this set those who are already in-patient. (In-patients will always gets the
+                # Force the addition to this set those who are already in-patient. (In-patients will always get the
                 # notional "FirstAppointment" for a new symptom.)
                 will_seek_care.update(idx_where_true(subgroup.hs_is_inpatient))
 
