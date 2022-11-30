@@ -110,7 +110,7 @@ class Simulation:
                 # save the configuration and apply in the `register` phase
                 self._custom_log_levels = custom_levels
 
-        if filename:
+        if filename and directory:
             timestamp = datetime.datetime.now().strftime('%Y-%m-%dT%H%M%S')
             log_path = Path(directory) / f"{filename}__{timestamp}.log.gz"
             self.output_file = logging.set_output_file(log_path)
