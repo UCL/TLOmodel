@@ -37,6 +37,7 @@ def get_events_run_and_scheduled(_sim) -> List:
 
 def test_healthcareseeking_does_occur_from_symptom_that_does_give_healthcareseeking_behaviour(seed):
     """test that a symptom that gives healthcare seeking results in generic HSI scheduled."""
+    # todo - check that no h.c.s. from those NOT with the symptom
 
     class DummyDisease(Module):
         METADATA = {Metadata.USES_SYMPTOMMANAGER}
@@ -106,7 +107,7 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_healthcareseek
 
 
 def test_healthcareseeking_does_not_occurs_from_symptom_that_do_not_give_healthcareseeking_behaviour(seed):
-    """test that a symptom that should not give healthseeeking does not give heaslth seeking."""
+    """test that a symptom that should not give healthseeeking does not give health seeking."""
 
     class DummyDisease(Module):
         METADATA = {Metadata.USES_SYMPTOMMANAGER}
@@ -221,20 +222,19 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_emergency_heal
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    # Check that the symptom has been registered and is flagged as not causing healthcare seeking
-    assert 'Symptom_that_does_cause_emergency_healthcare_seeking' in \
-           sim.modules['SymptomManager'].symptom_names
-    assert 'Symptom_that_does_cause_emergency_healthcare_seeking' in \
-           sim.modules['HealthSeekingBehaviour'].emergency_in_children
-    assert 'Symptom_that_does_cause_emergency_healthcare_seeking' in \
-           sim.modules['HealthSeekingBehaviour'].emergency_in_adults
+    # Check that the symptom has been registered and is flagged as causing emergency healthcare seeking
+    assert 'Symptom_that_does_cause_emergency_healthcare_seeking' in sim.modules['SymptomManager'].symptom_names
+    assert sim.modules['HealthSeekingBehaviour'].prob_seeks_emergency_appt_in_children[
+               'Symptom_that_does_cause_emergency_healthcare_seeking'] > 0
+    assert sim.modules['HealthSeekingBehaviour'].prob_seeks_emergency_appt_in_adults[
+               'Symptom_that_does_cause_emergency_healthcare_seeking'] > 0
 
     # Check that everyone has the symptom
     df = sim.population.props
     assert set(df.loc[df.is_alive].index) == set(
         sim.modules['SymptomManager'].who_has('Symptom_that_does_cause_emergency_healthcare_seeking'))
 
-    # Check that `HSI_GenericEmergencyFirstApptAtFacilityLevel1` are triggered (but not
+    # Check that `HSI_GenericEmergencyFirstApptAtFacilityLevel1` are triggered for everyone (but not
     # `HSI_GenericFirstApptAtFacilityLevel0`)
     events_run_and_scheduled = get_events_run_and_scheduled(sim)
     assert 'HSI_GenericFirstApptAtFacilityLevel0' not in events_run_and_scheduled
@@ -548,7 +548,7 @@ def test_same_day_healthcare_seeking_for_emergency_symptoms(seed, tmpdir):
 
         def read_parameters(self, data_folder):
             self.sim.modules['SymptomManager'].register_symptom(
-                Symptom('Symptom_that_does_cause_emergency_healthcare_seeking')
+                Symptom.emergency('Symptom_that_does_cause_emergency_healthcare_seeking')
             )
 
         def initialise_population(self, population):
@@ -615,11 +615,10 @@ def test_same_day_healthcare_seeking_when_using_force_healthcare_seeking(seed, t
 
         def read_parameters(self, data_folder):
             self.sim.modules['SymptomManager'].register_symptom(
-                Symptom(
-                    name='Symptom_that_does_not_cause_emergency_healthcare_seeking',
-                    prob_seeks_emergency_appt_in_adults=False,
-                    prob_seeks_emergency_appt_in_children=False
-                ),
+                Symptom(name='Symptom_that_does_not_cause_emergency_healthcare_seeking',
+                        odds_ratio_health_seeking_in_children=0.0001,  # <-- low chance of healthcare seeking
+                        odds_ratio_health_seeking_in_adults=0.0001,    # <-- low chance of healthcare seeking
+                        ),
             )
 
         def initialise_population(self, population):
