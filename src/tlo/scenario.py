@@ -330,9 +330,10 @@ class SampleRunner:
 
         # parse the log file. iterating over each of the log keys will parse the module-specific log file and
         # create the pickled version
-        outputs = parse_log_file(sim.log_filepath)
-        for key, value in outputs.items():
-            print(f'Found log-file for {key} with {len(value)} items')
+        if sim.log_filepath is not None:
+            outputs = parse_log_file(sim.log_filepath)
+            for key, value in outputs.items():
+                print(f'Found log-file for {key} with {len(value)} items')
 
     def run(self):
         # this method will execute all runs of each draw, so we save output in directory
