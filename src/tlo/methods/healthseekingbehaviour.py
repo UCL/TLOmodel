@@ -19,6 +19,7 @@ from tlo.methods.hsi_generic_first_appts import (
     HSI_GenericFirstApptAtFacilityLevel0,
 )
 
+
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
@@ -92,15 +93,16 @@ class HealthSeekingBehaviour(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-        self.hsb_linear_models = dict()
+        self.no_healthcareseeking_in_children = set()  # todo delete
+        self.no_healthcareseeking_in_adults = set()
+
         self.odds_ratio_health_seeking_in_children = dict()
         self.odds_ratio_health_seeking_in_adults = dict()
-        self.no_healthcareseeking_in_children = set()
-        self.emergency_in_children = set()
-        self.non_emergency_healthcareseeking_in_children = set()
-        self.no_healthcareseeking_in_adults = set()
-        self.emergency_in_adults = set()
-        self.non_emergency_healthcareseeking_in_adults = set()
+        self.prob_seeks_emergency_appt_in_children = dict()
+        self.prob_seeks_emergency_appt_in_adults = dict()
+
+        self.hsb_linear_models = dict()
+        self.emergency_appt_linear_models = dict()
 
         # "force_any_symptom_to_lead_to_healthcareseeking"=True will mean that probability of health care seeking is 1.0
         # for anyone with newly onset symptoms. Note that if this is not specified, then the value is taken from the
@@ -141,23 +143,23 @@ class HealthSeekingBehaviour(Module):
             # Children:
             if symptom.no_healthcareseeking_in_children:
                 self.no_healthcareseeking_in_children.add(symptom.name)
-            elif symptom.emergency_in_children:
-                self.emergency_in_children.add(symptom.name)
             else:
-                self.non_emergency_healthcareseeking_in_children.add(symptom.name)
                 self.odds_ratio_health_seeking_in_children[symptom.name] = (
                     symptom.odds_ratio_health_seeking_in_children
+                )
+                self.prob_seeks_emergency_appt_in_children[symptom.name] = (
+                    symptom.prob_seeks_emergency_appt_in_children
                 )
 
             # Adults:
             if symptom.no_healthcareseeking_in_adults:
                 self.no_healthcareseeking_in_adults.add(symptom.name)
-            elif symptom.emergency_in_adults:
-                self.emergency_in_adults.add(symptom.name)
             else:
-                self.non_emergency_healthcareseeking_in_adults.add(symptom.name)
                 self.odds_ratio_health_seeking_in_adults[symptom.name] = (
                     symptom.odds_ratio_health_seeking_in_adults
+                )
+                self.prob_seeks_emergency_appt_in_adults[symptom.name] = (
+                    symptom.prob_seeks_emergency_appt_in_adults
                 )
 
         # Define the linear models that govern healthcare seeking
@@ -171,45 +173,65 @@ class HealthSeekingBehaviour(Module):
     def define_linear_models(self):
         """Define linear models for health seeking behaviour for children and adults"""
         p = self.parameters
-        for subgroup, age_predictor, odds_ratios, care_seeking_symptoms in zip(
-            ('children', 'adults'),
+
+        # Model for care seeking:
+        for subgroup, age_predictor, care_seeking_odds_ratios, in zip(
+            (
+                'children',
+                'adults'
+            ),
             (
                 Predictor('age_years').when('>=5', p['odds_ratio_children_age_5to14']),
-                Predictor('age_years', conditions_are_mutually_exclusive=True)
-                .when('.between(35,59)', p['odds_ratio_adults_age_35to59'])
-                .when('>=60', p['odds_ratio_adults_age_60plus']),
+                Predictor('age_years', conditions_are_mutually_exclusive=True
+                          ).when('.between(35,59)', p['odds_ratio_adults_age_35to59'])
+                           .when('>=60', p['odds_ratio_adults_age_60plus']),
             ),
             (
                 self.odds_ratio_health_seeking_in_children,
                 self.odds_ratio_health_seeking_in_adults
             ),
-            (
-                self.non_emergency_healthcareseeking_in_children,
-                self.non_emergency_healthcareseeking_in_adults
-            ),
         ):
             self.hsb_linear_models[subgroup] = LinearModel(
                 LinearModelType.LOGISTIC,
                 p[f'baseline_odds_of_healthcareseeking_{subgroup}'],
+
                 # First set of predictors are for behaviour due to the 'average symptom'
-                # This is from the Ng'ambia et al. papers
-                Predictor('li_urban').when(
-                    True, p[f'odds_ratio_{subgroup}_setting_urban']
-                ),
-                Predictor('sex').when('F', p[f'odds_ratio_{subgroup}_sex_Female']),
                 age_predictor,
-                Predictor('region_of_residence', conditions_are_mutually_exclusive=True)
-                .when('Central', p[f'odds_ratio_{subgroup}_region_Central'])
-                .when('Southern', p[f'odds_ratio_{subgroup}_region_Southern']),
-                Predictor('li_wealth', conditions_are_mutually_exclusive=True)
-                .when(4, p[f'odds_ratio_{subgroup}_wealth_higher'])
-                .when(5, p[f'odds_ratio_{subgroup}_wealth_higher']),
-                # Second set of predictors are the symptom specific odd ratios
-                *(
-                    Predictor(f'sy_{symptom}').when('>0', odds_ratios[symptom])
-                    for symptom in care_seeking_symptoms
-                )
+                Predictor('li_urban').when(True, p[f'odds_ratio_{subgroup}_setting_urban']),
+                Predictor('sex').when('F', p[f'odds_ratio_{subgroup}_sex_Female']),
+                Predictor('region_of_residence', conditions_are_mutually_exclusive=True
+                          ).when('Central', p[f'odds_ratio_{subgroup}_region_Central'])
+                           .when('Southern', p[f'odds_ratio_{subgroup}_region_Southern']),
+                Predictor('li_wealth', conditions_are_mutually_exclusive=True
+                          ).when(4, p[f'odds_ratio_{subgroup}_wealth_higher'])
+                           .when(5, p[f'odds_ratio_{subgroup}_wealth_higher']),
+
+                # Second set of predictors are the symptom-specific odd ratios
+                *(Predictor(f'sy_{_symptom}').when('>0', _odds) for _symptom, _odds in care_seeking_odds_ratios.items())
             )
+
+        # Model for the care-seeking (if it occurs) to be for an EMERGENCY Appointment
+
+        def custom_predict(self, df, rng=None, **externals) -> pd.Series:
+            """Custom predict function for LinearModel. This finds the probability that a person seeks emergency care
+            by finding the highest probability of seeking emergency care for all symptoms they have currently."""
+            prob = (df[[f'sy_{_symptom}' for _symptom in self.prob_emergency_appt.keys()]] > 0) \
+                .mul(self.prob_emergency_appt.values()) \
+                .max(axis=1)
+            return prob > rng.random_sample(len(prob))
+
+        for subgroup, prob_emergency_appt in zip(
+            (
+                'children',
+                'adults'
+            ),
+            (
+                self.prob_seeks_emergency_appt_in_children,
+                self.prob_seeks_emergency_appt_in_adults
+            ),
+        ):
+            self.emergency_appt_linear_models[subgroup] = LinearModel.custom(predict_function=custom_predict,
+                                                                             prob_emergency_appt=prob_emergency_appt)
 
     @property
     def force_any_symptom_to_lead_to_healthcareseeking(self):
@@ -220,6 +242,7 @@ class HealthSeekingBehaviour(Module):
         else:
             return self.arg_force_any_symptom_to_lead_to_healthcareseeking
 
+
 # ---------------------------------------------------------------------------------------------------------
 #   REGULAR POLLING EVENT
 # ---------------------------------------------------------------------------------------------------------
@@ -228,6 +251,7 @@ class HealthSeekingBehaviour(Module):
 class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
     """This event occurs every day and determines if persons with newly onset symptoms will seek care.
     """
+
     def __init__(self, module):
         """Initialise the HealthSeekingBehaviourPoll
         :param module: the module that created this event
@@ -252,6 +276,7 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         # Define some shorter aliases
         module = self.module
         symptom_manager = self.sim.modules["SymptomManager"]
+        symptom_names = symptom_manager.symptom_names
         health_system = self.sim.modules["HealthSystem"]
         max_delay = module.parameters['max_days_delay_to_generic_HSI_after_symptoms']
         routine_hsi_event_class = HSI_GenericFirstApptAtFacilityLevel0
@@ -260,107 +285,86 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         # Get IDs of alive persons with new symptoms
         person_ids_with_newly_onset_symptoms = sorted(
             symptom_manager.get_persons_with_newly_onset_symptoms())
-        symptomatic_persons = population.props.loc[person_ids_with_newly_onset_symptoms]
-        alive_symptomatic_persons = symptomatic_persons[symptomatic_persons.is_alive]
+        newly_symptomatic_persons = population.props.loc[person_ids_with_newly_onset_symptoms]
+        alive_newly_symptomatic_persons = newly_symptomatic_persons[newly_symptomatic_persons.is_alive]
 
         # Clear the list of persons with newly onset symptoms
         symptom_manager.reset_persons_with_newly_onset_symptoms()
 
-        # Split alive symptomatic persons into child and adult subgroups
-        are_under_15 = alive_symptomatic_persons.age_years < 15
-        alive_symptomatic_children = alive_symptomatic_persons[are_under_15]
-        alive_symptomatic_adults = alive_symptomatic_persons[~are_under_15]
+        # Split alive newly symptomatic persons into child and adult subgroups
+        are_under_15 = alive_newly_symptomatic_persons.age_years < 15
+        alive_newly_symptomatic_children = alive_newly_symptomatic_persons[are_under_15]
+        alive_newly_symptomatic_adults = alive_newly_symptomatic_persons[~are_under_15]
+
+        idx_where_true = lambda ser: set(ser.loc[ser].index)  # noqa: E731
 
         # Separately schedule HSI events for child and adult subgroups
-        for subgroup, emergency_symptoms, care_seeking_symptoms, hsb_model in zip(
-            (alive_symptomatic_children, alive_symptomatic_adults),
-            (module.emergency_in_children, module.emergency_in_adults),
+        for subgroup, symptoms_that_allow_healthcareseeking, hsb_model, emergency_appt_model in zip(
             (
-                module.non_emergency_healthcareseeking_in_children,
-                module.non_emergency_healthcareseeking_in_adults
+                alive_newly_symptomatic_children,
+                alive_newly_symptomatic_adults
             ),
-            (module.hsb_linear_models['children'], module.hsb_linear_models['adults'])
+            (
+                module.odds_ratio_health_seeking_in_children.keys(),
+                module.odds_ratio_health_seeking_in_adults.keys(),
+            ),
+            (
+                module.hsb_linear_models['children'],
+                module.hsb_linear_models['adults']
+            ),
+            (
+                module.emergency_appt_linear_models['children'],
+                module.emergency_appt_linear_models['adults']
+            ),
         ):
-            if len(emergency_symptoms) > 0:
-                # Generate an emergency HSI event if any of the symptoms is an emergency
-                is_emergency_care_seeking = self._has_any_symptoms(
-                    subgroup, emergency_symptoms
-                )
-                health_system.schedule_batch_of_individual_hsi_events(
-                    hsi_event_class=emergency_hsi_event_class,
-                    person_ids=subgroup[is_emergency_care_seeking].index,
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None,
-                    module=module
-                )
-                # If a person has had an emergency appointment scheduled this day
-                # already due to emergency symptoms, then do not allow a non-emergency
-                # appointment to be scheduled in addition, so select the subgroup
-                # who are not emergency care-seeking
-                not_emergency_care_seeking_subgroup = subgroup[
-                    ~is_emergency_care_seeking
-                ]
-            else:
-                not_emergency_care_seeking_subgroup = subgroup
-
-            # Check if no symptoms initiating (non-emergency) care seeking specified
-            if len(care_seeking_symptoms) == 0:
-                continue
-            # Symptoms in non-emergency care seeking set may or may not generate an
-            # associated HSI event, we first select all persons in
-            # not_emergency_care_seeking_subgroup who have any symptoms which may lead
-            # to a HSI event being generated. From here onwards care seeking should be
-            # taken to mean specifically *non-emergency* care seeking
-            possibly_care_seeking_subgroup = not_emergency_care_seeking_subgroup[
-                self._has_any_symptoms(
-                    not_emergency_care_seeking_subgroup, care_seeking_symptoms
-                )
-            ]
-
+            # Determine who will seek care:
             if module.force_any_symptom_to_lead_to_healthcareseeking:
-                # This HSB module flag causes a generic non-emergency appointment to be
-                # scheduled for any symptom immediately
-                health_system.schedule_batch_of_individual_hsi_events(
-                    hsi_event_class=routine_hsi_event_class,
-                    person_ids=possibly_care_seeking_subgroup.index,
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None,
-                    module=module
-                )
+                # If forcing any person with symptoms to seek care, just find all those with any symptoms
+                will_seek_care = set(idx_where_true(self._has_any_symptoms(subgroup, symptom_names)))
             else:
-                # All in-patients with symptoms always generate a HSI event
-                care_seeking_inpatients = possibly_care_seeking_subgroup[
-                    possibly_care_seeking_subgroup.hs_is_inpatient
-                ]
-                # For non-in-patients with symptoms use HSB linear model to (randomly)
-                # select subset seeking care and so generating a HSI event
-                possibly_care_seeking_non_inpatients = possibly_care_seeking_subgroup[
-                    ~possibly_care_seeking_subgroup.hs_is_inpatient
-                ]
-                care_seeking_non_inpatients = possibly_care_seeking_non_inpatients[
+                # If not forcing, run the linear model to predict which persons will seek care, from among those with
+                # symptoms that cause any degree of healthcare seeking.
+                will_seek_care = idx_where_true(
                     hsb_model.predict(
-                        possibly_care_seeking_non_inpatients,
+                        subgroup.loc[self._has_any_symptoms(subgroup, symptoms_that_allow_healthcareseeking)],
                         module.rng,
-                        squeeze_single_row_output=False,
+                        squeeze_single_row_output=False
                     )
-                ]
-                for care_seeking_ids in (
-                    care_seeking_inpatients.index, care_seeking_non_inpatients.index
-                ):
-                    # Schedule generic non-emergency appointments after a random delay
-                    care_seeking_dates = (
-                        # Create NumPy datetime with day unit to allow directly adding
-                        # array of generated integer delays in [0, max_delay]
-                        np.array(self.sim.date, dtype='datetime64[D]')
-                        + module.rng.randint(0, max_delay, size=len(care_seeking_ids))
-                    )
-                    health_system.schedule_batch_of_individual_hsi_events(
-                        hsi_event_class=routine_hsi_event_class,
-                        person_ids=care_seeking_ids,
-                        priority=0,
-                        topen=map(Date, care_seeking_dates),
-                        tclose=None,
-                        module=module
-                    )
+                )
+
+                # Force the addition to this set those who are already in-patient. (In-patients will always gets the
+                # notional "FirstAppointment" for a new symptom.)
+                will_seek_care.update(idx_where_true(subgroup.hs_is_inpatient))
+
+            # Determine if the care sought will be emergency care (for those that seek care):
+            will_seek_emergency_care = idx_where_true(
+                emergency_appt_model.predict(subgroup.loc[will_seek_care], module.rng, squeeze_single_row_output=False))
+
+            # Determine who will seek non-emergency care (those that did not seek emergency care):
+            will_seek_non_emergency_care = will_seek_care - will_seek_emergency_care
+
+            # Schedule Emergency Care for same day
+            health_system.schedule_batch_of_individual_hsi_events(
+                hsi_event_class=emergency_hsi_event_class,
+                person_ids=sorted(will_seek_emergency_care),
+                priority=0,
+                topen=self.sim.date,
+                tclose=None,
+                module=module
+            )
+
+            # Schedule Non-Emergency Care for "soon"
+            care_seeking_dates = (
+                # Create NumPy datetime with day unit to allow directly adding
+                # array of generated integer delays in [0, max_delay]
+                np.array(self.sim.date, dtype='datetime64[D]')
+                + module.rng.randint(0, max_delay, size=len(will_seek_non_emergency_care))
+            )
+            health_system.schedule_batch_of_individual_hsi_events(
+                hsi_event_class=routine_hsi_event_class,
+                person_ids=sorted(will_seek_non_emergency_care),
+                priority=0,
+                topen=map(Date, care_seeking_dates),
+                tclose=None,
+                module=module
+            )
