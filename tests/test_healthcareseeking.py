@@ -37,7 +37,7 @@ def get_events_run_and_scheduled(_sim) -> List:
 
 def test_healthcareseeking_does_occur_from_symptom_that_does_give_healthcareseeking_behaviour(seed):
     """test that a symptom that gives healthcare seeking results in generic HSI scheduled."""
-    # todo - check that no h.c.s. from those NOT with the symptom
+
 
     class DummyDisease(Module):
         METADATA = {Metadata.USES_SYMPTOMMANAGER}
@@ -740,3 +740,15 @@ def test_everyone_seeks_care_for_symptom_with_high_odds_ratio_of_seeking_care(se
         evs = [x[1].TREATMENT_ID for x in
                sim.modules['HealthSystem'].sim.modules['HealthSystem'].find_events_for_person(_person_id)]
         assert 'FirstAttendance_NonEmergency' in evs, f"No FirstAttendance_NonEmergency for {_person_id=}"
+
+
+# todo in `test_healthcareseeking_does_occur_from_symptom_that_does_give_healthcareseeking_behaviour`, also check that
+#  no h.c.s. from those NOT with the symptom
+
+# todo check that the right proportion of persons seek care
+
+# todo test that force-healthcareseekig has no effect for symptom that is declare to have no healthcareseeking
+#  behaviour.
+
+# todo check that when an emergency symptom with prob 50%, it leads some having no care, some having non-emergency care
+#  and some having emergency care in the right proportions, for a few different proportions
