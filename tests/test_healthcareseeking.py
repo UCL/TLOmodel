@@ -780,7 +780,7 @@ def test_everyone_seeks_care_for_symptom_with_high_odds_ratio_of_seeking_care(se
 
 def test_care_seeking_from_symptoms_with_intermediate_level_of_care_seeking_and_emergency(seed):
     """Check that a symptom with an intermediate level of healthcare-seeking and intermediate probability of emergency
-    care leads to some persons having no care, some having emergency care and some having emergency care."""
+    care leads to some persons having no care, some having emergency care and some having non-emergency care."""
 
     class DummyDisease(Module):
         METADATA = {Metadata.USES_SYMPTOMMANAGER}
@@ -970,14 +970,14 @@ def test_persons_have_maximum_of_one_hsi_scheduled(seed):
         def read_parameters(self, data_folder):
             self.sim.modules['SymptomManager'].register_symptom(
                 Symptom(name='EmergencySymptom',
-                        odds_ratio_health_seeking_in_adults=1.0,  # <--- high degree of healthcare seeking
-                        odds_ratio_health_seeking_in_children=1.0,  # <--- high degree of healthcare seeking
+                        odds_ratio_health_seeking_in_adults=1.0,  # <--- intermediate degree of healthcare seeking
+                        odds_ratio_health_seeking_in_children=1.0,  # <--- intermediate degree of healthcare seeking
                         prob_seeks_emergency_appt_in_adults=0.5,  # <--- possibility of seeking emergency care
                         prob_seeks_emergency_appt_in_children=0.5,  # <--- possibility of seeking emergency care
                         ),
                 Symptom(name='NonEmergencySymptom',
-                        odds_ratio_health_seeking_in_adults=1.0,  # <--- high degree of healthcare seeking
-                        odds_ratio_health_seeking_in_children=1.0,  # <--- high degree of healthcare seeking
+                        odds_ratio_health_seeking_in_adults=1.0,  # <--- intermediate degree of healthcare seeking
+                        odds_ratio_health_seeking_in_children=1.0,  # <--- intermediate degree of healthcare seeking
                         prob_seeks_emergency_appt_in_adults=0.0,  # <--- will not seek emergency care
                         prob_seeks_emergency_appt_in_children=0.0,  # <--- will not seek emergency care
                         ),
