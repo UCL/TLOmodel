@@ -324,7 +324,7 @@ class Depression(Module):
             )
 
         # Symptom that this module will use
-        self.sim.modules['SymptomManager'].register_symptom(Symptom.emrgency('Injuries_From_Self_Harm', which='adults'))
+        self.sim.modules['SymptomManager'].register_symptom(Symptom.emergency('Injuries_From_Self_Harm', which='adults'))
 
     def apply_linear_model(self, lm, df):
         """

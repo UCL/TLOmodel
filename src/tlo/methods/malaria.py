@@ -246,7 +246,7 @@ class Malaria(Module):
             Symptom.emergency("acidosis"),
             Symptom.emergency("coma_convulsions"),
             Symptom.emergency("renal_failure"),
-            Symptom.emrgency("shock")
+            Symptom.emergency("shock")
         )
 
     def initialise_population(self, population):
