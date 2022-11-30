@@ -407,7 +407,7 @@ def test_one_per_hsi_scheduled_per_day_when_emergency_and_non_emergency_symptoms
     sim.modules['HealthSeekingBehaviour'].theHealthSeekingBehaviourPoll.run()
 
     # See what HSI are scheduled to occur for the person
-    evs = [x[1].TREATMENT_ID for x in sim.modules['HealthSystem'].sim.modules['HealthSystem'].find_events_for_person(0)]
+    evs = [x[1].TREATMENT_ID for x in sim.modules['HealthSystem'].find_events_for_person(0)]
 
     assert 'FirstAttendance_Emergency' in evs
     assert 'FirstAttendance_NonEmergency' not in evs
@@ -479,7 +479,7 @@ def test_force_healthcare_seeking(seed):
 
         # See what HSI are scheduled to occur for the person
         evs = [x[1].TREATMENT_ID for x in
-               sim.modules['HealthSystem'].sim.modules['HealthSystem'].find_events_for_person(0)]
+               sim.modules['HealthSystem'].find_events_for_person(0)]
 
         return 'FirstAttendance_NonEmergency' in evs
 
@@ -774,7 +774,7 @@ def test_everyone_seeks_care_for_symptom_with_high_odds_ratio_of_seeking_care(se
     # - check that every person for whom the symptom was onset has been scheduled an HSI
     for _person_id in df.loc[df.is_alive].index:
         evs = [x[1].TREATMENT_ID for x in
-               sim.modules['HealthSystem'].sim.modules['HealthSystem'].find_events_for_person(_person_id)]
+               sim.modules['HealthSystem'].find_events_for_person(_person_id)]
         assert 'FirstAttendance_NonEmergency' in evs, f"No FirstAttendance_NonEmergency for {_person_id=}"
 
 
@@ -845,7 +845,7 @@ def test_care_seeking_from_symptoms_with_intermediate_level_of_care_seeking_and_
     evs = pd.Series({
         _person_id: [
             x[1].TREATMENT_ID
-            for x in sim.modules['HealthSystem'].sim.modules['HealthSystem'].find_events_for_person(_person_id)
+            for x in sim.modules['HealthSystem'].find_events_for_person(_person_id)
         ]
         for _person_id in df.loc[df.is_alive].index
     }).explode()
@@ -936,7 +936,7 @@ def test_care_seeking_from_symptoms_with_different_levels_of_prob_emergency(seed
         evs = pd.Series({
             _person_id: [
                 x[1].TREATMENT_ID
-                for x in sim.modules['HealthSystem'].sim.modules['HealthSystem'].find_events_for_person(_person_id)
+                for x in sim.modules['HealthSystem'].find_events_for_person(_person_id)
             ]
             for _person_id in df.loc[df.is_alive].index
         }).explode()
@@ -1033,7 +1033,7 @@ def test_persons_have_maximum_of_one_hsi_scheduled(seed):
     evs = pd.Series({
         _person_id: [
             x[1].TREATMENT_ID
-            for x in sim.modules['HealthSystem'].sim.modules['HealthSystem'].find_events_for_person(_person_id)
+            for x in sim.modules['HealthSystem'].find_events_for_person(_person_id)
         ]
         for _person_id in df.loc[df.is_alive].index
     }).explode()
