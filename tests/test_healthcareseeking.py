@@ -38,7 +38,6 @@ def get_events_run_and_scheduled(_sim) -> List:
 def test_healthcareseeking_does_occur_from_symptom_that_does_give_healthcareseeking_behaviour(seed):
     """test that a symptom that gives healthcare seeking results in generic HSI scheduled."""
 
-
     class DummyDisease(Module):
         METADATA = {Metadata.USES_SYMPTOMMANAGER}
         """Dummy Disease - it's only job is to create a symptom and impose it everyone"""
@@ -89,10 +88,10 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_healthcareseek
     # Check that the symptom has been registered and is flagged as causing healthcare seeking
     assert 'Symptom_that_does_cause_healthcare_seeking' in \
            sim.modules['SymptomManager'].symptom_names
-    assert 'Symptom_that_does_cause_healthcare_seeking' not in \
-           sim.modules['HealthSeekingBehaviour'].no_healthcareseeking_in_children
-    assert 'Symptom_that_does_cause_healthcare_seeking' not in \
-           sim.modules['HealthSeekingBehaviour'].no_healthcareseeking_in_adults
+    assert 'Symptom_that_does_cause_healthcare_seeking' in \
+           sim.modules['HealthSeekingBehaviour'].odds_ratio_health_seeking_in_children
+    assert 'Symptom_that_does_cause_healthcare_seeking' in \
+           sim.modules['HealthSeekingBehaviour'].odds_ratio_health_seeking_in_adults
 
     # Check that everyone has the symptom
     df = sim.population.props
@@ -159,10 +158,10 @@ def test_healthcareseeking_does_not_occurs_from_symptom_that_do_not_give_healthc
     # Check that the symptom has been registered and is flagged as _not_ causing healthcare seeking
     assert 'Symptom_that_does_not_cause_healthcare_seeking' in \
            sim.modules['SymptomManager'].symptom_names
-    assert 'Symptom_that_does_not_cause_healthcare_seeking' in \
-           sim.modules['HealthSeekingBehaviour'].no_healthcareseeking_in_children
-    assert 'Symptom_that_does_not_cause_healthcare_seeking' in \
-           sim.modules['HealthSeekingBehaviour'].no_healthcareseeking_in_adults
+    assert 'Symptom_that_does_not_cause_healthcare_seeking' not in \
+           sim.modules['HealthSeekingBehaviour'].odds_ratio_health_seeking_in_children
+    assert 'Symptom_that_does_not_cause_healthcare_seeking' not in \
+           sim.modules['HealthSeekingBehaviour'].odds_ratio_health_seeking_in_adults
 
     # Check that everyone has the symptom
     df = sim.population.props
