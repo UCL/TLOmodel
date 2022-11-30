@@ -90,10 +90,14 @@ class Symptom:
             odds_ratio_health_seeking_in_children = 1.0  # i.e. Symptom has same odds of h.c.s. as the 'default'
 
         # Check that the odds-ratio of healthcare seeking is greater than or equal to 0.0
+        assert isinstance(odds_ratio_health_seeking_in_adults, float)
+        assert isinstance(odds_ratio_health_seeking_in_children, float)
         assert 0.0 <= odds_ratio_health_seeking_in_adults
         assert 0.0 <= odds_ratio_health_seeking_in_children
 
         # Check that probability of seeking an emergency appointment must be between 0.0 and 1.0
+        assert isinstance(prob_seeks_emergency_appt_in_adults, float)
+        assert isinstance(prob_seeks_emergency_appt_in_children, float)
         assert 0.0 <= prob_seeks_emergency_appt_in_adults <= 1.0
         assert 0.0 <= prob_seeks_emergency_appt_in_children <= 1.0
 
@@ -124,8 +128,8 @@ class Symptom:
             no_healthcareseeking_in_children=False,
             prob_seeks_emergency_appt_in_adults=1.0 if emergency_in_adults else 0.0,
             prob_seeks_emergency_appt_in_children=1.0 if emergency_in_children else 0.0,
-            odds_ratio_health_seeking_in_adults=np.inf if emergency_in_adults else 0.0,
-            odds_ratio_health_seeking_in_children=np.inf if emergency_in_children else 0.0,
+            odds_ratio_health_seeking_in_adults=10_000.0 if emergency_in_adults else 0.0,  # todo a more elegant way?
+            odds_ratio_health_seeking_in_children=10_000.0 if emergency_in_children else 0.0,
         )
 
     def __eq__(self, other):
@@ -245,8 +249,8 @@ class SymptomManager(Module):
                     name=generic_symptom_name,
                     odds_ratio_health_seeking_in_adults=odds_ratio_health_seeking_in_adults[generic_symptom_name],
                     odds_ratio_health_seeking_in_children=odds_ratio_health_seeking_in_children[generic_symptom_name],
-                    prob_seeks_emergency_appt_in_adults=False,
-                    prob_seeks_emergency_appt_in_children=False
+                    prob_seeks_emergency_appt_in_adults=0.0,
+                    prob_seeks_emergency_appt_in_children=0.0,
                 )
             )
 
