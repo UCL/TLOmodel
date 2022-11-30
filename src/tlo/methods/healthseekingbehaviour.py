@@ -353,7 +353,8 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                 # Create NumPy datetime with day unit to allow directly adding
                 # array of generated integer delays in [0, max_delay]
                 np.array(self.sim.date, dtype='datetime64[D]')
-                + module.rng.randint(0, max_delay, size=len(will_seek_non_emergency_care))
+                + module.rng.randint(0, max_delay + 1, size=len(will_seek_non_emergency_care))
+                # (The +1 is because `randint` takes the upper bound to be excluded.)
             )
             health_system.schedule_batch_of_individual_hsi_events(
                 hsi_event_class=routine_hsi_event_class,
