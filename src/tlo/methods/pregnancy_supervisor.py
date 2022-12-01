@@ -1588,10 +1588,6 @@ class PregnancySupervisor(Module):
         else:
             mni[individual_id]['didnt_seek_care'] = False
 
-            # If a death does not occur we reset the death causing properties (if appropriate)
-            if mother.ps_antepartum_haemorrhage != 'none':
-                df.at[individual_id, 'ps_antepartum_haemorrhage'] = 'none'
-
             if (mother.ps_htn_disorders == 'severe_pre_eclamp') and mni[individual_id]['new_onset_spe']:
                 mni[individual_id]['new_onset_spe'] = False
 
