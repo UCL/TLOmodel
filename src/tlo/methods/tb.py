@@ -1014,8 +1014,11 @@ class Tb(Module):
         eligible = df.at[person_id, "tb_inf"] != "active"
 
         # select coverage rate by year:
+        now = self.sim.date
+        year = now.year if now.year <= 2050 else 2050
+
         ipt = self.parameters["ipt_coverage"]
-        ipt_year = ipt.loc[ipt.year == self.sim.date.year]
+        ipt_year = ipt.loc[ipt.year == year]
         ipt_coverage_plhiv = ipt_year.coverage_plhiv
 
         if (
@@ -1403,7 +1406,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
 
             # increase coverage of IPT
             p["ipt_coverage"]["coverage_plhiv"] = 0.6
-            p["ipt_coverage"]["coverage_paediatric"] = 0.8  # this will apply to contacts of all ages
+            p["ipt_coverage"]["coverage_paediatric"] = 80  # this will apply to contacts of all ages
 
 
 class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
@@ -1811,11 +1814,12 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
             # ------------------------- give IPT to contacts ------------------------- #
             # if diagnosed, trigger ipt outreach event for up to 5 contacts of case
             # only high-risk districts are eligible
+            year = now.year if now.year < 2020 else 2019
 
             district = person["district_of_residence"]
             ipt = self.module.parameters["ipt_coverage"]
-            ipt_year = ipt.loc[ipt.year == self.sim.date.year]
-            ipt_coverage_paed = ipt_year.coverage_paediatric.values[0]
+            ipt_year = ipt.loc[ipt.year == year]
+            ipt_coverage_paed = ipt_year.coverage_paediatric.values[0] / 100
 
             if (district in p["tb_high_risk_distr"].district_name.values) & (
                 self.module.rng.rand() < ipt_coverage_paed
