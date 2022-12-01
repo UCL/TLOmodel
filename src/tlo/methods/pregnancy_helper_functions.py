@@ -65,17 +65,20 @@ def return_cons_avail(self, hsi_event, cons_dict, **info):
 
         # Depending on HSI calling this function a different parameter set is used to determine if analysis is being
         # conducted
-        if hsi_event.TREATMENT_ID == 'AntenatalCare_Outpatient':
+        if 'AntenatalCare' in hsi_event.TREATMENT_ID:
             params = self.sim.modules['PregnancySupervisor'].current_parameters
         else:
             params = self.sim.modules['Labour'].current_parameters
 
         # Store the names of the parameters which indicate that analysis is being conducted against specific HSIs
         analysis_dict = {'AntenatalCare_Outpatient': ['alternative_anc_quality', 'anc_availability_probability'],
-                         'DeliveryCare_Basic': ['alternative_bemonc_availability', 'bemonc_availability'],
-                         'DeliveryCare_Neonatal': ['alternative_bemonc_availability', 'bemonc_availability'],
-                         'DeliveryCare_Comprehensive': ['alternative_cemonc_availability', 'cemonc_availability'],
+                         'AntenatalCare_Inpatient': ['alternative_ip_anc_quality', 'ip_anc_availability_probability'],
+                         'AntenatalCare_FollowUp': ['alternative_ip_anc_quality', 'ip_anc_availability_probability'],
+                         'DeliveryCare_Basic': ['alternative_bemonc_availability', 'bemonc_cons_availability'],
+                         'DeliveryCare_Neonatal': ['alternative_bemonc_availability', 'bemonc_cons_availability'],
+                         'DeliveryCare_Comprehensive': ['alternative_cemonc_availability', 'cemonc_cons_availability'],
                          'PostnatalCare_Maternal': ['alternative_pnc_quality', 'pnc_availability_probability'],
+                         'PostnatalCare_Comprehensive': ['alternative_pnc_quality', 'pnc_availability_probability'],
                          'PostnatalCare_Neonatal': ['alternative_pnc_quality', 'pnc_availability_probability']}
 
         # Cycle through each HSI of interest. If this HSI is requesting a consumable, analysis is being conducted and
@@ -104,19 +107,19 @@ def check_emonc_signal_function_will_run(self, sf, hsi_event):
     :param hsi_event: hsi_event calling the intervention
     :return: BOOL
     """
-    params = self.current_parameters
     la_params = self.sim.modules['Labour'].current_parameters
+    ps_params = self.sim.modules['PregnancySupervisor'].current_parameters
     mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
     def see_if_sf_will_run():
         # Determine competence parameter to use (higher presumed competence in hospitals)
         if hsi_event.ACCEPTED_FACILITY_LEVEL == '1a':
-            competence = params['mean_hcw_competence_hc'][0]
+            competence = la_params['mean_hcw_competence_hc'][0]
         else:
-            competence = params['mean_hcw_competence_hp'][1]
+            competence = la_params['mean_hcw_competence_hp'][1]
 
         comp_result = self.rng.random_sample() < competence
-        hcw_result = self.rng.random_sample() < params[f'prob_hcw_avail_{sf}']
+        hcw_result = self.rng.random_sample() < la_params[f'prob_hcw_avail_{sf}']
 
         # If HCW is available and staff are competent at delivering the intervention then it will be delivered
         if comp_result and hcw_result:
@@ -130,15 +133,22 @@ def check_emonc_signal_function_will_run(self, sf, hsi_event):
 
         return False
 
-    if not la_params['la_analysis_in_progress']:
+    if not la_params['la_analysis_in_progress'] and not ps_params['ps_analysis_in_progress']:
         return see_if_sf_will_run()
 
     else:
+        if 'AntenatalCare' in hsi_event.TREATMENT_ID:
+            params = self.sim.modules['PregnancySupervisor'].current_parameters
+        else:
+            params = self.sim.modules['Labour'].current_parameters
+
         # Define HSIs and analysis parameters of interest
-        analysis_dict = {'DeliveryCare_Basic': ['alternative_bemonc_availability', 'bemonc_availability'],
+        analysis_dict = {'AntenatalCare_Inpatient': ['alternative_ip_anc_quality', 'ip_anc_availability_probability'],
+                         'DeliveryCare_Basic': ['alternative_bemonc_availability', 'bemonc_availability'],
                          'DeliveryCare_Neonatal': ['alternative_bemonc_availability', 'bemonc_availability'],
                          'DeliveryCare_Comprehensive': ['alternative_cemonc_availability', 'cemonc_availability'],
                          'PostnatalCare_Maternal': ['alternative_pnc_quality', 'pnc_availability_probability'],
+                         'PostnatalCare_Comprehensive': ['alternative_pnc_quality', 'pnc_availability_probability'],
                          'PostnatalCare_Neonatal': ['alternative_pnc_quality', 'pnc_availability_probability']}
 
         for k in analysis_dict:
@@ -179,16 +189,16 @@ def log_met_need(self, intervention, hsi):
     # For interventions with multiple indications the HSI and properties of the individual are used to determine the
     # correct name for the logged intervention.
     elif (intervention == 'mag_sulph') or (intervention == 'iv_htns'):
-        if ((hsi.TREATMENT_ID == 'DeliveryCare_Basic') or (hsi.TREATMENT_ID == 'AntenatalCare_Inpatient')) and \
-          not person.la_is_postpartum:
-            logger.info(key='intervention',
-                        data={'person_id': person_id,
-                              'int': f'{intervention}_an_{df.at[person_id, "ps_htn_disorders"]}'})
+        if hsi.TREATMENT_ID == 'AntenatalCare_Inpatient':
+            tp = ['an', 'ps']
+        elif hsi.TREATMENT_ID == 'DeliveryCare_Basic':
+            tp = ['la', 'ps']
+        else:
+            tp = ['pn', 'pn']
 
-        elif (hsi.TREATMENT_ID == 'PostnatalCare_Maternal') and person.la_is_postpartum:
-            logger.info(key='intervention',
-                        data={'person_id': person_id,
-                              'int': f'{intervention}_pn_{df.at[person_id, "pn_htn_disorders"]}'})
+        logger.info(key='intervention',
+                    data={'person_id': person_id,
+                          'int': f'{intervention}_{tp[0]}_{df.at[person_id, f"{tp[1]}_htn_disorders"]}'})
 
     elif intervention == 'sepsis_abx':
         if (hsi.TREATMENT_ID == 'DeliveryCare_Basic') or (hsi.TREATMENT_ID == 'AntenatalCare_Inpatient'):
@@ -303,7 +313,7 @@ def store_dalys_in_mni(individual_id, mni, mni_variable, date):
     mni[individual_id][mni_variable] = date
 
 
-def check_if_delayed_careseeking(self, individual_id):
+def check_if_delayed_careseeking(self, individual_id, timing):
     """
     This function checks if a woman who is seeking care for treatment of a pregnancy/postnatal related emergency will
     experience either a type 1 or type 2 delay
@@ -315,7 +325,16 @@ def check_if_delayed_careseeking(self, individual_id):
     if individual_id not in mni or mni[individual_id]['delay_one_two']:
         return
 
-    if self.rng.random_sample() < self.sim.modules['Labour'].current_parameters['prob_delay_one_two_fd']:
+    if self.sim.modules['PregnancySupervisor'].current_parameters['ps_analysis_in_progress'] and \
+        ((timing == 'preg_emerg') and self.sim.modules['PregnancySupervisor'].current_parameters['sens_analysis_max']):
+        mni[individual_id]['delay_one_two'] = False
+
+    elif self.sim.modules['Labour'].current_parameters['la_analysis_in_progress'] and \
+        (((timing == 'postnatal') and self.sim.modules['Labour'].current_parameters['pnc_sens_analysis_max']) or
+         ((timing == 'delivery') and self.sim.modules['Labour'].current_parameters['sba_sens_analysis_max'])):
+        mni[individual_id]['delay_one_two'] = False
+
+    elif self.rng.random_sample() < self.sim.modules['Labour'].current_parameters['prob_delay_one_two_fd']:
         mni[individual_id]['delay_one_two'] = True
 
 
@@ -415,7 +434,7 @@ def calculate_risk_of_death_from_causes(self, risks):
         return False
 
 
-def check_for_risk_of_death_from_cause_maternal(self, individual_id):
+def check_for_risk_of_death_from_cause_maternal(self, individual_id, timing):
     """
     This function calculates the risk of death associated with one or more causes being experience by an individual and
     determines if they will die and which of a number of competing cause is the primary cause of death
@@ -431,35 +450,36 @@ def check_for_risk_of_death_from_cause_maternal(self, individual_id):
     mother = df.loc[individual_id]
 
     # Cycle through mothers properties to ascertain what she is at risk of death from and store in a list
-
-    if (mother.ps_htn_disorders == 'severe_pre_eclamp' and mni[individual_id]['new_onset_spe']) or \
-       (mother.pn_htn_disorders == 'severe_pre_eclamp' and mni[individual_id]['new_onset_spe']):
+    if (mother.ps_htn_disorders == 'severe_pre_eclamp' and mni[individual_id]['new_onset_spe'] and
+       (timing != 'postnatal')) or \
+       (mother.pn_htn_disorders == 'severe_pre_eclamp' and mni[individual_id]['new_onset_spe'] and
+       (timing == 'postnatal')):
         causes.append('severe_pre_eclampsia')
 
-    if mother.ps_htn_disorders == 'eclampsia' or mother.pn_htn_disorders == 'eclampsia':
+    if ((mother.ps_htn_disorders == 'eclampsia') and (timing != 'postnatal')) or \
+       ((mother.pn_htn_disorders == 'eclampsia') and (timing == 'postnatal')):
         causes.append('eclampsia')
 
-    if (((mother.ps_antepartum_haemorrhage != 'none') or
-         (mother.la_antepartum_haem != 'none')) and (self != self.sim.modules['PostnatalSupervisor'])):
+    if ((mother.ps_antepartum_haemorrhage != 'none') and (timing != 'postnatal')) or \
+       ((mother.la_antepartum_haem != 'none') and (timing == 'intrapartum')):
         causes.append('antepartum_haemorrhage')
 
-    if mother.ps_chorioamnionitis and (self == self.sim.modules['PregnancySupervisor']):
+    if mother.ps_chorioamnionitis and (timing != 'postnatal'):
         causes.append('antenatal_sepsis')
 
-    if mother.la_uterine_rupture:
-        causes.append('uterine_rupture')
-
-    if mother.la_sepsis or ((self == self.sim.modules['Labour']) and
-                            mother.ps_chorioamnionitis and mother.ac_admitted_for_immediate_delivery != 'none'):
+    if mother.la_sepsis and (timing == 'intrapartum'):
         causes.append('intrapartum_sepsis')
 
-    if mother.la_sepsis_pp or mother.pn_sepsis_late_postpartum:
+    if (mother.la_sepsis_pp or mother.pn_sepsis_late_postpartum) and (timing == 'postnatal'):
         causes.append('postpartum_sepsis')
 
-    if mother.la_postpartum_haem:
+    if mother.la_uterine_rupture and (timing == 'intrapartum'):
+        causes.append('uterine_rupture')
+
+    if mother.la_postpartum_haem and (timing == 'postnatal'):
         causes.append('postpartum_haemorrhage')
 
-    if mother.pn_postpartum_haem_secondary:
+    if mother.pn_postpartum_haem_secondary and (timing == 'postnatal'):
         causes.append('secondary_postpartum_haemorrhage')
 
     # If this list is not empty, use either CFR parameters or linear models to calculate risk of death from each
@@ -473,6 +493,9 @@ def check_for_risk_of_death_from_cause_maternal(self, individual_id):
                 risks.update(risk)
 
             elif self == self.sim.modules['Labour']:
+                if cause == 'antenatal_sepsis':
+                    cause = 'intrapartum_sepsis'
+
                 if cause == 'secondary_postpartum_haemorrhage':
                     risk = {cause: self.la_linear_models['postpartum_haemorrhage_death'].predict(
                         df.loc[[individual_id]],
@@ -480,6 +503,7 @@ def check_for_risk_of_death_from_cause_maternal(self, individual_id):
                         delay_one_two=mni[individual_id]['delay_one_two'],
                         delay_three=mni[individual_id]['delay_three']
                     )[individual_id]}
+
                 else:
                     risk = {cause: self.la_linear_models[f'{cause}_death'].predict(
                         df.loc[[individual_id]],
