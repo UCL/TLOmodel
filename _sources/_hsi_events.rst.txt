@@ -28,7 +28,7 @@ CardioMetabolicDisorders
 * ``Prevention_CommunityTestingForHypertension`` at facility level 1a with appointment footprint: ``Over5OPD``.
 * ``Prevention_WeightLoss`` at facility level 1b with appointment footprint: ``Over5OPD``.
 * ``Treatment`` at facility level 1b with appointment footprint: ``Over5OPD``.
-* ``Treatment`` at facility level 2 with appointment footprint: ``AccidentsandEmerg``, ``Over5OPD``.
+* ``Treatment`` at facility level 2 with appointment footprint: ``Over5OPD``.
 
 CareOfWomenDuringPregnancy
 **************************
@@ -111,7 +111,7 @@ Malaria
 *******
 
 * ``Prevention_Iptp`` at facility level 1a with appointment footprint: ``Over5OPD``.
-* ``Test`` at facility level 0 with appointment footprint: ``ConWithDCSA``.
+* ``Test`` at facility level 1a with appointment footprint: ``Over5OPD``.
 * ``Treatment_Complicated_Adult`` at facility level 1b with appointment footprint:  and bed days footprint: ``general_bed`` (5 days).
 * ``Treatment_Complicated_Child`` at facility level 1b with appointment footprint:  and bed days footprint: ``general_bed`` (5 days).
 * ``Treatment_NotComplicated_Adult`` at facility level 1a with appointment footprint: ``Over5OPD``.
@@ -166,13 +166,13 @@ RTI
 
 * ``Rti_AcutePainManagement`` at facility level 1b with appointment footprint: ``Over5OPD``.
 * ``Rti_BurnManagement`` at facility level 1b with appointment footprint: ``MinorSurg`` and bed days footprint: ``general_bed`` (1 days).
-* ``Rti_FractureCast`` at facility level 1b with appointment footprint: ``AccidentsandEmerg``.
+* ``Rti_FractureCast`` at facility level 1b with appointment footprint: .
 * ``Rti_Imaging`` at facility level 1b with appointment footprint: ``DiagRadio``.
 * ``Rti_MajorSurgeries`` at facility level 1b with appointment footprint: ``MajorSurg``.
-* ``Rti_MedicalIntervention`` at facility level 1b with appointment footprint: ``AccidentsandEmerg`` and bed days footprint: ``general_bed`` (8 days).
+* ``Rti_MedicalIntervention`` at facility level 1b with appointment footprint:  and bed days footprint: ``general_bed`` (8 days).
 * ``Rti_MinorSurgeries`` at facility level 1b with appointment footprint: ``MinorSurg``.
 * ``Rti_OpenFractureTreatment`` at facility level 1b with appointment footprint: ``MinorSurg``.
-* ``Rti_ShockTreatment`` at facility level 1b with appointment footprint: ``AccidentsandEmerg``.
+* ``Rti_ShockTreatment`` at facility level 1b with appointment footprint: .
 * ``Rti_Suture`` at facility level 1b with appointment footprint: ``Over5OPD``.
 * ``Rti_TetanusVaccine`` at facility level 1b with appointment footprint: ``EPI``.
 

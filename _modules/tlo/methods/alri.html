@@ -296,12 +296,22 @@
         <span class="s1">&#39;other_alri&#39;</span>
     <span class="p">})</span>
 
-    <span class="n">classifications</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;danger_signs_pneumonia&#39;</span><span class="p">,</span> <span class="s1">&#39;fast_breathing_pneumonia&#39;</span><span class="p">,</span> <span class="s1">&#39;chest_indrawing_pneumonia&#39;</span><span class="p">,</span>
-                       <span class="s1">&#39;cough_or_cold&#39;</span><span class="p">}</span>
+    <span class="n">classifications</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">({</span>
+        <span class="s1">&#39;danger_signs_pneumonia&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;fast_breathing_pneumonia&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;chest_indrawing_pneumonia&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;cough_or_cold&#39;</span>
+    <span class="p">})</span>
 
-    <span class="n">all_symptoms</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">&#39;cough&#39;</span><span class="p">,</span> <span class="s1">&#39;difficult_breathing&#39;</span><span class="p">,</span> <span class="s1">&#39;cyanosis&#39;</span><span class="p">,</span> <span class="s1">&#39;fever&#39;</span><span class="p">,</span> <span class="s1">&#39;tachypnoea&#39;</span><span class="p">,</span> <span class="s1">&#39;chest_indrawing&#39;</span><span class="p">,</span> <span class="s1">&#39;danger_signs&#39;</span>
-    <span class="p">}</span>
+    <span class="n">all_symptoms</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">({</span>
+        <span class="s1">&#39;cough&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;difficult_breathing&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;cyanosis&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;fever&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;tachypnoea&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;chest_indrawing&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;danger_signs&#39;</span>
+    <span class="p">})</span>
 
     <span class="c1"># Declare the Alri complications:</span>
     <span class="n">complications</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">({</span>
@@ -1787,7 +1797,7 @@
         <span class="c1"># determine which complications are onset:</span>
         <span class="n">complications</span> <span class="o">=</span> <span class="p">{</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">probs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">p</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()}</span>
 
-        <span class="k">return</span> <span class="n">complications</span>
+        <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">complications</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">get_oxygen_saturation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">complication_set</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Set peripheral oxygen saturation&quot;&quot;&quot;</span>
@@ -2225,8 +2235,12 @@
             <span class="sd">&quot;&quot;&quot;Return the set of symptoms consistent with the set of complications that are onset.&quot;&quot;&quot;</span>
             <span class="n">symptoms_for_complications</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
             <span class="k">for</span> <span class="n">complication</span> <span class="ow">in</span> <span class="n">complications</span><span class="p">:</span>
-                <span class="n">symptoms_for_complications</span> <span class="o">=</span> <span class="n">symptoms_for_complications</span><span class="o">.</span><span class="n">union</span><span class="p">(</span>
-                    <span class="n">models</span><span class="o">.</span><span class="n">symptoms_for_complication</span><span class="p">(</span><span class="n">complication</span><span class="o">=</span><span class="n">complication</span><span class="p">,</span> <span class="n">oxygen_saturation</span><span class="o">=</span><span class="n">oxygen_saturation</span><span class="p">))</span>
+                <span class="n">symptoms_for_complications</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                    <span class="n">models</span><span class="o">.</span><span class="n">symptoms_for_complication</span><span class="p">(</span>
+                        <span class="n">complication</span><span class="o">=</span><span class="n">complication</span><span class="p">,</span>
+                        <span class="n">oxygen_saturation</span><span class="o">=</span><span class="n">oxygen_saturation</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
             <span class="k">return</span> <span class="n">symptoms_for_complications</span>
 
         <span class="n">symptoms_for_complications</span> <span class="o">=</span> <span class="n">get_symptoms_for_complications</span><span class="p">(</span><span class="n">complications</span><span class="o">=</span><span class="n">complications</span><span class="p">,</span>
@@ -3289,7 +3303,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Nov 05, 2022.
+        Last updated on Dec 01, 2022.
       </span>
 
     </p>

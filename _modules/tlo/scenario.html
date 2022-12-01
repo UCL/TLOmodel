@@ -485,6 +485,7 @@
             <span class="c1"># suppress stdout when saving output to directory (either user specified, or set by batch-run process)</span>
             <span class="n">log_config</span><span class="p">[</span><span class="s2">&quot;suppress_stdout&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Running draw </span><span class="si">{</span><span class="n">sample</span><span class="p">[</span><span class="s1">&#39;draw_number&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">, sample </span><span class="si">{</span><span class="n">sample</span><span class="p">[</span><span class="s1">&#39;sample_number&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="n">sim</span> <span class="o">=</span> <span class="n">Simulation</span><span class="p">(</span>
             <span class="n">start_date</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scenario</span><span class="o">.</span><span class="n">start_date</span><span class="p">,</span>
             <span class="n">seed</span><span class="o">=</span><span class="n">sample</span><span class="p">[</span><span class="s2">&quot;simulation_seed&quot;</span><span class="p">],</span>
@@ -497,17 +498,19 @@
 
         <span class="n">sim</span><span class="o">.</span><span class="n">make_initial_population</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scenario</span><span class="o">.</span><span class="n">pop_size</span><span class="p">)</span>
         <span class="n">sim</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">end_date</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scenario</span><span class="o">.</span><span class="n">end_date</span><span class="p">)</span>
-        <span class="n">outputs</span> <span class="o">=</span> <span class="n">parse_log_file</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">log_filepath</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">output</span> <span class="ow">in</span> <span class="n">outputs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;tlo.&quot;</span><span class="p">):</span>
-                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">log_config</span><span class="p">[</span><span class="s2">&quot;directory&quot;</span><span class="p">])</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">.pickle&quot;</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-                    <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span></div>
+
+        <span class="k">if</span> <span class="n">sim</span><span class="o">.</span><span class="n">log_filepath</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">outputs</span> <span class="o">=</span> <span class="n">parse_log_file</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">log_filepath</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">output</span> <span class="ow">in</span> <span class="n">outputs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;tlo.&quot;</span><span class="p">):</span>
+                    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">log_config</span><span class="p">[</span><span class="s2">&quot;directory&quot;</span><span class="p">])</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">.pickle&quot;</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="SampleRunner.run"><a class="viewcode-back" href="../../reference/tlo.scenario.html#tlo.scenario.SampleRunner.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># this method will execute all runs of each draw, so we save output in directory</span>
         <span class="n">log_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenario</span><span class="o">.</span><span class="n">log_configuration</span><span class="p">()</span>
         <span class="n">root_dir</span> <span class="o">=</span> <span class="n">draw_dir</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">if</span> <span class="n">log_config</span><span class="p">[</span><span class="s2">&quot;filename&quot;</span><span class="p">]:</span>  <span class="c1"># i.e. save output?</span>
+        <span class="k">if</span> <span class="n">log_config</span><span class="p">[</span><span class="s2">&quot;filename&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">log_config</span><span class="p">[</span><span class="s2">&quot;directory&quot;</span><span class="p">]:</span>  <span class="c1"># i.e. save output?</span>
             <span class="n">timestamp</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">T%H%M%SZ&quot;</span><span class="p">)</span>
             <span class="n">root_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">log_config</span><span class="p">[</span><span class="s2">&quot;directory&quot;</span><span class="p">])</span> <span class="o">/</span> <span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">log_config</span><span class="p">[</span><span class="s2">&quot;filename&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">stem</span> <span class="o">+</span> <span class="s2">&quot;-&quot;</span> <span class="o">+</span> <span class="n">timestamp</span><span class="p">)</span>
 
@@ -573,7 +576,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Nov 05, 2022.
+        Last updated on Dec 01, 2022.
       </span>
 
     </p>

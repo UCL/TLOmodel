@@ -233,10 +233,19 @@
         <span class="nb">print</span><span class="p">(</span><span class="n">json_string</span><span class="p">)</span>
         <span class="k">return</span>
 
-    <span class="n">tmp</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">NamedTemporaryFile</span><span class="p">()</span>
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">tmp</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">json_string</span><span class="p">)</span>
-    <span class="n">runner</span> <span class="o">=</span> <span class="n">SampleRunner</span><span class="p">(</span><span class="n">tmp</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+    <span class="c1"># Write the JSON config to a temporary file (to prevent clobbering by multiple processes running same scenario)</span>
+    <span class="c1"># We set delete=False on the file, otherwise Windows does not allow the opening of the file multiple times</span>
+    <span class="n">tmp</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">NamedTemporaryFile</span><span class="p">(</span><span class="n">delete</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">)</span>
+    <span class="n">tmp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">json_string</span><span class="p">)</span>
+    <span class="n">tmp</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+    <span class="c1"># SampleRunner loads the scenario information from the JSON config file</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">tmp</span><span class="o">.</span><span class="n">name</span>
+    <span class="n">runner</span> <span class="o">=</span> <span class="n">SampleRunner</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+
+    <span class="c1"># Runner has been created - clean up (we have to do this ourselves because we set delete=False)</span>
+    <span class="n">tmp</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">draw</span><span class="p">:</span>
         <span class="n">runner</span><span class="o">.</span><span class="n">run_sample_by_number</span><span class="p">(</span><span class="n">output_directory</span><span class="o">=</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">draw_number</span><span class="o">=</span><span class="n">draw</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">sample_number</span><span class="o">=</span><span class="n">draw</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
@@ -862,7 +871,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Nov 05, 2022.
+        Last updated on Dec 01, 2022.
       </span>
 
     </p>

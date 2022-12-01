@@ -195,7 +195,7 @@
 <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_parse_log_file_inner_loop</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">level</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_parse_log_file_inner_loop</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">level</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Parses the log file and returns dictionary of dataframes&quot;&quot;&quot;</span>
     <span class="n">log_data</span> <span class="o">=</span> <span class="n">LogData</span><span class="p">()</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span> <span class="k">as</span> <span class="n">log_file</span><span class="p">:</span>
@@ -212,11 +212,12 @@
     <span class="k">return</span> <span class="n">output_logs</span>
 
 
-<div class="viewcode-block" id="parse_log_file"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.parse_log_file">[docs]</a><span class="k">def</span> <span class="nf">parse_log_file</span><span class="p">(</span><span class="n">log_filepath</span><span class="p">):</span>
+<div class="viewcode-block" id="parse_log_file"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.parse_log_file">[docs]</a><span class="k">def</span> <span class="nf">parse_log_file</span><span class="p">(</span><span class="n">log_filepath</span><span class="p">,</span> <span class="n">level</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Parses logged output from a TLO run, split it into smaller logfiles and returns a class containing paths to</span>
 <span class="sd">    these split logfiles.</span>
 
 <span class="sd">    :param log_filepath: file path to log file</span>
+<span class="sd">    :param level: parse everything from the given level</span>
 <span class="sd">    :return: a class containing paths to split logfiles</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Processing log file </span><span class="si">{</span><span class="n">log_filepath</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
@@ -250,7 +251,7 @@
         <span class="n">file_handle</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
     <span class="c1"># return an object that accepts as an argument a dictionary containing paths to split logfiles</span>
-    <span class="k">return</span> <span class="n">LogsDict</span><span class="p">({</span><span class="n">name</span><span class="p">:</span> <span class="n">handle</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">handle</span> <span class="ow">in</span> <span class="n">module_name_to_filehandle</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span></div>
+    <span class="k">return</span> <span class="n">LogsDict</span><span class="p">({</span><span class="n">name</span><span class="p">:</span> <span class="n">handle</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">handle</span> <span class="ow">in</span> <span class="n">module_name_to_filehandle</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span> <span class="n">level</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="write_log_to_excel"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.write_log_to_excel">[docs]</a><span class="k">def</span> <span class="nf">write_log_to_excel</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">log_dataframes</span><span class="p">):</span>
@@ -327,7 +328,6 @@
 <div class="viewcode-block" id="get_scenario_outputs"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.get_scenario_outputs">[docs]</a><span class="k">def</span> <span class="nf">get_scenario_outputs</span><span class="p">(</span><span class="n">scenario_filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">outputs_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Returns paths of folders associated with a batch_file, in chronological order.&quot;&quot;&quot;</span>
     <span class="n">stub</span> <span class="o">=</span> <span class="n">scenario_filename</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;.py&#39;</span><span class="p">)</span>
-    <span class="n">f</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">DirEntry</span>
     <span class="n">folders</span> <span class="o">=</span> <span class="p">[</span><span class="n">Path</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">path</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">scandir</span><span class="p">(</span><span class="n">outputs_dir</span><span class="p">)</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">is_dir</span><span class="p">()</span> <span class="ow">and</span> <span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">stub</span><span class="p">)]</span>
     <span class="n">folders</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">folders</span></div>
@@ -339,7 +339,6 @@
 <span class="sd">    TODO: read the JSON file to get further information</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">info</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-    <span class="n">f</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">DirEntry</span>
     <span class="n">draw_folders</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">scandir</span><span class="p">(</span><span class="n">scenario_output_dir</span><span class="p">)</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">is_dir</span><span class="p">()]</span>
 
     <span class="n">info</span><span class="p">[</span><span class="s1">&#39;number_of_draws&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">draw_folders</span><span class="p">)</span>
@@ -376,7 +375,6 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">f</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">DirEntry</span>
         <span class="c1"># Get the paths for the draws</span>
         <span class="n">draws</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">scandir</span><span class="p">(</span><span class="n">results_folder</span><span class="p">)</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">is_dir</span><span class="p">()]</span>
 
@@ -564,7 +562,6 @@
                 <span class="n">t</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
         <span class="k">return</span> <span class="n">target</span>
 
-    <span class="n">f</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">DirEntry</span>
     <span class="n">draw_folders</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">scandir</span><span class="p">(</span><span class="n">scenario_output_dir</span><span class="p">)</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">is_dir</span><span class="p">()]</span>
     <span class="k">for</span> <span class="n">draw_folder</span> <span class="ow">in</span> <span class="n">draw_folders</span><span class="p">:</span>
         <span class="n">run_folders</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">scandir</span><span class="p">(</span><span class="n">draw_folder</span><span class="p">)</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">is_dir</span><span class="p">()]</span>
@@ -708,7 +705,7 @@
 <span class="sd">            }</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_names_and_paths</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_names_and_paths</span><span class="p">,</span> <span class="n">level</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="c1"># initialise class with module-specific log files paths</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_logfile_names_and_paths</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">file_names_and_paths</span>
@@ -716,13 +713,15 @@
         <span class="c1"># create a dictionary that will contain cached data</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_results_cache</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_level</span> <span class="o">=</span> <span class="n">level</span>
+
     <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="c1"># check if the requested key is found in a dictionary containing module name and log file paths. if key</span>
         <span class="c1"># is found, return parsed logs else return KeyError</span>
         <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logfile_names_and_paths</span><span class="p">:</span>
             <span class="c1"># check if key is found in cache</span>
             <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_results_cache</span><span class="p">:</span>
-                <span class="n">result_df</span> <span class="o">=</span> <span class="n">_parse_log_file_inner_loop</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_logfile_names_and_paths</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+                <span class="n">result_df</span> <span class="o">=</span> <span class="n">_parse_log_file_inner_loop</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_logfile_names_and_paths</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_level</span><span class="p">)</span>
                 <span class="c1"># get metadata for the selected log file and merge it all with the selected key</span>
                 <span class="n">result_df</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;_metadata&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">result_df</span><span class="p">[</span><span class="s1">&#39;_metadata&#39;</span><span class="p">]</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">cache</span><span class="p">:</span>  <span class="c1"># check if caching is disallowed</span>
@@ -1093,7 +1092,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Nov 05, 2022.
+        Last updated on Dec 01, 2022.
       </span>
 
     </p>
