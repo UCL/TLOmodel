@@ -6,7 +6,6 @@ or locally using:
 ```tlo scenario-run src/scripts/contraception/scenarios/run_analysis_contraception_all_diseases.py```
 """
 
-
 from tlo import Date, logging
 from tlo.methods import (
     alri,
