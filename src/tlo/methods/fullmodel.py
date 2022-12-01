@@ -83,6 +83,18 @@ def fullmodel(
         # HealthSystem and the Expanded Programme on Immunizations
         epi.Epi,
         healthsystem.HealthSystem,
+        # Contraception, Pregnancy, Labour, etc. (or SimplifiedBirths)
+        *(
+            [simplified_births.SimplifiedBirths] if use_simplified_births else
+            [
+                contraception.Contraception,
+                pregnancy_supervisor.PregnancySupervisor,
+                care_of_women_during_pregnancy.CareOfWomenDuringPregnancy,
+                labour.Labour,
+                newborn_outcomes.NewbornOutcomes,
+                postnatal_supervisor.PostnatalSupervisor,
+            ]
+        ),
         # Conditions of Early Childhood
         alri.Alri,
         diarrhoea.Diarrhoea,
@@ -109,18 +121,6 @@ def fullmodel(
         depression.Depression,
         epilepsy.Epilepsy,
     ]
-    # Contraception, Pregnancy, Labour, etc. (or SimplifiedBirths)
-    if use_simplified_births:
-        module_classes.append(simplified_births.SimplifiedBirths)
-    else:
-        module_classes += [
-            contraception.Contraception,
-            pregnancy_supervisor.PregnancySupervisor,
-            care_of_women_during_pregnancy.CareOfWomenDuringPregnancy,
-            labour.Labour,
-            newborn_outcomes.NewbornOutcomes,
-            postnatal_supervisor.PostnatalSupervisor,
-        ]
     return [
         module_class(
             resourcefilepath=resourcefilepath,
