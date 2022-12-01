@@ -1503,7 +1503,7 @@ class Labour(Module):
         # Function checks df for any potential cause of death, uses CFR parameters to determine risk of death
         # (either from one or multiple causes) and if death occurs returns the cause
         potential_cause_of_death = pregnancy_helper_functions.check_for_risk_of_death_from_cause_maternal(
-            self, individual_id=individual_id)
+            self, individual_id=individual_id, timing='postnatal')
 
         # Log df row containing complications and treatments to calculate met need
 
@@ -1731,9 +1731,7 @@ class Labour(Module):
 
         # Women who have been admitted for delivery due to severe pre-eclampsia AND have already received magnesium
         # before moving to the labour ward do not receive the intervention again
-        if ('assessment_and_treatment_of_severe_pre_eclampsia' not in params['allowed_interventions']) or \
-            ((df.at[person_id, 'ac_admitted_for_immediate_delivery'] != 'none') and
-           df.at[person_id, 'ac_mag_sulph_treatment'] and (labour_stage == 'ip')):
+        if 'assessment_and_treatment_of_severe_pre_eclampsia' not in params['allowed_interventions']:
             return
 
         if (df.at[person_id, 'ps_htn_disorders'] == 'severe_pre_eclamp') or \
@@ -1771,8 +1769,7 @@ class Labour(Module):
         params = self.current_parameters
 
         # If the treatment is not allowed to be delivered or it has already been delivered the function won't run
-        if ('assessment_and_treatment_of_hypertension' not in params['allowed_interventions']) or\
-           (df.at[person_id, 'ac_iv_anti_htn_treatment'] and (labour_stage == 'ip')):
+        if 'assessment_and_treatment_of_hypertension' not in params['allowed_interventions']:
             return
 
         if (df.at[person_id, 'ps_htn_disorders'] != 'none') or (df.at[person_id, 'pn_htn_disorders'] != 'none'):
@@ -1788,6 +1785,11 @@ class Labour(Module):
             if avail:
                 df.at[person_id, 'la_maternal_hypertension_treatment'] = True
                 pregnancy_helper_functions.log_met_need(self, 'iv_htns', hsi_event)
+
+                if (labour_stage == 'ip') and (df.at[person_id, 'ps_htn_disorders'] == 'severe_gest_htn'):
+                    df.at[person_id, 'ps_htn_disorders'] = 'gest_htn'
+                elif(labour_stage == 'pp') and (df.at[person_id, 'pn_htn_disorders'] == 'severe_gest_htn'):
+                    df.at[person_id, 'pn_htn_disorders'] = 'gest_htn'
 
                 avail = hsi_event.get_consumables(
                     item_codes=self.item_codes_lab_consumables['oral_antihypertensives'])
@@ -1913,8 +1915,7 @@ class Labour(Module):
         if (
             df.at[person_id, 'la_sepsis'] or
             df.at[person_id, 'la_sepsis_pp'] or
-            ((labour_stage == 'ip') and df.at[person_id, 'ps_chorioamnionitis'] and
-             (df.at[person_id, 'ac_admitted_for_immediate_delivery'] != 'none')) or
+            ((labour_stage == 'ip') and df.at[person_id, 'ps_chorioamnionitis']) or
            (labour_stage == 'pp' and df.at[person_id, 'pn_sepsis_late_postpartum'])):
 
             # run HCW check
@@ -2510,7 +2511,7 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                                                                     tclose=self.sim.date + DateOffset(days=1))
 
             elif mni[individual_id]['delivery_setting'] == 'hospital':
-                facility_level = self.module.rng.choice(['1a', '1b'])
+                facility_level = self.module.rng.choice(['1b', '2'])
                 hospital_delivery = HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(
                     self.module, person_id=individual_id, facility_level_of_this_hsi=facility_level)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(hospital_delivery, priority=0,
@@ -2518,7 +2519,8 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                                                                     tclose=self.sim.date + DateOffset(days=1))
 
             # Determine if the labouring woman will be delayed in attending for facility delivery
-            pregnancy_helper_functions.check_if_delayed_careseeking(self.module, individual_id)
+            if df.at[individual_id, 'ac_admitted_for_immediate_delivery'] == 'none':
+                pregnancy_helper_functions.check_if_delayed_careseeking(self.module, individual_id, timing='delivery')
 
             # ======================================== SCHEDULING BIRTH AND DEATH EVENTS ============================
             # We schedule all women to move through both the death and birth event.
@@ -2643,7 +2645,7 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
         # Function checks df for any potential cause of death, uses CFR parameters to determine risk of death
         # (either from one or multiple causes) and if death occurs returns the cause
         potential_cause_of_death = pregnancy_helper_functions.check_for_risk_of_death_from_cause_maternal(
-            self.module, individual_id=individual_id)
+            self.module, individual_id=individual_id, timing='intrapartum')
 
         # If a cause is returned death is scheduled
         if potential_cause_of_death:
@@ -2703,6 +2705,8 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
         # Finally, reset some of the treatment variables
         if not potential_cause_of_death:
             df.at[individual_id, 'la_maternal_hypertension_treatment'] = False
+            df.at[individual_id, 'ac_iv_anti_htn_treatment'] = False
+            df.at[individual_id, 'ac_mag_sulph_treatment'] = False
             df.at[individual_id, 'la_eclampsia_treatment'] = False
             df.at[individual_id, 'la_severe_pre_eclampsia_treatment'] = False
 
@@ -3146,7 +3150,12 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Labour)
 
-        self.TREATMENT_ID = 'DeliveryCare_Comprehensive'
+        if timing == 'intrapartum':
+            t_id = 'DeliveryCare_Comprehensive'
+        else:
+            t_id = 'PostnatalCare_Comprehensive'
+
+        self.TREATMENT_ID = t_id
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MajorSurg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.timing = timing
@@ -3158,8 +3167,12 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
 
         # If the squeeze factor is too high we assume delay in receiving interventions occurs (increasing risk
         # of death if complications occur)
+        if self.timing == 'intrapartum':
+            hsi = 'cemonc'
+        else:
+            hsi = 'pn'
         pregnancy_helper_functions.check_if_delayed_care_delivery(self.module, squeeze_factor, person_id,
-                                                                  hsi_type='cemonc')
+                                                                  hsi_type=hsi)
 
         # We use the variable self.timing to differentiate between women sent to this event during labour and women
         # sent after labour
@@ -3179,7 +3192,8 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
             sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.module, sf='surg',
                                                                                        hsi_event=self)
 
-            if avail and sf_check or (mni[person_id]['cs_indication'] == 'other'):
+            if (avail and sf_check) or (mni[person_id]['cs_indication'] == 'other' and
+                                        params['cemonc_availability'] != 0.0):
                 person = df.loc[person_id]
                 logger.info(key='caesarean_delivery', data=person.to_dict())
                 logger.info(key='cs_indications', data={'id': person_id,
@@ -3245,7 +3259,7 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
                                                                 tclose=self.sim.date + DateOffset(days=1))
 
         # Women who delivered via caesarean have the appropriate footprint applied
-        if mni[person_id]['mode_of_delivery'] == 'caesarean_section':
+        if (self.timing == 'intrapartum') and (mni[person_id]['mode_of_delivery'] == 'caesarean_section'):
             return self.make_appt_footprint({'Csection': 1})
 
         # And those who didnt have surgery had the expected footprint overwritten
