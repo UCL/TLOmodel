@@ -6,8 +6,6 @@ or locally using:
 ```tlo scenario-run src/scripts/contraception/scenarios/run_analysis_contraception_no_diseases.py```
 """
 
-import pandas as pd
-
 from tlo import Date, logging
 from tlo.methods import contraception, demography, enhanced_lifestyle,\
     healthseekingbehaviour, healthsystem, hiv, symptommanager
