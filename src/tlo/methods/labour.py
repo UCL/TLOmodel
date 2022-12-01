@@ -6,7 +6,7 @@ import scipy.stats
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.lm import LinearModel
+from tlo.lm import LinearModel, LinearModelType
 from tlo.methods import Metadata, labour_lm, pregnancy_helper_functions
 from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
@@ -554,6 +554,10 @@ class Labour(Module):
             Types.REAL, 'set probability of BEmONC intervention being delivered during analysis'),
         'cemonc_availability': Parameter(
             Types.REAL, 'set probability of CEmONC intervention being delivered during analysis'),
+        'bemonc_cons_availability': Parameter(
+            Types.REAL, 'set probability of BEmONC consumables being available'),
+        'cemonc_cons_availability': Parameter(
+            Types.REAL, 'set probability of CEmONC consumables being available'),
         'alternative_pnc_coverage': Parameter(
             Types.BOOL, 'Signals within the analysis event that an alternative level of PNC coverage has been '
                         'determined following the events run'),
@@ -566,6 +570,13 @@ class Labour(Module):
         'pnc_availability_probability': Parameter(
             Types.REAL, 'Target probability of quality/consumables when analysis is being conducted - only applied if '
                         'alternative_pnc_coverage is true'),
+        'sba_sens_analysis_max': Parameter(
+            Types.BOOL, 'Signals that max coverage of SBA is being forced for sensitivity analysis'),
+        'pnc_sens_analysis_max': Parameter(
+            Types.BOOL, 'Signals that max coverage of PNC is being forced for sensitivity analysis'),
+        'pnc_sens_analysis_min': Parameter(
+            Types.BOOL, 'Signals that min coverage of SBA is being forced for sensitivity analysis'),
+
     }
 
     PROPERTIES = {
@@ -3301,7 +3312,8 @@ class LabourAndPostnatalCareAnalysisEvent(Event, PopulationScopeEventMixin):
 
         # Check to see if analysis is being conducted when this event runs
         if params['alternative_bemonc_availability'] or params['alternative_cemonc_availability'] or \
-            params['alternative_pnc_coverage'] or params['alternative_pnc_quality']:\
+            params['alternative_pnc_coverage'] or params['alternative_pnc_quality'] or params['sba_sens_analysis_max'] \
+            or params['pnc_sens_analysis_max'] or params['pnc_sens_analysis_min']:
 
             params['la_analysis_in_progress'] = True
 
@@ -3336,22 +3348,39 @@ class LabourAndPostnatalCareAnalysisEvent(Event, PopulationScopeEventMixin):
 
                 mean = mean / (1.0 - mean)
                 scaled_intercept = 1.0 * (target / mean) if (target != 0 and mean != 0 and not np.isnan(mean)) else 1.0
+
                 params['odds_will_attend_pnc'] = scaled_intercept
 
                 # Then override the parameters which control neonatal care seeking
-                params['prob_careseeking_for_complication_pn'] = params['pnc_availability_probability']
+                cov_prob = params['pnc_availability_odds'] / (params['pnc_availability_odds'] + 1)
                 params['prob_timings_pnc'] = [1.0, 0]
 
-                nb_params['prob_pnc_check_newborn'] = params['pnc_availability_probability']
-                nb_params['prob_care_seeking_for_complication'] = params['pnc_availability_probability']
+                nb_params['prob_pnc_check_newborn'] = cov_prob
                 nb_params['prob_timings_pnc_newborns'] = [1.0, 0]
-
-                pn_params['prob_care_seeking_postnatal_emergency'] = params['pnc_availability_probability']
-                pn_params['prob_care_seeking_postnatal_emergency_neonate'] = params['pnc_availability_probability']
 
             if params['alternative_pnc_quality']:
                 params['squeeze_threshold_for_delay_three_pn'] = 10_000
+                nb_params['squeeze_threshold_for_delay_three_nb_care'] = 10_000
                 params['prob_intervention_delivered_anaemia_assessment_pnc'] = params['pnc_availability_probability']
+
+            if params['pnc_sens_analysis_max'] or params['pnc_sens_analysis_min']:
+
+                self.module.la_linear_models['postnatal_check'] = LinearModel(
+                         LinearModelType.MULTIPLICATIVE,
+                         params['pnc_availability_probability'])
+                params['prob_timings_pnc'] = [params['pnc_availability_probability'],
+                                              1 - params['pnc_availability_probability']]
+                params['prob_careseeking_for_complication_pn'] = params['pnc_availability_probability']
+                pn_params['prob_care_seeking_postnatal_emergency'] = params['pnc_availability_probability']
+
+                nb_params['prob_pnc_check_newborn'] = params['pnc_availability_probability']
+                nb_params['prob_timings_pnc_newborns'] = [params['pnc_availability_probability'],
+                                                          1 - params['pnc_availability_probability']]
+                nb_params['prob_care_seeking_for_complication'] = params['pnc_availability_probability']
+                pn_params['prob_care_seeking_postnatal_emergency_neonate'] = params['pnc_availability_probability']
+
+            if params['sba_sens_analysis_max']:
+                params['odds_deliver_at_home'] = 0.0
 
 
 class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
