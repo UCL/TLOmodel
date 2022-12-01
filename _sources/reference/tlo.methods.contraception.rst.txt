@@ -108,7 +108,7 @@ tlo.methods.contraception module
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthSystem'}
 
-     all_contraception_states : {'not_using', 'other_traditional', 'other_modern', 'female_sterilization', 'pill', 'injections', 'withdrawal', 'implant', 'male_condom', 'IUD', 'periodic_abstinence'}
+     all_contraception_states : {'pill', 'withdrawal', 'implant', 'periodic_abstinence', 'male_condom', 'injections', 'other_traditional', 'IUD', 'female_sterilization', 'other_modern', 'not_using'}
 
      **Functions (defined or overridden in class Contraception):**
 

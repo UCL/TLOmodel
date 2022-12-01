@@ -11,7 +11,7 @@ tlo.methods.healthsystem module
 
      **Class attributes:**
 
-     bed_days_allocated_to_this_event : <property object at 0x7ff9d2994360>
+     bed_days_allocated_to_this_event : <property object at 0x7febf0f66360>
 
      **Functions (defined or overridden in class HSI_Event):**
 
@@ -141,7 +141,7 @@ tlo.methods.healthsystem module
 
      INIT_DEPENDENCIES : {'Demography'}
 
-     capabilities_today : <property object at 0x7ff9d2994450>
+     capabilities_today : <property object at 0x7febf0f66450>
 
      **Functions (defined or overridden in class HealthSystem):**
 
