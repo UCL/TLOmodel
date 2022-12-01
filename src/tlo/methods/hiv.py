@@ -2030,8 +2030,8 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
         if not person["is_alive"]:
             return
 
-        # If the person has previously been diagnosed do nothing do not occupy any resources
-        if person["hv_diagnosed"]:
+        # If the person has previously been diagnosed and on tx, do nothing do not occupy any resources
+        if person["hv_diagnosed"] and (person["hv_art"] != "on_VL_suppressed"):
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         # Run test
@@ -2417,7 +2417,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 # and the person will never give-up coming back to
                 # pick-up medication.
                 # if person has already tried unsuccessfully to get ART at level 1a 2 times
-                #  then refer to level 1b
+                #  then refer to level 2
                 if self.counter_for_drugs_not_available <= 2:
                     # repeat attempt for ARVs at level 1a
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -2434,7 +2434,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         hsi_event=HSI_Hiv_StartOrContinueTreatment(
                             person_id=person_id, module=self.module,
-                            facility_level_of_this_hsi="1b"
+                            facility_level_of_this_hsi="2"
                         ),
                         topen=self.sim.date + pd.DateOffset(days=1),
                         priority=0,

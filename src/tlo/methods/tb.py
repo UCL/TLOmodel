@@ -823,7 +823,6 @@ class Tb(Module):
         incidence_year = (inc_estimates.loc[
             (inc_estimates.year == self.sim.date.year), "incidence_per_100k"
         ].values[0]) / 100000
-        incidence_month = incidence_year / 12
 
         self.assign_baseline_active_tb(
             population,
@@ -833,7 +832,7 @@ class Tb(Module):
         self.assign_baseline_active_tb(
             population,
             strain="mdr",
-            incidence=incidence_month * p['prop_mdr2010'])
+            incidence=incidence_year * p['prop_mdr2010'])
 
         self.send_for_screening_general(
             population
@@ -985,8 +984,11 @@ class Tb(Module):
             df.loc[eligible]
         )
 
+        # scale to get overall prevalence correct
+        scaled_rr_of_infection = rr_of_infection / rr_of_infection.mean()
+
         #  probability of infection
-        p_infection = (rr_of_infection * incidence)
+        p_infection = (scaled_rr_of_infection * incidence)
 
         # New infections:
         will_be_infected = (
@@ -1087,7 +1089,7 @@ class Tb(Module):
             p_infection = (
                 rr_of_infection * p['beta'] *
                 (
-                    (n_smear_pos + n_smear_neg * 0.2) /
+                    (n_smear_pos + (n_smear_neg * 0.2)) /
                     (n_smear_pos + n_smear_neg + n_susc)
                 )
             )
@@ -1125,7 +1127,8 @@ class Tb(Module):
         # in that case, second infection will not do anything
         susc_idx = df.loc[
             df.is_alive
-        ].index
+            & (df.tb_inf != "active")
+            ].index
 
         # weight risk by individual characteristics
         # Compute chance that each susceptible person becomes infected:
