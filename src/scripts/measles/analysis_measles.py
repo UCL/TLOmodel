@@ -88,5 +88,5 @@ plt.xlabel("Date")
 plt.ylabel("Incidence per 1000py")
 plt.xticks(rotation=90)
 plt.legend(["Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
-
+plt.tight_layout()
 plt.show()

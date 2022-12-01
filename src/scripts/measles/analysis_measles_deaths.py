@@ -1,5 +1,4 @@
 import datetime
-# import time
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -17,9 +16,6 @@ from tlo.methods import (
     symptommanager,
 )
 
-# import pandas as pd
-
-
 # The resource files
 resources = Path("./resources")
 
@@ -31,11 +27,11 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2018, 12, 31)
-popsize = 10000
+popsize = 20_000
 
 
 # don't register epi as want population with no vaccination
-def run_sim(service_availability=[]):
+def run_sim(healthsystem_on: bool):
     # Establish the simulation object and set the seed
     # seed is not set - each simulation run gets a random seed
     sim = Simulation(start_date=start_date, seed=32,
@@ -52,7 +48,10 @@ def run_sim(service_availability=[]):
         enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
         symptommanager.SymptomManager(resourcefilepath=resources),
 
-        healthsystem.HealthSystem(resourcefilepath=resources, disable=True),
+        healthsystem.HealthSystem(resourcefilepath=resources,
+                                  disable=healthsystem_on,
+                                  disable_and_reject_all=not healthsystem_on,
+                                  ),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
 
         epi.Epi(resourcefilepath=resources),
@@ -79,7 +78,7 @@ def get_summary_stats(logfile):
     deaths = output['tlo.methods.demography']['death'].copy()
     deaths = deaths.set_index('date')
     # limit to deaths due to measles
-    to_drop = (deaths.cause != 'measles')
+    to_drop = (deaths.cause != 'Measles')
     deaths = deaths.drop(index=to_drop[to_drop].index)
     # count by year:
     deaths['year'] = deaths.index.year
@@ -95,20 +94,21 @@ def get_summary_stats(logfile):
 # run 1
 # run baseline with no vaccination to allow cases to occur
 # disable all hsi to prevent any measles treatment
-logfile_no_hs = run_sim(service_availability=[])
+logfile_no_hs = run_sim(healthsystem_on=False)
 
 # run 2
 # no vaccination
 # allow hsi for measles treatment
-logfile_hs = run_sim(service_availability=['*'])
+logfile_hs = run_sim(healthsystem_on=True)
+
+
+# %%  PLOTS
 
 results_no_hs = get_summary_stats(logfile_no_hs)
 results_hs = get_summary_stats(logfile_hs)
 
 results_no_hs['deaths'].sum()
 results_hs['deaths'].sum()
-
-# %%  PLOTS
 
 # incidence
 plt.plot(results_no_hs['incidence'])
