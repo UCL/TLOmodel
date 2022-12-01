@@ -229,8 +229,6 @@ class PostnatalSupervisor(Module):
                                                                 'sepsis', categories=['none', 'mild_motor_and_cog',
                                                                                       'mild_motor', 'moderate_motor',
                                                                                       'severe_motor']),
-        'pn_deficiencies_following_pregnancy': Property(Types.INT, 'bitset column, stores types of anaemia causing '
-                                                                   'deficiencies following pregnancy'),
         'pn_anaemia_following_pregnancy': Property(Types.CATEGORICAL, 'severity of anaemia following pregnancy',
                                                    categories=['none', 'mild', 'moderate', 'severe']),
         'pn_emergency_event_mother': Property(Types.BOOL, 'Whether a mother is experiencing an emergency complication'
@@ -838,7 +836,7 @@ class PostnatalSupervisor(Module):
             # Function checks df for any potential cause of death, uses CFR parameters to determine risk of death
             # (either from one or multiple causes) and if death occurs returns the cause
             potential_cause_of_death = pregnancy_helper_functions.check_for_risk_of_death_from_cause_maternal(
-                self, individual_id=individual_id)
+                self, individual_id=individual_id, timing='postnatal')
 
             # If a cause is returned death is scheduled
             if potential_cause_of_death:
@@ -1186,7 +1184,7 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
                                                                       params['prob_care_seeking_postnatal_emergency']):
 
                 # If care will be sought, check if they experience delay seeking care
-                pregnancy_helper_functions.check_if_delayed_careseeking(self.module, individual_id)
+                pregnancy_helper_functions.check_if_delayed_careseeking(self.module, individual_id, timing='postnatal')
 
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     pnc_one_maternal, priority=0, topen=self.sim.date, tclose=self.sim.date + pd.DateOffset(days=1))
