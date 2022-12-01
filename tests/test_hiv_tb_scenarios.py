@@ -78,7 +78,7 @@ def test_scenario_parameters(seed):
     assert sim.modules["Hiv"].parameters["prob_circ_after_hiv_test"] == 0.25
     assert sim.modules["Tb"].parameters["age_eligibility_for_ipt"] == 100
     assert sim.modules["Tb"].parameters["ipt_coverage"]["coverage_plhiv"].all() >= 0.6
-    assert sim.modules["Tb"].parameters["ipt_coverage"]["coverage_paediatric"].all() >= 80
+    assert (sim.modules["Tb"].parameters["ipt_coverage"]["coverage_paediatric"] == 80).all()
 
 
 @pytest.mark.slow
