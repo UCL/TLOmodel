@@ -1,4 +1,4 @@
-name: Reusable workflow for triggering tests with a pull-request comment
+name: Reusable workflow for triggering tests with an issue or pull-request comment
 
 on:
   workflow_call:
@@ -9,7 +9,7 @@ on:
         type: string
         default: ubuntu-latest
       keyword:
-        description: The keyword to appear after /run in PR comment to trigger workflow
+        description: The keyword to appear after /run in comment to trigger workflow
         required: true
         type: string
       description:
@@ -48,14 +48,14 @@ jobs:
   run_test_on_keyword_and_reply_with_result:
     runs-on: ${{ inputs.runs-on }}
     timeout-minutes: ${{ inputs.timeout-minutes }}
-    if: github.event.issue.pull_request && github.event.comment.body == format('/run {0}', inputs.keyword)
+    if: github.event.comment.body == format('/run {0}', inputs.keyword)
     steps:
     - name: Check permissions of commenting user
       id: has_permissions
-      uses: actions/github-script@v4
+      uses: actions/github-script@v6
       with:
         script: |
-          const response = await github.repos.getCollaboratorPermissionLevel({
+          const response = await github.rest.repos.getCollaboratorPermissionLevel({
             owner: context.repo.owner,
             repo: context.repo.repo,  
             username: context.payload.comment.user.login,
@@ -67,29 +67,32 @@ jobs:
       run: |
         exit 1
     - name: React to comment
-      uses: actions/github-script@v4
+      uses: actions/github-script@v6
       with:
         script: |
-          github.reactions.createForIssueComment({
+          github.rest.reactions.createForIssueComment({
             owner: context.repo.owner,
             repo: context.repo.repo,
             comment_id: context.payload.comment.id,
             content: "rocket",
           });
-    - name: Get pull-request SHA
+    - name: Get SHA of last commit on default branch if issue or pull-request branch
       id: sha
-      uses: actions/github-script@v4
+      uses: actions/github-script@v6
       with:
         result-encoding: string
         script: |
-          const { data: pr } = await github.pulls.get({
+          if (!context.payload.pull_request) {
+            return context.sha;
+          };
+          const { data: pr } = await github.rest.pulls.get({
             owner: context.issue.owner,
             repo: context.issue.repo,
             pull_number: context.issue.number,
           });
           return pr.head.sha;
-    - name: Checkout pull-request SHA
-      uses: actions/checkout@v2
+    - name: Checkout SHA
+      uses: actions/checkout@v3
       with:
         lfs: true
         ref: ${{ steps.sha.outputs.result }}
@@ -104,7 +107,7 @@ jobs:
         organization: ${{ inputs.application-organization }}
     - name: Create comment with test result and link to workflow run information
       if: always() && steps.has_permissions.outputs.result == 'true'
-      uses: actions/github-script@v4
+      uses: actions/github-script@v6
       with:
         github-token: ${{ steps.get_comment_bot_token.outputs.token }}
         script: |
@@ -119,7 +122,7 @@ jobs:
           let job, step;
           while (!got_completed_step_info & attempts < maximum_attempts) {
             await new Promise(r => setTimeout(r, 1000));  // Wait for 1 second
-            const { data: run_jobs } = await github.actions.listJobsForWorkflowRun({
+            const { data: run_jobs } = await github.rest.actions.listJobsForWorkflowRun({
               owner: context.repo.owner,
               repo: context.repo.repo,
               run_id: context.runId,
@@ -155,7 +158,7 @@ jobs:
             `⏲️ ${time_minutes} minutes`,
             `#️⃣ ${{ steps.sha.outputs.result }}`
           ].join('\n');
-          github.issues.createComment({
+          github.rest.issues.createComment({
             issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,  
