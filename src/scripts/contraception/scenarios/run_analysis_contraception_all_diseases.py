@@ -6,7 +6,6 @@ or locally using:
 ```tlo scenario-run src/scripts/contraception/scenarios/run_analysis_contraception_all_diseases.py```
 """
 
-import pandas as pd
 
 from tlo import Date, logging
 from tlo.methods import (
@@ -44,7 +43,6 @@ from tlo.methods import (
     wasting
 )
 from tlo.scenario import BaseScenario
-from pathlib import Path
 
 
 class RunAnalysisCo(BaseScenario):
