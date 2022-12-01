@@ -29,12 +29,12 @@ from tlo.scenario import BaseScenario
 class SBAPerfectCEMONC(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 55447
+        self.seed = 537184
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2031, 1, 1)
-        self.pop_size = 200_000
+        self.end_date = Date(2015, 1, 1)
+        self.pop_size = 100_000
         self.number_of_draws = 1
-        self.runs_per_draw = 20
+        self.runs_per_draw = 15
 
     def log_configuration(self):
         return {
@@ -94,8 +94,11 @@ class SBAPerfectCEMONC(BaseScenario):
                        'alternative_cemonc_availability': True,
                        'bemonc_availability': 0.9,
                        'cemonc_availability': 0.9,
-                       'analysis_year': 2021
-                       }
+                       'bemonc_cons_availability': 1.0,
+                       'cemonc_cons_availability': 1.0,
+                       'analysis_year': 2010},
+
+            'PregnancySupervisor': {'analysis_year': 2010}
         }
 
 
