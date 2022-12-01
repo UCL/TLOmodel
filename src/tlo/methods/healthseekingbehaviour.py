@@ -42,8 +42,8 @@ class HealthSeekingBehaviour(Module):
     # No parameters to declare
     PARAMETERS = {
         'force_any_symptom_to_lead_to_healthcareseeking': Parameter(
-            Types.BOOL, "Whether every symptom should always lead to healthcare seeking (ignoring the other parameters "
-                        "that determine the probability of seeking care."),
+            Types.BOOL, "Whether every symptom [except those that declare they should not lead to any healthcare "
+                        "seeking] should always lead to healthcare seeking immediately."),
         'baseline_odds_of_healthcareseeking_children': Parameter(Types.REAL, 'odds of health-care seeking (children:'
                                                                              ' 0-14) if male, 0-5 years-old, living in'
                                                                              ' a rural setting in the Northern region,'
@@ -102,7 +102,7 @@ class HealthSeekingBehaviour(Module):
 
         # "force_any_symptom_to_lead_to_healthcareseeking"=True will mean that probability of health care seeking is 1.0
         # for anyone with newly onset symptoms (excepting symptoms explicitly declared to have no healthcareseeking
-        # behaviour).
+        # behaviour) and the care is sought on the same day.
         # (Note that if this is not specified, then the value is taken from the ResourceFile.)
         if force_any_symptom_to_lead_to_healthcareseeking is not None:
             assert isinstance(force_any_symptom_to_lead_to_healthcareseeking, bool)
@@ -311,8 +311,9 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         ):
             # Determine who will seek care:
             if module.force_any_symptom_to_lead_to_healthcareseeking:
-                # If forcing any person with symptoms to seek care, just find all those with any symptoms
-                # NB. This excludes symptoms declared to have no healthcareseeking behaviour.
+                # If forcing any person with symptoms to seek care, find all those with any symptoms which cause
+                # any degree of healthcare seeking (i.e., excluding symptoms declared to have no healthcare-seeking
+                # behaviour).
                 will_seek_care = set(
                     idx_where_true(self._has_any_symptoms(subgroup, symptoms_that_allow_healthcareseeking))
                 )
@@ -348,14 +349,19 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                 module=module
             )
 
-            # Schedule Non-Emergency Care for "soon"
-            care_seeking_dates = (
-                # Create NumPy datetime with day unit to allow directly adding
-                # array of generated integer delays in [0, max_delay]
-                np.array(self.sim.date, dtype='datetime64[D]')
-                + module.rng.randint(0, max_delay + 1, size=len(will_seek_non_emergency_care))
-                # (The +1 is because `randint` takes the upper bound to be excluded.)
-            )
+            # Schedule Non-Emergency Care for "soon" (after a random delay), or the same day if using
+            # `force_any_symptom_to_lead_to_healthcareseeking`.
+            if not module.force_any_symptom_to_lead_to_healthcareseeking:
+                care_seeking_dates = (
+                    # Create NumPy datetime with day unit to allow directly adding
+                    # array of generated integer delays in [0, max_delay]
+                    np.array(self.sim.date, dtype='datetime64[D]')
+                    + module.rng.randint(0, max_delay + 1, size=len(will_seek_non_emergency_care))
+                    # (The +1 is because `randint` takes the upper bound to be excluded.)
+                )
+            else:
+                care_seeking_dates = np.array([self.sim.date] * len(will_seek_non_emergency_care))
+
             health_system.schedule_batch_of_individual_hsi_events(
                 hsi_event_class=routine_hsi_event_class,
                 person_ids=sorted(will_seek_non_emergency_care),

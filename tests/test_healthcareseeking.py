@@ -421,8 +421,8 @@ def test_force_healthcare_seeking(seed):
     def hsi_scheduled_following_symptom_onset(force_any_symptom_to_lead_to_healthcare_seeking,
                                               no_healthcareseeking_in_children=False,
                                               no_healthcareseeking_in_adults=False):
-        """Returns True if a FirstAttendance HSI has been scheduled for a person following onset of symptoms with low
-        probability of causing healthcare seeking."""
+        """Returns True if a FirstAttendance HSI has been scheduled for a person on the same day as the onset of
+        symptoms that would ordinarily have a low probability of causing healthcare seeking."""
 
         class DummyDisease(Module):
             METADATA = {Metadata.USES_SYMPTOMMANAGER}
@@ -477,9 +477,9 @@ def test_force_healthcare_seeking(seed):
         # Run the HealthSeeingBehaviourPoll
         sim.modules['HealthSeekingBehaviour'].theHealthSeekingBehaviourPoll.run()
 
-        # See what HSI are scheduled to occur for the person
+        # See what HSI are scheduled to occur for the person on the same day
         evs = [x[1].TREATMENT_ID for x in
-               sim.modules['HealthSystem'].find_events_for_person(0)]
+               sim.modules['HealthSystem'].find_events_for_person(0) if x[0].date() == start_date]
 
         return 'FirstAttendance_NonEmergency' in evs
 
