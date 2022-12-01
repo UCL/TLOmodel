@@ -78,7 +78,7 @@ def test_scenario_parameters(seed):
     assert sim.modules["Hiv"].parameters["prob_circ_after_hiv_test"] == 0.25
     assert sim.modules["Tb"].parameters["age_eligibility_for_ipt"] == 100
     assert sim.modules["Tb"].parameters["ipt_coverage"]["coverage_plhiv"].all() >= 0.6
-    assert sim.modules["Tb"].parameters["ipt_coverage"]["coverage_paediatric"].all() >= 0.8
+    assert sim.modules["Tb"].parameters["ipt_coverage"]["coverage_paediatric"].all() >= 80
 
 
 @pytest.mark.slow
@@ -94,8 +94,8 @@ def test_scenario_ipt_expansion(seed):
 
     # stop PLHIV getting IPT for purpose of tests
     sim.modules['Tb'].parameters['ipt_coverage'].coverage_plhiv = 0
-    # set coverage of IPT for TB contacts to 1.0
-    sim.modules['Tb'].parameters['ipt_coverage'].coverage_paediatric = 1.0
+    # set coverage of IPT for TB contacts to 100%
+    sim.modules['Tb'].parameters['ipt_coverage'].coverage_paediatric = 100
 
     # Make the population
     sim.make_initial_population(n=popsize)
@@ -184,8 +184,8 @@ def test_scenario_ipt_expansion(seed):
     # these parameters are changed during ScenarioSetupEvent so reset them
     # stop PLHIV getting IPT for purpose of tests
     sim.modules['Tb'].parameters['ipt_coverage'].coverage_plhiv = 0
-    # set coverage of IPT for TB contacts to 1.0
-    sim.modules['Tb'].parameters['ipt_coverage'].coverage_paediatric = 1.0
+    # set coverage of IPT for TB contacts to 100
+    sim.modules['Tb'].parameters['ipt_coverage'].coverage_paediatric = 100
 
     assert sim.modules["Tb"].parameters["age_eligibility_for_ipt"] >= 5.0
 
