@@ -41,94 +41,66 @@ from tlo.methods import (
 def fullmodel(
     resourcefilepath: Path,
     use_simplified_births: Optional[bool] = False,
-    symptommanager_spurious_symptoms: Optional[bool] = True,
-    healthsystem_disable: Optional[bool] = False,
-    healthsystem_mode_appt_constraints: Optional[int] = 1,
-    healthsystem_capabilities_coefficient: Optional[float] = None,
-    healthsystem_record_hsi_event_details: Optional[bool] = False
+    module_kwargs=None,
 ) -> List[Module]:
     """Return the modules that should be registered in a run of the `Full Model`."""
-
-    all_modules = []
-
-    # Standard modules:
-    all_modules.extend([
-        demography.Demography(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-        symptommanager.SymptomManager(
-            resourcefilepath=resourcefilepath,
-            spurious_symptoms=symptommanager_spurious_symptoms),
-    ])
-
-    # HealthSystem and the Expanded Programme on Immunizations
-    all_modules.extend([
-        epi.Epi(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(
-            resourcefilepath=resourcefilepath,
-            disable=healthsystem_disable,
-            mode_appt_constraints=healthsystem_mode_appt_constraints,
-            capabilities_coefficient=healthsystem_capabilities_coefficient,
-            record_hsi_event_details=healthsystem_record_hsi_event_details),
-    ])
-
+    if module_kwargs is None:
+        module_kwargs = {
+            "SymptomManager": {"spurious_symptoms": True},
+            "HealthSystem": {"mode_appt_constraints": 1},
+        }
+    module_classes = [
+        # Standard modules
+        demography.Demography,
+        enhanced_lifestyle.Lifestyle,
+        healthburden.HealthBurden,
+        healthseekingbehaviour.HealthSeekingBehaviour,
+        symptommanager.SymptomManager,
+        # HealthSystem and the Expanded Programme on Immunizations
+        epi.Epi,
+        healthsystem.HealthSystem,
+        # Conditions of Early Childhood
+        alri.Alri,
+        diarrhoea.Diarrhoea,
+        stunting.Stunting,
+        wasting.Wasting,
+        # Communicable Diseases
+        hiv.Hiv,
+        malaria.Malaria,
+        measles.Measles,
+        schisto.Schisto,
+        tb.Tb,
+        # Non-Communicable Conditions
+        #  - Cancers
+        bladder_cancer.BladderCancer,
+        breast_cancer.BreastCancer,
+        oesophagealcancer.OesophagealCancer,
+        other_adult_cancers.OtherAdultCancer,
+        prostate_cancer.ProstateCancer,
+        #  - Cardio-metabolic Disorders
+        cardio_metabolic_disorders.CardioMetabolicDisorders,
+        #  - Injuries
+        rti.RTI,
+        #  - Other Non-Communicable Conditions
+        depression.Depression,
+        epilepsy.Epilepsy,
+    ]
     # Contraception, Pregnancy, Labour, etc. (or SimplifiedBirths)
     if use_simplified_births:
-        all_modules.extend([
-            simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-        ])
+        module_classes.append(simplified_births.SimplifiedBirths)
     else:
-        all_modules.extend([
-            contraception.Contraception(resourcefilepath=resourcefilepath, use_healthsystem=True),
-            pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-            care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-            labour.Labour(resourcefilepath=resourcefilepath),
-            newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-            postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath)
-        ])
-
-    # Conditions of Early Childhood
-    all_modules.extend([
-        alri.Alri(resourcefilepath=resourcefilepath),
-        diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
-        stunting.Stunting(resourcefilepath=resourcefilepath),
-        wasting.Wasting(resourcefilepath=resourcefilepath),
-    ])
-
-    # Communicable Diseases
-    all_modules.extend([
-        hiv.Hiv(resourcefilepath=resourcefilepath),
-        malaria.Malaria(resourcefilepath=resourcefilepath),
-        measles.Measles(resourcefilepath=resourcefilepath),
-        schisto.Schisto(resourcefilepath=resourcefilepath),
-        tb.Tb(resourcefilepath=resourcefilepath)
-    ])
-
-    # Non-Communicable Conditions
-    #  - Cancers
-    all_modules.extend([
-        bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
-        breast_cancer.BreastCancer(resourcefilepath=resourcefilepath),
-        oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
-        other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath),
-        prostate_cancer.ProstateCancer(resourcefilepath=resourcefilepath),
-    ])
-
-    #  - Cardio-metabolic Disorders
-    all_modules.extend([
-        cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath)
-    ])
-
-    #  - Injuries
-    all_modules.extend([
-        rti.RTI(resourcefilepath=resourcefilepath)
-    ])
-
-    #  - Other Non-Communicable Conditions
-    all_modules.extend([
-        depression.Depression(resourcefilepath=resourcefilepath),
-        epilepsy.Epilepsy(resourcefilepath=resourcefilepath)
-    ])
-
-    return all_modules
+        module_classes += [
+            contraception.Contraception,
+            pregnancy_supervisor.PregnancySupervisor,
+            care_of_women_during_pregnancy.CareOfWomenDuringPregnancy,
+            labour.Labour,
+            newborn_outcomes.NewbornOutcomes,
+            postnatal_supervisor.PostnatalSupervisor,
+        ]
+    return [
+        module_class(
+            resourcefilepath=resourcefilepath,
+            **module_kwargs.get(module_class.__name__, {})
+        )
+        for module_class in module_classes
+    ]

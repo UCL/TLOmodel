@@ -48,7 +48,10 @@ class EffectOfEachTreatment(BaseScenario):
         }
 
     def modules(self):
-        return fullmodel(resourcefilepath=self.resources, healthsystem_mode_appt_constraints=0)
+        return fullmodel(
+            resourcefilepath=self.resources,
+            module_kwargs={"HealthSystem": {"mode_appt_constraints": 0}}
+        )
 
     def draw_parameters(self, draw_number, rng):
         return {
