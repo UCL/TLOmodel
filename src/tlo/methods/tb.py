@@ -1137,11 +1137,12 @@ class Tb(Module):
         rng = self.rng
         now = self.sim.date
 
-        # apply risk to all, some will already be infected/scheduled for infection
-        # in that case, second infection will not do anything
+        # todo add condition not currently with active tb
+        # apply risk to all susceptible people
         susc_idx = df.loc[
             df.is_alive
-        ].index
+            & (df.tb_inf != "active")
+            ].index
 
         # weight risk by individual characteristics
         # Compute chance that each susceptible person becomes infected:
