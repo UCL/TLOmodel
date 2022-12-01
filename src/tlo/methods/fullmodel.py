@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from tlo import Module
 from tlo.methods import (
@@ -40,10 +40,34 @@ from tlo.methods import (
 
 def fullmodel(
     resourcefilepath: Path,
-    use_simplified_births: Optional[bool] = False,
-    module_kwargs=None,
+    use_simplified_births: bool = False,
+    module_kwargs: Optional[Dict[str, Dict]] = None,
 ) -> List[Module]:
-    """Return the modules that should be registered in a run of the `Full Model`."""
+    """Return a list of modules that should be registered in a run of the full model.
+
+    :param resourcefilepath: Path to root of directory containing resource files.
+    :param use_simplified_births: Whether to use ``SimplifiedBirths`` module in place
+        of full pregnancy related modules.
+    :param module_kwargs: Dictionary mapping from module class names to dictionaries of
+        keyword argument names and values to set for the module. If ``None`` (the
+        default), the default values for all module keyword arguments are used other
+        than ``spurious_symptoms`` being set to ``True`` in ``SymptomManager`` and
+        ``mode_appt_constraints`` being set to ``1`` in ``HealthSystem``.
+    :return: List of initialised modules that can be passed to ``Simulation.register``
+        method.
+
+    :Example:
+
+    The following would initialise all modules in the full model with the ``disable``
+    argument to the ``HealthSystem`` module set to ``True``
+
+    >>> from tlo.methods.fullmodel import fullmodel
+    >>> resourcefilepath = ...
+    >>> modules = fullmodel(
+    >>>     resourcefilepath,
+    >>>     module_kwargs={"HealthSystem": {"disable": True}},
+    >>> )
+    """
     if module_kwargs is None:
         module_kwargs = {
             "SymptomManager": {"spurious_symptoms": True},
