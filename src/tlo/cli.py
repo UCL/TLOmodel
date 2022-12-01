@@ -62,10 +62,19 @@ def scenario_run(scenario_file, draw_only, draw: tuple, output_dir=None):
         print(json_string)
         return
 
-    tmp = tempfile.NamedTemporaryFile()
-    with open(tmp.name, 'w') as f:
-        f.write(json_string)
-    runner = SampleRunner(tmp.name)
+    # Write the JSON config to a temporary file (to prevent clobbering by multiple processes running same scenario)
+    # We set delete=False on the file, otherwise Windows does not allow the opening of the file multiple times
+    tmp = tempfile.NamedTemporaryFile(delete=False, mode='w')
+    tmp.write(json_string)
+    tmp.flush()
+
+    # SampleRunner loads the scenario information from the JSON config file
+    filename = tmp.name
+    runner = SampleRunner(filename)
+
+    # Runner has been created - clean up (we have to do this ourselves because we set delete=False)
+    tmp.close()
+    os.unlink(filename)
 
     if draw:
         runner.run_sample_by_number(output_directory=output_dir, draw_number=draw[0], sample_number=draw[1])
