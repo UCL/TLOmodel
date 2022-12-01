@@ -7,7 +7,8 @@ from matplotlib import pyplot as plt
 
 from tlo.analysis.utils import extract_results, get_scenario_outputs
 
-from ..analysis_scripts import analysis_utility_functions
+#from ..analysis_scripts import analysis_utility_functions
+from src.scripts.maternal_perinatal_analyses.analysis_scripts import analysis_utility_functions
 
 plt.style.use('seaborn')
 
@@ -136,43 +137,40 @@ def output_all_death_calibrations(scenario_filename, outputspath, pop_size, sim_
                       [x + y for x, y in zip(id_mmr_data[1], mm[1])],
                       [x + y for x, y in zip(id_mmr_data[2], mm[2])]]
 
-    for data, title, l_colour, f_colour in zip([mm, id_mmr_data, total_mmr_data],
-                                               ['Direct', 'Indirect', 'Total'],
-                                               ['deepskyblue', 'mediumpurple', 'coral'],
-                                               ['b', 'mediumslateblue', 'lightcoral']):
+    for data, title in zip([mm, id_mmr_data, total_mmr_data], ['(Direct)', '(Indirect)', '(Total)']):
 
-        if title == 'Direct':
+        if title == '(Direct)':
             mp = 0.7
-        elif title == 'Indirect':
+        elif title == '(Indirect)':
             mp = 0.3
         else:
             mp = 1
 
         fig, ax = plt.subplots()
-        ax.plot(sim_years, data[0], label="Model (mean)", color=l_colour)
-        ax.fill_between(sim_years, data[1], data[2], color=f_colour, alpha=.1)
-        plt.errorbar(2010, (675*mp), yerr=((780*mp)-(570*mp))/2, label='DHS 2010', fmt='o', color='green',
+        ax.plot(sim_years, data[0], label="Model", color='deepskyblue')
+        ax.fill_between(sim_years, data[1], data[2], color='b', alpha=.1)
+        plt.errorbar(2010, (675*mp), yerr=((780*mp)-(570*mp))/2, label='DHS (2010)', fmt='o', color='green',
                      ecolor='mediumseagreen',
                      elinewidth=3, capsize=0)
-        plt.errorbar(2015, (439*mp), yerr=((531*mp)-(348*mp))/2, label='DHS 2015', fmt='o', color='green',
+        plt.errorbar(2015, (439*mp), yerr=((531*mp)-(348*mp))/2, label='DHS (2015)', fmt='o', color='green',
                      ecolor='mediumseagreen',
                      elinewidth=3, capsize=0)
-        ax.plot([2011, 2015, 2017], [(444*mp), (370*mp), (349*mp)], label="WHO MMEIG", color='red')
+        ax.plot([2011, 2015, 2017], [(444*mp), (370*mp), (349*mp)], label="UN MMEIG (2019)", color='cadetblue')
         ax.fill_between([2011, 2015, 2017], [(347*mp), (269*mp), (244*mp)], [(569*mp), (517*mp), (507*mp)],
-                        color='pink', alpha=.1)
+                        color='cadetblue', alpha=.1)
         ax.plot([2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019],
                 [242*mp, 235*mp, 229*mp, 223*mp, 219*mp, 219*mp, 217*mp, 214*mp, 209*mp],
-                label="GBD (2019)", color='black')
+                label="GBD (2019)", color='darkslateblue')
         ax.fill_between([2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019],
                         [168*mp, 165*mp, 158*mp, 151*mp, 150*mp, 146*mp, 141*mp, 141*mp, 134*mp],
-                        [324*mp, 313*mp, 310*mp, 307*mp, 304*mp, 307*mp, 304*mp, 300*mp, 294*mp], color='grey',
+                        [324*mp, 313*mp, 310*mp, 307*mp, 304*mp, 307*mp, 304*mp, 300*mp, 294*mp], color='slateblue',
                         alpha=.1)
-        if title == 'Direct':
-            ax.set(ylim=(0, 750))
+        if title == '(Total)':
+            ax.set(ylim=(0, 1550))
         else:
-            ax.set(ylim=(0, 2200))
+            ax.set(ylim=(0, 850))
         plt.xlabel('Year')
-        plt.ylabel("Deaths per 100,000 live births")
+        plt.ylabel("Deaths per 100 000 live births")
         plt.title(f'{title} Maternal Mortality Ratio per Year')
         plt.legend()
         plt.savefig(f'{graph_location}/{title}_mmr.png')
@@ -301,10 +299,10 @@ def output_all_death_calibrations(scenario_filename, outputspath, pop_size, sim_
            color='slategrey')
     ax.bar(labels, indirect_deaths_means['AIDS_non_TB'], width, label='AIDS_non_TB', color='hotpink')
 
-    ax.set(ylim=(0, 1200))
+    ax.set(ylim=(0, 850))
     ax.set_ylabel('Deaths per 100,000 live births')
-    ax.set_ylabel('Year')
-    ax.set_title('Indirect Causes of Maternal Death During Pregnancy')
+    ax.set_xlabel('Year')
+    ax.set_title('Indirect causes of maternal death within the TLO model')
     ax.legend()
     plt.savefig(f'{graph_location}/indirect_death_mmr_cause.png')
     plt.show()
@@ -462,21 +460,6 @@ def output_all_death_calibrations(scenario_filename, outputspath, pop_size, sim_
     props_df = pd.DataFrame(data=proportions_dicts)
     props_df = props_df.fillna(0)
 
-    # labels = list(props_df.index)
-    labels_10 = list()
-    labels_15 = list()
-    values_10 = list()
-    values_15 = list()
-
-    for index in props_df.index:
-        values_10.append(props_df.loc[index, slice(2010, 2014)].mean())
-        labels_10.append(f'{index} ({round(props_df.loc[index, slice(2010, 2014)].mean(), 2)} %)')
-        values_15.append(props_df.loc[index, slice(2015, 2020)].mean())
-        labels_15.append(f'{index} ({round(props_df.loc[index, slice(2015, 2020)].mean(), 2)} %)')
-
-    pie_prop_cause_of_death(values_10, '2010_2014', labels_10, 'all')
-    pie_prop_cause_of_death(values_15, '2015-2020', labels_15, 'all')
-
     simplified_df = props_df.transpose()
 
     simplified_df['Abortion'] = simplified_df['induced_abortion'] + simplified_df['spontaneous_abortion']
@@ -499,22 +482,40 @@ def output_all_death_calibrations(scenario_filename, outputspath, pop_size, sim_
             simplified_df = simplified_df.drop(columns=[column])
 
     all_labels = list()
-    labels_10 = list()
-    labels_15 = list()
     all_values = list()
-    values_10 = list()
-    values_15 = list()
+    av_lq = list()
+    av_uq = list()
     for column in simplified_df.columns:
         all_values.append(simplified_df[column].mean())
+        av_lq.append(simplified_df[column].quantile(0.025))
+        av_uq.append(simplified_df[column].quantile(0.925))
         all_labels.append(f'{column} ({round(simplified_df[column].mean(), 2)} %)')
-        values_10.append(simplified_df.loc[slice(2010, 2014), column].mean())
-        labels_10.append(f'{column} ({round(simplified_df.loc[slice(2010, 2014), column].mean(), 2)} %)')
-        values_15.append(simplified_df.loc[slice(2015, 2020), column].mean())
-        labels_15.append(f'{column} ({round(simplified_df.loc[slice(2015, 2020), column].mean(), 2)} %)')
 
-    pie_prop_cause_of_death(values_10, '2010_2014', labels_10, 'combined')
-    pie_prop_cause_of_death(values_15, '2015-2020', labels_15, 'combined')
     pie_prop_cause_of_death(all_values, '2010-2020', all_labels, 'total')
+
+    # todo: add uncertainty for model outputs
+    labels = ['EP', 'UR', 'APH', 'Abortion', 'SPE/Ec.', 'PPH', 'Sepsis']
+    model = all_values
+    bemonc_data = [0.8, 12.6, 5.3, 6.8, 15.9, 26, 18.9]  # order = ectopic,
+    ui = [(x - y) / 2 for x, y in zip(av_uq, av_lq)]
+
+    x = np.arange(len(labels))  # the label locations
+    width = 0.35  # the width of the bars
+
+    fig, ax = plt.subplots()
+    ax.bar(x - width / 2, model, width, yerr=ui, label='Model')
+    ax.bar(x + width / 2, bemonc_data, width, label='BEmONC Survey (2015)')
+    # ax.bar_label(labels)
+    # Add some text for labels, title and custom x-axis tick labels, etc.
+    ax.set_ylabel('% of total deaths')
+    ax.set_xlabel('Cause of death')
+    ax.set_title('Proportion of total maternal deaths by cause (2010-2020)')
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels)
+    ax.legend(loc='upper left')
+    fig.tight_layout()
+    plt.savefig(f'{graph_location}/proportions_cause_of_death.png')
+    plt.show()
 
     # =========================================== CASE FATALITY PER COMPLICATION ======================================
     tr = list()  # todo:update?
@@ -648,6 +649,7 @@ def output_all_death_calibrations(scenario_filename, outputspath, pop_size, sim_
     # ----------------------------------------------- NEONATAL MORTALITY RATE ----------------------------------------
     # NMR due to neonatal disorders...
     # NEONATAL DISORDERS NMR - ROUGHLY EQUATES TO FIRST WEEK NMR
+
     nd_nmr = analysis_utility_functions.get_comp_mean_and_rate(
         'Neonatal Disorders', total_births_per_year_ex2010, death_results_labels, 1000, sim_years)
 
@@ -657,7 +659,7 @@ def output_all_death_calibrations(scenario_filename, outputspath, pop_size, sim_
         module="tlo.methods.demography.detail",
         key="properties_of_deceased_persons",
         custom_generate_series=(
-            lambda df: df.loc[(df['age_days'] < 28) & (df['cause_of_death'] != 'Other')].assign(
+            lambda df: df.loc[(df['age_days'] <= 28)].assign(
                 year=df['date'].dt.year).groupby(['year'])['year'].count()))
     total_neonatal_deaths = tnd.fillna(0)
 
@@ -666,76 +668,51 @@ def output_all_death_calibrations(scenario_filename, outputspath, pop_size, sim_
     tnmr_lq = [x / y * 1000 for x, y in zip(t_nm[1], total_births_per_year_ex2010_data[1])]
     tnmr_uq = [x / y * 1000 for x, y in zip(t_nm[2], total_births_per_year_ex2010_data[2])]
 
-    id_nd = extract_results(
-        results_folder,
-        module="tlo.methods.demography.detail",
-        key="properties_of_deceased_persons",
-        custom_generate_series=(
-            lambda df: df.loc[(df['age_days'] < 28) &
-                              df['cause_of_death'].str.contains(
-                                  'AIDS_non_TB|AIDS_TB|TB|ALRI|Diarrhoea|Malaria|anomaly')].assign(
-                year=df['date'].dt.year).groupby(['year'])['year'].count()))
-    indirect_neonatal_deaths = id_nd.fillna(0)
-
-    i_nm = analysis_utility_functions.get_mean_and_quants(indirect_neonatal_deaths, sim_years)
-    i_nmr = [x / y * 1000 for x, y in zip(i_nm[0], total_births_per_year_ex2010_data[0])]
-    i_tnmr_lq = [x / y * 1000 for x, y in zip(i_nm[1], total_births_per_year_ex2010_data[1])]
-    i_tnmr_uq = [x / y * 1000 for x, y in zip(i_nm[2], total_births_per_year_ex2010_data[2])]
-
     def get_nmr_graphs(data, colours, title, save_name):
         fig, ax = plt.subplots()
         ax.plot(sim_years, data[0], label="Model (mean)", color=colours[0])
         ax.fill_between(sim_years, data[1], data[2], color=colours[1], alpha=.1)
 
-        if save_name != 'neonatal_disorders_nmr':
-            data = {'dhs': {'mean': [31, 27], 'lq': [26, 22], 'uq': [34, 34]},
-                    'hug': {'mean': 22.7, 'lq': 15.6, 'uq': 28.8},
-                    'gbd': {'mean': 25, 'lq': 21.4, 'uq': 26.6},
-                    'un': {'mean': [28, 27, 26, 25, 24, 23, 22, 22, 20, 20],
-                           'lq': [25, 24, 23, 22, 20, 18, 16, 15, 14, 13],
-                           'uq': [31, 31, 30, 29, 29, 28, 28, 29, 29, 30]}}
-        else:
-            data = {'dhs': {'mean': [25, 22], 'lq': [22, 18], 'uq': [28, 28]},
-                    'hug': {'mean': 18.6, 'lq': 13, 'uq': 24},
-                    'gbd': {'mean': 20, 'lq': 17.12, 'uq': 21.3},
-                    'un': {'mean': [22.4, 21.6, 20.8, 20, 19.2, 18.4, 17.6, 17.6, 16, 16],
-                           'lq': [20, 19.2, 18.4, 17.6, 16, 14.4, 12.8, 12, 11.2, 10.4],
-                           'uq': [25.6, 24.8, 24, 23.2, 23.2, 22.4, 22.4, 23.2, 23.2, 24]}}
+        data = {'dhs': {'mean': [31, 27], 'lq': [26, 22], 'uq': [34, 34]},
+                     'hug': {'mean': 22.7, 'lq': 15.6, 'uq': 28.8},
+                     'gbd': {'mean': 25, 'lq': 21.4, 'uq': 26.6},
+                     'un': {'mean': [28, 27, 26, 25, 24, 23, 22, 22, 20, 20],
+                            'lq': [25, 24, 23, 22, 20, 18, 16, 15, 14, 13],
+                            'uq': [31, 31, 30, 29, 29, 28, 28, 29, 29, 30]}}
 
-        plt.errorbar(2010, data['dhs']['mean'][0], label='DHS 2010',
-                     yerr=(data['dhs']['uq'][0] - data['dhs']['lq'][0]) / 2, fmt='o', color='green',
-                     ecolor='mediumseagreen',
+
+        plt.errorbar(2010, data['dhs']['mean'][0], label='DHS (2010)',
+                     yerr=(data['dhs']['uq'][0] - data['dhs']['lq'][0]) / 2, fmt='o', color='mediumseagreen',
+                     ecolor='green',
                      elinewidth=3, capsize=0)
 
-        plt.errorbar(2015, data['dhs']['mean'][1], label='DHS 2015',
-                     yerr=(data['dhs']['uq'][1] - data['dhs']['lq'][1]) / 2, fmt='o', color='black',
-                     ecolor='grey',
+        plt.errorbar(2015, data['dhs']['mean'][1], label='DHS (2015)',
+                     yerr=(data['dhs']['uq'][1] - data['dhs']['lq'][1]) / 2, fmt='o', color='mediumseagreen',
+                     ecolor='green',
                      elinewidth=3, capsize=0)
 
-        plt.errorbar(2017, data['hug']['mean'], label='Hug 2017',
+        plt.errorbar(2017, data['hug']['mean'], label='Hug (2017)',
                      yerr=(data['hug']['uq'] - data['hug']['lq']) / 2,
-                     fmt='o', color='purple', ecolor='pink', elinewidth=3, capsize=0)
+                     fmt='o', color='purple', ecolor='purple', elinewidth=3, capsize=0)
 
-        plt.errorbar(2019, data['gbd']['mean'], label='Paulson (GBD) 2019',
+        plt.errorbar(2019, data['gbd']['mean'], label='GBD (2019)',
                      yerr=(data['gbd']['uq'] - data['gbd']['lq']) / 2,
-                     fmt='o', color='purple', ecolor='pink', elinewidth=3, capsize=0)
+                     fmt='o', color='pink', ecolor='pink', elinewidth=3, capsize=0)
 
         ax.plot([2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019],
-                data['un']['mean'], label="UN IGCME (unadj.)", color='purple')
+                data['un']['mean'], label="UN IGCME", color='grey')
         ax.fill_between([2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019],
                         data['un']['lq'], data['un']['uq'], color='grey', alpha=.1)
         ax.set(ylim=(0, 45))
         plt.xlabel('Year')
-        plt.ylabel("Rate per 1000 births")
+        plt.ylabel("Deaths per 1000 births")
         plt.title(title)
         plt.legend()
         plt.savefig(f'{graph_location}/{save_name}.png')
         plt.show()
 
     get_nmr_graphs(nd_nmr, ['deepskyblue', 'b'], 'Yearly NMR due to GBD "Neonatal Disorders"', 'neonatal_disorders_nmr')
-    get_nmr_graphs([tnmr, tnmr_lq, tnmr_uq], ['coral', 'lightcoral'], 'Yearly Total NMR', 'total_nmr')
-    get_nmr_graphs([i_nmr, i_tnmr_lq, i_tnmr_uq], ['seagreen', 'mediumseagreen'],
-                   'Yearly NMR due to causes other than "Neonatal Disorders"', 'other_nmr')
+    get_nmr_graphs([tnmr, tnmr_lq, tnmr_uq], ['deepskyblue', 'b'], 'Yearly Total NMR', 'total_nmr')
 
     # ------------------------------------------ CRUDE DEATHS PER YEAR ------------------------------------------------
     # Neonatal Disorders...
@@ -771,49 +748,67 @@ def output_all_death_calibrations(scenario_filename, outputspath, pop_size, sim_
                   'crude_deaths_cba')
 
     # --------------------------- PROPORTION OF 'NEONATAL DISORDER' DEATHS BY CAUSE -----------------------------------
+    # TODO: could output other causes also
+    neo_calib_targets_fottrell = [27.3, 25.8, 8.95]  # prematuirty, birth asphyxia, early onset sepsis
+    neo_calib_targets_bemonc = [26, 52, 6] # prematuirty, birth asphyxia, early onset sepsis
+
     direct_neonatal_causes = ['early_onset_sepsis', 'late_onset_sepsis', 'encephalopathy', 'preterm_other',
                               'respiratory_distress_syndrome', 'neonatal_respiratory_depression']
 
-    list_of_proportions_dicts_nb = list()
-    total_deaths_per_year_nb = list()
+    causes_prop = dict()
+    for cause in direct_neonatal_causes:
+        causes_prop.update({cause: [0, 0, 0]})
 
     for year in sim_years:
-        yearly_mean_number = list()
-        causes = dict()
+        total_deaths_py = tnd.loc[year].mean()
 
         for complication in direct_neonatal_causes:
             if complication in death_results.loc[year].index:
-                mean = death_results.loc[year, complication].mean()
-                yearly_mean_number.append(mean)
-                causes.update({f'{complication}_{year}': mean})
-            else:
-                yearly_mean_number.append(0)
+                causes_prop[complication][0] += (death_results.loc[year, complication].mean() / total_deaths_py) * 100
+                causes_prop[complication][1] += (death_results.loc[year, complication].quantile(0.025) /
+                                                 total_deaths_py) * 100
+                causes_prop[complication][2] += (death_results.loc[year, complication].quantile(0.925) /
+                                                 total_deaths_py) * 100
 
-        total_deaths_this_year = sum(yearly_mean_number)
-        total_deaths_per_year_nb.append(total_deaths_this_year)
+    for c in causes_prop:
+        causes_prop[c] = [x / len(sim_years) for x in causes_prop[c]]
 
-        for complication in causes:
-            causes[complication] = (causes[complication] / total_deaths_this_year) * 100
+    results = [(causes_prop['respiratory_distress_syndrome'][0] + causes_prop['preterm_other'][0]),
+               (causes_prop['encephalopathy'][0] + causes_prop['neonatal_respiratory_depression'][0]),
+               causes_prop['early_onset_sepsis'][0] + causes_prop['late_onset_sepsis'][0]]
 
-        list_of_proportions_dicts_nb.append(causes)
+    results_uq = [(causes_prop['respiratory_distress_syndrome'][2] + causes_prop['preterm_other'][2]),
+               (causes_prop['encephalopathy'][2] + causes_prop['neonatal_respiratory_depression'][2]),
+               causes_prop['early_onset_sepsis'][2] + causes_prop['late_onset_sepsis'][2]]
 
-    # todo: force colours for each complication in each year to be the same
-    for year, dictionary in zip(sim_years, list_of_proportions_dicts_nb):
-        labels = list()
-        sizes = list(dictionary.values())
+    results_lq = [(causes_prop['respiratory_distress_syndrome'][1] + causes_prop['preterm_other'][1]),
+               (causes_prop['encephalopathy'][1] + causes_prop['neonatal_respiratory_depression'][1]),
+               causes_prop['early_onset_sepsis'][1] + causes_prop['late_onset_sepsis'][1]]
 
-        for key, value in zip(dictionary.keys(), sizes):
-            labels.append(key.replace(f"_{year}", f" ({round(value, 2)} %)"))
 
-        fig1, ax1 = plt.subplots()
-        ax1.pie(sizes, shadow=True, startangle=90)
-        ax1.axis('equal')
-        box = ax.get_position()
-        ax.set_position([box.x0, box.y0, box.width * 0.5, box.height])
-        plt.legend(labels, loc='center left', bbox_to_anchor=(1, 0.5))
-        plt.title(f'Proportion of total neonatal deaths by cause in {year}')
-        plt.savefig(f'{graph_location}/neo_death_by_cause_{year}.png', bbox_inches="tight")
-        plt.show()
+    labels = ['Prematurity', '"Birth Asphyxia"', 'Neonatal sepsis']
+    ui = [(x - y) / 2 for x, y in zip(results_uq, results_lq)]
+    # create the base axis
+    fig, ax = plt.subplots(1, 1, figsize=(8, 6))
+    # set the labels
+    # and the x positions
+    label = ['Prematurity', '"Birth Asphyxia"', 'Neonatal sepsis']
+    x = np.arange(len(label))
+    width = 0.2
+    rect1 = ax.bar(x - width, results, width=width, yerr=ui, label='Model')
+    rect2 = ax.bar(x, neo_calib_targets_fottrell, width=width, label='Fottrell (2015)',)
+    rects2 = ax.bar(x + width, neo_calib_targets_bemonc, width=width, label='EMoNC (2015)',)
+    ax.set_ylabel("% of total deaths")
+    ax.set_xlabel("Cause of death")
+    ax.set_title("Proportion of total neonatal deaths by leading causes (2010-2020)")
+    ax.set_xticks(x)
+    ax.set_xticklabels(label)
+    ax.legend(loc='upper right')
+    ax.tick_params(axis="x",  which="both")
+    ax.tick_params(axis="y",  which="both")
+    plt.savefig(f'{graph_location}/proportions_cause_of_death_neo.png')
+    plt.show()
+
 
     # ------------------------------------------- CASE FATALITY PER COMPLICATION ------------------------------------
     nb_oc_df = extract_results(
@@ -972,9 +967,6 @@ def output_all_death_calibrations(scenario_filename, outputspath, pop_size, sim_
 
     # proportion causes for preterm birth
     # -------------------------------------------------------- DALYS -------------------------------------------------
-    # todo: i think we just want stacked...
-
-    # add in GBD?
 
     def extract_dalys_gbd_data(group):
         dalys_df = dalys_data.loc[(dalys_data['measure_name'] == 'DALYs (Disability-Adjusted Life Years)') &
@@ -989,7 +981,36 @@ def output_all_death_calibrations(scenario_filename, outputspath, pop_size, sim_
             gbd_dalys_lq.append(dalys_df.loc[(dalys_df['Year'] == year)].sum()['GBD_Lower'])
             gbd_dalys_uq.append(dalys_df.loc[(dalys_df['Year'] == year)].sum()['GBD_Upper'])
 
-        return [gbd_dalys, gbd_dalys_lq, gbd_dalys_uq]
+        if group == 'Maternal':
+            # Rates/total DALYs are adjusted to remove 'indirect maternal' and HIV aggravated deaths
+            mat_dalys_not_modelled = [[9735, 9795, 9673, 9484, 9305, 9153, 9220, 9177, 9115, 9128],
+                                      [13667, 13705, 13588, 13441, 13359, 13230, 13555, 13558, 13506, 13553],
+                                      [6308, 6304, 6225, 6148, 5878, 5764, 5763, 5664, 5611, 5548]]
+
+            maternal_gbd_dalys_adj = [[x - y for x, y in zip(gbd_dalys, mat_dalys_not_modelled[0])],
+                                      [x - y for x, y in zip(gbd_dalys_uq, mat_dalys_not_modelled[1])],
+                                      [x - y for x, y in zip(gbd_dalys_lq, mat_dalys_not_modelled[2])]]
+
+            gbd_dalys_rate = [[591, 561, 529, 501, 475, 452, 439, 423, 411, 404],
+                              [763, 731, 695, 660, 631, 611, 599, 577, 560, 555],
+                              [422, 403, 382, 358, 337, 320, 306, 288, 278, 275]]
+
+            gbd_dalys_rate_adj = [[523, 494, 465, 440, 417, 396, 385, 370, 360, 354],
+                                  [668, 638, 606, 574, 547, 531, 520, 499, 484, 482],
+                                  [378, 360, 341, 319, 300, 285, 272, 256, 247, 245]]
+
+            return {'total': [gbd_dalys, gbd_dalys_lq, gbd_dalys_uq],
+                    'total_adj': maternal_gbd_dalys_adj,
+                    'rate': gbd_dalys_rate,
+                    'rate_adj': gbd_dalys_rate_adj}
+        else:
+
+            rate = [[8059, 7754, 7388, 7039, 6667, 6323, 6051, 5637, 5402, 5199],
+                    [9576, 9191, 8784, 8402, 8010, 7798, 7458, 7091, 6901, 6756],
+                    [6785, 6460, 6115, 5773, 5449, 5167, 4847, 4486, 4246, 4044]]
+
+            return {'total': [gbd_dalys, gbd_dalys_lq, gbd_dalys_uq],
+                    'rate': rate}
 
     maternal_gbd_dalys = extract_dalys_gbd_data('Maternal')
     neonatal_gbd_dalys = extract_dalys_gbd_data('Neonatal')
@@ -1002,6 +1023,28 @@ def output_all_death_calibrations(scenario_filename, outputspath, pop_size, sim_
             lambda df: df.drop(
                 columns='date').groupby(['year']).sum().stack()),
         do_scaling=True)
+
+    person_years_total = extract_results(
+        results_folder,
+        module="tlo.methods.demography",
+        key="person_years",
+        custom_generate_series=(
+            lambda df: df.assign(total=(df['M'].apply(lambda x: sum(x.values()))) + df['F'].apply(
+                lambda x: sum(x.values()))).assign(
+                year=df['date'].dt.year).groupby(['year'])['total'].sum()),
+        do_scaling=True)
+
+    denom = analysis_utility_functions.get_mean_and_quants(person_years_total, sim_years)
+
+    mat_model_dalys_data = dict()
+    neo_model_dalys_data = dict()
+
+    mat_model_dalys_data.update({'rate': analysis_utility_functions.get_comp_mean_and_rate('Maternal Disorders',
+                                                                                           denom[0], dalys_stacked,
+                                                                                           100000, sim_years)})
+    neo_model_dalys_data.update(
+        {'rate': analysis_utility_functions.get_comp_mean_and_rate('Neonatal Disorders', denom[0], dalys_stacked,
+                                                                   100000, sim_years)})
 
     def extract_dalys_tlo_model(group):
         stacked_dalys = list()
@@ -1016,25 +1059,62 @@ def output_all_death_calibrations(scenario_filename, outputspath, pop_size, sim_
 
         return [stacked_dalys, stacked_dalys_lq, stacked_dalys_uq]
 
-    maternal_dalys = extract_dalys_tlo_model('Maternal')
-    neonatal_dalys = extract_dalys_tlo_model('Neonatal')
+    mat_model_dalys_data.update({'total': extract_dalys_tlo_model('Maternal')})
+    neo_model_dalys_data.update({'total': extract_dalys_tlo_model('Neonatal')})
 
-    def get_daly_graphs(group, dalys, gbd_estimate):
+    def get_daly_graphs(group, model_data, gbd_data):
+
+        # Total
         fig, ax = plt.subplots()
-        ax.plot(sim_years, dalys[0], label=f"{group} DALYs", color='deepskyblue')
-        ax.fill_between(sim_years, dalys[1], dalys[2], color='b', alpha=.1)
+        ax.plot(sim_years, model_data['total'][0], label=f"{group} DALYs model", color='deepskyblue')
+        ax.fill_between(sim_years, model_data['total'][1], model_data['total'][2], color='b', alpha=.1)
 
-        ax.plot(daly_years, gbd_estimate[0], label="GBD DALY Est.", color='olivedrab')
-        ax.fill_between(daly_years, gbd_estimate[1], gbd_estimate[2], color='g', alpha=.1)
+        ax.plot(daly_years, gbd_data['total'][0], label="GBD DALYs", color='olivedrab')
+        ax.fill_between(daly_years, gbd_data['total'][1], gbd_data['total'][2], color='g', alpha=.1)
+
+        if group == 'Maternal':
+            ax.plot(daly_years, gbd_data['total_adj'][0], label="GBD DALY Adj.", color='darkslateblue')
+            ax.fill_between(daly_years, gbd_data['total_adj'][1], gbd_data['total_adj'][2], color='slateblue'
+                            , alpha=.1)
+            ax.set(ylim=(0, 160_000))
+        else:
+            ax.set(ylim=0)
+
         plt.xlabel('Year')
-        plt.ylabel("Disability Adjusted Life Years (stacked)")
+        plt.ylabel("DALYs (stacked)")
         plt.title(f'Total DALYs per Year Attributable to {group} disorders')
         plt.legend()
         plt.savefig(f'{graph_location}/{group}_dalys_stacked.png')
         plt.show()
 
-    get_daly_graphs('Maternal', maternal_dalys, maternal_gbd_dalys)
-    get_daly_graphs('Neonatal', neonatal_dalys, neonatal_gbd_dalys)
+        # Rate
+        fig, ax = plt.subplots()
+        ax.plot(sim_years, model_data['rate'][0], label=f"{group} DALYs model", color='deepskyblue')
+        ax.fill_between(sim_years, model_data['rate'][1], model_data['rate'][2], color='b', alpha=.1)
+
+        ax.plot(daly_years, gbd_data['rate'][0], label="GBD DALYs rate", color='olivedrab')
+        ax.fill_between(daly_years, gbd_data['rate'][1], gbd_data['rate'][2], color='g', alpha=.1)
+
+        if group == 'Maternal':
+            ax.plot(daly_years, gbd_data['rate_adj'][0], label="GBD DALY Adj. rate", color='darkslateblue')
+            ax.fill_between(daly_years, gbd_data['rate_adj'][1], gbd_data['rate_adj'][2], color='slateblue'
+                            , alpha=.1)
+            ax.set(ylim=(0, 1100))
+        else:
+            ax.set(ylim=0)
+
+
+        plt.xlabel('Year')
+        plt.ylabel("DALYs per 100k PY")
+        plt.title(f'Total DALYs per 100k Person Years per Year Attributable to {group} disorders')
+        plt.legend()
+        plt.savefig(f'{graph_location}/{group}_dalys_stacked_rate.png')
+        plt.show()
+
+
+    get_daly_graphs('Maternal', mat_model_dalys_data, maternal_gbd_dalys)
+    get_daly_graphs('Neonatal', neo_model_dalys_data, neonatal_gbd_dalys)
+    x='y'
 
     # todo: move to scenrio files
     # 1.) define HSIs of interest
