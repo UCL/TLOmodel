@@ -38,12 +38,35 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
     neo_comp_dfs = {k: analysis_utility_functions.get_modules_neonatal_complication_dataframes(results_folders[k]) for
                     k in results_folders}
 
-    treatments = ['pac', 'ep_case_mang', 'abx_an_sepsis', 'uterotonics', 'man_r_placenta', 'abx_pn_sepsis',
-                  'ur_surg', 'mag_sulph_an_severe_pre_eclamp', 'mag_sulph_an_eclampsia',
-                  'iv_htns_an_severe_pre_eclamp', 'iv_htns_an_severe_gest_htn', 'iv_htns_an_eclampsia',
-                  'iv_htns_pn_severe_pre_eclamp', 'iv_htns_pn_severe_gest_htn', 'iv_htns_pn_eclampsia',
-                  'mag_sulph_pn_severe_pre_eclamp', 'mag_sulph_pn_eclampsia', 'blood_tran_ur', 'blood_tran_aph',
-                  'blood_tran_pph', 'pph_surg', 'avd_ol', 'neo_resus', 'neo_sep_treat']
+    treatments = ['pac',
+                  'ep_case_mang',
+                  'abx_an_sepsis',
+                  'abx_pn_sepsis',
+                  'uterotonics',
+                  'man_r_placenta',
+                  'ur_surg',
+                  'blood_tran_ur',
+                  'mag_sulph_an_severe_pre_eclamp',
+                  'iv_htns_an_severe_pre_eclamp',
+                  'mag_sulph_an_eclampsia',
+                  'iv_htns_an_eclampsia',
+                  'mag_sulph_la_severe_pre_eclamp',
+                  'iv_htns_la_severe_pre_eclamp',
+                  'mag_sulph_la_eclampsia',
+                  'iv_htns_la_eclampsia',
+                  'mag_sulph_pn_severe_pre_eclamp',
+                  'iv_htns_pn_severe_pre_eclamp',
+                  'mag_sulph_pn_eclampsia',
+                  'iv_htns_pn_eclampsia',
+                  'iv_htns_an_severe_gest_htn',
+                  'iv_htns_la_severe_gest_htn',
+                  'iv_htns_pn_severe_gest_htn',
+                  'blood_tran_aph',
+                  'blood_tran_pph',
+                  'pph_surg',
+                  'avd_ol',
+                  'neo_resus',
+                  'neo_sep_treat']
 
     # ============================================ MET NEED ==========================================================
     def get_total_interventions_delivered(results_folder, interventions, intervention_years):
@@ -132,9 +155,9 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
 
         # PPH - uterine atony
         incidence_ua_pph = analysis_utility_functions.get_mean_and_quants_from_str_df(
-            mat_comps['labour'], 'pph_uterine_atony', intervention_years)
+            mat_comps['postnatal_supervisor'], 'pph_uterine_atony', intervention_years)
         incidence_oth_pph = analysis_utility_functions.get_mean_and_quants_from_str_df(
-            mat_comps['labour'], 'pph_other', intervention_years)
+            mat_comps['postnatal_supervisor'], 'pph_other', intervention_years)
         crude_comps.update({'pph_uterine_atony': sum_lists(incidence_ua_pph, incidence_oth_pph)})
 
         # PPH - retained placenta
@@ -159,33 +182,37 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
             mat_comps['labour'], 'uterine_rupture', intervention_years)})
 
         # Severe pre-eclampsia - antenatal
-        incidence_a_spe = analysis_utility_functions.get_mean_and_quants_from_str_df(
-            mat_comps['pregnancy_supervisor'], 'severe_pre_eclamp', intervention_years)
-        incidence_p_spe = analysis_utility_functions.get_mean_and_quants_from_str_df(
-            mat_comps['labour'], 'severe_pre_eclamp', intervention_years)
-        crude_comps.update({'spe_an_la': sum_lists(incidence_a_spe, incidence_p_spe)})
+        crude_comps.update({'spe_an': analysis_utility_functions.get_mean_and_quants_from_str_df(
+            mat_comps['pregnancy_supervisor'], 'severe_pre_eclamp', intervention_years)})
+
+        # Severe pre-eclampsia - intrapartum
+        crude_comps.update({'spe_la': analysis_utility_functions.get_mean_and_quants_from_str_df(
+            mat_comps['labour'], 'severe_pre_eclamp', intervention_years)})
 
         # Severe pre-eclampsia - postnatal
         crude_comps.update({'spe_pn': analysis_utility_functions.get_mean_and_quants_from_str_df(
             mat_comps['postnatal_supervisor'], 'severe_pre_eclamp', intervention_years)})
 
         # Severe gestational hypertension - antenatal
-        incidence_a_sgh = analysis_utility_functions.get_mean_and_quants_from_str_df(
-            mat_comps['pregnancy_supervisor'], 'severe_gest_htn', intervention_years)
-        incidence_p_sgh = analysis_utility_functions.get_mean_and_quants_from_str_df(
-            mat_comps['labour'], 'severe_gest_htn', intervention_years)
-        crude_comps.update({'sgh_an_la': sum_lists(incidence_a_sgh, incidence_p_sgh)})
+        crude_comps.update({'sgh_an': analysis_utility_functions.get_mean_and_quants_from_str_df(
+            mat_comps['pregnancy_supervisor'], 'severe_gest_htn', intervention_years)})
+
+        # Severe gestational hypertension - intrapartum
+        crude_comps.update({'sgh_la': analysis_utility_functions.get_mean_and_quants_from_str_df(
+            mat_comps['labour'], 'severe_gest_htn', intervention_years)})
 
         # Severe gestational hypertension - postnatal
         crude_comps.update({'sgh_pn': analysis_utility_functions.get_mean_and_quants_from_str_df(
             mat_comps['postnatal_supervisor'], 'severe_gest_htn', intervention_years)})
 
         # Eclampsia - antenatal
-        incidence_a_ec = analysis_utility_functions.get_mean_and_quants_from_str_df(
-            mat_comps['pregnancy_supervisor'], 'eclampsia', intervention_years)
-        incidence_p_ec = analysis_utility_functions.get_mean_and_quants_from_str_df(
-            mat_comps['labour'], 'eclampsia', intervention_years)
-        crude_comps.update({'ec_an_la': sum_lists(incidence_a_ec, incidence_p_ec)})
+        # Severe pre-eclampsia - antenatal
+        crude_comps.update({'ec_an': analysis_utility_functions.get_mean_and_quants_from_str_df(
+            mat_comps['pregnancy_supervisor'], 'eclampsia', intervention_years)})
+
+        # Severe pre-eclampsia - intrapartum
+        crude_comps.update({'ec_la': analysis_utility_functions.get_mean_and_quants_from_str_df(
+            mat_comps['labour'], 'eclampsia', intervention_years)})
 
         # Eclampsia - postnatal
         crude_comps.update({'ec_pn': analysis_utility_functions.get_mean_and_quants_from_str_df(
@@ -200,8 +227,8 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
         for list_pos in [0, 1, 2]:
             ol_cpd.append([x * 0.7 for x in crude_comps['obs_labour'][list_pos]])
             old_oth.append([x * 0.3 for x in crude_comps['obs_labour'][list_pos]])
-        crude_comps.update({'obs_labour_cpd': sum_lists(incidence_a_ec, incidence_p_ec)})
-        crude_comps.update({'obs_labour_other': sum_lists(incidence_a_ec, incidence_p_ec)})
+        crude_comps.update({'obs_labour_cpd': ol_cpd})
+        crude_comps.update({'obs_labour_other': old_oth})
 
         # Neonatal sepsis
         incidence_eons_nb = analysis_utility_functions.get_mean_and_quants_from_str_df(
@@ -295,11 +322,14 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
                               'pph_retained_p': 'man_r_placenta',
                               'pph_surg_cases': ['pph_surg', 'blood_tran_pph'],
                               'pp_sepsis': 'abx_pn_sepsis',
-                              'spe_an_la': ['mag_sulph_an_severe_pre_eclamp', 'iv_htns_an_severe_pre_eclamp'],
+                              'spe_an': ['mag_sulph_an_severe_pre_eclamp', 'iv_htns_an_severe_pre_eclamp'],
+                              'spe_la': ['mag_sulph_la_severe_pre_eclamp', 'iv_htns_la_severe_pre_eclamp'],
                               'spe_pn': ['iv_htns_pn_severe_pre_eclamp', 'mag_sulph_pn_severe_pre_eclamp'],
-                              'sgh_an_la': 'iv_htns_an_severe_gest_htn',
+                              'sgh_an': 'iv_htns_an_severe_gest_htn',
+                              'sgh_la': 'iv_htns_la_severe_gest_htn',
                               'sgh_pn': 'iv_htns_pn_severe_gest_htn',
-                              'ec_an_la': ['iv_htns_an_eclampsia', 'mag_sulph_an_eclampsia'],
+                              'ec_an': ['iv_htns_an_eclampsia', 'mag_sulph_an_eclampsia'],
+                              'ec_la': ['iv_htns_la_eclampsia', 'mag_sulph_la_eclampsia'],
                               'ec_pn': ['iv_htns_pn_eclampsia', 'mag_sulph_pn_eclampsia'],
                               'obs_labour_other': 'avd_ol',
                               'neo_resp_distress': 'neo_resus',
@@ -334,6 +364,31 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
         plt.legend()
         plt.savefig(f'{plot_destination_folder}/{t}.png')
         plt.show()
+
+    met_need_avg = dict()
+    for k in met_need:
+        met_need_avg.update({k:{}})
+        for v in met_need[k]:
+            met_need_avg[k][v] = sum(met_need[k][v]) / len(intervention_years)
+
+    labels = results_folders.keys()
+
+    for v in met_need_avg[list(labels)[0]]:
+
+        mean_vals = list()
+        for k in met_need_avg:
+            mean_vals.append(met_need_avg[k][v])
+
+        width = 0.55  # the width of the bars: can also be len(x) sequence
+        fig, ax = plt.subplots()
+        ax.bar(labels, mean_vals, width=width)
+        ax.tick_params(axis='x', which='major', labelsize=8)
+        ax.set_ylabel('Met need%')
+        ax.set_xlabel('Scenario')
+        ax.set_title(f'Average Met Need for {v}')
+        plt.savefig(f'{plot_destination_folder}/{v}_avg.png')
+        plt.show()
+
 
 # ===================================== CONTRIBUTION TO DEATH ========================================================
     factors = ['delay_one_two', 'delay_three', 'didnt_seek_care', 'cons_not_avail', 'comp_not_avail',
