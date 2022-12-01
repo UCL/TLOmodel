@@ -25,37 +25,41 @@ TARGET_PERIOD = (Date(2015, 1, 1), Date(2019, 12, 31))
 log = load_pickled_dataframes(results_folder)['tlo.methods.hsi_generic_first_appts']
 symptom = log['symptoms_of_person_at_emergency_hsi'].copy()
 symptom = symptom.drop(index=symptom.index[~symptom['date'].between(*TARGET_PERIOD)])
+scaling_factor = load_pickled_dataframes(results_folder
+                                         )['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
 
 # groupby and get avg annual counts of each group of symptoms
 symptom['year'] = symptom.date.dt.year.copy()
 symptom.drop(columns='date', inplace=True)
 symptom = symptom.groupby(['year', 'message']).size().reset_index(name='count')
+symptom['count'] = symptom['count'] * scaling_factor
 symptom = symptom.groupby('message')['count'].mean().reset_index()
-symptom['per cent'] = 100 * symptom['count']/symptom['count'].sum()
+symptom['per cent'] = 100 * symptom['count'] / symptom['count'].sum()
 symptom = symptom.sort_values(by=['count'], ascending=False).reset_index(drop=True)
 symptom['cumulative per cent'] = symptom['per cent'].cumsum()
 
 # list the possible symptoms and modules called by function do_at_generic_first_appt_emergency
-symp = {'alri': ['cough', 'difficult_breathing'],
-        'cmd': ['chronic_lower_back_pain_symptoms', 'ever_stroke_damage', 'ever_heart_attack_damage'],
+symp = {'alri': ['danger_signs'],
+        'cmd': ['ever_stroke_damage', 'ever_heart_attack_damage'],
         'depression': ['Injuries_From_Self_Harm'],
-        'malaria': ["acidosis", "coma_convulsions", "renal_failure", "shock", "jaundice", "anaemia"],
+        'malaria': ["acidosis", "coma_convulsions", "renal_failure", "shock"],
         'chronic_syndrome': ['craving_sandwiches'],
         'mockitis': ['extreme_pain_in_the_nose'],
         'rti': ['severe_trauma'],
-        # 'hiv': ['aids_symptoms'],
-        'measles': ['encephalitis'],
-        # 'tb': ["fatigue", "night_sweats"],
-        'other_cancer': ['early_other_adult_ca_symptom']}
+        'measles': ['encephalitis']
+        }
 
-# other alri symptoms ['cyanosis', 'fever', 'tachypnoea', 'chest_indrawing', 'danger_signs']
+# other alri symptoms ['cough', 'difficult_breathing', 'cyanosis', 'fever', 'tachypnoea', 'chest_indrawing']
+# other cmd symptoms ['chronic_lower_back_pain_symptoms']
 # other rit symptoms ['injury]
-# other measles symptom ['rash', 'fever', 'diarrhoea', 'otitis_media', 'respiratory_symptoms', 'eye_complaint']
-# other tb symptom ["fever", "respiratory_symptoms", "fatigue", "night_sweats"]
-# 'diarrhoea': ['diarrhoea', 'bloody stools', 'fever', 'vomiting', 'dehydration']
-# generic symptoms
-# generic = ['fever', 'vomiting', 'stomachache', 'sore_throat', 'respiratory_symptoms', 'headache',
-#             'skin_complaint', 'dental_complaint', 'backache', 'injury', 'eye_complaint', 'diarrhoea']
+# other malaria symptoms ["jaundice", "anaemia"]
+# other measles symptoms ['rash', 'fever', 'diarrhoea', 'otitis_media', 'respiratory_symptoms', 'eye_complaint']
+# tb symptoms ["fever", "respiratory_symptoms", "fatigue", "night_sweats"]
+# diarrhoea symptoms: ['diarrhoea', 'bloody stools', 'fever', 'vomiting', 'dehydration']
+# hiv symptoms ['aids_symptoms']
+# 'other_cancer': ['early_other_adult_ca_symptom']
+# generic symptoms ['fever', 'vomiting', 'stomachache', 'sore_throat', 'respiratory_symptoms', 'headache',
+#                   'skin_complaint', 'dental_complaint', 'backache', 'injury', 'eye_complaint', 'diarrhoea']
 
 # map to module based on symptoms in a simple way
 symptom.message = [x.split('|') for x in symptom.message]
@@ -66,13 +70,13 @@ for i in symptom.index:
 
 # fill nan entries
 # the null message
-symptom.loc[symptom.message.isin([['']]), 'module'] = 'unknown'
+symptom.loc[4, 'module'] = 'unknown'
 # simple message of one generic symptom
 symptom.module = symptom.module.fillna('generic and others')
 
 # get counts of modules
 mod_by_symp = symptom.groupby('module')['count'].sum().reset_index()
-mod_by_symp['proportion'] = 100 * mod_by_symp['count']/mod_by_symp['count'].sum()
+mod_by_symp['proportion'] = 100 * mod_by_symp['count'] / mod_by_symp['count'].sum()
 mod_by_symp = mod_by_symp.sort_values(by=['count'], ascending=False)
 
 # plot proportion by module
