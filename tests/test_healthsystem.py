@@ -117,7 +117,10 @@ def test_run_no_interventions_allowed(tmpdir, seed):
     log_config = {
         "filename": "log",
         "directory": tmpdir,
-        "custom_levels": {"*": logging.INFO}
+        "custom_levels": {
+            "*": logging.INFO,
+            "tlo.methods.healthsystem": logging.DEBUG,
+        }
     }
     sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
@@ -167,7 +170,17 @@ def test_run_in_mode_0_with_capacity(tmpdir, seed):
     # (Mode 0 -> No Constraints)
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
+    sim = Simulation(
+        start_date=start_date,
+        seed=seed,
+        log_config={
+            "filename": "log",
+            "directory": tmpdir,
+            "custom_levels": {
+                "tlo.methods.healthsystem": logging.DEBUG,
+            }
+        }
+    )
 
     # Define the service availability
     service_availability = ['*']
@@ -209,7 +222,17 @@ def test_run_in_mode_0_no_capacity(tmpdir, seed):
     # (Mode 0 -> No Constraints)
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
+    sim = Simulation(
+        start_date=start_date,
+        seed=seed,
+        log_config={
+            "filename": "log",
+            "directory": tmpdir,
+            "custom_levels": {
+                "tlo.methods.healthsystem": logging.DEBUG,
+            }
+        }
+    )
 
     # Define the service availability
     service_availability = ['*']
@@ -251,7 +274,17 @@ def test_run_in_mode_1_with_capacity(tmpdir, seed):
     # (Mode 1 -> elastic constraints)
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
+    sim = Simulation(
+        start_date=start_date,
+        seed=seed,
+        log_config={
+            "filename": "log",
+            "directory": tmpdir,
+            "custom_levels": {
+                "tlo.methods.healthsystem": logging.DEBUG,
+            }
+        }
+    )
 
     # Define the service availability
     service_availability = ['*']
@@ -293,7 +326,17 @@ def test_run_in_mode_1_with_no_capacity(tmpdir, seed):
     # (Mode 1 -> elastic constraints)
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
+    sim = Simulation(
+        start_date=start_date,
+        seed=seed,
+        log_config={
+            "filename": "log",
+            "directory": tmpdir,
+            "custom_levels": {
+                "tlo.methods.healthsystem": logging.DEBUG,
+            }
+        }
+    )
 
     # Define the service availability
     service_availability = ['*']
@@ -337,7 +380,17 @@ def test_run_in_mode_2_with_capacity(tmpdir, seed):
     # (Mode 2 -> hard constraints)
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
+    sim = Simulation(
+        start_date=start_date,
+        seed=seed,
+        log_config={
+            "filename": "log",
+            "directory": tmpdir,
+            "custom_levels": {
+                "tlo.methods.healthsystem": logging.DEBUG,
+            }
+        }
+    )
 
     # Define the service availability
     service_availability = ['*']
@@ -381,7 +434,17 @@ def test_run_in_mode_2_with_no_capacity(tmpdir, seed):
     # (Mode 2 -> hard constraints)
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
+    sim = Simulation(
+        start_date=start_date,
+        seed=seed,
+        log_config={
+            "filename": "log",
+            "directory": tmpdir,
+            "custom_levels": {
+                "tlo.methods.healthsystem": logging.DEBUG,
+            }
+        }
+    )
 
     # Define the service availability
     service_availability = ['*']
@@ -425,7 +488,17 @@ def test_run_in_with_hs_disabled(tmpdir, seed):
     # All events should run but no logging from healthsystem
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
+    sim = Simulation(
+        start_date=start_date,
+        seed=seed,
+        log_config={
+            "filename": "log",
+            "directory": tmpdir,
+            "custom_levels": {
+                "tlo.methods.healthsystem": logging.DEBUG,
+            }
+        }
+    )
 
     # Define the service availability
     service_availability = ['*']
@@ -471,7 +544,17 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir, seed)
     # (Mode 2 -> hard constraints)
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
+    sim = Simulation(
+        start_date=start_date,
+        seed=seed,
+        log_config={
+            "filename": "log",
+            "directory": tmpdir,
+            "custom_levels": {
+                "tlo.methods.healthsystem": logging.DEBUG,
+            }
+        }
+    )
 
     # Define the service availability
     service_availability = ['*']
@@ -1119,6 +1202,7 @@ def test_hsi_run_on_same_day_if_scheduled_for_same_day(seed, tmpdir):
     log_config = {
         "filename": "log",
         "directory": tmpdir,
+        "custom_levels": {"tlo.methods.healthsystem": logging.DEBUG},
     }
     sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, log_config=log_config)
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
