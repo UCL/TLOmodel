@@ -19,8 +19,8 @@ class RunAnalysisCo(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = self.start_date + pd.DateOffset(years=2)
-        self.pop_size = 2_000  # <- recommended population size for the runs is 50k
+        self.end_date = Date(2099, 12, 31)
+        self.pop_size = 50_000  # <- recommended population size for the runs is 50k
         self.number_of_draws = 1  # <- one scenario
         self.runs_per_draw = 1  # <- repeated this many times
 
