@@ -1538,7 +1538,7 @@ class PregnancySupervisor(Module):
 
         if care_seeking:
             # check for delay
-            pregnancy_helper_functions.check_if_delayed_careseeking(self, individual_id)
+            pregnancy_helper_functions.check_if_delayed_careseeking(self, individual_id, timing='preg_loss')
 
             # We assume women will seek care via HSI_GenericEmergencyFirstApptAtFacilityLevel1 and will be admitted for
             # care in CareOfWomenDuringPregnancy module
@@ -1575,7 +1575,7 @@ class PregnancySupervisor(Module):
         # Function checks df for any potential cause of death, uses CFR parameters to determine risk of death
         # (either from one or multiple causes) and if death occurs returns the cause
         potential_cause_of_death = pregnancy_helper_functions.check_for_risk_of_death_from_cause_maternal(
-                self, individual_id=individual_id)
+                self, individual_id=individual_id, timing='antenatal')
 
         # If a cause is returned death is scheduled
         if potential_cause_of_death:
@@ -1857,7 +1857,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
             if not df.at[person, 'hs_is_inpatient']:
 
                 # Determine if care seeking is delayed
-                pregnancy_helper_functions.check_if_delayed_careseeking(self.module, person)
+                pregnancy_helper_functions.check_if_delayed_careseeking(self.module, person, timing='preg_emerg')
 
                 from tlo.methods.care_of_women_during_pregnancy import (
                     HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment,
