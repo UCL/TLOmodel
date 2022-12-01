@@ -50,8 +50,8 @@ from tlo.methods import (
 )
 from tlo.scenario import BaseScenario
 
-number_of_draws = 31
-runs_per_draw = 5
+number_of_draws = 20
+runs_per_draw = 10
 
 
 class TestScenario(BaseScenario):
@@ -61,8 +61,8 @@ class TestScenario(BaseScenario):
         super().__init__()
         self.seed = random.randint(0, 50000)
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2036, 1, 1)
-        self.pop_size = 100000
+        self.end_date = Date(2020, 1, 1)
+        self.pop_size = 200000
         self.number_of_draws = number_of_draws
         self.runs_per_draw = runs_per_draw
 
@@ -78,9 +78,9 @@ class TestScenario(BaseScenario):
             'custom_levels': {
                 '*': logging.WARNING,
                 "tlo.methods.deviance_measure": logging.INFO,
-                "tlo.methods.hiv": logging.INFO,
+                # "tlo.methods.hiv": logging.INFO,
                 "tlo.methods.tb": logging.INFO,
-                "tlo.methods.demography": logging.INFO,
+                # "tlo.methods.demography": logging.INFO,
             }
         }
 
@@ -113,12 +113,12 @@ class TestScenario(BaseScenario):
 
         return {
             'Hiv': {
-                # 'beta': self.sampled_parameters.hiv_Nov22[draw_number],
-                'beta': 0.129671,
+                'beta': self.sampled_parameters.hiv_Dec22[draw_number],
+                # 'beta': 0.129671,
             },
             'Tb': {
-                # 'beta': self.sampled_parameters.tb_Nov22[draw_number],
-                'beta': np.linspace(0.05, 0.35, num=self.number_of_draws)[draw_number],
+                'beta': self.sampled_parameters.tb_Dec22[draw_number],
+                # 'beta': np.linspace(0.05, 0.35, num=self.number_of_draws)[draw_number],
             },
         }
 

@@ -1525,8 +1525,8 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
                 # ANC testing - value for mothers and infants testing
                 self.sim.modules["Hiv"].parameters["prob_anc_test_at_delivery"] = 0.95
 
-            # prob ART start if dx, this is already 95% at 2020
-            # self.sim.modules["Hiv"].parameters["prob_start_art_after_hiv_test"] = 0.95
+                # prob ART start if dx, this is already 95% at 2020
+                # self.sim.modules["Hiv"].parameters["prob_start_art_after_hiv_test"] = 0.95
 
             if p["scenario_SI"] != "b":
                 # viral suppression rates
@@ -1552,7 +1552,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
                 p["first_line_test"] = "xpert"
                 p["second_line_test"] = "sputum"
 
-        # introduce consumables constraints
+        # remove consumables constraints
         if (scenario == 1) or (scenario == 4):
             # list only things that change: constraints on consumables and personnel
             new_parameters = {
@@ -1575,7 +1575,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
                 # increase PrEP coverage for FSW after HIV test
                 self.sim.modules["Hiv"].parameters["prob_prep_for_fsw_after_hiv_test"] = 0.5
 
-                # prep poll for AGYW - target to highest risk
+                # prep poll for AGYW - target to the highest risk
                 # increase retention to 75% for FSW and AGYW
                 self.sim.modules["Hiv"].parameters["prob_prep_for_agyw"] = 0.1
                 self.sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_3_months"] = 0.75
