@@ -7,19 +7,13 @@ import matplotlib.pyplot as plt
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
-    antenatal_care,
-    contraception,
     demography,
     enhanced_lifestyle,
     epi,
-    healthburden,
     healthseekingbehaviour,
     healthsystem,
-    labour,
     measles,
-    newborn_outcomes,
-    postnatal_supervisor,
-    pregnancy_supervisor,
+    simplified_births,
     symptommanager,
 )
 
@@ -27,7 +21,7 @@ from tlo.methods import (
 
 
 # The resource files
-resourcefilepath = Path("./resources")
+resources = Path("./resources")
 
 # store output files
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
@@ -53,28 +47,16 @@ def run_sim(service_availability=[]):
 
     # Register the appropriate modules
     sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(
-            resourcefilepath=resourcefilepath,
-            service_availability=service_availability,
-            mode_appt_constraints=0,
-            ignore_cons_constraints=True,
-            ignore_priority=True,
-            capabilities_coefficient=1.0,
-            disable=False,
-        ),
-        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-        contraception.Contraception(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        labour.Labour(resourcefilepath=resourcefilepath),
-        antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-        newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-        epi.Epi(resourcefilepath=resourcefilepath),
-        measles.Measles(resourcefilepath=resourcefilepath),
+        demography.Demography(resourcefilepath=resources),
+        simplified_births.SimplifiedBirths(resourcefilepath=resources),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
+        symptommanager.SymptomManager(resourcefilepath=resources),
+
+        healthsystem.HealthSystem(resourcefilepath=resources, disable=True),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
+
+        epi.Epi(resourcefilepath=resources),
+        measles.Measles(resourcefilepath=resources),
     )
 
     # Run the simulation and flush the logger
