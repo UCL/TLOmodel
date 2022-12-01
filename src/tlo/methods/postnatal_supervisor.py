@@ -225,10 +225,6 @@ class PostnatalSupervisor(Module):
                                                          ' sepsis during week one of life'),
         'pn_sepsis_late_neonatal': Property(Types.BOOL, 'Whether this neonate has developed late neonatal sepsis '
                                                         'following discharge'),
-        'pn_neonatal_sepsis_disab': Property(Types.CATEGORICAL, 'Level of disability experience from a neonate post '
-                                                                'sepsis', categories=['none', 'mild_motor_and_cog',
-                                                                                      'mild_motor', 'moderate_motor',
-                                                                                      'severe_motor']),
         'pn_anaemia_following_pregnancy': Property(Types.CATEGORICAL, 'severity of anaemia following pregnancy',
                                                    categories=['none', 'mild', 'moderate', 'severe']),
         'pn_emergency_event_mother': Property(Types.BOOL, 'Whether a mother is experiencing an emergency complication'
@@ -247,7 +243,6 @@ class PostnatalSupervisor(Module):
         df.loc[df.is_alive, 'pn_htn_disorders'] = 'none'
         df.loc[df.is_alive, 'pn_postpartum_haem_secondary'] = False
         df.loc[df.is_alive, 'pn_sepsis_late_postpartum'] = False
-        df.loc[df.is_alive, 'pn_neonatal_sepsis_disab'] = 'none'
         df.loc[df.is_alive, 'pn_sepsis_early_neonatal'] = False
         df.loc[df.is_alive, 'pn_sepsis_late_neonatal'] = False
         df.loc[df.is_alive, 'pn_sepsis_late_neonatal'] = False
@@ -329,7 +324,6 @@ class PostnatalSupervisor(Module):
         df.at[child_id, 'pn_sepsis_late_postpartum'] = False
         df.at[child_id, 'pn_sepsis_early_neonatal'] = False
         df.at[child_id, 'pn_sepsis_late_neonatal'] = False
-        df.at[child_id, 'pn_neonatal_sepsis_disab'] = 'none'
         df.at[child_id, 'pn_obstetric_fistula'] = 'none'
         df.at[child_id, 'pn_anaemia_following_pregnancy'] = 'none'
         df.at[child_id, 'pn_emergency_event_mother'] = False
