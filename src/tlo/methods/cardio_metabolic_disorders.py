@@ -340,7 +340,7 @@ class CardioMetabolicDisorders(Module):
         for event in self.events:
             self.sim.modules['SymptomManager'].register_symptom(
                 Symptom(name=f'{event}_damage',
-                        odds_ratio_health_seeking_in_adults=100.0,  # average probability to seek health care
+                        odds_ratio_health_seeking_in_adults=0.02,  # very low probability to seek health care
                         odds_ratio_health_seeking_in_children=0.0,  # this symptom is not for children
                         prob_seeks_emergency_appt_in_adults=1.0,    # if seeking care, then 100% emergency health care
                         prob_seeks_emergency_appt_in_children=0.0,  # this symptom is not for children
