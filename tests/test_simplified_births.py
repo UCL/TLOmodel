@@ -246,8 +246,13 @@ def test_other_modules_running_with_simplified_births_module():
             }
         }
     )
-
-    sim.register(*fullmodel(resourcefilepath=resourcefilepath, use_simplified_births=True, healthsystem_disable=True))
+    sim.register(
+        *fullmodel(
+            resourcefilepath=resourcefilepath,
+            use_simplified_births=True,
+            module_kwargs={"HealthSystem": {"disable": True}},
+        )
+    )
     sim.make_initial_population(n=1_000)
     sim.simulate(end_date=Date(2011, 12, 31))
     check_property_integrity(sim)

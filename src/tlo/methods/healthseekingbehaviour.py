@@ -158,6 +158,9 @@ class HealthSeekingBehaviour(Module):
         # Define the linear models that govern healthcare seeking
         self.define_linear_models()
 
+        # Define the linear models that govern healthcare seeking
+        self.define_linear_models()
+
     def on_birth(self, mother_id, child_id):
         """Nothing to handle on_birth
         """

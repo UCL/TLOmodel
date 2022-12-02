@@ -183,11 +183,15 @@ sim.register(
     *fullmodel(
         resourcefilepath=resourcefilepath,
         use_simplified_births=False,
-        symptommanager_spurious_symptoms=not args.disable_spurious_symptoms,
-        healthsystem_disable=args.disable_health_system,
-        healthsystem_mode_appt_constraints=args.mode_appt_constraints,
-        healthsystem_capabilities_coefficient=args.capabilities_coefficient,
-        healthsystem_record_hsi_event_details=args.record_hsi_event_details
+        module_kwargs={
+            "HealthSystem": {
+                "disable": args.disable_health_system,
+                "mode_appt_constraints": args.mode_appt_constraints,
+                "capabilities_coefficient": args.capabilities_coefficient,
+                "record_hsi_event_details": args.record_hsi_event_details,
+            },
+            "SymptomManager": {"spurious_symptoms": not args.disable_spurious_symptoms},
+        }
     )
 )
 
