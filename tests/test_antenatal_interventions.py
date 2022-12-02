@@ -843,6 +843,7 @@ def test_initiation_of_treatment_for_prom_with_or_without_chorioamnionitis_durin
     sim.event_queue.queue.clear()
 
     # Set the woman to have an infection and run the event
+    df.at[mother_id, 'ps_gestational_age_in_weeks'] = 29
     df.at[mother_id, 'ps_chorioamnionitis'] = True
     inpatient_hsi.apply(person_id=updated_mother_id, squeeze_factor=0.0)
 
@@ -864,7 +865,7 @@ def test_initiation_of_treatment_for_antepartum_haemorrhage_during_antenatal_inp
     # set key pregnancy characteristics
     df = sim.population.props
     df.at[mother_id, 'is_pregnant'] = True
-    df.at[mother_id, 'ps_gestational_age_in_weeks'] = 22
+    df.at[mother_id, 'ps_gestational_age_in_weeks'] = 28
 
     # set complication properties
     df.at[mother_id, 'ps_antepartum_haemorrhage'] = 'severe'

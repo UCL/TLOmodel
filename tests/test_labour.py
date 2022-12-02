@@ -429,7 +429,8 @@ def test_logic_within_death_and_still_birth_events(seed):
     df.at[mother_id, 'la_uterine_rupture'] = True
     df.at[mother_id, 'ps_htn_disorders'] = 'eclampsia'
 
-    causes = pregnancy_helper_functions.check_for_risk_of_death_from_cause_maternal(sim.modules['Labour'], mother_id)
+    causes = pregnancy_helper_functions.check_for_risk_of_death_from_cause_maternal(sim.modules['Labour'], mother_id,
+                                                                                    timing='intrapartum')
 
     # ensure they are correctly captured in the death event
     assert causes
@@ -441,7 +442,8 @@ def test_logic_within_death_and_still_birth_events(seed):
     df.at[mother_id, 'pn_htn_disorders'] = 'severe_pre_eclamp'
     sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['new_onset_spe'] = True
 
-    causes = pregnancy_helper_functions.check_for_risk_of_death_from_cause_maternal(sim.modules['Labour'], mother_id)
+    causes = pregnancy_helper_functions.check_for_risk_of_death_from_cause_maternal(sim.modules['Labour'], mother_id,
+                                                                                    timing='postnatal')
 
     assert causes
 
