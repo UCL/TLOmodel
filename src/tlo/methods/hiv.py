@@ -1257,7 +1257,7 @@ class Hiv(Module):
 
         # Consider if the person will be referred to start ART
         if df.loc[person_id, "age_years"] <= 15:
-            starts_art = 1
+            starts_art = True
         else:
             starts_art = self.rng.random_sample() < self.prob_art_start_after_test(self.sim.date.year)
 
@@ -2031,7 +2031,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
             return
 
         # If the person has previously been diagnosed and on tx, do nothing do not occupy any resources
-        if person["hv_diagnosed"] and (person["hv_art"] != "on_VL_suppressed"):
+        if person["hv_diagnosed"] and (person["hv_art"] != "not"):
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         # Run test
