@@ -2,10 +2,10 @@
 This file defines a batch run through which the hiv and tb modules are run across a grid of parameter values
 
 check the batch configuration gets generated without error:
-tlo scenario-run --draw-only src/scripts/hiv/hiv_tb_projections_may2022/scenario0.py
+tlo scenario-run --draw-only src/scripts/hiv/PaperProjectionsNov2022/scenario1.py
 
 Run on the batch system using:
-tlo batch-submit src/scripts/hiv/hiv_tb_projections_may2022/scenario0.py
+tlo batch-submit src/scripts/hiv/PaperProjectionsNov2022/scenario1.py
 
 Display information about a job:
 tlo batch-job tlo_q1_demo-123 --tasks
@@ -41,7 +41,7 @@ class TestScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            "filename": "scenario0",
+            "filename": "scenario1",
             "directory": "./outputs",
             "custom_levels": {
                 "*": logging.WARNING,
