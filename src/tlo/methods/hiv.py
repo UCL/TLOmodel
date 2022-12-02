@@ -2075,7 +2075,8 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                     self.module.do_when_hiv_diagnosed(person_id=person_id)
 
                     # Screen for tb if they have not been referred from a Tb HSI
-                    if "Tb" in self.sim.modules and (self.referred_from != 'Tb'):
+                    # and do not currently have TB diagnosis
+                    if "Tb" in self.sim.modules and (self.referred_from != 'Tb') and not person["tb_diagnosed"]:
                         self.sim.modules["HealthSystem"].schedule_hsi_event(
                             tb.HSI_Tb_ScreeningAndRefer(
                                 person_id=person_id, module=self.sim.modules["Tb"]
