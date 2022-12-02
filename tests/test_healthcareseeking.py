@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 from typing import List
 
+import numpy as np
 import pandas as pd
 from pandas import DateOffset
 
@@ -50,6 +51,8 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_healthcareseek
             self.sim.modules['SymptomManager'].register_symptom(
                 Symptom(
                     name='Symptom_that_does_cause_healthcare_seeking',
+                    odds_ratio_health_seeking_in_adults=1000000.0,  # <--- very high odds of seeking care
+                    odds_ratio_health_seeking_in_children=1000000.0  # <--- very high odds of seeking care
                 ),
             )
 
@@ -683,3 +686,84 @@ def test_same_day_healthcare_seeking_when_using_force_healthcare_seeking(seed, t
     only_event_that_ran, count = sim.modules['HealthSystem'].hsi_event_counts.popitem()
     assert count == 1
     assert only_event_that_ran.event_name == 'HSI_GenericFirstApptAtFacilityLevel0'
+
+
+def test_everyone_seeks_care_for_symptom_with_high_odds_ratio_of_seeking_care(seed):
+    """Check that a non-emergency symptom with a VERY high odds of healthcare seeking will cause everyone who has that
+    symptom to seek care (a non-emergency first appointment)."""
+
+    class DummyDisease(Module):
+        METADATA = {Metadata.USES_SYMPTOMMANAGER}
+        """Dummy Disease - it's only job is to create a symptom and impose it on everyone"""
+
+        def read_parameters(self, data_folder):
+            self.sim.modules['SymptomManager'].register_symptom(
+                Symptom(name='NonEmergencySymptom',
+                        odds_ratio_health_seeking_in_adults=1000000.0,   # <--- very high odds of seeking care
+                        odds_ratio_health_seeking_in_children=1000000.0  # <--- very high odds of seeking care
+                        ),
+            )
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            """Give all persons the symptom"""
+            df = self.sim.population.props
+            idx_all_alive_persons = df.loc[df.is_alive].index.to_list()
+            self.sim.modules['SymptomManager'].change_symptom(
+                person_id=idx_all_alive_persons,
+                disease_module=self,
+                symptom_string='NonEmergencySymptom',
+                add_or_remove='+'
+            )
+
+        def on_birth(self, mother, child):
+            pass
+
+    start_date = Date(2010, 1, 1)
+    sim = Simulation(start_date=start_date, seed=seed)
+
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
+                 healthseekingbehaviour.HealthSeekingBehaviour(
+                     resourcefilepath=resourcefilepath,
+                     force_any_symptom_to_lead_to_healthcareseeking=False,
+                 ),
+                 DummyDisease()
+                 )
+
+    # Initialise the simulation (run the simulation for zero days)
+    popsize = 1000
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date)
+
+    # Check that everyone has the symptom
+    df = sim.population.props
+    assert set(df.loc[df.is_alive].index) == set(sim.modules['SymptomManager'].who_has('NonEmergencySymptom'))
+
+    # Check that the linear model of health-care seeking show that the prob of seeking care is ~1.0
+    hsb = sim.modules['HealthSeekingBehaviour']
+    assert np.allclose(
+        hsb.hsb_linear_models['children'].predict(df.loc[df.is_alive & (df.age_years < 15)]),
+        1.0,
+        atol=0.001
+    )
+    assert np.allclose(
+        hsb.hsb_linear_models['adults'].predict(df.loc[df.is_alive & (df.age_years >= 15)]),
+        1.0,
+        atol=0.001
+    )
+
+    # Check that all persons are scheduled for the generic HSI when the simulation runs:
+    # - clear HealthSystem queue and run the HealthSeekingPoll
+    sim.modules['HealthSystem'].reset_queue()
+    sim.modules['HealthSeekingBehaviour'].theHealthSeekingBehaviourPoll.run()
+
+    # - check that every person for whom the symptom was onset has been scheduled an HSI
+    for _person_id in df.loc[df.is_alive].index:
+        evs = [x[1].TREATMENT_ID for x in
+               sim.modules['HealthSystem'].sim.modules['HealthSystem'].find_events_for_person(_person_id)]
+        assert 'FirstAttendance_NonEmergency' in evs, f"No FirstAttendance_NonEmergency for {_person_id=}"
