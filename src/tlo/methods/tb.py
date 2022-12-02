@@ -1893,14 +1893,16 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
 
         # refer for HIV testing: all ages
-        self.sim.modules["HealthSystem"].schedule_hsi_event(
-            hsi_event=hiv.HSI_Hiv_TestAndRefer(
-                person_id=person_id, module=self.sim.modules["Hiv"], referred_from='Tb'
-            ),
-            priority=1,
-            topen=self.sim.date,
-            tclose=None,
-        )
+        # do not run if already HIV diagnosed
+        if not person["hv_diagnosed"]:
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi_event=hiv.HSI_Hiv_TestAndRefer(
+                    person_id=person_id, module=self.sim.modules["Hiv"], referred_from='Tb'
+                ),
+                priority=1,
+                topen=self.sim.date,
+                tclose=None,
+            )
 
         # child under 5 -> chest x-ray, but access is limited
         # if xray not available, HSI_Tb_Xray_level1b will refer
