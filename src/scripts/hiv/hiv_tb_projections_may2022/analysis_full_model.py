@@ -23,10 +23,10 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2036, 1, 1)
-popsize = 100000
+end_date = Date(2020, 1, 1)
+popsize = 20000
 
-scenario = 0
+scenario = 4
 
 # set up the log config
 log_config = {
@@ -61,10 +61,10 @@ sim.register(*fullmodel(
 ))
 
 # # set the scenario
-# sim.modules["Tb"].parameters["beta"] = 1.8
-# sim.modules["Tb"].parameters["scenario"] = scenario
-# sim.modules["Tb"].parameters["scenario_start_date"] = Date(2023, 1, 1)
-# sim.modules["Tb"].parameters["scenario_SI"] = "a"
+sim.modules["Hiv"].parameters["beta"] = 0.129671
+sim.modules["Tb"].parameters["beta"] = 0.19
+sim.modules["Tb"].parameters["scenario"] = scenario
+sim.modules["Tb"].parameters["scenario_start_date"] = Date(2014, 1, 1)
 #
 # # to cluster tests in positive people
 # sim.modules["Hiv"].parameters["rr_test_hiv_positive"] = 10  # default 1.5
