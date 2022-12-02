@@ -102,7 +102,8 @@ class Tb(Module):
             "smear positivity with active infection: False=negative, True=positive",
         ),
         # ------------------ testing status ------------------ #
-        "tb_ever_tested": Property(Types.BOOL, "ever had a tb test"),
+        # todo
+        "tb_date_tested": Property(Types.DATE, "Date of last tb test"),
         "tb_diagnosed": Property(
             Types.BOOL, "person has current diagnosis of active tb"
         ),
@@ -801,7 +802,8 @@ class Tb(Module):
         df["tb_smear"] = False
 
         # ------------------ testing status ------------------ #
-        df["tb_ever_tested"] = False
+        # todo
+        df["tb_date_tested"] = pd.NaT
         df["tb_diagnosed"] = False
         df["tb_date_diagnosed"] = pd.NaT
         df["tb_diagnosed_mdr"] = False
@@ -825,17 +827,14 @@ class Tb(Module):
             (inc_estimates.year == self.sim.date.year), "incidence_per_100k"
         ].values[0]) / 100000
 
-        # todo change this back
-        # incidence_month = incidence_year / 12
-
-        # todo change to incidence month
+        # todo change to incidence year
         self.assign_baseline_active_tb(
             population,
             strain="ds",
             incidence=incidence_year)
 
         # todo changes prop_mdr to 0.0186 (error in resourcefile)
-        # todo change to incidence month
+        # todo change to incidence year
         self.assign_baseline_active_tb(
             population,
             strain="mdr",
@@ -890,7 +889,8 @@ class Tb(Module):
         df.at[child_id, "tb_smear"] = False
 
         # ------------------ testing status ------------------ #
-        df.at[child_id, "tb_ever_tested"] = False
+        # todo
+        df.at[child_id, "tb_date_tested"] = pd.NaT
 
         df.at[child_id, "tb_diagnosed"] = False
         df.at[child_id, "tb_date_diagnosed"] = pd.NaT
@@ -1910,14 +1910,15 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
 
         # refer for HIV testing: all ages
-        # do not run if already HIV diagnosed
-        if not person["hv_diagnosed"]:
+        # todo exclude if hiv test within last week
+        # do not run if already HIV diagnosed or had test in last week
+        if not person["hv_diagnosed"] or (person["hv_last_test_date"] >= (now - DateOffset(days=7))):
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 hsi_event=hiv.HSI_Hiv_TestAndRefer(
                     person_id=person_id, module=self.sim.modules["Hiv"], referred_from='Tb'
                 ),
                 priority=1,
-                topen=self.sim.date,
+                topen=now,
                 tclose=None,
             )
 
@@ -2013,7 +2014,8 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
         # if a test has been performed, update person's properties
         if test_result is not None:
-            df.at[person_id, "tb_ever_tested"] = True
+            # todo
+            df.at[person_id, "tb_date_tested"] = now
 
         # if any test returns positive result, refer for appropriate treatment
         if test_result:
