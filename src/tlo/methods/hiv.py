@@ -1049,6 +1049,7 @@ class Hiv(Module):
         # if mother known HIV+, schedule virological test for infant in 6wks, 9mths, 18mths
         if mother.hv_diagnosed and df.at[child_id, "is_alive"]:
 
+            # schedule infant prophylaxis
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 hsi_event=HSI_Hiv_StartInfantProphylaxis(
                     person_id=child_id,
@@ -1060,35 +1061,38 @@ class Hiv(Module):
                 tclose=None,
             )
 
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                hsi_event=HSI_Hiv_TestAndRefer(
-                    person_id=child_id,
-                    module=self,
-                    referred_from='Infant_testing'),
-                priority=1,
-                topen=self.sim.date + pd.DateOffset(weeks=6),
-                tclose=None,
-            )
+            # schedule infant HIV testing if not already scheduled by newborn_outcomes
+            if "newborn_outcomes" not in self.sim.modules:
 
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                hsi_event=HSI_Hiv_TestAndRefer(
-                    person_id=child_id,
-                    module=self,
-                    referred_from='Infant_testing'),
-                priority=1,
-                topen=self.sim.date + pd.DateOffset(months=9),
-                tclose=None,
-            )
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=HSI_Hiv_TestAndRefer(
+                        person_id=child_id,
+                        module=self,
+                        referred_from='Infant_testing'),
+                    priority=1,
+                    topen=self.sim.date + pd.DateOffset(weeks=6),
+                    tclose=None,
+                )
 
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                hsi_event=HSI_Hiv_TestAndRefer(
-                    person_id=child_id,
-                    module=self,
-                    referred_from='Infant_testing'),
-                priority=1,
-                topen=self.sim.date + pd.DateOffset(months=18),
-                tclose=None,
-            )
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=HSI_Hiv_TestAndRefer(
+                        person_id=child_id,
+                        module=self,
+                        referred_from='Infant_testing'),
+                    priority=1,
+                    topen=self.sim.date + pd.DateOffset(months=9),
+                    tclose=None,
+                )
+
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=HSI_Hiv_TestAndRefer(
+                        person_id=child_id,
+                        module=self,
+                        referred_from='Infant_testing'),
+                    priority=1,
+                    topen=self.sim.date + pd.DateOffset(months=18),
+                    tclose=None,
+                )
 
     def report_daly_values(self):
         """Report DALYS for HIV, based on current symptomatic state of persons."""
@@ -2034,6 +2038,10 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
         if person["hv_diagnosed"] and (person["hv_art"] != "not"):
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
+        # if person has had test in last week, do not repeat test
+        if person["hv_last_test_date"] >= (self.sim.date - DateOffset(days=7)):
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+
         # Run test
         if person["age_years"] < 1.0:
             test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
@@ -2070,7 +2078,8 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                     self.module.do_when_hiv_diagnosed(person_id=person_id)
 
                     # Screen for tb if they have not been referred from a Tb HSI
-                    if "Tb" in self.sim.modules and (self.referred_from != 'Tb'):
+                    # and do not currently have TB diagnosis
+                    if "Tb" in self.sim.modules and (self.referred_from != 'Tb') and not person["tb_diagnosed"]:
                         self.sim.modules["HealthSystem"].schedule_hsi_event(
                             tb.HSI_Tb_ScreeningAndRefer(
                                 person_id=person_id, module=self.sim.modules["Tb"]

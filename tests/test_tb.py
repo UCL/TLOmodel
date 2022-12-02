@@ -211,7 +211,7 @@ def test_natural_history(seed):
                          )
         hsi_event.run(squeeze_factor=0)
 
-    assert df.at[tb_case, 'tb_ever_tested']
+    assert df.at[tb_case, 'tb_date_tested'] != pd.NaT
     assert df.at[tb_case, 'tb_diagnosed']
     assert df.at[tb_case, "tb_on_treatment"]
     assert df.at[tb_case, "tb_date_treated"] == sim.date
@@ -264,7 +264,7 @@ def test_treatment_schedule(seed):
                                                  module=sim.modules['Tb'])
     screening_appt.apply(person_id=person_id, squeeze_factor=0.0)
 
-    assert df.at[person_id, 'tb_ever_tested']
+    assert df.at[person_id, 'tb_date_tested'] != pd.NaT
     assert df.at[person_id, 'tb_diagnosed']
     assert not df.at[person_id, 'tb_diagnosed_mdr']
 
@@ -340,7 +340,7 @@ def test_treatment_failure(seed):
                                                  module=sim.modules['Tb'])
     screening_appt.apply(person_id=person_id, squeeze_factor=0.0)
 
-    assert df.at[person_id, 'tb_ever_tested']
+    assert df.at[person_id, 'tb_date_tested'] != pd.NaT
     assert df.at[person_id, 'tb_diagnosed']
     assert not df.at[person_id, 'tb_diagnosed_mdr']
 
@@ -623,7 +623,7 @@ def test_mdr(seed):
                                                  module=sim.modules['Tb'])
     screening_appt.apply(person_id=person_id, squeeze_factor=0.0)
 
-    assert df.at[person_id, 'tb_ever_tested']
+    assert df.at[person_id, 'tb_date_tested'] != pd.NaT
     assert df.at[person_id, 'tb_diagnosed']
     assert not df.at[person_id, 'tb_diagnosed_mdr']
 
@@ -808,9 +808,10 @@ def test_active_tb_linear_model(seed):
 @pytest.mark.slow
 def test_basic_run_with_default_parameters(seed):
     """Run the TB module with check and check dtypes consistency"""
-    end_date = Date(2015, 12, 31)
+    end_date = Date(2010, 6, 30)
 
     sim = get_sim(seed=seed)
+
     sim.make_initial_population(n=1000)
 
     check_dtypes(sim)
