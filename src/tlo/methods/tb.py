@@ -1552,7 +1552,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
                 p["first_line_test"] = "xpert"
                 p["second_line_test"] = "sputum"
 
-        # remove consumables constraints
+        # remove consumables constraints, all cons available
         if (scenario == 1) or (scenario == 4):
             # list only things that change: constraints on consumables and personnel
             new_parameters = {
@@ -2687,8 +2687,8 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         new_tb_cases = len(
             df[(df.tb_date_active >= (now - DateOffset(months=self.repeat)))]
         )
-        # todo remove
-        print(new_tb_cases)
+        # # todo remove
+        # print(new_tb_cases)
 
         # number of latent cases
         new_latent_cases = len(
@@ -2804,8 +2804,8 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 & (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
                 ]
         )
-        # todo remove
-        print("mdr", new_mdr_cases)
+        # # todo remove
+        # print("mdr", new_mdr_cases)
 
         if new_mdr_cases:
             prop_mdr = new_mdr_cases / new_tb_cases

@@ -35,10 +35,10 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
-popsize = 200000
+end_date = Date(2014, 1, 1)
+popsize = 10000
 
-scenario = 0
+scenario = 1
 
 # set up the log config
 log_config = {
@@ -47,7 +47,7 @@ log_config = {
     "custom_levels": {
         "*": logging.WARNING,
         # "tlo.methods.deviance_measure": logging.INFO,
-        "tlo.methods.epi": logging.INFO,
+        # "tlo.methods.epi": logging.INFO,
         "tlo.methods.hiv": logging.INFO,
         "tlo.methods.tb": logging.INFO,
         "tlo.methods.demography": logging.INFO,
@@ -90,8 +90,8 @@ sim.register(
 # set the scenario
 sim.modules["Hiv"].parameters["beta"] = 0.129671
 sim.modules["Tb"].parameters["beta"] = 0.19
-# sim.modules["Tb"].parameters["scenario"] = scenario
-# sim.modules["Tb"].parameters["scenario_start_date"] = Date(2023, 1, 1)
+sim.modules["Tb"].parameters["scenario"] = scenario
+sim.modules["Tb"].parameters["scenario_start_date"] = Date(2011, 1, 1)
 # sim.modules["Tb"].parameters["scenario_SI"] = "z"
 
 # sim.modules["Tb"].parameters["rr_tb_hiv"] = 5  # default 13

@@ -129,8 +129,8 @@ data_hiv_moh_art = pd.read_excel(xls, sheet_name="MoH_number_art")
 # %% Analyse results of runs
 
 # 0) Find results_folder associated with a given batch_file (and get most recent [-1])
-# results_folder = get_scenario_outputs("calibration.py", outputspath)[-1]
-results_folder = Path("./outputs/t.mangal@imperial.ac.uk/best_calibration_runs")
+results_folder = get_scenario_outputs("calibration.py", outputspath)[-1]
+# results_folder = Path("./outputs/t.mangal@imperial.ac.uk/best_calibration_runs")
 
 # Declare path for output graphs from this script
 make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
