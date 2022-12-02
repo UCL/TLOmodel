@@ -2031,7 +2031,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
             return
 
         # If the person has previously been diagnosed and on tx, do nothing do not occupy any resources
-        if person["hv_diagnosed"] and (person["hv_art"] == "none"):
+        if person["hv_diagnosed"] and (person["hv_art"] != "none"):
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         # Run test
