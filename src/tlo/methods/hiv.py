@@ -2038,6 +2038,10 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
         if person["hv_diagnosed"] and (person["hv_art"] != "not"):
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
+        # if person has had test in last week, do not repeat test
+        if person["hv_last_test_date"] >= (self.sim.date - DateOffset(days=7)):
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+
         # Run test
         if person["age_years"] < 1.0:
             test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
