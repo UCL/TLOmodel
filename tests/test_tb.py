@@ -808,7 +808,7 @@ def test_active_tb_linear_model(seed):
 @pytest.mark.slow
 def test_basic_run_with_default_parameters(seed):
     """Run the TB module with check and check dtypes consistency"""
-    end_date = Date(2011, 12, 31)
+    end_date = Date(2010, 6, 30)
 
     sim = get_sim(seed=seed)
 
