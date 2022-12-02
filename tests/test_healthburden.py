@@ -93,7 +93,12 @@ def test_cause_of_disability_being_registered(seed):
     rfp = Path(os.path.dirname(__file__)) / '../resources'
 
     sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
-    sim.register(*fullmodel(resourcefilepath=rfp, healthsystem_disable=True))
+    sim.register(
+        *fullmodel(
+            resourcefilepath=rfp,
+            module_kwargs={"HealthSystem": {"disable": True}},
+        )
+    )
 
     # Increase risk of death of Diarrhoea to ensure that are at least some deaths
     increase_risk_of_death(sim.modules['Diarrhoea'])
