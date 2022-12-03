@@ -10,12 +10,12 @@ from tlo.analysis.utils import compare_number_of_deaths
 from tlo.methods import (
     demography,
     enhanced_lifestyle,
-    healthburden,
+    epi,
     healthseekingbehaviour,
     healthsystem,
-    other_adult_cancers,
+    measles,
     simplified_births,
-    symptommanager, epi, measles,
+    symptommanager,
 )
 
 outputpath = Path("./outputs")
