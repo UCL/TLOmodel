@@ -5,6 +5,7 @@ This file is to analyse the proportions of symptoms re. HSI_GenericEmergencyFirs
 from pathlib import Path
 
 from matplotlib import pyplot as plt
+import pandas as pd
 
 from tlo import Date
 from tlo.analysis.utils import get_scenario_outputs, load_pickled_dataframes
@@ -36,7 +37,6 @@ symptom['count'] = symptom['count'] * scaling_factor
 symptom = symptom.groupby('message')['count'].mean().reset_index()
 symptom['per cent'] = 100 * symptom['count'] / symptom['count'].sum()
 symptom = symptom.sort_values(by=['count'], ascending=False).reset_index(drop=True)
-symptom['cumulative per cent'] = symptom['per cent'].cumsum()
 
 # list the possible symptoms and modules called by function do_at_generic_first_appt_emergency
 symp = {'alri': ['danger_signs'],
@@ -64,25 +64,39 @@ symp = {'alri': ['danger_signs'],
 # map to module based on symptoms in a simple way
 symptom.message = [x.split('|') for x in symptom.message]
 for i in symptom.index:
-    for k in symp.keys():
-        if set(symp[k]).intersection(set(symptom.loc[i, 'message'])):  # if the message contains symptoms of a module
-            symptom.loc[i, 'module'] = k
+    symptom.loc[i, 'module'] = ','.join(
+        [k for k in symp.keys() if set(symp[k]).intersection(set(symptom.loc[i, 'message']))]
+    )  # there may be multiple modules mapped to the same set of symptoms
 
 # fill nan entries
 # the null message
-symptom.loc[4, 'module'] = 'unknown'
-# simple message of one generic symptom
-symptom.module = symptom.module.fillna('generic and others')
+null_message_idx = [i for i in symptom.index if symptom.loc[i, 'message'] == ['']]
+symptom.loc[null_message_idx, 'module'] = 'unknown'
+# simple message of one generic symptom or others not included in above modules
+null_module_idx = symptom[symptom.module == ''].index
+symptom.loc[null_module_idx, 'module'] = 'generic and others'
 
 # get counts of modules
 mod_by_symp = symptom.groupby('module')['count'].sum().reset_index()
-mod_by_symp['proportion'] = 100 * mod_by_symp['count'] / mod_by_symp['count'].sum()
-mod_by_symp = mod_by_symp.sort_values(by=['count'], ascending=False)
+# split multiple-module list into single modules
+mod_by_symp.module = mod_by_symp.module.str.split(',')
+mod_by_symp_split = pd.DataFrame(mod_by_symp.module.tolist(), mod_by_symp.index)
+mod_by_symp_split = mod_by_symp_split.merge(mod_by_symp['count'], left_index=True, right_index=True)
+# count of unique module by symptom
+uni_mod_by_symp = pd.DataFrame(mod_by_symp_split[[0, 'count']], mod_by_symp_split.index).rename(columns={0: 'module'})
+for col in mod_by_symp_split.columns[1:-1]:
+    df = pd.DataFrame(mod_by_symp_split[[col, 'count']], mod_by_symp_split.index).rename(columns={col: 'module'})
+    df = df.dropna()
+    uni_mod_by_symp = pd.concat([uni_mod_by_symp, df]).groupby('module')['count'].sum().reset_index()
+# sort by count
+uni_mod_by_symp = uni_mod_by_symp.sort_values(by=['count'], ascending=False)
+# percentage
+uni_mod_by_symp['proportion'] = 100 * uni_mod_by_symp['count'] / uni_mod_by_symp['count'].sum()
 
 # plot proportion by module
 title_of_figure = 'Proportions of modules using AandE/FirstAttendance_Emergency'
 fig = plt.figure()
-ax = mod_by_symp.plot.bar(x='module', y='proportion')
+ax = uni_mod_by_symp.plot.bar(x='module', y='proportion')
 ax.set_title(title_of_figure)
 ax.set_xlabel('module')
 ax.set_ylabel('proportion %')
