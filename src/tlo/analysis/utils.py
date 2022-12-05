@@ -5,9 +5,11 @@ import gzip
 import json
 import os
 import pickle
+from collections import Counter, defaultdict
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Callable, Dict, Iterable, List, Optional, TextIO, Union
+from types import MappingProxyType
+from typing import Callable, Dict, Iterable, List, Optional, TextIO, Tuple, Union
 
 import git
 import matplotlib.colors as mcolors
@@ -16,7 +18,7 @@ import numpy as np
 import pandas as pd
 import squarify
 
-from tlo import logging, util
+from tlo import Date, logging, util
 from tlo.logging.reader import LogData
 from tlo.util import create_age_range_lookup
 
@@ -631,207 +633,216 @@ def colors_in_matplotlib() -> tuple:
     )
 
 
-def _define_coarse_appts() -> pd.DataFrame:
-    """Define which appointment types fall into which 'coarse appointment' category, the order of the categories and the
-    colour of the category.
-    Names of colors are selected with reference to: https://i.stack.imgur.com/lFZum.png"""
-    return pd.DataFrame.from_records(
-        [
-            {
-                'category': 'Outpatient',
-                'appt_types': ['Under5OPD', 'Over5OPD'],
-                'color': 'magenta'
-            },
-            {
-                'category': 'Con w/ DCSA',
-                'appt_types': ['ConWithDCSA'],
-                'color': 'crimson'},
-            {
-                'category': 'A & E',
-                'appt_types': ['AccidentsandEmerg'],
-                'color': 'forestgreen'},
-            {
-                'category': 'Inpatient',
-                'appt_types': ['InpatientDays', 'IPAdmission'],
-                'color': 'mediumorchid'},
-            {
-                'category': 'RMNCH',
-                'appt_types': ['AntenatalFirst', 'ANCSubsequent', 'NormalDelivery', 'CompDelivery', 'Csection', 'EPI',
-                               'FamPlan', 'U5Malnutr'],
-                'color': 'gold'},
-            {
-                'category': 'HIV/AIDS',
-                'appt_types': ['VCTNegative', 'VCTPositive', 'MaleCirc', 'NewAdult', 'EstMedCom', 'EstNonCom', 'PMTCT',
-                               'Peds'],
-                'color': 'darkturquoise'},
-            {
-                'category': 'Tb',
-                'appt_types': ['TBNew', 'TBFollowUp'],
-                'color': 'y'},
-            {
-                'category': 'Dental',
-                'appt_types': ['DentAccidEmerg', 'DentSurg', 'DentalU5', 'DentalO5'],
-                'color': 'rosybrown'},
-            {
-                'category': 'Mental Health',
-                'appt_types': ['MentOPD', 'MentClinic'],
-                'color': 'lightsalmon'},
-            {
-                'category': 'Surgery / Radiotherapy',
-                'appt_types': ['MajorSurg', 'MinorSurg', 'Radiotherapy'],
-                'color': 'orange'},
-            {
-                'category': 'STI',
-                'appt_types': ['STI'],
-                'color': 'slateblue'},
-            {
-                'category': 'Lab / Diagnostics',
-                'appt_types': ['LabHaem', 'LabPOC', 'LabParasit', 'LabBiochem', 'LabMicrobio', 'LabMolec', 'LabTBMicro',
-                               'LabSero', 'LabCyto', 'LabTrans', 'Ultrasound', 'Mammography', 'MRI', 'Tomography',
-                               'DiagRadio'],
-                'color': 'dodgerblue'}
-        ]
-    ).set_index('category')
+APPT_TYPE_TO_COARSE_APPT_TYPE_MAP = MappingProxyType({
+    'Under5OPD': 'Outpatient',
+    'Over5OPD': 'Outpatient',
+    'ConWithDCSA': 'Con w/ DCSA',
+    'AccidentsandEmerg': 'A & E',
+    'InpatientDays': 'Inpatient',
+    'IPAdmission': 'Inpatient',
+    'AntenatalFirst': 'RMNCH',
+    'ANCSubsequent': 'RMNCH',
+    'NormalDelivery': 'RMNCH',
+    'CompDelivery': 'RMNCH',
+    'Csection': 'RMNCH',
+    'EPI': 'RMNCH',
+    'FamPlan': 'RMNCH',
+    'U5Malnutr': 'RMNCH',
+    'VCTNegative': 'HIV/AIDS',
+    'VCTPositive': 'HIV/AIDS',
+    'MaleCirc': 'HIV/AIDS',
+    'NewAdult': 'HIV/AIDS',
+    'EstMedCom': 'HIV/AIDS',
+    'EstNonCom': 'HIV/AIDS',
+    'PMTCT': 'HIV/AIDS',
+    'Peds': 'HIV/AIDS',
+    'TBNew': 'Tb',
+    'TBFollowUp': 'Tb',
+    'DentAccidEmerg': 'Dental',
+    'DentSurg': 'Dental',
+    'DentalU5': 'Dental',
+    'DentalO5': 'Dental',
+    'MentOPD': 'Mental Health',
+    'MentClinic': 'Mental Health',
+    'MajorSurg': 'Surgery / Radiotherapy',
+    'MinorSurg': 'Surgery / Radiotherapy',
+    'Radiotherapy': 'Surgery / Radiotherapy',
+    'STI': 'STI',
+    'LabHaem': 'Lab / Diagnostics',
+    'LabPOC': 'Lab / Diagnostics',
+    'LabParasit': 'Lab / Diagnostics',
+    'LabBiochem': 'Lab / Diagnostics',
+    'LabMicrobio': 'Lab / Diagnostics',
+    'LabMolec': 'Lab / Diagnostics',
+    'LabTBMicro': 'Lab / Diagnostics',
+    'LabSero': 'Lab / Diagnostics',
+    'LabCyto': 'Lab / Diagnostics',
+    'LabTrans': 'Lab / Diagnostics',
+    'Ultrasound': 'Lab / Diagnostics',
+    'Mammography': 'Lab / Diagnostics',
+    'MRI': 'Lab / Diagnostics',
+    'Tomography': 'Lab / Diagnostics',
+    'DiagRadio': 'Lab / Diagnostics'
+})
+
+
+COARSE_APPT_TYPE_TO_COLOR_MAP = MappingProxyType({
+    'Outpatient': 'magenta',
+    'Con w/ DCSA': 'crimson',
+    'A & E': 'forestgreen',
+    'Inpatient': 'mediumorchid',
+    'RMNCH': 'gold',
+    'HIV/AIDS': 'darkturquoise',
+    'Tb': 'y',
+    'Dental': 'rosybrown',
+    'Mental Health': 'lightsalmon',
+    'Surgery / Radiotherapy': 'orange',
+    'STI': 'slateblue',
+    'Lab / Diagnostics': 'dodgerblue'
+})
 
 
 def get_coarse_appt_type(appt_type: str) -> str:
-    """Return the `coarser` categorization of appt_types for a given appt_type. """
-    for coarse_appt_types, row in _define_coarse_appts().iterrows():
-        if appt_type in row['appt_types']:
-            return coarse_appt_types
+    """Return the `coarser` categorization of appt_types for a given appt_type."""
+    return APPT_TYPE_TO_COARSE_APPT_TYPE_MAP.get(appt_type, None)
 
 
 def order_of_coarse_appt(_coarse_appt: Union[str, pd.Index]) -> Union[int, pd.Index]:
     """Define a standard order for the coarse appointment types."""
-    order = _define_coarse_appts().index
+    ordered_coarse_appts = list(COARSE_APPT_TYPE_TO_COLOR_MAP.keys())
     if isinstance(_coarse_appt, str):
-        return tuple(order).index(_coarse_appt)
+        return ordered_coarse_appts.index(_coarse_appt)
     else:
-        return order[order.isin(_coarse_appt)]
+        return pd.Index(ordered_coarse_appts.index(c) for c in _coarse_appt)
 
 
 def get_color_coarse_appt(coarse_appt_type: str) -> str:
-    """Return the colour (as matplotlib string) assigned to this appointment type. Returns `np.nan` if appointment-type
-    is not recognised.
-    Names of colors are selected with reference to: https://i.stack.imgur.com/lFZum.png"""
-    colors = _define_coarse_appts().color
-    if coarse_appt_type in colors.index:
-        return colors.loc[coarse_appt_type]
-    else:
-        return np.nan
+    """Return the colour (as matplotlib string) assigned to this appointment type.
+
+    Returns `np.nan` if appointment-type is not recognised.
+
+    Names of colors are selected with reference to: https://i.stack.imgur.com/lFZum.png
+    """
+    return COARSE_APPT_TYPE_TO_COLOR_MAP.get(coarse_appt_type, np.nan)
 
 
-def _define_short_treatment_ids() -> pd.Series:
-    """Define the order of the short treatment_ids and the color for each.
-    Names of colors are selected with reference to: https://matplotlib.org/stable/gallery/color/named_colors.html"""
-    return pd.Series({
-        'FirstAttendance*': 'darkgrey',
-        'Inpatient*': 'silver',
+SHORT_TREATMENT_ID_TO_COLOR_MAP = MappingProxyType({
+    'FirstAttendance*': 'darkgrey',
+    'Inpatient*': 'silver',
 
-        'Contraception*': 'darkseagreen',
-        'AntenatalCare*': 'green',
-        'DeliveryCare*': 'limegreen',
-        'PostnatalCare*': 'springgreen',
+    'Contraception*': 'darkseagreen',
+    'AntenatalCare*': 'green',
+    'DeliveryCare*': 'limegreen',
+    'PostnatalCare*': 'springgreen',
 
-        'Alri*': 'darkorange',
-        'Diarrhoea*': 'tan',
-        'Undernutrition*': 'gold',
-        'Epi*': 'darkgoldenrod',
+    'Alri*': 'darkorange',
+    'Diarrhoea*': 'tan',
+    'Undernutrition*': 'gold',
+    'Epi*': 'darkgoldenrod',
 
-        'Hiv*': 'deepskyblue',
-        'Malaria*': 'lightsteelblue',
-        'Measles*': 'cornflowerblue',
-        'Tb*': 'mediumslateblue',
-        'Schisto*': 'skyblue',
+    'Hiv*': 'deepskyblue',
+    'Malaria*': 'lightsteelblue',
+    'Measles*': 'cornflowerblue',
+    'Tb*': 'mediumslateblue',
+    'Schisto*': 'skyblue',
 
-        'CardioMetabolicDisorders*': 'brown',
+    'CardioMetabolicDisorders*': 'brown',
 
-        'BladderCancer*': 'orchid',
-        'BreastCancer*': 'mediumvioletred',
-        'OesophagealCancer*': 'deeppink',
-        'ProstateCancer*': 'hotpink',
-        'OtherAdultCancer*': 'palevioletred',
+    'BladderCancer*': 'orchid',
+    'BreastCancer*': 'mediumvioletred',
+    'OesophagealCancer*': 'deeppink',
+    'ProstateCancer*': 'hotpink',
+    'OtherAdultCancer*': 'palevioletred',
 
-        'Depression*': 'indianred',
-        'Epilepsy*': 'red',
+    'Depression*': 'indianred',
+    'Epilepsy*': 'red',
 
-        'Rti*': 'lightsalmon',
-    })
+    'Rti*': 'lightsalmon',
+})
 
 
-def order_of_short_treatment_ids(_short_treatment_id: Union[str, pd.Index]) -> Union[int, pd.Index]:
+def _standardize_short_treatment_id(short_treatment_id):
+    return short_treatment_id.replace('_*', '*').rstrip('*') + '*'
+
+
+def order_of_short_treatment_ids(
+    short_treatment_id: Union[str, pd.Index]
+) -> Union[int, pd.Index]:
     """Define a standard order for short treatment_ids."""
-    order = _define_short_treatment_ids().index
-    if isinstance(_short_treatment_id, str):
-        return tuple(order).index(_short_treatment_id.replace('_*', '*'))
+    ordered_short_treatment_ids = list(SHORT_TREATMENT_ID_TO_COLOR_MAP.keys())
+    if isinstance(short_treatment_id, str):
+        return ordered_short_treatment_ids.index(
+            _standardize_short_treatment_id(short_treatment_id)
+        )
     else:
-        return order[order.isin(_short_treatment_id)]
+        return pd.Index(
+            ordered_short_treatment_ids.index(_standardize_short_treatment_id(i))
+            for i in short_treatment_id
+        )
 
 
 def get_color_short_treatment_id(short_treatment_id: str) -> str:
-    """Return the colour (as matplotlib string) assigned to this shorted TREATMENT_ID. Returns `np.nan` if treatment_id
-    is not recognised."""
-    colors = _define_short_treatment_ids()
-    _short_treatment_ids_with_trailing_asterix = short_treatment_id.replace('_*', '*').rstrip('*') + '*'
-    if _short_treatment_ids_with_trailing_asterix in colors.index:
-        return colors.loc[_short_treatment_ids_with_trailing_asterix]
-    else:
-        return np.nan
+    """Return the colour (as matplotlib string) assigned to this shorted TREATMENT_ID.
+
+    Returns `np.nan` if treatment_id is not recognised.
+    """
+    return SHORT_TREATMENT_ID_TO_COLOR_MAP.get(
+        _standardize_short_treatment_id(short_treatment_id), np.nan
+    )
 
 
-def _define_cause_of_death_labels() -> pd.Series:
-    """Define the order of the cause_of_death_labels and the color for each.
-    Names of colors are selected with reference to: https://matplotlib.org/stable/gallery/color/named_colors.html"""
-    return pd.Series({
-        'Maternal Disorders': 'green',
-        'Neonatal Disorders': 'springgreen',
-        'Congenital birth defects': 'mediumaquamarine',
+CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP = MappingProxyType({
+    'Maternal Disorders': 'green',
+    'Neonatal Disorders': 'springgreen',
+    'Congenital birth defects': 'mediumaquamarine',
 
-        'Lower respiratory infections': 'darkorange',
-        'Childhood Diarrhoea': 'tan',
+    'Lower respiratory infections': 'darkorange',
+    'Childhood Diarrhoea': 'tan',
 
-        'AIDS': 'deepskyblue',
-        'Malaria': 'lightsteelblue',
-        'Measles': 'cornflowerblue',
-        'non_AIDS_TB': 'mediumslateblue',
+    'AIDS': 'deepskyblue',
+    'Malaria': 'lightsteelblue',
+    'Measles': 'cornflowerblue',
+    'non_AIDS_TB': 'mediumslateblue',
 
-        'Heart Disease': 'sienna',
-        'Kidney Disease': 'chocolate',
-        'Diabetes': 'peru',
-        'Stroke': 'burlywood',
+    'Heart Disease': 'sienna',
+    'Kidney Disease': 'chocolate',
+    'Diabetes': 'peru',
+    'Stroke': 'burlywood',
 
-        'Cancer (Bladder)': 'deeppink',
-        'Cancer (Breast)': 'darkmagenta',
-        'Cancer (Oesophagus)': 'mediumvioletred',
-        'Cancer (Other)': 'crimson',
-        'Cancer (Prostate)': 'hotpink',
+    'Cancer (Bladder)': 'deeppink',
+    'Cancer (Breast)': 'darkmagenta',
+    'Cancer (Oesophagus)': 'mediumvioletred',
+    'Cancer (Other)': 'crimson',
+    'Cancer (Prostate)': 'hotpink',
 
-        'Depression / Self-harm': 'goldenrod',
-        'Epilepsy': 'gold',
+    'Depression / Self-harm': 'goldenrod',
+    'Epilepsy': 'gold',
 
-        'Transport Injuries': 'lightsalmon',
+    'Transport Injuries': 'lightsalmon',
 
-        'Other': 'dimgrey',
-    })
+    'Other': 'dimgrey',
+})
 
 
-def order_of_cause_of_death_label(_cause_of_death_label: Union[str, pd.Index]) -> Union[int, pd.Index]:
+def order_of_cause_of_death_label(
+    cause_of_death_label: Union[str, pd.Index]
+) -> Union[int, pd.Index]:
     """Define a standard order for Cause-of-Death labels."""
-    order = _define_cause_of_death_labels().index
-    if isinstance(_cause_of_death_label, str):
-        return tuple(order).index(_cause_of_death_label)
+    ordered_cause_of_death_labels = list(CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP.keys())
+    if isinstance(cause_of_death_label, str):
+        return ordered_cause_of_death_labels.index(cause_of_death_label)
     else:
-        return pd.Index(sorted(_cause_of_death_label, key=order_of_cause_of_death_label))
+        return pd.Index(
+            ordered_cause_of_death_labels.index(c) for c in cause_of_death_label
+        )
 
 
 def get_color_cause_of_death_label(cause_of_death_label: str) -> str:
-    """Return the colour (as matplotlib string) assigned to this shorted Cause-of-Death Label. Returns `np.nan` if
-    label is not recognised."""
-    colors = _define_cause_of_death_labels()
-    if cause_of_death_label in colors.index:
-        return colors.loc[cause_of_death_label]
-    else:
-        return np.nan
+    """Return the colour (as matplotlib string) assigned to this Cause-of-Death Label.
+
+    Returns `np.nan` if label is not recognised.
+    """
+    return CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP.get(cause_of_death_label, np.nan)
 
 
 def squarify_neat(sizes: np.array, label: np.array, colormap: Callable, numlabels=5, **kwargs):
@@ -867,6 +878,136 @@ def get_root_path(starter_path: Optional[Path] = None) -> Path:
         return get_git_root(starter_path)
     else:
         raise OSError("File Not Found")
+
+
+def bin_hsi_event_details(
+    results_folder: Path,
+    get_counter_from_event_details: callable,
+    start_date: Date,
+    end_date: Date,
+    do_scaling: bool = False
+) -> Dict[Tuple[int, int], Counter]:
+    """Bin logged HSI event details into dictionary of counters for each draw and run.
+
+    :param results_folder: Path to folder containing scenario outputs.
+    :param get_counter_from_event_details: Callable which when passed and event details
+        dictionary and count returns a Counter instance keyed by properties to bin
+        over.
+    :param start_date: Start date to filter log entries by when accumulating counts.
+    :param end_date: End date to filter log entries by when accumulating counts.
+    :param do_scaling: Whether to scale counts by population scaling factor value
+        recorded in `tlo.methods.population` log.
+
+    :return: Dictionary keyed by `(draw, run)` tuples with corresponding values the
+        counters containing the binned event detail property counts for the
+        corresponding scenario draw and run.
+    """
+    scenario_info = get_scenario_info(results_folder)
+    binned_counts_by_draw_and_run = {}
+    for draw in range(scenario_info["number_of_draws"]):
+        for run in range(scenario_info["runs_per_draw"]):
+            scaling_factor = 1 if not do_scaling else load_pickled_dataframes(
+                results_folder, draw, run, 'tlo.methods.population'
+            )['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
+            hsi_event_counts = load_pickled_dataframes(
+                results_folder, draw, run, "tlo.methods.healthsystem.summary"
+            )["tlo.methods.healthsystem.summary"]["hsi_event_counts"]
+            hsi_event_counts = hsi_event_counts[
+                hsi_event_counts['date'].between(start_date, end_date)
+            ]
+            hsi_event_counts_sum = sum(
+                [
+                    Counter(d)
+                    for d in hsi_event_counts["hsi_event_key_to_counts"].values
+                ],
+                start=Counter()
+            )
+            hsi_event_details = load_pickled_dataframes(
+                results_folder, draw, run, "tlo.methods.healthsystem.summary"
+            )[
+                "tlo.methods.healthsystem.summary"
+            ]["hsi_event_details"]["hsi_event_key_to_event_details"][0]
+            binned_counts_by_draw_and_run[draw, run] = sum(
+                (
+                    get_counter_from_event_details(
+                        hsi_event_details[key], count * scaling_factor
+                    )
+                    for key, count in hsi_event_counts_sum.items()
+                ),
+                Counter()
+            )
+    return binned_counts_by_draw_and_run
+
+
+def compute_mean_across_runs(
+    counters_by_draw_and_run: Dict[Tuple[int, int], Counter]
+) -> Dict[int, Counter]:
+    """Compute mean across scenario runs of dict of counters keyed by draw and run.
+
+    :param counters_by_draw_and_run: Dictionary keyed by `(draw, run)` tuples with
+        counter values.
+
+    :return: Dictionary keyed by `draw` with counter values corresponding to mean
+        of counters across all runs for each draw.
+    """
+    summed_counters_by_draw = defaultdict(Counter)
+    num_runs_by_draw = Counter()
+    for (draw, _), counter in counters_by_draw_and_run.items():
+        summed_counters_by_draw[draw] += counter
+        num_runs_by_draw[draw] += 1
+    return {
+        draw: Counter(
+            {key: count / num_runs_by_draw[draw] for key, count in counter.items()}
+        )
+        for draw, counter in summed_counters_by_draw.items()
+    }
+
+
+def plot_stacked_bar_chart(
+    ax: plt.Axes,
+    binned_counts: Counter,
+    inner_group_cmap: Optional[Dict] = None,
+    bar_width: float = 0.5,
+    count_scale: float = 1.
+):
+    """Plot a stacked bar chart using count data binned over two levels of grouping.
+
+    :param ax: Matplotlib axis to add bar chart to.
+    :param binned_counts: Counts keyed by pair of string keys corresponding to inner
+        and outer groups binning performed over.
+    :param inner_group_cmap: Map from inner group keys to colors to plot corresponding
+        bars with. If ``None`` the default color cycle will be used.
+    :param bar_width: Width of each bar as a proportion of space between bars.
+    :param count_scale: Scaling factor to multiply all counts by.
+    """
+    outer_groups = sorted(set(outer_group for outer_group, _ in binned_counts))
+    if inner_group_cmap is None:
+        inner_groups = sorted(set(inner_group for _, inner_group in binned_counts))
+    else:
+        inner_groups = list(inner_group_cmap.keys())
+    cumulative_counts = Counter({outer_group: 0 for outer_group in outer_groups})
+    for inner_group in inner_groups:
+        counts = Counter(
+            {
+                outer_group: binned_counts[outer_group, inner_group] * count_scale
+                for outer_group in outer_groups
+            }
+        )
+        if sum(counts.values()) > 0:
+            ax.bar(
+                list(counts.keys()),
+                list(counts.values()),
+                bottom=list(
+                    cumulative_counts[outer_group] for outer_group in outer_groups
+                ),
+                label=inner_group,
+                color=(
+                    None if inner_group_cmap is None else inner_group_cmap[inner_group]
+                ),
+                width=bar_width,
+            )
+        cumulative_counts += counts
+    ax.legend()
 
 
 def plot_clustered_stacked(dfall, ax, color_for_column_map=None, legends=True, H="/", **kwargs):
