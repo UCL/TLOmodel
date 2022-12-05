@@ -1,5 +1,6 @@
 """
-This file defines a batch test run of a subset of the population for 1 year with all disease modules and full use of HSIs
+This file defines a batch test run of a subset of the population for 1 year
+with all disease modules and full use of HSIs
 It's used for calibrations (demographic patterns, health burdens and healthsystem usage)
 
 Run on the batch system using:

@@ -15,6 +15,7 @@ from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
+from tlo.util import random_date
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -680,13 +681,15 @@ class MalariaScheduleTesting(RegularEvent, PopulationScopeEventMixin):
         alive = df.is_alive
         test = df.index[alive][self.module.rng.random_sample(size=alive.sum()) < p["testing_adj"]]
 
+
         for person_index in test:
             logger.debug(key='message',
                          data=f'MalariaScheduleTesting: scheduling HSI_Malaria_rdt for person {person_index}')
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Malaria_rdt(self.module, person_id=person_index),
                 priority=1,
-                topen=now, tclose=None
+                topen=random_date(self.sim.date, self.sim.date + self.frequency, self.module.rng),
+                tclose=None
             )
 
 
@@ -699,7 +702,7 @@ class MalariaIPTp(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         df = population.props
-        now = self.sim.date
+        now=self.sim.date
 
         # select currently pregnant women without IPTp, malaria-negative
         p1 = df.index[df.is_alive & df.is_pregnant & ~df.ma_is_infected & ~df.ma_iptp]
@@ -788,6 +791,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
 
     def apply(self, person_id, squeeze_factor):
 
+
         df = self.sim.population.props
         params = self.module.parameters
         hs = self.sim.modules["HealthSystem"]
@@ -823,6 +827,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
                         logger.debug(key='message',
                                      data=f'HSI_Malaria_rdt: scheduling HSI_Malaria_tx_compl_child {person_id}'
                                           f'on date {self.sim.date}')
+
 
                         treat = HSI_Malaria_complicated_treatment_child(
                             self.sim.modules["Malaria"], person_id=person_id
