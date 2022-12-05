@@ -18,7 +18,7 @@ logger.setLevel(logging.INFO)
 class Measles(Module):
     """This module represents measles infections and disease."""
 
-    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
+    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager', 'Hiv'}
 
     OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
 
