@@ -18,7 +18,7 @@ logger.setLevel(logging.INFO)
 class Measles(Module):
     """This module represents measles infections and disease."""
 
-    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager', 'Hiv'}
+    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
 
     OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
 
@@ -64,11 +64,7 @@ class Measles(Module):
         "symptom_prob": Parameter(
             Types.DATA_FRAME, "Probability of each symptom with measles infection"),
         "case_fatality_rate": Parameter(
-            Types.DICT, "Probability that case of measles will result in death if not treated [for those without "
-                        "untreated HIV]"),
-        "cfr_untreated_hiv": Parameter(
-            Types.REAL, "Probability that case of measles will result in death if not treated for those without "
-                        "untreated HIV"),
+            Types.DICT, "Probability that case of measles will result in death if not treated")
     }
 
     PROPERTIES = {
@@ -279,7 +275,6 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
 
         # Determine if the person has "untreated HIV", which is defined as a person in any stage of HIV but not on
         # successful treatment currently.
-        untreated_hiv = df.at[person_id, "hv_inf"] and (df.at[person_id, "hv_art"] != "on_VL_suppressed")
 
         logger.debug(key="MeaslesOnsetEvent",
                      data=f"MeaslesOnsetEvent: new infections scheduled for {person_id}")
@@ -289,7 +284,7 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
         df.at[person_id, "me_on_treatment"] = False
 
         symp_onset = self.assign_symptoms(ref_age)  # Assign symptoms for this person
-        prob_death = self.get_prob_death(ref_age, untreated_hiv)  # Look-up the probability of death for this person
+        prob_death = self.get_prob_death(ref_age)  # Look-up the probability of death for this person
 
         # Schedule either the DeathEvent of the SymptomResolution event, depending on the expected outcome of this case
         if rng.random_sample() < prob_death:
@@ -334,16 +329,10 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
 
         return date_of_symp_onset
 
-    def get_prob_death(self, _age, _untreated_hiv):
-        """Returns the probability of death for this person based on their age and whether they have untreated HIV.
-        If they do not have untreated HIV, then CFR is based only on age;
-        If they do have untreated HIV, then CFR is given by a fixed value irrespective of age
-        """
+    def get_prob_death(self, _age):
+        """Returns the probability of death for this person based on their age and whether they have untreated HIV."""
         p = self.module.parameters
-        if not _untreated_hiv:
-            return p["case_fatality_rate"].get(_age)
-        else:
-            return p["cfr_untreated_hiv"]
+        return p["case_fatality_rate"].get(_age)
 
 
 class MeaslesSymptomResolveEvent(Event, IndividualScopeEventMixin):

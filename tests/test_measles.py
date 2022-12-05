@@ -12,7 +12,6 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    hiv,
     measles,
     simplified_births,
     symptommanager,
@@ -62,7 +61,6 @@ def sim(seed):
         ),
         epi.Epi(resourcefilepath=resources),
         measles.Measles(resourcefilepath=resources),
-        hiv.DummyHivModule(),
     )
 
     return sim
@@ -164,7 +162,6 @@ def test_measles_zero_death_rate(sim):
     # set zero death rate
     cfr = sim.modules['Measles'].parameters["case_fatality_rate"]
     sim.modules['Measles'].parameters["case_fatality_rate"] = {k: 0.0 for k, v in cfr.items()}
-    sim.modules['Measles'].parameters["cfr_untreated_hiv"] = 0.0
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
