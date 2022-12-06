@@ -25,7 +25,6 @@ class Predictor(object):
         conditions_are_exhaustive: Optional[bool] = False,
     ):
         """A Predictor variable for the regression model.
-
         :param property_name: A property of the population dataframe e.g. age, sex, etc.
             or if ``external=True`` the name of the external property that will be
             passed as a keyword argument to the ``LinearModel.predict`` method.
@@ -162,7 +161,6 @@ class LinearModel(object):
         *predictors: Predictor
     ):
         """A linear model has an intercept and zero or more ``Predictor`` variables.
-
         :param lm_type: Model type to use.
         :param intercept: Intercept term for the model.
         :param *predictors: Any ``Predictor`` instances to use in computing output.
@@ -206,7 +204,6 @@ class LinearModel(object):
     @staticmethod
     def multiplicative(*predictors: Predictor):
         """Returns a multplicative LinearModel with intercept=1.0
-
         :param predictors: One or more Predictor objects defining the model
         """
         return LinearModel(LinearModelType.MULTIPLICATIVE, 1.0, *predictors)
@@ -214,20 +211,16 @@ class LinearModel(object):
     @staticmethod
     def custom(predict_function, **kwargs):
         """Define a linear model using the supplied function
-
         The function acts as a drop-in replacement to the predict function and must
         implement the interface:
-
             (
                 self: LinearModel,
                 df: Union[pd.DataFrame, pd.Series],
                 rng: Optional[np.random.RandomState] = None,
                 **kwargs
             ) -> pd.Series
-
         It is the responsibility of the caller of predict to ensure they pass either
         a dataframe or an individual record as expected by the custom function.
-
         See test_custom() in test_lm.py for a couple of examples.
         """
         # create an instance of a custom linear model
@@ -245,13 +238,11 @@ class LinearModel(object):
 
     def _parse_predictors(self):
         """Set model string, callback predictors and predictor names from predictors.
-
         Sets `self._model_string` to an expression string (to be evaluated by
         ``pandas.DataFrame.eval``) corresponding to the evaluation of the model output
         for the subset of the predictors which do not define a custom callback function
         and the model intercept, or an empty string if no non-callback predictors are
         present.
-
         Additionally sets `self._callback_predictors` to a tuple of the omitted
         predictors with custom callback functions and `self._predictor_names` to a set
         of strings corresponding to names specified in the predictors.
@@ -345,9 +336,7 @@ class LinearModel(object):
         **external_variables
     ) -> Dict[str, pd.Series]:
         """Construct mapping from predictor column names to column values.
-
         For use in ``resolvers`` argument to ``pandas.eval`` call.
-
         Compared to ``pandas.DataFrame._get_cleaned_column_resolvers()`` here only the
         column names present in the model predictors are included when constructing the
         returned dictionary. For dataframes with a large number of columns this is more
@@ -366,12 +355,13 @@ class LinearModel(object):
                     isinstance(col.dtype, pd.CategoricalDtype)
                     and np.issubdtype(col.dtype.categories.dtype, np.integer)
                 ):
-                    # `pandas.eval` raises an error when using boolean
-                    # operations on series with a categorical dtype with integer
-                    # categories therefore if any such columns are present we
-                    # convert to the corresponding integer type
-                    dtype = col.dtype.categories.dtype
-                    column_resolvers[cleaned_name] = col.astype(dtype)
+                    # `pandas.eval` raises an error when using boolean operations
+                    # on series with a categorical dtype with integer categories
+                    # therefore if any such columns are present we convert to
+                    # double-precision floats - this should be safe providing only
+                    # integer categories which have exact floating point representations
+                    # are used (which is likely to be the case)
+                    column_resolvers[cleaned_name] = col.astype(np.float64)
                 else:
                     column_resolvers[cleaned_name] = col
         for name, value in external_variables.items():
@@ -386,7 +376,6 @@ class LinearModel(object):
         **kwargs
     ) -> pd.Series:
         """Evaluate linear model output for a given set of input data.
-
         :param df: The input ``DataFrame`` containing the input data to evaluate the
           model with.
         :param rng: If set to a NumPy ``RandomState`` instance, returned output will
