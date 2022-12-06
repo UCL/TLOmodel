@@ -199,7 +199,7 @@ def figure3_appointments_used(results_folder: Path, output_folder: Path):
 
     counts_of_coarse_appt_by_date = \
         counts_of_appt_by_date.unstack(). \
-            groupby(axis=1, by=counts_of_appt_by_date.index.levels[1].map(get_coarse_appt_type)).sum()
+        groupby(axis=1, by=counts_of_appt_by_date.index.levels[1].map(get_coarse_appt_type)).sum()
 
     counts_of_coarse_appt_by_date = counts_of_coarse_appt_by_date[
         sorted(counts_of_coarse_appt_by_date.columns, key=order_of_coarse_appt)
