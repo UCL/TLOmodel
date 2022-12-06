@@ -1,5 +1,5 @@
 from pathlib import Path
-
+import argparse
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
@@ -236,9 +236,16 @@ def apply(results_folder: Path, output_folder: Path):
 
 
 if __name__ == "__main__":
-    results_folder = Path(
-        '/Users/dimitra/PycharmProjects/TLOmodel/outputs') / 'long_run-2022-12-05T112011Z'
+
+    parser = argparse.ArgumentParser("Analyse logged HSI event data from scenario run")
+    parser.add_argument(
+        "--results-folder",
+        type=Path,
+        help="Path to folder containing results of scenario to perform analysis for"
+    )
+    args = parser.parse_args()
+
     apply(
-        results_folder=results_folder,
-        output_folder=results_folder,
+        results_folder=args.results_folder,
+        output_folder=args.results_folder
     )
