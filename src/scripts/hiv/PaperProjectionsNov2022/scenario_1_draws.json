@@ -1,0 +1,74 @@
+{
+  "scenario_script_path": "src/scripts/hiv/PaperProjectionsNov2022/scenario_1.py",
+  "scenario_seed": 5,
+  "runs_per_draw": 10,
+  "draws": [
+    {
+      "draw_number": 0,
+      "draw_seed": 953453411,
+      "parameters": {
+        "Tb": {
+          "scenario": 1,
+          "beta": 0.193668
+        },
+        "Hiv": {
+          "beta": 0.127485
+        }
+      }
+    },
+    {
+      "draw_number": 1,
+      "draw_seed": 236996814,
+      "parameters": {
+        "Tb": {
+          "scenario": 1,
+          "beta": 0.204125
+        },
+        "Hiv": {
+          "beta": 0.135999
+        }
+      }
+    },
+    {
+      "draw_number": 2,
+      "draw_seed": 1592283119,
+      "parameters": {
+        "Tb": {
+          "scenario": 1,
+          "beta": 0.207443
+        },
+        "Hiv": {
+          "beta": 0.1161
+        }
+      }
+    },
+    {
+      "draw_number": 3,
+      "draw_seed": 1423042237,
+      "parameters": {
+        "Tb": {
+          "scenario": 1,
+          "beta": 0.189727
+        },
+        "Hiv": {
+          "beta": 0.122471
+        }
+      }
+    },
+    {
+      "draw_number": 4,
+      "draw_seed": 887852006,
+      "parameters": {
+        "Tb": {
+          "scenario": 1,
+          "beta": 0.197228
+        },
+        "Hiv": {
+          "beta": 0.128874
+        }
+      }
+    }
+  ],
+  "commit": "8a169b50877069166509b1f2f2155e4c1922f7ca",
+  "github": "https://github.com/UCL/TLOmodel/blob/8a169b50877069166509b1f2f2155e4c1922f7ca/src/scripts/hiv/PaperProjectionsNov2022/scenario_1.py"
+}

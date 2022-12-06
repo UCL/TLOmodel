@@ -23,10 +23,10 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
-popsize = 20000
+end_date = Date(2036, 1, 1)
+popsize = 200000
 
-scenario = 4
+scenario = 0
 
 # set up the log config
 log_config = {
@@ -44,7 +44,8 @@ log_config = {
 # Register the appropriate modules
 # need to call epi before tb to get bcg vax
 # seed = random.randint(0, 50000)
-seed = 5  # set seed for reproducibility
+seed = 236996814  # set seed for reproducibility
+
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
 sim.register(*fullmodel(
     resourcefilepath=resourcefilepath,
@@ -61,10 +62,10 @@ sim.register(*fullmodel(
 ))
 
 # # set the scenario
-sim.modules["Hiv"].parameters["beta"] = 0.129671
-sim.modules["Tb"].parameters["beta"] = 0.19
+sim.modules["Hiv"].parameters["beta"] = 0.135999
+sim.modules["Tb"].parameters["beta"] = 0.204125
 sim.modules["Tb"].parameters["scenario"] = scenario
-sim.modules["Tb"].parameters["scenario_start_date"] = Date(2014, 1, 1)
+# sim.modules["Tb"].parameters["scenario_start_date"] = Date(2023, 1, 1)
 #
 # # to cluster tests in positive people
 # sim.modules["Hiv"].parameters["rr_test_hiv_positive"] = 10  # default 1.5
