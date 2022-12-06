@@ -634,7 +634,6 @@ class Tb(Module):
                 priority=0,
             )
 
-
     def select_tb_test(self, person_id):
 
         df = self.sim.population.props

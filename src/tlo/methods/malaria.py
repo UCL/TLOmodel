@@ -671,7 +671,6 @@ class MalariaScheduleTesting(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         df = population.props
-        now = self.sim.date
         p = self.module.parameters
 
         # select people to go for testing (and subsequent tx)
@@ -680,7 +679,6 @@ class MalariaScheduleTesting(RegularEvent, PopulationScopeEventMixin):
         # unnecessary treatments  and uninfected people
         alive = df.is_alive
         test = df.index[alive][self.module.rng.random_sample(size=alive.sum()) < p["testing_adj"]]
-
 
         for person_index in test:
             logger.debug(key='message',
@@ -702,7 +700,7 @@ class MalariaIPTp(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         df = population.props
-        now=self.sim.date
+        now = self.sim.date
 
         # select currently pregnant women without IPTp, malaria-negative
         p1 = df.index[df.is_alive & df.is_pregnant & ~df.ma_is_infected & ~df.ma_iptp]
@@ -790,7 +788,6 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = '1a'
 
     def apply(self, person_id, squeeze_factor):
-
 
         df = self.sim.population.props
         params = self.module.parameters
