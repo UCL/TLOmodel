@@ -15,7 +15,7 @@ from tlo.analysis.utils import (
     order_of_coarse_appt,
 )
 
-PREFIX_ON_FILENAME = '0'
+PREFIX_ON_FILENAME = '3'
 
 # Declare period for which the results will be generated (defined inclusively)
 TARGET_PERIOD = (Date(2010, 1, 1), Date(2010, 12, 31))
@@ -224,15 +224,15 @@ def figure3_appointments_used(results_folder: Path, output_folder: Path):
 def apply(results_folder: Path, output_folder: Path):
     """Description of the usage of healthcare system resources."""
 
-    # figure1_distribution_of_hsi_event_by_date(
+    #figure1_distribution_of_hsi_event_by_date(
     #    results_folder=results_folder, output_folder=results_folder
-    # )
+    #)
     figure2_distribution_of_hsi_event_by_treatment(
         results_folder=results_folder, output_folder=results_folder
     )
-    # figure3_appointments_used(
+    #figure3_appointments_used(
     #    results_folder=results_folder, output_folder=results_folder
-    # )
+    #)
 
 
 if __name__ == "__main__":
