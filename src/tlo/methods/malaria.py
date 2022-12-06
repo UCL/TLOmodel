@@ -825,7 +825,6 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
                                      data=f'HSI_Malaria_rdt: scheduling HSI_Malaria_tx_compl_child {person_id}'
                                           f'on date {self.sim.date}')
 
-
                         treat = HSI_Malaria_complicated_treatment_child(
                             self.sim.modules["Malaria"], person_id=person_id
                         )
