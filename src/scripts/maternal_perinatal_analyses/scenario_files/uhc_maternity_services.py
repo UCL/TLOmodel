@@ -29,9 +29,9 @@ from tlo.scenario import BaseScenario
 class UHCMaternityServices(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 987
+        self.seed = 562661
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2015, 1, 1)
+        self.end_date = Date(2031, 1, 1)
         self.pop_size = 200_000
         self.number_of_draws = 1
         self.runs_per_draw = 20
@@ -98,15 +98,17 @@ class UHCMaternityServices(BaseScenario):
                        'cemonc_cons_availability': 1.0,
                        'alternative_pnc_coverage': True,
                        'alternative_pnc_quality': True,
-                       'pnc_availability_odds': 11.0,
+                       'pnc_availability_odds': 15.0,
                        'pnc_availability_probability': 1.0,
-                       'analysis_year': 2010},
+                       'analysis_year': 2023},
 
             'PregnancySupervisor': {'alternative_anc_coverage': True,
                                     'alternative_anc_quality': True,
+                                    'alternative_ip_anc_quality': True,
                                     'anc_availability_odds': 9.0,
                                     'anc_availability_probability': 1.0,
-                                    'analysis_year': 2010}
+                                    'ip_anc_availability_probability': 1.0,
+                                    'analysis_year': 2023}
 
         }
 
