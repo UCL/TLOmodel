@@ -198,8 +198,8 @@ def figure3_appointments_used(results_folder: Path, output_folder: Path):
     # PLOT TOTALS BY COARSE APPT_TYPE
 
     counts_of_coarse_appt_by_date = \
-        counts_of_appt_by_date.unstack().\
-        groupby(axis=1, by=counts_of_appt_by_date.index.levels[1].map(get_coarse_appt_type)).sum()
+        counts_of_appt_by_date.unstack(). \
+            groupby(axis=1, by=counts_of_appt_by_date.index.levels[1].map(get_coarse_appt_type)).sum()
 
     counts_of_coarse_appt_by_date = counts_of_coarse_appt_by_date[
         sorted(counts_of_coarse_appt_by_date.columns, key=order_of_coarse_appt)
@@ -224,19 +224,18 @@ def figure3_appointments_used(results_folder: Path, output_folder: Path):
 def apply(results_folder: Path, output_folder: Path):
     """Description of the usage of healthcare system resources."""
 
-    #figure1_distribution_of_hsi_event_by_date(
+    # figure1_distribution_of_hsi_event_by_date(
     #    results_folder=results_folder, output_folder=results_folder
-    #)
+    # )
     figure2_distribution_of_hsi_event_by_treatment(
         results_folder=results_folder, output_folder=results_folder
     )
-    #figure3_appointments_used(
+    # figure3_appointments_used(
     #    results_folder=results_folder, output_folder=results_folder
-    #)
+    # )
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser("Analyse logged HSI event data from scenario run")
     parser.add_argument(
         "--results-folder",
