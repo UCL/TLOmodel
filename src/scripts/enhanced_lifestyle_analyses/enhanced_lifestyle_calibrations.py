@@ -1,3 +1,6 @@
+"""
+This is lifestyle calibration. it plots lifestyle properties against their observed data.
+"""
 # %% Import Statements
 import datetime
 from pathlib import Path
@@ -15,16 +18,22 @@ from tlo.methods import demography, enhanced_lifestyle, simplified_births
 
 def add_footnote(footnote: str):
     """ a function that adds a footnote below property plots
+
     :param footnote: any plot footnote description """
     plt.figtext(0.5, 0.01, footnote, ha="center", fontsize=10,
                 bbox={"facecolor": "gray", "alpha": 0.3, "pad": 5})
 
 
-class LifeStylePlots:
+class LifeStyleCalibration:
     """ a class for calibrating lifestyle properties """
 
     def __init__(self, logs=None, path: str = None):
+        """ initialise variables
 
+        :param logs: all lifestyle logs
+        :param path: a path to outputs folder
+
+        """
         # create a dictionary for lifestyle properties and their descriptions to be used as plot descriptors.
         self.en_props = {'li_urban': 'currently urban', 'li_wealth': 'wealth level',
                          'li_low_ex': 'currently low exercise', 'li_tob': 'current using tobacco',
@@ -38,7 +47,7 @@ class LifeStylePlots:
                          }
 
         # ------------------------- OBSERVED DATA PROPORTIONS--------------------------------
-        # 1. Those that are logged not by either rural urban or gender
+        # 1. Lifestyle properties that are logged not by either rural urban or gender
         self.obs_data_prop = {
             'li_urban': {
                 'ob_year': 2018,
@@ -71,7 +80,7 @@ class LifeStylePlots:
                 }
             }
         }
-        # 2. Those that are logged by rural urban
+        # 2. Lifestyle properties that are logged by rural urban
         self.obs_data_prop_rural_urban = {
             'li_unimproved_sanitation': {
                 'ob_year': 2015,
@@ -94,7 +103,7 @@ class LifeStylePlots:
                 'data': [0.15, 0.01]
             }
         }
-        # 3. Those that are logged by rural urban and gender
+        # 3. Lifestyle properties that are logged by rural urban and gender
         self.obs_data_prop_rural_urban_cat = {
             'li_wealth': {
                 'ob_year': 2015,
@@ -130,7 +139,7 @@ class LifeStylePlots:
             }
         }
 
-        # 4. Those that are logged by gender
+        # 4. Lifestyle properties that are logged by gender
         self.other_props = {
             'li_mar_stat': {
                 'ob_year': 2015,
@@ -205,7 +214,9 @@ class LifeStylePlots:
 
     def plot_no_cat_gender_age_group_properties(self, li_property: str):
         """ A function to plot all lifestyle properties that are not grouped by categories, gender, age group or
-        urban / rural status """
+        urban / rural status
+
+         :param li_property: one of the lifestyle properties """
 
         # a dataframe that will hold plotting data
         total_per_prop = pd.DataFrame()
@@ -301,7 +312,9 @@ class LifeStylePlots:
             plt.show()
 
     def plot_properties_by_urban_rural(self, li_property: str):
-        """ A function to plot all lifestyle properties that are grouped by rural urban """
+        """ A function to plot all lifestyle properties that are grouped by rural urban
+
+         :param li_property: one of the lifestyle properties """
         ylim = 1.0  # max y-limit
         _rows_counter: int = 0  # a counter to set the number of rows when plotting
         fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(10, 5))  # configure plot
@@ -365,7 +378,10 @@ class LifeStylePlots:
         plt.show()
 
     def plot_properties_by_urban_rural_cat(self, li_property: str, categories: list = None):
-        """ A function to plot all Lifestyle properties grouped by rural, urban and categories """
+        """ A function to plot all Lifestyle properties grouped by rural, urban and categories
+
+         :param li_property: one of the lifestyle properties
+         :param categories: a list containing categories """
 
         # create a dictionary that will hold proportions for individuals in both rural and urban
         _prop_urb_rural = dict()
@@ -525,7 +541,10 @@ class LifeStylePlots:
                 plt.show()
 
     def plot_properties_by_gender(self, li_property: str, categories: list = None):
-        """ A function to plot Lifestyle properties that are grouped by gender """
+        """ A function to plot Lifestyle properties that are grouped by gender
+
+         :param li_property: one of the lifestyle properties
+         :param categories: a list containing categories """
         ylim = 1.0
         _props = dict()  # to hold male female proportions
         # 1. create model proportions
@@ -603,7 +622,7 @@ class LifeStylePlots:
             plt.show()
 
     def display_all_properties_plots(self):
-        """ A function to plot all lifestyle properties. Here we are looping through a dictionary that contains all
+        """ A function to calibrate all lifestyle properties. Here we are looping through a dictionary that contains all
         lifestyle properties and call other functions based on which observed data dictionary the property belongs """
         # loop through all properties dictionary
         for prop in self.en_props:
@@ -674,7 +693,7 @@ def run():
     return sim
 
 
-# catch warnings
+# uncomment the line below if you want to catch all warnings
 # pd.set_option('mode.chained_assignment', 'raise')
 # %% Run the Simulation
 sim = run()
@@ -686,8 +705,8 @@ output = parse_log_file(sim.log_filepath)
 # construct a dict of dataframes using lifestyle logs
 logs_df = output['tlo.methods.enhanced_lifestyle']
 
-# initialise LifestylePlots class
-g_plots = LifeStylePlots(logs=logs_df, path="./outputs")
+# initialise LifeStyleCalibration class
+g_plots = LifeStyleCalibration(logs=logs_df, path="./outputs")
 
-# plot lifestyle properties
+# calibrate lifestyle properties
 g_plots.display_all_properties_plots()

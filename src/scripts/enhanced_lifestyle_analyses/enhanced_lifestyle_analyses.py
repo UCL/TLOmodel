@@ -1,3 +1,7 @@
+"""
+This is Lifestyle analyses file.  It seeks to show trends in different lifestyle properties. It plots properties by
+gender and age groups
+"""
 # %% Import Statements
 import datetime
 from pathlib import Path
@@ -174,14 +178,14 @@ class LifeStylePlots:
                   category 3: 25-29.9
                   category 4: 30-34.9
                   category 5: 35+
-            bmi is 0 until age 15
+            bmi is np.nan until age 15
 
         2. wealth level
-            wealth level is categorised as follows as follows;
+            wealth level is categorised as follows;
 
                     Urban                               |         Rural
                     ------------------------------------|----------------------------------------------
-                    level 1 = 75% wealth level           |  level 1 = 11% wealth level
+                    level 1 = 75% wealth level          |  level 1 = 11% wealth level
                     level 2 = 16% wealth level          |  level 2 = 21% wealth level
                     level 3 = 5% wealth level           |  level 3 = 23% wealth level
                     level 4 = 2% wealth level           |  level 4 = 23% wealth level
@@ -191,7 +195,7 @@ class LifeStylePlots:
              education level is categorised as follows
                     level 1: no education
                     level 2: primary education
-                    level 3 : secondary+ education )
+                    level 3 : secondary+ education
 
         4. marital status
             marital status is categorised as follows
@@ -267,7 +271,6 @@ class LifeStylePlots:
         """ a function to plot non categorical properties of lifestyle module grouped by gender
 
          :param _property: any other non categorical property defined in lifestyle module """
-
         # set y-axis limit.
         y_lim: float = 0.8
         if _property in ['li_no_access_handwashing', 'li_high_salt', 'li_wood_burn_stove', 'li_in_ed']:
@@ -280,7 +283,6 @@ class LifeStylePlots:
 
         # plot for male circumcision and female sex workers
         if _property in ['li_is_circ', 'li_is_sexworker']:
-            # plot male circumcision
             self.male_circumcision_and_sex_workers_plot(_property)
 
         # check if property is in a group of those that need plotting by urban and rural
@@ -350,7 +352,6 @@ class LifeStylePlots:
             elif _property in ['li_mar_stat', 'li_ed_lev']:
                 self.plot_categorical_properties_by_gender(_property, ['1', '2', '3'])
             else:
-                # pass
                 self.plot_non_categorical_properties_by_gender(_property)
 
     # 2. AGE GROUP PLOTS
@@ -366,14 +367,14 @@ class LifeStylePlots:
                   category 3: 25-29.9
                   category 4: 30-34.9
                   category 5: 35+
-            bmi is 0 until age 15
+            bmi is np.nan until age 15
 
         2. wealth level
             wealth level is categorised as follows as follows;
 
                     Urban                               |         Rural
                     ------------------------------------|----------------------------------------------
-                    level 1 = 75% wealth level           |  level 1 = 11% wealth level
+                    level 1 = 75% wealth level          |  level 1 = 11% wealth level
                     level 2 = 16% wealth level          |  level 2 = 21% wealth level
                     level 3 = 5% wealth level           |  level 3 = 23% wealth level
                     level 4 = 2% wealth level           |  level 4 = 23% wealth level
@@ -383,7 +384,7 @@ class LifeStylePlots:
              education level is categorised as follows
                     level 1: not in education
                     level 2: primary education
-                    level 3 : secondary+ education )
+                    level 3 : secondary+ education
 
         4. marital status
             marital status is categorised as follows
@@ -410,8 +411,7 @@ class LifeStylePlots:
                 # loop through categories and get age groups data per each category
                 for cat in categories:
                     new_df[f'cat_{cat}'] = self.dfs[_property][urban_rural]['M'][cat].sum(axis=0) + \
-                                           self.dfs[_property][urban_rural]['F'][cat].sum(
-                                               axis=0)
+                                           self.dfs[_property][urban_rural]['F'][cat].sum(axis=0)
 
                 # convert values to proportions
                 # new_df = new_df.apply(lambda row: row / row.sum(), axis=0)
@@ -439,6 +439,7 @@ class LifeStylePlots:
                 new_df[f'cat_{cat}'] = self.dfs[_property]['M'][cat].sum(axis=0) + self.dfs[_property]['F'][cat].sum(
                     axis=0)
             # convert values to proportions
+            print(f'the df is {new_df}')
             # new_df = new_df.apply(lambda row: row / row.sum(), axis=0)
             new_df = new_df.apply(lambda row: row / row.sum(), axis=1)
             # do plotting
@@ -592,7 +593,7 @@ def run():
 
     # Basic arguments required for the simulation
     start_date = Date(2010, 1, 1)
-    end_date = Date(2050, 1, 1)
+    end_date = Date(2022, 2, 1)
     pop_size = 20000
 
     # This creates the Simulation instance for this run. Because we"ve passed the `seed` and
@@ -624,7 +625,7 @@ sim = run()
 
 # %% read the results
 output = parse_log_file(sim.log_filepath)
-# output = parse_log_file(Path("./outputs/enhanced_lifestyle__2022-11-24T135421.log"))
+# output = parse_log_file(Path("./outputs/enhanced_lifestyle__2022-12-07T112556.log"))
 
 # construct a dict of dataframes using lifestyle logs
 logs_df = output['tlo.methods.enhanced_lifestyle']

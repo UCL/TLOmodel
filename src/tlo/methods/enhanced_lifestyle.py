@@ -444,36 +444,39 @@ class EduPropertyInitialiser:
         :param df: population dataframe
         :param rng: random number generator """
 
-        # create a new dataframe to hold results
-        edu_df = pd.DataFrame(data=df[['li_in_ed', 'li_ed_lev']].copy(), index=df.index)
+        # check to see if education linear model is not arleady initialised
+        if len(self.module.models.is_edu_dictionary_empty()) == 0:
+            # create a new dataframe to hold results
+            edu_df = pd.DataFrame(data=df[['li_in_ed', 'li_ed_lev']].copy(), index=df.index)
+            edu_df['li_ed_lev'] = 1
+            # select individuals who are alive and 5+ years
+            age_gte5 = df.index[(df.age_years >= 5) & df.is_alive]
 
-        edu_df['li_ed_lev'] = 1
-        # select individuals who are alive and 5+ years
-        age_gte5 = df.index[(df.age_years >= 5) & df.is_alive]
+            # store population eligible for education
+            edu_pop = df.loc[(df.age_years >= 5) & df.is_alive]
+            rnd_draw = pd.Series(data=rng.random_sample(size=len(age_gte5)), index=age_gte5, dtype=float)
 
-        # store population eligible for education
-        edu_pop = df.loc[(df.age_years >= 5) & df.is_alive]
+            # make some predictions
+            p_some_ed = self.module.models.education_linear_models()['some_edu_linear_model'].predict(edu_pop)
+            p_ed_lev_3 = self.module.models.education_linear_models()['level_3_edu_linear_model'].predict(edu_pop)
 
-        rnd_draw = pd.Series(data=rng.random_sample(size=len(age_gte5)), index=age_gte5, dtype=float)
+            dfx = pd.concat([(1 - p_ed_lev_3), (1 - p_some_ed)], axis=1)
+            dfx.columns = ['cut_off_ed_levl_3', 'p_ed_lev_1']
 
-        # make some predictions
-        p_some_ed = self.module.models.education_linear_models()['some_edu_linear_model'].predict(edu_pop)
-        p_ed_lev_3 = self.module.models.education_linear_models()['level_3_edu_linear_model'].predict(edu_pop)
+            dfx['li_ed_lev'] = 2
+            dfx.loc[dfx['cut_off_ed_levl_3'] < rnd_draw, 'li_ed_lev'] = 3
+            dfx.loc[dfx['p_ed_lev_1'] > rnd_draw, 'li_ed_lev'] = 1
 
-        dfx = pd.concat([(1 - p_ed_lev_3), (1 - p_some_ed)], axis=1)
-        dfx.columns = ['cut_off_ed_levl_3', 'p_ed_lev_1']
+            edu_df.loc[age_gte5, 'li_ed_lev'] = dfx['li_ed_lev']
 
-        dfx['li_ed_lev'] = 2
-        dfx.loc[dfx['cut_off_ed_levl_3'] < rnd_draw, 'li_ed_lev'] = 3
-        dfx.loc[dfx['p_ed_lev_1'] > rnd_draw, 'li_ed_lev'] = 1
+            edu_df.loc[df.age_years.between(5, 12) & (edu_df['li_ed_lev'] == 2) & df.is_alive, 'li_in_ed'] = True
+            edu_df.loc[df.age_years.between(13, 19) & (edu_df['li_ed_lev'] == 3) & df.is_alive, 'li_in_ed'] = True
 
-        edu_df.loc[age_gte5, 'li_ed_lev'] = dfx['li_ed_lev']
-
-        edu_df.loc[df.age_years.between(5, 12) & (edu_df['li_ed_lev'] == 2) & df.is_alive, 'li_in_ed'] = True
-        edu_df.loc[df.age_years.between(13, 19) & (edu_df['li_ed_lev'] == 3) & df.is_alive, 'li_in_ed'] = True
+            self.module.models.is_edu_dictionary_empty()['li_in_ed'] = edu_df.li_in_ed
+            self.module.models.is_edu_dictionary_empty()['li_ed_lev'] = edu_df.li_ed_lev
 
         # return results based on the selected property
-        return edu_df.li_in_ed if self.edu_property == 'li_in_ed' else edu_df.li_ed_lev
+        return self.module.models.is_edu_dictionary_empty()[self.edu_property]
 
 
 class BmiPropertyInitialiser:
@@ -519,8 +522,8 @@ class BmiPropertyInitialiser:
 
 
 class LifestyleModels:
-    """Helper class to store all linear models for the Lifestyle module. We have used two types of linear models namely
-    logistic and multiplicative linear models. We currently have defined linear models for the following;
+    """Helper class to store all linear models for the Lifestyle module. We have used three types of linear models namely
+    logistic, multiplicative and custom linear models. We currently have defined linear models for the following;
             1.  urban rural status
             2.  wealth level
             3.  low exercise
@@ -534,7 +537,9 @@ class LifestyleModels:
             11. no access hand washing
             12. salt intake
             13. sugar intake
-            14. bmi """
+            14. bmi
+            15. male circumcision
+            16. female sex workers """
 
     def __init__(self, module):
         # initialise variables
@@ -542,6 +547,9 @@ class LifestyleModels:
         self.rng = self.module.rng
         self.params = module.parameters
         self.date_last_run = module.sim.date
+
+        # define a dictionary that wll hold results from education linear models
+        self.edu_lm_res = dict()
 
         # create all linear models dictionary for use in both initialisation and update of properties
         self._models = {
@@ -551,7 +559,7 @@ class LifestyleModels:
             },
             'li_wealth': {
                 'init': self.wealth_level_linear_model(),
-                'update': self.wealth_level_linear_model()
+                'update': None
             },
             'li_low_ex': {
                 'init': self.low_exercise_linear_model(),
@@ -607,7 +615,7 @@ class LifestyleModels:
             },
             'li_is_circ': {
                 'init': self.male_circumsision_property_linear_model(),
-                'update': self.male_circumsision_property_linear_model()
+                'update': None
             },
             'li_is_sexworker': {
                 'init': self.female_sex_workers(),
@@ -615,12 +623,16 @@ class LifestyleModels:
             }
         }
 
+    def is_edu_dictionary_empty(self):
+        """ a function to check if education dictionary is empty or not """
+        return self.edu_lm_res
+
     def get_lm_keys(self):
-        """ a function to return all linear model keys as defined in models dictionary"""
+        """ a function to return all linear model keys as defined in models dictionary """
         return self._models.keys()
 
     def initialise_all_properties(self, df):
-        """initialise population properties using linear models defined in LifestyleModels class.
+        """ initialise population properties using linear models defined in LifestyleModels class.
 
         :param df: The population dataframe """
         # loop through linear models dictionary and initialise each property in the population dataframe
@@ -638,9 +650,7 @@ class LifestyleModels:
         months_since_last_poll = round((now - self.date_last_run) / np.timedelta64(1, "M"))
         # loop through linear models dictionary and initialise each property in the population dataframe
         for _property_name, _model in self._models.items():
-            if _property_name in ['li_wealth']:
-                pass
-            else:
+            if _model['update'] is not None:
                 df.loc[df.is_alive, _property_name] = _model['update'].predict(
                     df.loc[df.is_alive], rng=self.rng, other=self.module.sim.date,
                     months_since_last_poll=months_since_last_poll)
@@ -1649,7 +1659,7 @@ class LifestyleModels:
                         Steps:
                             1.  accept a population dataframe from the predict method of a custom linear model
                             2.  create a new series using data from column `li_wood_burn_stove` in the  dataframe
-                            3.  update the dataframe using different probabilities
+                            3.  update the series using different probabilities
                             4.  return the updated series
 
                         :param self: a reference to the calling custom linear model
@@ -1821,7 +1831,7 @@ class LifestyleModels:
             # create a new series that will hold all bmi transitions
             trans_bmi = pd.Series(data=df.li_bmi.copy(), index=df.index, dtype=float)
 
-            # those reaching age 15 allocated bmi 3
+            # those reaching age 15 allocated bmi 2
             age15_idx = df.index[df.is_alive & (df.age_exact_years >= 15) & (df.age_exact_years < 15.25)]
             trans_bmi.loc[age15_idx] = 2
 

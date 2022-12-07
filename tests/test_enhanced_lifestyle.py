@@ -1,3 +1,6 @@
+""""
+This is a test file for Lifestyle Module. It contains a number of checks to ensure everything is running as expected
+"""
 import os
 import time
 from pathlib import Path
@@ -89,8 +92,10 @@ def test_assign_rural_urban_by_district(simulation):
 
 
 def test_check_properties_daily_event():
+    """ A test that seeks to test the integrity of lifestyle properties. It contains a dummy module with an event that
+    runs daily to ensure properties what they are expected """
     class DummyModule(Module):
-
+        """ a dummy module for testing lifestyle properties """
         def read_parameters(self, data_folder):
             pass
 
