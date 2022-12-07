@@ -188,12 +188,16 @@ class Contraception(Module):
 
         # 3) Give a notional date on which the last appointment occurred for those that need them
         needs_appts = females1549 & df['co_contraception'].isin(self.states_that_may_require_HSI_to_maintain_on)
-        df.loc[needs_appts, 'co_date_of_last_fp_appt'] = pd.Series([
-            random_date(
-                self.sim.date - pd.DateOffset(days=self.parameters['days_between_appts_for_maintenance']),
+        states_to_maintain_on = sorted(self.states_that_may_require_HSI_to_maintain_on)
+        df.loc[needs_appts, 'co_date_of_last_fp_appt'] = df.loc[needs_appts, 'co_contraception'].astype('string').apply(
+            lambda _co_contraception: random_date(
+                self.sim.date - pd.DateOffset(
+                    days=self.parameters['days_between_appts_for_maintenance']
+                    [states_to_maintain_on.index(_co_contraception)]),
                 self.sim.date - pd.DateOffset(days=1),
-                self.rng) for _ in range(len(needs_appts))
-        ])
+                self.rng
+            )
+        )
 
     def initialise_simulation(self, sim):
         """
@@ -538,15 +542,20 @@ class Contraception(Module):
         days_between_appts = self.parameters['days_between_appts_for_maintenance']
 
         date_of_last_appt = df.loc[ids, "co_date_of_last_fp_appt"].to_dict()
+        states_to_maintain_on = sorted(self.states_that_may_require_HSI_to_maintain_on)
 
         for _woman_id, _old, _new in zip(ids, old, new):
+            if _new == 'female_sterilization':
+                assert df.loc[_woman_id, 'age_years'] >= 30
             # Does this change require an HSI?
             is_a_switch = _old != _new
             reqs_appt = _new in self.states_that_may_require_HSI_to_switch_to if is_a_switch \
                 else _new in self.states_that_may_require_HSI_to_maintain_on
-            due_appt = pd.isnull(date_of_last_appt[_woman_id]) or (
-                (date_today - date_of_last_appt[_woman_id]).days >= days_between_appts
-            )
+            if (not is_a_switch) & (_old in self.states_that_may_require_HSI_to_maintain_on):
+                due_appt = (pd.isnull(date_of_last_appt[_woman_id]) or
+                            (date_today - date_of_last_appt[_woman_id]).days >=
+                            days_between_appts[states_to_maintain_on.index(_old)]
+                            )
             do_appt = self.use_healthsystem and reqs_appt and (is_a_switch or due_appt)
 
             # If the new method requires an HSI to be implemented, schedule the HSI:
