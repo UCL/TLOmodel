@@ -411,13 +411,30 @@ def test_defaulting_off_method_if_no_healthsystem_or_consumable_at_individual_le
         contraceptives = sorted(sim.modules['Contraception'].all_contraception_states)
         n_contraceptives = len(contraceptives)
         states_that_may_require_HSI_to_maintain_on = \
-            sim.modules['Contraception'].states_that_may_require_HSI_to_maintain_on
+            sorted(sim.modules['Contraception'].states_that_may_require_HSI_to_maintain_on)
 
-        # Set that some woman two women are on each of the contraceptive, one of whom is due an appointment next month
+        # Set that two women are on each of the contraceptive, one of whom is due an appointment next month
         initial_conditions = pd.DataFrame({
             'method': contraceptives * 2,
             'due_appt': [True] * n_contraceptives + [False] * n_contraceptives
         })
+
+        def set_last_appt(of_method, due_bool):
+            """
+            Sets the number of days when last appointment was issued. If the appt is due and the method requires HSI
+            to maintain, it is set to 25 days less than the method-specific 'days_between_appts_for_maintenance'.
+            If the appt is due but the method does not require HSI to maintain, it is set to 65 days. If the
+            appt is not due, it is set to 1 day.
+            """
+            if due_bool:
+                if of_method in states_that_may_require_HSI_to_maintain_on:
+                    return (sim.modules['Contraception'].parameters['days_between_appts_for_maintenance']
+                            [states_that_may_require_HSI_to_maintain_on.index(of_method)] - 25)
+                else:
+                    return 65
+            else:
+                return 1
+
         for _person_id, _row in initial_conditions.iterrows():
             _props = {
                 'sex': 'F',
@@ -427,14 +444,13 @@ def test_defaulting_off_method_if_no_healthsystem_or_consumable_at_individual_le
                 'is_pregnant': False,
                 'date_of_last_pregnancy': pd.NaT,
                 'co_unintended_preg': False,
-                'co_date_of_last_fp_appt': sim.date - (
-                    pd.DateOffset(months=5) if _row.due_appt else pd.DateOffset(days=1)
-                )
+                'co_date_of_last_fp_appt': sim.date -
+                    pd.DateOffset(days=set_last_appt(of_method=_row.method, due_bool=_row.due_appt))
             }
             df.loc[_person_id, _props.keys()] = _props.values()
 
         # Run simulation
-        sim.simulate(end_date=sim.start_date + pd.DateOffset(months=3))
+        sim.simulate(end_date=sim.start_date + pd.DateOffset(months=2))  # TODO: months=min(days_between)/30-1
         __check_no_illegal_switches(sim)
 
         # Check method that the women are now on.
@@ -448,7 +464,7 @@ def test_defaulting_off_method_if_no_healthsystem_or_consumable_at_individual_le
             initial_conditions.method.loc[on_a_method_that_did_not_require_appointment]
         ).all()
 
-        # - Those originally on a method that did not require an appointment and were not due an appointment, are still
+        # - Those originally on a method that required an appointment and were not due an appointment, are still
         # on it
         on_a_method_that_required_appointment_but_appointment_not_due = (
             initial_conditions.method.isin(states_that_may_require_HSI_to_maintain_on)
@@ -459,7 +475,7 @@ def test_defaulting_off_method_if_no_healthsystem_or_consumable_at_individual_le
             initial_conditions.method.loc[on_a_method_that_required_appointment_but_appointment_not_due]
         ).all()
 
-        # - Those originally on a method that did not require an appointment and were due an appointment, have defaulted
+        # - Those originally on a method that required an appointment and were due an appointment, have defaulted
         # to "not_using"
         on_a_method_that_required_appointment_and_appointment_was_due = (
             initial_conditions.method.isin(states_that_may_require_HSI_to_maintain_on)
