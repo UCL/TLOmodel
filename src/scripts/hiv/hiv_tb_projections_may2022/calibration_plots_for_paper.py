@@ -23,9 +23,9 @@ from tlo.analysis.utils import (
 resourcefilepath = Path("./resources")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
-# outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
+outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
 
-outputspath = Path("./outputs/tbh03@ic.ac.uk")
+# outputspath = Path("./outputs/tbh03@ic.ac.uk")
 
 # %% read in data files for plots
 # load all the data for calibration
@@ -131,9 +131,9 @@ data_hiv_moh_art = pd.read_excel(xls, sheet_name="MoH_number_art")
 # %% Analyse results of runs
 
 # 0) Find results_folder associated with a given batch_file (and get most recent [-1])
-# results_folder = get_scenario_outputs("scenario0.py", outputspath)[-1]
+results_folder = get_scenario_outputs("calibration.py", outputspath)[-1]
 
-results_folder = get_scenario_outputs("long_run_all_diseases.py", outputspath)[-1]
+# results_folder = get_scenario_outputs("long_run_all_diseases.py", outputspath)[-1]
 
 # Declare path for output graphs from this script
 make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
@@ -148,7 +148,7 @@ info = get_scenario_info(results_folder)
 params = extract_params(results_folder)
 
 # choose which draw to summarise / visualise
-draw = 0
+draw = 16
 
 # %% extract results
 # Load and format model results (with year as integer):
