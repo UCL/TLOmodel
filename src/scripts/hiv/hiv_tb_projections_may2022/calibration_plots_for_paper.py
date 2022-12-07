@@ -23,7 +23,9 @@ from tlo.analysis.utils import (
 resourcefilepath = Path("./resources")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
-outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
+# outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
+
+outputspath = Path("./outputs/tbh03@ic.ac.uk")
 
 # %% read in data files for plots
 # load all the data for calibration
@@ -129,7 +131,9 @@ data_hiv_moh_art = pd.read_excel(xls, sheet_name="MoH_number_art")
 # %% Analyse results of runs
 
 # 0) Find results_folder associated with a given batch_file (and get most recent [-1])
-results_folder = get_scenario_outputs("scenario0.py", outputspath)[-1]
+# results_folder = get_scenario_outputs("scenario0.py", outputspath)[-1]
+
+results_folder = get_scenario_outputs("long_run_all_diseases.py", outputspath)[-1]
 
 # Declare path for output graphs from this script
 make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
@@ -790,11 +794,11 @@ plt.show()
 # Make plot
 fig, ax = plt.subplots()
 
-ax.plot(data_hiv_unaids_deaths.index[0:14],
-        aids_deaths["median_aids_deaths_rate_100kpy"][0:14], "-", color="C3")
-ax.fill_between(data_hiv_unaids_deaths.index[0:14],
-                aids_deaths["lower_aids_deaths_rate_100kpy"][0:14],
-                aids_deaths["upper_aids_deaths_rate_100kpy"][0:14], color="C3", alpha=0.2)
+ax.plot(data_hiv_unaids_deaths.index[0:9],
+        aids_deaths["median_aids_deaths_rate_100kpy"][0:9], "-", color="C3")
+ax.fill_between(data_hiv_unaids_deaths.index[0:9],
+                aids_deaths["lower_aids_deaths_rate_100kpy"][0:9],
+                aids_deaths["upper_aids_deaths_rate_100kpy"][0:9], color="C3", alpha=0.2)
 
 
 ax.plot(data_hiv_unaids_deaths.index, data_hiv_unaids_deaths["AIDS_mortality_per_100k"], "-", color="C0")
@@ -825,16 +829,16 @@ plt.show()
 # TB deaths (excluding HIV/TB deaths)
 fig, ax = plt.subplots()
 
-ax.plot(data_tb_who.index[0:14],
-        tb_deaths["median_tb_deaths_rate_100kpy"][0:14], "-", color="C3")
-ax.fill_between(data_tb_who.index[0:14],
-                tb_deaths["lower_tb_deaths_rate_100kpy"][0:14],
-                tb_deaths["upper_tb_deaths_rate_100kpy"][0:14], color="C3", alpha=0.2)
+ax.plot(data_tb_who.index[0:9],
+        tb_deaths["median_tb_deaths_rate_100kpy"][0:9], "-", color="C3")
+ax.fill_between(data_tb_who.index[0:9],
+                tb_deaths["lower_tb_deaths_rate_100kpy"][0:9],
+                tb_deaths["upper_tb_deaths_rate_100kpy"][0:9], color="C3", alpha=0.2)
 
-ax.plot(data_tb_who.index[0:14], data_tb_who["mortality_tb_excl_hiv_per_100k"][0:14], "-", color="C0")
-ax.fill_between(data_tb_who.index[0:14],
-                data_tb_who["mortality_tb_excl_hiv_per_100k_low"][0:14],
-                data_tb_who["mortality_tb_excl_hiv_per_100k_high"][0:14], color="C0", alpha=0.2)
+ax.plot(data_tb_who.index[0:9], data_tb_who["mortality_tb_excl_hiv_per_100k"][0:9], "-", color="C0")
+ax.fill_between(data_tb_who.index[0:9],
+                data_tb_who["mortality_tb_excl_hiv_per_100k_low"][0:9],
+                data_tb_who["mortality_tb_excl_hiv_per_100k_high"][0:9], color="C0", alpha=0.2)
 
 ax.set_ylabel("TB mortality per 100,000")
 ax.set_xlabel("Year")
@@ -942,11 +946,11 @@ model_2012_high = model_deaths_AIDS.iloc[2].quantile(0.975)
 model_2017_high = model_deaths_AIDS.iloc[5].quantile(0.975)
 
 # get GBD estimates from any log_filepath
-death_compare = compare_number_of_deaths('outputs/tb_transmission_runs__2022-09-07T181342.log', resourcefilepath)
-# death_compare = compare_number_of_deaths('outputs/t.mangal@imperial.ac.uk/scenario0-2022-08-25T104912Z.log',
-#                                          resourcefilepath)
+# death_compare = compare_number_of_deaths('outputs/tb_transmission_runs__2022-09-07T181342.log', resourcefilepath)
+death_compare = compare_number_of_deaths('outputs/tb_transmission_runs__2022-12-02T170813.log',
+                                         resourcefilepath)
 
-# sim.log_filepath example: 'outputs/Logfile__2021-10-04T155631.log'
+# sim.log_filepath example: 'outputs/tb_transmission_runs__2022-12-02T170813.log'
 
 # include all ages and both sexes
 deaths2010 = death_compare.loc[("2010-2014", slice(None), slice(None), "AIDS")].sum()
