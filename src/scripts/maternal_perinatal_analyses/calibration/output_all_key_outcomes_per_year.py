@@ -919,7 +919,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     aph_uqs = [x + y for x, y in zip(mm_aph_data[2], s_aph_data[2])]
 
     target_aph_dict = {'double': False,
-                       'first': {'year': 2015, 'value': 6.4, 'label': 'BEmONC.', 'ci': 0},
+                       'first': {'year': 2015, 'value': 4.6, 'label': 'BEmONC.', 'ci': 0},
                        }
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
@@ -1041,8 +1041,8 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
             target_rate_ol.append(31)
 
     target_ol_dict = {'double': True,
-                      'first': {'year': 2010, 'value': 17, 'label': 'BEmONC 2010', 'ci': 0},
-                      'second': {'year': 2015, 'value': 31, 'label': 'BEmONC 2015', 'ci': 0}}
+                      'first': {'year': 2010, 'value': 18.3, 'label': 'BEmONC 2010', 'ci': 0},
+                      'second': {'year': 2015, 'value': 33.7, 'label': 'BEmONC 2015', 'ci': 0}}
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
         sim_years, ol_data[0], ol_data[1], ol_data[2], target_ol_dict, 'Rate per 1000 births',
@@ -1170,8 +1170,8 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
 
     # todo: note, we would expect our rate to be higher than this
     target_sep_dict = {'double': True,
-                       'first': {'year': 2010, 'value': 4.7, 'label': 'BEmONC 2010', 'ci': 0},
-                       'second': {'year': 2015, 'value': 1.89, 'label': 'BEmONC 2015', 'ci': 0}}
+                       'first': {'year': 2010, 'value': 2.34, 'label': 'BEmONC 2010', 'ci': 0},
+                       'second': {'year': 2015, 'value': 1.5, 'label': 'BEmONC 2015', 'ci': 0}}
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
         sim_years, total_sep_rates, sep_lq, sep_uq, target_sep_dict, 'Rate per 1000 births',
@@ -1189,13 +1189,12 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     pph_uq = [x + y for x, y in zip(la_pph_data[2], pn_pph_data[2])]
 
     target_pph_dict = {'double': True,
-                       'first': {'year': 2010, 'value': 16, 'label': 'BEmONC 2010', 'ci': 0},
-                       'second': {'year': 2015, 'value': 14.6, 'label': 'BEmONC 2015', 'ci': 0}}
+                       'first': {'year': 2010, 'value': 7.95, 'label': 'BEmONC 2010', 'ci': 0},
+                       'second': {'year': 2015, 'value': 12.8, 'label': 'BEmONC 2015', 'ci': 0}}
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
         sim_years, total_pph_rates, pph_lq, pph_uq, target_pph_dict, 'Rate per 1000 births',
         'Rate of Postpartum Haemorrhage per Year', graph_location, 'pph_rate')
-
 
     # ----------------------------------------- Fistula... -------------------------------------------------
     vv_fis_data = analysis_utility_functions.get_comp_mean_and_rate(
