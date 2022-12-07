@@ -67,10 +67,12 @@ class Contraception(Module):
         'Prob_Switch_From_And_To': Parameter(Types.DATA_FRAME,
                                              'The probability of switching to a new method, by method, conditional that'
                                              ' the woman will switch to a new method.'),
-        'days_between_appts_for_maintenance': Parameter(Types.INT,
+        'days_between_appts_for_maintenance': Parameter(Types.LIST,
                                                         'The number of days between successive family planning '
                                                         'appointments for women that are maintaining the use of a '
-                                                        'method.'),
+                                                        'method (for each method in'
+                                                        'sorted(self.states_that_may_require_HSI_to_maintain_on), i.e.'
+                                                        '[IUD, implant, injections, other_modern, pill]).'),
         'age_specific_fertility_rates': Parameter(
             Types.DATA_FRAME, 'Data table from official source (WPP) for age-specific fertility rates and calendar '
                               'period'),
@@ -110,7 +112,7 @@ class Contraception(Module):
                                             'determine if a Family Planning appointment is needed to maintain the '
                                             'person on their current contraceptive. If the person is to maintain use of'
                                             ' the current contraceptive, they will have an HSI only if the days elapsed'
-                                            ' since this value exceeds the parameter '
+                                            ' since this value exceeds the method-specific parameter '
                                             '`days_between_appts_for_maintenance`.'
                                             )
     }
