@@ -709,7 +709,7 @@ class Contraception(Module):
         no women are pregnant, so the first births generated endogenously (through pregnancy -> gestation -> labour)
         occur after 9 months of simulation time. This method examines age-specific fertility rate data and causes there
         to be the appropriate number of births, scattered uniformly over the first 9 months of the simulation. These are
-        "direct live births" that are not subjected to any of the processes (e.g.  isk of loss of pregnancy, or risk of
+        "direct live births" that are not subjected to any of the processes (e.g. risk of loss of pregnancy, or risk of
         death to mother) represented in the `PregnancySupervisor`, `CareOfWomenDuringPregnancy` or `Labour`.
         When initialising population ensured person_id=0 is a man, so can safely exclude person_id=0 from choice of
         direct birth mothers without loss of generality."""
