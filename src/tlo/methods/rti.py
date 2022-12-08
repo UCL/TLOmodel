@@ -1201,8 +1201,8 @@ class RTI(Module):
         # create a generic severe trauma symptom, which forces people into the health system
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(name='severe_trauma',
-                    odds_ratio_health_seeking_in_adults=1.0,  # average probability to seek health care
-                    odds_ratio_health_seeking_in_children=1.0,  # as above
+                    odds_ratio_health_seeking_in_adults=0.1,  # low probability to seek health care
+                    odds_ratio_health_seeking_in_children=0.1,  # as above
                     prob_seeks_emergency_appt_in_adults=1.0,  # if seeking care, then 100% emergency health care
                     prob_seeks_emergency_appt_in_children=1.0,  # as above
                     ),
