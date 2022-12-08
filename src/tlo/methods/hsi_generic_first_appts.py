@@ -330,15 +330,6 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
     schedule_hsi = hsi_event.sim.modules["HealthSystem"].schedule_hsi_event
     age = df.at[person_id, 'age_years']
 
-    # Logs the symptoms that the person has, as a compound string
-    logger.info(
-        key='symptoms_of_person_at_emergency_hsi',
-        description='A list of the symptoms experienced by a person when they have a '
-                    '`HSI_GenericEmergencyFirstApptAtFacilityLevel1` HSI, in the form of a compound string delineated'
-                    ' with `|`.',
-        data='|'.join([s for s in symptoms])
-    )
-
     if 'PregnancySupervisor' in sim.modules:
 
         # -----  ECTOPIC PREGNANCY  -----
