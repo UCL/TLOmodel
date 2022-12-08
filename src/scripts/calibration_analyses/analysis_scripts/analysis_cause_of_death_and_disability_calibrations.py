@@ -15,7 +15,6 @@ from tlo.analysis.utils import (
     extract_results,
     format_gbd,
     get_color_cause_of_death_label,
-    get_scenario_outputs,
     load_pickled_dataframes,
     make_age_grp_lookup,
     make_age_grp_types,
@@ -332,8 +331,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.set_ylabel('Fraction')
         ax.set_title(f"Fraction of {what} Represented in the Model")
         ax.text(x=0.5, y=0.05, s=('Main causes not included explicitly:\n\n' + top_five_causes_of_death_not_modelled),
-                bbox={'edgecolor': 'r', 'facecolor': 'w'}
-        )
+                bbox={'edgecolor': 'r', 'facecolor': 'w'})
         fig.tight_layout()
         plt.savefig(make_graph_file_name(f"C_{what}_{period}_coverage"))
         plt.show()
