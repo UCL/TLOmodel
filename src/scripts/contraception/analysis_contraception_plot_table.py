@@ -11,7 +11,7 @@ time_start = time.time()
 # suffix if you want to (if not just set to '') for the output figure(s) and/or table
 suffix = "20K_TimsCode"  # "50K_TimsCode"
 # simulated pop size to be rescaled to the size of Malawi pop
-pop_size_simulated = 50000
+pop_size_simulated = 50_000
 # which results to use
 datestamp_without_log = '2022-11-07T144634' #50K: '2022-11-08T165333'  # TODO: update with final sim
 datestamp_with_log = '2022-11-04T175536' #50K: '2022-11-13T180430'  # TODO: update with final sim
