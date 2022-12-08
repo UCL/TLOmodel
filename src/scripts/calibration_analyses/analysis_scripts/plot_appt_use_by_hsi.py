@@ -71,6 +71,9 @@ def figure5_proportion_of_hsi_events_per_appt_type(results_folder: Path, output_
     counter_to_df = counter_to_df.groupby(
         ['TREATMENT_ID', 'Appt_Type'])['Count'].sum().reset_index()
 
+    # save
+    counter_to_df.to_csv(output_folder/'hsi_counts_by_treatment_id_and_appt_type.csv')
+
     # plot a square plot of appt use by treatment_id for each appt
     # appts to be plot
     appts = ['AccidentsandEmerg', 'AntenatalTotal', 'Csection',
