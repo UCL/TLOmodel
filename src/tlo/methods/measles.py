@@ -62,6 +62,8 @@ class Measles(Module):
             Types.REAL, "Risk of scheduled death occurring if on treatment for measles complications"),
         "symptom_prob": Parameter(
             Types.DATA_FRAME, "Probability of each symptom with measles infection"),
+        "case_fatality_rate": Parameter(
+            Types.DICT, "Probability that case of measles will result in death if not treated")
     }
 
     PROPERTIES = {
@@ -106,6 +108,7 @@ class Measles(Module):
         self.load_parameters_from_dataframe(workbook["parameters"])
 
         self.parameters["symptom_prob"] = workbook["symptoms"]
+        self.parameters["case_fatality_rate"] = workbook["cfr"].set_index('age')["probability"].to_dict()
 
         # moderate symptoms all mapped to moderate_measles, pneumonia/encephalitis mapped to severe_measles
         if "HealthBurden" in self.sim.modules.keys():
@@ -302,7 +305,8 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
         # todo separate probability for people with HIV
 
         # probability of death
-        if rng.uniform() < symptom_prob["death"]:
+        prob_death = p["case_fatality_rate"].get(ref_age)
+        if rng.random_sample() < prob_death:
             logger.debug(key="MeaslesOnsetEvent",
                          data=f"This is MeaslesOnsetEvent, scheduling measles death for {person_id}")
 
