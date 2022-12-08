@@ -802,7 +802,7 @@ CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP = MappingProxyType({
     'AIDS': 'deepskyblue',
     'Malaria': 'lightsteelblue',
     'Measles': 'cornflowerblue',
-    'non_AIDS_TB': 'mediumslateblue',
+    'TB (non-AIDS)': 'mediumslateblue',
 
     'Heart Disease': 'sienna',
     'Kidney Disease': 'chocolate',
