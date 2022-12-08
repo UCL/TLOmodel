@@ -295,23 +295,45 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         plt.show()
         plt.close(fig)
 
-        # %% Assess the "coverage" of the model: i.e. the fraction of deaths/dalys that are causes that are represnted
+        # %% Assess the "coverage" of the model: i.e. the fraction of deaths/dalys that are causes that are represented
         # the model.
+
+        # Causes of death not in the model and the fraction of total deaths they cause
+        unmodelled_causes = gbd \
+            .loc[(period == period) & (gbd['measure_name'] == what)] \
+            .assign(frac_deaths=lambda df: df['mean'] / df['mean'].sum()) \
+            .groupby(by=['cause_name', 'label'])['frac_deaths'].sum() \
+            .sort_values(ascending=False) \
+            .pipe(lambda df: df.loc[(slice(None), "Other")])
+
+        top_five_causes_of_death_not_modelled = ''.join([
+            f"* {_cause} ({round(100 * _percent_deaths, 1)}%)\n"
+            for _cause, _percent_deaths in unmodelled_causes[0:10].iteritems() if _percent_deaths >= 0.005
+        ])
+
         outcomes = outcome_by_age_pt['GBD'][("mean")]
         fraction_causes_modelled = 1.0 - outcomes['Other'] / outcomes.sum(axis=1)
-        fig, axs = plt.subplots(nrows=1, ncols=2, sharey=True)
-        for sex, ax in zip(sexes, axs):
+        fig, ax = plt.subplots()
+        for sex in sexes:
             fraction_causes_modelled.loc[(sex, slice(None))].droplevel(0).plot(
-                ax=ax, color=get_color_cause_of_death_label('Other'), lw=5)
-            ax.set_ylim(0, 1.0)
-            xticks = fraction_causes_modelled.index.levels[1]
-            ax.set_xticks(range(len(xticks)))
-            ax.set_xticklabels(xticks, rotation=90)
-            ax.grid(axis='y')
-            ax.set_xlabel('Age-Group')
-            ax.set_ylabel('Fraction')
-            ax.set_title(f"{sexname(sex)}")
-        fig.suptitle(f"Fraction of {what} Represented in the Model", fontsize=16)
+                ax=ax,
+                color=get_color_cause_of_death_label('Other'),
+                linestyle=':' if sex == 'F' else '-',
+                label=sexname(sex),
+                lw=5,
+            )
+        ax.legend()
+        ax.set_ylim(0, 1.0)
+        xticks = fraction_causes_modelled.index.levels[1]
+        ax.set_xticks(range(len(xticks)))
+        ax.set_xticklabels(xticks, rotation=90)
+        ax.grid(axis='y')
+        ax.set_xlabel('Age-Group')
+        ax.set_ylabel('Fraction')
+        ax.set_title(f"Fraction of {what} Represented in the Model")
+        ax.text(x=0.5, y=0.05, s=('Main causes not included explicitly:\n\n' + top_five_causes_of_death_not_modelled),
+                bbox={'edgecolor': 'r', 'facecolor': 'w'}
+        )
         fig.tight_layout()
         plt.savefig(make_graph_file_name(f"C_{what}_{period}_coverage"))
         plt.show()
