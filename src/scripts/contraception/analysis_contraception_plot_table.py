@@ -25,9 +25,6 @@ print_bool = False
 do_interv_analysis = True
 ##
 # OUTPUT REQUIREMENTS
-# order of contraceptives for the table:
-contraceptives_order = ['pill', 'IUD', 'injections', 'implant', 'male_condom',
-                        'female_sterilization', 'other_modern']
 # %% Plot Contraception Use Over time?
 # plot_use_time_bool = False
 plot_use_time_bool = True
@@ -37,7 +34,7 @@ plot_use_time_method_bool = True
 # %% Plot Pregnancies Over time?
 # plot_pregnancies_bool = False
 plot_pregnancies_bool = True
-# %% Do you want to set the upper limits for the y-axes?
+# %% Do you want to set the upper limits for the y-axes for the 3 plots above?
 set_ylims_bool = True
 # If the above is True (otherwise it doesn't matter),
 # upper limits for the figures (in the order [Use, Use By Method, Pregnancies]
@@ -49,10 +46,18 @@ table_use_costs_bool = True
 # years to summarise in the table of use and costs (totals for time periods between each 2 consecutive years;
 # first year included, last year excluded)
 TimePeriods_starts = [2023, 2031, 2041, 2051]
-# The use & cost values in table can be "mean" (default) or can be changed to max
+# The use & cost values within the time periods in table can be "mean" (default) or can be changed to "max"
 # use_output = "max"  # TODO: test whether it still works
+# Order of contraceptives for the table
+contraceptives_order = ['pill', 'IUD', 'injections', 'implant', 'male_condom',
+                        'female_sterilization', 'other_modern']
+# %% Calculate Contraception Pop and PPFP Intervention Costs over time?
+# calc_intervention_costs_bool = False
+calc_intervention_costs_bool = True
 ################################################################################
 
+if not ('ylims_l' in locals() or 'ylims_l' in globals()):
+    ylims_l = []
 if not ('TimePeriods_starts' in locals() or 'TimePeriods_starts' in globals()):
     TimePeriods_starts = []
     # TODO: test whether this works
@@ -82,7 +87,7 @@ print("analysis without interventions in progress")
 print('--------------------')
 
 
-def do_analysis(ID, logFile, in_TimePeriods_starts=[]):
+def do_analysis(ID, logFile):
     use_df, percentage_use_df, costs_df = a_co.analyse_contraception(
         ID, logFile,
         # Population size multiplier to get outputs for the entire Malawi (based on pop size in 2010)
@@ -95,16 +100,15 @@ def do_analysis(ID, logFile, in_TimePeriods_starts=[]):
         plot_use_time_method_bool,
         # %% Plot Pregnancies Over time?
         plot_pregnancies_bool,
-        # %% Do you want to set the upper limits for the y-axes?
-        set_ylims_bool,
-        # List of modern methods
-        contraceptives_order,
-        # Calculate Use and Consumables Costs of Contraception methods within
+        # %% Do you want to set the upper limits for the y-axes? If so, order them as [Use, Use By Method, Pregnancies].
+        set_ylims_bool, ylims_l,
+        # %% Calculate Use and Consumables Costs of Contraception methods within
         # some time periods?
-        table_use_costs_bool, in_TimePeriods_starts,
-        # The list of upper limits for y-axes of the figures
-        # (in the order Use - Use By Method - Pregnancies)
-        ylims_l
+        table_use_costs_bool, TimePeriods_starts,
+        # List of modern methods in order in which they should appear in table
+        contraceptives_order,
+        # %% Calculate Contraception Pop and PPFP Intervention Costs over time?
+        calc_intervention_costs_bool
         # and default: in_use_output="mean"
     )
     return use_df, percentage_use_df, costs_df
@@ -112,7 +116,7 @@ def do_analysis(ID, logFile, in_TimePeriods_starts=[]):
 
 ID_without = datestamp_without_log + "_without" + str(int(pop_size_simulated/1000)) + "K" + suffix
 use_without_df, percentage_use_without_df, costs_without_df =\
-    do_analysis(ID_without, logFile_without, TimePeriods_starts)
+    do_analysis(ID_without, logFile_without)
 
 if do_interv_analysis:
     # Use and Consumables Costs of Contraception methods Over time
