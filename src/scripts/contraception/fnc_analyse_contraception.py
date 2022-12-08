@@ -18,17 +18,17 @@ from tlo.analysis.utils import parse_log_file
 import functools
 
 
-def analyse_contraception(in_datestamp, in_log_file,
-                          in_pop_size_multiplier,
-                          in_plot_use_time_bool=True,
-                          in_plot_use_time_method_bool=True,
-                          in_plot_pregnancies_bool=True,
-                          in_set_ylims_bool=False, in_ylims_l=[],
-                          in_calc_use_costs_bool=True, in_required_time_period_starts=[],
-                          in_contraceptives_order=['pill', 'IUD', 'injections', 'implant','male_condom',
-                                                   'female_sterilization', 'other_modern'],
-                          in_calc_intervention_costs_bool=True,
-                          in_use_output="mean"
+def analyse_contraception(in_datestamp: str, in_log_file: str,
+                          in_pop_size_multiplier: float,
+                          in_plot_use_time_bool: bool = False,
+                          in_plot_use_time_method_bool: bool = False,
+                          in_plot_pregnancies_bool: bool = False,
+                          in_set_ylims_bool: bool = False, in_ylims_l: list = [],
+                          in_calc_use_costs_bool: bool = False, in_required_time_period_starts: list = [],
+                          in_contraceptives_order: list = ['pill', 'IUD', 'injections', 'implant','male_condom',
+                                                           'female_sterilization', 'other_modern'],
+                          in_calc_intervention_costs_bool: bool = False,
+                          in_use_output: str = "mean"
                           ):
     """
     Performs analysis of contraception for pre-simulated data (data given by
@@ -42,11 +42,11 @@ def analyse_contraception(in_datestamp, in_log_file,
         downloaded
     :param in_pop_size_multiplier:
     :param in_plot_use_time_bool: True if we want to plot use of any
-        contraception over time (default: True)
+        contraception over time (default: False)
     :param in_plot_use_time_method_bool: True if we want to plot use of
-        individual contraception methods over time (default: True)
+        individual contraception methods over time (default: False)
     :param in_plot_pregnancies_bool: True if we want to plot pregnancies over
-        time (default: True)
+        time (default: False)
     :param in_set_ylims_bool: True if we want to set upper limits for the y-axes
         for the 3 plots. (default: False)
     :param in_ylims_l: list of the upper limits for y-axes of the figures in the
@@ -55,7 +55,7 @@ def analyse_contraception(in_datestamp, in_log_file,
     :param in_calc_use_costs_bool: True if we want to calculate use and costs of
         contraception methods in time periods (time periods
         'in_required_time_period_starts' needs to be given as input)
-        (default: True)
+        (default: False)
     :param in_required_time_period_starts: a list of years determining the time
         periods for which we require the calculations, first year inc.,
         last year excl. (default: [] -- as we don't need it if
@@ -63,7 +63,7 @@ def analyse_contraception(in_datestamp, in_log_file,
     :param in_contraceptives_order: list of modern contraceptives ordered as we
         want them to appear in the table
     :param in_calc_intervention_costs_bool: True if we want to calculate
-        contraception Pop and PPFP intervention costs over time (default: True)
+        contraception Pop and PPFP intervention costs over time (default: False)
     :param in_use_output: "mean" or "max", according to which output of numbers,
         and percentage of women using contraception methods we want to display
         in the table (default: "mean")
