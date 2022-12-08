@@ -9,23 +9,25 @@ data for a table of use and costs of contraception methods (if required)
 import logging
 import timeit
 from pathlib import Path
-
 import numpy as np
 import pandas as pd
 from matplotlib import dates as mdates
 from matplotlib import pyplot as plt
 from collections import Counter
-
 from tlo.analysis.utils import parse_log_file
+import functools
 
 
 def analyse_contraception(in_datestamp, in_log_file,
-                          in_calc_annual_intervention_costs_bool,
-                          in_plot_use_time_bool,
-                          in_plot_use_time_method_bool,
-                          in_plot_pregnancies_bool,
-                          in_contraceptives_order,
-                          in_calc_use_costs_bool, in_required_time_period_starts=[],
+                          in_pop_size_multiplier,
+                          in_plot_use_time_bool=True,
+                          in_plot_use_time_method_bool=True,
+                          in_plot_pregnancies_bool=True,
+                          in_set_ylims_bool=False, in_ylims_l=[],
+                          in_calc_use_costs_bool=True, in_required_time_period_starts=[],
+                          in_contraceptives_order=['pill', 'IUD', 'injections', 'implant','male_condom',
+                                                   'female_sterilization', 'other_modern'],
+                          in_calc_intervention_costs_bool=True,
                           in_use_output="mean"
                           ):
     """
@@ -36,29 +38,42 @@ def analyse_contraception(in_datestamp, in_log_file,
      'in_datestamp' to be assigned to correct simulations.
 
     :param in_datestamp: datestamp to be included in output files names
-    :param in_log_file: log file from which the simulations logging is downloaded
+    :param in_log_file: log file from which the simulations logging is
+        downloaded
+    :param in_pop_size_multiplier:
     :param in_plot_use_time_bool: True if we want to plot use of any
-        contraception over time
+        contraception over time (default: True)
     :param in_plot_use_time_method_bool: True if we want to plot use of
-        individual contraception methods over time
+        individual contraception methods over time (default: True)
     :param in_plot_pregnancies_bool: True if we want to plot pregnancies over
-        time
+        time (default: True)
+    :param in_set_ylims_bool: True if we want to set upper limits for the y-axes
+        for the 3 plots. (default: False)
+    :param in_ylims_l: list of the upper limits for y-axes of the figures in the
+        order [Use, Use By Method, Pregnancies] (default: [] -- as we don't need
+        it if 'in_set_ylims_bool' is False)
     :param in_calc_use_costs_bool: True if we want to calculate use and costs of
         contraception methods in time periods (time periods
         'in_required_time_period_starts' needs to be given as input)
+        (default: True)
     :param in_required_time_period_starts: a list of years determining the time
         periods for which we require the calculations, first year inc.,
-        last year excl. (default: [] -- as we don't need if
+        last year excl. (default: [] -- as we don't need it if
         'in_calc_use_costs_bool' is False)
+    :param in_contraceptives_order: list of modern contraceptives ordered as we
+        want them to appear in the table
+    :param in_calc_intervention_costs_bool: True if we want to calculate
+        contraception Pop and PPFP intervention costs over time (default: True)
     :param in_use_output: "mean" or "max", according to which output of numbers,
         and percentage of women using contraception methods we want to display
         in the table (default: "mean")
-    :param in_contraceptives_order: list of modern contraceptives
+
 
     :return: Three data frames by time periods:
         number of women using contraception methods,
         percentage of women using contraception methods,
         costs of contraception methods
+        (if 'in_calc_use_costs_bool' is False, returns 3 empty lists)
     """
 
     def fullprint(in_to_print):  # TODO: remove
@@ -84,7 +99,7 @@ def analyse_contraception(in_datestamp, in_log_file,
     log_df = parse_log_file('outputs/' + in_log_file, level=logging.DEBUG)
 
     # %% Caclulate annual Pop and PPFP intervention costs:
-    if in_calc_annual_intervention_costs_bool:
+    if in_calc_intervention_costs_bool:
         # Load Population Totals (Demography Model Results)
             # females 15-49 by year:
         demog_df_f = log_df['tlo.methods.demography']['age_range_f'].set_index('date')
@@ -130,9 +145,11 @@ def analyse_contraception(in_datestamp, in_log_file,
         Model_using = Model_total - Model_not_using
 
         fig, ax = plt.subplots()
-        ax.plot(np.asarray(Model_Years), Model_total)
-        ax.plot(np.asarray(Model_Years), Model_not_using)
-        ax.plot(np.asarray(Model_Years), Model_using)
+        ax.plot(np.asarray(Model_Years), Model_total * in_pop_size_multiplier)
+        ax.plot(np.asarray(Model_Years), Model_not_using * in_pop_size_multiplier)
+        ax.plot(np.asarray(Model_Years), Model_using * in_pop_size_multiplier)
+        if in_set_ylims_bool:
+            ax.set_ylim([0, in_ylims_l[0]])
         # plt.plot(Data_Years, Data_Pop_Normalised)
 
         # format the ticks
@@ -169,16 +186,18 @@ def analyse_contraception(in_datestamp, in_log_file,
         Model_other_traditional = com_df.other_traditional
 
         fig, ax = plt.subplots()
-        ax.plot(np.asarray(Model_Years), Model_pill)
-        ax.plot(np.asarray(Model_Years), Model_IUD)
-        ax.plot(np.asarray(Model_Years), Model_injections)
-        ax.plot(np.asarray(Model_Years), Model_implant)
-        ax.plot(np.asarray(Model_Years), Model_male_condom)
-        ax.plot(np.asarray(Model_Years), Model_female_sterilization)
-        ax.plot(np.asarray(Model_Years), Model_other_modern)
-        ax.plot(np.asarray(Model_Years), Model_periodic_abstinence)
-        ax.plot(np.asarray(Model_Years), Model_withdrawal)
-        ax.plot(np.asarray(Model_Years), Model_other_traditional)
+        ax.plot(np.asarray(Model_Years), Model_pill * in_pop_size_multiplier)
+        ax.plot(np.asarray(Model_Years), Model_IUD * in_pop_size_multiplier)
+        ax.plot(np.asarray(Model_Years), Model_injections * in_pop_size_multiplier)
+        ax.plot(np.asarray(Model_Years), Model_implant * in_pop_size_multiplier)
+        ax.plot(np.asarray(Model_Years), Model_male_condom * in_pop_size_multiplier)
+        ax.plot(np.asarray(Model_Years), Model_female_sterilization * in_pop_size_multiplier)
+        ax.plot(np.asarray(Model_Years), Model_other_modern * in_pop_size_multiplier)
+        ax.plot(np.asarray(Model_Years), Model_periodic_abstinence * in_pop_size_multiplier)
+        ax.plot(np.asarray(Model_Years), Model_withdrawal * in_pop_size_multiplier)
+        ax.plot(np.asarray(Model_Years), Model_other_traditional * in_pop_size_multiplier)
+        if in_set_ylims_bool:
+            ax.set_ylim([0, in_ylims_l[1]])
 
         # format the ticks
         # ax.xaxis.set_major_locator(years)
@@ -210,8 +229,9 @@ def analyse_contraception(in_datestamp, in_log_file,
 
 
         fig, ax = plt.subplots()
-        ax.plot(np.asarray(Model_Years), Model_pregnancy)
-
+        ax.plot(np.asarray(Model_Years), Model_pregnancy * in_pop_size_multiplier)
+        if in_set_ylims_bool:
+            ax.set_ylim([0, in_ylims_l[2]])
 
         # format the ticks
         # ax.xaxis.set_major_locator(years)
@@ -229,7 +249,7 @@ def analyse_contraception(in_datestamp, in_log_file,
 
     # %% Calculate Use and Consumables Costs of Contraception methods within
     # some time periods:
-    if in_calc_use_costs_bool:
+    if in_calc_use_costs_bool:  # TODO: add population scaling to use and consts calculations
         # time period starts should be given as input
         assert in_required_time_period_starts != [],\
             "The calculations of use and costs are requested (ie input 'in_calc_use_costs_bool' set as True, " +\
@@ -649,6 +669,9 @@ def analyse_contraception(in_datestamp, in_log_file,
                 .append(sum_costs_all_times(cons_costs_by_time_and_method_df))
 
         print("Calculations of Consumables Costs finished.")
+    # %% If computations are not required:
+    else:
+        co_output_use_modern_tp_df, co_output_percentage_use_df, cons_costs_by_time_and_method_df = [], [], []
 
     return co_output_use_modern_tp_df, co_output_percentage_use_df,\
            cons_costs_by_time_and_method_df
@@ -776,10 +799,12 @@ def analyse_contraception(in_datestamp, in_log_file,
 
 if __name__ == '__main__':
     analyse_contraception(in_datestamp, in_log_file,
-                          in_calc_annual_intervention_costs_bool,
+                          in_pop_size_multiplier,
                           in_plot_use_time_bool,
                           in_plot_use_time_method_bool,
                           in_plot_pregnancies_bool,
-                          in_contraceptives_order,
+                          in_set_ylims_bool, in_ylims_l,
                           in_calc_use_costs_bool, in_required_time_period_starts,
+                          in_contraceptives_order,
+                          in_calc_intervention_costs_bool,
                           in_use_output)
