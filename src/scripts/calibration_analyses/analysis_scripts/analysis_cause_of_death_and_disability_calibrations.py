@@ -252,7 +252,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         #  (the addition of the bounds for the sub-categories - as done here - is not strictly correct.)
         #  ... OR use formula to make my own explicit assumption about correlation of uncertainty in different age-grps.
 
-        select_labels = ['AIDS', 'Cancer (Other)', 'Measles', 'Other']
+        select_labels = []
 
         fig, ax = plt.subplots()
         xylim = tot_outcomes_by_cause.loc[('upper', slice(None))].max().max() / 1e3
@@ -318,10 +318,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         plt.close(fig)
 
     # %% Make graphs for each of Deaths and DALYS for a specific period
-    make_std_graphs(what='Deaths', period='2010-2014')
+    # make_std_graphs(what='Deaths', period='2010-2014')
     # make_std_graphs(what='DALYs', period='2010-2014')  # <-- todo colormapping and order for DALYS
 
-    # make_std_graphs(what='Deaths', period='2015-2019')
+    make_std_graphs(what='Deaths', period='2015-2019')
     # make_std_graphs(what='DALYs', period='2015-2019')  # <-- todo colormapping and order for DALYS
 
 
@@ -331,6 +331,6 @@ if __name__ == "__main__":
 
     # Find results folder (most recent run generated using that scenario_filename)
     scenario_filename = 'long_run_all_diseases.py'
-    results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
+    results_folder = outputspath / "long_run_all_diseases-2022-12-06T144559Z"
 
     apply(results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
