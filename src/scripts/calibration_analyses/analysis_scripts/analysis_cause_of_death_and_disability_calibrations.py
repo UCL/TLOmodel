@@ -56,7 +56,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # update name of DALYS in the gbd dataset:
     gbd_all['measure_name'] = gbd_all['measure_name'].replace({'DALYs (Disability-Adjusted Life Years)': 'DALYs'})
 
-    def make_std_graphs(what='Deaths', period='2010-2014'):
+    def make_std_graphs(what, period):
         """Make the standard Graphs for a specific period for either 'Deaths' or 'DALYS'"""
 
         assert type(what) is str
@@ -173,7 +173,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                                    edgecolor='black',
                                    linewidth=0.4,
                                    )
-            ax.set_title(f'{sexname(sex)}', fontsize=18)
+            ax.set_title(f'{sexname(sex)}, {period}', fontsize=18)
             ax.set_xlabel('Age Group')
             ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
             ax.set_ylabel(f"{what} per year\n(thousands)")
@@ -233,7 +233,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 fig.patch.set_linewidth(8)
                 fig.tight_layout()
                 fig.savefig(make_graph_file_name(
-                    f"{what}_{period}_AgeAndSexSpecificLineGraph_{reformat_cause(cause)}")
+                    f"B_{what}_{period}_AgeAndSexSpecificLineGraph_{reformat_cause(cause)}")
                 )
                 fig.show()
                 plt.close(fig)
@@ -291,7 +291,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.set_ylabel('Model (thousands)')
         ax.set_title(f'{what} per year by Cause {period}')
         ax.legend(ncol=1, prop={'size': 8}, loc='lower right')
-        plt.savefig(make_graph_file_name(f"{what}_{period}_Scatter_Plot"))
+        plt.savefig(make_graph_file_name(f"A_{what}_{period}_Scatter_Plot"))
         plt.show()
         plt.close(fig)
 
@@ -313,12 +313,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             ax.set_title(f"{sexname(sex)}")
         fig.suptitle(f"Fraction of {what} Represented in the Model", fontsize=16)
         fig.tight_layout()
-        plt.savefig(make_graph_file_name(f"{what}_{period}_coverage"))
+        plt.savefig(make_graph_file_name(f"C_{what}_{period}_coverage"))
         plt.show()
         plt.close(fig)
 
     # %% Make graphs for each of Deaths and DALYS for a specific period
-    # make_std_graphs(what='Deaths', period='2010-2014')
+    make_std_graphs(what='Deaths', period='2010-2014')
     # make_std_graphs(what='DALYs', period='2010-2014')  # <-- todo colormapping and order for DALYS
 
     make_std_graphs(what='Deaths', period='2015-2019')
