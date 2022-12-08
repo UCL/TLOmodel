@@ -1199,14 +1199,7 @@ class RTI(Module):
         for probability in probabilities:
             assert 0 <= probability <= 1, "Probability is not a feasible value"
         # create a generic severe trauma symptom, which forces people into the health system
-        self.sim.modules['SymptomManager'].register_symptom(
-            Symptom(name='severe_trauma',
-                    odds_ratio_health_seeking_in_adults=1.0,  # average probability to seek health care
-                    odds_ratio_health_seeking_in_children=1.0,  # as above
-                    prob_seeks_emergency_appt_in_adults=1.0,  # if seeking care, then 100% emergency health care
-                    prob_seeks_emergency_appt_in_children=1.0,  # as above
-                    )
-        )
+        self.sim.modules['SymptomManager'].register_symptom(Symptom.emergency('severe_trauma'))
 
         # create an injury lookup table to handle all assigning injuries/daly weights and daly weight changes. The table
         # is writted in the following format: [[1], 2, 3, 4]. [1] contains information used in assigning injuries e.g.
