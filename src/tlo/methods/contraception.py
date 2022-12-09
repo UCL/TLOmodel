@@ -42,7 +42,7 @@ class Contraception(Module):
                                                   'women.'),
         'Failure_ByMethod': Parameter(Types.DATA_FRAME,
                                       'Probability per month of a women on a contraceptive becoming pregnant, by '
-                                      'method'),
+                                      'method.'),
         'rr_fail_under25': Parameter(Types.REAL,
                                      'The relative risk of becoming pregnant whilst using a contraceptive for woman '
                                      'younger than 25 years compared to older women.'),
@@ -50,9 +50,9 @@ class Contraception(Module):
                                          'Probability per month of a women who is not using any contraceptive method of'
                                          ' starting use of a method, by method.'),
         'Interventions_Pop': Parameter(Types.DATA_FRAME,
-                                       'Pop (population scale contraception intervention) intervention multiplier'),
+                                       'Pop (population scale contraception intervention) intervention multiplier.'),
         'Interventions_PPFP': Parameter(Types.DATA_FRAME,
-                                        'PPFP (post-partum family planning) intervention multiplier'),
+                                        'PPFP (post-partum family planning) intervention multiplier.'),
         'Initiation_ByAge': Parameter(Types.DATA_FRAME,
                                       'The effect of age on the probability of starting use of contraceptive (add one '
                                       'for multiplicative effect).'),
@@ -79,9 +79,9 @@ class Contraception(Module):
                                                         '[IUD, implant, injections, other_modern, pill]).'),
         'age_specific_fertility_rates': Parameter(
             Types.DATA_FRAME, 'Data table from official source (WPP) for age-specific fertility rates and calendar '
-                              'period'),
+                              'period.'),
 
-        'pop_2010': Parameter(Types.DATA_FRAME, 'Population in 2010'),
+        'pop_2010': Parameter(Types.DATA_FRAME, 'Population in 2010.'),
 
         'scaling_factor_on_monthly_risk_of_pregnancy': Parameter(
             Types.LIST, "Scaling factor (by age-group: 15-19, 20-24, ..., 45-49) on the monthly risk of pregnancy and "
@@ -90,19 +90,21 @@ class Contraception(Module):
                         " the WPP age-specific fertility rate value for the same year."),
 
         'max_number_of_runs_of_hsi_if_consumable_not_available': Parameter(
-            Types.INT, "The maximum number of time an HSI can run (repeats occur if the consumables are not available"),
+            Types.INT, "The maximum number of time an HSI can run (repeats occur if the consumables are not "
+                       "available)."),
 
         'max_days_delay_between_decision_to_change_method_and_hsi_scheduled': Parameter(
-            Types.INT, "The maximum delay (in days) between the decision for a contraceptive to change and the `topen`"
-                       "date of the HSI that is scheduled to effect the change (when using the healthsystem),"),
+            Types.INT, "The maximum delay (in days) between the decision for a contraceptive to change and the `topen` "
+                       "date of the HSI that is scheduled to effect the change (when using the healthsystem).")#,
 
-        'pop_intervention_cost': Parameter(
-            Types.INT, "Cost of Pop intervention (population scale contraception intervention) for whole population of "
-                       "Malawi in 2016 (MWK - Malawi Kwacha)"),
-
-        'ppfp_intervention_cost': Parameter(
-            Types.INT, "Cost of PPFP (post-partum family planning) intervention for whole population of Malawi in 2016 "
-                       "(MWK - Malawi Kwacha)")
+        # # TODO: are the two parameters below used for anything or they can be removed?
+        # 'pop_intervention_cost': Parameter(
+        #     Types.INT, "Cost of Pop intervention (population scale contraception intervention) for whole population of "
+        #                "Malawi in 2016 (MWK - Malawi Kwacha)"),
+        #
+        # 'ppfp_intervention_cost': Parameter(
+        #     Types.INT, "Cost of PPFP (post-partum family planning) intervention for whole population of Malawi in 2016 "
+        #                "(MWK - Malawi Kwacha)")
     }
 
     all_contraception_states = {
