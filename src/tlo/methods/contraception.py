@@ -95,16 +95,15 @@ class Contraception(Module):
 
         'max_days_delay_between_decision_to_change_method_and_hsi_scheduled': Parameter(
             Types.INT, "The maximum delay (in days) between the decision for a contraceptive to change and the `topen` "
-                       "date of the HSI that is scheduled to effect the change (when using the healthsystem).")#,
+                       "date of the HSI that is scheduled to effect the change (when using the healthsystem)."),
 
-        # # TODO: are the two parameters below used for anything or they can be removed?
-        # 'pop_intervention_cost': Parameter(
-        #     Types.INT, "Cost of Pop intervention (population scale contraception intervention) for whole population of "
-        #                "Malawi in 2016 (MWK - Malawi Kwacha)"),
-        #
-        # 'ppfp_intervention_cost': Parameter(
-        #     Types.INT, "Cost of PPFP (post-partum family planning) intervention for whole population of Malawi in 2016 "
-        #                "(MWK - Malawi Kwacha)")
+        'pop_intervention_cost': Parameter(
+            Types.INT, "Cost of Pop intervention (population scale contraception intervention) for whole population of "
+                       "Malawi in 2016 (MWK - Malawi Kwacha)"),
+
+        'ppfp_intervention_cost': Parameter(
+            Types.INT, "Cost of PPFP (post-partum family planning) intervention for whole population of Malawi in 2016 "
+                       "(MWK - Malawi Kwacha)")
     }
 
     all_contraception_states = {
