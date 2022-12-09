@@ -98,58 +98,6 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
     # output dataframes
     log_df = parse_log_file('outputs/' + in_log_file, level=logging.DEBUG)
 
-    # %% Calculate annual Pop and PPFP intervention costs:
-    if in_calc_intervention_costs_bool:
-        # @@ Load Population Totals (Demography Model Results)
-        # females 15-49 by year:
-        demog_df_f = log_df['tlo.methods.demography']['age_range_f'].set_index('date')
-        demog_df_f['15-49'] =\
-            demog_df_f.loc[:, ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49']].sum(axis=1)
-        # print("demog_df_f.loc[:, ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49', '15-49']]")
-        # print(demog_df_f.loc[:, ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49', '15-49']])
-        # males 15-49 by year:
-        demog_df_m = log_df['tlo.methods.demography']['age_range_m'].set_index('date')
-        demog_df_m['15-49'] =\
-            demog_df_m.loc[:, ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49']].sum(axis=1)
-        # print("demog_df_m.loc[:, ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49', '15-49']]")
-        # print(demog_df_m.loc[:, ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49', '15-49']])
-        # total females & males 15-49 as both targeted by Pop and PPFP interventions, by year:
-        popsize1549 = demog_df_f['15-49'] + demog_df_m['15-49']
-        popsize1549 = pd.DataFrame(popsize1549)
-        # print("popsize1549")
-        # print(popsize1549)
-        # Calculate ratio of population compared to 2016 as base year (when PPFP and Pop interventions start):
-        popsize1549['ratio'] = popsize1549.loc[:, '15-49'] / popsize1549.loc['2016-01-01 00:00:00', '15-49']
-        # print("popsize1549")
-        # print(popsize1549)
-        # Mulitply PPFP and Pop intervention costs by this ratio for each year:
-        # TODO: was trying to pull these parameters from contracption.py but not managing too
-        #  - perhaps not worth it and just hard code for now:
-        # ppfp_intervention_cost = tlo.methods.contraception.Contraception.process_params(['ppfp_intervention_cost'])
-        # cost of PPFP intervention for whole population of Malawi in 2016 (MWK - Malawi Kwacha)
-        ppfp_interv_cost_2016 = 146000000
-        # cost of Pop intervention for whole population of Malawi in 2016 (MWK - Malawi Kwacha)
-        pop_interv_cost_2016 = 1300000000
-        # print("ppfp_interv_cost_2016")
-        # print(ppfp_interv_cost_2016)
-        # print("pop_interv_cost_2016")
-        # print(pop_interv_cost_2016)
-        popsize1549['ppfp_intervention_cost'] = popsize1549['ratio'] * ppfp_interv_cost_2016
-        popsize1549['pop_intervention_cost'] = popsize1549['ratio'] * pop_interv_cost_2016
-        popsize1549['interventions_total'] =\
-            popsize1549['ppfp_intervention_cost'] + popsize1549['pop_intervention_cost']
-        # print("popsize1549.loc[:, ['ratio', 'ppfp_intervention_cost', 'pop_intervention_cost', 'interventions_total']]")
-        # with pd.option_context('display.max_columns', None):
-        #     print(
-        #         popsize1549.loc[:, ['ratio', 'ppfp_intervention_cost', 'pop_intervention_cost', 'interventions_total']]
-        #     )
-        # print("popsize1549['ppfp_intervention_cost']")
-        # print(popsize1549['ppfp_intervention_cost'])
-        # print("popsize1549['pop_intervention_cost']")
-        # print(popsize1549['pop_intervention_cost'])
-        # print("popsize1549['interventions_total']")
-        # print(popsize1549['interventions_total'])
-
     # %% Plot Contraception Use Over time:
     if in_plot_use_time_bool:
         years = mdates.YearLocator()  # every year
@@ -691,6 +639,58 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
     # %% If computations are not required:
     else:
         co_output_use_modern_tp_df, co_output_percentage_use_df, cons_costs_by_time_and_method_df = [], [], []
+
+    # %% Calculate annual Pop and PPFP intervention costs:
+    if in_calc_intervention_costs_bool:
+        # @@ Load Population Totals (Demography Model Results)
+        # females 15-49 by year:
+        demog_df_f = log_df['tlo.methods.demography']['age_range_f'].set_index('date')
+        demog_df_f['15-49'] =\
+            demog_df_f.loc[:, ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49']].sum(axis=1)
+        # print("demog_df_f.loc[:, ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49', '15-49']]")
+        # print(demog_df_f.loc[:, ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49', '15-49']])
+        # males 15-49 by year:
+        demog_df_m = log_df['tlo.methods.demography']['age_range_m'].set_index('date')
+        demog_df_m['15-49'] =\
+            demog_df_m.loc[:, ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49']].sum(axis=1)
+        # print("demog_df_m.loc[:, ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49', '15-49']]")
+        # print(demog_df_m.loc[:, ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49', '15-49']])
+        # total females & males 15-49 as both targeted by Pop and PPFP interventions, by year:
+        popsize1549 = demog_df_f['15-49'] + demog_df_m['15-49']
+        popsize1549 = pd.DataFrame(popsize1549)
+        # print("popsize1549")
+        # print(popsize1549)
+        # Calculate ratio of population compared to 2016 as base year (when PPFP and Pop interventions start):
+        popsize1549['ratio'] = popsize1549.loc[:, '15-49'] / popsize1549.loc['2016-01-01 00:00:00', '15-49']
+        # print("popsize1549")
+        # print(popsize1549)
+        # Mulitply PPFP and Pop intervention costs by this ratio for each year:
+        # TODO: was trying to pull these parameters from contracption.py but not managing too
+        #  - perhaps not worth it and just hard code for now:
+        # ppfp_intervention_cost = tlo.methods.contraception.Contraception.process_params(['ppfp_intervention_cost'])
+        # cost of PPFP intervention for whole population of Malawi in 2016 (MWK - Malawi Kwacha)
+        ppfp_interv_cost_2016 = 146000000
+        # cost of Pop intervention for whole population of Malawi in 2016 (MWK - Malawi Kwacha)
+        pop_interv_cost_2016 = 1300000000
+        # print("ppfp_interv_cost_2016")
+        # print(ppfp_interv_cost_2016)
+        # print("pop_interv_cost_2016")
+        # print(pop_interv_cost_2016)
+        popsize1549['ppfp_intervention_cost'] = popsize1549['ratio'] * ppfp_interv_cost_2016
+        popsize1549['pop_intervention_cost'] = popsize1549['ratio'] * pop_interv_cost_2016
+        popsize1549['interventions_total'] =\
+            popsize1549['ppfp_intervention_cost'] + popsize1549['pop_intervention_cost']
+        # print("popsize1549.loc[:, ['ratio', 'ppfp_intervention_cost', 'pop_intervention_cost', 'interventions_total']]")
+        # with pd.option_context('display.max_columns', None):
+        #     print(
+        #         popsize1549.loc[:, ['ratio', 'ppfp_intervention_cost', 'pop_intervention_cost', 'interventions_total']]
+        #     )
+        # print("popsize1549['ppfp_intervention_cost']")
+        # print(popsize1549['ppfp_intervention_cost'])
+        # print("popsize1549['pop_intervention_cost']")
+        # print(popsize1549['pop_intervention_cost'])
+        # print("popsize1549['interventions_total']")
+        # print(popsize1549['interventions_total'])
 
     return co_output_use_modern_tp_df, co_output_percentage_use_df,\
            cons_costs_by_time_and_method_df
