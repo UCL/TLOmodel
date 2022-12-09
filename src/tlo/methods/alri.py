@@ -123,12 +123,22 @@ class Alri(Module):
         'other_alri'
     })
 
-    classifications = {'danger_signs_pneumonia', 'fast_breathing_pneumonia', 'chest_indrawing_pneumonia',
-                       'cough_or_cold'}
+    classifications = sorted({
+        'danger_signs_pneumonia',
+        'fast_breathing_pneumonia',
+        'chest_indrawing_pneumonia',
+        'cough_or_cold'
+    })
 
-    all_symptoms = {
-        'cough', 'difficult_breathing', 'cyanosis', 'fever', 'tachypnoea', 'chest_indrawing', 'danger_signs'
-    }
+    all_symptoms = sorted({
+        'cough',
+        'difficult_breathing',
+        'cyanosis',
+        'fever',
+        'tachypnoea',
+        'chest_indrawing',
+        'danger_signs'
+    })
 
     # Declare the Alri complications:
     complications = sorted({
@@ -1614,7 +1624,7 @@ class Models:
         # determine which complications are onset:
         complications = {c for c, p in probs.items() if p > self.rng.random_sample()}
 
-        return complications
+        return sorted(complications)
 
     def get_oxygen_saturation(self, complication_set):
         """Set peripheral oxygen saturation"""
@@ -2052,8 +2062,12 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
             """Return the set of symptoms consistent with the set of complications that are onset."""
             symptoms_for_complications = set()
             for complication in complications:
-                symptoms_for_complications = symptoms_for_complications.union(
-                    models.symptoms_for_complication(complication=complication, oxygen_saturation=oxygen_saturation))
+                symptoms_for_complications.update(
+                    models.symptoms_for_complication(
+                        complication=complication,
+                        oxygen_saturation=oxygen_saturation
+                    )
+                )
             return symptoms_for_complications
 
         symptoms_for_complications = get_symptoms_for_complications(complications=complications,

@@ -171,6 +171,7 @@ class DxTest:
     def __init__(self,
                  property: str,
                  item_codes: Union[np.integer, int, list, set, dict] = None,
+                 optional_item_codes: Union[np.integer, int, list, set, dict] = None,
                  sensitivity: float = None,
                  specificity: float = None,
                  measure_error_stdev: float = None,
@@ -186,6 +187,11 @@ class DxTest:
         if item_codes is not None:
             assert isinstance(item_codes, (np.integer, int, list, set, dict)), 'item_codes in incorrect format.'
         self.item_codes = item_codes
+
+        if optional_item_codes is not None:
+            assert isinstance(optional_item_codes, (np.integer, int, list, set, dict)), \
+                'optional_item_codes in incorrect format.'
+        self.optional_item_codes = optional_item_codes
 
         # Store performance characteristics (if sensitivity and specificity are not supplied than assume perfect)
         _assert_float_or_none(sensitivity, 'Sensitivity is given in incorrect format.')
@@ -247,7 +253,7 @@ class DxTest:
 
         # If a consumable is required and it is not available, return None
         if self.item_codes is not None:
-            if not hsi_event.get_consumables(item_codes=self.item_codes):
+            if not hsi_event.get_consumables(item_codes=self.item_codes, optional_item_codes=self.optional_item_codes):
                 return None
 
         # Apply the test:

@@ -1,4 +1,4 @@
-name: Run extra tests on pull-request comments
+name: Run extra tests on issue or pull-request comments
 
 on:
   issue_comment:
@@ -8,7 +8,7 @@ on:
 jobs:
 
   scaled_sim:
-    uses: ./.github/workflows/run-on-pr-comment.yml
+    uses: ./.github/workflows/run-on-comment.yml
     with:
       runs-on: self-hosted
       keyword: scaled-sim
@@ -21,7 +21,7 @@ jobs:
       application-private-key: ${{ secrets.COMMENT_BOT_APP_PRIVATE_KEY }}
 
   multiple_seed_tests:
-    uses: ./.github/workflows/run-on-pr-comment.yml
+    uses: ./.github/workflows/run-on-comment.yml
     with:
       runs-on: self-hosted
       keyword: multiple-seed-tests
@@ -35,7 +35,7 @@ jobs:
       application-private-key: ${{ secrets.COMMENT_BOT_APP_PRIVATE_KEY }}
       
   dummy_job:
-    uses: ./.github/workflows/run-on-pr-comment.yml
+    uses: ./.github/workflows/run-on-comment.yml
     with:
       runs-on: self-hosted
       keyword: dummy-job

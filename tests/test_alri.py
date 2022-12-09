@@ -65,7 +65,7 @@ def get_sim(tmpdir, seed, cons_available):
             'custom_levels': {
                 "*": logging.WARNING,
                 "tlo.methods.alri": logging.INFO,
-                "tlo.methods.healthsystem": logging.INFO
+                "tlo.methods.healthsystem": logging.DEBUG
             }
         }
     )
@@ -220,19 +220,19 @@ def test_integrity_of_linear_models(sim_hs_all_consumables):
                                                           ),
                                                           has_secondary_bacterial_inf=pd.notnull(coinf)
                                                           )
-                assert isinstance(res, set)
+                assert isinstance(res, (set, list))
                 assert all([c in alri_module.complications for c in res])
 
     # --- symptoms_for_disease
     for disease_type in alri_module.disease_types:
         res = models.symptoms_for_disease(disease_type)
-        assert isinstance(res, set)
+        assert isinstance(res, (set, list))
         assert all([s in sim.modules['SymptomManager'].symptom_names for s in res])
 
     # --- symptoms_for_complication
     for complication in alri_module.complications:
         res = models.symptoms_for_complication(complication, oxygen_saturation='<90%')
-        assert isinstance(res, set)
+        assert isinstance(res, (set, list))
         assert all([s in sim.modules['SymptomManager'].symptom_names for s in res])
 
     # --- death
@@ -1047,7 +1047,9 @@ def generate_hsi_sequence(sim, incident_case_event, age_of_person_under_2_months
     sim.modules['Alri'].initialise_simulation = one_person_to_have_disease
     sim.simulate(end_date=Date(2010, 3, 1))
 
-    df = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']['HSI_Event'].set_index('date')
+    df = parse_log_file(
+        sim.log_filepath, level=logging.DEBUG
+    )['tlo.methods.healthsystem']['HSI_Event'].set_index('date')
 
     # Return list of tuples of TREATMENT_ID and Facility_Level
     mask = df.TREATMENT_ID.str.startswith('Alri_') | df.TREATMENT_ID.str.startswith('FirstAttendance_')

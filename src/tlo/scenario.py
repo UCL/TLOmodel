@@ -314,6 +314,7 @@ class SampleRunner:
             # suppress stdout when saving output to directory (either user specified, or set by batch-run process)
             log_config["suppress_stdout"] = True
 
+        logger.info(key="message", data=f"Running draw {sample['draw_number']}, sample {sample['sample_number']}")
         sim = Simulation(
             start_date=self.scenario.start_date,
             seed=sample["simulation_seed"],
@@ -326,17 +327,19 @@ class SampleRunner:
 
         sim.make_initial_population(n=self.scenario.pop_size)
         sim.simulate(end_date=self.scenario.end_date)
-        outputs = parse_log_file(sim.log_filepath)
-        for key, output in outputs.items():
-            if key.startswith("tlo."):
-                with open(Path(log_config["directory"]) / f"{key}.pickle", "wb") as f:
-                    pickle.dump(output, f)
+
+        if sim.log_filepath is not None:
+            outputs = parse_log_file(sim.log_filepath)
+            for key, output in outputs.items():
+                if key.startswith("tlo."):
+                    with open(Path(log_config["directory"]) / f"{key}.pickle", "wb") as f:
+                        pickle.dump(output, f)
 
     def run(self):
         # this method will execute all runs of each draw, so we save output in directory
         log_config = self.scenario.log_configuration()
         root_dir = draw_dir = None
-        if log_config["filename"]:  # i.e. save output?
+        if log_config["filename"] and log_config["directory"]:  # i.e. save output?
             timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%SZ")
             root_dir = Path(log_config["directory"]) / (Path(log_config["filename"]).stem + "-" + timestamp)
 
