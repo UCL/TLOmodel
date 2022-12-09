@@ -266,6 +266,16 @@ class Contraception(Module):
         # Schedule births to occur during the first 9 months of the simulation
         self.schedule_births_for_first_9_months()
 
+        if self.use_interventions:
+            # Log possible initiation date of interventions
+            logger.info(key='contraception_intervention',
+                        data={
+                            'date_co_interv_implemented': self.interventions_start_date
+                        },
+                        description='Date when contraception interventions are implemented'
+                                    ' (if it is before end of sim).'
+                        )
+
     def on_birth(self, mother_id, child_id):
         """
         * 1) Formally end the pregnancy
@@ -296,13 +306,6 @@ class Contraception(Module):
             # Update module parameters to enable interventions
             self.processed_params = self.process_params()
             self.interventions_on = True
-            # Log start of interventions
-            logger.info(key='contraception_intervention',
-                        data={
-                            'date_co_interv_implemented': self.sim.date
-                        },
-                        description='Date when contraception interventions are implemented.'
-                        )
 
         self.sim.population.props.at[person_id, 'is_pregnant'] = False
         person_age = self.sim.population.props.at[person_id, 'age_years']
@@ -769,13 +772,6 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
             # Update module parameters to enable interventions
             self.module.processed_params = self.module.process_params()
             self.module.interventions_on = True
-            # Log start of interventions
-            logger.info(key='contraception_intervention',
-                        data={
-                            'date_co_interv_implemented': self.sim.date
-                        },
-                        description='Date when contraception interventions are implemented.'
-                        )
 
         # Determine who will become pregnant, given current contraceptive method
         if self.run_do_pregnancy:
