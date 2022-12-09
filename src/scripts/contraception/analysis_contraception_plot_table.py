@@ -9,20 +9,22 @@ time_start = time.time()
 ################################################################################
 # TO SET:  # TODO: update with final sims
 # suffix if you want to (if not just set to '') for the output figure(s) and/or table
-suffix = "20K_TimsCode"  # "50K_TimsCode"
+suffix = '_Totals-to-table_Dec8--resetYaxesLimits'
 # simulated pop size to be rescaled to the size of Malawi pop
-pop_size_simulated = 50_000
+pop_size_simulated = 2_000  # 50_000
 # which results to use
-datestamp_without_log = '2022-11-07T144634' #50K: '2022-11-08T165333'  # TODO: update with final sim
-datestamp_with_log = '2022-11-04T175536' #50K: '2022-11-13T180430'  # TODO: update with final sim
-logFile_without = 'run_analysis_contraception__' + datestamp_without_log + '.log'
-logFile_with = 'run_analysis_contraception__' + datestamp_with_log + '.log'
+datestamp_without_log = '2022-12-08T224955' #50K: '2022-11-08T165333'  # TODO: update with final sim
+datestamp_with_log = '2022-12-08T224955' #50K: '2022-11-13T180430'  # TODO: update with final sim
+# sims with 'no'/'all' diseases
+with_diseases = 'no'
+logFile_without = 'run_analysis_contraception_' + with_diseases + '_diseases__' + datestamp_without_log + '.log'
+logFile_with = 'run_analysis_contraception_' + with_diseases + '_diseases__' + datestamp_with_log + '.log'
 # Do you want prints to see costs, use, percentage use and table?
 # If False, no output is printed, but the output table is still saved in the 'outputs' folder.
 print_bool = False
 # parameter only for test runs (if False, skips the second analysis and uses the outputs from the 1st analysis instead)
 # needs to be True for the final run
-do_interv_analysis = True
+do_interv_analysis = False
 ##
 # OUTPUT REQUIREMENTS
 # %% Plot Contraception Use Over time?
