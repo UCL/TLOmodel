@@ -348,10 +348,12 @@ class Lifestyle(Module):
 
         self.load_parameters_from_dataframe(dfd)
 
-        # load urban by distric data
+        # load urban rural by district data
         p['init_p_urban'] = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Lifestyle_Enhanced.xlsx',
                                           sheet_name='urban_rural_by_district').drop(columns=['rural', 'urban',
                                                                                               'prop_rural'], axis=1)
+        # convert urban rural data from dataframe to dict
+        p['init_p_urban'] = p['init_p_urban'].set_index('district').to_dict()
 
         # Manually set dates for campaign starts for now todo - fix this
         p['start_date_campaign_exercise_increase'] = datetime.date(2010, 7, 1)
@@ -675,7 +677,7 @@ class LifestyleModels:
             rnd_draw = pd.Series(data=rng.random_sample(size=len(df)), index=df.index, dtype=float)
 
             # map district of residence to a series containing probabilities of becoming rural or urban
-            rural_urban_props = df['district_of_residence'].map(p['init_p_urban'].set_index('district')['prop_urban'])
+            rural_urban_props = df['district_of_residence'].map(p['init_p_urban']['prop_urban'])
 
             # check all districts have been corectly mapped to their rural urban proportions
             assert 0 == rural_urban_props.isna().sum(), 'some districts are not mapped to their rural urban values'
@@ -1085,7 +1087,7 @@ class LifestyleModels:
 
             p = self.parameters
             # create a series that will return all female sexworkers
-            f_sex_worker = pd.Series(data=df.li_is_sexworker.copy(), index=df.index, dtype=bool)
+            f_sex_worker = df.li_is_sexworker.copy()
 
             # Select current sex workers to stop being a sex worker
             sw_idx = df.loc[df.is_alive & df.li_is_sexworker].index
@@ -1157,8 +1159,7 @@ class LifestyleModels:
         return male_circ_lm
 
     # --------------------- LINEAR MODELS FOR UPDATING POPULATION PROPERTIES ------------------------------ #
-    # todo: 1.  make exposed to campaign `_property` reflect index of individuals who have transitioned
-    #       2.   setting some properties directly i.e. date of campaign `_property` reduction, perhaps I can do better?
+    # todo: make exposed to campaign `_property` reflect index of individuals who have transitioned
 
     def update_rural_urban_property_linear_model(self) -> LinearModel:
         """A function to create linear model for updating the rural urban status of an individual. Here, we are using
@@ -1181,7 +1182,7 @@ class LifestyleModels:
             p = self.parameters
 
             # create a new series that will hold all rural urban transitions
-            rural_urban_trans = pd.Series(data=df.li_urban.copy(), index=df.index, dtype=bool)
+            rural_urban_trans = df.li_urban.copy()
 
             # get index of current urban/rural status
             currently_rural = df.index[~df.li_urban & df.is_alive]
@@ -1223,7 +1224,7 @@ class LifestyleModels:
             p = self.parameters
 
             # create a new series that will hold all low exercise transitions
-            low_ex_trans = pd.Series(data=df.li_low_ex.copy(), index=df.index, dtype=bool)
+            low_ex_trans = df.li_low_ex.copy()
 
             # transition new individuals from not low exercise to low exercise
             adults_not_low_ex = df.index[~df.li_low_ex & df.is_alive & (df.age_years >= 15)]
@@ -1275,7 +1276,7 @@ class LifestyleModels:
             p = self.parameters
 
             # create a new serie that will hold all tobacco use transitions
-            tob_trans = pd.Series(data=df.li_tob.copy(), index=df.index, dtype=bool)
+            tob_trans = df.li_tob.copy()
 
             # select indiviuals 15+ who are not smoking tobacco
             adults_not_tob = df.index[(df.age_years >= 15) & df.is_alive & ~df.li_tob]
@@ -1331,7 +1332,7 @@ class LifestyleModels:
             p = self.parameters
 
             # create a new serie that will hold all excess alcohol transitions
-            li_ex_alc_trans = pd.Series(data=df.li_ex_alc.copy(), index=df.index, dtype=bool)
+            li_ex_alc_trans = df.li_ex_alc.copy()
 
             # select index of individuals of different categories
             not_ex_alc_f = df.index[~df.li_ex_alc & df.is_alive & (df.sex == 'F') & (df.age_years >= 15)]
@@ -1387,7 +1388,7 @@ class LifestyleModels:
             p = self.parameters
 
             # create a new serie that will hold all marital status transitions
-            mar_stat_trans = pd.Series(data=df.li_mar_stat.copy(), index=df.index, dtype=int)
+            mar_stat_trans = df.li_mar_stat.copy()
 
             curr_never_mar = df.index[df.is_alive & df.age_years.between(15, 29) & (df.li_mar_stat == 1)]
             curr_mar = df.index[df.is_alive & (df.li_mar_stat == 2)]
@@ -1429,7 +1430,7 @@ class LifestyleModels:
             p = self.parameters
 
             # create a new dataframe that will hold all education transitions
-            edu_trans = pd.DataFrame(data=df[['li_in_ed', 'li_ed_lev']].copy(), index=df.index)
+            edu_trans = df[['li_in_ed', 'li_ed_lev']].copy()
 
             # get all individuals currently in education
             in_ed = df.index[df.is_alive & df.li_in_ed]
@@ -1508,7 +1509,7 @@ class LifestyleModels:
             p = self.parameters
 
             # create a new series that will hold all unimproved sanitation transitions
-            unimproved_san_trans = pd.Series(data=df.li_unimproved_sanitation.copy(), index=df.index, dtype=bool)
+            unimproved_san_trans = df.li_unimproved_sanitation.copy()
 
             # probability of improved sanitation at all follow-up times
             unimproved_sanitaton_idx = df.index[df.li_unimproved_sanitation & df.is_alive]
@@ -1564,7 +1565,7 @@ class LifestyleModels:
             p = self.parameters
 
             # create a new dataframe that will hold all no access handwashing transitions
-            trans_no_access_handwashing = pd.Series(data=df.li_no_access_handwashing.copy(), index=df.index, dtype=bool)
+            trans_no_access_handwashing = df.li_no_access_handwashing.copy()
 
             # probability of moving to access to handwashing at all follow-up times
             no_access_handwashing_idx = df.index[df.li_no_access_handwashing & df.is_alive]
@@ -1608,8 +1609,7 @@ class LifestyleModels:
             p = self.parameters
 
             # create a new series that will hold all no clean drinking water transitions
-            trans_no_clean_drinking_water = pd.Series(data=df.li_no_clean_drinking_water.copy(),
-                                                      index=df.index, dtype=bool)
+            trans_no_clean_drinking_water = df.li_no_clean_drinking_water.copy()
 
             # probability of moving to clean drinking water at all follow-up times
             no_clean_drinking_water_idx = df.index[df.li_no_clean_drinking_water & df.is_alive]
@@ -1670,7 +1670,7 @@ class LifestyleModels:
             p = self.parameters
 
             # create a new series that will hold allwood burn stove transitions
-            trans_wood_burn_stove = pd.Series(data=df.li_wood_burn_stove.copy(), index=df.index, dtype=bool)
+            trans_wood_burn_stove = df.li_wood_burn_stove.copy()
 
             # probability of moving to non wood burn stove at all follow-up times
             wood_burn_stove_idx = df.index[df.li_wood_burn_stove & df.is_alive]
@@ -1727,7 +1727,7 @@ class LifestyleModels:
             p = self.parameters
 
             # create a new series that will hold all high salt transitions
-            trans_high_salt = pd.Series(data=df.li_high_salt.copy(), index=df.index, dtype=bool)
+            trans_high_salt = df.li_high_salt.copy()
 
             # select individuals who are not high salt and make some to be high salt
             not_high_salt_idx = df.index[~df.li_high_salt & df.is_alive]
@@ -1778,7 +1778,7 @@ class LifestyleModels:
             p = self.parameters
 
             # create a new series that will hold all high sugar transitions
-            trans_high_sugar = pd.Series(data=df.li_high_sugar.copy(), index=df.index, dtype=bool)
+            trans_high_sugar = df.li_high_sugar.copy()
 
             not_high_sugar_idx = df.index[~df.li_high_sugar & df.is_alive]
             eff_p_high_sugar = pd.Series(data=p['r_high_sugar'], index=not_high_sugar_idx, dtype=float)
@@ -1969,11 +1969,7 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
             else:
                 # log all other remaining properties
-                data = df.loc[df.is_alive].groupby(by=[
-                    df.loc[df.is_alive, 'sex'],
-                    df.loc[df.is_alive, _property],
-                    df.loc[df.is_alive, 'age_range'],
-                ]).size()
+                data = df.loc[df.is_alive].groupby(by=['sex', _property, 'age_range']).size()
 
             # log data
             logger.info(

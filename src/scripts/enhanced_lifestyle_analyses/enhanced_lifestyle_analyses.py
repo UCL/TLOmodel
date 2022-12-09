@@ -439,7 +439,6 @@ class LifeStylePlots:
                 new_df[f'cat_{cat}'] = self.dfs[_property]['M'][cat].sum(axis=0) + self.dfs[_property]['F'][cat].sum(
                     axis=0)
             # convert values to proportions
-            print(f'the df is {new_df}')
             # new_df = new_df.apply(lambda row: row / row.sum(), axis=0)
             new_df = new_df.apply(lambda row: row / row.sum(), axis=1)
             # do plotting
@@ -593,7 +592,7 @@ def run():
 
     # Basic arguments required for the simulation
     start_date = Date(2010, 1, 1)
-    end_date = Date(2022, 2, 1)
+    end_date = Date(2050, 2, 1)
     pop_size = 20000
 
     # This creates the Simulation instance for this run. Because we"ve passed the `seed` and
@@ -633,7 +632,7 @@ logs_df = output['tlo.methods.enhanced_lifestyle']
 # initialise LifestylePlots class
 g_plots = LifeStylePlots(logs=logs_df, path="./outputs")
 # plot by gender
-# g_plots.display_all_categorical_and_non_categorical_plots_by_gender()
+g_plots.display_all_categorical_and_non_categorical_plots_by_gender()
 
 # plot by age groups
 g_plots.display_all_categorical_and_non_categorical_plots_by_age_group()

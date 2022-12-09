@@ -700,7 +700,7 @@ sim = run()
 
 # %% read the results
 output = parse_log_file(sim.log_filepath)
-# output = parse_log_file(Path("./outputs/enhanced_lifestyle__2022-11-24T135421.log"))
+# output = parse_log_file(Path("./outputs/enhanced_lifestyle__2022-12-02T114931.log"))
 
 # construct a dict of dataframes using lifestyle logs
 logs_df = output['tlo.methods.enhanced_lifestyle']
