@@ -524,8 +524,10 @@ class BmiPropertyInitialiser:
 
 
 class LifestyleModels:
-    """Helper class to store all linear models for the Lifestyle module. We have used three types of linear models namely
-    logistic, multiplicative and custom linear models. We currently have defined linear models for the following;
+    """Helper class to store all linear models for the Lifestyle module. We have used three types of linear models
+    namely logistic, multiplicative and custom linear models. We currently have defined linear models for
+    the following;
+
             1.  urban rural status
             2.  wealth level
             3.  low exercise
