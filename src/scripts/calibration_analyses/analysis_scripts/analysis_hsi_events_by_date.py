@@ -1,18 +1,19 @@
-from pathlib import Path
 import argparse
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
 from tlo import Date
 from tlo.analysis.utils import (
-    load_pickled_dataframes,
     extract_results,
-    summarize,
     get_coarse_appt_type,
     get_color_coarse_appt,
     get_color_short_treatment_id,
+    load_pickled_dataframes,
     order_of_coarse_appt,
+    summarize,
 )
 
 PREFIX_ON_FILENAME = '3'
