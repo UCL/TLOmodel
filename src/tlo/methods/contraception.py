@@ -296,6 +296,13 @@ class Contraception(Module):
             # Update module parameters to enable interventions
             self.processed_params = self.process_params()
             self.interventions_on = True
+            # Log start of interventions
+            logger.info(key='contraception_intervention',
+                        data={
+                            'date_co_interv_implemented': self.sim.date
+                        },
+                        description='Date when contraception interventions are implemented.'
+                        )
 
         self.sim.population.props.at[person_id, 'is_pregnant'] = False
         person_age = self.sim.population.props.at[person_id, 'age_years']
@@ -762,6 +769,13 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
             # Update module parameters to enable interventions
             self.module.processed_params = self.module.process_params()
             self.module.interventions_on = True
+            # Log start of interventions
+            logger.info(key='contraception_intervention',
+                        data={
+                            'date_co_interv_implemented': self.sim.date
+                        },
+                        description='Date when contraception interventions are implemented.'
+                        )
 
         # Determine who will become pregnant, given current contraceptive method
         if self.run_do_pregnancy:
