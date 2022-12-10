@@ -9,12 +9,15 @@ time_start = time.time()
 ################################################################################
 # TO SET:  # TODO: update with final sims
 # suffix if you want to (if not just set to '') for the output figure(s) and/or table
-suffix = '_Totals-to-table_Dec8--resetYaxesLimits'
+suffix = '_Totals-to-table_Dec9_2K-intervLoged'
 # simulated pop size to be rescaled to the size of Malawi pop
+# TODO: take from simulation & assert it's the same for both (without and with interv)
 pop_size_simulated = 2_000  # 50_000
 # which results to use
-datestamp_without_log = '2022-12-08T224955' #50K: '2022-11-08T165333'  # TODO: update with final sim
-datestamp_with_log = '2022-12-08T224955' #50K: '2022-11-13T180430'  # TODO: update with final sim
+datestamp_without_log = '2022-12-08T224955'  # TODO: update with final sim
+# 2K no dis: '2022-12-08T224955' from 2022-12-08T224709Z
+datestamp_with_log = '2022-12-09T173334'  # TODO: update with final sim
+# 2K no dis, with the interv logging: '2022-12-2022-12-09T173334' from 2022-12-09T173111Z
 # sims with 'no'/'all' diseases
 with_diseases = 'no'
 logFile_without = 'run_analysis_contraception_' + with_diseases + '_diseases__' + datestamp_without_log + '.log'
@@ -24,7 +27,7 @@ logFile_with = 'run_analysis_contraception_' + with_diseases + '_diseases__' + d
 print_bool = False
 # parameter only for test runs (if False, skips the second analysis and uses the outputs from the 1st analysis instead)
 # needs to be True for the final run
-do_interv_analysis = False
+do_interv_analysis = True
 ##
 # OUTPUT REQUIREMENTS
 # %% Plot Contraception Use Over time?
@@ -37,7 +40,7 @@ plot_use_time_method_bool = True
 # plot_pregnancies_bool = False
 plot_pregnancies_bool = True
 # %% Do you want to set the upper limits for the y-axes for the 3 plots above?
-set_ylims_bool = True
+set_ylims_bool = False
 # If the above is True (otherwise it doesn't matter),
 # upper limits for the figures (in the order [Use, Use By Method, Pregnancies]
 ylims_l = [1.2576e7, 0.41265e7, 0.174885e7]
@@ -89,7 +92,7 @@ print("analysis without interventions in progress")
 print('--------------------')
 
 
-def do_analysis(ID, logFile):
+def do_analysis(ID, logFile, in_calc_intervention_costs_bool):
     use_df, percentage_use_df, costs_df = a_co.analyse_contraception(
         ID, logFile,
         # Population size multiplier to get outputs for the entire Malawi (based on pop size in 2010)
@@ -110,7 +113,7 @@ def do_analysis(ID, logFile):
         # List of modern methods in order in which they should appear in table
         contraceptives_order,
         # %% Calculate Contraception Pop and PPFP Intervention Costs over time?
-        calc_intervention_costs_bool
+        in_calc_intervention_costs_bool
         # and default: in_use_output="mean"
     )
     return use_df, percentage_use_df, costs_df
@@ -118,7 +121,7 @@ def do_analysis(ID, logFile):
 
 ID_without = datestamp_without_log + "_without" + str(int(pop_size_simulated/1000)) + "K" + suffix
 use_without_df, percentage_use_without_df, costs_without_df =\
-    do_analysis(ID_without, logFile_without)
+    do_analysis(ID_without, logFile_without, False)  # no calc of intervention costs for sim without interv
 
 if do_interv_analysis:
     # Use and Consumables Costs of Contraception methods Over time
@@ -128,7 +131,7 @@ if do_interv_analysis:
     print('--------------------')
     ID_with = datestamp_with_log + "_with" + str(int(pop_size_simulated / 1000)) + "K" + suffix
     use_with_df, percentage_use_with_df, costs_with_df =\
-        do_analysis(ID_with, logFile_with)
+        do_analysis(ID_with, logFile_with, calc_intervention_costs_bool)
 else:
     use_with_df = use_without_df
     percentage_use_with_df = percentage_use_without_df
