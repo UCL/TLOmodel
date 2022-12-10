@@ -20,6 +20,7 @@ from tlo.analysis.utils import parse_log_file
 import warnings
 from tlo import Date
 import functools
+# TODO: once finalised, remove unused imports
 
 
 def analyse_contraception(in_datestamp: str, in_log_file: str,
@@ -102,7 +103,7 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
     # output dataframes
     log_df = parse_log_file('outputs/' + in_log_file, level=logging.DEBUG)
     # last year simulated
-    co_sum_df = log_df['tlo.methods.contraception']['contraception_use_summary']
+    co_sum_df = log_df['tlo.methods.contraception']['contraception_use_summary'].copy()
     co_sum_df['year'] = co_sum_df['date'].dt.year
     last_year_simulated = co_sum_df.loc[co_sum_df.shape[0] - 1, 'year']
 
@@ -110,7 +111,7 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
     if in_plot_use_time_bool:
 
         # Load Model Results
-        co_df = log_df['tlo.methods.contraception']['contraception_use_summary'].set_index('date')
+        co_df = log_df['tlo.methods.contraception']['contraception_use_summary'].set_index('date').copy()
         Model_Years = pd.to_datetime(co_df.index)
         Model_total = co_df.sum(axis=1)
         Model_not_using = co_df.not_using
@@ -135,7 +136,7 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
     if in_plot_use_time_method_bool:
 
         # Load Model Results
-        com_df = log_df['tlo.methods.contraception']['contraception_use_summary']
+        com_df = log_df['tlo.methods.contraception']['contraception_use_summary'].copy()
         Model_Years = pd.to_datetime(com_df.date)  # TODO: confusing name, as these are dates not just years
         Model_pill = com_df.pill
         Model_IUD = com_df.IUD
@@ -175,7 +176,7 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
     if in_plot_pregnancies_bool:
 
         # Load Model Results
-        preg_df = log_df['tlo.methods.contraception']['pregnancy'].set_index('date')
+        preg_df = log_df['tlo.methods.contraception']['pregnancy'].set_index('date').copy()
         preg_df.index = pd.to_datetime(preg_df.index).year
         num_pregs_by_year = preg_df.groupby(by=preg_df.index).size()
         Model_Years = num_pregs_by_year.index
@@ -215,15 +216,15 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
         # Load Contraception Use Results
         # ['date', 'IUD', 'female_sterilization', 'implant', 'injections',
         # 'male_condom', 'not_using', 'other_modern', 'other_traditional',
-        # 'periodic_abstinence', 'pill', 'withdrawal', 'year']:
-        co_use_df = log_df['tlo.methods.contraception']['contraception_use_summary']
-        co_use_df['women_total'] =\
-            co_use_df.loc[:, ((co_use_df.columns != 'date') & (co_use_df.columns != 'year'))].sum(axis=1)
+        # 'periodic_abstinence', 'pill', 'withdrawal']:
+        co_use_df = log_df['tlo.methods.contraception']['contraception_use_summary'].copy()
+        co_use_df['women_total'] = co_use_df.sum(axis=1)
         cols_to_keep = in_contraceptives_order.copy()
-        cols_to_keep.append('year')
+        cols_to_keep.append('date')
         cols_to_keep.append('women_total')
         co_use_modern_df = co_use_df.loc[:, cols_to_keep].copy()
         co_use_modern_df['co_modern_total'] = co_use_modern_df.loc[:, in_contraceptives_order].sum(axis=1)
+        co_use_modern_df['year'] = co_use_modern_df['date'].dt.year
         print("Nmb of women at the initiation:", co_use_df['women_total'][0])
         print("Years simulated:",
               co_use_modern_df.loc[1, 'year'], "-", last_year_simulated)
@@ -414,10 +415,11 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
 
         cons_df['Request'] = join_avail_notavail_items(cons_df)
 
+        # TODO: remove
         # # All individual requests
-        # print(cons_df['Request'].value_counts(dropna=False)) # TODO: remove
+        # print(cons_df['Request'].value_counts(dropna=False))
         # # All records of Item_Available
-        # fullprint(cons_df['Item_Available'].value_counts(dropna=False)) # TODO: remove
+        # fullprint(cons_df['Item_Available'].value_counts(dropna=False))
 
         # Limit consumables data to those which were processed (contraception
         # was given to a woman as all items were available)
@@ -575,13 +577,14 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
                 l_costs.append(costs)
             return l_costs
 
+        # TODO: remove
         # timeitprint("calc costs",
         #             functools.partial(calculate_costs,
         #                               resource_items_pkgs_df,
         #                               cons_avail_grouped_by_time_and_method_df,
         #                               mean_use_df),
         #             6000)
-        # 26.302437201999055 s for 6000 repetitions  # TODO: remove
+        # 26.302437201999055 s for 6000 repetitions
         cons_avail_grouped_by_time_and_method_df['Costs'] =\
             calculate_costs(resource_items_pkgs_df,
                             cons_avail_grouped_by_time_and_method_df,
@@ -629,25 +632,29 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
     if in_calc_intervention_costs_bool:
         # @@ Load Population Totals (Demography Model Results)
         # females 15-49 by year:
-        demog_df_f = log_df['tlo.methods.demography']['age_range_f'].set_index('date')
+        demog_df_f = log_df['tlo.methods.demography']['age_range_f'].set_index('date').copy()
         demog_df_f['15-49'] =\
             demog_df_f.loc[:, ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49']].sum(axis=1)
-        # print("demog_df_f.loc[:, ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49', '15-49']]")  # TODO: remove
+        # TODO: remove
+        # print("demog_df_f.loc[:, ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49', '15-49']]")
         # print(demog_df_f.loc[:, ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49', '15-49']])
         # males 15-49 by year:
-        demog_df_m = log_df['tlo.methods.demography']['age_range_m'].set_index('date')
+        demog_df_m = log_df['tlo.methods.demography']['age_range_m'].set_index('date').copy()
         demog_df_m['15-49'] =\
             demog_df_m.loc[:, ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49']].sum(axis=1)
-        # print("demog_df_m.loc[:, ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49', '15-49']]")  # TODO: remove
+        # TODO: remove
+        # print("demog_df_m.loc[:, ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49', '15-49']]")
         # print(demog_df_m.loc[:, ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49', '15-49']])
         # total females & males 15-49 as both targeted by Pop and PPFP interventions, by year:
         popsize1549 = demog_df_f['15-49'] + demog_df_m['15-49']
         popsize1549 = pd.DataFrame(popsize1549)
-        # print("popsize1549")  # TODO: remove
+        # TODO: remove
+        # print("popsize1549")
         # print(popsize1549)
         # Calculate ratio of population compared to 2016 as base year (when PPFP and Pop interventions start):
         popsize1549['ratio'] = popsize1549.loc[:, '15-49'] / popsize1549.loc['2016-01-01 00:00:00', '15-49']
-        # print("popsize1549")  # TODO: remove
+        # TODO: remove
+        # print("popsize1549")
         # print(popsize1549)
         # Mulitply PPFP and Pop intervention costs by this ratio for each year:
         # TODO: pull the 2 parameters below from RF_Contraception.xlsx
@@ -656,7 +663,8 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
         ppfp_interv_cost_2016 = 146000000
         # cost of Pop intervention for whole population of Malawi in 2016 (MWK - Malawi Kwacha)
         pop_interv_cost_2016 = 1300000000
-        # print("ppfp_interv_cost_2016")  # TODO: remove
+        # TODO: remove
+        # print("ppfp_interv_cost_2016")
         # print(ppfp_interv_cost_2016)
         # print("pop_interv_cost_2016")
         # print(pop_interv_cost_2016)
@@ -664,7 +672,8 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
         popsize1549['pop_intervention_cost'] = popsize1549['ratio'] * pop_interv_cost_2016
         popsize1549['interventions_total'] =\
             popsize1549['ppfp_intervention_cost'] + popsize1549['pop_intervention_cost']
-        # print("popsize1549.loc[:, ['ratio', 'ppfp_intervention_cost', 'pop_intervention_cost', 'interventions_total']]")  # TODO: remove
+        # TODO: remove
+        # print("popsize1549.loc[:, ['ratio', 'ppfp_intervention_cost', 'pop_intervention_cost', 'interventions_total']]")
         # with pd.option_context('display.max_columns', None):
         #     print(
         #         popsize1549.loc[:, ['ratio', 'ppfp_intervention_cost', 'pop_intervention_cost', 'interventions_total']]
