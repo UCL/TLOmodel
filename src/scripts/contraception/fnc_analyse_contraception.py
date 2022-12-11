@@ -106,6 +106,7 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
     co_sum_df = log_df['tlo.methods.contraception']['contraception_use_summary'].copy()
     co_sum_df['year'] = co_sum_df['date'].dt.year
     last_year_simulated = co_sum_df.loc[co_sum_df.shape[0] - 1, 'year']
+    last_day_simulated = co_sum_df.loc[co_sum_df.shape[0] - 1, 'date']
 
     # %% Plot Contraception Use Over time:
     if in_plot_use_time_bool:
@@ -624,7 +625,8 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
 
     if in_calc_intervention_costs_bool:
         # TODO: last_DAY_simulated < day when intervention supposed to start -> see loged 'cotraception_intervention'
-        if last_year_simulated < 2023:
+        df_interv_implem = log_df['tlo.methods.contraception']['contraception_intervention'].set_index('date').copy()
+        if Date(last_day_simulated) < Date(df_interv_implem.loc['2010-01-01', 'date_co_interv_implemented']):
             warnings.warn('\nWarning: Calculations of intervention costs are not provided as the simulation ends before'
                           ' interventions are introduced.')
             in_calc_intervention_costs_bool = False
