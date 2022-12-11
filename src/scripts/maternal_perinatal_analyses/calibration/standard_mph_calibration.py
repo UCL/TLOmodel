@@ -29,7 +29,7 @@ from tlo.scenario import BaseScenario
 class Calibration(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 6742
+        self.seed = 8864
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2021, 1, 1)
         self.pop_size = 100_000
