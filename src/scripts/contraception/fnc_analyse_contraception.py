@@ -643,9 +643,6 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
         demog_df_f.index.name = 'year'
         demog_df_f['15-49'] =\
             demog_df_f.loc[:, ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49']].sum(axis=1)
-        # TODO: remove
-        # print("demog_df_f.loc[:, ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49', '15-49']]")
-        # print(demog_df_f.loc[:, ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49', '15-49']])
         # males 15-49 by year:
         demog_df_m = log_df['tlo.methods.demography']['age_range_m'].set_index('date').copy()
         demog_df_m['year'] = pd.to_datetime(demog_df_m.index).year
@@ -653,21 +650,12 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
         demog_df_m.index.name = 'year'
         demog_df_m['15-49'] =\
             demog_df_m.loc[:, ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49']].sum(axis=1)
-        # TODO: remove
-        # print("demog_df_m.loc[:, ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49', '15-49']]")
-        # print(demog_df_m.loc[:, ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49', '15-49']])
         # total females & males 15-49 as both targeted by Pop and PPFP interventions, by year:
         popsize1549 = demog_df_f['15-49'] + demog_df_m['15-49']
         popsize1549 = pd.DataFrame(popsize1549)
         popsize1549['year'] = demog_df_f['year']
-        # TODO: remove
-        # print("popsize1549")
-        # print(popsize1549)
         # Calculate ratio of population compared to 2016 as base year (when Pop and PPFP interventions start):
         popsize1549['ratio'] = popsize1549.loc[:, '15-49'] / popsize1549.loc[2016, '15-49']
-        # TODO: remove
-        # print("popsize1549")
-        # print(popsize1549)
         # Mulitply Pop and PPFP intervention costs by this ratio for each year:
         # TODO: pull the 2 parameters below from RF_Contraception.xlsx
         #  (Parameters/pop_intervention_cost & ppfp_intervention_cost)
@@ -675,11 +663,7 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
         pop_interv_cost_2016 = 1300000000
         # cost of PPFP intervention for whole population of Malawi in 2016 (MWK - Malawi Kwacha)
         ppfp_interv_cost_2016 = 146000000
-        # TODO: remove
-        # print("pop_interv_cost_2016")
-        # print(pop_interv_cost_2016)
-        # print("ppfp_interv_cost_2016")
-        # print(ppfp_interv_cost_2016)
+        # calculate interventions costs for each year
         popsize1549['pop_intervention_cost'] = popsize1549['ratio'] * pop_interv_cost_2016
         popsize1549['ppfp_intervention_cost'] = popsize1549['ratio'] * ppfp_interv_cost_2016
         popsize1549['interventions_total'] =\
@@ -687,20 +671,7 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
         # interventions costs before implementation = 0
         popsize1549.loc[range(2010, interv_implem_date.year),
                         ['pop_intervention_cost', 'ppfp_intervention_cost', 'interventions_total']] = 0
-        # TODO: remove
-        # print("popsize1549.loc[:, ['ratio', 'ppfp_intervention_cost', 'pop_intervention_cost', 'interventions_total']]")
-        # with pd.option_context('display.max_columns', None):
-        #     print(
-        #         popsize1549.loc[:, ['ratio', 'ppfp_intervention_cost', 'pop_intervention_cost', 'interventions_total']]
-        #     )
-        # print("popsize1549['ppfp_intervention_cost']")
-        # print(popsize1549['ppfp_intervention_cost'])
-        # print("popsize1549['pop_intervention_cost']")
-        # print(popsize1549['pop_intervention_cost'])
-        # print("popsize1549['interventions_total']")
-        # print(popsize1549['interventions_total'])
-
-        # TODO: I changed now the df popsize1549 to have 'year' as index, but I'm afraid it shouldn't be index but a column for the create_time_period_data() fnc.
+        # Assign time_periods to the data
         co_interv_costs_tp_df = \
             create_time_period_data(in_required_time_period_starts,
                                     popsize1549)
