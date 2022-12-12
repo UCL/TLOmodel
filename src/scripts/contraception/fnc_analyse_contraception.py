@@ -74,11 +74,13 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
         in the table (default: "mean")
 
 
-    :return: Three data frames by time periods:
+    :return: Four data frames by time periods:
         number of women using contraception methods,
         percentage of women using contraception methods,
-        costs of contraception methods
-        (if 'in_calc_use_costs_bool' is False, returns 3 empty lists)
+        costs of contraception methods,
+        (if 'in_calc_use_costs_bool' is False, returns 3 empty lists for the above)
+        costs of contraception interventions (Pop, PPFP, Pop+PPFP)
+        (if 'in_calc_intervention_costs_bool' is False, returns an empty list for the above)
     """
 
     def fullprint(in_to_print):  # TODO: remove
@@ -258,8 +260,8 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
 
             :param in_l_time_period_start: a list of starts of the time periods,
                 first year incl., last year excl.,
-            :param in_df: the data with records that include the 'year' when the
-                record was performed
+            :param in_df: the data with records that include the column 'year'
+                when the record was performed
 
             :return: A new data frame that includes only records from the required
                 time periods, and includes a new column 'Time_Period'.
@@ -623,10 +625,11 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
     else:
         co_output_use_modern_tp_df, co_output_percentage_use_df, cons_costs_by_time_and_method_df = [], [], []
 
+    # If calculation of intervention costs requested, warn if simulation ends before the interventions are implemented
     if in_calc_intervention_costs_bool:
-        # TODO: last_DAY_simulated < day when intervention supposed to start -> see loged 'cotraception_intervention'
         df_interv_implem = log_df['tlo.methods.contraception']['contraception_intervention'].set_index('date').copy()
-        if Date(last_day_simulated) < Date(df_interv_implem.loc['2010-01-01', 'date_co_interv_implemented']):
+        interv_implem_date = Date(df_interv_implem.loc['2010-01-01', 'date_co_interv_implemented'])
+        if Date(last_day_simulated) < interv_implem_date:
             warnings.warn('\nWarning: Calculations of intervention costs are not provided as the simulation ends before'
                           ' interventions are introduced.')
             in_calc_intervention_costs_bool = False
@@ -635,6 +638,9 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
         # @@ Load Population Totals (Demography Model Results)
         # females 15-49 by year:
         demog_df_f = log_df['tlo.methods.demography']['age_range_f'].set_index('date').copy()
+        demog_df_f['year'] = pd.to_datetime(demog_df_f.index).year
+        demog_df_f.index = pd.to_datetime(demog_df_f.index).year
+        demog_df_f.index.name = 'year'
         demog_df_f['15-49'] =\
             demog_df_f.loc[:, ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49']].sum(axis=1)
         # TODO: remove
@@ -642,6 +648,9 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
         # print(demog_df_f.loc[:, ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49', '15-49']])
         # males 15-49 by year:
         demog_df_m = log_df['tlo.methods.demography']['age_range_m'].set_index('date').copy()
+        demog_df_m['year'] = pd.to_datetime(demog_df_m.index).year
+        demog_df_m.index = pd.to_datetime(demog_df_m.index).year
+        demog_df_m.index.name = 'year'
         demog_df_m['15-49'] =\
             demog_df_m.loc[:, ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49']].sum(axis=1)
         # TODO: remove
@@ -650,30 +659,34 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
         # total females & males 15-49 as both targeted by Pop and PPFP interventions, by year:
         popsize1549 = demog_df_f['15-49'] + demog_df_m['15-49']
         popsize1549 = pd.DataFrame(popsize1549)
+        popsize1549['year'] = demog_df_f['year']
         # TODO: remove
         # print("popsize1549")
         # print(popsize1549)
-        # Calculate ratio of population compared to 2016 as base year (when PPFP and Pop interventions start):
-        popsize1549['ratio'] = popsize1549.loc[:, '15-49'] / popsize1549.loc['2016-01-01 00:00:00', '15-49']
+        # Calculate ratio of population compared to 2016 as base year (when Pop and PPFP interventions start):
+        popsize1549['ratio'] = popsize1549.loc[:, '15-49'] / popsize1549.loc[2016, '15-49']
         # TODO: remove
         # print("popsize1549")
         # print(popsize1549)
-        # Mulitply PPFP and Pop intervention costs by this ratio for each year:
+        # Mulitply Pop and PPFP intervention costs by this ratio for each year:
         # TODO: pull the 2 parameters below from RF_Contraception.xlsx
         #  (Parameters/pop_intervention_cost & ppfp_intervention_cost)
-        # cost of PPFP intervention for whole population of Malawi in 2016 (MWK - Malawi Kwacha)
-        ppfp_interv_cost_2016 = 146000000
         # cost of Pop intervention for whole population of Malawi in 2016 (MWK - Malawi Kwacha)
         pop_interv_cost_2016 = 1300000000
+        # cost of PPFP intervention for whole population of Malawi in 2016 (MWK - Malawi Kwacha)
+        ppfp_interv_cost_2016 = 146000000
         # TODO: remove
-        # print("ppfp_interv_cost_2016")
-        # print(ppfp_interv_cost_2016)
         # print("pop_interv_cost_2016")
         # print(pop_interv_cost_2016)
-        popsize1549['ppfp_intervention_cost'] = popsize1549['ratio'] * ppfp_interv_cost_2016
+        # print("ppfp_interv_cost_2016")
+        # print(ppfp_interv_cost_2016)
         popsize1549['pop_intervention_cost'] = popsize1549['ratio'] * pop_interv_cost_2016
+        popsize1549['ppfp_intervention_cost'] = popsize1549['ratio'] * ppfp_interv_cost_2016
         popsize1549['interventions_total'] =\
-            popsize1549['ppfp_intervention_cost'] + popsize1549['pop_intervention_cost']
+            popsize1549['pop_intervention_cost'] + popsize1549['ppfp_intervention_cost']
+        # interventions costs before implementation = 0
+        popsize1549.loc[range(2010, interv_implem_date.year),
+                        ['pop_intervention_cost', 'ppfp_intervention_cost', 'interventions_total']] = 0
         # TODO: remove
         # print("popsize1549.loc[:, ['ratio', 'ppfp_intervention_cost', 'pop_intervention_cost', 'interventions_total']]")
         # with pd.option_context('display.max_columns', None):
@@ -687,10 +700,45 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
         # print("popsize1549['interventions_total']")
         # print(popsize1549['interventions_total'])
 
-        print("Calculations of Intervention Costs finished.")
+        # TODO: I changed now the df popsize1549 to have 'year' as index, but I'm afraid it shouldn't be index but a column for the create_time_period_data() fnc.
+        co_interv_costs_tp_df = \
+            create_time_period_data(in_required_time_period_starts,
+                                    popsize1549)
+        # Group intervention costs by time period:
+        co_interv_costs_tp_df.index = co_interv_costs_tp_df['Time_Period']
+        co_interv_costs_sum_by_tp_df =\
+            co_interv_costs_tp_df.loc[:, ['pop_intervention_cost', 'ppfp_intervention_cost', 'interventions_total']]\
+                .dropna().groupby(['Time_Period']).sum()
+
+        def sum_interv_costs_all_times(in_df_interv_costs_by_tp):
+            """
+            Adds a row with sum of intervention costs in all time periods.
+            :param in_df_interv_costs_by_tp: 'Time_Period' as index;
+                'pop_intervention_cost', 'ppfp_intervention_cost', 'interventions_total' as columns.
+            :return: The sum row with interventions costs in all time periods.
+            """
+            # tp of all times, ie very first to very last year of time periods
+            y_first = in_df_interv_costs_by_tp.index[0].split("-")[0]
+            y_last = in_df_interv_costs_by_tp.index[len(in_df_interv_costs_by_tp) - 1].split("-")[1]
+            sum_tp = (str(y_first) + "-" + str(y_last))
+            # sum the costs in all time periods
+            sum_costs = in_df_interv_costs_by_tp.sum(axis=0).to_frame().transpose()
+            sum_costs.index = [sum_tp]
+            return sum_costs
+
+        co_interv_costs_sum_by_tp_df = co_interv_costs_sum_by_tp_df.append(
+            sum_interv_costs_all_times(co_interv_costs_sum_by_tp_df)
+        )
+    else:
+        co_interv_costs_sum_by_tp_df =\
+            pd.DataFrame(
+                {'pop_intervention_cost': [np.nan], 'ppfp_intervention_cost': [np.nan], 'interventions_total': [np.nan]}
+            )
+
+    print("Calculations of Intervention Costs finished.")
 
     return co_output_use_modern_tp_df, co_output_percentage_use_df,\
-           cons_costs_by_time_and_method_df
+           cons_costs_by_time_and_method_df, co_interv_costs_sum_by_tp_df
 
 
 if __name__ == '__main__':

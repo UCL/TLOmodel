@@ -3,13 +3,14 @@ import pandas as pd
 # import collections
 import timeit
 import time
+# TODO: once finalised, remove unused imports
 
 time_start = time.time()
 
 ################################################################################
 # TO SET:  # TODO: update with final sims
 # suffix if you want to (if not just set to '') for the output figure(s) and/or table
-suffix = '_Totals-to-table_Dec9_2K-intervLoged'
+suffix = '_Totals-to-table_Dec12'
 # simulated pop size to be rescaled to the size of Malawi pop
 # TODO: take from simulation & assert it's the same for both (without and with interv)
 pop_size_simulated = 2_000  # 50_000
@@ -22,12 +23,6 @@ datestamp_with_log = '2022-12-09T173334'  # TODO: update with final sim
 with_diseases = 'no'
 logFile_without = 'run_analysis_contraception_' + with_diseases + '_diseases__' + datestamp_without_log + '.log'
 logFile_with = 'run_analysis_contraception_' + with_diseases + '_diseases__' + datestamp_with_log + '.log'
-# Do you want prints to see costs, use, percentage use and table?
-# If False, no output is printed, but the output table is still saved in the 'outputs' folder.
-print_bool = False
-# parameter only for test runs (if False, skips the second analysis and uses the outputs from the 1st analysis instead)
-# needs to be True for the final run
-do_interv_analysis = True
 ##
 # OUTPUT REQUIREMENTS
 # %% Plot Contraception Use Over time?
@@ -59,7 +54,21 @@ contraceptives_order = ['pill', 'IUD', 'injections', 'implant', 'male_condom',
 # %% Calculate Contraception Pop and PPFP Intervention Costs over time?
 # calc_intervention_costs_bool = False
 calc_intervention_costs_bool = True
+# %% Parameters only for test runs
+# # Do you want to do both analysis? If not (set one of the below to False). The analysis won't be done and the outputs
+# from the other analysis (set to True below) will be used instead.
+# #TODO: both need to be True to get final results
+do_no_interv_analysis = True
+do_interv_analysis = True
+# Do you want prints to see costs, use, percentage use and table?
+# If False, no output is printed, but the output table is still saved in the 'outputs' folder.
+print_bool = False
 ################################################################################
+if table_use_costs_bool:
+    assert do_no_interv_analysis | do_interv_analysis,\
+        "If you request to create a table of use & costs, at least one analysis needs to be done, ie " +\
+        "'do_no_interv_analysis' or 'do_interv_analysis' needs to be True.\n Otherwise, do not request the analysis," +\
+        " ie set 'table_use_costs_bool' to False."
 
 if not ('ylims_l' in locals() or 'ylims_l' in globals()):
     ylims_l = []
@@ -86,57 +95,74 @@ def timeitprint(in_what_measures, in_fnc, in_timeit_rep_nmb=1):  # TODO: remove
 
 
 # Use and Consumables Costs of Contraception methods Over time
-# WITHOUT interventions:
-print()
-print("analysis without interventions in progress")
-print('--------------------')
-
-
 def do_analysis(ID, logFile, in_calc_intervention_costs_bool):
-    use_df, percentage_use_df, costs_df = a_co.analyse_contraception(
-        ID, logFile,
-        # Population size multiplier to get outputs for the entire Malawi (based on pop size in 2010)
-        14.54 * pow(10, 6) / pop_size_simulated,
-        # TODO: later change, so the scaling to the pop size of Malawi is done using the
-        #  scaling_factor from the population logging
-        # %% Plot Contraception Use Over time?
-        plot_use_time_bool,
-        # %% Plot Contraception Use By Method Over time?
-        plot_use_time_method_bool,
-        # %% Plot Pregnancies Over time?
-        plot_pregnancies_bool,
-        # %% Do you want to set the upper limits for the y-axes? If so, order them as [Use, Use By Method, Pregnancies].
-        set_ylims_bool, ylims_l,
-        # %% Calculate Use and Consumables Costs of Contraception methods within
-        # some time periods?
-        table_use_costs_bool, TimePeriods_starts,
-        # List of modern methods in order in which they should appear in table
-        contraceptives_order,
-        # %% Calculate Contraception Pop and PPFP Intervention Costs over time?
-        in_calc_intervention_costs_bool
-        # and default: in_use_output="mean"
-    )
-    return use_df, percentage_use_df, costs_df
+    use_df, percentage_use_df, costs_df, interv_costs_df =\
+        a_co.analyse_contraception(
+            ID, logFile,
+            # Population size multiplier to get outputs for the entire Malawi (based on pop size in 2010)
+            14.54 * pow(10, 6) / pop_size_simulated,
+            # TODO: later change, so the scaling to the pop size of Malawi is done using the
+            #  scaling_factor from the population logging
+            # %% Plot Contraception Use Over time?
+            plot_use_time_bool,
+            # %% Plot Contraception Use By Method Over time?
+            plot_use_time_method_bool,
+            # %% Plot Pregnancies Over time?
+            plot_pregnancies_bool,
+            # %% Do you want to set the upper limits for the y-axes?
+            # If so, order them as [Use, Use By Method, Pregnancies] within ylims_l.
+            set_ylims_bool, ylims_l,
+            # %% Calculate Use and Consumables Costs of Contraception methods within
+            # some time periods?
+            table_use_costs_bool, TimePeriods_starts,
+            # List of modern methods in order in which they should appear in table
+            contraceptives_order,
+            # %% Calculate Contraception Pop and PPFP Intervention Costs over time?
+            in_calc_intervention_costs_bool
+            # and default: in_use_output="mean"
+        )
+    return use_df, percentage_use_df, costs_df, interv_costs_df
 
 
-ID_without = datestamp_without_log + "_without" + str(int(pop_size_simulated/1000)) + "K" + suffix
-use_without_df, percentage_use_without_df, costs_without_df =\
-    do_analysis(ID_without, logFile_without, False)  # no calc of intervention costs for sim without interv
+if do_no_interv_analysis:
+    # WITHOUT interventions:
+    print()
+    print("analysis without interventions in progress")
+    print('--------------------')
+    ID_without = datestamp_without_log + "_without" + str(int(pop_size_simulated/1000)) + "K" + suffix
+    use_without_df, percentage_use_without_df, costs_without_df, interv_costs_without_df =\
+        do_analysis(ID_without, logFile_without, False)  # no calc of intervention costs for sim without interv
 
-if do_interv_analysis:
-    # Use and Consumables Costs of Contraception methods Over time
+    if do_interv_analysis:
+        # WITH interventions:
+        print()
+        print("analysis with interventions in progress")
+        print('--------------------')
+        ID_with = datestamp_with_log + "_with" + str(int(pop_size_simulated / 1000)) + "K" + suffix
+        use_with_df, percentage_use_with_df, costs_with_df, interv_costs_with_df =\
+            do_analysis(ID_with, logFile_with, calc_intervention_costs_bool)
+    else:
+        # use as WITH interventions outputs from the sim WITHOUT interventions
+        use_with_df = use_without_df
+        percentage_use_with_df = percentage_use_without_df
+        costs_with_df = costs_without_df
+        interv_costs_with_df = interv_costs_without_df
+        ID_with = ID_without + "-again"
+
+else:
     # WITH interventions:
     print()
     print("analysis with interventions in progress")
     print('--------------------')
     ID_with = datestamp_with_log + "_with" + str(int(pop_size_simulated / 1000)) + "K" + suffix
-    use_with_df, percentage_use_with_df, costs_with_df =\
+    use_with_df, percentage_use_with_df, costs_with_df, interv_costs_with_df = \
         do_analysis(ID_with, logFile_with, calc_intervention_costs_bool)
-else:
-    use_with_df = use_without_df
-    percentage_use_with_df = percentage_use_without_df
-    costs_with_df = costs_without_df
-    ID_with = ID_without + "-again"
+    # use as WITHOUT interventions outputs from the sim WITH interventions
+    use_without_df = use_with_df
+    percentage_use_without_df = percentage_use_with_df
+    costs_without_df = costs_with_df
+    interv_costs_without_df = interv_costs_with_df
+    ID_without = ID_with + "-again"
 
 if print_bool:
     print("\n")
@@ -144,9 +170,17 @@ if print_bool:
     print(costs_without_df)
     print()
     print("\n")
+    print("INTERVENTION COSTS WITHOUT")
+    print(interv_costs_without_df)
+    print()
+    print("\n")
     print("COSTS WITH")
     print(costs_with_df)
     #
+    print("\n")
+    print("INTERVENTION COSTS WITH")
+    print(interv_costs_with_df)
+    print()
     print("\n")
     print("MEAN USE WITHOUT")
     fullprint(use_without_df)
@@ -172,20 +206,21 @@ if table_use_costs_bool:
 
 
     def combine_use_costs_with_without_interv(
-        in_df_use_without, in_df_use_perc_without, in_df_costs_without,
-        in_df_use_with, in_df_use_perc_with, in_df_costs_with):
+        in_df_use_without, in_df_use_perc_without, in_df_costs_without, in_df_interv_costs_without,
+        in_df_use_with, in_df_use_perc_with, in_df_costs_with, in_df_interv_costs_with):
         # assert collections.Counter(in_df1_use) == collections.Counter(in_df2_use)
         # assert collections.Counter(in_df1_costs) == collections.Counter(in_df2_costs)
         # assert all(in_df1_use.index == in_df2_use.index)
         # assert all(in_df1_costs.index == in_df2_costs.index)
         data = []
         for tp in in_df_use_without.index:
-            for in_df_use, in_df_use_perc, in_df_costs in \
-                [(in_df_use_without, in_df_use_perc_without, in_df_costs_without),
-                 (in_df_use_with, in_df_use_perc_with, in_df_costs_with)]:
+            for in_df_use, in_df_use_perc, in_df_costs, in_df_interv_costs in \
+                [(in_df_use_without, in_df_use_perc_without, in_df_costs_without, in_df_interv_costs_without),
+                 (in_df_use_with, in_df_use_perc_with, in_df_costs_with, in_df_interv_costs_with)]:
                 # use nmb (perc)
                 l_tp_use = list(in_df_use_perc.loc[tp, :])
-                l_tp_use.append('--')
+                for i in range(4):
+                    l_tp_use.append('--')
                 data.append(l_tp_use)
                 # costs
                 l_tp_costs = []
@@ -197,10 +232,22 @@ if table_use_costs_bool:
                             l_tp_costs.append(round(sum(l_tp_costs), 2))
                         else:
                             l_tp_costs.append(0)
-                l_tp_costs.append('-tba-')  # TODO: to be added -> sum total costs and interv
+                # TODO: to be added -> sum total costs and interv
+                if in_df_interv_costs.empty:
+                    for i in range(3):
+                        l_tp_costs.append(0)
+                    l_tp_costs.append('-tba-')
+                else:
+                    l_tp_costs.append(round(in_df_interv_costs.loc[tp, 'pop_intervention_cost'], 2))
+                    l_tp_costs.append('-tba-')
+                    l_tp_costs.append('-tba-')
+                    l_tp_costs.append('-tba-')
                 data.append(l_tp_costs)
         table_cols = list(in_df_use_without.columns)
-        table_cols.append('co_modern_interv_total')
+        table_cols.append('pop_interv')
+        table_cols.append('ppfp_interv')
+        table_cols.append('pop_ppfp_interv')
+        table_cols.append('co_modern_all_interv_total')
         df_combined = pd.DataFrame(data[:],
                                    columns=pd.Index(table_cols,
                                                     name='Contraception method'),  # TODO: maybe remove?
@@ -213,14 +260,18 @@ if table_use_costs_bool:
 
 
     use_costs_table_df = combine_use_costs_with_without_interv(
-        use_without_df, use_without_val_perc_df, costs_without_df,
-        use_with_df, use_with_val_perc_df, costs_with_df
+        use_without_df, use_without_val_perc_df, costs_without_df, interv_costs_without_df,
+        use_with_df, use_with_val_perc_df, costs_with_df, interv_costs_with_df
     )
 
     # Change the names of totals
     use_costs_table_df = use_costs_table_df.rename(
         index={'co_modern_total': 'modern contraceptives total',
-               'co_modern_interv_total': 'modern contraceptives & interventions total'}
+               'pop_interv': 'Pop intervention',
+               'ppfp_interv': 'PPFP intervention',
+               'pop_ppfp_interv': 'Pop & PPFP intervention',
+               'co_modern_all_interv_total': 'modern contraceptives & interventions total'
+               }
     )
     # Remove the underscores from the names of contraception methods
     use_costs_table_df.index = use_costs_table_df.index.map(lambda s: s.replace("_", " "))
