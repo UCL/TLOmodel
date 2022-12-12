@@ -80,7 +80,7 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
         costs of contraception methods,
         (if 'in_calc_use_costs_bool' is False, returns 3 empty lists for the above)
         costs of contraception interventions (Pop, PPFP, Pop+PPFP)
-        (if 'in_calc_intervention_costs_bool' is False, returns an empty list for the above)
+        (if 'in_calc_intervention_costs_bool' is False, returns an empty DataFrame for the above)
     """
 
     def fullprint(in_to_print):  # TODO: remove
@@ -731,9 +731,7 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
         )
     else:
         co_interv_costs_sum_by_tp_df =\
-            pd.DataFrame(
-                {'pop_intervention_cost': [np.nan], 'ppfp_intervention_cost': [np.nan], 'interventions_total': [np.nan]}
-            )
+            pd.DataFrame({'pop_intervention_cost': [], 'ppfp_intervention_cost': [], 'interventions_total': []})
 
     print("Calculations of Intervention Costs finished.")
 
