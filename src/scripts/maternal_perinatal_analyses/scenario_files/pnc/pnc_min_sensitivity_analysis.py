@@ -29,12 +29,12 @@ from tlo.scenario import BaseScenario
 class PNCMinSensitivityAnalysis(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 537184
+        self.seed = 562537
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2015, 1, 1)
-        self.pop_size = 100_000
+        self.end_date = Date(2031, 1, 1)
+        self.pop_size = 250_000
         self.number_of_draws = 1
-        self.runs_per_draw = 15
+        self.runs_per_draw = 20
 
     def log_configuration(self):
         return {
@@ -93,9 +93,9 @@ class PNCMinSensitivityAnalysis(BaseScenario):
             'Labour': {'pnc_sens_analysis_min': True,
                        'alternative_pnc_quality': True,
                        'pnc_availability_probability': 0.0,
-                       'analysis_year': 2010},
+                       'analysis_year': 2023},
 
-            'PregnancySupervisor': {'analysis_year': 2010},
+            'PregnancySupervisor': {'analysis_year': 2023},
 
         }
 

@@ -29,16 +29,16 @@ from tlo.scenario import BaseScenario
 class BaselineScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 562661
+        self.seed = 562537
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2031, 1, 1)
-        self.pop_size = 200_000
+        self.pop_size = 250_000
         self.number_of_draws = 1
         self.runs_per_draw = 20
 
     def log_configuration(self):
         return {
-            'filename': 'baseline_scenario_200k', 'directory': './outputs',
+            'filename': 'baseline_scenario_250k', 'directory': './outputs',
             "custom_levels": {
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,

@@ -29,16 +29,16 @@ from tlo.scenario import BaseScenario
 class ANCMinSensitivityAnalysis(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 123456
+        self.seed = 562537
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2015, 1, 1)
+        self.end_date = Date(2031, 1, 1)
         self.pop_size = 250_000
         self.number_of_draws = 1
         self.runs_per_draw = 20
 
     def log_configuration(self):
         return {
-            'filename': 'anc_min_sens_analysis_200k', 'directory': './outputs',
+            'filename': 'anc_min_sens_analysis_250k', 'directory': './outputs',
             "custom_levels": {
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
@@ -91,9 +91,9 @@ class ANCMinSensitivityAnalysis(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         return {
             'PregnancySupervisor': {'sens_analysis_min': True,
-                                    'analysis_year': 2010},
+                                    'analysis_year': 2023},
 
-            'Labour': {'analysis_year': 2010},
+            'Labour': {'analysis_year': 2023},
         }
 
 
