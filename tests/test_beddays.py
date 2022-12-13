@@ -926,7 +926,7 @@ def test_in_patient_appt_included_and_logged(tmpdir, seed):
         'filename': 'temp',
         'directory': tmpdir,
         'custom_levels': {
-            "tlo.methods.healthsystem": logging.INFO,
+            "tlo.methods.healthsystem": logging.DEBUG,
         }
     })
     sim.register(
@@ -939,7 +939,9 @@ def test_in_patient_appt_included_and_logged(tmpdir, seed):
     check_dtypes(sim)
 
     # Load the logged tracker for general beds
-    log_hsi = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']['HSI_Event']
+    log_hsi = parse_log_file(
+        sim.log_filepath, logging.DEBUG
+    )['tlo.methods.healthsystem']['HSI_Event']
     log_hsi.index = pd.to_datetime(log_hsi.date)
     appts_freq_by_date = log_hsi[
         'Number_By_Appt_Type_Code'].apply(pd.Series).fillna(0).astype(int).groupby(level=0).sum()
@@ -948,11 +950,11 @@ def test_in_patient_appt_included_and_logged(tmpdir, seed):
     expectation = pd.concat(
         [
             pd.DataFrame(index=[date_of_admission],
-                         data={k: num_persons * v for k, v in footprint.items()}),
-            pd.DataFrame(index=[date_of_admission],
                          data={k: num_persons * v for k, v in IN_PATIENT_ADMISSION.items()}),
             pd.DataFrame(index=pd.date_range(date_of_admission, date_of_discharge),
-                         data={k: num_persons * v for k, v in IN_PATIENT_DAY.items()})
+                         data={k: num_persons * v for k, v in IN_PATIENT_DAY.items()}),
+            pd.DataFrame(index=[date_of_admission],
+                         data={k: num_persons * v for k, v in footprint.items()}),
         ], axis=1).fillna(0).astype(int)
 
     pd.testing.assert_frame_equal(appts_freq_by_date, expectation,

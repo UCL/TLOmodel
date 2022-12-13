@@ -117,7 +117,10 @@ def test_run_no_interventions_allowed(tmpdir, seed):
     log_config = {
         "filename": "log",
         "directory": tmpdir,
-        "custom_levels": {"*": logging.INFO}
+        "custom_levels": {
+            "*": logging.INFO,
+            "tlo.methods.healthsystem": logging.DEBUG,
+        }
     }
     sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
@@ -167,7 +170,17 @@ def test_run_in_mode_0_with_capacity(tmpdir, seed):
     # (Mode 0 -> No Constraints)
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
+    sim = Simulation(
+        start_date=start_date,
+        seed=seed,
+        log_config={
+            "filename": "log",
+            "directory": tmpdir,
+            "custom_levels": {
+                "tlo.methods.healthsystem": logging.DEBUG,
+            }
+        }
+    )
 
     # Define the service availability
     service_availability = ['*']
@@ -192,7 +205,7 @@ def test_run_in_mode_0_with_capacity(tmpdir, seed):
     check_dtypes(sim)
 
     # read the results
-    output = parse_log_file(sim.log_filepath)
+    output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
 
     # Do the checks for health system appts
     assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
@@ -209,7 +222,17 @@ def test_run_in_mode_0_no_capacity(tmpdir, seed):
     # (Mode 0 -> No Constraints)
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
+    sim = Simulation(
+        start_date=start_date,
+        seed=seed,
+        log_config={
+            "filename": "log",
+            "directory": tmpdir,
+            "custom_levels": {
+                "tlo.methods.healthsystem": logging.DEBUG,
+            }
+        }
+    )
 
     # Define the service availability
     service_availability = ['*']
@@ -234,7 +257,7 @@ def test_run_in_mode_0_no_capacity(tmpdir, seed):
     check_dtypes(sim)
 
     # read the results
-    output = parse_log_file(sim.log_filepath)
+    output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
 
     # Do the checks
     assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
@@ -251,7 +274,17 @@ def test_run_in_mode_1_with_capacity(tmpdir, seed):
     # (Mode 1 -> elastic constraints)
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
+    sim = Simulation(
+        start_date=start_date,
+        seed=seed,
+        log_config={
+            "filename": "log",
+            "directory": tmpdir,
+            "custom_levels": {
+                "tlo.methods.healthsystem": logging.DEBUG,
+            }
+        }
+    )
 
     # Define the service availability
     service_availability = ['*']
@@ -276,7 +309,7 @@ def test_run_in_mode_1_with_capacity(tmpdir, seed):
     check_dtypes(sim)
 
     # read the results
-    output = parse_log_file(sim.log_filepath)
+    output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
 
     # Do the checks
     assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
@@ -293,7 +326,17 @@ def test_run_in_mode_1_with_no_capacity(tmpdir, seed):
     # (Mode 1 -> elastic constraints)
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
+    sim = Simulation(
+        start_date=start_date,
+        seed=seed,
+        log_config={
+            "filename": "log",
+            "directory": tmpdir,
+            "custom_levels": {
+                "tlo.methods.healthsystem": logging.DEBUG,
+            }
+        }
+    )
 
     # Define the service availability
     service_availability = ['*']
@@ -318,7 +361,7 @@ def test_run_in_mode_1_with_no_capacity(tmpdir, seed):
     check_dtypes(sim)
 
     # read the results
-    output = parse_log_file(sim.log_filepath)
+    output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
 
     # Do the checks
     assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
@@ -337,7 +380,17 @@ def test_run_in_mode_2_with_capacity(tmpdir, seed):
     # (Mode 2 -> hard constraints)
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
+    sim = Simulation(
+        start_date=start_date,
+        seed=seed,
+        log_config={
+            "filename": "log",
+            "directory": tmpdir,
+            "custom_levels": {
+                "tlo.methods.healthsystem": logging.DEBUG,
+            }
+        }
+    )
 
     # Define the service availability
     service_availability = ['*']
@@ -362,7 +415,7 @@ def test_run_in_mode_2_with_capacity(tmpdir, seed):
     check_dtypes(sim)
 
     # read the results
-    output = parse_log_file(sim.log_filepath)
+    output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
 
     # Do the checks
     assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
@@ -381,7 +434,17 @@ def test_run_in_mode_2_with_no_capacity(tmpdir, seed):
     # (Mode 2 -> hard constraints)
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
+    sim = Simulation(
+        start_date=start_date,
+        seed=seed,
+        log_config={
+            "filename": "log",
+            "directory": tmpdir,
+            "custom_levels": {
+                "tlo.methods.healthsystem": logging.DEBUG,
+            }
+        }
+    )
 
     # Define the service availability
     service_availability = ['*']
@@ -406,7 +469,7 @@ def test_run_in_mode_2_with_no_capacity(tmpdir, seed):
     check_dtypes(sim)
 
     # read the results
-    output = parse_log_file(sim.log_filepath)
+    output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
 
     # Do the checks
     hsi_events = output['tlo.methods.healthsystem']['HSI_Event']
@@ -425,7 +488,17 @@ def test_run_in_with_hs_disabled(tmpdir, seed):
     # All events should run but no logging from healthsystem
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
+    sim = Simulation(
+        start_date=start_date,
+        seed=seed,
+        log_config={
+            "filename": "log",
+            "directory": tmpdir,
+            "custom_levels": {
+                "tlo.methods.healthsystem": logging.DEBUG,
+            }
+        }
+    )
 
     # Define the service availability
     service_availability = ['*']
@@ -451,7 +524,7 @@ def test_run_in_with_hs_disabled(tmpdir, seed):
     check_dtypes(sim)
 
     # read the results
-    output = parse_log_file(sim.log_filepath)
+    output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
 
     # Do the checks
     assert 'HSI_Event' not in output['tlo.methods.healthsystem']  # HealthSystem no logging
@@ -471,7 +544,17 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir, seed)
     # (Mode 2 -> hard constraints)
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
+    sim = Simulation(
+        start_date=start_date,
+        seed=seed,
+        log_config={
+            "filename": "log",
+            "directory": tmpdir,
+            "custom_levels": {
+                "tlo.methods.healthsystem": logging.DEBUG,
+            }
+        }
+    )
 
     # Define the service availability
     service_availability = ['*']
@@ -496,7 +579,7 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir, seed)
     check_dtypes(sim)
 
     # read the results
-    output = parse_log_file(sim.log_filepath)
+    output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
 
     # Do the check for the occurrence of the GenericFirstAppt which is created by the HSB module
     assert 'FirstAttendance_NonEmergency' in output['tlo.methods.healthsystem']['HSI_Event']['TREATMENT_ID'].values
@@ -653,7 +736,7 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
         'filename': 'tmpfile',
         'directory': tmpdir,
         'custom_levels': {
-            "tlo.methods.healthsystem": logging.INFO,
+            "tlo.methods.healthsystem": logging.DEBUG,
             "tlo.methods.healthsystem.summary": logging.INFO
         }
     })
@@ -681,7 +764,7 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
     )
 
     sim.simulate(end_date=start_date + pd.DateOffset(years=2))
-    log = parse_log_file(sim.log_filepath)
+    log = parse_log_file(sim.log_filepath, level=logging.DEBUG)
 
     # Standard log:
     detailed_hsi_event = log["tlo.methods.healthsystem"]['HSI_Event']
@@ -804,7 +887,7 @@ def test_summary_logger_generated_in_year_long_simulation(seed, tmpdir):
             'filename': 'tmpfile',
             'directory': tmpdir,
             'custom_levels': {
-                "tlo.methods.healthsystem": logging.INFO,
+                "tlo.methods.healthsystem": logging.DEBUG,
                 "tlo.methods.healthsystem.summary": logging.INFO
             }
         })
@@ -900,7 +983,7 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
         'filename': 'tmpfile',
         'directory': tmpdir,
         'custom_levels': {
-            "tlo.methods.healthsystem": logging.INFO,
+            "tlo.methods.healthsystem": logging.DEBUG,
         }
     })
 
@@ -990,7 +1073,7 @@ def test_manipulation_of_service_availability(seed, tmpdir):
             'filename': 'tmpfile',
             'directory': tmpdir,
             'custom_levels': {
-                "tlo.methods.healthsystem": logging.INFO,
+                "tlo.methods.healthsystem": logging.DEBUG,
             }
         })
 
@@ -999,7 +1082,9 @@ def test_manipulation_of_service_availability(seed, tmpdir):
         sim.make_initial_population(n=500)
         sim.simulate(end_date=start_date + pd.DateOffset(days=7))
 
-        log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']
+        log = parse_log_file(
+            sim.log_filepath, level=logging.DEBUG
+        )['tlo.methods.healthsystem']
         if 'HSI_Event' in log:
             return set(log['HSI_Event']['TREATMENT_ID'].value_counts().to_dict().keys())
         else:
@@ -1117,6 +1202,7 @@ def test_hsi_run_on_same_day_if_scheduled_for_same_day(seed, tmpdir):
     log_config = {
         "filename": "log",
         "directory": tmpdir,
+        "custom_levels": {"tlo.methods.healthsystem": logging.DEBUG},
     }
     sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, log_config=log_config)
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -1132,7 +1218,9 @@ def test_hsi_run_on_same_day_if_scheduled_for_same_day(seed, tmpdir):
     sim.simulate(end_date=sim.start_date + pd.DateOffset(days=5))
 
     # Check that all events ran on the same day, the first day of the simulation.
-    log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']['HSI_Event']
+    log = parse_log_file(
+        sim.log_filepath, level=logging.DEBUG
+    )['tlo.methods.healthsystem']['HSI_Event']
     assert 4 == len(log)  # 3 HSI events should have occurred
     assert (log['date'] == sim.start_date).all()
     assert log['TREATMENT_ID'].to_list() == [

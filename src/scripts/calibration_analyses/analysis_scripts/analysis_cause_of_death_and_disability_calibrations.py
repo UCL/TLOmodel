@@ -158,7 +158,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # %% Make figures of overall summaries of outcomes by cause
         def _sort_columns(df):
             """ Reverse the standard order of the columns so that 'Other' is at base"""
-            return df[reversed(order_of_cause_of_death_label(df.columns))]  #
+            return df[reversed(sorted(df.columns, key=order_of_cause_of_death_label))]  #
 
         for sex in sexes:
             _dat = {_dat: outcome_by_age_pt[_dat].loc[sex].loc[:, pd.IndexSlice['mean']].pipe(_sort_columns)
