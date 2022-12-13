@@ -94,7 +94,8 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_healthcareseek
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, hsi_event_count_log_period="simulation"),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, hsi_event_count_log_period="simulation",
+                                           store_hsi_events_that_have_run=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  DummyDisease()
