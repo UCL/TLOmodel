@@ -16,6 +16,7 @@ from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HealthSystemChangeParameters, HSI_Event
 from tlo.methods.symptommanager import Symptom
+from tlo.util import random_date
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -627,7 +628,7 @@ class Tb(Module):
         for person in screen_idx:
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Tb_ScreeningAndRefer(person_id=person, module=self),
-                topen=self.sim.date,
+                topen=random_date(self.sim.date, self.sim.date + DateOffset(months=1), self.rng),
                 tclose=None,
                 priority=0,
             )
