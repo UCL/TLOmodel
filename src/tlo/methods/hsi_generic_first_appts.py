@@ -82,7 +82,8 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
 
         self.TREATMENT_ID = 'FirstAttendance_Emergency'
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
+            ('Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD'): 1})
 
     def apply(self, person_id, squeeze_factor):
 
@@ -329,6 +330,15 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
     symptoms = hsi_event.sim.modules['SymptomManager'].has_what(person_id=person_id)
     schedule_hsi = hsi_event.sim.modules["HealthSystem"].schedule_hsi_event
     age = df.at[person_id, 'age_years']
+
+    # Logs the symptoms that the person has, as a compound string
+    logger.info(
+        key='symptoms_of_person_at_emergency_hsi',
+        description='A list of the symptoms experienced by a person when they have a '
+                    '`HSI_GenericEmergencyFirstApptAtFacilityLevel1` HSI, in the form of a compound string delineated'
+                    ' with `|`.',
+        data='|'.join([s for s in symptoms])
+    )
 
     if 'PregnancySupervisor' in sim.modules:
 

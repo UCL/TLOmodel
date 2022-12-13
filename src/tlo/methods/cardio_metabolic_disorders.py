@@ -339,10 +339,12 @@ class CardioMetabolicDisorders(Module):
         # Register symptoms from events and make them emergencies
         for event in self.events:
             self.sim.modules['SymptomManager'].register_symptom(
-                Symptom(
-                    name=f'{event}_damage',
-                    emergency_in_adults=True
-                ),
+                Symptom(name=f'{event}_damage',
+                        odds_ratio_health_seeking_in_adults=0.2,  # low probability to seek health care
+                        prob_seeks_emergency_appt_in_adults=1.0,    # if seeking care, then 100% emergency health care
+                        odds_ratio_health_seeking_in_children=0.0,  # this symptom is not for children
+                        prob_seeks_emergency_appt_in_children=0.0,  # this symptom is not for children
+                        ),
             )
 
     def initialise_population(self, population):
@@ -1696,7 +1698,7 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
         assert isinstance(module, CardioMetabolicDisorders)
 
         self.TREATMENT_ID = 'CardioMetabolicDisorders_Treatment'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1, 'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '2'
 
         self.event = ev
