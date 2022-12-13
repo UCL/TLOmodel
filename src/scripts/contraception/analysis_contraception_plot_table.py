@@ -10,7 +10,7 @@ time_start = time.time()
 ################################################################################
 # TO SET:  # TODO: update with final sims
 # suffix if you want to (if not just set to '') for the output figure(s) and/or table
-suffix = '_Totals-to-table_Dec12'
+suffix = '_Totals-to-table_Dec13'
 # simulated pop size to be rescaled to the size of Malawi pop
 # TODO: take from simulation & assert it's the same for both (without and with interv)
 pop_size_simulated = 2_000  # 50_000
@@ -229,19 +229,20 @@ if table_use_costs_bool:
                         l_tp_costs.append(round(float(in_df_costs.loc[(tp, meth), :]), 2))
                     else:
                         if meth == 'co_modern_total':
-                            l_tp_costs.append(round(sum(l_tp_costs), 2))
+                            co_modern_total = sum(l_tp_costs)
+                            l_tp_costs.append(round(co_modern_total, 2))
                         else:
                             l_tp_costs.append(0)
                 # TODO: to be added -> sum total costs and interv
                 if in_df_interv_costs.empty:
                     for i in range(3):
                         l_tp_costs.append(0)
-                    l_tp_costs.append('-tba-')
+                    l_tp_costs.append(co_modern_total)
                 else:
                     l_tp_costs.append(round(in_df_interv_costs.loc[tp, 'pop_intervention_cost'], 2))
-                    l_tp_costs.append('-tba-')
-                    l_tp_costs.append('-tba-')
-                    l_tp_costs.append('-tba-')
+                    l_tp_costs.append(round(in_df_interv_costs.loc[tp, 'ppfp_intervention_cost'], 2))
+                    l_tp_costs.append(round(in_df_interv_costs.loc[tp, 'interventions_total'], 2))
+                    l_tp_costs.append(round(in_df_interv_costs.loc[tp, 'interventions_total'] + co_modern_total, 2))
                 data.append(l_tp_costs)
         table_cols = list(in_df_use_without.columns)
         table_cols.append('pop_interv')
