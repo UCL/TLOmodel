@@ -24,7 +24,6 @@ import functools
 
 
 def analyse_contraception(in_datestamp: str, in_log_file: str,
-                          in_pop_size_multiplier: float,
                           in_plot_use_time_bool: bool = False,
                           in_plot_use_time_method_bool: bool = False,
                           in_plot_pregnancies_bool: bool = False,
@@ -45,7 +44,6 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
     :param in_datestamp: datestamp to be included in output files names
     :param in_log_file: log file from which the simulations logging is
         downloaded
-    :param in_pop_size_multiplier:
     :param in_plot_use_time_bool: True if we want to plot use of any
         contraception over time (default: False)
     :param in_plot_use_time_method_bool: True if we want to plot use of
@@ -109,6 +107,9 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
     co_sum_df['year'] = co_sum_df['date'].dt.year
     last_year_simulated = co_sum_df.loc[co_sum_df.shape[0] - 1, 'year']
     last_day_simulated = co_sum_df.loc[co_sum_df.shape[0] - 1, 'date']
+    # Load scaling factor to rescale nmbs from simulated pop_size to pop size of Malawi
+    df_scale = log_df['tlo.methods.population']['scaling_factor'].set_index('date').copy()
+    scaling_factor = df_scale.loc['2010-01-01', 'scaling_factor']
 
     # %% Plot Contraception Use Over time:
     if in_plot_use_time_bool:
@@ -121,9 +122,9 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
         Model_using = Model_total - Model_not_using
 
         fig, ax = plt.subplots()
-        ax.plot(np.asarray(Model_Years), Model_total * in_pop_size_multiplier)
-        ax.plot(np.asarray(Model_Years), Model_not_using * in_pop_size_multiplier)
-        ax.plot(np.asarray(Model_Years), Model_using * in_pop_size_multiplier)
+        ax.plot(np.asarray(Model_Years), Model_total * scaling_factor)
+        ax.plot(np.asarray(Model_Years), Model_not_using * scaling_factor)
+        ax.plot(np.asarray(Model_Years), Model_using * scaling_factor)
         if in_set_ylims_bool:
             ax.set_ylim([0, in_ylims_l[0]])
 
@@ -153,16 +154,16 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
         Model_other_traditional = com_df.other_traditional
 
         fig, ax = plt.subplots()
-        ax.plot(np.asarray(Model_Years), Model_pill * in_pop_size_multiplier)
-        ax.plot(np.asarray(Model_Years), Model_IUD * in_pop_size_multiplier)
-        ax.plot(np.asarray(Model_Years), Model_injections * in_pop_size_multiplier)
-        ax.plot(np.asarray(Model_Years), Model_implant * in_pop_size_multiplier)
-        ax.plot(np.asarray(Model_Years), Model_male_condom * in_pop_size_multiplier)
-        ax.plot(np.asarray(Model_Years), Model_female_sterilization * in_pop_size_multiplier)
-        ax.plot(np.asarray(Model_Years), Model_other_modern * in_pop_size_multiplier)
-        ax.plot(np.asarray(Model_Years), Model_periodic_abstinence * in_pop_size_multiplier)
-        ax.plot(np.asarray(Model_Years), Model_withdrawal * in_pop_size_multiplier)
-        ax.plot(np.asarray(Model_Years), Model_other_traditional * in_pop_size_multiplier)
+        ax.plot(np.asarray(Model_Years), Model_pill * scaling_factor)
+        ax.plot(np.asarray(Model_Years), Model_IUD * scaling_factor)
+        ax.plot(np.asarray(Model_Years), Model_injections * scaling_factor)
+        ax.plot(np.asarray(Model_Years), Model_implant * scaling_factor)
+        ax.plot(np.asarray(Model_Years), Model_male_condom * scaling_factor)
+        ax.plot(np.asarray(Model_Years), Model_female_sterilization * scaling_factor)
+        ax.plot(np.asarray(Model_Years), Model_other_modern * scaling_factor)
+        ax.plot(np.asarray(Model_Years), Model_periodic_abstinence * scaling_factor)
+        ax.plot(np.asarray(Model_Years), Model_withdrawal * scaling_factor)
+        ax.plot(np.asarray(Model_Years), Model_other_traditional * scaling_factor)
         if in_set_ylims_bool:
             ax.set_ylim([0, in_ylims_l[1]])
 
@@ -186,7 +187,7 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
         Model_pregnancy = num_pregs_by_year.values
 
         fig, ax = plt.subplots()
-        ax.plot(np.asarray(Model_Years), Model_pregnancy * in_pop_size_multiplier)
+        ax.plot(np.asarray(Model_Years), Model_pregnancy * scaling_factor)
         if in_set_ylims_bool:
             ax.set_ylim([0, in_ylims_l[2]])
 
@@ -200,7 +201,7 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
 
     # %% Calculate Use and Consumables Costs of Contraception methods within
     # some time periods:
-    if in_calc_use_costs_bool:  # TODO: add population scaling to use and consts calculations
+    if in_calc_use_costs_bool:
         # time period starts should be given as input
         assert in_required_time_period_starts != [],\
             "The calculations of use and costs are requested (ie input 'in_calc_use_costs_bool' set as True, " +\
@@ -214,7 +215,6 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
         assert all(in_required_time_period_starts[i] <= in_required_time_period_starts[i + 1]
                    for i in range(len(in_required_time_period_starts) - 1)),\
             "The 'TimePeriods_starts' needs to be in chronological order."
-
 #  ###### USE ##################################################################
         # Load Contraception Use Results
         # ['date', 'IUD', 'female_sterilization', 'implant', 'injections',
@@ -311,7 +311,7 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
         # Rescale the numbers of contraception use to the population size of Malawi
         # (from the nmbs for simulation pop_size)
         co_use_modern_tp_df.loc[:, co_use_modern_tp_df.columns != 'Time_Period'] =\
-            co_use_modern_tp_df.loc[:, co_use_modern_tp_df.columns != 'Time_Period'] * in_pop_size_multiplier
+            co_use_modern_tp_df.loc[:, co_use_modern_tp_df.columns != 'Time_Period'] * scaling_factor
 
         def sum_use_all_times(in_df_use_by_tp, in_output_type):
             """
@@ -627,7 +627,7 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
 
         # Rescale the numbers of contraception costs to the population size of Malawi
         # (from the nmbs for simulation pop_size)
-        cons_costs_by_time_and_method_df.loc[:, :] = cons_costs_by_time_and_method_df.loc[:, :] * in_pop_size_multiplier
+        cons_costs_by_time_and_method_df.loc[:, :] = cons_costs_by_time_and_method_df.loc[:, :] * scaling_factor
 
         print("Calculations of Consumables Costs finished.")
 
@@ -724,7 +724,6 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
 
 if __name__ == '__main__':
     analyse_contraception(in_datestamp, in_log_file,
-                          in_pop_size_multiplier,
                           in_plot_use_time_bool,
                           in_plot_use_time_method_bool,
                           in_plot_pregnancies_bool,
