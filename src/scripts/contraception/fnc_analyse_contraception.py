@@ -308,6 +308,11 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
         co_use_modern_tp_df =\
             co_use_modern_tp_df.loc[:, co_use_modern_tp_df.columns != 'women_total']
 
+        # Rescale the numbers of contraception use to the population size of Malawi
+        # (from the nmbs for simulation pop_size)
+        co_use_modern_tp_df.loc[:, co_use_modern_tp_df.columns != 'Time_Period'] =\
+            co_use_modern_tp_df.loc[:, co_use_modern_tp_df.columns != 'Time_Period'] * in_pop_size_multiplier
+
         def sum_use_all_times(in_df_use_by_tp, in_output_type):
             """
             Adds a row with mean/max use in all time periods.
@@ -620,8 +625,13 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
             cons_costs_by_time_and_method_df\
                 .append(sum_costs_all_times(cons_costs_by_time_and_method_df))
 
+        # Rescale the numbers of contraception costs to the population size of Malawi
+        # (from the nmbs for simulation pop_size)
+        cons_costs_by_time_and_method_df.loc[:, :] = cons_costs_by_time_and_method_df.loc[:, :] * in_pop_size_multiplier
+
         print("Calculations of Consumables Costs finished.")
-    # %% If computations are not required:
+
+    # If calculation of Use and Consumables Costs of Contraception methods are not required
     else:
         co_output_use_modern_tp_df, co_output_percentage_use_df, cons_costs_by_time_and_method_df = [], [], []
 
@@ -700,6 +710,8 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
         co_interv_costs_sum_by_tp_df = co_interv_costs_sum_by_tp_df.append(
             sum_interv_costs_all_times(co_interv_costs_sum_by_tp_df)
         )
+
+    # If calculation of intervention costs is not required
     else:
         co_interv_costs_sum_by_tp_df =\
             pd.DataFrame({'pop_intervention_cost': [], 'ppfp_intervention_cost': [], 'interventions_total': []})
