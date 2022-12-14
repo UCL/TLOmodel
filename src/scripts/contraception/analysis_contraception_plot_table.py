@@ -10,10 +10,7 @@ time_start = time.time()
 ################################################################################
 # TO SET:  # TODO: update with final sims
 # suffix if you want to (if not just set to '') for the output figure(s) and/or table
-suffix = '_Totals-to-table_Dec13'
-# simulated pop size to be rescaled to the size of Malawi pop
-# TODO: take from simulation & assert it's the same for both (without and with interv)
-pop_size_simulated = 2_000  # 50_000
+suffix = '_Totals-to-table_Dec13_2K'
 # which results to use
 datestamp_without_log = '2022-12-08T224955'  # TODO: update with final sim
 # 2K no dis: '2022-12-08T224955' from 2022-12-08T224709Z
@@ -99,10 +96,6 @@ def do_analysis(ID, logFile, in_calc_intervention_costs_bool):
     use_df, percentage_use_df, costs_df, interv_costs_df =\
         a_co.analyse_contraception(
             ID, logFile,
-            # Population size multiplier to get outputs for the entire Malawi (based on pop size in 2010)
-            14.54 * pow(10, 6) / pop_size_simulated,
-            # TODO: later change, so the scaling to the pop size of Malawi is done using the
-            #  scaling_factor from the population logging
             # %% Plot Contraception Use Over time?
             plot_use_time_bool,
             # %% Plot Contraception Use By Method Over time?
@@ -129,7 +122,7 @@ if do_no_interv_analysis:
     print()
     print("analysis without interventions in progress")
     print('--------------------')
-    ID_without = datestamp_without_log + "_without" + str(int(pop_size_simulated/1000)) + "K" + suffix
+    ID_without = datestamp_without_log + "_without" + suffix
     use_without_df, percentage_use_without_df, costs_without_df, interv_costs_without_df =\
         do_analysis(ID_without, logFile_without, False)  # no calc of intervention costs for sim without interv
 
@@ -138,7 +131,7 @@ if do_no_interv_analysis:
         print()
         print("analysis with interventions in progress")
         print('--------------------')
-        ID_with = datestamp_with_log + "_with" + str(int(pop_size_simulated / 1000)) + "K" + suffix
+        ID_with = datestamp_with_log + "_with" + suffix
         use_with_df, percentage_use_with_df, costs_with_df, interv_costs_with_df =\
             do_analysis(ID_with, logFile_with, calc_intervention_costs_bool)
     else:
@@ -154,7 +147,7 @@ else:
     print()
     print("analysis with interventions in progress")
     print('--------------------')
-    ID_with = datestamp_with_log + "_with" + str(int(pop_size_simulated / 1000)) + "K" + suffix
+    ID_with = datestamp_with_log + "_with" + suffix
     use_with_df, percentage_use_with_df, costs_with_df, interv_costs_with_df = \
         do_analysis(ID_with, logFile_with, calc_intervention_costs_bool)
     # use as WITHOUT interventions outputs from the sim WITH interventions
