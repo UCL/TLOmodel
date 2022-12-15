@@ -759,4 +759,4 @@ def test_contraception_coverage_with_use_healthsystem(tmpdir, seed):
 
         return all([equals(A[k], B[k], tol=_tol) for k in set(A.keys() & B.keys())])
 
-    assert compare_dictionaries(contraception_use_healthsystem_true, contraception_use_healthsystem_false, tol=0.01)
+    assert compare_dictionaries(contraception_use_healthsystem_true, contraception_use_healthsystem_false, tol=0.011)
