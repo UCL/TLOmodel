@@ -553,7 +553,7 @@ class Contraception(Module):
             is_a_switch = _old != _new
             reqs_appt = _new in self.states_that_may_require_HSI_to_switch_to if is_a_switch \
                 else _new in self.states_that_may_require_HSI_to_maintain_on
-            if (not is_a_switch) & (_old in self.states_that_may_require_HSI_to_maintain_on):
+            if (not is_a_switch) & reqs_appt:
                 due_appt = (pd.isnull(date_of_last_appt[_woman_id]) or
                             (date_today - date_of_last_appt[_woman_id]).days >=
                             days_between_appts[states_to_maintain_on.index(_old)]
