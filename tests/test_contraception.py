@@ -529,7 +529,7 @@ def test_defaulting_off_method_if_no_healthsystem_at_population_level(tmpdir, se
     after_everyone_has_appt = pd.to_datetime(ys['date']) > (sim.start_date + pd.DateOffset(months=121))
     # 10 years & 1 month allow time for an appointment to become due for everyone
     # (allowing for the monthly occurrence of the poll).
-    # TODO: base on days_between_appts_for_maintenance
+    # TODO: base on max days_between_appts_for_maintenance
     assert (ys.loc[after_everyone_has_appt, states_that_may_require_HSI_to_maintain_on] == 0).all().all()
 
     # Check there is no record of starting/switching-to contraception of anything that requires an HSI
@@ -553,7 +553,8 @@ def test_defaulting_off_method_if_no_consumables_at_population_level(tmpdir, see
     # Run simulation whereby contraception requires HSI, HSI run, but there are no consumables
     # Let there be no discontinuation (so that every would otherwise stay on contraception)
     sim = run_sim(tmpdir=tmpdir, seed=seed, use_healthsystem=True, disable=False, consumables_available=False,
-                  no_discontinuation=True, end_date=Date(2021, 12, 31))  # TODO: base on days_between_appts_for_maintenance
+                  no_discontinuation=True, end_date=Date(2021, 12, 31))
+    # TODO: base on max days_between_appts_for_maintenance
     __check_no_illegal_switches(sim)
 
     log = parse_log_file(sim.log_filepath)['tlo.methods.contraception']
@@ -570,7 +571,7 @@ def test_defaulting_off_method_if_no_consumables_at_population_level(tmpdir, see
         pd.to_datetime(num_on_contraceptives['date']) > (sim.start_date + pd.DateOffset(months=121))
     # 10 years & 1 month allow time for an appointment to become due for everyone
     # (allowing for the monthly occurrence of the poll).
-    # TODO: base on days_between_appts_for_maintenance
+    # TODO: base on max days_between_appts_for_maintenance
     assert (num_on_contraceptives.loc[after_everyone_has_appt, states_that_may_require_HSI_to_maintain_on] == 0
             ).all().all()
 
@@ -702,7 +703,7 @@ def test_contraception_coverage_with_use_healthsystem(tmpdir, seed):
         cons = sim.modules['HealthSystem'].consumables._prob_item_codes_available
 
         def find_average_availability(items: List, level: str):
-            """Find the probability that all the items are available at level 1a."""
+            """Find the probability that all the items are available at the level."""
             facilities = set([x.id for x in sim.modules['HealthSystem']._facilities_for_each_district[level].values()])
             return np.prod(
                [cons.loc[(slice(None), facilities, _item)].mean() for _item in items]
