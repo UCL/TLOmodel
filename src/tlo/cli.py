@@ -208,9 +208,8 @@ def batch_submit(ctx, scenario_file, keep_pool_alive):
     task_dir = "${{AZ_BATCH_TASK_DIR}}"
     gzip_pattern_match = "{{txt,log}}"
     command = f"""
-    git fetch --all
-    git checkout -b {current_branch} origin/{current_branch}
-    git pull
+    git fetch origin {commit.hexsha}
+    git checkout {commit.hexsha}
     pip install -r requirements/base.txt
     tlo --config-file tlo.example.conf batch-run {azure_run_json} {working_dir} {{draw_number}} {{run_number}}
     cp {task_dir}/std*.txt {working_dir}/{{draw_number}}/{{run_number}}/.
