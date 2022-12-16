@@ -15,7 +15,6 @@ from tlo.analysis.utils import (
     extract_results,
     format_gbd,
     get_color_cause_of_death_label,
-    get_scenario_outputs,
     load_pickled_dataframes,
     make_age_grp_lookup,
     make_age_grp_types,
@@ -56,7 +55,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # update name of DALYS in the gbd dataset:
     gbd_all['measure_name'] = gbd_all['measure_name'].replace({'DALYs (Disability-Adjusted Life Years)': 'DALYs'})
 
-    def make_std_graphs(what='Deaths', period='2010-2014'):
+    def make_std_graphs(what, period):
         """Make the standard Graphs for a specific period for either 'Deaths' or 'DALYS'"""
 
         assert type(what) is str
@@ -173,7 +172,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                                    edgecolor='black',
                                    linewidth=0.4,
                                    )
-            ax.set_title(f'{sexname(sex)}', fontsize=18)
+            ax.set_title(f'{sexname(sex)}, {period}', fontsize=18)
             ax.set_xlabel('Age Group')
             ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
             ax.set_ylabel(f"{what} per year\n(thousands)")
@@ -233,7 +232,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 fig.patch.set_linewidth(8)
                 fig.tight_layout()
                 fig.savefig(make_graph_file_name(
-                    f"{what}_{period}_AgeAndSexSpecificLineGraph_{reformat_cause(cause)}")
+                    f"B_{what}_{period}_AgeAndSexSpecificLineGraph_{reformat_cause(cause)}")
                 )
                 fig.show()
                 plt.close(fig)
@@ -252,7 +251,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         #  (the addition of the bounds for the sub-categories - as done here - is not strictly correct.)
         #  ... OR use formula to make my own explicit assumption about correlation of uncertainty in different age-grps.
 
-        select_labels = ['AIDS', 'Cancer (Other)', 'Measles', 'Other']
+        select_labels = []
 
         fig, ax = plt.subplots()
         xylim = tot_outcomes_by_cause.loc[('upper', slice(None))].max().max() / 1e3
@@ -291,29 +290,50 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.set_ylabel('Model (thousands)')
         ax.set_title(f'{what} per year by Cause {period}')
         ax.legend(ncol=1, prop={'size': 8}, loc='lower right')
-        plt.savefig(make_graph_file_name(f"{what}_{period}_Scatter_Plot"))
+        plt.savefig(make_graph_file_name(f"A_{what}_{period}_Scatter_Plot"))
         plt.show()
         plt.close(fig)
 
-        # %% Assess the "coverage" of the model: i.e. the fraction of deaths/dalys that are causes that are represnted
+        # %% Assess the "coverage" of the model: i.e. the fraction of deaths/dalys that are causes that are represented
         # the model.
+
+        # Causes of death not in the model and the fraction of total deaths they cause
+        unmodelled_causes = gbd \
+            .loc[(period == period) & (gbd['measure_name'] == what)] \
+            .assign(frac_deaths=lambda df: df['mean'] / df['mean'].sum()) \
+            .groupby(by=['cause_name', 'label'])['frac_deaths'].sum() \
+            .sort_values(ascending=False) \
+            .pipe(lambda df: df.loc[(slice(None), "Other")])
+
+        top_five_causes_of_death_not_modelled = ''.join([
+            f"* {_cause} ({round(100 * _percent_deaths, 1)}%)\n"
+            for _cause, _percent_deaths in unmodelled_causes[0:10].iteritems() if _percent_deaths >= 0.005
+        ])
+
         outcomes = outcome_by_age_pt['GBD'][("mean")]
         fraction_causes_modelled = 1.0 - outcomes['Other'] / outcomes.sum(axis=1)
-        fig, axs = plt.subplots(nrows=1, ncols=2, sharey=True)
-        for sex, ax in zip(sexes, axs):
+        fig, ax = plt.subplots()
+        for sex in sexes:
             fraction_causes_modelled.loc[(sex, slice(None))].droplevel(0).plot(
-                ax=ax, color=get_color_cause_of_death_label('Other'), lw=5)
-            ax.set_ylim(0, 1.0)
-            xticks = fraction_causes_modelled.index.levels[1]
-            ax.set_xticks(range(len(xticks)))
-            ax.set_xticklabels(xticks, rotation=90)
-            ax.grid(axis='y')
-            ax.set_xlabel('Age-Group')
-            ax.set_ylabel('Fraction')
-            ax.set_title(f"{sexname(sex)}")
-        fig.suptitle(f"Fraction of {what} Represented in the Model", fontsize=16)
+                ax=ax,
+                color=get_color_cause_of_death_label('Other'),
+                linestyle=':' if sex == 'F' else '-',
+                label=sexname(sex),
+                lw=5,
+            )
+        ax.legend()
+        ax.set_ylim(0, 1.0)
+        xticks = fraction_causes_modelled.index.levels[1]
+        ax.set_xticks(range(len(xticks)))
+        ax.set_xticklabels(xticks, rotation=90)
+        ax.grid(axis='y')
+        ax.set_xlabel('Age-Group')
+        ax.set_ylabel('Fraction')
+        ax.set_title(f"Fraction of {what} Represented in the Model")
+        ax.text(x=0.5, y=0.05, s=('Main causes not included explicitly:\n\n' + top_five_causes_of_death_not_modelled),
+                bbox={'edgecolor': 'r', 'facecolor': 'w'})
         fig.tight_layout()
-        plt.savefig(make_graph_file_name(f"{what}_{period}_coverage"))
+        plt.savefig(make_graph_file_name(f"C_{what}_{period}_coverage"))
         plt.show()
         plt.close(fig)
 
@@ -321,7 +341,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     make_std_graphs(what='Deaths', period='2010-2014')
     # make_std_graphs(what='DALYs', period='2010-2014')  # <-- todo colormapping and order for DALYS
 
-    # make_std_graphs(what='Deaths', period='2015-2019')
+    make_std_graphs(what='Deaths', period='2015-2019')
     # make_std_graphs(what='DALYs', period='2015-2019')  # <-- todo colormapping and order for DALYS
 
 
@@ -331,6 +351,6 @@ if __name__ == "__main__":
 
     # Find results folder (most recent run generated using that scenario_filename)
     scenario_filename = 'long_run_all_diseases.py'
-    results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
+    results_folder = outputspath / "long_run_all_diseases-2022-12-06T144559Z"
 
     apply(results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
