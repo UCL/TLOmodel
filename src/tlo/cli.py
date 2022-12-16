@@ -102,8 +102,11 @@ def batch_submit(ctx, scenario_file, keep_pool_alive):
         return
 
     scenario = load_scenario(scenario_file)
+
+    # get the commit we're going to submit to run on batch, and save the run config for that commit
+    # it's the most recent commit on current branch
     repo = Repo(".")
-    commit = next(repo.iter_commits(max_count=1, paths=scenario_file))
+    commit = next(repo.iter_commits(max_count=1))
     run_json = scenario.save_draws(commit=commit.hexsha)
 
     print(">Setting up batch\r", end="")
