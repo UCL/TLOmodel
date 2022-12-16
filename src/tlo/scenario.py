@@ -158,7 +158,7 @@ class BaseScenario:
             for k, v in kwargs.items():
                 config[k] = v
         if "commit" in config:
-            github_url = f"https://github.com/UCL/TLOmodel/blob/{config['commit']}/{config['scenario_script_path']}"
+            github_url = f"https://github.com/UCL/TLOmodel/blob/{config['commit']}"
             config["github"] = github_url
         if return_config:
             return config
