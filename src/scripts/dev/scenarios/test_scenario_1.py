@@ -13,8 +13,6 @@ from tlo.methods import (
 )
 from tlo.scenario import BaseScenario
 
-# can probably delete this file
-
 
 class TestScenario(BaseScenario):
     def __init__(self):
