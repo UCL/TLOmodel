@@ -238,8 +238,8 @@ class SymptomManager(Module):
                     name=generic_symptom_name,
                     odds_ratio_health_seeking_in_adults=odds_ratio_health_seeking_in_adults[generic_symptom_name],
                     odds_ratio_health_seeking_in_children=odds_ratio_health_seeking_in_children[generic_symptom_name],
-                    emergency_in_adults=False,
-                    emergency_in_children=False
+                    emergency_in_adults=True if generic_symptom_name == 'spurious_emergency_symptom' else False,
+                    emergency_in_children=True if generic_symptom_name == 'spurious_emergency_symptom' else False
                 )
             )
 
