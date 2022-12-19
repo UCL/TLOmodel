@@ -183,7 +183,8 @@ class SymptomManager(Module):
             'backache',
             'injury',
             'eye_complaint',
-            'diarrhoea'
+            'diarrhoea',
+            'spurious_emergency_symptom'  # the spurious symptom that will seek AandE care
         }
 
         self.all_registered_symptoms = set()
