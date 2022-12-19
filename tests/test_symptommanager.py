@@ -325,6 +325,7 @@ def test_spurious_emergency_symptom_during_simulation(seed):
     # Make the probability of onset of the spurious emergency symptom be 1.0 and duration of one day
     generic_symptoms = sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence']
     the_generic_symptom = generic_symptoms.iloc[-1].generic_symptom_name
+    assert the_generic_symptom == 'spurious_emergency_symptom'
     generic_symptoms.loc[
         (the_generic_symptom == generic_symptoms['generic_symptom_name']),
         ['prob_spurious_occurrence_in_children_per_day',
