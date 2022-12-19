@@ -77,20 +77,20 @@ class Symptom:
         # 2) if the symptom is declared as an emergency, it cannot also have an odds ratio for health seeking
         if emergency_in_children:
             assert no_healthcareseeking_in_children is False
-            assert odds_ratio_health_seeking_in_children is None
+            assert pd.isna(odds_ratio_health_seeking_in_children)
 
         if emergency_in_adults:
             assert no_healthcareseeking_in_adults is False
-            assert odds_ratio_health_seeking_in_adults is None
+            assert pd.isna(odds_ratio_health_seeking_in_adults)
 
         # 3) if an odds-ratio is specified, it cannot have the emergency or the no-seeking flags
-        if odds_ratio_health_seeking_in_children is not None:
+        if not pd.isna(odds_ratio_health_seeking_in_children):
             assert emergency_in_children is False
             assert no_healthcareseeking_in_children is False
             assert isinstance(odds_ratio_health_seeking_in_children, float)
             assert 0 < odds_ratio_health_seeking_in_children
 
-        if odds_ratio_health_seeking_in_adults is not None:
+        if not pd.isna(odds_ratio_health_seeking_in_adults):
             assert emergency_in_adults is False
             assert no_healthcareseeking_in_adults is False
             assert isinstance(odds_ratio_health_seeking_in_adults, float)
@@ -98,14 +98,14 @@ class Symptom:
 
         # If odds-ratios are not provided (and no other flags provided), default to values of 1.0
         if (
-            (odds_ratio_health_seeking_in_children is None) &
+            (pd.isna(odds_ratio_health_seeking_in_children)) &
             (emergency_in_children is False) &
             (no_healthcareseeking_in_children is False)
         ):
             odds_ratio_health_seeking_in_children = 1.0
 
         if (
-            (odds_ratio_health_seeking_in_adults is None) &
+            (pd.isna(odds_ratio_health_seeking_in_adults)) &
             (emergency_in_adults is False) &
             (no_healthcareseeking_in_adults is False)
         ):
