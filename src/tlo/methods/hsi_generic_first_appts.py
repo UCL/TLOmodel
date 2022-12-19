@@ -95,6 +95,26 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
         do_at_generic_first_appt_emergency(hsi_event=self, squeeze_factor=squeeze_factor)
 
 
+class HSI_EmergencyCare_SpuriousSymptom(HSI_Event, IndividualScopeEventMixin):
+    """This is an HSI event that provides Accident & Emergency Care for a person that has spurious emergency symptom."""
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        self.TREATMENT_ID = self.__class__.__name__
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
+        self.ACCEPTED_FACILITY_LEVEL = '1a'  # alternative level '1b'
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.populations.props
+        if not df.at[person_id, 'alive']:
+            return self.make_appt_footprint()
+        else:
+            sm = self.sim.modules['SymptomManager']
+            sm.change_symptom(person_id, "spurious_emergency_symptom", '-', sm)
+
+        do_at_generic_first_appt_emergency(hsi_event=self, squeeze_factor=squeeze_factor)
+
+
 def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
     """The actions are taken during the non-emergency generic HSI, HSI_GenericFirstApptAtFacilityLevel0."""
 
