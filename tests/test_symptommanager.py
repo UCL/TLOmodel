@@ -310,6 +310,52 @@ def test_spurious_symptoms_during_simulation(seed):
     assert [] == sim.modules['SymptomManager'].who_has(the_generic_symptom)
 
 
+def test_spurious_emergency_symptom_during_simulation(seed):
+    """Test on the functionality of the spurious emergency symptom"""
+    sim = Simulation(start_date=start_date, seed=seed)
+
+    # Register the core modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           disable_and_reject_all=True),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
+                 )
+
+    # Make the probability of onset of the spurious emergency symptom be 1.0 and duration of one day
+    generic_symptoms = sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence']
+    the_generic_symptom = generic_symptoms.iloc[-1].generic_symptom_name
+    generic_symptoms.loc[
+        (the_generic_symptom == generic_symptoms['generic_symptom_name']),
+        ['prob_spurious_occurrence_in_children_per_day',
+         'prob_spurious_occurrence_in_adults_per_day']
+    ] = (1.0, 1.0)
+
+    generic_symptoms.loc[
+        (the_generic_symptom == generic_symptoms['generic_symptom_name']),
+        ['duration_in_days_of_spurious_occurrence_in_children',
+         'duration_in_days_of_spurious_occurrence_in_adults']
+    ] = (1, 1)
+
+    # Run the simulation
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date + DateOffset(days=0))
+
+    # Check that no one has symptoms
+    assert [] == sim.modules['SymptomManager'].who_has(the_generic_symptom)
+
+    # Run the onset event & check that all persons now have the generic symptom
+    onset = SymptomManager_SpuriousSymptomOnset(module=sim.modules['SymptomManager'])
+    onset.apply(sim.population)
+    df = sim.population.props
+    assert set(df.is_alive.index) == set(sim.modules['SymptomManager'].who_has(the_generic_symptom))
+
+    # Update time, run resolve event and check that no one has symptom
+    sim.date += DateOffset(days=1)
+    sim.modules['SymptomManager'].spurious_symptom_resolve_event.apply(sim.population)
+    assert [] == sim.modules['SymptomManager'].who_has(the_generic_symptom)
+
+
 @pytest.fixture
 def symptom_manager():
     return symptommanager.SymptomManager(resourcefilepath=resourcefilepath)
