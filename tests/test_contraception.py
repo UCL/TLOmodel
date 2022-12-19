@@ -444,8 +444,9 @@ def test_defaulting_off_method_if_no_healthsystem_or_consumable_at_individual_le
                 'is_pregnant': False,
                 'date_of_last_pregnancy': pd.NaT,
                 'co_unintended_preg': False,
-                'co_date_of_last_fp_appt': sim.date -
-                    pd.DateOffset(days=set_last_appt(of_method=_row.method, due_bool=_row.due_appt))
+                'co_date_of_last_fp_appt': sim.date - pd.DateOffset(
+                    days=set_last_appt(of_method=_row.method, due_bool=_row.due_appt)
+                 )
             }
             df.loc[_person_id, _props.keys()] = _props.values()
 
