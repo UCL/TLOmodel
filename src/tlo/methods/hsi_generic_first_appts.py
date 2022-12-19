@@ -100,6 +100,8 @@ class HSI_EmergencyCare_SpuriousSymptom(HSI_Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        assert module is self.sim.modules['HealthSeekingBehaviour']
+
         self.TREATMENT_ID = self.__class__.__name__
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'  # alternative level '1b'
@@ -458,3 +460,11 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
     if 'Alri' in sim.modules:
         if (age <= 5) and (('cough' in symptoms) or ('difficult_breathing' in symptoms)):
             sim.modules['Alri'].on_presentation(person_id=person_id, hsi_event=hsi_event)
+
+    # ----- spurious emgergency symptom -----
+    if 'spurious_emergency_symptom' in symptoms:
+        event = HSI_EmergencyCare_SpuriousSymptom(
+            module=sim.modules['HealthSeekingBehaviour'],
+            person_id=person_id
+        )
+        schedule_hsi(event, priority=1, topen=sim.date)
