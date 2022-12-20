@@ -114,8 +114,6 @@ class HSI_EmergencyCare_SpuriousSymptom(HSI_Event, IndividualScopeEventMixin):
             sm = self.sim.modules['SymptomManager']
             sm.change_symptom(person_id, "spurious_emergency_symptom", '-', sm)
 
-        do_at_generic_first_appt_emergency(hsi_event=self, squeeze_factor=squeeze_factor)
-
 
 def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
     """The actions are taken during the non-emergency generic HSI, HSI_GenericFirstApptAtFacilityLevel0."""
