@@ -107,8 +107,8 @@ class HSI_EmergencyCare_SpuriousSymptom(HSI_Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = '1a'  # alternative level '1b'
 
     def apply(self, person_id, squeeze_factor):
-        df = self.sim.populations.props
-        if not df.at[person_id, 'alive']:
+        df = self.sim.population.props
+        if not df.at[person_id, 'is_alive']:
             return self.make_appt_footprint({})
         else:
             sm = self.sim.modules['SymptomManager']
