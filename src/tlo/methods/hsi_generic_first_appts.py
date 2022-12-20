@@ -109,7 +109,7 @@ class HSI_EmergencyCare_SpuriousSymptom(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         df = self.sim.populations.props
         if not df.at[person_id, 'alive']:
-            return self.make_appt_footprint()
+            return self.make_appt_footprint({})
         else:
             sm = self.sim.modules['SymptomManager']
             sm.change_symptom(person_id, "spurious_emergency_symptom", '-', sm)
