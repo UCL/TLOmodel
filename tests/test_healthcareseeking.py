@@ -297,10 +297,10 @@ def test_healthcareseeking_occurs_with_spurious_symptoms_only(seed):
         'prob_spurious_occurrence_in_children_per_day',
         'prob_spurious_occurrence_in_adults_per_day'
     ]] = 1.0
-    sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence'][[
+    sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence'].iloc[:-1][[
         'odds_ratio_for_health_seeking_in_children',
         'odds_ratio_for_health_seeking_in_adults'
-    ]] = 10.0
+    ]] = 10.0   # excluding spurious_emergency_symptom
 
     # Run the simulation for one day
     end_date = start_date + DateOffset(days=1)
