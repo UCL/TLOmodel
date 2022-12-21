@@ -15,7 +15,7 @@ from tlo.analysis.utils import (
     extract_results,
     get_scenario_info,
     load_pickled_dataframes,
-    summarize,
+    summarize, get_scenario_outputs,
 )
 
 resourcefilepath = Path("./resources")
@@ -24,9 +24,9 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 outputspath = Path("./outputs/sejjil0@ucl.ac.uk")
 
 # 0) Find results_folder associated with a given batch_file (and get most recent [-1])
-# results_folder = get_scenario_outputs("baseline_alri_scenario.py", outputspath)[-1]
+results_folder = get_scenario_outputs("baseline_alri_scenario.py", outputspath)[-1]
 # or specify which folder to use
-results_folder = (outputspath / 'baseline_alri_scenario-2022-03-23T102644Z')
+# results_folder = (outputspath / 'baseline_alri_scenario-2022-03-23T102644Z')
 # results_folder = (outputspath/'baseline_alri_scenario-2022-03-22T113403Z')
 # folder9 = (outputspath/'baseline_alri_scenario-2022-03-23T102644Z/0/9')
 # # get the pickled files if not generated at the batch run

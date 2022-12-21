@@ -985,17 +985,18 @@ class Alri(Module):
                     self.sim.modules['SymptomManager'].register_symptom(
                         Symptom(name=symptom_name,
                                 emergency_in_children=True))
-                elif symptom_name == 'chest_indrawing':
+                elif symptom_name in ('tachypnoea', 'chest_indrawing', 'respiratory_distress'):
                     self.sim.modules['SymptomManager'].register_symptom(
                         Symptom(name=symptom_name,
                                 odds_ratio_health_seeking_in_children=self.parameters[
                                     'or_care_seeking_perceived_severe_illness']))
                 else:
                     self.sim.modules['SymptomManager'].register_symptom(
-                        Symptom(name=symptom_name))
-                    # (Associates the symptoms with the 'average' healthcare seeking, apart from "danger_signs", which
-                    # is an emergency symptom in children, and "chest_indrawing" which does have increased healthcare
-                    # seeking.)
+                        Symptom(name=symptom_name,
+                                odds_ratio_health_seeking_in_children=15.0))
+                # (Associates the symptoms with the 'average' healthcare seeking, apart from "danger_signs", which
+                # is an emergency symptom in children, and "chest_indrawing" which does have increased healthcare
+                # seeking.)
 
     def pre_initialise_population(self):
         """Define columns for complications at run-time"""
@@ -1510,7 +1511,7 @@ class Alri(Module):
         }."""
 
         # # # For hospital classification # # #
-        if facility_level in ('1b', '2', '3'):
+        if facility_level in ('2', '3'):
             # young infants classifications
             if child_is_younger_than_2_months:
                 # if any(s in ['danger_signs', 'respiratory_distress', 'chest_indrawing'] for s in symptoms):
@@ -1533,7 +1534,7 @@ class Alri(Module):
                     return 'cough_or_cold'
 
         # # # For village clinics and health centres classification # # #
-        elif facility_level in ('0', '1a'):
+        elif facility_level in ('0', '1a', '1b'):
             # young infants classifications
             if child_is_younger_than_2_months:
                 # if any(s in ['danger_signs', 'chest_indrawing'] for s in symptoms):
@@ -3258,8 +3259,19 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
              ''                                 <-- implies does not need oxygen
         }."""
 
+        # SpO2<90% apply severe classification to get inpatient care
         if oxygen_saturation == '<90%':
             return 'danger_signs_pneumonia'
+        # # usefulness of PO in the care management decision of cases with SpO2<95%
+        # elif oxygen_saturation != '>=95%':
+        #     if imci_classification_based_on_symptoms == 'cough_or_cold':
+        #         return 'fast_breathing_pneumonia'  # if SpO2<95% measured by PO,
+        #         #                                   apply the next severity classification to receive antibiotics
+        #     else:
+        #         return imci_classification_based_on_symptoms  # if SpO2<95% measured by PO,
+        #         #                                           apply the imci-classification for respective intervention
+
+        # if SpO2>=95% measured by PO, final classification will be determined by HW
         else:
             return ''
 
@@ -3291,12 +3303,29 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                             1.0 - p['prob_iCCM_severe_pneumonia_treated_as_fast_breathing_pneumonia']
                         ]
                     )
+            # if imci_classification_based_on_symptoms == 'danger_signs_pneumonia':
+            #     if rand() < p['sensitivity_of_classification_of_danger_signs_pneumonia_facility_level0']:
+            #         return imci_classification_based_on_symptoms
+            #     else:
+            #         return rand_choice(
+            #             ['chest_indrawing_pneumonia', 'cough_or_cold'],
+            #             p=[
+            #                 p['prob_iCCM_severe_pneumonia_treated_as_fast_breathing_pneumonia'],
+            #                 1.0 - p['prob_iCCM_severe_pneumonia_treated_as_fast_breathing_pneumonia']
+            #             ]
+            #         )
 
             elif imci_classification_based_on_symptoms == 'fast_breathing_pneumonia':
                 if rand() < p['sensitivity_of_classification_of_fast_breathing_pneumonia_facility_level0']:
                     return imci_classification_based_on_symptoms
                 else:
                     return 'cough_or_cold'
+
+            # elif imci_classification_based_on_symptoms in ('chest_indrawing_pneumonia', 'fast_breathing_pneumonia'):
+            #     if rand() < p['sensitivity_of_classification_of_fast_breathing_pneumonia_facility_level0']:
+            #         return imci_classification_based_on_symptoms
+            #     else:
+            #         return 'cough_or_cold'
 
             elif imci_classification_based_on_symptoms == "cough_or_cold":
                 return "cough_or_cold"
@@ -3358,7 +3387,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
 
         if facility_level == "0":
             classification = _classification_at_facility_level_0(imci_classification_based_on_symptoms)
-        elif facility_level in ("1a", "1b"):
+        elif facility_level in ("1a","1b"):
             classification = _classification_at_facility_level_1(imci_classification_based_on_symptoms)
         elif facility_level == "2":
             classification = _classification_at_facility_level_2(imci_classification_based_on_symptoms)
@@ -3930,6 +3959,40 @@ def _make_hw_diagnosis_perfect(alri_module):
     p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level2'] = 1.0
     p['sensitivity_of_classification_of_severe_pneumonia_facility_level2'] = 1.0
     p['prob_hw_decision_for_oxygen_provision_when_po_unavailable'] = 1.0
+
+
+def _set_current_policy(alri_module):
+    """Modify the parameters of an instance of the Alri module so that sensitivity of all diagnosis steps is perfect.
+    And under current policy parameters"""
+    p = alri_module.parameters
+
+    # p['sensitivity_of_classification_of_fast_breathing_pneumonia_facility_level0'] = 1.0
+    # p['sensitivity_of_classification_of_danger_signs_pneumonia_facility_level0'] = 1.0
+    # p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level1'] = 1.0
+    # p['sensitivity_of_classification_of_severe_pneumonia_facility_level1'] = 1.0
+    # p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level2'] = 1.0
+    # p['sensitivity_of_classification_of_severe_pneumonia_facility_level2'] = 1.0
+    # p['prob_hw_decision_for_oxygen_provision_when_po_unavailable'] = 1.0
+
+    p['apply_oxygen_indication_to_SpO2_measurement'] = '<90%'
+    p['allow_use_oximetry_for_non_severe_classifications'] = False
+
+
+def _set_new_policy(alri_module):
+    """Modify the parameters of an instance of the Alri module so that sensitivity of all diagnosis steps is perfect.
+    And under new policy parameters"""
+    p = alri_module.parameters
+
+    # p['sensitivity_of_classification_of_fast_breathing_pneumonia_facility_level0'] = 1.0
+    # p['sensitivity_of_classification_of_danger_signs_pneumonia_facility_level0'] = 1.0
+    # p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level1'] = 1.0
+    # p['sensitivity_of_classification_of_severe_pneumonia_facility_level1'] = 1.0
+    # p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level2'] = 1.0
+    # p['sensitivity_of_classification_of_severe_pneumonia_facility_level2'] = 1.0
+    # p['prob_hw_decision_for_oxygen_provision_when_po_unavailable'] = 1.0
+
+    p['apply_oxygen_indication_to_SpO2_measurement'] = '<93%'
+    p['allow_use_oximetry_for_non_severe_classifications'] = True
 
 
 def _make_treatment_perfect(alri_module):

@@ -262,6 +262,10 @@ total_uncomplicated_pneumonia = df_pneumonia['complications'].apply(lambda x: 1 
 total_complicated_pneumonia = df_pneumonia['complications'].apply(lambda x: 1 if (len(x) != 0) else 0).sum()
 prop_complicated_pneumonia = total_complicated_pneumonia / total_pneumonia_cases  # 0.4517
 
+total_pc_pneumonia = df_pneumonia['complications'].apply(lambda x: 1 if any(
+    e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax', 'bacteraemia'] for e in x) else 0).sum()
+prop_pc_pneumonia = total_pc_pneumonia / total_pneumonia_cases  # 0.207
+
 # get the proportion of danger signs in uncomplicated pneumonia
 tot_ds_in_uncomplicated_pneumonia = df_pneumonia[['complications', 'symptoms']].apply(
     lambda x: 1 if (len(x[0]) == 0) and 'danger_signs' in x[1] else 0, axis=1).sum()

@@ -31,7 +31,7 @@ resourcefilepath = Path("./resources")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 log_filename = 'none'
-# log_filename = outputpath / 'GBD_lri_comparison_50k_pop__2022-09-12T150908.log'
+# log_filename = outputpath / 'GBD_lri_comparison_50k_pop__2022-03-15T111444.log'
 # <-- insert name of log file to avoid re-running the simulation
 
 if not os.path.exists(log_filename):
@@ -67,7 +67,7 @@ if not os.path.exists(log_filename):
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                  service_availability=['*'], cons_availability='default'),
+                                  service_availability=['*'], cons_availability='all', disable=True),
         alri.Alri(resourcefilepath=resourcefilepath),
         alri.AlriPropertiesOfOtherModules()
     )

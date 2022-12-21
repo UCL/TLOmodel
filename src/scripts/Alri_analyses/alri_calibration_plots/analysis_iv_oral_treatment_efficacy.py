@@ -495,7 +495,7 @@ if __name__ == "__main__":
     ax.grid(axis='y')
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(reversed(handles), reversed(labels), title='Case Type', loc='upper left', bbox_to_anchor=(1, 1), fontsize=7)
-    fig.suptitle('Deaths to Alri Under Different Treatments', fontsize=14)
+    # fig.suptitle('Deaths to Alri Under Different Treatments', fontsize=14)
     fig.tight_layout()
     fig.show()
     plt.close(fig)
