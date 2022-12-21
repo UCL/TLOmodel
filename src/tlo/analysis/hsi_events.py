@@ -169,18 +169,7 @@ def get_details_of_defined_hsi_events(
                 # this is an abstract base class and so does not need documenting
                 pass
             else:
-                details_of_defined_hsi_events.add(
-                    HSIEventDetails(
-                        event_name=type(hsi_event).__name__,
-                        module_name=tlo_module_class.__name__,
-                        treatment_id=hsi_event.TREATMENT_ID,
-                        facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL,
-                        appt_footprint=tuple(hsi_event.EXPECTED_APPT_FOOTPRINT),
-                        beddays_footprint=tuple(
-                            sorted(hsi_event.BEDDAYS_FOOTPRINT.items())
-                        ),
-                    )
-                )
+                details_of_defined_hsi_events.add(hsi_event.as_namedtuple())
     return details_of_defined_hsi_events
 
 
@@ -248,7 +237,9 @@ def _format_facility_level(facility_level):
 
 
 def _format_appt_footprint(appt_footprint, inline_code_formatter):
-    return ', '.join(f'{inline_code_formatter(a)}' for a in appt_footprint)
+    return ', '.join(
+        f'{inline_code_formatter(appt_type)}' for appt_type, _ in appt_footprint
+    )
 
 
 def _format_beddays_footprint(beddays_footprint, inline_code_formatter):
@@ -477,9 +468,22 @@ def main():
     if args.json_file is not None:
         with open(args.json_file, 'r') as f:
             hsi_event_details = json.load(f)
+
+        # JSON serializes tuples to lists therefore need to reformat to reconstruct
+        # HSIEventDetails named tuples
+        def recursive_list_to_tuple(obj):
+            if isinstance(obj, list):
+                return tuple(recursive_list_to_tuple(child) for child in obj)
+            else:
+                return obj
+
         json_hsi_event_details = set(
-            # JSON serializes tuples to lists therefore need to reformat
-            HSIEventDetails(*event_details[:-1], tuple(event_details[-1]))
+            HSIEventDetails(
+                **{
+                    key: recursive_list_to_tuple(value)
+                    for key, value in event_details.items()
+                }
+            )
             for event_details in hsi_event_details
         )
         print(f'HSI events loaded from JSON file {args.json_file}.')

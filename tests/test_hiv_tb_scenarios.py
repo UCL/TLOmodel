@@ -49,7 +49,6 @@ def get_sim(seed):
             capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
             disable=False,  # disables the healthsystem (no constraints and no logging) and every HSI runs
             disable_and_reject_all=False,  # disable healthsystem and no HSI runs
-            store_hsi_events_that_have_run=False,  # convenience function for debugging
         ),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
