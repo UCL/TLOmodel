@@ -426,6 +426,9 @@ def test_defaulting_off_method_if_no_healthsystem_or_consumable_at_individual_le
             If the appt is due but the method does not require HSI to maintain, it is set to 65 days. If the
             appt is not due, it is set to 1 day.
             """
+            # if the below ceases to apply, it should be reconsidered as the need for an appt is only evaluated monthly
+            assert min(sim.modules['Contraception'].parameters['days_between_appts_for_maintenance']) >\
+                   31
             if due_bool:
                 if of_method in states_that_may_require_HSI_to_maintain_on:
                     return (sim.modules['Contraception'].parameters['days_between_appts_for_maintenance']
@@ -451,7 +454,13 @@ def test_defaulting_off_method_if_no_healthsystem_or_consumable_at_individual_le
             df.loc[_person_id, _props.keys()] = _props.values()
 
         # Run simulation
-        sim.simulate(end_date=sim.start_date + pd.DateOffset(months=2))  # TODO: months=min(days_between)/30-1
+        # 1 month to be due (if due_appt) + max_days_delay_between_decision_to_change_method_and_hsi_scheduled
+        # days within which the appt can be scheduled (topen) + 7 days when the appt is closed and contraceptive changed
+        # to "not_using" if the maintenance was not possible to be performed (tclose)
+        sim.simulate(end_date=sim.start_date + pd.DateOffset(months=1, days=\
+            sim.modules['Contraception'].parameters[
+                'max_days_delay_between_decision_to_change_method_and_hsi_scheduled'
+            ]+7))
         __check_no_illegal_switches(sim)
 
         # Check method that the women are now on.
