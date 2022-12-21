@@ -69,6 +69,11 @@ class LifeStyleCalibration:
                 'source': 'Price et al 2018; 6 or more sugary drinks per day',
                 'data': 0.37
             },
+            'li_is_sexworker': {
+                'ob_year': 2012,
+                'source': 'UNAIDS',
+                'data': 0.006
+            },
             'li_in_ed': {
                 'ob_year': 2015,
                 'source': 'Malawi DHS 2015',
@@ -282,9 +287,15 @@ class LifeStyleCalibration:
             plt.show()
 
         else:
+            y_lim = 1.0
+
             # get totals male and females per each property
             total_per_prop['total_pop'] = self.dfs[li_property].sum(axis=1)
 
+            if li_property == 'li_is_sexworker':
+                y_lim = 0.01
+                # get totals male and females per each property
+                total_per_prop['total_pop'] = self.dfs[li_property]['F'].sum(axis=1)
             # get year(to be set as an index and used when plotting)
             total_per_prop['period'] = self.dfs[li_property].index.year
             total_per_prop = total_per_prop.groupby(by='period').sum()
@@ -305,7 +316,7 @@ class LifeStyleCalibration:
                 color='red',
                 ax=ax
             )
-            plt.ylim(0, 1)
+            plt.ylim(0, y_lim)
             add_footnote(f"Data source: {self.obs_data_prop[li_property]['source']}")
             plt.tight_layout()
             plt.savefig(self.outputpath / (li_property + self.datestamp + 'fig_.png'), format='png')
@@ -696,11 +707,11 @@ def run():
 # uncomment the line below if you want to catch all warnings
 # pd.set_option('mode.chained_assignment', 'raise')
 # %% Run the Simulation
-sim = run()
+# sim = run()
 
 # %% read the results
-output = parse_log_file(sim.log_filepath)
-# output = parse_log_file(Path("./outputs/enhanced_lifestyle__2022-12-02T114931.log"))
+# output = parse_log_file(sim.log_filepath)
+output = parse_log_file(Path("./outputs/enhanced_lifestyle__2022-12-13T130809.log"))
 
 # construct a dict of dataframes using lifestyle logs
 logs_df = output['tlo.methods.enhanced_lifestyle']

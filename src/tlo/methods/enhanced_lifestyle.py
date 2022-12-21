@@ -682,7 +682,9 @@ class LifestyleModels:
             rural_urban_props = df['district_of_residence'].map(p['init_p_urban']['prop_urban'])
 
             # check all districts have been corectly mapped to their rural urban proportions
-            assert 0 == rural_urban_props.isna().sum(), 'some districts are not mapped to their rural urban values'
+            assert not rural_urban_props.isnull().any(), 'some districts are not mapped to their rural urban values'
+            # check urban rural proportion is greater or equal to 0 but less or equal to 1
+            assert rural_urban_props.apply(lambda x: 0.0 <= x <= 1.0).any(), 'proportion is less than 0 or greater than 1'
 
             # get individual's rural urban status
             rural_urban = rural_urban_props > rnd_draw
@@ -1948,10 +1950,10 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
             elif _property == 'li_in_ed':
                 data = df.loc[df.is_alive & df.age_years.between(5, 19)].groupby(by=[
-                    df.loc[df.is_alive & df.age_years.between(5, 19), 'sex'],
-                    df.loc[df.is_alive & df.age_years.between(5, 19), _property],
-                    df.loc[df.is_alive & df.age_years.between(5, 19), 'age_years'],
-                ]).size()
+                    'sex', 'li_wealth', _property, 'age_years']).size()
+
+            elif _property == 'li_ed_lev':
+                data = df.loc[df.is_alive].groupby(by=['sex', 'li_wealth', _property, 'age_range']).size()
 
             elif _property == 'li_is_sexworker':
                 data = df.loc[df.is_alive & (df.age_years.between(15, 49))].groupby(by=[
