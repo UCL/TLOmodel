@@ -527,8 +527,10 @@ def test_defaulting_off_method_if_no_healthsystem_at_population_level(tmpdir, se
      switching to any contraceptive that requires an HSI."""
 
     # Run simulation whereby contraception requires HSI but the HealthSystem prevent HSI occurring
-    sim = run_sim(tmpdir=tmpdir, seed=seed, use_healthsystem=True, healthsystem_disable_and_reject_all=True,
-                  end_date=Date(2021, 12, 31))  # TODO: base on max days_between_appts_for_maintenance
+    sim = run_sim(tmpdir=tmpdir, seed=seed, use_healthsystem=True, healthsystem_disable_and_reject_all=True, run=False)
+    max_days_between_appt_for_maintenance = \
+        max(sim.modules['Contraception'].parameters['days_between_appts_for_maintenance'])
+    sim.simulate(end_date=sim.start_date + pd.DateOffset(years=2, days=max_days_between_appt_for_maintenance))
     __check_no_illegal_switches(sim)
 
     log = parse_log_file(sim.log_filepath)['tlo.methods.contraception']
@@ -536,10 +538,10 @@ def test_defaulting_off_method_if_no_healthsystem_at_population_level(tmpdir, se
     # Check there is no record of persons being maintained on contraceptives that require an HSI
     states_that_may_require_HSI_to_maintain_on = sim.modules['Contraception'].states_that_may_require_HSI_to_maintain_on
     ys = log['contraception_use_summary']
-    after_everyone_has_appt = pd.to_datetime(ys['date']) > (sim.start_date + pd.DateOffset(months=121))
-    # 10 years & 1 month allow time for an appointment to become due for everyone
+    after_everyone_has_appt = pd.to_datetime(ys['date']) > \
+                              (sim.start_date + pd.DateOffset(months=1, days=max_days_between_appt_for_maintenance))
+    # max_days_between_appt_for_maintenance + 1 month allow time for an appointment to become due for everyone
     # (allowing for the monthly occurrence of the poll).
-    # TODO: base on max days_between_appts_for_maintenance
     assert (ys.loc[after_everyone_has_appt, states_that_may_require_HSI_to_maintain_on] == 0).all().all()
 
     # Check there is no record of starting/switching-to contraception of anything that requires an HSI
@@ -563,8 +565,10 @@ def test_defaulting_off_method_if_no_consumables_at_population_level(tmpdir, see
     # Run simulation whereby contraception requires HSI, HSI run, but there are no consumables
     # Let there be no discontinuation (so that every would otherwise stay on contraception)
     sim = run_sim(tmpdir=tmpdir, seed=seed, use_healthsystem=True, disable=False, consumables_available=False,
-                  no_discontinuation=True, end_date=Date(2021, 12, 31))
-    # TODO: base on max days_between_appts_for_maintenance
+                  no_discontinuation=True, run=False)
+    max_days_between_appt_for_maintenance =\
+        max(sim.modules['Contraception'].parameters['days_between_appts_for_maintenance'])
+    sim.simulate(end_date=sim.start_date + pd.DateOffset(years=2, days=max_days_between_appt_for_maintenance))
     __check_no_illegal_switches(sim)
 
     log = parse_log_file(sim.log_filepath)['tlo.methods.contraception']
@@ -577,11 +581,10 @@ def test_defaulting_off_method_if_no_consumables_at_population_level(tmpdir, see
     # Check that, after six months of simulation time, no one is on a contraceptive that requires a consumable for
     # maintenance.
     num_on_contraceptives = log['contraception_use_summary']
-    after_everyone_has_appt =\
-        pd.to_datetime(num_on_contraceptives['date']) > (sim.start_date + pd.DateOffset(months=121))
-    # 10 years & 1 month allow time for an appointment to become due for everyone
+    after_everyone_has_appt = pd.to_datetime(num_on_contraceptives['date']) > \
+                              (sim.start_date + pd.DateOffset(months=1, days=max_days_between_appt_for_maintenance))
+    # max_days_between_appt_for_maintenance + 1 month allow time for an appointment to become due for everyone
     # (allowing for the monthly occurrence of the poll).
-    # TODO: base on max days_between_appts_for_maintenance
     assert (num_on_contraceptives.loc[after_everyone_has_appt, states_that_may_require_HSI_to_maintain_on] == 0
             ).all().all()
 
