@@ -105,7 +105,7 @@ def _extract_dalys_by_disease(_df: pd.DataFrame) -> pd.Series:
     N.B. This limits the time period of interest to 2010-2019"""
     _, calperiodlookup = make_calendar_period_lookup()
 
-    return _df.loc[(_df['year'] >= 2010) & (_df['year'] < 2020)]\
+    return _df.loc[(_df['year'] >= 2020) & (_df['year'] < 2030)]\
              .drop(columns=['date', 'sex', 'age_range', 'year'])\
              .sum(axis=0)
 
@@ -167,3 +167,8 @@ ax.set_ylim((0, 1.5))
 ax.legend(loc='lower left')
 fig.tight_layout()
 fig.show()
+
+# Extract outputs to .csv
+dalys_summarized.to_csv('dalys_summarized.csv')
+dalys_by_disease_summarized.to_csv('dalys_by_disease_summarized.csv')
+deaths_summarized.to_csv('deaths_summarized.csv')
