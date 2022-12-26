@@ -3,6 +3,7 @@ import pandas as pd
 # import collections
 import timeit
 import time
+import math
 # TODO: once finalised, remove unused imports
 
 time_start = time.time()
@@ -10,7 +11,7 @@ time_start = time.time()
 ################################################################################
 # TO SET:  # TODO: update with final sims
 # suffix if you want to (if not just set to '') for the output figure(s) and/or table
-suffix = '_Totals-to-table_Dec13_2K'
+suffix = '_Dec22_26_2Kpop_1e6'
 # which results to use
 datestamp_without_log = '2022-12-08T224955'  # TODO: update with final sim
 # 2K no dis: '2022-12-08T224955' from 2022-12-08T224709Z
@@ -51,6 +52,8 @@ contraceptives_order = ['pill', 'IUD', 'injections', 'implant', 'male_condom',
 # %% Calculate Contraception Pop and PPFP Intervention Costs over time?
 # calc_intervention_costs_bool = False
 calc_intervention_costs_bool = True
+# %% Round the costs? No => None, Yes => set to what nearest to round them (e.g. to nearest million => 1e6).
+rounding_costs_to = 1e6
 # %% Parameters only for test runs
 # # Do you want to do both analysis? If not (set one of the below to False). The analysis won't be done and the outputs
 # from the other analysis (set to True below) will be used instead.
@@ -60,6 +63,7 @@ do_interv_analysis = True
 # Do you want prints to see costs, use, percentage use and table?
 # If False, no output is printed, but the output table is still saved in the 'outputs' folder.
 print_bool = False
+# print_bool = True
 ################################################################################
 if table_use_costs_bool:
     assert do_no_interv_analysis | do_interv_analysis,\
@@ -166,14 +170,15 @@ if print_bool:
     print("INTERVENTION COSTS WITHOUT")
     print(interv_costs_without_df)
     print()
+    #
     print("\n")
     print("COSTS WITH")
     print(costs_with_df)
-    #
     print("\n")
     print("INTERVENTION COSTS WITH")
     print(interv_costs_with_df)
     print()
+    #
     print("\n")
     print("MEAN USE WITHOUT")
     fullprint(use_without_df)
@@ -184,9 +189,9 @@ if print_bool:
     fullprint(percentage_use_without_df)
     print(list(percentage_use_without_df.columns))
 
+# %% Plot Use and Consumables Costs of Contraception methods Over time
+# with and without intervention?
 if table_use_costs_bool:
-    # %% Plot Use and Consumables Costs of Contraception methods Over time
-    # with and without intervention:
     if not ('use_output' in locals() or 'use_output' in globals()):
         use_output = "mean"
 
@@ -197,6 +202,33 @@ if table_use_costs_bool:
         use_with_df.round(2).astype(str) +\
         " (" + percentage_use_with_df.round(2).astype(str) + ")"
 
+    # # %% Round the costs?
+    if rounding_costs_to:
+        round_index = math.log10(rounding_costs_to)
+        costs_without_df = round(costs_without_df, -int(round_index)) / rounding_costs_to
+        costs_with_df = round(costs_with_df, -int(round_index)) / rounding_costs_to
+        if do_interv_analysis:
+            interv_costs_with_df = round(interv_costs_with_df, -int(round_index)) / rounding_costs_to
+        if not do_no_interv_analysis:
+            interv_costs_without_df = interv_costs_with_df
+
+        if print_bool:
+            print("\n")
+            print("COSTS WITHOUT rounded")
+            print(costs_without_df)
+            print()
+            print("\n")
+            print("INTERVENTION COSTS WITHOUT")
+            print(interv_costs_without_df)
+            print()
+            #
+            print("\n")
+            print("COSTS WITH rounded")
+            print(costs_with_df)
+            print("\n")
+            print("INTERVENTION COSTS WITH rounded")
+            print(interv_costs_with_df)
+            print()
 
     def combine_use_costs_with_without_interv(
         in_df_use_without, in_df_use_perc_without, in_df_costs_without, in_df_interv_costs_without,
@@ -242,13 +274,36 @@ if table_use_costs_bool:
         table_cols.append('ppfp_interv')
         table_cols.append('pop_ppfp_interv')
         table_cols.append('co_modern_all_interv_total')
+
+        def costs_name(in_rounding_costs_to):
+            if in_rounding_costs_to:
+                if in_rounding_costs_to == 1e9:
+                    return "milliards "
+                elif in_rounding_costs_to == 1e6:
+                    return "millions "
+                elif in_rounding_costs_to == 1e5:
+                    return "hundreds of thousands "
+                elif in_rounding_costs_to == 1e4:
+                    return "tens of thousands "
+                elif in_rounding_costs_to == 1e3:
+                    return "thousands "
+                elif in_rounding_costs_to == 100:
+                    return "hundreds "
+                elif in_rounding_costs_to == 10:
+                    return "tens "
+                else:
+                    return str(in_rounding_costs_to) + " "
+            else:
+                return ""
+
         df_combined = pd.DataFrame(data[:],
                                    columns=pd.Index(table_cols,
                                                     name='Contraception method'),  # TODO: maybe remove?
                                    index=pd.MultiIndex.from_product([
                                        in_df_use_without.index,
                                        ['Without interventions', 'With Pop and PPFP interventions'],
-                                       [str(use_output).capitalize() + ' number of women using (%)', 'Costs']
+                                       [str(use_output).capitalize() + ' number of women using (%)',
+                                        'Costs (' + costs_name(rounding_costs_to) + 'MWK)']
                                    ]))
         return df_combined.loc[:, :].transpose()
 
@@ -260,11 +315,11 @@ if table_use_costs_bool:
 
     # Change the names of totals
     use_costs_table_df = use_costs_table_df.rename(
-        index={'co_modern_total': 'modern contraceptives total',
+        index={'co_modern_total': 'modern contraceptives TOTAL',
                'pop_interv': 'Pop intervention',
                'ppfp_interv': 'PPFP intervention',
                'pop_ppfp_interv': 'Pop & PPFP intervention',
-               'co_modern_all_interv_total': 'modern contraceptives & interventions total'
+               'co_modern_all_interv_total': 'modern contraceptives & interventions TOTAL'
                }
     )
     # Remove the underscores from the names of contraception methods
