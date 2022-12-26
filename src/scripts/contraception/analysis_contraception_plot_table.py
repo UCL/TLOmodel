@@ -162,32 +162,33 @@ else:
     ID_without = ID_with + "-again"
 
 if print_bool:
-    print("\n")
-    print("COSTS WITHOUT")
-    print(costs_without_df)
-    print()
-    print("\n")
-    print("INTERVENTION COSTS WITHOUT")
-    print(interv_costs_without_df)
-    print()
-    #
-    print("\n")
-    print("COSTS WITH")
-    print(costs_with_df)
-    print("\n")
-    print("INTERVENTION COSTS WITH")
-    print(interv_costs_with_df)
-    print()
-    #
-    print("\n")
-    print("MEAN USE WITHOUT")
-    fullprint(use_without_df)
-    print(list(use_without_df.columns))
-    #
-    print("\n")
-    print("MEAN PERCENTAGE USE WITHOUT")
-    fullprint(percentage_use_without_df)
-    print(list(percentage_use_without_df.columns))
+    if do_no_interv_analysis:
+        print("\n")
+        print("COSTS WITHOUT")
+        print(costs_without_df)
+        print()
+        print("\n")
+        print("INTERVENTION COSTS WITHOUT")
+        print(interv_costs_without_df)
+        print()
+    if do_interv_analysis:
+        print("\n")
+        print("COSTS WITH")
+        print(costs_with_df)
+        print("\n")
+        print("INTERVENTION COSTS WITH")
+        print(interv_costs_with_df)
+        print()
+    if do_no_interv_analysis:
+        print("\n")
+        print("MEAN USE WITHOUT")
+        fullprint(use_without_df)
+        print(list(use_without_df.columns))
+        #
+        print("\n")
+        print("MEAN PERCENTAGE USE WITHOUT")
+        fullprint(percentage_use_without_df)
+        print(list(percentage_use_without_df.columns))
 
 # %% Plot Use and Consumables Costs of Contraception methods Over time
 # with and without intervention?
@@ -213,22 +214,23 @@ if table_use_costs_bool:
             interv_costs_without_df = interv_costs_with_df
 
         if print_bool:
-            print("\n")
-            print("COSTS WITHOUT rounded")
-            print(costs_without_df)
-            print()
-            print("\n")
-            print("INTERVENTION COSTS WITHOUT")
-            print(interv_costs_without_df)
-            print()
-            #
-            print("\n")
-            print("COSTS WITH rounded")
-            print(costs_with_df)
-            print("\n")
-            print("INTERVENTION COSTS WITH rounded")
-            print(interv_costs_with_df)
-            print()
+            if do_no_interv_analysis:
+                print("\n")
+                print("COSTS WITHOUT rounded")
+                print(costs_without_df)
+                print()
+                print("\n")
+                print("INTERVENTION COSTS WITHOUT")
+                print(interv_costs_without_df)
+                print()
+            if do_interv_analysis:
+                print("\n")
+                print("COSTS WITH rounded")
+                print(costs_with_df)
+                print("\n")
+                print("INTERVENTION COSTS WITH rounded")
+                print(interv_costs_with_df)
+                print()
 
     def combine_use_costs_with_without_interv(
         in_df_use_without, in_df_use_perc_without, in_df_costs_without, in_df_interv_costs_without,
