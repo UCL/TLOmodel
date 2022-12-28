@@ -234,11 +234,7 @@ if table_use_costs_bool:
 
     def combine_use_costs_with_without_interv(
         in_df_use_without, in_df_use_perc_without, in_df_costs_without, in_df_interv_costs_without,
-        in_df_use_with, in_df_use_perc_with, in_df_costs_with, in_df_interv_costs_with):
-        # assert collections.Counter(in_df1_use) == collections.Counter(in_df2_use)
-        # assert collections.Counter(in_df1_costs) == collections.Counter(in_df2_costs)
-        # assert all(in_df1_use.index == in_df2_use.index)
-        # assert all(in_df1_costs.index == in_df2_costs.index)
+            in_df_use_with, in_df_use_perc_with, in_df_costs_with, in_df_interv_costs_with):
         data = []
         for tp in in_df_use_without.index:
             for in_df_use, in_df_use_perc, in_df_costs, in_df_interv_costs in \
@@ -269,7 +265,8 @@ if table_use_costs_bool:
                     l_tp_costs.append(round(in_df_interv_costs.loc[tp, 'pop_intervention_cost'], 2))
                     l_tp_costs.append(round(in_df_interv_costs.loc[tp, 'ppfp_intervention_cost'], 2))
                     l_tp_costs.append(round(in_df_interv_costs.loc[tp, 'interventions_total'], 2))
-                    l_tp_costs.append(round(in_df_interv_costs.loc[tp, 'interventions_total'] + co_modern_total, 2))
+                    l_tp_costs.append(round(in_df_interv_costs.loc[tp, 'interventions_total'] +
+                                            co_modern_total, 2))
                 data.append(l_tp_costs)
         table_cols = list(in_df_use_without.columns)
         table_cols.append('pop_interv')
@@ -308,7 +305,6 @@ if table_use_costs_bool:
                                         'Costs (' + costs_name(rounding_costs_to) + 'MWK)']
                                    ]))
         return df_combined.loc[:, :].transpose()
-
 
     use_costs_table_df = combine_use_costs_with_without_interv(
         use_without_df, use_without_val_perc_df, costs_without_df, interv_costs_without_df,
