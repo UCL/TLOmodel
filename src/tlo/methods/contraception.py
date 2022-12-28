@@ -401,9 +401,9 @@ class Contraception(Module):
 
             # Increase prob of 'female_sterilization' in older women accordingly
             new_fs_probs_30plus = switching_matrix.loc['female_sterilization', :] /\
-                                  float(
-                                      self.parameters['n_female3049_in_2010'] / self.parameters['n_female1549_in_2010']
-                                  )
+                float(
+                    self.parameters['n_female3049_in_2010'] / self.parameters['n_female1549_in_2010']
+                )
             switching_matrix_except_fs = switching_matrix.loc[switching_matrix.index != 'female_sterilization']
             switching_matrix_30plus = switching_matrix_except_fs.apply(lambda col: col / col.sum())
             switching_matrix_30plus = switching_matrix_30plus * (1 - new_fs_probs_30plus)
@@ -766,8 +766,8 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         Determine who will become pregnant and update contraceptive method."""
 
         # Check whether it is appropriate and time to implement interventions
-        if self.module.use_interventions and not self.module.interventions_on and\
-            self.sim.date == self.module.interventions_start_date:
+        if self.module.use_interventions and not self.module.interventions_on and \
+           self.sim.date == self.module.interventions_start_date:
             # Update module parameters to enable interventions
             self.module.processed_params = self.module.process_params()
             self.module.interventions_on = True
