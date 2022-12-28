@@ -29,7 +29,7 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
                           in_plot_pregnancies_bool: bool = False,
                           in_set_ylims_bool: bool = False, in_ylims_l: list = [],
                           in_calc_use_costs_bool: bool = False, in_required_time_period_starts: list = [],
-                          in_contraceptives_order: list = ['pill', 'IUD', 'injections', 'implant','male_condom',
+                          in_contraceptives_order: list = ['pill', 'IUD', 'injections', 'implant', 'male_condom',
                                                            'female_sterilization', 'other_modern'],
                           in_calc_intervention_costs_bool: bool = False,
                           in_use_output: str = "mean"
@@ -250,7 +250,7 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
 
             time_period_pos = next(i for i, v in enumerate(in_l_time_period_start) if v > in_year) - 1
             return str(in_l_time_period_start[time_period_pos]) + "-"\
-                   + str(in_l_time_period_start[time_period_pos+1] - 1)
+                + str(in_l_time_period_start[time_period_pos+1] - 1)
 
         def create_time_period_data(in_l_time_period_start, in_df):
             """
@@ -279,9 +279,9 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
                                     co_use_modern_df)
 
         co_use_modern_tp_df = \
-            co_use_modern_tp_df.loc[:,
-            ((co_use_modern_tp_df.columns != 'date') &
-             (co_use_modern_tp_df.columns != 'year'))]
+            co_use_modern_tp_df.loc[
+                :, ((co_use_modern_tp_df.columns != 'date') & (co_use_modern_tp_df.columns != 'year'))
+            ]
 
         def create_percentage_use_df(in_df_use_incl_women_total):
             """
@@ -345,25 +345,25 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
             # Include the output summation for all time periods:
             co_output_use_modern_tp_df = \
                 co_output_use_modern_tp_df \
-                    .append(sum_use_all_times(co_output_use_modern_tp_df, in_use_output))
+                .append(sum_use_all_times(co_output_use_modern_tp_df, in_use_output))
 
             co_output_percentage_use_df =\
                 co_percentage_use_df.groupby('Time_Period').mean()
             # Include the output summation for all time periods:
             co_output_percentage_use_df = \
                 co_output_percentage_use_df\
-                    .append(sum_use_all_times(co_output_percentage_use_df, in_use_output))
+                .append(sum_use_all_times(co_output_percentage_use_df, in_use_output))
         elif in_use_output == "max":
             co_output_use_modern_tp_df = \
                 co_use_modern_tp_df.groupby('Time_Period').max()
             co_output_use_modern_tp_df = \
                 co_output_use_modern_tp_df \
-                    .append(sum_use_all_times(co_output_use_modern_tp_df, in_use_output))
+                .append(sum_use_all_times(co_output_use_modern_tp_df, in_use_output))
             co_output_percentage_use_df =\
                 co_percentage_use_df.groupby('Time_Period').max()
             co_output_percentage_use_df = \
                 co_output_percentage_use_df\
-                    .append(sum_use_all_times(co_output_percentage_use_df, in_use_output))
+                .append(sum_use_all_times(co_output_percentage_use_df, in_use_output))
             # we still need the mean use to calculate costs of condoms
             mean_use_df = \
                 co_use_modern_tp_df.groupby('Time_Period').mean()
@@ -483,7 +483,7 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
 
         cons_avail_grouped_by_time_and_method_df =\
             cons_time_and_method_df.loc[:, 'Item_Available']\
-                .dropna().groupby(['Time_Period', 'Contraceptive_Method']).agg(lambda x: list(x)).copy().to_frame()
+            .dropna().groupby(['Time_Period', 'Contraceptive_Method']).agg(lambda x: list(x)).copy().to_frame()
 
         # Sum the counts of all item types that were actually used
         # (i.e. were available when requested) per time period per method.
@@ -569,9 +569,9 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
                     # 2/3 of 365.25 days as approximation of number of condom used per year *
                     # mean nmb of women using
                     costs = unit_cost *\
-                            int(in_df_mean_use['tp_len'].loc[in_df_mean_use.index == i[0]]) *\
-                            2 / 3 * 365.25 *\
-                            float(in_df_mean_use[i[1]].loc[in_df_mean_use.index == i[0]])
+                        int(in_df_mean_use['tp_len'].loc[in_df_mean_use.index == i[0]]) *\
+                        2 / 3 * 365.25 *\
+                        float(in_df_mean_use[i[1]].loc[in_df_mean_use.index == i[0]])
                 # otherwise calculate from the logs
                 else:
                     item_avail_dict = in_df_cons_avail_by_time_and_method.loc[
@@ -623,7 +623,7 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
             cons_avail_grouped_by_time_and_method_df.loc[:, 'Costs'].copy().to_frame()
         cons_costs_by_time_and_method_df =\
             cons_costs_by_time_and_method_df\
-                .append(sum_costs_all_times(cons_costs_by_time_and_method_df))
+            .append(sum_costs_all_times(cons_costs_by_time_and_method_df))
 
         # Rescale the numbers of contraception costs to the population size of Malawi
         # (from the nmbs for simulation pop_size)
@@ -689,7 +689,7 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
         co_interv_costs_tp_df.index = co_interv_costs_tp_df['Time_Period']
         co_interv_costs_sum_by_tp_df =\
             co_interv_costs_tp_df.loc[:, ['pop_intervention_cost', 'ppfp_intervention_cost', 'interventions_total']]\
-                .dropna().groupby(['Time_Period']).sum()
+            .dropna().groupby(['Time_Period']).sum()
 
         def sum_interv_costs_all_times(in_df_interv_costs_by_tp):
             """
@@ -719,7 +719,7 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
     print("Calculations of Intervention Costs finished.")
 
     return co_output_use_modern_tp_df, co_output_percentage_use_df,\
-           cons_costs_by_time_and_method_df, co_interv_costs_sum_by_tp_df
+        cons_costs_by_time_and_method_df, co_interv_costs_sum_by_tp_df
 
 
 if __name__ == '__main__':
