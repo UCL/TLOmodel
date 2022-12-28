@@ -298,16 +298,16 @@ class HSI_Event:
             items_available = {k: v for k, v in item_codes.items() if rtn[k]}
             items_not_available = {k: v for k, v in item_codes.items() if not rtn[k]}
             logger_contraception.debug(key='Contraception_consumables',
-                                      data={
-                                          'TREATMENT_ID': (self.TREATMENT_ID if self.TREATMENT_ID is not None else ""),
-                                          'Item_Available': str(items_available),
-                                          'Item_NotAvailable': str(items_not_available),
-                                      },
-                                      # NB. Casting the data to strings because
-                                      # logger complains with dict of varying sizes/keys
-                                      description=
-                                      "Record of each contraception consumable item when the contraceptive is applied."
-                                      )
+                                       data={
+                                           'TREATMENT_ID': (self.TREATMENT_ID if self.TREATMENT_ID is not None else ""),
+                                           'Item_Available': str(items_available),
+                                           'Item_NotAvailable': str(items_not_available),
+                                       },
+                                       # NB. Casting the data to strings because
+                                       # logger complains with dict of varying sizes/keys
+                                       description="Record of each contraception consumable item when the"
+                                                   "contraceptive is applied."
+                                       )
 
         # Return result in expected format:
         if not return_individual_results:

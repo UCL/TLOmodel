@@ -51,7 +51,7 @@ co_use_f_steril_2010_2020_df = co_use_df.loc[['2010-01-01', '2020-12-01'],
                                               'co_contraception=female_sterilization|age_range=35-39',
                                               'co_contraception=female_sterilization|age_range=40-44',
                                               'co_contraception=female_sterilization|age_range=45-49']
-    ].transpose()
+                                             ].transpose()
 
 co_use_f_steril_2010_2020_df = co_use_f_steril_2010_2020_df.set_axis(
     ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49'], axis=0
