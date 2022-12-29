@@ -35,7 +35,6 @@ from tlo.methods import (
     prostate_cancer,
     rti,
     schisto,
-    simplified_births,
     stunting,
     symptommanager,
     tb,
