@@ -11,7 +11,7 @@ import plot_legends
 from scripts.calibration_analyses.analysis_scripts import (
     analysis_compare_appt_usage_real_and_simulation,
 )
-from tlo.analysis.utils import get_scenario_outputs
+# from tlo.analysis.utils import get_scenario_outputs
 
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):

@@ -13,13 +13,12 @@ import timeit
 from pathlib import Path
 import numpy as np
 import pandas as pd
-from matplotlib import dates as mdates
 from matplotlib import pyplot as plt
 from collections import Counter
 from tlo.analysis.utils import parse_log_file
 import warnings
 from tlo import Date
-import functools
+# import functools
 # TODO: once finalised, remove unused imports
 
 
@@ -86,7 +85,7 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
                                None):
             print(in_to_print)
 
-    timeit_rep_nmb = 600
+    # timeit_rep_nmb = 600
 
     def timeitprint(in_what_measures: str, in_fnc, in_timeit_rep_nmb=1):  # TODO: remove
         if in_timeit_rep_nmb > 1:
@@ -720,15 +719,3 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
 
     return co_output_use_modern_tp_df, co_output_percentage_use_df,\
         cons_costs_by_time_and_method_df, co_interv_costs_sum_by_tp_df
-
-
-if __name__ == '__main__':
-    analyse_contraception(in_datestamp, in_log_file,
-                          in_plot_use_time_bool,
-                          in_plot_use_time_method_bool,
-                          in_plot_pregnancies_bool,
-                          in_set_ylims_bool, in_ylims_l,
-                          in_calc_use_costs_bool, in_required_time_period_starts,
-                          in_contraceptives_order,
-                          in_calc_intervention_costs_bool,
-                          in_use_output)
