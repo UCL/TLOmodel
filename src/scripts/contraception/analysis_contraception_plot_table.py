@@ -1,9 +1,11 @@
+import math
+import time
+import timeit
+
 import fnc_analyse_contraception as a_co
 import pandas as pd
+
 # import collections
-import timeit
-import time
-import math
 # TODO: once finalised, remove unused imports
 
 time_start = time.time()

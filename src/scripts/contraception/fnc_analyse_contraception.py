@@ -10,14 +10,17 @@ costs (whichever required)
 """
 import logging
 import timeit
+import warnings
+from collections import Counter
 from pathlib import Path
+
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
-from collections import Counter
-from tlo.analysis.utils import parse_log_file
-import warnings
+
 from tlo import Date
+from tlo.analysis.utils import parse_log_file
+
 # import functools
 # TODO: once finalised, remove unused imports
 
