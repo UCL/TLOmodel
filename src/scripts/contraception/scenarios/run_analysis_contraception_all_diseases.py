@@ -38,7 +38,7 @@ from tlo.methods import (
     stunting,
     symptommanager,
     tb,
-    wasting
+    wasting,
 )
 from tlo.scenario import BaseScenario
 
