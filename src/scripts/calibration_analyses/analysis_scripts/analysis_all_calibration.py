@@ -11,6 +11,7 @@ import plot_legends
 from scripts.calibration_analyses.analysis_scripts import (
     analysis_compare_appt_usage_real_and_simulation,
 )
+
 # from tlo.analysis.utils import get_scenario_outputs
 
 
