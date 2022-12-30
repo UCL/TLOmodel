@@ -12,6 +12,7 @@ from scripts.calibration_analyses.analysis_scripts import (
     analysis_compare_appt_usage_real_and_simulation,
     plot_appt_use_by_hsi,
 )
+
 # from tlo.analysis.utils import get_scenario_outputs
 
 
