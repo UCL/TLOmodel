@@ -216,6 +216,14 @@ class SymptomManager(Module):
             if symptom.name not in self.symptom_names:
                 self.all_registered_symptoms.add(symptom)
                 self.symptom_names.add(symptom.name)
+            elif symptom.name == 'spurious_emergency_symptom':
+                if not ((symptom.no_healthcareseeking_in_adults is False) &
+                        (symptom.no_healthcareseeking_in_children is False) &
+                        (symptom.emergency_in_adults is True) &
+                        (symptom.emergency_in_children is True) &
+                        (pd.isna(symptom.odds_ratio_health_seeking_in_adults)) &
+                        (pd.isna(symptom.odds_ratio_health_seeking_in_children))):
+                    raise DuplicateSymptomWithNonIdenticalPropertiesError
             elif symptom not in self.all_registered_symptoms:
                 raise DuplicateSymptomWithNonIdenticalPropertiesError
 
