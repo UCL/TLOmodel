@@ -102,7 +102,7 @@ class HSI_EmergencyCare_SpuriousSymptom(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         assert module is self.sim.modules['HealthSeekingBehaviour']
 
-        self.TREATMENT_ID = self.__class__.__name__
+        self.TREATMENT_ID = "SpuriousEmergencyCare"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'  # alternative level '1b'
 

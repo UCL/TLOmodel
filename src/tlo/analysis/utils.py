@@ -758,6 +758,8 @@ SHORT_TREATMENT_ID_TO_COLOR_MAP = MappingProxyType({
     'Epilepsy*': 'red',
 
     'Rti*': 'lightsalmon',
+
+    'SpuriousEmergencyCare*': 'gainsboro',
 })
 
 
