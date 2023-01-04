@@ -264,8 +264,8 @@ def test_auto_onset_symptom(seed):
     assert 0 == len(sm.has_what(person_id))
 
 
-def test_spurious_symptoms_during_simulation(seed):
-    """Test on the functionality of the spurious symptoms"""
+def test_nonemergency_spurious_symptoms_during_simulation(seed):
+    """Test on the functionality of non-emergency spurious symptoms"""
     sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the core modules
@@ -310,7 +310,7 @@ def test_spurious_symptoms_during_simulation(seed):
     assert [] == sim.modules['SymptomManager'].who_has(the_generic_symptom)
 
 
-def test_spurious_emergency_symptom_during_simulation(seed):
+def test_emergency_spurious_symptom_during_simulation(seed):
     """Test on the functionality of the spurious emergency symptom"""
     sim = Simulation(start_date=start_date, seed=seed)
 
@@ -349,6 +349,7 @@ def test_spurious_emergency_symptom_during_simulation(seed):
     onset = SymptomManager_SpuriousSymptomOnset(module=sim.modules['SymptomManager'])
     onset.apply(sim.population)
     df = sim.population.props
+    assert len(df.is_alive.index) > 0
     assert set(df.is_alive.index) == set(sim.modules['SymptomManager'].who_has(the_generic_symptom))
 
     # Update time, run resolve event and check that no one has symptom
