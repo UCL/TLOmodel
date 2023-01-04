@@ -315,7 +315,7 @@ def test_healthcareseeking_occurs_with_nonemergency_spurious_symptoms_only(seed)
     sim.simulate(end_date=end_date)
 
     # Check that 'HSI_GenericFirstApptAtFacilityLevel0' are triggerd (but not
-    # 'HSI_GenericEmergencyFirstApptAtFacilityLevel1')
+    # 'HSI_GenericEmergencyFirstApptAtFacilityLevel1' nor 'HSI_EmergencyCare_SpuriousSymptom')
     events_run_and_scheduled = get_events_run_and_scheduled(sim)
     assert 'HSI_GenericFirstApptAtFacilityLevel0' in events_run_and_scheduled
     assert 'HSI_GenericEmergencyFirstApptAtFacilityLevel1' not in events_run_and_scheduled
@@ -354,7 +354,7 @@ def test_healthcareseeking_occurs_with_emergency_spurious_symptom_only(seed):
 
     # Run the simulation for one day for one person
     end_date = start_date + DateOffset(days=1)
-    popsize = 1
+    popsize = 200
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
@@ -372,8 +372,7 @@ def test_healthcareseeking_occurs_with_emergency_spurious_symptom_only(seed):
         'generic_symptoms_spurious_occurrence'].iloc[-1].generic_symptom_name  # spurious_emergency_symptom
     assert [] == sim.modules['SymptomManager'].who_has(the_symptom)
 
-    # todo: check that running this HSI does not cause an error if it does happen to be called on someone who is dead,
-    # todo: or who is alive but does not have that symptom
+    # todo: check that running this HSI does not cause an error if it does happen to be called on someone who is dead
 
 
 def test_healthcareseeking_occurs_with_all_spurious_symptoms_only(seed):
