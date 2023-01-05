@@ -98,13 +98,13 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
 class HSI_EmergencyCare_SpuriousSymptom(HSI_Event, IndividualScopeEventMixin):
     """This is an HSI event that provides Accident & Emergency Care for a person that has spurious emergency symptom."""
 
-    def __init__(self, module, person_id):
+    def __init__(self, module, person_id, accepted_facility_level='1a'):
         super().__init__(module, person_id=person_id)
         assert module is self.sim.modules['HealthSeekingBehaviour']
 
         self.TREATMENT_ID = "FirstAttendance_SpuriousEmergencyCare"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1a'  # alternative level '1b'
+        self.ACCEPTED_FACILITY_LEVEL = accepted_facility_level  # '1a' in default or '1b' as an alternative
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
