@@ -453,7 +453,77 @@ def test_healthcareseeking_occurs_with_nonemergency_spurious_symptoms_and_diseas
 
 
 # todo: def test_heatlcareseeking_occurs_with_emergency_spurious_symptoms_and_disease_modules
+def test_healthcareseeking_occurs_with_emergency_spurious_symptoms_and_disease_modules(seed):
+    """Mockitis and Chronic Syndrome should lead to there being emergency and non-emergency generic HSI"""
+    start_date = Date(2010, 1, 1)
+    sim = Simulation(start_date=start_date, seed=seed)
+
+    # Register the core modules including Chronic Syndrome and Mockitis -
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, hsi_event_count_log_period="simulation"),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 mockitis.Mockitis(),
+                 chronicsyndrome.ChronicSyndrome()
+                 )
+
+    # Make spurious emergency symptom occur and cause HSI_EmergencyCare_SpuriousSymptom:
+    sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence'].iloc[-1:][[
+        'prob_spurious_occurrence_in_children_per_day',
+        'prob_spurious_occurrence_in_adults_per_day'
+    ]] = 1.0
+    # turn off other spurious symptoms
+    sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence'].iloc[:-1][[
+        'prob_spurious_occurrence_in_children_per_day',
+        'prob_spurious_occurrence_in_adults_per_day'
+    ]] = 0.0
+
+    # Run the simulation for one day
+    end_date = start_date + DateOffset(days=1)
+    popsize = 200
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
+
+    # what to check/what results are expected?
+
+
 # todo: def test_heatlcareseeking_occurs_with_all_spurious_symptoms_and_disease_modules
+def test_healthcareseeking_occurs_with_all_spurious_symptoms_and_disease_modules(seed):
+    """Mockitis and Chronic Syndrome should lead to there being emergency and non-emergency generic HSI"""
+    start_date = Date(2010, 1, 1)
+    sim = Simulation(start_date=start_date, seed=seed)
+
+    # Register the core modules including Chronic Syndrome and Mockitis -
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, hsi_event_count_log_period="simulation"),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 mockitis.Mockitis(),
+                 chronicsyndrome.ChronicSyndrome()
+                 )
+
+    # Make spurious emergency symptom occur with some prob and cause HSI_EmergencyCare_SpuriousSymptom:
+    sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence'].iloc[-1:][[
+        'prob_spurious_occurrence_in_children_per_day',
+        'prob_spurious_occurrence_in_adults_per_day'
+    ]] = 0.5
+    # same setting to other spurious symptoms
+    sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence'].iloc[:-1][[
+        'prob_spurious_occurrence_in_children_per_day',
+        'prob_spurious_occurrence_in_adults_per_day'
+    ]] = 0.5
+
+    # Run the simulation for one day
+    end_date = start_date + DateOffset(days=1)
+    popsize = 200
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
+
+    # what to check/what results are expected?
 
 
 def test_one_hsi_scheduled_per_day_when_two_emergency_symptoms_are_onset(seed):
