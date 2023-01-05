@@ -465,4 +465,4 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
             module=sim.modules['HealthSeekingBehaviour'],
             person_id=person_id
         )
-        schedule_hsi(event, priority=1, topen=sim.date)
+        schedule_hsi(event, priority=0, topen=sim.date)
