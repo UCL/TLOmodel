@@ -452,6 +452,11 @@ def test_healthcareseeking_occurs_with_nonemergency_spurious_symptoms_and_diseas
     assert 'HSI_EmergencyCare_SpuriousSymptom' not in events_run_and_scheduled
 
 
+# todo: def test_heatlcareseeking_occurs_with_emergency_spurious_symptoms_and_disease_modules
+# todo: def test_heatlcareseeking_occurs_with_all_spurious_symptoms_and_disease_modules
+# todo: test when two emergency symptoms are onset
+
+
 def test_one_per_hsi_scheduled_per_day_when_emergency_and_non_emergency_symptoms_are_onset(seed):
     """When an individual is onset with a set of symptoms including emergency and non-emergency symptoms, there should
     be only scheduled the emergency appointment."""
