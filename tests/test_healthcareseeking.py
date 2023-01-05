@@ -372,7 +372,36 @@ def test_healthcareseeking_occurs_with_emergency_spurious_symptom_only(seed):
         'generic_symptoms_spurious_occurrence'].iloc[-1].generic_symptom_name  # spurious_emergency_symptom
     assert [] == sim.modules['SymptomManager'].who_has(the_symptom)
 
-    # todo: check that running this HSI does not cause an error if it does happen to be called on someone who is dead
+
+def test_healthcareseeking_no_error_if_HSI_EmergencyCare_SpuriousSymptom_is_run_on_a_dead_person(seed):
+    """Check that running HSI_EmergencyCare_SpuriousSymptom does not cause an error and returns a blank footprint"""
+    start_date = Date(2010, 1, 1)
+    sim = Simulation(start_date=start_date, seed=seed)
+
+    # Register the core modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, hsi_event_count_log_period="simulation"),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 )
+
+    # Run the simulation for zero days for a small population
+    end_date = start_date
+    popsize = 200
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
+
+    # Make one person dead and run HSI_EmergencyCare_SpuriousSymptom on them
+    dead_person_id = 0
+    sim.population.props.loc[dead_person_id, 'is_alive'] = False
+
+    from tlo.methods.hsi_generic_first_appts import HSI_EmergencyCare_SpuriousSymptom
+    hsi = HSI_EmergencyCare_SpuriousSymptom(person_id=dead_person_id, module=sim.modules['HealthSeekingBehaviour'])
+
+    blank_footprint = sim.modules['HealthSystem'].get_blank_appt_footprint()
+    assert blank_footprint == hsi.run(squeeze_factor=None)
 
 
 def test_healthcareseeking_occurs_with_all_spurious_symptoms_only(seed):
