@@ -471,7 +471,6 @@ def test_healthcareseeking_occurs_with_nonemergency_spurious_symptoms_and_diseas
     assert 'HSI_EmergencyCare_SpuriousSymptom' not in events_run_and_scheduled
 
 
-# todo: def test_heatlcareseeking_occurs_with_emergency_spurious_symptoms_and_disease_modules
 def test_healthcareseeking_occurs_with_emergency_spurious_symptoms_and_disease_modules(seed):
     """Mockitis and Chronic Syndrome should lead to there being emergency and non-emergency generic HSI"""
     start_date = Date(2010, 1, 1)
@@ -506,10 +505,29 @@ def test_healthcareseeking_occurs_with_emergency_spurious_symptoms_and_disease_m
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    # what to check/what results are expected?
+    # check that all three HSI in his_generic_first_appts are triggered
+    events_run_and_scheduled = get_events_run_and_scheduled(sim)
+    assert 'HSI_GenericFirstApptAtFacilityLevel0' in events_run_and_scheduled
+    assert 'HSI_GenericEmergencyFirstApptAtFacilityLevel1' in events_run_and_scheduled
+    assert 'HSI_EmergencyCare_SpuriousSymptom' in events_run_and_scheduled
+
+    # check the count of FirstAttendance_Emergency
+    hsi_event_count_df = pd.DataFrame(index=range(len(sim.modules['HealthSystem'].hsi_event_counts)))
+    hsi_event_count_df['HSI_event'] = [event_details.event_name
+                                       for event_details in sim.modules['HealthSystem'].hsi_event_counts.keys()]
+    hsi_event_count_df['treatment_id'] = [event_details.treatment_id
+                                          for event_details in sim.modules['HealthSystem'].hsi_event_counts.keys()]
+    hsi_event_count_df['appt_footprint'] = [event_details.appt_footprint
+                                            for event_details in sim.modules['HealthSystem'].hsi_event_counts.keys()]
+    hsi_event_count_df['count'] = [sim.modules['HealthSystem'].hsi_event_counts[event_details]
+                                   for event_details in sim.modules['HealthSystem'].hsi_event_counts.keys()]
+    # both Spurious Emergency Symptom and emergency symptoms from disease modules
+    # will trigger FirstAttencancy_EmergencyCare
+    assert (hsi_event_count_df.loc[hsi_event_count_df.treatment_id == 'FirstAttendance_Emergency', 'count'].sum()
+            >= hsi_event_count_df.loc[
+                hsi_event_count_df.treatment_id == 'FirstAttendance_SpuriousEmergencyCare', 'count'].sum())
 
 
-# todo: def test_heatlcareseeking_occurs_with_all_spurious_symptoms_and_disease_modules
 def test_healthcareseeking_occurs_with_all_spurious_symptoms_and_disease_modules(seed):
     """Mockitis and Chronic Syndrome should lead to there being emergency and non-emergency generic HSI"""
     start_date = Date(2010, 1, 1)
@@ -530,7 +548,7 @@ def test_healthcareseeking_occurs_with_all_spurious_symptoms_and_disease_modules
     # Make all spurious symptoms occur with some prob:
     all_spurious_symptoms[
         ['prob_spurious_occurrence_in_children_per_day', 'prob_spurious_occurrence_in_adults_per_day']
-    ] = 0.5
+    ] = 0.25
 
     # Run the simulation for one day
     end_date = start_date + DateOffset(days=1)
@@ -538,7 +556,27 @@ def test_healthcareseeking_occurs_with_all_spurious_symptoms_and_disease_modules
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    # what to check/what results are expected?
+    # check that all three HSI in his_generic_first_appts are triggered
+    events_run_and_scheduled = get_events_run_and_scheduled(sim)
+    assert 'HSI_GenericFirstApptAtFacilityLevel0' in events_run_and_scheduled
+    assert 'HSI_GenericEmergencyFirstApptAtFacilityLevel1' in events_run_and_scheduled
+    assert 'HSI_EmergencyCare_SpuriousSymptom' in events_run_and_scheduled
+
+    # check the count of FirstAttendance_Emergency
+    hsi_event_count_df = pd.DataFrame(index=range(len(sim.modules['HealthSystem'].hsi_event_counts)))
+    hsi_event_count_df['HSI_event'] = [event_details.event_name
+                                       for event_details in sim.modules['HealthSystem'].hsi_event_counts.keys()]
+    hsi_event_count_df['treatment_id'] = [event_details.treatment_id
+                                          for event_details in sim.modules['HealthSystem'].hsi_event_counts.keys()]
+    hsi_event_count_df['appt_footprint'] = [event_details.appt_footprint
+                                            for event_details in sim.modules['HealthSystem'].hsi_event_counts.keys()]
+    hsi_event_count_df['count'] = [sim.modules['HealthSystem'].hsi_event_counts[event_details]
+                                   for event_details in sim.modules['HealthSystem'].hsi_event_counts.keys()]
+    # both Spurious Emergency Symptom and emergency symptoms from disease modules
+    # will trigger FirstAttencancy_EmergencyCare
+    assert (hsi_event_count_df.loc[hsi_event_count_df.treatment_id == 'FirstAttendance_Emergency', 'count'].sum()
+            >= hsi_event_count_df.loc[
+                hsi_event_count_df.treatment_id == 'FirstAttendance_SpuriousEmergencyCare', 'count'].sum())
 
 
 def test_one_hsi_scheduled_per_day_when_two_emergency_symptoms_are_onset(seed):
