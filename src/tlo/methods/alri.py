@@ -992,8 +992,7 @@ class Alri(Module):
                                     'or_care_seeking_perceived_severe_illness']))
                 else:
                     self.sim.modules['SymptomManager'].register_symptom(
-                        Symptom(name=symptom_name,
-                                odds_ratio_health_seeking_in_children=15.0))
+                        Symptom(name=symptom_name))
                 # (Associates the symptoms with the 'average' healthcare seeking, apart from "danger_signs", which
                 # is an emergency symptom in children, and "chest_indrawing" which does have increased healthcare
                 # seeking.)
@@ -2334,28 +2333,28 @@ class Models:
             disease_type == 'other_alri' and not any(symptom in [
                 'respiratory_distress', 'danger_signs'] for symptom in all_symptoms)
                 and bacterial_infection not in self.module.pathogens['bacterial']):
-            return min(1.0, 0.25 * to_prob(odds_death))
+            return min(1.0, 0.25 * to_prob(odds_death))  #these wouldn't be be in the Lazzerini dataset or within less than 1%
 
         # Adjust the natural risk of death for those uncomplicated CXR- bacterial causes, without severe symptoms
         elif 0 == len(complications) and (
             disease_type == 'other_alri' and not any(symptom in [
                 'respiratory_distress', 'danger_signs'] for symptom in all_symptoms)
                 and bacterial_infection in self.module.pathogens['bacterial']):
-            return min(1.0, 0.5 * to_prob(odds_death))
+            return min(1.0, 0.5 * to_prob(odds_death))  #these wouldn't be be in the Lazzerini dataset or within less than 1%
 
         # Adjust the natural risk of death for those uncomplicated CXR- viral causes, with severe symptoms
         elif 0 == len(complications) and (
             disease_type == 'other_alri' and any(symptom in [
                 'respiratory_distress', 'danger_signs'] for symptom in all_symptoms)
                 and bacterial_infection not in self.module.pathogens['bacterial']):
-            return min(1.0, 0.75 * to_prob(odds_death))
+            return min(1.0, 0.75 * to_prob(odds_death))  # antibiotic treatment has no effect on outcome
 
         # Adjust the natural risk of death for those uncomplicated CXR- bacterial causes, with severe symptoms
         elif 0 == len(complications) and (
             disease_type == 'other_alri' and any(symptom in [
                 'respiratory_distress', 'danger_signs'] for symptom in all_symptoms)
                 and bacterial_infection in self.module.pathogens['bacterial']):
-            return min(1.0, to_prob(odds_death))
+            return min(1.0, to_prob(odds_death))  # death for these cases
 
         # Adjust the natural risk of death for those uncomplicated CXR+ viral causes, without severe symptoms
         elif 0 == len(complications) and (

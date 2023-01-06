@@ -106,7 +106,7 @@ def generate_case_mix() -> pd.DataFrame:
         probs_of_acquiring_pathogen = alri_polling_event.get_probs_of_acquiring_pathogen(
             interval_as_fraction_of_a_year=1.0)
 
-        # Sample who is infected and with what pathogen & Repeat 10 times with replacement to generate larger numbers
+        # Sample who is infected and with what pathogen
         new_alri = []
         while len(new_alri) < MIN_SAMPLE_OF_NEW_CASES:
             new_alri.extend(
@@ -128,7 +128,7 @@ def generate_case_mix() -> pd.DataFrame:
                               va_pneumo_all_doses=False,
                               un_clinical_acute_malnutrition="well",
                               ) -> dict:
-        """Return the characteristics that are determined by IncidentCase (over 1000 iterations), given an infection
+        """Return the characteristics that are determined by IncidentCase (over NUM_REPS_FOR_EACH_CASE iterations), given an infection
         caused by the pathogen"""
         incident_case = AlriIncidentCase(module=alri_module_with_perfect_diagnosis, person_id=None, pathogen=None)
 
@@ -574,64 +574,24 @@ if __name__ == "__main__":
         (100 - risk_of_death.treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx) / 100)
      ).sum()  # 0.00604 -- 0.06% deaths
 
-    # examine risk of death by chest-indrawing
-    risk_of_death1 = summarize_by(
+
+    # UNDER PERFECT HW DX
+    risk_of_death_imperfect_dx = summarize_by(
         df=table,
         by=['oxygen_saturation', 'classification_for_treatment_decision_without_oximeter_perfect_accuracy'],
         columns=[
             'prob_die_if_no_treatment',
-            'treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx',
-            'treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_perfect_hw_dx',
-            'treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx',
-            'treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_perfect_hw_dx',
+            'treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_imperfect_hw_dx',
+            'treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_imperfect_hw_dx',
+            'treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_imperfect_hw_dx',
+            'treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_imperfect_hw_dx',
         ]
-    ).loc[("<90%", "chest_indrawing_pneumonia")]
-    print(f"{risk_of_death1=}")
-
-    # Examine risk of death and treatment effectiveness for SpO2<90% (considered danger_signs_pneumonia by oximetry)
-    treatment_effectiveness_SpO2_lt90 = summarize_by(
-        df=table,
-        by=['oxygen_saturation', 'classification_for_treatment_decision_with_oximeter_perfect_accuracy'],
-        columns=[
-            'prob_die_if_no_treatment',
-            'treatment_efficacy_if_perfect_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx',
-            'treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx',
-            'treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_perfect_hw_dx',
-            'treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx',
-            'treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_perfect_hw_dx',
-        ]
-    ).loc[("<90%", "danger_signs_pneumonia")]
-    print(f"{treatment_effectiveness_SpO2_lt90}")
-
-    # Examine risk of death and treatment effectiveness for all "danger_signs_pneumonia" (with and without SpO2<90%)
-    treatment_effectiveness_all_ds_and_low_os = summarize_by(
-        df=table,
-        by=['classification_for_treatment_decision_with_oximeter_perfect_accuracy'],
-        columns=[
-            'prob_die_if_no_treatment',
-            'treatment_efficacy_if_perfect_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx',
-            'treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx',
-            'treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_perfect_hw_dx',
-            'treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx',
-            'treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_perfect_hw_dx',
-        ]
-    ).loc["danger_signs_pneumonia"]
-    print(f"{treatment_effectiveness_all_ds_and_low_os}")
-
-    # Examine risk of death and treatment effectiveness for non-severe pneumonia (symptom only) & SpO2<90%
-    treatment_effectiveness_non_severe_low_os = summarize_by(
-        df=table,
-        by=['oxygen_saturation', 'has_danger_signs'],
-        columns=[
-            'prob_die_if_no_treatment',
-            'treatment_efficacy_if_perfect_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx',
-            'treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx',
-            'treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_perfect_hw_dx',
-            'treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx',
-            'treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_perfect_hw_dx',
-        ]
-    ).loc["<90%", False]  # 'chest_indrawing_pneumonia', 'cough_or_cold', 'fast_breathing_pneumonia'
-    print(f"{treatment_effectiveness_non_severe_low_os}")
+    ).assign(
+        fraction_of_deaths=lambda df: (
+            (df.fraction * df.prob_die_if_no_treatment) / (df.fraction * df.prob_die_if_no_treatment).sum()
+        )
+    )
+    print(f"{risk_of_death_imperfect_dx=}")
 
     # ------
     # Look at where a person would receive a different diagnoses with/without oximeter

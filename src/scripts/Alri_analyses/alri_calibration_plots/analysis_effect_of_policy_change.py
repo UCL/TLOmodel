@@ -35,7 +35,7 @@ from tlo.methods.alri import (
 )
 from tlo.util import sample_outcome
 
-MODEL_POPSIZE = 50_000
+MODEL_POPSIZE = 15_000
 MIN_SAMPLE_OF_NEW_CASES = 200
 NUM_REPS_FOR_EACH_CASE = 20
 
@@ -315,7 +315,7 @@ def generate_table():
                 un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
             ),
 
-            # Treatment Efficacy with * PERFECT HW Diagnosis *
+            # All Perfect
             f'treatment_efficacy_if_perfect_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx_current_pol':
                 treatment_efficacy(
                     # Information about the patient:
@@ -334,6 +334,7 @@ def generate_table():
                     new_policy=False
                 ),
 
+            # Treatment Efficacy with * PERFECT HW Diagnosis *
             f'treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx_current_pol':
                 treatment_efficacy(
                     # Information about the patient:
@@ -480,7 +481,7 @@ def generate_table():
                 ),
 
             # # # # # APPLY NEW POLICY # # # # #
-            # Treatment Efficacy with * PERFECT HW Diagnosis
+            # All Perfect
             f'treatment_efficacy_if_perfect_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx_new_pol':
                 treatment_efficacy(
                     # Information about the patient:
@@ -495,10 +496,11 @@ def generate_table():
                     oxygen_available=True,
                     treatment_perfect=True,
                     hw_dx_perfect=True,
-                    facility_level='2',
+                    facility_level=_facility_level,
                     new_policy=True
                 ),
 
+            # Treatment Efficacy with * PERFECT HW Diagnosis
             f'treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx_new_pol':
                 treatment_efficacy(
                     # Information about the patient:
@@ -571,7 +573,7 @@ def generate_table():
                     new_policy=True
                 ),
 
-            # Treatment Efficacy with * IMPERFECT HW Diangosis * LEVEL 1A *
+            # Treatment Efficacy with * IMPERFECT HW Diangosis *
             f'treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_imperfect_hw_dx_new_pol':
                 treatment_efficacy(
                     # Information about the patient:
@@ -799,6 +801,31 @@ if __name__ == "__main__":
         (
             100 - risk_of_death.treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx_current_pol) / 100)
      ).sum()  # 0.00604 -- 0.06% deaths
+
+
+    # UNDER PERFECT HW DX
+    risk_of_death_imperfect_dx = summarize_by(
+        df=table,
+        by=['oxygen_saturation', 'classification_for_treatment_decision_without_oximeter_perfect_accuracy_level2'],
+        columns=[
+            'prob_die_if_no_treatment',
+            'treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_imperfect_hw_dx_current_pol',
+            'treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_imperfect_hw_dx_current_pol',
+            'treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_imperfect_hw_dx_current_pol',
+            'treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_imperfect_hw_dx_current_pol',
+            'treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_imperfect_hw_dx_new_pol',
+            'treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_imperfect_hw_dx_new_pol',
+            'treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_imperfect_hw_dx_new_pol',
+            'treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_imperfect_hw_dx_new_pol',
+        ]
+    ).assign(
+        fraction_of_deaths=lambda df: (
+            (df.fraction * df.prob_die_if_no_treatment) / (df.fraction * df.prob_die_if_no_treatment).sum()
+        )
+    )
+    print(f"{risk_of_death_imperfect_dx=}")
+
+
 
     # Overall summary figure: Number of deaths in the cohort Deaths broken down by ( disease / oxygen_saturation) when
     # * No Treatment
