@@ -370,7 +370,7 @@ def test_healthcareseeking_occurs_with_emergency_spurious_symptom_only(seed):
     assert [] == sim.modules['SymptomManager'].who_has('spurious_emergency_symptom')
 
 
-def test_healthcareseeking_no_error_if_HSI_EmergencyCare_SpuriousSymptom_is_run_on_a_dead_person(seed):
+def test_healthcareseeking_no_error_if_hsi_emergencycare_spurioussymptom_is_run_on_a_dead_person(seed):
     """Check that running HSI_EmergencyCare_SpuriousSymptom does not cause an error and returns a blank footprint"""
     start_date = Date(2010, 1, 1)
     sim = Simulation(start_date=start_date, seed=seed)
