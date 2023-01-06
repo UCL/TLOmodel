@@ -293,20 +293,21 @@ def test_healthcareseeking_occurs_with_nonemergency_spurious_symptoms_only(seed)
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  )
 
-    # Make spurious symptoms certain to occur and cause non-emergency care-seeking:
-    sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence'].iloc[:-1][[
-        'prob_spurious_occurrence_in_children_per_day',
-        'prob_spurious_occurrence_in_adults_per_day'
-    ]] = 1.0  # excluding spurious_emergency_symptom, which will be tested separately
-    sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence'].iloc[:-1][[
-        'odds_ratio_for_health_seeking_in_children',
-        'odds_ratio_for_health_seeking_in_adults'
-    ]] = 10.0   # excluding spurious_emergency_symptom, which will be tested separately
-    # Make spurious emergency symptom never occur or cause HSI_EmergencyCare_SpuriousSymptom:
-    sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence'].iloc[-1:][[
-        'prob_spurious_occurrence_in_children_per_day',
-        'prob_spurious_occurrence_in_adults_per_day'
-    ]] = 0.0
+    all_spurious_symptoms = sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence']
+    # Make non-emergency spurious symptoms 100% occur and cause non-emergency care-seeking:
+    all_spurious_symptoms.loc[
+        ~all_spurious_symptoms.generic_symptom_name.isin(['spurious_emergency_symptom']),
+        ['prob_spurious_occurrence_in_children_per_day', 'prob_spurious_occurrence_in_adults_per_day']
+    ] = 1.0
+    all_spurious_symptoms.loc[
+        ~all_spurious_symptoms.generic_symptom_name.isin(['spurious_emergency_symptom']),
+        ['odds_ratio_for_health_seeking_in_children', 'odds_ratio_for_health_seeking_in_adults']
+    ] = 10.0
+    # Make spurious emergency symptom never occur or cause relevant HSI:
+    all_spurious_symptoms.loc[
+        all_spurious_symptoms.generic_symptom_name.isin(['spurious_emergency_symptom']),
+        ['prob_spurious_occurrence_in_children_per_day', 'prob_spurious_occurrence_in_adults_per_day']
+    ] = 0.0
 
     # Run the simulation for one day
     end_date = start_date + DateOffset(days=1)
@@ -341,18 +342,16 @@ def test_healthcareseeking_occurs_with_emergency_spurious_symptom_only(seed):
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  )
 
+    all_spurious_symptoms = sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence']
     # Make spurious emergency symptom certain to occur and cause HSI_EmergencyCare_SpuriousSymptom:
-    sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence'].iloc[-1:][[
-        'prob_spurious_occurrence_in_children_per_day',
-        'prob_spurious_occurrence_in_adults_per_day'
-    ]] = 1.0  # the spurious_emergency_symptom
-    # turn off other spurious symptoms
-    sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence'].iloc[:-1][[
-        'prob_spurious_occurrence_in_children_per_day',
-        'prob_spurious_occurrence_in_adults_per_day'
-    ]] = 0.0
+    all_spurious_symptoms.loc[
+        all_spurious_symptoms.generic_symptom_name.isin(['spurious_emergency_symptom']),
+        ['prob_spurious_occurrence_in_children_per_day', 'prob_spurious_occurrence_in_adults_per_day']
+    ] = 1.0
+    # NB. Since spurious emergency symptom 100% occurs to each person, actually only emergency care will be caused even
+    # with non-emergency symptoms, there is no need to turn off other spurious symptoms.
 
-    # Run the simulation for one day for one person
+    # Run the simulation for one day
     end_date = start_date + DateOffset(days=1)
     popsize = 200
     sim.make_initial_population(n=popsize)
@@ -368,9 +367,7 @@ def test_healthcareseeking_occurs_with_emergency_spurious_symptom_only(seed):
     assert 'HSI_EmergencyCare_SpuriousSymptom' in events_run_and_scheduled
 
     # check that running this HSI does indeed remove the symptom from a person who has it
-    the_symptom = sim.modules['SymptomManager'].parameters[
-        'generic_symptoms_spurious_occurrence'].iloc[-1].generic_symptom_name  # spurious_emergency_symptom
-    assert [] == sim.modules['SymptomManager'].who_has(the_symptom)
+    assert [] == sim.modules['SymptomManager'].who_has('spurious_emergency_symptom')
 
 
 def test_healthcareseeking_no_error_if_HSI_EmergencyCare_SpuriousSymptom_is_run_on_a_dead_person(seed):
@@ -419,16 +416,11 @@ def test_healthcareseeking_occurs_with_all_spurious_symptoms_only(seed):
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  )
 
-    # Make spurious emergency symptom occur with some prob and cause HSI_EmergencyCare_SpuriousSymptom:
-    sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence'].iloc[-1:][[
-        'prob_spurious_occurrence_in_children_per_day',
-        'prob_spurious_occurrence_in_adults_per_day'
-    ]] = 0.5  # the spurious_emergency_symptom
-    # same prob for other spurious symptoms
-    sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence'].iloc[:-1][[
-        'prob_spurious_occurrence_in_children_per_day',
-        'prob_spurious_occurrence_in_adults_per_day'
-    ]] = 0.5
+    all_spurious_symptoms = sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence']
+    # Make all spurious symptoms occur with some prob:
+    all_spurious_symptoms[
+        ['prob_spurious_occurrence_in_children_per_day', 'prob_spurious_occurrence_in_adults_per_day']
+    ] = 0.5
 
     # Run the simulation for one day for one person
     end_date = start_date + DateOffset(days=1)
@@ -438,8 +430,6 @@ def test_healthcareseeking_occurs_with_all_spurious_symptoms_only(seed):
 
     # Check that 'HSI_EmergencyCare_SpuriousSymptom', 'HSI_GenericEmergencyFirstApptAtFacilityLevel1'
     # and HSI_GenericFirstApptAtFacilityLevel0 are all triggered
-    # NB. HSI_Emergency_Care_SpuriousSymptom is the secondary HSI and HSI_GenericEmergencyFirstApptAtFacilityLevel1
-    # is the primary HSI, i.e., if the secondary occurs then the primary must occur
     events_run_and_scheduled = get_events_run_and_scheduled(sim)
     assert 'HSI_GenericFirstApptAtFacilityLevel0' in events_run_and_scheduled
     assert 'HSI_GenericEmergencyFirstApptAtFacilityLevel1' in events_run_and_scheduled
@@ -498,16 +488,17 @@ def test_healthcareseeking_occurs_with_emergency_spurious_symptoms_and_disease_m
                  chronicsyndrome.ChronicSyndrome()
                  )
 
-    # Make spurious emergency symptom occur and cause HSI_EmergencyCare_SpuriousSymptom:
-    sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence'].iloc[-1:][[
-        'prob_spurious_occurrence_in_children_per_day',
-        'prob_spurious_occurrence_in_adults_per_day'
-    ]] = 1.0
+    all_spurious_symptoms = sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence']
+    # Make spurious emergency symptom occur with some prob and cause HSI_EmergencyCare_SpuriousSymptom:
+    all_spurious_symptoms.loc[
+        all_spurious_symptoms.generic_symptom_name.isin(['spurious_emergency_symptom']),
+        ['prob_spurious_occurrence_in_children_per_day', 'prob_spurious_occurrence_in_adults_per_day']
+    ] = 0.5
     # turn off other spurious symptoms
-    sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence'].iloc[:-1][[
-        'prob_spurious_occurrence_in_children_per_day',
-        'prob_spurious_occurrence_in_adults_per_day'
-    ]] = 0.0
+    all_spurious_symptoms.loc[
+        ~all_spurious_symptoms.generic_symptom_name.isin(['spurious_emergency_symptom']),
+        ['prob_spurious_occurrence_in_children_per_day', 'prob_spurious_occurrence_in_adults_per_day']
+    ] = 0.0
 
     # Run the simulation for one day
     end_date = start_date + DateOffset(days=1)
@@ -535,16 +526,11 @@ def test_healthcareseeking_occurs_with_all_spurious_symptoms_and_disease_modules
                  chronicsyndrome.ChronicSyndrome()
                  )
 
-    # Make spurious emergency symptom occur with some prob and cause HSI_EmergencyCare_SpuriousSymptom:
-    sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence'].iloc[-1:][[
-        'prob_spurious_occurrence_in_children_per_day',
-        'prob_spurious_occurrence_in_adults_per_day'
-    ]] = 0.5
-    # same setting to other spurious symptoms
-    sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence'].iloc[:-1][[
-        'prob_spurious_occurrence_in_children_per_day',
-        'prob_spurious_occurrence_in_adults_per_day'
-    ]] = 0.5
+    all_spurious_symptoms = sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence']
+    # Make all spurious symptoms occur with some prob:
+    all_spurious_symptoms[
+        ['prob_spurious_occurrence_in_children_per_day', 'prob_spurious_occurrence_in_adults_per_day']
+    ] = 0.5
 
     # Run the simulation for one day
     end_date = start_date + DateOffset(days=1)
