@@ -279,7 +279,7 @@ if table_use_costs_bool:
         def costs_name(in_rounding_costs_to):
             if in_rounding_costs_to:
                 if in_rounding_costs_to == 1e9:
-                    return "milliards "
+                    return "billions "
                 elif in_rounding_costs_to == 1e6:
                     return "millions "
                 elif in_rounding_costs_to == 1e5:
