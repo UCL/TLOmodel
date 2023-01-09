@@ -6,7 +6,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 from tlo import Date, Simulation, logging
-from tlo.analysis.utils import parse_log_file
+from tlo.analysis.utils import parse_log_file, compare_number_of_deaths
 from tlo.methods import (
     demography,
     enhanced_lifestyle,
@@ -37,9 +37,9 @@ log_config = {
     'custom_levels': {
         '*': logging.CRITICAL,
         'tlo.methods.epilepsy': logging.INFO,
+        'tlo.methods.demography': logging.INFO,
         'tlo.methods.healthsystem': logging.WARNING,
         'tlo.methods.healthburden': logging.WARNING,
-        'tlo.methods.demography': logging.WARNING,
     }
 }
 
@@ -67,18 +67,17 @@ sim.simulate(end_date=end_date)
 
 # %% read the results
 output = parse_log_file(sim.log_filepath)
-# output = parse_log_file(sim.LogFile__2022-02-06T080307.log)
 
 prop_seiz_stat_1 = pd.Series(
     output['tlo.methods.epilepsy']['epilepsy_logging']['prop_seiz_stat_1'].values,
     index=output['tlo.methods.epilepsy']['epilepsy_logging']['date']
 )
-plt.plot(np.arange(len(prop_seiz_stat_1.index)), prop_seiz_stat_1, color='lightsteelblue', label='model')
-plt.xticks(np.arange(len(prop_seiz_stat_1.index)), prop_seiz_stat_1.index, rotation=45)
+plt.plot(prop_seiz_stat_1, color='lightsteelblue', label='model')
 plt.axhline(0.013, color='lightsalmon', label='Ba Diop et al. 2014')
 plt.title('Proportion of people with epilepsy but no current seizures')
 plt.ylim(0, 0.05)
 plt.legend()
+plt.tight_layout()
 plt.show()
 plt.clf()
 
@@ -86,12 +85,12 @@ prop_seiz_stat_2 = pd.Series(
     output['tlo.methods.epilepsy']['epilepsy_logging']['prop_seiz_stat_2'].values,
     index=output['tlo.methods.epilepsy']['epilepsy_logging']['date']
 )
-plt.plot(np.arange(len(prop_seiz_stat_2.index)), prop_seiz_stat_2, color='lightsteelblue', label='model')
-plt.xticks(np.arange(len(prop_seiz_stat_2.index)), prop_seiz_stat_2.index, rotation=45)
+plt.plot(prop_seiz_stat_2, color='lightsteelblue', label='model')
 plt.axhline(0.013, color='lightsalmon', label='Ba Diop et al. 2014')
 plt.title('Proportion of people with infrequent epilepsy seizures')
 plt.ylim(0, 0.02)
 plt.legend()
+plt.tight_layout()
 plt.show()
 plt.clf()
 
@@ -100,12 +99,12 @@ prop_seiz_stat_3 = pd.Series(
     output['tlo.methods.epilepsy']['epilepsy_logging']['prop_seiz_stat_3'].values,
     index=output['tlo.methods.epilepsy']['epilepsy_logging']['date']
 )
-plt.plot(np.arange(len(prop_seiz_stat_3.index)), prop_seiz_stat_3, color='lightsteelblue', label='model')
-plt.xticks(np.arange(len(prop_seiz_stat_3.index)), prop_seiz_stat_3.index, rotation=45)
+plt.plot(prop_seiz_stat_3, color='lightsteelblue', label='model')
 plt.axhline(0.013, color='lightsalmon', label='Ba Diop et al. 2014')
 plt.title('Proportion of people with frequent epilepsy seizures')
 plt.ylim(0, 0.015)
 plt.legend()
+plt.tight_layout()
 plt.show()
 plt.clf()
 
@@ -116,6 +115,7 @@ plt.axhline(0.013, color='black', linestyle=':', label='Ba Diop et al. 2014')
 plt.legend()
 plt.title('Average proportion of each seizure status')
 plt.xticks(np.arange(len(mean_proportion_in_sim)), ['seizure\nstatus 1', 'seizure\nstatus 2', 'seizure\nstatus 3'])
+plt.tight_layout()
 plt.show()
 plt.clf()
 
@@ -126,6 +126,7 @@ n_seiz_stat_1_3 = pd.Series(
 n_seiz_stat_1_3.plot()
 plt.title('Number with epilepsy (past or current)')
 plt.ylim(0, 800000)
+plt.tight_layout()
 plt.show()
 
 n_seiz_stat_2_3 = pd.Series(
@@ -135,8 +136,10 @@ n_seiz_stat_2_3 = pd.Series(
 n_seiz_stat_2_3.plot()
 plt.title('Number with epilepsy (infrequent or frequent seizures)')
 plt.ylim(0, 300000)
+plt.tight_layout()
 plt.show()
 plt.clf()
+
 prop_antiepilep_seiz_stat_1 = pd.Series(
     output['tlo.methods.epilepsy']['epilepsy_logging']['prop_antiepilep_seiz_stat_1'].values,
     index=output['tlo.methods.epilepsy']['epilepsy_logging']['date']
@@ -144,6 +147,7 @@ prop_antiepilep_seiz_stat_1 = pd.Series(
 prop_antiepilep_seiz_stat_1.plot()
 plt.title('Proportion on antiepileptics amongst people with epilepsy but no current seizures')
 plt.ylim(0, 1)
+plt.tight_layout()
 plt.show()
 plt.clf()
 
@@ -154,6 +158,7 @@ prop_antiepilep_seiz_stat_2 = pd.Series(
 prop_antiepilep_seiz_stat_2.plot()
 plt.title('Proportion on antiepileptics amongst people with infrequent epilepsy seizures')
 plt.ylim(0, 1)
+plt.tight_layout()
 plt.show()
 plt.clf()
 
@@ -164,6 +169,7 @@ prop_antiepilep_seiz_stat_3 = pd.Series(
 prop_antiepilep_seiz_stat_3.plot()
 plt.title('Proportion on antiepileptics amongst people with frequent epilepsy seizures')
 plt.ylim(0, 1)
+plt.tight_layout()
 plt.show()
 plt.clf()
 
@@ -174,8 +180,10 @@ n_epi_death = pd.Series(
 n_epi_death.plot()
 plt.title('Number of deaths from epilepsy')
 plt.ylim(0, 50)
+plt.tight_layout()
 plt.show()
 plt.clf()
+
 n_antiep = pd.Series(
     output['tlo.methods.epilepsy']['epilepsy_logging']['n_antiep'].values,
     index=output['tlo.methods.epilepsy']['epilepsy_logging']['date']
@@ -183,36 +191,57 @@ n_antiep = pd.Series(
 n_antiep.plot()
 plt.title('Number of people on antiepileptics')
 plt.ylim(0, 50000)
+plt.tight_layout()
 plt.show()
 plt.clf()
+
 epi_death_rate = pd.Series(
     output['tlo.methods.epilepsy']['epilepsy_logging']['epi_death_rate'].values,
     index=output['tlo.methods.epilepsy']['epilepsy_logging']['date']
 )
-plt.plot(np.arange(len(epi_death_rate)), epi_death_rate, color='lightsteelblue', label='Incidence of\ndeath')
-plt.hlines(np.mean(epi_death_rate), np.arange(len(epi_death_rate))[0], np.arange(len(epi_death_rate))[-1],
-           label=f"Mean incidence of\ndeath = {np.round(np.mean(epi_death_rate), 3)}")
+plt.plot(epi_death_rate, color='lightsteelblue', label='Incidence of\ndeath')
+plt.axhline(np.mean(epi_death_rate), label=f"Mean incidence of\ndeath = {np.round(np.mean(epi_death_rate), 3)}")
 plt.title('Rate of epilepsy death in people with seizures')
 plt.legend()
-plt.xticks(np.arange(len(epi_death_rate)), epi_death_rate.index, rotation=45)
 plt.ylim(0, 20)
+plt.tight_layout()
 plt.show()
 plt.clf()
-
 
 incidence_epilepsy = pd.Series(
     output['tlo.methods.epilepsy']['inc_epilepsy']['incidence_epilepsy'].values,
     index=output['tlo.methods.epilepsy']['inc_epilepsy']['date']
 )
-plt.plot(np.arange(len(incidence_epilepsy)), incidence_epilepsy, color='lightsteelblue', label='Incidence of\nepilepsy')
-plt.hlines(np.mean(incidence_epilepsy), np.arange(len(incidence_epilepsy))[0], np.arange(len(incidence_epilepsy))[-1],
-           color='steelblue', label=f"Mean incidence of\nepilepsy = {np.round(np.mean(incidence_epilepsy), 2)}")
+plt.plot(incidence_epilepsy, color='lightsteelblue', label='Incidence of\nepilepsy')
+plt.axhline(np.mean(incidence_epilepsy),
+            color='steelblue',
+            label=f"Mean incidence of\nepilepsy = {np.round(np.mean(incidence_epilepsy), 2)}")
 plt.title('Incidence of epilepsy')
 plt.legend()
-plt.xticks(np.arange(len(incidence_epilepsy)), incidence_epilepsy.index, rotation=45)
 plt.ylim(0, 100)
+plt.tight_layout()
 plt.show()
 plt.clf()
+
+
+# Compare Deaths due to Epilepsy with GBD data
+comparison = compare_number_of_deaths(logfile=sim.log_filepath, resourcefilepath=resourcefilepath)
+
+CAUSE_NAME = 'Epilepsy'
+
+fig, axs = plt.subplots(nrows=2, ncols=1, sharey=True, sharex=True)
+for _row, period in enumerate(('2010-2014', '2015-2019')):
+    ax = axs[_row]
+    comparison.loc[(period, slice(None), slice(None), CAUSE_NAME)].droplevel([0, 1, 3]).groupby(axis=0, level=0).sum().plot(use_index=True, ax=ax)
+    ax.set_ylabel('Deaths per year')
+    ax.set_title(f"{period}")
+    xticks = comparison.index.levels[2]
+    ax.set_xticks(range(len(xticks)))
+    ax.set_xticklabels(xticks, rotation=90)
+fig.tight_layout()
+fig.show()
+
+
 # Compare model outputs to GBD study
 gbd_data = pd.read_csv("C:/Users/Robbie Manning Smith/Desktop/gbddata/epilepsy/IHME-GBD_2019_DATA-4a82f00e-1.csv")
 # get incidence estimates
@@ -237,8 +266,10 @@ plt.bar([1, 2], [mean_inc_death_gbd / mean_inc_gbd, np.mean(epi_death_rate) / np
 plt.xticks([1, 2], ['GBD', 'Model'])
 plt.ylabel('CFR')
 plt.title("The epilepsy model's case fatality ratio compared to the GBD's estimate")
+plt.tight_layout()
 plt.show()
 plt.clf()
+
 incidence_epilepsy_df = pd.DataFrame(incidence_epilepsy)
 incidence_epilepsy_df = incidence_epilepsy_df.rename(columns={0: 'inc'})
 incidence_epilepsy_df['year'] = incidence_epilepsy_df.index.year
@@ -250,8 +281,10 @@ plt.legend()
 plt.xticks(np.arange(len(incidence_epilepsy_df.index)), incidence_epilepsy_df.index)
 plt.ylabel('Incidence of epilepsy')
 plt.title("Comparing the model's estimated incidence\nof epilepsy over time to the GBD estimates")
+plt.tight_layout()
 plt.show()
 plt.clf()
+
 incidence_epilepsy_death_df = pd.DataFrame(epi_death_rate)
 incidence_epilepsy_death_df = incidence_epilepsy_death_df.rename(columns={0: 'inc_death'})
 incidence_epilepsy_death_df['year'] = incidence_epilepsy_death_df.index.year
@@ -264,5 +297,7 @@ plt.legend()
 plt.xticks(np.arange(len(incidence_epilepsy_death_df.index)), incidence_epilepsy_df.index)
 plt.ylabel('Incidence of epilepsy death')
 plt.title("Comparing the model's estimated incidence\nof epilepsy death over time to the GBD estimates")
+plt.tight_layout()
 plt.show()
 plt.clf()
+
