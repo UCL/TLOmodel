@@ -230,24 +230,9 @@ class Epilepsy(Module):
         df.at[child_id, 'ep_epi_death'] = False
         df.at[child_id, 'ep_disability'] = 0
 
-    def on_hsi_alert(self, person_id, treatment_id):
-        """
-        This is called whenever there is an HSI event commissioned by one of the other disease modules.
-        """
-        logger.debug(key='debug',
-                     data=f'This is Epilepsy, being alerted about a health system interaction '
-                          f'by person {person_id} for: {treatment_id}')
-
     def report_daly_values(self):
-        # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
-        # experienced by persons in the previous month. Only rows for alive-persons must be returned.
-        # The names of the series of columns is taken to be the label of the cause of this disability.
-        # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
-        logger.debug(key='debug', data='This is Epilepsy reporting my health values')
-
         df = self.sim.population.props  # shortcut to population properties dataframe
-        disability_series_for_alive_persons = df.loc[df.is_alive, 'ep_disability']
-        return disability_series_for_alive_persons
+        return df.loc[df.is_alive, 'ep_disability']
 
     def transition_seizure_stat(self):
         """
@@ -257,13 +242,14 @@ class Epilepsy(Module):
         :return:
         """
         # Get the parameters used to determine transitions between seizure states
-        p = self.sim.modules['Epilepsy'].parameters
+        p = self.parameters
         prop_transition_1_2 = p['base_prob_3m_seiz_stat_infreq_none']
         prop_transition_2_1 = p['base_prob_3m_seiz_stat_none_infreq']
         prop_transition_2_3 = p['base_prob_3m_seiz_stat_freq_infreq']
         prop_transition_3_1 = p['base_prob_3m_seiz_stat_none_freq']
         prop_transition_3_2 = p['base_prob_3m_seiz_stat_infreq_freq']
         rr_effectiveness_antiepileptics = p['rr_effectiveness_antiepileptics']
+
         # get the population and the current seizure status of those with epilepsy and those who are on anti epileptics
         df = self.sim.population.props
         population_with_seizure_status_1 = df.index[df.is_alive & (df.ep_seiz_stat == '1')]
@@ -272,36 +258,47 @@ class Epilepsy(Module):
         seizure_status_2_on_anti_epileptics = df.index[df.is_alive & (df.ep_seiz_stat == '2') & df.ep_antiep]
         population_with_seizure_status_3 = df.index[df.is_alive & (df.ep_seiz_stat == '3')]
         seizure_status_3_on_anti_epileptics = df.index[df.is_alive & (df.ep_seiz_stat == '3') & df.ep_antiep]
+
         # Determine who will transition from seizure status 1 to 2, first create a random number to determine likelihood
         # of transition
         random_draw_1_2 = self.rng.random_sample(size=len(population_with_seizure_status_1))
+
         # Get the base probability of transitioning from state 1 to state 2
         probability_of_transition_1_2 = pd.DataFrame([prop_transition_1_2] * len(random_draw_1_2), columns=['prob'],
                                                      index=population_with_seizure_status_1)
+
         # Reduce the risk of worsening seizures if on anti epileptics
         probability_of_transition_1_2.loc[seizure_status_1_on_anti_epileptics, 'prob'] /= \
             rr_effectiveness_antiepileptics
+
         # determine who will transition between seizure state 1 to 2
         changing_1_2 = population_with_seizure_status_1[probability_of_transition_1_2['prob'] > random_draw_1_2]
+
         # update seizure status
         df.loc[changing_1_2, 'ep_seiz_stat'] = '2'
+
         # Determine if those with seizure status 2 increase or decrease in severity, first get random draws for each
         # transition state
         random_draw_2_1 = self.rng.random_sample(size=len(population_with_seizure_status_2))
         random_draw_2_3 = self.rng.random_sample(size=len(population_with_seizure_status_2))
+
         # create a dataframe for the transition probabilities
         probability_of_transition_2 = pd.DataFrame({'prob_down': [prop_transition_2_1] * len(random_draw_2_1),
                                                     'prob_up': [prop_transition_2_3] * len(random_draw_2_1)},
                                                    index=population_with_seizure_status_2)
+
         # Increase the likelihood of reducing seizure status for those on anti epileptics
         probability_of_transition_2.loc[seizure_status_2_on_anti_epileptics, 'prob_down'] *= \
             rr_effectiveness_antiepileptics
+
         # Decrease the likelihood of reducing seizure status for those on anti epileptics
         probability_of_transition_2.loc[seizure_status_2_on_anti_epileptics, 'prob_up'] /= \
             rr_effectiveness_antiepileptics
+
         # Establish who has a changing seizure status
         changing_2_1 = population_with_seizure_status_2[probability_of_transition_2['prob_down'] > random_draw_2_1]
         changing_2_3 = population_with_seizure_status_2[probability_of_transition_2['prob_up'] > random_draw_2_3]
+
         # If someone with seizure status 2 has been selected to both increase and decrease in severity, choose a
         # transition direction based on the likelihood of transitioning states
         both_up_down_seiz_stat_2 = changing_2_1.intersection(changing_2_3)
@@ -313,28 +310,35 @@ class Epilepsy(Module):
                                 sum([prop_transition_2_1, prop_transition_2_3]))
                 )
                 df.loc[person, 'ep_seiz_stat'] = chosen_direction
+
         # Drop those who have already had their seizure status changed from the indexs changing_2_1 and changing_2_3
         changing_2_1 = changing_2_1.drop(both_up_down_seiz_stat_2)
         changing_2_3 = changing_2_3.drop(both_up_down_seiz_stat_2)
         df.loc[changing_2_1, 'ep_seiz_stat'] = '1'
         df.loc[changing_2_3, 'ep_seiz_stat'] = '3'
+
         # Determine if those with seizure status 3 decrease in severity and by how much, first get random draws for each
         # transition state
         random_draw_3_1 = self.rng.random_sample(size=len(population_with_seizure_status_3))
         random_draw_3_2 = self.rng.random_sample(size=len(population_with_seizure_status_3))
+
         # create a dataframe for the transition probabilities
         probability_of_transition_3 = pd.DataFrame({'prob_down_1': [prop_transition_3_2] * len(random_draw_3_2),
                                                     'prob_down_2': [prop_transition_3_1] * len(random_draw_3_1)},
                                                    index=population_with_seizure_status_3)
+
         # Increase the likelihood of reducing seizure status for those on anti epileptics
         probability_of_transition_3.loc[seizure_status_3_on_anti_epileptics, 'prob_down_1'] *= \
             rr_effectiveness_antiepileptics
+
         # Decrease the likelihood of reducing seizure status for those on anti epileptics
         probability_of_transition_3.loc[seizure_status_3_on_anti_epileptics, 'prob_down_2'] /= \
             rr_effectiveness_antiepileptics
+
         # Establish who has a changing seizure status
         changing_3_2 = population_with_seizure_status_3[probability_of_transition_3['prob_down_1'] > random_draw_3_2]
         changing_3_1 = population_with_seizure_status_3[probability_of_transition_3['prob_down_2'] > random_draw_3_1]
+
         # If someone with seizure status 2 has been selected to both increase and decrease in severity, choose a
         # transition direction based on the likelihood of transitioning states
         both_down_seiz_stat_3 = changing_3_1.intersection(changing_3_2)
@@ -346,6 +350,7 @@ class Epilepsy(Module):
                                 sum([prop_transition_3_1, prop_transition_3_2]))
                 )
                 df.loc[person, 'ep_seiz_stat'] = chosen_direction
+
         # Drop those who have already had their seizure status changed from the indexs changing_2_1 and changing_2_3
         changing_3_1 = changing_3_1.drop(both_down_seiz_stat_3)
         changing_3_2 = changing_3_2.drop(both_down_seiz_stat_3)
@@ -397,9 +402,6 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         """
         ep = self.module
         df = population.props
-
-        # Declaration of how we will refer to any treatments that are related to this disease.
-        # TREATMENT_ID = 'antiepileptic'
 
         # set ep_epi_death back to False after death
         df.loc[~df.is_alive & df.ep_epi_death, 'ep_epi_death'] = False
@@ -496,8 +498,6 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
             disease_module=self.module
         )
 
-# todo: seizures while not on on anti-epileptic leads to call HSI_Epilepsy_Start_Anti_Epileptic
-
 
 class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
@@ -555,7 +555,7 @@ class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Epilepsy_Start_Anti-Epileptics'
+        self.TREATMENT_ID = 'Epilepsy_Treatment_Start'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
 
@@ -587,30 +587,27 @@ class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
             best_available_medicine = list(available_treatments.keys())[best_option_index]
             # Request the medicine from the health system, with to_log set to True to actually consume the medicine
             # from the health system
-            self.get_consumables(
-                self.module.item_codes[best_available_medicine],
-                to_log=True
-            )
+            self.get_consumables(self.module.item_codes[best_available_medicine])
             # Update this person's properties to show that they are currently on medication
             df.at[person_id, 'ep_antiep'] = True
-            # Log the successful treatment
-            logger.debug(key='debug', data='@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
-        else:
-            self.module.sim.modules['HealthSystem'].schedule_hsi_event(hsi_event=self,
-                                                                       topen=self.sim.date + pd.DateOffset(days=1),
-                                                                       tclose=None,
-                                                                       priority=2)
 
-        # Schedule a follow-up for 3 months:
-        hs.schedule_hsi_event(
-            hsi_event=HSI_Epilepsy_Follow_Up(
-                module=self.module,
-                person_id=person_id,
-            ),
-            topen=self.sim.date + DateOffset(months=3),
-            tclose=None,
-            priority=0
-        )
+            # Schedule a follow-up for 3 months:
+            hs.schedule_hsi_event(
+                hsi_event=HSI_Epilepsy_Follow_Up(
+                    module=self.module,
+                    person_id=person_id,
+                ),
+                topen=self.sim.date + DateOffset(months=3),
+                tclose=None,
+                priority=0
+            )
+
+        else:
+            # If no medicine is available, run this HSI again next month
+            self.module.sim.modules['HealthSystem'].schedule_hsi_event(hsi_event=self,
+                                                                       topen=self.sim.date + pd.DateOffset(months=1),
+                                                                       tclose=None,
+                                                                       priority=0)
 
 
 class HSI_Epilepsy_Follow_Up(HSI_Event, IndividualScopeEventMixin):
@@ -618,7 +615,7 @@ class HSI_Epilepsy_Follow_Up(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        self.TREATMENT_ID = "Epilepsy_Treatment"
+        self.TREATMENT_ID = "Epilepsy_Treatment_Followup"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
 
@@ -629,16 +626,10 @@ class HSI_Epilepsy_Follow_Up(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
 
-        # Schedule a follow-up for 3 months:
+        # Schedule a reoccurrence of this follow-up in 3 months:
         hs.schedule_hsi_event(
-            hsi_event=HSI_Epilepsy_Follow_Up(
-                module=self.module,
-                person_id=person_id,
-            ),
+            hsi_event=self,
             topen=self.sim.date + DateOffset(months=3),
             tclose=None,
             priority=0
         )
-
-    def did_not_run(self):
-        pass
