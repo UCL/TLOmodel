@@ -11,7 +11,6 @@ from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
 
-
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 

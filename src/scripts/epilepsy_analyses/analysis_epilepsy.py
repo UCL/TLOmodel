@@ -6,7 +6,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 from tlo import Date, Simulation, logging
-from tlo.analysis.utils import parse_log_file, compare_number_of_deaths
+from tlo.analysis.utils import compare_number_of_deaths, parse_log_file
 from tlo.methods import (
     demography,
     enhanced_lifestyle,
@@ -232,7 +232,11 @@ CAUSE_NAME = 'Epilepsy'
 fig, axs = plt.subplots(nrows=2, ncols=1, sharey=True, sharex=True)
 for _row, period in enumerate(('2010-2014', '2015-2019')):
     ax = axs[_row]
-    comparison.loc[(period, slice(None), slice(None), CAUSE_NAME)].droplevel([0, 1, 3]).groupby(axis=0, level=0).sum().plot(use_index=True, ax=ax)
+    comparison.loc[(period, slice(None), slice(None), CAUSE_NAME)]\
+              .droplevel([0, 1, 3])\
+              .groupby(axis=0, level=0)\
+              .sum()\
+              .plot(use_index=True, ax=ax)
     ax.set_ylabel('Deaths per year')
     ax.set_title(f"{period}")
     xticks = comparison.index.levels[2]
@@ -300,4 +304,3 @@ plt.title("Comparing the model's estimated incidence\nof epilepsy death over tim
 plt.tight_layout()
 plt.show()
 plt.clf()
-
