@@ -59,12 +59,12 @@ class Tb(Module):
 
     # Declare Causes of Death
     CAUSES_OF_DEATH = {
-        "TB": Cause(gbd_causes="Tuberculosis", label="non_AIDS_TB"),
+        "TB": Cause(gbd_causes="Tuberculosis", label="TB (non-AIDS)"),
         "AIDS_TB": Cause(gbd_causes="HIV/AIDS", label="AIDS"),
     }
 
     CAUSES_OF_DISABILITY = {
-        "TB": Cause(gbd_causes="Tuberculosis", label="non_AIDS_TB"),
+        "TB": Cause(gbd_causes="Tuberculosis", label="TB (non-AIDS)"),
     }
 
     # Declaration of the specific symptoms that this module will use

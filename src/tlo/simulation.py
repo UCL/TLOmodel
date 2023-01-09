@@ -110,7 +110,7 @@ class Simulation:
                 # save the configuration and apply in the `register` phase
                 self._custom_log_levels = custom_levels
 
-        if filename:
+        if filename and directory:
             timestamp = datetime.datetime.now().strftime('%Y-%m-%dT%H%M%S')
             log_path = Path(directory) / f"{filename}__{timestamp}.log"
             self.output_file = logging.set_output_file(log_path)
@@ -248,12 +248,18 @@ class Simulation:
         for module in self.modules.values():
             module.on_simulation_end()
 
-        # complete logging
-        if self.output_file:
-            self.output_file.flush()
-            self.output_file.close()
-
         logger.info(key='info', data=f'simulate() {time.time() - start} s')
+
+        # From Python logging.shutdown
+        if self.output_file:
+            try:
+                self.output_file.acquire()
+                self.output_file.flush()
+                self.output_file.close()
+            except (OSError, ValueError):
+                pass
+            finally:
+                self.output_file.release()
 
     def schedule_event(self, event, date):
         """Schedule an event to happen on the given future date.

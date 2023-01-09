@@ -779,8 +779,12 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
         assert isinstance(module, Malaria)
 
         self.TREATMENT_ID = "Malaria_Test"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"ConWithDCSA": 1})
-        self.ACCEPTED_FACILITY_LEVEL = '0'
+        df = self.sim.population.props
+        person_age_years = df.at[self.target, 'age_years']
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
+            "Under5OPD" if person_age_years < 5 else "Over5OPD": 1}
+        )
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
 
     def apply(self, person_id, squeeze_factor):
 

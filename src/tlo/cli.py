@@ -62,10 +62,19 @@ def scenario_run(scenario_file, draw_only, draw: tuple, output_dir=None):
         print(json_string)
         return
 
-    tmp = tempfile.NamedTemporaryFile()
-    with open(tmp.name, 'w') as f:
-        f.write(json_string)
-    runner = SampleRunner(tmp.name)
+    # Write the JSON config to a temporary file (to prevent clobbering by multiple processes running same scenario)
+    # We set delete=False on the file, otherwise Windows does not allow the opening of the file multiple times
+    tmp = tempfile.NamedTemporaryFile(delete=False, mode='w')
+    tmp.write(json_string)
+    tmp.flush()
+
+    # SampleRunner loads the scenario information from the JSON config file
+    filename = tmp.name
+    runner = SampleRunner(filename)
+
+    # Runner has been created - clean up (we have to do this ourselves because we set delete=False)
+    tmp.close()
+    os.unlink(filename)
 
     if draw:
         runner.run_sample_by_number(output_directory=output_dir, draw_number=draw[0], sample_number=draw[1])
@@ -93,8 +102,11 @@ def batch_submit(ctx, scenario_file, keep_pool_alive):
         return
 
     scenario = load_scenario(scenario_file)
+
+    # get the commit we're going to submit to run on batch, and save the run config for that commit
+    # it's the most recent commit on current branch
     repo = Repo(".")
-    commit = next(repo.iter_commits(max_count=1, paths=scenario_file))
+    commit = next(repo.iter_commits(max_count=1))
     run_json = scenario.save_draws(commit=commit.hexsha)
 
     print(">Setting up batch\r", end="")
@@ -196,9 +208,8 @@ def batch_submit(ctx, scenario_file, keep_pool_alive):
     task_dir = "${{AZ_BATCH_TASK_DIR}}"
     gzip_pattern_match = "{{txt,log}}"
     command = f"""
-    git fetch --all
-    git checkout -b {current_branch} origin/{current_branch}
-    git pull
+    git fetch origin {commit.hexsha}
+    git checkout {commit.hexsha}
     pip install -r requirements/base.txt
     tlo --config-file tlo.example.conf batch-run {azure_run_json} {working_dir} {{draw_number}} {{run_number}}
     cp {task_dir}/std*.txt {working_dir}/{{draw_number}}/{{run_number}}/.

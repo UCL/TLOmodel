@@ -23,7 +23,7 @@ jobs:
     strategy:
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           lfs: true
       - id: set-matrix
@@ -31,12 +31,13 @@ jobs:
         run: |
           set -e
           # Find all test files and generate their list in JSON format
-          VAR_FILES="::set-output name=matrix::{\"include\":["
+          VAR_FILES="{\"include\":["
           for file in tests/test_*.py; do
               VAR_FILES="${VAR_FILES}{\"file\":\"${file}\"},"
           done
           VAR_FILES="${VAR_FILES}]}"
-          echo "${VAR_FILES}"
+          echo $VAR_FILES
+          echo "matrix=${VAR_FILES}" >> $GITHUB_OUTPUT
 
   test:
     needs: gen-test-matrix
@@ -47,7 +48,7 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJson(needs.gen-test-matrix.outputs.matrix) }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           lfs: true
       - name: System info
@@ -70,7 +71,7 @@ jobs:
     strategy:
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           lfs: true
       - name: System info
@@ -92,7 +93,7 @@ jobs:
     strategy:
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           lfs: true
       - name: System info
