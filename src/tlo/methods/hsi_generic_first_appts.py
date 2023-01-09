@@ -423,6 +423,7 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
                          priority=0,
                          topen=sim.date,
                          tclose=None)
+
     # -----  EXAMPLES FOR MOCKITIS AND CHRONIC SYNDROME  -----
     if 'craving_sandwiches' in symptoms:
         event = HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(
