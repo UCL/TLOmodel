@@ -145,7 +145,7 @@ prop_antiepilep_seiz_stat_1 = pd.Series(
     index=output['tlo.methods.epilepsy']['epilepsy_logging']['date']
 )
 prop_antiepilep_seiz_stat_1.plot()
-plt.title('Proportion on antiepileptics amongst people with epilepsy but no current seizures')
+plt.title('Proportion on antiepileptics\namongst people with epilepsy but no current seizures')
 plt.ylim(0, 1)
 plt.tight_layout()
 plt.show()
@@ -156,7 +156,7 @@ prop_antiepilep_seiz_stat_2 = pd.Series(
     index=output['tlo.methods.epilepsy']['epilepsy_logging']['date']
 )
 prop_antiepilep_seiz_stat_2.plot()
-plt.title('Proportion on antiepileptics amongst people with infrequent epilepsy seizures')
+plt.title('Proportion on antiepileptics\namongst people with infrequent epilepsy seizures')
 plt.ylim(0, 1)
 plt.tight_layout()
 plt.show()
@@ -167,7 +167,7 @@ prop_antiepilep_seiz_stat_3 = pd.Series(
     index=output['tlo.methods.epilepsy']['epilepsy_logging']['date']
 )
 prop_antiepilep_seiz_stat_3.plot()
-plt.title('Proportion on antiepileptics amongst people with frequent epilepsy seizures')
+plt.title('Proportion on antiepileptics\namongst people with frequent epilepsy seizures')
 plt.ylim(0, 1)
 plt.tight_layout()
 plt.show()
