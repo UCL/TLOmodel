@@ -11,8 +11,6 @@ from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
 
-# todo: note this code is becoming very depracated and does not include health interactions
-
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -508,7 +506,7 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=self.repeat))
 
     def apply(self, population):
-        # get some summary statistics
+        """Get some summary statistics and log them"""
         df = population.props
 
         status_groups = df.groupby('ep_seiz_stat').sum()
@@ -546,10 +544,6 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                         'n_seiz_stat_2_3': n_seiz_stat_2_3,
                         'n_antiep': n_antiep
                     })
-
-        individual = df.loc[[5]]
-
-        logger.info(key='individual_check', data=individual, description='following an individual through simulation')
 
 
 class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
