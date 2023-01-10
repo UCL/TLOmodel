@@ -49,7 +49,7 @@ class RunAnalysisCo(BaseScenario):
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2050, 12, 31)
-        self.pop_size = 50_000  # <- recommended population size for the runs
+        self.pop_size = 1_000  # <- recommended population size for the runs
         self.number_of_draws = 1  # <- one scenario
         self.runs_per_draw = 1  # <- repeated this many times
 
@@ -93,7 +93,7 @@ class RunAnalysisCo(BaseScenario):
         # Contraception, Pregnancy, Labour, etc. (or SimplifiedBirths)
         all_modules.extend([
             contraception.Contraception(resourcefilepath=self.resources, use_healthsystem=True,
-                                        use_interventions=True,  # default: False
+                                        use_interventions=False,  # default: False
                                         # interventions_start_date=Date(2016, 1, 1),  # if needs to be changed
                                         # the default date is Date(2023, 1, 1)
                                         ),
