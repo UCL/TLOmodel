@@ -727,6 +727,9 @@ def get_color_coarse_appt(coarse_appt_type: str) -> str:
 
 
 SHORT_TREATMENT_ID_TO_COLOR_MAP = MappingProxyType({
+
+    '*': 'black',  # todo <--- choose a different colour
+
     'FirstAttendance*': 'darkgrey',
     'Inpatient*': 'silver',
 
@@ -791,7 +794,7 @@ def get_color_short_treatment_id(short_treatment_id: str) -> str:
     )
 
 
-CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP = MappingProxyType({
+CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP = MappingProxyType({
     'Maternal Disorders': 'green',
     'Neonatal Disorders': 'springgreen',
     'Congenital birth defects': 'mediumaquamarine',
@@ -803,6 +806,7 @@ CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP = MappingProxyType({
     'Malaria': 'lightsteelblue',
     'Measles': 'cornflowerblue',
     'non_AIDS_TB': 'mediumslateblue',
+    'Schistosomiasis': 'black',  # todo <---- choose different colour
 
     'Heart Disease': 'sienna',
     'Kidney Disease': 'chocolate',
@@ -820,29 +824,34 @@ CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP = MappingProxyType({
 
     'Transport Injuries': 'lightsalmon',
 
+    'Lower Back Pain': 'black',  # todo <---- choose different colour
+
     'Other': 'dimgrey',
 })
 
 
-def order_of_cause_of_death_label(
+def order_of_cause_of_death_or_daly_label(
     cause_of_death_label: Union[str, pd.Index]
 ) -> Union[int, pd.Index]:
     """Define a standard order for Cause-of-Death labels."""
-    ordered_cause_of_death_labels = list(CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP.keys())
+    ordered_cause_of_death_labels = list(CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.keys())
     if isinstance(cause_of_death_label, str):
         return ordered_cause_of_death_labels.index(cause_of_death_label)
     else:
-        return pd.Index(
-            ordered_cause_of_death_labels.index(c) for c in cause_of_death_label
-        )
+        try:
+            return pd.Index(
+                ordered_cause_of_death_labels.index(c) for c in cause_of_death_label
+            )
+        except:
+            print("hello")
 
 
-def get_color_cause_of_death_label(cause_of_death_label: str) -> str:
+def get_color_cause_of_death_or_daly_label(cause_of_death_label: str) -> str:
     """Return the colour (as matplotlib string) assigned to this Cause-of-Death Label.
 
     Returns `np.nan` if label is not recognised.
     """
-    return CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP.get(cause_of_death_label, np.nan)
+    return CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.get(cause_of_death_label, np.nan)
 
 
 def squarify_neat(sizes: np.array, label: np.array, colormap: Callable, numlabels=5, **kwargs):

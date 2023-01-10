@@ -15,12 +15,12 @@ from tlo import Date
 from tlo.analysis.utils import (
     extract_results,
     get_coarse_appt_type,
-    get_color_cause_of_death_label,
+    get_color_cause_of_death_or_daly_label,
     get_color_coarse_appt,
     get_color_short_treatment_id,
     make_age_grp_lookup,
     make_age_grp_types,
-    order_of_cause_of_death_label,
+    order_of_cause_of_death_or_daly_label,
     order_of_coarse_appt,
     order_of_short_treatment_ids,
     squarify_neat,
@@ -168,11 +168,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # Plots.....
     def do_bar_plot_with_ci(_df, _ax):
         """Make a vertical bar plot for each Cause-of-Death Label for the _df onto axis _ax"""
-        _df_sorted = _df.loc[order_of_cause_of_death_label(_df.index)]  # sort cause-of-death labels
+        _df_sorted = _df.sort_index(axis=0, key=order_of_cause_of_death_or_daly_label)  # sort cause-of-death labels
 
         for i, cause_label in enumerate(_df_sorted.index):
             # plot bar for one cause
-            color = get_color_cause_of_death_label(cause_label)
+            color = get_color_cause_of_death_or_daly_label(cause_label)
             one_cause = _df.loc[cause_label]
 
             mean_deaths = one_cause.loc[(slice(None), "mean")]
@@ -355,14 +355,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         format_to_plot = _deaths_av.unstack()
         format_to_plot.index = format_to_plot.index.astype(make_age_grp_types())
         format_to_plot = format_to_plot.sort_index(axis=0)
-        format_to_plot = format_to_plot[order_of_cause_of_death_label(format_to_plot.columns)]
+        format_to_plot = format_to_plot.sort_index(axis=1, key=order_of_cause_of_death_or_daly_label)
 
         fig, ax = plt.subplots()
         name_of_plot = f'Deaths Averted by {_scenario_name} by Age and Cause {target_period()}'
         (
             format_to_plot / 1000
         ).plot.bar(stacked=True, ax=ax,
-                   color=[get_color_cause_of_death_label(_label) for _label in format_to_plot.columns],
+                   color=[get_color_cause_of_death_or_daly_label(_label) for _label in format_to_plot.columns],
                    )
         ax.axhline(0.0, color='black')
         ax.set_title(name_of_plot)
@@ -402,15 +402,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     for _scenario_name, _deaths_av in deaths_averted_by_wealth_and_label.T.iterrows():
         format_to_plot = _deaths_av.unstack()
-        format_to_plot = format_to_plot.sort_index(axis=0)
-        format_to_plot = format_to_plot[order_of_cause_of_death_label(format_to_plot.columns)]
+        format_to_plot = format_to_plot.sort_index(axis=0).sort_index(axis=1, key=order_of_cause_of_death_or_daly_label)
 
         fig, ax = plt.subplots()
         name_of_plot = f'Deaths Averted by {_scenario_name} by Wealth and Cause {target_period()}'
         (
             format_to_plot / 1000
         ).plot.bar(stacked=True, ax=ax,
-                   color=[get_color_cause_of_death_label(_label) for _label in format_to_plot.columns],
+                   color=[get_color_cause_of_death_or_daly_label(_label) for _label in format_to_plot.columns],
                    )
         ax.axhline(0.0, color='black')
         ax.set_title(name_of_plot)
@@ -515,7 +514,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         .groupby(axis=0, by=delta_appts.index.map(get_coarse_appt_type)) \
         .sum() \
         .sort_index(key=order_of_coarse_appt)
-    delta_appts_coarse = delta_appts_coarse[order_of_short_treatment_ids(delta_appts_coarse.columns)]
+    delta_appts_coarse = delta_appts_coarse.sort_index(axis=1, key=order_of_short_treatment_ids)
     (
         delta_appts_coarse / 1e6
     ).T.plot.bar(

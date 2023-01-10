@@ -6,7 +6,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 from tlo.analysis.utils import (
-    CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP,
+    CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP,
     get_coarse_appt_type,
     get_color_coarse_appt,
     get_color_short_treatment_id,
@@ -63,8 +63,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # %% Cause of Death Labels
     fig, ax = plot_legend(
-        labels=list(CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP.keys()),
-        colors=list(CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP.values()),
+        labels=list(CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.keys()),
+        colors=list(CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.values()),
         title="Cause-of-Death Labels",
     )
     fig.show()

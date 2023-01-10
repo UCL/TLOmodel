@@ -14,14 +14,14 @@ from matplotlib import pyplot as plt
 from tlo.analysis.utils import (
     extract_results,
     format_gbd,
-    get_color_cause_of_death_label,
+    get_color_cause_of_death_or_daly_label,
     get_scenario_outputs,
     load_pickled_dataframes,
     make_age_grp_lookup,
     make_age_grp_types,
     make_calendar_period_lookup,
     make_calendar_period_type,
-    order_of_cause_of_death_label,
+    order_of_cause_of_death_or_daly_label,
     plot_clustered_stacked,
     summarize,
 )
@@ -150,7 +150,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         dats = ['GBD', 'Model']
         sexes = ['F', 'M']
 
-        all_causes = sorted(list(results.index.levels[3]), key=order_of_cause_of_death_label)
+        all_causes = sorted(list(results.index.levels[3]), key=order_of_cause_of_death_or_daly_label)
 
         sexname = lambda x: 'Females' if x == 'F' else 'Males'  # noqa: E731
         reformat_cause = lambda x: x.replace(' / ', '_')  # noqa: E731
@@ -158,7 +158,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # %% Make figures of overall summaries of outcomes by cause
         def _sort_columns(df):
             """ Reverse the standard order of the columns so that 'Other' is at base"""
-            return df[reversed(order_of_cause_of_death_label(df.columns))]  #
+            return df[reversed(order_of_cause_of_death_or_daly_label(df.columns))]  #
 
         for sex in sexes:
             _dat = {_dat: outcome_by_age_pt[_dat].loc[sex].loc[:, pd.IndexSlice['mean']].pipe(_sort_columns)
@@ -167,7 +167,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             fig, ax = plt.subplots()
             plot_clustered_stacked(ax=ax,
                                    dfall=_dat,
-                                   color_for_column_map=get_color_cause_of_death_label,
+                                   color_for_column_map=get_color_cause_of_death_or_daly_label,
                                    legends=False,
                                    H='',
                                    edgecolor='black',
@@ -229,7 +229,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     ax[row].set_title(f"{cause}: {sexname(sex)}, {period}")
                     ax[row].legend()
 
-                fig.patch.set_edgecolor(get_color_cause_of_death_label(cause))
+                fig.patch.set_edgecolor(get_color_cause_of_death_or_daly_label(cause))
                 fig.patch.set_linewidth(8)
                 fig.tight_layout()
                 fig.savefig(make_graph_file_name(
@@ -276,7 +276,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 vals.at[('upper', cause), 'Model'] - y
             ]).reshape(2, 1)
 
-            ax.errorbar(x=x, y=y, xerr=xerr, yerr=yerr, label=cause, color=get_color_cause_of_death_label(cause))
+            ax.errorbar(x=x, y=y, xerr=xerr, yerr=yerr, label=cause, color=get_color_cause_of_death_or_daly_label(cause))
 
             # add labels to selected points
             if cause in select_labels:
@@ -302,7 +302,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig, axs = plt.subplots(nrows=1, ncols=2, sharey=True)
         for sex, ax in zip(sexes, axs):
             fraction_causes_modelled.loc[(sex, slice(None))].droplevel(0).plot(
-                ax=ax, color=get_color_cause_of_death_label('Other'), lw=5)
+                ax=ax, color=get_color_cause_of_death_or_daly_label('Other'), lw=5)
             ax.set_ylim(0, 1.0)
             xticks = fraction_causes_modelled.index.levels[1]
             ax.set_xticks(range(len(xticks)))

@@ -10,7 +10,7 @@ from tlo.analysis.utils import (
     colors_in_matplotlib,
     flatten_multi_index_series_into_dict_for_logging,
     get_coarse_appt_type,
-    get_color_cause_of_death_label,
+    get_color_cause_of_death_or_daly_label,
     get_color_coarse_appt,
     get_color_short_treatment_id,
     get_filtered_treatment_ids,
@@ -259,7 +259,7 @@ def test_colormap_cause_of_death_label(seed):
 
     all_labels = get_all_cause_of_death_labels(seed)
 
-    colors = [get_color_cause_of_death_label(_label) for _label in all_labels]
+    colors = [get_color_cause_of_death_or_daly_label(_label) for _label in all_labels]
 
     assert len(set(colors)) == len(colors)  # No duplicates
     assert all([isinstance(_x, str) for _x in colors])  # All strings
