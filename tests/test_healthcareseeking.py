@@ -452,11 +452,12 @@ def test_healthcareseeking_occurs_with_nonemergency_spurious_symptoms_and_diseas
                  chronicsyndrome.ChronicSyndrome()
                  )
 
+    all_spurious_symptoms = sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence']
     # Make spurious emergency symptom never occur or cause HSI_EmergencyCare_SpuriousSymptom:
-    sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence'].iloc[-1:][[
-        'prob_spurious_occurrence_in_children_per_day',
-        'prob_spurious_occurrence_in_adults_per_day'
-    ]] = 0.0
+    all_spurious_symptoms.loc[
+        all_spurious_symptoms.generic_symptom_name.isin(['spurious_emergency_symptom']),
+        ['prob_spurious_occurrence_in_children_per_day', 'prob_spurious_occurrence_in_adults_per_day']
+    ] = 0.0
 
     # Run the simulation for one day
     end_date = start_date + DateOffset(days=1)
