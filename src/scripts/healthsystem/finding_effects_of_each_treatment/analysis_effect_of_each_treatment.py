@@ -356,8 +356,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     for _scenario_name, _deaths_av in deaths_averted_by_agegrp_and_label.T.iterrows():
         format_to_plot = _deaths_av.unstack()
         format_to_plot.index = format_to_plot.index.astype(make_age_grp_types())
-        format_to_plot = format_to_plot.sort_index(axis=0)
-        format_to_plot = format_to_plot.sort_index(axis=1, key=order_of_cause_of_death_or_daly_label)
+        format_to_plot = format_to_plot\
+            .sort_index(axis=0)\
+            .reindex(columns=CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.keys(), fill_value=0.0)\
+            .sort_index(axis=1, key=order_of_cause_of_death_or_daly_label)
 
         fig, ax = plt.subplots()
         name_of_plot = f'Deaths Averted by {_scenario_name} by Age and Cause {target_period()}'
@@ -404,7 +406,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     for _scenario_name, _deaths_av in deaths_averted_by_wealth_and_label.T.iterrows():
         format_to_plot = _deaths_av.unstack()
-        format_to_plot = format_to_plot.sort_index(axis=0).sort_index(axis=1, key=order_of_cause_of_death_or_daly_label)
+        format_to_plot = format_to_plot\
+            .sort_index(axis=0)\
+            .reindex(columns=CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.keys(), fill_value=0.0)\
+            .sort_index(axis=1, key=order_of_cause_of_death_or_daly_label)
 
         fig, ax = plt.subplots()
         name_of_plot = f'Deaths Averted by {_scenario_name} by Wealth and Cause {target_period()}'
