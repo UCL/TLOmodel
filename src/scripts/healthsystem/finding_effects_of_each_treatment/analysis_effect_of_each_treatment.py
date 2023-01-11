@@ -25,7 +25,7 @@ from tlo.analysis.utils import (
     order_of_short_treatment_ids,
     squarify_neat,
     summarize,
-    to_age_group,
+    to_age_group, CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP,
 )
 
 
@@ -168,12 +168,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # Plots.....
     def do_bar_plot_with_ci(_df, _ax):
         """Make a vertical bar plot for each Cause-of-Death Label for the _df onto axis _ax"""
-        _df_sorted = _df.sort_index(axis=0, key=order_of_cause_of_death_or_daly_label)  # sort cause-of-death labels
+        _df_sorted = _df\
+            .reindex(index=CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.keys(), fill_value=0.0)\
+            .sort_index(axis=0, key=order_of_cause_of_death_or_daly_label)  # include all labels and sort
 
         for i, cause_label in enumerate(_df_sorted.index):
             # plot bar for one cause
             color = get_color_cause_of_death_or_daly_label(cause_label)
-            one_cause = _df.loc[cause_label]
+            one_cause = _df_sorted.loc[cause_label]
 
             mean_deaths = one_cause.loc[(slice(None), "mean")]
             lower_bar = mean_deaths["Everything"]  # (When all interventions are on)
