@@ -580,9 +580,9 @@ def test_healthcareseeking_occurs_with_all_spurious_symptoms_and_disease_modules
                 hsi_event_count_df.treatment_id == 'FirstAttendance_SpuriousEmergencyCare', 'count'].sum())
 
 
-def test_one_hsi_scheduled_per_day_when_two_emergency_symptoms_are_onset(seed):
+def test_one_generic_emergency_hsi_scheduled_per_day_when_two_emergency_symptoms_are_onset(seed):
     """When an individual is onset with a set of symptoms including two emergency symptoms, there should
-    be two HSI events scheduled."""
+    be only one generic emergency HSI event scheduled."""
 
     class DummyDisease(Module):
         METADATA = {Metadata.USES_SYMPTOMMANAGER}
