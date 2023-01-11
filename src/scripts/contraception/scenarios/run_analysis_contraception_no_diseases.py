@@ -7,8 +7,15 @@ or locally using:
 """
 
 from tlo import Date, logging
-from tlo.methods import contraception, demography, enhanced_lifestyle,\
-    healthseekingbehaviour, healthsystem, hiv, symptommanager
+from tlo.methods import (
+    contraception,
+    demography,
+    enhanced_lifestyle,
+    healthseekingbehaviour,
+    healthsystem,
+    hiv,
+    symptommanager,
+)
 from tlo.scenario import BaseScenario
 
 

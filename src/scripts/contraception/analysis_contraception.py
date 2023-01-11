@@ -62,7 +62,8 @@ sim.register(
     healthsystem.HealthSystem(resourcefilepath=resources, cons_availability="all", disable=False),
     # <-- HealthSystem functioning
 
-    contraception.Contraception(resourcefilepath=resources, use_healthsystem=True, use_interventions=False),  # <-- using HealthSystem
+    contraception.Contraception(resourcefilepath=resources, use_healthsystem=True, use_interventions=False),
+    # <-- using HealthSystem
     contraception.SimplifiedPregnancyAndLabour(),
 
     hiv.DummyHivModule(),
