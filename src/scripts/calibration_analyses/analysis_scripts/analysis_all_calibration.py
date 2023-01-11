@@ -65,10 +65,13 @@ if __name__ == "__main__":
 
     # Find results folder (most recent run generated using that scenario_filename)
     scenario_filename = 'run_analysis_contraception_all_diseases.py'
-    #results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
+    # results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
 
     # Test dataset:
-    results_folder = Path('/Users/timothycolbourn/PycharmProjects/TLOmodel/outputs/sejjtec@ucl.ac.uk/run_analysis_contraception_all_diseases-2022-12-02T162502Z')
+    results_folder = Path(
+        '/Users/timothycolbourn/PycharmProjects/TLOmodel/outputs/sejjtec@ucl.ac.uk/' +
+        'run_analysis_contraception_all_diseases-2022-12-02T162502Z'
+    )
 
     # If needed -- in the case that pickles were not created remotely during batch
     # create_pickles_locally(results_folder)
