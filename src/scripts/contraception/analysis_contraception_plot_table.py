@@ -13,18 +13,23 @@ time_start = time.time()
 ################################################################################
 # TO SET:  # TODO: update with final sims
 # suffix if you want to (if not just set to '') for the output figure(s) and/or table
-suffix = '_Dec22_26_2Kpop_1e6'
+suffix = '_Dec2022_TabRounding_FullmodMatts_1e6_50K'
 # which results to use
-datestamp_without_log = '2022-12-08T224955'  # TODO: update with final sim
+# datestamp_without_log = '2022-12-08T224955'  # TODO: update with final sim
 # 2K no dis: '2022-12-08T224955' from 2022-12-08T224709Z
-datestamp_with_log = '2022-12-09T173334'  # TODO: update with final sim
+datestamp_without_log = '2022-12-15T092305'
+# 50K, no dis, no interv
+# datestamp_with_log = '2022-12-09T173334'  # TODO: update with final sim
 # 2K no dis, with the interv logging: '2022-12-2022-12-09T173334' from 2022-12-09T173111Z
+datestamp_with_log = '2022-12-30T175440'
+# 50K, no dis, with interv
 # sims with 'no'/'all' diseases
 with_diseases = 'no'
 logFile_without = 'run_analysis_contraception_' + with_diseases + '_diseases__' + datestamp_without_log + '.log'
 logFile_with = 'run_analysis_contraception_' + with_diseases + '_diseases__' + datestamp_with_log + '.log'
 ##
 # OUTPUT REQUIREMENTS
+# %%%% plots
 # %% Plot Contraception Use Over time?
 # plot_use_time_bool = False
 plot_use_time_bool = True
@@ -39,6 +44,8 @@ set_ylims_bool = False
 # If the above is True (otherwise it doesn't matter),
 # upper limits for the figures (in the order [Use, Use By Method, Pregnancies]
 ylims_l = [1.2576e7, 0.41265e7, 0.174885e7]
+#
+# %%%% table
 # %% Table the Use and Costs (By Method) Over time?
 # table_use_costs_bool = False
 table_use_costs_bool = True
@@ -128,7 +135,7 @@ if do_no_interv_analysis:
     print()
     print("analysis without interventions in progress")
     print('--------------------')
-    ID_without = datestamp_without_log + "_without" + suffix
+    ID_without = datestamp_without_log + "_without"
     use_without_df, percentage_use_without_df, costs_without_df, interv_costs_without_df =\
         do_analysis(ID_without, logFile_without, False)  # no calc of intervention costs for sim without interv
 
@@ -137,7 +144,7 @@ if do_no_interv_analysis:
         print()
         print("analysis with interventions in progress")
         print('--------------------')
-        ID_with = datestamp_with_log + "_with" + suffix
+        ID_with = datestamp_with_log + "_with"
         use_with_df, percentage_use_with_df, costs_with_df, interv_costs_with_df =\
             do_analysis(ID_with, logFile_with, calc_intervention_costs_bool)
     else:
@@ -153,7 +160,7 @@ else:
     print()
     print("analysis with interventions in progress")
     print('--------------------')
-    ID_with = datestamp_with_log + "_with" + suffix
+    ID_with = datestamp_with_log + "_with"
     use_with_df, percentage_use_with_df, costs_with_df, interv_costs_with_df = \
         do_analysis(ID_with, logFile_with, calc_intervention_costs_bool)
     # use as WITHOUT interventions outputs from the sim WITH interventions
@@ -330,9 +337,8 @@ if table_use_costs_bool:
         print("TABLE")
         fullprint(use_costs_table_df)
 
-    output_table_file = r"outputs/output_table_" + use_output + "-use_costs" +\
-                        "__" + ID_without + "_" + ID_with +\
-                        ".xlsx"
+    output_table_file = r"outputs/output_table_" + use_output + "-use_costs" + "__" + ID_without + "_" + ID_with +\
+                        suffix + ".xlsx"
     writer = pd.ExcelWriter(output_table_file)
     # Mean use rounded to two decimals for the table
     use_costs_table_df.to_excel(writer, index_label=use_costs_table_df.columns.name)
