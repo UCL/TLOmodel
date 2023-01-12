@@ -24,7 +24,7 @@ class RunAnalysisCo(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2099, 12, 31)
+        self.end_date = Date(2050, 12, 31)
         self.pop_size = 250_000  # <- recommended population size for the runs is 50k
         self.number_of_draws = 1  # <- one scenario
         self.runs_per_draw = 1  # <- repeated this many times
@@ -53,7 +53,7 @@ class RunAnalysisCo(BaseScenario):
 
             # - Contraception and replacement for Labour etc.
             contraception.Contraception(resourcefilepath=self.resources,
-                                        use_interventions=False,  # default: False
+                                        use_interventions=True,  # default: False
                                         # interventions_start_date=Date(2016, 1, 1),  # if needs to be changed
                                         # the default date is Date(2023, 1, 1)
                                         use_healthsystem=True),  # <-- using HealthSystem
