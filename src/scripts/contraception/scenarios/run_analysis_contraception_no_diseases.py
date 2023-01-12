@@ -25,7 +25,7 @@ class RunAnalysisCo(BaseScenario):
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2099, 12, 31)
-        self.pop_size = 200_000  # <- recommended population size for the runs is 50k
+        self.pop_size = 250_000  # <- recommended population size for the runs is 50k
         self.number_of_draws = 1  # <- one scenario
         self.runs_per_draw = 1  # <- repeated this many times
 
