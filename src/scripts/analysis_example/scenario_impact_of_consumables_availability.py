@@ -3,12 +3,13 @@ This file defines a batch run of a large population for a long time with all dis
 It's used for calibrations (demographic patterns, health burdens and healthsytstem usage)
 
 Run on the batch system using:
-```tlo batch-submit src/scripts/healthsystem/impact_of_cons_availability/scenario_impact_of_consumables_availability.py```
+```tlo batch-submit src/scripts/analysis_example/scenario_impact_of_consumables_availability.py```
 
 or locally using:
-    ```tlo scenario-run src/scripts/healthsystem/impact_of_cons_availability/scenario_impact_of_consumables_availability.py```
+    ```tlo scenario-run src/scripts/analysis_example/scenario_impact_of_consumables_availability.py```
 
 """
+import pandas as pd
 
 from tlo import Date, logging
 from tlo.methods.fullmodel import fullmodel
@@ -20,15 +21,15 @@ class ImpactOfConsumablesAvailability(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2019, 12, 31)
-        self.pop_size = 20_000  # <- recommended population size for the runs
-        self.number_of_draws = 3  # <- one scenario
-        self.runs_per_draw = 3  # <- repeated this many times
+        self.end_date = self.start_date + pd.DateOffset(years=5)
+        self.pop_size = 10_000
+        self.number_of_draws = 2
+        self.runs_per_draw = 2
 
     def log_configuration(self):
         return {
             'filename': 'impact_of_consumables_availability',
-            'directory': './outputs',  # <- (specified only for local running)
+            'directory': './outputs',
             'custom_levels': {
                 '*': logging.WARNING,
                 'tlo.methods.demography': logging.INFO,
@@ -42,7 +43,7 @@ class ImpactOfConsumablesAvailability(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         return {
             'HealthSystem': {
-                'cons_availability': ['default', 'none', 'all'][draw_number]
+                'cons_availability': ['default', 'all'][draw_number]
                 }
         }
 
