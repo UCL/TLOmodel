@@ -604,8 +604,8 @@ def test_one_generic_emergency_hsi_scheduled_per_day_when_two_emergency_symptoms
 
         def read_parameters(self, data_folder):
             self.sim.modules['SymptomManager'].register_symptom(
-                Symptom(name='EmergencySymptom1', emergency_in_adults=True, emergency_in_children=True),
-                Symptom(name='EmergencySymptom2', emergency_in_adults=True, emergency_in_children=True)
+                Symptom.emergency('EmergencySymptom1'),
+                Symptom.emergency('EmergencySymptom2')
             )
 
         def initialise_population(self, population):
