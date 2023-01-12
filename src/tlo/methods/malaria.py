@@ -243,10 +243,10 @@ class Malaria(Module):
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom("jaundice"),  # nb. will cause care seeking as much as a typical symptom
             Symptom("severe_anaemia"),  # nb. will cause care seeking as much as a typical symptom
-            Symptom("acidosis", emergency_in_children=True, emergency_in_adults=True),
-            Symptom("coma_convulsions", emergency_in_children=True, emergency_in_adults=True),
-            Symptom("renal_failure", emergency_in_children=True, emergency_in_adults=True),
-            Symptom("shock", emergency_in_children=True, emergency_in_adults=True)
+            Symptom.emergency("acidosis"),
+            Symptom.emergency("coma_convulsions"),
+            Symptom.emergency("renal_failure"),
+            Symptom.emergency("shock")
         )
 
     def initialise_population(self, population):
