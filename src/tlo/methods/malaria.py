@@ -485,7 +485,7 @@ class Malaria(Module):
         df.at[child_id, "ma_iptp"] = False
 
         # reset mother's IPTp status to False
-        if mother_id != -1:
+        if mother_id >= 0: #exclude direct births 
             df.at[mother_id, "ma_iptp"] = False
 
     def on_hsi_alert(self, person_id, treatment_id):

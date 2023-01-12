@@ -972,12 +972,8 @@ class Hiv(Module):
 
         # ----------------------------------- MTCT - AT OR PRIOR TO BIRTH --------------------------
         #  DETERMINE IF THE CHILD IS INFECTED WITH HIV FROM THEIR MOTHER DURING PREGNANCY / DELIVERY
-        # if mother_id set to -1 by contraception DirectBirth, randomly sample from female pop
-        mother_id = mother_id if mother_id != -1 else self.rng.choice(
-            df.index[df.is_alive & (df.sex == "F") & (df.age_years > 16)])
-        assert mother_id != -1
-
-        mother = df.loc[mother_id]
+        assert mother_id != -1e7 # This case is for individuals who were adults at start of the simulation, should not be considered here.
+        mother = df.loc[abs(mother_id)] #Not interested whether true or direct birth
 
         mother_infected_prior_to_pregnancy = mother.hv_inf & (
             mother.hv_date_inf <= mother.date_of_last_pregnancy
@@ -1016,7 +1012,7 @@ class Hiv(Module):
             and (df.at[child_id, "nb_breastfeeding_status"] != "none")
             and mother.hv_inf
         ):
-            self.mtct_during_breastfeeding(mother_id, child_id)
+            self.mtct_during_breastfeeding(abs(mother_id), child_id)  #Pass mother's id, whether from true or direct birth
 
         # ----------------------------------- HIV testing --------------------------
         if "CareOfWomenDuringPregnancy" not in self.sim.modules:
@@ -1028,7 +1024,7 @@ class Hiv(Module):
 
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_TestAndRefer(
-                        person_id=mother_id,
+                        person_id=abs(mother_id), #Pass mother's id, whether from true or direct birth
                         module=self,
                         referred_from='ANC_routine'),
                     priority=1,

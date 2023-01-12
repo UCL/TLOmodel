@@ -226,7 +226,7 @@ class Contraception(Module):
         """
         df = self.sim.population.props
 
-        if mother_id != -1:
+        if mother_id >= 0: #to check if direct birth look for positive mother ids
             self.end_pregnancy(person_id=mother_id)
 
         # Initialise child's properties:
@@ -608,8 +608,8 @@ class Contraception(Module):
             dat=self.parameters['age_specific_fertility_rates'], months_exposure=9)
 
         df = self.sim.population.props
-        prob_birth = df.loc[
-            (df.sex == 'F') & df.is_alive & ~df.is_pregnant]['age_range'].map(
+        prob_birth = df.iloc[1:].loc[
+            (df.sex == 'F') & df.is_alive & ~df.is_pregnant]['age_range'].map( #don't use person_id=0 for direct birth mother
             risk_of_birth[self.sim.date.year]).fillna(0)
 
         # determine which women will get pregnant
@@ -619,19 +619,21 @@ class Contraception(Module):
 
         # schedule births:
         for _id in give_birth_women_ids:
-            self.sim.schedule_event(DirectBirth(person_id=None, module=self),
+            self.sim.schedule_event(DirectBirth(person_id=(_id)*(-1), module=self), #pass negative of mother's id
                                     random_date(self.sim.date, self.sim.date + pd.DateOffset(months=9), self.rng)
                                     )
 
 
 class DirectBirth(Event, IndividualScopeEventMixin):
-    """Do birth, with the mother_id set to -1 (we do not associate the child with a particular mother)."""
+    """Do birth, with the mother_id set to person_id*(-1) (we do not associate the child with a particular mother)."""
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
     def apply(self, person_id):
-        self.sim.do_birth(-1)
+        assert person_id != -1e7
+        assert person_id < 0 #check that mother is correctly logged as direct birth mother
+        self.sim.do_birth(person_id) #use actual id for mother
 
 
 class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):

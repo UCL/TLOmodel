@@ -776,7 +776,7 @@ class PostnatalSupervisor(Module):
         # Here we apply risk of late onset neonatal sepsis (sepsis onsetting after day 7) to newborns
         onset_sepsis = self.apply_linear_model(
             self.pn_linear_models['late_onset_neonatal_sepsis'],
-            df.loc[df['is_alive'] & (df['mother_id'] != -1) & ~df['nb_death_after_birth'] &
+            df.loc[df['is_alive'] & (df['mother_id'] >= 0) & ~df['nb_death_after_birth'] &
                    (df['age_days'] > upper_and_lower_day_limits[0]) &
                    (df['age_days'] < upper_and_lower_day_limits[1]) & (df['date_of_birth'] > self.sim.start_date) &
                    ~df['hs_is_inpatient']])

@@ -231,7 +231,7 @@ class Demography(Module):
         df.loc[df.is_alive, 'date_of_death'] = pd.NaT
         df.loc[df.is_alive, 'cause_of_death'] = np.nan
         df.loc[df.is_alive, 'sex'] = demog_char_to_assign['Sex']
-        df.loc[df.is_alive, 'mother_id'] = -1
+        df.loc[df.is_alive, 'mother_id'] = -1e7 #These individuals are motherless but their characterists are not inherited, so treat as special case. WARNING: this number should not be hard-coded, should define global variable e.g. tag_adults_at_sim_start = -1e7
         df.loc[df.is_alive, 'district_num_of_residence'] = demog_char_to_assign['District_Num'].values[:]
         df.loc[df.is_alive, 'district_of_residence'] = demog_char_to_assign['District'].values[:]
         df.loc[df.is_alive, 'region_of_residence'] = demog_char_to_assign['Region'].values[:]
@@ -303,15 +303,20 @@ class Demography(Module):
         }
         df.loc[child_id, child.keys()] = child.values()
 
-        # Log the birth:
-        _mother_age_at_birth = df.at[mother_id, 'age_years'] if mother_id != -1 else -1
+        # Log the birth: all information relating to mothers who gave direct births is still logged as "-1" for consistency with previous runs 
+        _mother_age_at_birth = df.at[mother_id, 'age_years'] if mother_id >= 0 else -1
         _mother_age_at_pregnancy = int(
             (df.at[mother_id, 'date_of_last_pregnancy'] - df.at[mother_id, 'date_of_birth'])
-            / np.timedelta64(1, 'Y')) if mother_id != -1 else -1
+            / np.timedelta64(1, 'Y')) if mother_id >= 0 else -1
+
+        if mother_id >= 0: 
+            mother_log = mother_id
+        else:
+             mother_log = -1
 
         logger.info(
             key='on_birth',
-            data={'mother': mother_id,
+            data={'mother': mother_log,
                   'child': child_id,
                   'mother_age': _mother_age_at_birth,
                   'mother_age_at_pregnancy': _mother_age_at_pregnancy}
