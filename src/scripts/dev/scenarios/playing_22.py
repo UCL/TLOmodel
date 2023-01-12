@@ -14,15 +14,15 @@ class Playing22(BaseScenario):
         super().__init__()
         self.seed = 12
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2011, 1, 1)
-        self.pop_size = 200
-        self.number_of_draws = 1
-        self.runs_per_draw = 10
+        self.end_date = Date(2014, 1, 1)
+        self.pop_size = 1000
+        self.number_of_draws = 3
+        self.runs_per_draw = 3
 
     def log_configuration(self):
         return {
             'filename': 'playing_22',
-            'directory': None,
+            'directory': './outputs',
             'custom_levels': {
                 '*': logging.INFO,
             }
@@ -41,7 +41,6 @@ class Playing22(BaseScenario):
         return {
             'Lifestyle': {
                 'init_p_urban': rng.randint(10, 20) / 100.0,
-                'init_p_high_sugar': 0.52,
             },
         }
 

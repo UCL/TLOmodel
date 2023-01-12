@@ -29,7 +29,7 @@ logger.setLevel(logging.INFO)
 def _parse_log_file_inner_loop(filepath, level):
     """Parses the log file and returns dictionary of dataframes"""
     log_data = LogData()
-    with open(filepath) as log_file:
+    with gzip.open(filepath, 'rt') as log_file:
         for line in log_file:
             # only parse json entities
             if line.startswith('{'):
@@ -52,37 +52,75 @@ def parse_log_file(log_filepath, level: int = logging.INFO):
     :return: a class containing paths to split logfiles
     """
     print(f'Processing log file {log_filepath}')
-    uuid_to_module_name: Dict[str, str] = dict()  # uuid to module name
-    module_name_to_filehandle: Dict[str, TextIO] = dict()  # module name to file handle
-
-    log_directory = Path(log_filepath).parent
+    log_filepath = Path(log_filepath)
+    log_directory = log_filepath.parent
     print(f'Writing module-specific log files to {log_directory}')
 
+    # We've been given a file path, which may or may not be a path to a gzipped file (scenarios produce gzipped log
+    # files). Check for both and open the right sort of file handle.
+    zipped_log_filepath = log_directory / (log_filepath.name + '.gz')
+    if log_filepath.suffix == '.gz':
+        log_file = gzip.open(log_filepath, 'rt')
+    elif os.path.exists(zipped_log_filepath):
+        log_file = gzip.open(zipped_log_filepath, 'rt')
+    else:
+        log_file = open(log_filepath, 'r')
+
+    # each log line has a unique uuid mapping it to the module logger name; this dict stores the mapping
+    uuid_to_module_name: Dict[str, str] = dict()
+
+    # lookup to hold file handles for each module-specific log file we're writing
+    module_log_handle: Dict[str, TextIO] = dict()
+
+    # lookup passed to the LogsDict class, with module to module-specific log filenames
+    module_log_names = {}
+
     # iterate over each line in the logfile
-    with open(log_filepath) as log_file:
-        for line in log_file:
-            # only parse lines that are json log lines (old-style logging is not supported)
-            if line.startswith('{'):
-                log_data_json = json.loads(line)
-                uuid = log_data_json['uuid']
-                # if this is a header line (only header lines have a `type` key)
-                if 'type' in log_data_json:
-                    module_name = log_data_json["module"]
-                    uuid_to_module_name[uuid] = module_name
-                    # we only need to create the file if we don't already have one for this module
-                    if module_name not in module_name_to_filehandle:
-                        module_name_to_filehandle[module_name] = open(log_directory / f"{module_name}.log", mode="w")
-                # copy line from log file to module-specific log file (both headers and non-header lines)
-                module_name_to_filehandle[uuid_to_module_name[uuid]].write(line)
+    for line in log_file:
+        # only parse lines that are json log lines (old-style logging is not supported)
+        if line.startswith('{'):
+            log_data_json = json.loads(line)
+            uuid = log_data_json['uuid']
+
+            # if this a header for log entries (only headers have a `type` key)
+            if 'type' in log_data_json:
+                module_name = log_data_json["module"]
+
+                # the uuid connects every log entry with a module and key - add to module lookup
+                uuid_to_module_name[uuid] = module_name
+
+                # if this is the first header line we've encountered for this module
+                if module_name not in module_log_handle:
+                    # remove any existing log or pickled file for this module
+                    pickle_file_name = log_directory / f"{module_name}.pickle"
+                    if os.path.exists(pickle_file_name):
+                        print('Removing existing pickle file', pickle_file_name)
+                        os.remove(pickle_file_name)
+
+                    module_log_name = log_directory / f"{module_name}.log.gz"
+                    if os.path.exists(module_log_name):
+                        print('Removing existing module-specific log file', module_log_name)
+                        os.remove(module_log_name)
+
+                    # create a new module-specific log filehandle
+                    module_log_handle[module_name] = gzip.open(
+                        module_log_name, mode="wt"
+                    )
+                    module_log_names[module_name] = module_log_handle[module_name].name
+
+            # copy line from log file to module-specific log file (both headers and non-header lines)
+            module_log_handle[uuid_to_module_name[uuid]].write(line)
+
+    # close all module-specific files
+    for file_handle in module_log_handle.values():
+        file_handle.close()
+
+    log_file.close()
 
     print('Finished writing module-specific log files.')
 
-    # close all module-specific files
-    for file_handle in module_name_to_filehandle.values():
-        file_handle.close()
-
     # return an object that accepts as an argument a dictionary containing paths to split logfiles
-    return LogsDict({name: handle.name for name, handle in module_name_to_filehandle.items()}, level)
+    return LogsDict(module_log_names, level)
 
 
 def write_log_to_excel(filename, log_dataframes):
@@ -372,41 +410,19 @@ def format_gbd(gbd_df: pd.DataFrame):
     return gbd_df
 
 
-def create_pickles_locally(scenario_output_dir, compressed_file_name_prefix=None):
+def create_pickles_locally(scenario_dir, log_name_prefix):
     """For a run from the Batch system that has not resulted in the creation of the pickles, reconstruct the pickles
      locally."""
-
-    def turn_log_into_pickles(logfile):
-        print(f"Opening {logfile}")
-        outputs = parse_log_file(logfile)
-        for key, output in outputs.items():
-            if key.startswith("tlo."):
-                print(f" - Writing {key}.pickle")
-                with open(logfile.parent / f"{key}.pickle", "wb") as f:
-                    pickle.dump(output, f)
-
-    def uncompress_and_save_logfile(compressed_file) -> Path:
-        """Uncompress and save a log file and return its path."""
-        target = compressed_file.parent / str(compressed_file.name[0:-3])
-        with open(target, "wb") as t:
-            with gzip.open(compressed_file, 'rb') as s:
-                t.write(s.read())
-        return target
-
-    draw_folders = [f for f in os.scandir(scenario_output_dir) if f.is_dir()]
+    draw_folders = [f for f in os.scandir(scenario_dir) if f.is_dir()]
     for draw_folder in draw_folders:
         run_folders = [f for f in os.scandir(draw_folder) if f.is_dir()]
         for run_folder in run_folders:
-            # Find the original log-file written by the simulation
-            if compressed_file_name_prefix is None:
-                logfile = [x for x in os.listdir(run_folder) if x.endswith('.log')][0]
-            else:
-                compressed_file_name = [
-                    x for x in os.listdir(run_folder) if x.startswith(compressed_file_name_prefix)
-                ][0]
-                logfile = uncompress_and_save_logfile(Path(run_folder) / compressed_file_name)
-
-            turn_log_into_pickles(logfile)
+            log_filename = [x for x in os.listdir(run_folder) if x.startswith(log_name_prefix)]
+            assert len(log_filename) == 1, f"Found {len(log_filename)} files starting with {log_name_prefix}"
+            logs = parse_log_file(Path(run_folder) / str(log_filename[0]))
+            # we only produce pickles on access - do them all now
+            for module, log in logs.items():
+                print(f"Found {len(log.keys())} keys in {module} log.")
 
 
 def compare_number_of_deaths(logfile: Path, resourcefilepath: Path):
@@ -552,12 +568,23 @@ class LogsDict(Mapping):
         if key in self._logfile_names_and_paths:
             # check if key is found in cache
             if key not in self._results_cache:
-                result_df = _parse_log_file_inner_loop(self._logfile_names_and_paths[key], self._level)
-                # get metadata for the selected log file and merge it all with the selected key
-                result_df[key]['_metadata'] = result_df['_metadata']
+                if self._logfile_names_and_paths[key].endswith('.pickle'):
+                    # return the already pickled file
+                    result_df = pickle.load(open(self._logfile_names_and_paths[key], 'rb'))
+                else:
+                    # if the pickled result doesn't exist, we need to create it
+                    result_df = _parse_log_file_inner_loop(self._logfile_names_and_paths[key], self._level)
+                    # get metadata for the selected log file and merge it all with the selected key
+                    result_df[key]['_metadata'] = result_df['_metadata']
+                    # pop the key for pickling
+                    result_df = result_df[key]
+                    pickle_filename = str((Path(self._logfile_names_and_paths[key])).parent / (key + '.pickle'))
+                    pickle.dump(result_df, open(pickle_filename, 'wb'))
+                    self._logfile_names_and_paths[key] = pickle_filename
+
                 if not cache:  # check if caching is disallowed
-                    return result_df[key]
-                self._results_cache[key] = result_df[key]    # add key specific parsed results to cache
+                    return result_df
+                self._results_cache[key] = result_df    # add key specific parsed results to cache
             return self._results_cache[key]  # return the added results
 
         else:

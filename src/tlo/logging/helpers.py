@@ -1,23 +1,31 @@
+import gzip
 import logging as _logging
 import sys
 from pathlib import Path
 from typing import Dict, Iterable
 
-from .core import _FORMATTER, _LOGGERS, DEBUG, getLogger
+from .core import _FORMATTER, _LOGGERS, DEBUG, TLOStreamHandler, getLogger
 
 
-def set_output_file(log_path: Path) -> _logging.FileHandler:
+def set_output_file(log_path: Path) -> _logging.StreamHandler:
     """Add filehandler to logger
 
     :param log_path: path for file
     :return: filehandler object
     """
-    file_handler = _logging.FileHandler(log_path)
-    file_handler.setFormatter(_FORMATTER)
-    getLogger('tlo').handlers = [h for h in getLogger('tlo').handlers
-                                 if not isinstance(h, _logging.FileHandler)]
-    getLogger('tlo').addHandler(file_handler)
-    return file_handler
+    # if we haven't been given a gzip file, make it so
+    if not log_path.name.endswith('.gz'):
+        log_path = log_path.parent / (log_path.name + '.gz')
+
+    # log to this compressed file
+    stream_handler = TLOStreamHandler(gzip.open(log_path, mode='wt', encoding='utf-8'))
+    stream_handler.setFormatter(_FORMATTER)
+
+    # Get rid of any existing TLOStreamHandlers
+    getLogger('tlo').handlers = [h for h in getLogger('tlo').handlers if not isinstance(h, TLOStreamHandler)]
+    getLogger('tlo').addHandler(stream_handler)
+
+    return stream_handler
 
 
 def set_logging_levels(custom_levels: Dict[str, int], modules: Iterable[str]):

@@ -1,3 +1,4 @@
+import gzip
 import json
 import os
 from pathlib import Path
@@ -44,8 +45,8 @@ def read_file(file_handler, file_name):
     :param file_name: path to file
     :return: list of lines
     """
-    file_handler.flush()
-    with open(file_name) as handle:
+    file_handler.stream.close()
+    with gzip.open(file_name, 'rt') as handle:
         lines = handle.readlines()
     return lines
 
