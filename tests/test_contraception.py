@@ -290,7 +290,7 @@ def test_pregnancies_and_births_occurring(tmpdir, seed):
     assert total_direct_births > 0
 
     # Check that after 9 months, every birth has a specific mother identified (i.e. mother_id >= 0)
-    assert (births.loc[after9months, 'mother'] >= 0).all(), "Issue is mothers after 9 months"
+    assert (births.loc[after9months, 'mother'] >= 0).all(), "A child born after 9 months of simulation time has a mother_id that is negative."
 
     # Check that, for any birth associated with a mother, the mother was pregnant
     assert (set(births.loc[after9months, 'mother']) - set(births.loc[after9months, 'mother']<0)).issubset(set(pregs['woman_id'])), "check that mother was pregnant"
