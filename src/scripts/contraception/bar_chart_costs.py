@@ -62,6 +62,8 @@ def plot_costs(in_datestamps, in_suffix, in_x_labels, in_cons_costs_without, in_
 
     fig.tight_layout()
 
+    plt.grid(axis='y')
+
     plt.savefig(outputpath / ('Consumables and Interventions Costs ' + in_datestamps[0] + "_" + in_datestamps[1] +
                               in_suffix + '.png'), format='png')
     print("Fig: Consumables and Interventions Costs Over time saved.")
