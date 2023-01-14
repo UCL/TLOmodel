@@ -25,7 +25,7 @@ from tlo.analysis.utils import parse_log_file
 # TODO: once finalised, remove unused imports
 
 
-def analyse_contraception(in_datestamp: str, in_log_file: str,
+def analyse_contraception(in_datestamp: str, in_log_file: str, in_suffix: str,
                           in_plot_use_time_bool: bool = False,
                           in_plot_use_time_method_bool: bool = False,
                           in_plot_pregnancies_bool: bool = False,
@@ -46,6 +46,7 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
     :param in_datestamp: datestamp to be included in output files names
     :param in_log_file: log file from which the simulations logging is
         downloaded
+    :param in_suffix: A suffix added to the end of Figs output filenames.
     :param in_plot_use_time_bool: True if we want to plot use of any
         contraception over time (default: False)
     :param in_plot_use_time_method_bool: True if we want to plot use of
@@ -135,7 +136,7 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
         plt.ylabel("Number of women")
         # plt.gca().set_xlim(Date(2010, 1, 1), Date(2023, 1, 1)) to see only 2010-2023 (excl)
         plt.legend(['Total women age 15-49 years', 'Not Using Contraception', 'Using Contraception'])
-        plt.savefig(outputpath / ('Contraception Use' + in_datestamp + '.png'), format='png')
+        plt.savefig(outputpath / ('Contraception Use' + in_datestamp + in_suffix + '.png'), format='png')
         print("Fig: Contraception Use Over time saved.")
 
     # %% Plot Contraception Use By Method Over time:
@@ -174,7 +175,7 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
         plt.ylabel("Number using method")
         plt.legend(['pill', 'IUD', 'injections', 'implant', 'male_condom', 'female_sterilization',
                     'other_modern', 'periodic_abstinence', 'withdrawal', 'other_traditional'])
-        plt.savefig(outputpath / ('Contraception Use By Method' + in_datestamp + '.png'), format='png')
+        plt.savefig(outputpath / ('Contraception Use By Method' + in_datestamp + in_suffix + '.png'), format='png')
         # plt.show()
         print("Fig: Contraception Use By Method Over time saved.")
 
@@ -197,7 +198,7 @@ def analyse_contraception(in_datestamp: str, in_log_file: str,
         plt.xlabel("Year")
         plt.ylabel("Number of pregnancies")
         plt.legend(['total', 'pregnant', 'not_pregnant'])
-        plt.savefig(outputpath / ('Pregnancies Over Time' + in_datestamp + '.png'), format='png')
+        plt.savefig(outputpath / ('Pregnancies Over Time' + in_datestamp + in_suffix + '.png'), format='png')
         # plt.show()
         print("Fig: Pregnancies Over time saved.")
 
