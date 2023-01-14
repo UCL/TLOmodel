@@ -1,6 +1,7 @@
 import math
 import time
 import timeit
+import bar_chart_costs
 
 import fnc_analyse_contraception as a_co
 import pandas as pd
@@ -12,19 +13,19 @@ time_start = time.time()
 
 ################################################################################
 # TO SET:  # TODO: update with final sims
-# suffix if you want to (if not just set to '') for the output figure(s) and/or table
-suffix = '_Dec2022_TabRounding_FullmodMatts_1e6_50K'
-# which results to use
-# datestamp_without_log = '2022-12-08T224955'  # TODO: update with final sim
-# 2K no dis: '2022-12-08T224955' from 2022-12-08T224709Z
-datestamp_without_log = '2022-12-15T092305'
-# 50K, no dis, no interv
-# datestamp_with_log = '2022-12-09T173334'  # TODO: update with final sim
-# 2K no dis, with the interv logging: '2022-12-2022-12-09T173334' from 2022-12-09T173111Z
-datestamp_with_log = '2022-12-30T175440'
-# 50K, no dis, with interv
 # sims with 'no'/'all' diseases
 with_diseases = 'no'
+# suffix if you want to (if not just set to '') for the output figure(s) and/or table
+suffix = '_Dec2022_FigCosts_1e6_2K_' + with_diseases + "_dis"
+# which results to use
+datestamp_without_log = '2022-12-08T224955'
+# 2K no dis: '2022-12-08T224955' from 2022-12-08T224709Z
+# datestamp_without_log = '2022-12-15T092305'
+# 50K, no dis, no interv
+datestamp_with_log = '2022-12-09T173334'
+# 2K no dis, with the interv logging: '2022-12-2022-12-09T173334' from 2022-12-09T173111Z
+# datestamp_with_log = '2022-12-30T175440'
+# 50K, no dis, with interv
 logFile_without = 'run_analysis_contraception_' + with_diseases + '_diseases__' + datestamp_without_log + '.log'
 logFile_with = 'run_analysis_contraception_' + with_diseases + '_diseases__' + datestamp_with_log + '.log'
 ##
@@ -73,6 +74,9 @@ do_interv_analysis = True
 # If False, no output is printed, but the output table is still saved in the 'outputs' folder.
 print_bool = False
 # print_bool = True
+# %% Plot Consumables & Intervention Costs Over Time from the Table?
+# plot_costs = False
+plot_costs = True
 ################################################################################
 if table_use_costs_bool:
     assert do_no_interv_analysis | do_interv_analysis,\
@@ -108,7 +112,7 @@ def timeitprint(in_what_measures, in_fnc, in_timeit_rep_nmb=1):  # TODO: remove
 def do_analysis(ID, logFile, in_calc_intervention_costs_bool):
     use_df, percentage_use_df, costs_df, interv_costs_df =\
         a_co.analyse_contraception(
-            ID, logFile,
+            ID, logFile, suffix,
             # %% Plot Contraception Use Over time?
             plot_use_time_bool,
             # %% Plot Contraception Use By Method Over time?
@@ -199,7 +203,7 @@ if print_bool:
         fullprint(percentage_use_without_df)
         print(list(percentage_use_without_df.columns))
 
-# %% Plot Use and Consumables Costs of Contraception methods Over time
+# %% Table Use and Consumables Costs of Contraception methods Over time
 # with and without intervention?
 if table_use_costs_bool:
     if not ('use_output' in locals() or 'use_output' in globals()):
@@ -241,6 +245,20 @@ if table_use_costs_bool:
                 print(interv_costs_with_df)
                 print()
 
+    # %% Plot Consumables & Intervention Costs Over Time from the Table?
+    if plot_costs:
+        # group consumables costs by time periods
+        cons_costs_without_tp_l = costs_without_df.groupby(level=[0], sort=False).sum()['Costs'].tolist()
+        cons_costs_with_tp_l = costs_with_df.groupby(level=[0], sort=False).sum()['Costs'].tolist()
+        # create lists with interv costs
+        pop_interv_costs_with_tp_l = interv_costs_with_df['pop_intervention_cost'].tolist()
+        ppfp_interv_costs_with_tp_l = interv_costs_with_df['ppfp_intervention_cost'].tolist()
+        bar_chart_costs.plot_costs(
+            [datestamp_without_log, datestamp_with_log], suffix, list(interv_costs_with_df.index),
+            cons_costs_without_tp_l, cons_costs_with_tp_l, pop_interv_costs_with_tp_l, ppfp_interv_costs_with_tp_l
+        )
+
+    # TODO: move the creation of the table (bellow) to a separate .py file
     def combine_use_costs_with_without_interv(
         in_df_use_without, in_df_use_perc_without, in_df_costs_without, in_df_interv_costs_without,
             in_df_use_with, in_df_use_perc_with, in_df_costs_with, in_df_interv_costs_with):
@@ -265,7 +283,6 @@ if table_use_costs_bool:
                             l_tp_costs.append(round(co_modern_total, 2))
                         else:
                             l_tp_costs.append(0)
-                # TODO: to be added -> sum total costs and interv
                 if in_df_interv_costs.empty:
                     for i in range(3):
                         l_tp_costs.append(0)
