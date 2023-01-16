@@ -415,9 +415,9 @@ def test_healthcareseeking_no_error_if_hsi_emergencycare_spurioussymptom_is_run_
     assert blank_footprint == hsi.run(squeeze_factor=None)
 
 
-def test_healthcareseeking_occurs_with_all_spurious_symptoms_only(seed):
+def test_healthcareseeking_occurs_with_emergency_and_nonemergency_spurious_symptoms(seed):
     """spurious emergency symptom should generate SpuriousEmergencyCare,
-    and non-emergency spurious symptoms should generate care of HSI_GenericFirstApptAtFacilityLevel0"""
+    and non-emergency spurious symptoms should generate HSI_GenericFirstApptAtFacilityLevel0"""
     start_date = Date(2010, 1, 1)
     sim = Simulation(start_date=start_date, seed=seed)
 
@@ -431,26 +431,27 @@ def test_healthcareseeking_occurs_with_all_spurious_symptoms_only(seed):
                  )
 
     all_spurious_symptoms = sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence']
-    # Make all spurious symptoms occur with some prob:
+    # Make all spurious symptoms occur with 100% prob:
     all_spurious_symptoms[
         ['prob_spurious_occurrence_in_children_per_day', 'prob_spurious_occurrence_in_adults_per_day']
-    ] = 0.5
+    ] = 1.0
 
     # Run the simulation for one day for one person
     end_date = start_date + DateOffset(days=1)
-    popsize = 200
+    popsize = 1
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    # Check that 'HSI_EmergencyCare_SpuriousSymptom', 'HSI_GenericEmergencyFirstApptAtFacilityLevel1'
-    # and HSI_GenericFirstApptAtFacilityLevel0 are all triggered
+    # Check that only 'HSI_EmergencyCare_SpuriousSymptom', 'HSI_GenericEmergencyFirstApptAtFacilityLevel1'
+    # are triggered. ('HSI_GenericFirstApptAtFacilityLevel0' is not triggered because emergnecy care seeking takes
+    # precedence.)
     events_run_and_scheduled = get_events_run_and_scheduled(sim)
-    assert 'HSI_GenericFirstApptAtFacilityLevel0' in events_run_and_scheduled
     assert 'HSI_GenericEmergencyFirstApptAtFacilityLevel1' in events_run_and_scheduled
     assert 'HSI_EmergencyCare_SpuriousSymptom' in events_run_and_scheduled
+    assert 'HSI_GenericFirstApptAtFacilityLevel0' not in events_run_and_scheduled
 
 
-def test_healthcareseeking_occurs_with_nonemergency_spurious_symptoms_and_disease_modules(seed):
+def test_healthcareseeking_occurs_when_triggerd_from_disease_modules(seed):
     """Mockitis and Chronic Syndrome should lead to there being emergency and non-emergency generic HSI"""
     start_date = Date(2010, 1, 1)
     sim = Simulation(start_date=start_date, seed=seed)
@@ -459,19 +460,12 @@ def test_healthcareseeking_occurs_with_nonemergency_spurious_symptoms_and_diseas
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, hsi_event_count_log_period="simulation"),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome()
                  )
-
-    all_spurious_symptoms = sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence']
-    # Make spurious emergency symptom never occur or cause HSI_EmergencyCare_SpuriousSymptom:
-    all_spurious_symptoms.loc[
-        all_spurious_symptoms['name'].isin(['spurious_emergency_symptom']),
-        ['prob_spurious_occurrence_in_children_per_day', 'prob_spurious_occurrence_in_adults_per_day']
-    ] = 0.0
 
     # Run the simulation for one day
     end_date = start_date + DateOffset(days=1)
@@ -536,11 +530,17 @@ def test_healthcareseeking_occurs_with_emergency_spurious_symptoms_and_disease_m
                                             for event_details in sim.modules['HealthSystem'].hsi_event_counts.keys()]
     hsi_event_count_df['count'] = [sim.modules['HealthSystem'].hsi_event_counts[event_details]
                                    for event_details in sim.modules['HealthSystem'].hsi_event_counts.keys()]
-    # both Spurious Emergency Symptom and emergency symptoms from disease modules
-    # will trigger FirstAttencancy_EmergencyCare
-    assert (hsi_event_count_df.loc[hsi_event_count_df.treatment_id == 'FirstAttendance_Emergency', 'count'].sum()
-            >= hsi_event_count_df.loc[
-                hsi_event_count_df.treatment_id == 'FirstAttendance_SpuriousEmergencyCare', 'count'].sum())
+
+    # The number of `FirstAttendance_Emergency` HSI must exceed the number of `FirstAttendance_SpuriousEmergencyCare`
+    assert (
+        hsi_event_count_df.loc[
+            hsi_event_count_df.treatment_id == 'FirstAttendance_Emergency', 'count'
+        ].sum()
+        >=
+        hsi_event_count_df.loc[
+            hsi_event_count_df.treatment_id == 'FirstAttendance_SpuriousEmergencyCare', 'count'
+        ].sum()
+    )
 
 
 def test_healthcareseeking_occurs_with_all_spurious_symptoms_and_disease_modules(seed):
@@ -646,12 +646,13 @@ def test_hsi_schedules_with_emergency_spurious_symptoms_and_mockitis_module(seed
 
 
 def test_one_generic_emergency_hsi_scheduled_per_day_when_two_emergency_symptoms_are_onset(seed):
-    """When an individual is onset with a set of symptoms including two emergency symptoms, there should
-    be only one generic emergency HSI event scheduled."""
+    """When an individual is onset with two emergency symptoms, there should be only one generic emergency HSI event
+    scheduled."""
 
     class DummyDisease(Module):
+        """Dummy Disease - it's only job is to create some symptoms and impose them on everyone"""
+
         METADATA = {Metadata.USES_SYMPTOMMANAGER}
-        """Dummy Disease - it's only job is to create a symptom and impose it everyone"""
 
         def read_parameters(self, data_folder):
             self.sim.modules['SymptomManager'].register_symptom(

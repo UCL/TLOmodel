@@ -298,7 +298,9 @@ def test_auto_onset_symptom(seed):
 
 
 def test_nonemergency_spurious_symptoms_during_simulation(seed):
-    """Test on the functionality of non-emergency spurious symptoms"""
+    """Test on the functionality of a generic non-emergency spurious symptom"""
+    the_generic_symptom = 'fever'
+
     sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the core modules
@@ -311,7 +313,7 @@ def test_nonemergency_spurious_symptoms_during_simulation(seed):
 
     # Make the probability of onset of one of the generic symptoms be 1.0 and duration of one day
     generic_symptoms = sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence']
-    the_generic_symptom = 'fever'
+
     generic_symptoms.loc[
         (the_generic_symptom == generic_symptoms['name']),
         ['prob_spurious_occurrence_in_children_per_day',
@@ -345,6 +347,8 @@ def test_nonemergency_spurious_symptoms_during_simulation(seed):
 
 def test_emergency_spurious_symptom_during_simulation(seed):
     """Test on the functionality of the spurious emergency symptom"""
+    emergency_spurious_symptom = 'spurious_emergency_symptom'
+
     sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the core modules
@@ -357,7 +361,6 @@ def test_emergency_spurious_symptom_during_simulation(seed):
 
     # Make the probability of onset of the spurious emergency symptom be 1.0 and duration of one day
     generic_symptoms = sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence']
-    emergency_spurious_symptom = 'spurious_emergency_symptom'
     generic_symptoms.loc[
         (emergency_spurious_symptom == generic_symptoms['name']),
         ['prob_spurious_occurrence_in_children_per_day',
