@@ -445,7 +445,7 @@ class LinearModel(object):
         result.name = None
 
         if self.lm_type == LinearModelType.LOGISTIC:
-            result = result / (1 + result)
+            result = result.apply(lambda x: x / (1 + x) if x < np.inf else 1.0)
 
         # If the user supplied a random number generator then they want outcomes,
         # not probabilities

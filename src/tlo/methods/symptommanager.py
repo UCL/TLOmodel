@@ -128,11 +128,8 @@ class Symptom:
             no_healthcareseeking_in_children=False,
             prob_seeks_emergency_appt_in_adults=1.0 if emergency_in_adults else 0.0,
             prob_seeks_emergency_appt_in_children=1.0 if emergency_in_children else 0.0,
-            odds_ratio_health_seeking_in_adults=10_000.0 if emergency_in_adults else 0.0,
-            odds_ratio_health_seeking_in_children=10_000.0 if emergency_in_children else 0.0,
-            #                                      10_000 is an arbitrarily large odds ratio that will practically
-            #                                       ensure that there is healthcare-seeking. `np.inf` might have been
-            #                                       used but this is not does not work within the LinearModel.
+            odds_ratio_health_seeking_in_adults=np.inf if emergency_in_adults else 0.0,
+            odds_ratio_health_seeking_in_children=np.inf if emergency_in_children else 0.0,
         )
 
     def __eq__(self, other):
