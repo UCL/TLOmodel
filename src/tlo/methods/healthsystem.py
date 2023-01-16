@@ -461,7 +461,6 @@ class HealthSystem(Module):
         disable_and_reject_all: bool = False,
         compute_squeeze_factor_to_district_level: bool = True,
         hsi_event_count_log_period: Optional[str] = "month",
-        store_hsi_events_that_have_run: bool = False,
     ):
         """
         :param name: Name to use for module, defaults to module class name if ``None``.
@@ -497,7 +496,6 @@ class HealthSystem(Module):
             end of each day, end of each calendar month, end of each calendar year or
             the end of the simulation respectively, or ``None`` to not track the HSI
             event details and frequencies.
-        :param store_hsi_events_that_have_run: Convenience flag for debugging.
         """
 
         super().__init__(name)
@@ -537,13 +535,6 @@ class HealthSystem(Module):
         # Define the container for calls for health system interaction events
         self.HSI_EVENT_QUEUE = []
         self.hsi_event_queue_counter = 0  # Counter to help with the sorting in the heapq
-
-        # Check 'store_hsi_events_that_have_run': will store a running list of HSI events that have run
-        # (for debugging)
-        assert isinstance(store_hsi_events_that_have_run, bool)
-        self.store_hsi_events_that_have_run = store_hsi_events_that_have_run
-        if self.store_hsi_events_that_have_run:
-            self.store_of_hsi_events_that_have_run = list()
 
         # Store the argument provided for cons_availability
         assert cons_availability in (None, 'default', 'all', 'none')
@@ -1333,20 +1324,6 @@ class HealthSystem(Module):
                 did_run=did_run,
             )
 
-        # Storage for the purpose of testing / documentation
-        if self.store_hsi_events_that_have_run:
-            self.store_of_hsi_events_that_have_run.append(
-                {
-                    'HSI_Event': hsi_event.__class__.__name__,
-                    'date': self.sim.date,
-                    'TREATMENT_ID': hsi_event.TREATMENT_ID,
-                    'did_run': did_run,
-                    'Appt_Footprint': actual_appt_footprint,
-                    'Squeeze_Factor': _squeeze_factor,
-                    'Person_ID': hsi_event.target
-                }
-            )
-
     def write_to_hsi_log(
         self,
         event_details: HSIEventDetails,
@@ -1359,6 +1336,7 @@ class HealthSystem(Module):
         logger.debug(
             key="HSI_Event",
             data={
+                'Event_Name': event_details.event_name,
                 'TREATMENT_ID': event_details.treatment_id,
                 'Number_By_Appt_Type_Code': dict(event_details.appt_footprint),
                 'Person_ID': person_id,

@@ -5,9 +5,11 @@ from typing import Iterable, List
 
 import numpy as np
 import pandas as pd
+
 from pandas import DateOffset
 
-from tlo import Date, Module, Simulation
+from tlo import Date, Module, Simulation, logging
+from tlo.analysis.utils import parse_log_file
 from tlo.events import Event, IndividualScopeEventMixin
 from tlo.methods import (
     Metadata,
@@ -33,26 +35,31 @@ def get_events_run_and_scheduled(sim) -> List:
     """Returns a list of HSI_Events that have been run already or are scheduled to run."""
     return [
         event_details.event_name
-        for event_details in sim.modules['HealthSystem'].hsi_event_counts.keys()
+        for event_details in sim.modules['HealthSystem'].hsi_event_counts.keys()  # <-- events already run
     ] + [
         type(event_queue_item.hsi_event).__name__
-        for event_queue_item in sim.modules['HealthSystem'].HSI_EVENT_QUEUE
+        for event_queue_item in sim.modules['HealthSystem'].HSI_EVENT_QUEUE  # <-- events scheduled
     ]
 
 
 def get_events_run_and_scheduled_for_person(_sim, person_ids: Iterable) -> List:
     """Returns a list of HSI_Events that have been run already or are scheduled to run, for a particular set of
     persons"""
-    return [
-               ev['HSI_Event'] for ev in _sim.modules['HealthSystem'].store_of_hsi_events_that_have_run
-               if ev['Person_ID'] in person_ids
-           ] + [
-               e[4].__class__.__name__ for e in _sim.modules['HealthSystem'].HSI_EVENT_QUEUE
-               if e[4].target in person_ids
-           ]
+
+    # Get list of events ran already from the log file
+    all_hsi = parse_log_file(_sim.log_filepath, level=logging.DEBUG)["tlo.methods.healthsystem"]["HSI_Event"]
+
+    return (
+        all_hsi.loc[all_hsi['Person_ID'].isin(person_ids), 'Event_Name'].to_list()  # <-- events already run
+        +
+        [
+            e[4].__class__.__name__ for e in _sim.modules['HealthSystem'].HSI_EVENT_QUEUE
+            if e[4].target in person_ids  # <-- events scheduled
+        ]
+    )
 
 
-def test_healthcareseeking_does_occur_from_symptom_that_does_give_healthcareseeking_behaviour(seed):
+def test_healthcareseeking_does_occur_from_symptom_that_does_give_healthcareseeking_behaviour(seed, tmpdir):
     """test that a symptom that gives healthcare seeking results in generic HSI scheduled (and that those without the
     symptom do not seek care)."""
 
@@ -89,13 +96,19 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_healthcareseek
             pass
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, log_config={
+        'filename': 'temp',
+        'directory': tmpdir,
+        'custom_levels': {
+            "tlo.methods.healthsystem": logging.DEBUG
+        }
+    }
+                     )
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, hsi_event_count_log_period="simulation",
-                                           store_hsi_events_that_have_run=True),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, hsi_event_count_log_period="simulation"),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  DummyDisease()
