@@ -289,7 +289,7 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         alive_newly_symptomatic_children = alive_newly_symptomatic_persons[are_under_15]
         alive_newly_symptomatic_adults = alive_newly_symptomatic_persons[~are_under_15]
 
-        idx_where_true = lambda ser: set(ser.loc[ser].index)  # noqa: E731
+        idx_where_true = lambda series: set(series.loc[series].index)  # noqa: E731
 
         # Separately schedule HSI events for child and adult subgroups
         for subgroup, symptoms_that_allow_healthcareseeking, hsb_model, emergency_appt_model in zip(
