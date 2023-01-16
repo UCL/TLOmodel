@@ -235,12 +235,11 @@ def test_get_person_id_to_inherit_from(rng: np.random.RandomState):
             child_id, mother_id, population_dataframe=None, rng=None
         )
 
-    #Here test direct birth mothers, scope is [-population_size, -1] 
+    # Test direct birth mothers, whose scope in person_id is [-population_size, -1]
     for child_id in rng.randint(0, population_size, size=(num_test)):
         for mother_id in rng.randint(-population_size, -1, size=(num_test)):
             assert abs(mother_id) == tlo.util.get_person_id_to_inherit_from(
-                child_id, mother_id, population_dataframe=None, rng=None
-        )
+                child_id, mother_id, population_dataframe=None, rng=None)
 
     population_dataframe = pd.DataFrame(
         {
@@ -249,7 +248,8 @@ def test_get_person_id_to_inherit_from(rng: np.random.RandomState):
             "age_years": rng.randint(0, 100, size=population_size),
         }
     )
-    
+
+    # Test case of individuals initialised as adults at the start of the simulation
     mother_id = DEFAULT_mother_id
     for child_id in rng.choice(
         population_dataframe.index[population_dataframe.is_alive], size=num_test
@@ -257,7 +257,7 @@ def test_get_person_id_to_inherit_from(rng: np.random.RandomState):
         inherit_from_id = tlo.util.get_person_id_to_inherit_from(
             child_id, mother_id, population_dataframe, rng
         )
-        assert inherit_from_id != mother_id 
+        assert inherit_from_id != mother_id
         assert inherit_from_id != child_id
         assert population_dataframe.loc[inherit_from_id].is_alive
 

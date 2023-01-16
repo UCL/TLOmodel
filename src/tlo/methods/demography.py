@@ -6,6 +6,7 @@ The core demography module and its associated events.
 """
 
 import math
+import warnings
 from collections import defaultdict
 from pathlib import Path
 
@@ -35,9 +36,12 @@ MAX_AGE_FOR_RANGE = 100
 AGE_RANGE_SIZE = 5
 MAX_AGE = 120
 
+
+# Fnc to swap the contents of row1 and row2 in dataframe df, leaving all other rows unaffected.
 def swap_rows(df, row1, row2):
-    df.iloc[row1], df.iloc[row2] =  df.iloc[row2].copy(), df.iloc[row1].copy()
+    df.iloc[row1], df.iloc[row2] = df.iloc[row2].copy(), df.iloc[row1].copy()
     return df
+
 
 class Demography(Module):
     """
@@ -234,7 +238,7 @@ class Demography(Module):
         df.loc[df.is_alive, 'date_of_death'] = pd.NaT
         df.loc[df.is_alive, 'cause_of_death'] = np.nan
         df.loc[df.is_alive, 'sex'] = demog_char_to_assign['Sex']
-        df.loc[df.is_alive, 'mother_id'] = DEFAULT_mother_id #These individuals are motherless but their characterists are not inherited
+        df.loc[df.is_alive, 'mother_id'] = DEFAULT_mother_id  # Motherless, and their characterists are not inherited
         df.loc[df.is_alive, 'district_num_of_residence'] = demog_char_to_assign['District_Num'].values[:]
         df.loc[df.is_alive, 'district_of_residence'] = demog_char_to_assign['District'].values[:]
         df.loc[df.is_alive, 'region_of_residence'] = demog_char_to_assign['Region'].values[:]
@@ -244,12 +248,14 @@ class Demography(Module):
         df.loc[df.is_alive, 'age_range'] = df.loc[df.is_alive, 'age_years'].map(self.AGE_RANGE_LOOKUP)
         df.loc[df.is_alive, 'age_days'] = demog_char_to_assign['age_in_days'].dt.days
 
-        #Ensure first individual in df is man, so that exclusion of person_id=0 from selection of direct birth mothers is consistent.  
-        if(df.loc[0].sex=='F'):
+        # Ensure first individual in df is a man, to safely exclude person_id=0 from selection of direct birth mothers.
+        # If no men are found in df, issue a warning and proceed with female individual at person_id = 0.
+        if (df.loc[0].sex == 'F'):
             diff_id = (df.sex.values != 'F').argmax()
-            swap_rows(df,0,diff_id) 
-        
-        assert df.loc[0].sex=='M'
+            if (diff_id != 0):
+                swap_rows(df, 0, diff_id)
+            else:
+                warnings.warn("No men found. Direct birth mothers search will exclude woman at person_id=0.")
 
     def initialise_simulation(self, sim):
         """
@@ -314,14 +320,14 @@ class Demography(Module):
         df.loc[child_id, child.keys()] = child.values()
 
         # Log the birth:
-        _mother_age_at_birth = df.at[abs(mother_id), 'age_years'] #Log age of mother whether true or direct birth
+        _mother_age_at_birth = df.at[abs(mother_id), 'age_years']  # Log age of mother whether true or direct birth
         _mother_age_at_pregnancy = int(
-            (df.at[mother_id, 'date_of_last_pregnancy'] - df.at[mother_id, 'date_of_birth']) 
-            / np.timedelta64(1, 'Y')) if mother_id >= 0 else -1 #No pregnancy for direct birth
-        
+            (df.at[mother_id, 'date_of_last_pregnancy'] - df.at[mother_id, 'date_of_birth'])
+            / np.timedelta64(1, 'Y')) if mother_id >= 0 else -1  # No pregnancy for direct birth
+
         logger.info(
             key='on_birth',
-            data={'mother': mother_id, #Keep track of whether true or direct birth by using mother_id, not abs(mother_id)
+            data={'mother': mother_id,  # Keep track of whether true or direct birth by using mother_id
                   'child': child_id,
                   'mother_age': _mother_age_at_birth,
                   'mother_age_at_pregnancy': _mother_age_at_pregnancy}

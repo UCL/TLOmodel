@@ -9,7 +9,9 @@ from pandas import DateOffset
 
 from tlo import Population
 
+# Default mother_id value, assigned to individuals initialised as adults at the start of the simulation.
 DEFAULT_mother_id = -1e7
+
 
 def create_age_range_lookup(min_age: int, max_age: int, range_size: int = 5) -> (list, Dict[int, str]):
     """Create age-range categories and a dictionary that will map all whole years to age-range categories
@@ -409,7 +411,7 @@ def hash_dataframe(dataframe: pd.DataFrame):
 
 
 def get_person_id_to_inherit_from(child_id, mother_id, population_dataframe, rng):
-    """Get index of person to inherit properties from. 
+    """Get index of person to inherit properties from.
     """
 
     if mother_id == DEFAULT_mother_id:
@@ -418,7 +420,7 @@ def get_person_id_to_inherit_from(child_id, mother_id, population_dataframe, rng
         alive_persons_not_including_child = population_dataframe.index[
             population_dataframe.is_alive
         ].drop(child_id, errors="ignore")
-        return rng.choice(alive_persons_not_including_child) 
+        return rng.choice(alive_persons_not_including_child)
     elif ((mother_id < 0) & (mother_id > DEFAULT_mother_id)):
         return abs(mother_id)
     elif (mother_id >= 0):

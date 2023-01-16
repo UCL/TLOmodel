@@ -284,16 +284,16 @@ def test_pregnancies_and_births_occurring(tmpdir, seed):
     after9months = pd.to_datetime(births.date) >= (sim.start_date + pd.DateOffset(months=9))
     assert len(births[~after9months])
 
-    # Check that mothers are stored as (-1)*mother_id for some (but not all) of the births before 9 months.
-    #assert <0 in births.loc[~after9months, 'mother'].values
+    # Check that mothers are stored as (-1)*mother_id (for DirectBirth) for some of the births before 9 months.
     total_direct_births = sum(1 for n in births.loc[~after9months, 'mother'].values if n < 0)
     assert total_direct_births > 0
 
     # Check that after 9 months, every birth has a specific mother identified (i.e. mother_id >= 0)
-    assert (births.loc[after9months, 'mother'] >= 0).all(), "A child born after 9 months of simulation time has a mother_id that is negative."
+    assert (births.loc[after9months, 'mother'] >= 0).all()
 
     # Check that, for any birth associated with a mother, the mother was pregnant
-    assert (set(births.loc[after9months, 'mother']) - set(births.loc[after9months, 'mother']<0)).issubset(set(pregs['woman_id']))
+    assert (set(births.loc[after9months, 'mother']) -
+            set(births.loc[after9months, 'mother'] < 0)).issubset(set(pregs['woman_id']))
 
 
 def test_woman_starting_contraceptive_after_birth(tmpdir, seed):
