@@ -315,9 +315,7 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                 # If forcing any person with symptoms to seek care, find all those with any symptoms which cause
                 # any degree of healthcare seeking (i.e., excluding symptoms declared to have no healthcare-seeking
                 # behaviour).
-                will_seek_care = set(
-                    idx_where_true(self._has_any_symptoms(subgroup, symptoms_that_allow_healthcareseeking))
-                )
+                will_seek_care = idx_where_true(self._has_any_symptoms(subgroup, symptoms_that_allow_healthcareseeking))
             else:
                 # If not forcing, run the linear model to predict which persons will seek care, from among those with
                 # symptoms that cause any degree of healthcare seeking.
