@@ -18,14 +18,20 @@ with_diseases = 'no'
 # suffix if you want to (if not just set to '') for the output figure(s) and/or table
 suffix = '_Dec2022_FigCosts_1e6_2K_' + with_diseases + "_dis"
 # which results to use
+# - Without interv
 datestamp_without_log = '2022-12-08T224955'
 # 2K no dis: '2022-12-08T224955' from 2022-12-08T224709Z
 # datestamp_without_log = '2022-12-15T092305'
-# 50K, no dis, no interv
+# 50K, no dis: '2022-12-15T092305' from 2022-12-14T114522Z
+# datestamp_without_log = '2023-01-12T163853'
+# 200K, no dis, no interv: '2023-01-12T163853' from 2023-01-12T163637Z
+# # - With interv
 datestamp_with_log = '2022-12-09T173334'
 # 2K no dis, with the interv logging: '2022-12-2022-12-09T173334' from 2022-12-09T173111Z
 # datestamp_with_log = '2022-12-30T175440'
 # 50K, no dis, with interv
+# datestamp_with_log = '2023-01-12T163457'
+# 200K, no dis: '2023-01-12T163457' from 2023-01-12T163240Z
 logFile_without = 'run_analysis_contraception_' + with_diseases + '_diseases__' + datestamp_without_log + '.log'
 logFile_with = 'run_analysis_contraception_' + with_diseases + '_diseases__' + datestamp_with_log + '.log'
 ##
