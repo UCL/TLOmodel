@@ -310,16 +310,16 @@ def test_healthcareseeking_occurs_with_nonemergency_spurious_symptoms_only(seed)
     all_spurious_symptoms = sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence']
     # Make non-emergency spurious symptoms 100% occur and cause non-emergency care-seeking:
     all_spurious_symptoms.loc[
-        ~all_spurious_symptoms.generic_symptom_name.isin(['spurious_emergency_symptom']),
+        ~all_spurious_symptoms['name'].isin(['spurious_emergency_symptom']),
         ['prob_spurious_occurrence_in_children_per_day', 'prob_spurious_occurrence_in_adults_per_day']
     ] = 1.0
     all_spurious_symptoms.loc[
-        ~all_spurious_symptoms.generic_symptom_name.isin(['spurious_emergency_symptom']),
+        ~all_spurious_symptoms['name'].isin(['spurious_emergency_symptom']),
         ['odds_ratio_for_health_seeking_in_children', 'odds_ratio_for_health_seeking_in_adults']
     ] = 10.0
     # Make spurious emergency symptom never occur or cause relevant HSI:
     all_spurious_symptoms.loc[
-        all_spurious_symptoms.generic_symptom_name.isin(['spurious_emergency_symptom']),
+        all_spurious_symptoms['name'].isin(['spurious_emergency_symptom']),
         ['prob_spurious_occurrence_in_children_per_day', 'prob_spurious_occurrence_in_adults_per_day']
     ] = 0.0
 
@@ -359,7 +359,7 @@ def test_healthcareseeking_occurs_with_emergency_spurious_symptom_only(seed):
     all_spurious_symptoms = sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence']
     # Make spurious emergency symptom certain to occur and cause HSI_EmergencyCare_SpuriousSymptom:
     all_spurious_symptoms.loc[
-        all_spurious_symptoms.generic_symptom_name.isin(['spurious_emergency_symptom']),
+        all_spurious_symptoms['name'].isin(['spurious_emergency_symptom']),
         ['prob_spurious_occurrence_in_children_per_day', 'prob_spurious_occurrence_in_adults_per_day']
     ] = 1.0
     # NB. Since spurious emergency symptom 100% occurs to each person, actually only emergency care will be caused even
@@ -469,7 +469,7 @@ def test_healthcareseeking_occurs_with_nonemergency_spurious_symptoms_and_diseas
     all_spurious_symptoms = sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence']
     # Make spurious emergency symptom never occur or cause HSI_EmergencyCare_SpuriousSymptom:
     all_spurious_symptoms.loc[
-        all_spurious_symptoms.generic_symptom_name.isin(['spurious_emergency_symptom']),
+        all_spurious_symptoms['name'].isin(['spurious_emergency_symptom']),
         ['prob_spurious_occurrence_in_children_per_day', 'prob_spurious_occurrence_in_adults_per_day']
     ] = 0.0
 
@@ -505,12 +505,12 @@ def test_healthcareseeking_occurs_with_emergency_spurious_symptoms_and_disease_m
     all_spurious_symptoms = sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence']
     # Make spurious emergency symptom occur with some prob and cause HSI_EmergencyCare_SpuriousSymptom:
     all_spurious_symptoms.loc[
-        all_spurious_symptoms.generic_symptom_name.isin(['spurious_emergency_symptom']),
+        all_spurious_symptoms['name'].isin(['spurious_emergency_symptom']),
         ['prob_spurious_occurrence_in_children_per_day', 'prob_spurious_occurrence_in_adults_per_day']
     ] = 0.5
     # turn off other spurious symptoms
     all_spurious_symptoms.loc[
-        ~all_spurious_symptoms.generic_symptom_name.isin(['spurious_emergency_symptom']),
+        ~all_spurious_symptoms['name'].isin(['spurious_emergency_symptom']),
         ['prob_spurious_occurrence_in_children_per_day', 'prob_spurious_occurrence_in_adults_per_day']
     ] = 0.0
 
@@ -613,12 +613,12 @@ def test_hsi_schedules_with_emergency_spurious_symptoms_and_mockitis_module(seed
     all_spurious_symptoms = sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence']
     # Make spurious emergency symptom occur and cause HSI_EmergencyCare_SpuriousSymptom:
     all_spurious_symptoms.loc[
-        all_spurious_symptoms.generic_symptom_name.isin(['spurious_emergency_symptom']),
+        all_spurious_symptoms['name'].isin(['spurious_emergency_symptom']),
         ['prob_spurious_occurrence_in_children_per_day', 'prob_spurious_occurrence_in_adults_per_day']
     ] = 1.0
     # turn off other spurious symptoms
     all_spurious_symptoms.loc[
-        ~all_spurious_symptoms.generic_symptom_name.isin(['spurious_emergency_symptom']),
+        ~all_spurious_symptoms['name'].isin(['spurious_emergency_symptom']),
         ['prob_spurious_occurrence_in_children_per_day', 'prob_spurious_occurrence_in_adults_per_day']
     ] = 0.0
 

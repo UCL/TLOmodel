@@ -236,29 +236,23 @@ class SymptomManager(Module):
 
     def register_generic_symptoms(self):
         """Register the genric symptoms, using information read in from the ResourceFile."""
+        df = self.parameters['generic_symptoms_spurious_occurrence']
 
         # Check that information is contained in the ResourceFile for every generic symptom that must be defined
-        assert self.generic_symptoms == set(
-            self.parameters['generic_symptoms_spurious_occurrence']['generic_symptom_name'].to_list())
+        assert self.generic_symptoms == set(df['name'].to_list())
 
-        odds_ratio_health_seeking_in_children = self.parameters['generic_symptoms_spurious_occurrence'].set_index(
-            'generic_symptom_name')['odds_ratio_for_health_seeking_in_children'].to_dict()
-        odds_ratio_health_seeking_in_adults = self.parameters['generic_symptoms_spurious_occurrence'].set_index(
-            'generic_symptom_name')['odds_ratio_for_health_seeking_in_adults'].to_dict()
+        symptoms_to_register = df[
+            [
+                'name',
+                'odds_ratio_health_seeking_in_children',
+                'odds_ratio_health_seeking_in_adults',
+                'prob_seeks_emergency_appt_in_adults',
+                'prob_seeks_emergency_appt_in_children',
+            ]
+        ].set_index('name').loc[sorted(self.generic_symptoms)].reset_index()  # order as `sorted(self.generic_symptoms)`
 
-        # Register the Generic Symptoms
-        for generic_symptom_name in sorted(self.generic_symptoms):
-            self.register_symptom(
-                Symptom(
-                    name=generic_symptom_name,
-                    odds_ratio_health_seeking_in_adults=odds_ratio_health_seeking_in_adults[generic_symptom_name],
-                    odds_ratio_health_seeking_in_children=odds_ratio_health_seeking_in_children[generic_symptom_name],
-                    prob_seeks_emergency_appt_in_adults=(
-                        1.0 if generic_symptom_name == 'spurious_emergency_symptom' else 0.0),
-                    prob_seeks_emergency_appt_in_children=(
-                        1.0 if generic_symptom_name == 'spurious_emergency_symptom' else 0.0),
-                )
-            )
+        for _, _r in symptoms_to_register.iterrows():
+            self.register_symptom(Symptom(**_r.to_dict()))
 
     def pre_initialise_population(self):
         """Register the generic symptoms and define the properties for each symptom"""
@@ -616,7 +610,7 @@ class SymptomManager_SpuriousSymptomOnset(RegularEvent, PopulationScopeEventMixi
 
     def get_generic_symptoms_dict(self, generic_sympoms_df):
         """Helper function to store contents of the generic_symptoms dataframe as dicts"""
-        df = generic_sympoms_df.set_index('generic_symptom_name')
+        df = generic_sympoms_df.set_index('name')
 
         return {
             'prob_per_day': {

@@ -311,15 +311,15 @@ def test_nonemergency_spurious_symptoms_during_simulation(seed):
 
     # Make the probability of onset of one of the generic symptoms be 1.0 and duration of one day
     generic_symptoms = sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence']
-    the_generic_symptom = generic_symptoms.iloc[0].generic_symptom_name
+    the_generic_symptom = 'fever'
     generic_symptoms.loc[
-        (the_generic_symptom == generic_symptoms['generic_symptom_name']),
+        (the_generic_symptom == generic_symptoms['name']),
         ['prob_spurious_occurrence_in_children_per_day',
          'prob_spurious_occurrence_in_adults_per_day']
     ] = (1.0, 1.0)
 
     generic_symptoms.loc[
-        (the_generic_symptom == generic_symptoms['generic_symptom_name']),
+        (the_generic_symptom == generic_symptoms['name']),
         ['duration_in_days_of_spurious_occurrence_in_children',
          'duration_in_days_of_spurious_occurrence_in_adults']
     ] = (1, 1)
@@ -357,16 +357,15 @@ def test_emergency_spurious_symptom_during_simulation(seed):
 
     # Make the probability of onset of the spurious emergency symptom be 1.0 and duration of one day
     generic_symptoms = sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence']
-    the_generic_symptom = generic_symptoms.iloc[-1].generic_symptom_name
-    assert the_generic_symptom == 'spurious_emergency_symptom'
+    emergency_spurious_symptom = 'spurious_emergency_symptom'
     generic_symptoms.loc[
-        (the_generic_symptom == generic_symptoms['generic_symptom_name']),
+        (emergency_spurious_symptom == generic_symptoms['name']),
         ['prob_spurious_occurrence_in_children_per_day',
          'prob_spurious_occurrence_in_adults_per_day']
     ] = (1.0, 1.0)
 
     generic_symptoms.loc[
-        (the_generic_symptom == generic_symptoms['generic_symptom_name']),
+        (emergency_spurious_symptom == generic_symptoms['name']),
         ['duration_in_days_of_spurious_occurrence_in_children',
          'duration_in_days_of_spurious_occurrence_in_adults']
     ] = (1, 1)
@@ -376,19 +375,19 @@ def test_emergency_spurious_symptom_during_simulation(seed):
     sim.simulate(end_date=start_date + DateOffset(days=0))
 
     # Check that no one has symptoms
-    assert [] == sim.modules['SymptomManager'].who_has(the_generic_symptom)
+    assert [] == sim.modules['SymptomManager'].who_has(emergency_spurious_symptom)
 
     # Run the onset event & check that all persons now have the generic symptom
     onset = SymptomManager_SpuriousSymptomOnset(module=sim.modules['SymptomManager'])
     onset.apply(sim.population)
     df = sim.population.props
     assert len(df.is_alive.index) > 0
-    assert set(df.is_alive.index) == set(sim.modules['SymptomManager'].who_has(the_generic_symptom))
+    assert set(df.is_alive.index) == set(sim.modules['SymptomManager'].who_has(emergency_spurious_symptom))
 
     # Update time, run resolve event and check that no one has symptom
     sim.date += DateOffset(days=1)
     sim.modules['SymptomManager'].spurious_symptom_resolve_event.apply(sim.population)
-    assert [] == sim.modules['SymptomManager'].who_has(the_generic_symptom)
+    assert [] == sim.modules['SymptomManager'].who_has(emergency_spurious_symptom)
 
 
 @pytest.fixture
