@@ -1,11 +1,10 @@
 """Test for HealthCareSeeking Module"""
 import os
 from pathlib import Path
-from typing import Iterable, List
+from typing import Iterable, List, Optional
 
 import numpy as np
 import pandas as pd
-
 from pandas import DateOffset
 
 from tlo import Date, Module, Simulation, logging
@@ -24,33 +23,51 @@ from tlo.methods import (
 )
 from tlo.methods.symptommanager import Symptom
 
-try:
-    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-except NameError:
-    # running interactively
-    resourcefilepath = './resources'
+resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+
+log_config = lambda _tmpdir: {  # noqa: E731
+        'filename': 'temp',
+        'directory': _tmpdir,
+        'custom_levels': {
+            "tlo.methods.healthsystem": logging.DEBUG
+        }
+}
+
+
+def get_hsi_events_that_ran(sim, person_ids: Optional[Iterable] = None) -> List:
+    """Get list of events that ran already (optionally, limiting to an iterable of person_ids). """
+
+    healthsystem_log = parse_log_file(sim.log_filepath, level=logging.DEBUG)["tlo.methods.healthsystem"]
+    try:
+        all_hsi = healthsystem_log["HSI_Event"]
+    except KeyError:
+        # If no logged entry, it implies no HSI have run: return an empty list.
+        return []
+
+    if person_ids is None:
+        return all_hsi.loc[all_hsi.did_run, 'Event_Name'].to_list()
+    else:
+        return all_hsi.loc[all_hsi.did_run & all_hsi['Person_ID'].isin(person_ids), 'Event_Name'].to_list()
 
 
 def get_events_run_and_scheduled(sim) -> List:
     """Returns a list of HSI_Events that have been run already or are scheduled to run."""
-    return [
-        event_details.event_name
-        for event_details in sim.modules['HealthSystem'].hsi_event_counts.keys()  # <-- events already run
-    ] + [
-        type(event_queue_item.hsi_event).__name__
-        for event_queue_item in sim.modules['HealthSystem'].HSI_EVENT_QUEUE  # <-- events scheduled
-    ]
+    return (
+        get_hsi_events_that_ran(sim)  # <-- events already run
+        +
+        [
+            type(event_queue_item.hsi_event).__name__
+            for event_queue_item in sim.modules['HealthSystem'].HSI_EVENT_QUEUE  # <-- events scheduled
+        ]
+    )
 
 
 def get_events_run_and_scheduled_for_person(_sim, person_ids: Iterable) -> List:
     """Returns a list of HSI_Events that have been run already or are scheduled to run, for a particular set of
     persons"""
 
-    # Get list of events ran already from the log file
-    all_hsi = parse_log_file(_sim.log_filepath, level=logging.DEBUG)["tlo.methods.healthsystem"]["HSI_Event"]
-
     return (
-        all_hsi.loc[all_hsi['Person_ID'].isin(person_ids), 'Event_Name'].to_list()  # <-- events already run
+        get_hsi_events_that_ran(_sim, person_ids)  # <-- events already run
         +
         [
             e[4].__class__.__name__ for e in _sim.modules['HealthSystem'].HSI_EVENT_QUEUE
@@ -96,14 +113,7 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_healthcareseek
             pass
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed, log_config={
-        'filename': 'temp',
-        'directory': tmpdir,
-        'custom_levels': {
-            "tlo.methods.healthsystem": logging.DEBUG
-        }
-    }
-                     )
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir))
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -142,7 +152,7 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_healthcareseek
     assert 0 == len(get_events_run_and_scheduled_for_person(sim, idx_no_symptom))
 
 
-def test_healthcareseeking_does_not_occurs_from_symptom_that_do_not_give_healthcareseeking_behaviour(seed):
+def test_healthcareseeking_does_not_occurs_from_symptom_that_do_not_give_healthcareseeking_behaviour(seed, tmpdir):
     """test that a symptom that should not give healthseeeking does not give health seeking."""
 
     class DummyDisease(Module):
@@ -175,7 +185,7 @@ def test_healthcareseeking_does_not_occurs_from_symptom_that_do_not_give_healthc
             pass
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir))
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -212,7 +222,7 @@ def test_healthcareseeking_does_not_occurs_from_symptom_that_do_not_give_healthc
     assert 'HSI_GenericEmergencyFirstApptAtFacilityLevel1' not in events_run_and_scheduled
 
 
-def test_healthcareseeking_does_occur_from_symptom_that_does_give_emergency_healthcareseeking_behaviour(seed):
+def test_healthcareseeking_does_occur_from_symptom_that_does_give_emergency_healthcareseeking_behaviour(seed, tmpdir):
     """test that a symptom that give emergency healthcare seeking results in emergency HSI scheduled."""
 
     class DummyDisease(Module):
@@ -241,7 +251,7 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_emergency_heal
             pass
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir))
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -278,10 +288,10 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_emergency_heal
     assert all(map(lambda x: x == 'HSI_GenericEmergencyFirstApptAtFacilityLevel1', events_run_and_scheduled))
 
 
-def test_no_healthcareseeking_when_no_spurious_symptoms_and_no_disease_modules(seed):
+def test_no_healthcareseeking_when_no_spurious_symptoms_and_no_disease_modules(seed, tmpdir):
     """there should be no generic HSI if there are no spurious symptoms or disease module"""
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir))
 
     # Register the core modules including Chronic Syndrome and Mockitis -
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -305,10 +315,10 @@ def test_no_healthcareseeking_when_no_spurious_symptoms_and_no_disease_modules(s
     assert 'HSI_GenericEmergencyFirstApptAtFacilityLevel1' not in events_run_and_scheduled
 
 
-def test_healthcareseeking_occurs_with_spurious_symptoms_only(seed):
+def test_healthcareseeking_occurs_with_spurious_symptoms_only(seed, tmpdir):
     """spurious symptoms should generate non-emergency HSI"""
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir))
 
     # Register the core modules including Chronic Syndrome and Mockitis -
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -347,10 +357,10 @@ def test_healthcareseeking_occurs_with_spurious_symptoms_only(seed):
         assert 0 < len(sim.modules['SymptomManager'].has_what(person))
 
 
-def test_healthcareseeking_occurs_with_spurious_symptoms_and_disease_modules(seed):
+def test_healthcareseeking_occurs_with_spurious_symptoms_and_disease_modules(seed, tmpdir):
     """Mockitis and Chronic Syndrome should lead to there being emergency and non-emergency generic HSI"""
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir))
 
     # Register the core modules including Chronic Syndrome and Mockitis -
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
