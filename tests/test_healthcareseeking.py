@@ -520,7 +520,7 @@ def test_healthcareseeking_occurs_when_triggerd_from_disease_modules(seed):
     assert 'HSI_EmergencyCare_SpuriousSymptom' not in events_run_and_scheduled
 
 
-def test_healthcareseeking_occurs_when_nonemergency_spurious_symptoms_and_disease_modules(seed):
+def test_healthcareseeking_occurs_with_nonemergency_spurious_symptoms_and_disease_modules(seed):
     """This is to test that when the population have non-emergency spurious symptoms as well as diseases of
     Mockitis and Chronic Syndrome, emergency and non-emergency generic HSI will be triggered."""
     start_date = Date(2010, 1, 1)
