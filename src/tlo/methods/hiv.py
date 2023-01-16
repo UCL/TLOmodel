@@ -972,7 +972,6 @@ class Hiv(Module):
 
         # ----------------------------------- MTCT - AT OR PRIOR TO BIRTH --------------------------
         #  DETERMINE IF THE CHILD IS INFECTED WITH HIV FROM THEIR MOTHER DURING PREGNANCY / DELIVERY
-        assert mother_id != -1e7 # This case is for individuals who were adults at start of the simulation, should not be considered here.
         mother = df.loc[abs(mother_id)] #Not interested whether true or direct birth
 
         mother_infected_prior_to_pregnancy = mother.hv_inf & (

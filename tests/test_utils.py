@@ -14,6 +14,7 @@ import tlo.util
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import demography
+from tlo.util import DEFAULT_mother_id
 
 path_to_files = Path(os.path.dirname(__file__))
 
@@ -233,6 +234,14 @@ def test_get_person_id_to_inherit_from(rng: np.random.RandomState):
         assert mother_id == tlo.util.get_person_id_to_inherit_from(
             child_id, mother_id, population_dataframe=None, rng=None
         )
+
+    #Here test direct birth mothers, scope is [-population_size, -1] 
+    for child_id in rng.randint(0, population_size, size=(num_test)):
+        for mother_id in rng.randint(-population_size, -1, size=(num_test)):
+            assert abs(mother_id) == tlo.util.get_person_id_to_inherit_from(
+                child_id, mother_id, population_dataframe=None, rng=None
+        )
+
     population_dataframe = pd.DataFrame(
         {
             "is_alive": rng.choice((True, False), size=population_size),
@@ -241,7 +250,7 @@ def test_get_person_id_to_inherit_from(rng: np.random.RandomState):
         }
     )
     
-    mother_id = -1e7
+    mother_id = DEFAULT_mother_id
     for child_id in rng.choice(
         population_dataframe.index[population_dataframe.is_alive], size=num_test
     ):

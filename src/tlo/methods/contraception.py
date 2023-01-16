@@ -602,7 +602,7 @@ class Contraception(Module):
         occur after 9 months of simulation time. This method examines age-specific fertility rate data and causes there
         to be the appropriate number of births, scattered uniformly over the first 9 months of the simulation. These are
          "direct live births" that are not subjected to any of the processes (e.g. risk of loss of pregnancy, or risk
-         of death to mother) represented in the `PregnancySupervisor`, `CareOfWomenDuringPregnancy` or `Labour`."""
+         of death to mother) represented in the `PregnancySupervisor`, `CareOfWomenDuringPregnancy` or `Labour`. When initialising population ensured person_id=0 is a man, so can safely exclude person_id=0 from choice of direct birth mothers without loss of generality."""
 
         risk_of_birth = get_medium_variant_asfr_from_wpp_resourcefile(
             dat=self.parameters['age_specific_fertility_rates'], months_exposure=9)
@@ -631,7 +631,6 @@ class DirectBirth(Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
 
     def apply(self, person_id):
-        assert person_id != -1e7
         assert person_id < 0 #check that mother is correctly logged as direct birth mother
         self.sim.do_birth(person_id) #use actual id for mother
 

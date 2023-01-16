@@ -19,7 +19,7 @@ from tlo.methods.causes import (
     collect_causes_from_disease_modules,
     create_mappers_from_causes_to_label,
 )
-from tlo.util import create_age_range_lookup, get_person_id_to_inherit_from
+from tlo.util import DEFAULT_mother_id, create_age_range_lookup, get_person_id_to_inherit_from
 
 # Standard logger
 logger = logging.getLogger(__name__)
@@ -35,6 +35,9 @@ MAX_AGE_FOR_RANGE = 100
 AGE_RANGE_SIZE = 5
 MAX_AGE = 120
 
+def swap_rows(df, row1, row2):
+    df.iloc[row1], df.iloc[row2] =  df.iloc[row2].copy(), df.iloc[row1].copy()
+    return df
 
 class Demography(Module):
     """
@@ -231,7 +234,7 @@ class Demography(Module):
         df.loc[df.is_alive, 'date_of_death'] = pd.NaT
         df.loc[df.is_alive, 'cause_of_death'] = np.nan
         df.loc[df.is_alive, 'sex'] = demog_char_to_assign['Sex']
-        df.loc[df.is_alive, 'mother_id'] = -1e7 #These individuals are motherless but their characterists are not inherited, so treat as special case. WARNING: this number should not be hard-coded, should define global variable e.g. tag_adults_at_sim_start = -1e7
+        df.loc[df.is_alive, 'mother_id'] = DEFAULT_mother_id #These individuals are motherless but their characterists are not inherited
         df.loc[df.is_alive, 'district_num_of_residence'] = demog_char_to_assign['District_Num'].values[:]
         df.loc[df.is_alive, 'district_of_residence'] = demog_char_to_assign['District'].values[:]
         df.loc[df.is_alive, 'region_of_residence'] = demog_char_to_assign['Region'].values[:]
@@ -240,6 +243,13 @@ class Demography(Module):
         df.loc[df.is_alive, 'age_years'] = df.loc[df.is_alive, 'age_exact_years'].astype('int64')
         df.loc[df.is_alive, 'age_range'] = df.loc[df.is_alive, 'age_years'].map(self.AGE_RANGE_LOOKUP)
         df.loc[df.is_alive, 'age_days'] = demog_char_to_assign['age_in_days'].dt.days
+
+        #Ensure first individual in df is man, so that exclusion of person_id=0 from selection of direct birth mothers is consistent.  
+        if(df.loc[0].sex=='F'):
+            diff_id = (df.sex.values != 'F').argmax()
+            swap_rows(df,0,diff_id) 
+        
+        assert df.loc[0].sex=='M'
 
     def initialise_simulation(self, sim):
         """
@@ -303,20 +313,15 @@ class Demography(Module):
         }
         df.loc[child_id, child.keys()] = child.values()
 
-        # Log the birth: all information relating to mothers who gave direct births is still logged as "-1" for consistency with previous runs 
-        _mother_age_at_birth = df.at[mother_id, 'age_years'] if mother_id >= 0 else -1
+        # Log the birth:
+        _mother_age_at_birth = df.at[abs(mother_id), 'age_years'] #Log age of mother whether true or direct birth
         _mother_age_at_pregnancy = int(
-            (df.at[mother_id, 'date_of_last_pregnancy'] - df.at[mother_id, 'date_of_birth'])
-            / np.timedelta64(1, 'Y')) if mother_id >= 0 else -1
-
-        if mother_id >= 0: 
-            mother_log = mother_id
-        else:
-             mother_log = -1
-
+            (df.at[mother_id, 'date_of_last_pregnancy'] - df.at[mother_id, 'date_of_birth']) 
+            / np.timedelta64(1, 'Y')) if mother_id >= 0 else -1 #No pregnancy for direct birth
+        
         logger.info(
             key='on_birth',
-            data={'mother': mother_log,
+            data={'mother': mother_id, #Keep track of whether true or direct birth by using mother_id, not abs(mother_id)
                   'child': child_id,
                   'mother_age': _mother_age_at_birth,
                   'mother_age_at_pregnancy': _mother_age_at_pregnancy}

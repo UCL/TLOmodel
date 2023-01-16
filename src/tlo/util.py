@@ -9,6 +9,7 @@ from pandas import DateOffset
 
 from tlo import Population
 
+DEFAULT_mother_id = -1e7
 
 def create_age_range_lookup(min_age: int, max_age: int, range_size: int = 5) -> (list, Dict[int, str]):
     """Create age-range categories and a dictionary that will map all whole years to age-range categories
@@ -222,7 +223,7 @@ class BitsetHandler:
         """Test whether bit(s) for a specified element are set.
 
         :param where: Condition to filter rows that will checked.
-        :param element: Element string to test if bit is set for.
+       :param element: Element string to test if bit is set for.
         :param first: Boolean keyword argument specifying whether to return only the
             first item / row in the computed column / dataframe.
         :param columns: Optional argument specifying column(s) containing bitsets to
@@ -411,14 +412,14 @@ def get_person_id_to_inherit_from(child_id, mother_id, population_dataframe, rng
     """Get index of person to inherit properties from. 
     """
 
-    if mother_id == -1e7:
+    if mother_id == DEFAULT_mother_id:
         # Get indices of alive persons and try to drop child_id from these indices if
         # present, ignoring any errors if child_id not currently in population dataframe
         alive_persons_not_including_child = population_dataframe.index[
             population_dataframe.is_alive
         ].drop(child_id, errors="ignore")
         return rng.choice(alive_persons_not_including_child) 
-    elif ((mother_id < 0) & (mother_id > -1e7)):
+    elif ((mother_id < 0) & (mother_id > DEFAULT_mother_id)):
         return abs(mother_id)
     elif (mother_id >= 0):
         return mother_id
