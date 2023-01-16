@@ -201,7 +201,7 @@ class HealthSeekingBehaviour(Module):
                            .when(5, p[f'odds_ratio_{subgroup}_wealth_higher']),
 
                 # Second set of predictors are the symptom-specific odd ratios
-                *(Predictor(f'sy_{_symptom}').when('>0', _odds) for _symptom, _odds in care_seeking_odds_ratios.items())
+                *(Predictor(f'sy_{symptom}').when('>0', odds) for symptom, odds in care_seeking_odds_ratios.items())
             )
 
         # Model for the care-seeking (if it occurs) to be for an EMERGENCY Appointment
