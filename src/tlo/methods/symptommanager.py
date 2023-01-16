@@ -44,7 +44,7 @@ class Symptom:
     as the "average symptom".
 
     The in-built method `emergency_symptom_with_automatic_healthcareseeking` produces another common type of symptom,
-    which gives a very high chance that emergency care is sought.
+    which gives a very high probability that emergency care is sought.
 
     The characteristics of Symptoms is separate for adults (peron aged 15+) and children (those aged aged <15).
     """
