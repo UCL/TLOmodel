@@ -155,8 +155,6 @@ class HealthSeekingBehaviour(Module):
                     symptom.prob_seeks_emergency_appt_in_adults
                 )
 
-        # Define the linear models that govern healthcare seeking
-        self.define_linear_models()
 
         # Define the linear models that govern healthcare seeking
         self.define_linear_models()
