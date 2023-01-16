@@ -40,11 +40,11 @@ class Symptom:
       (`odds_ratio_health_seeking_in_`)
      * the probability that emergency care is sought, if care is sought at all (`prob_seeks_emergency_appt_in_`).
 
-    The default behaviour is for a symptom that causes healthcare-seeking for non-emergency care with the same chance
+    The default behaviour is for a symptom that causes healthcare-seeking for non-emergency care with the same probability
     as the "average symptom".
 
     The in-built method `emergency_symptom_with_automatic_healthcareseeking` produces another common type of symptom,
-    which gives a very high chance that emergency care is sought.
+    which gives a very high probability that emergency care is sought.
 
     The characteristics of Symptoms is separate for adults (peron aged 15+) and children (those aged aged <15).
     """
@@ -132,7 +132,7 @@ class Symptom:
             odds_ratio_health_seeking_in_children=10_000.0 if emergency_in_children else 0.0,
             #                                      10_000 is an arbitrarily large odds ratio that will practically
             #                                       ensure that there is healthcare-seeking. `np.inf` might have been
-            #                                       used but this is not does not within the LinearModel.
+            #                                       used but this is not does not work within the LinearModel.
         )
 
     def __eq__(self, other):
