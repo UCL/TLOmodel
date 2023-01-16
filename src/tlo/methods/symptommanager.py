@@ -40,7 +40,7 @@ class Symptom:
       (`odds_ratio_health_seeking_in_`)
      * the probability that emergency care is sought, if care is sought at all (`prob_seeks_emergency_appt_in_`).
 
-    The default behaviour is for a symptom that causes healthcare-seeking for non-emergency care with the same chance
+    The default behaviour is for a symptom that causes healthcare-seeking for non-emergency care with the same probability
     as the "average symptom".
 
     The in-built method `emergency_symptom_with_automatic_healthcareseeking` produces another common type of symptom,
