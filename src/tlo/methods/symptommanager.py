@@ -132,7 +132,7 @@ class Symptom:
             odds_ratio_health_seeking_in_children=10_000.0 if emergency_in_children else 0.0,
             #                                      10_000 is an arbitrarily large odds ratio that will practically
             #                                       ensure that there is healthcare-seeking. `np.inf` might have been
-            #                                       used but this is not does not within the LinearModel.
+            #                                       used but this is not does not work within the LinearModel.
         )
 
     def __eq__(self, other):
