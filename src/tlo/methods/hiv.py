@@ -451,10 +451,13 @@ class Hiv(Module):
         # LinearModels to give the shape and scale for the Weibull distribution describing time from infection to death
         self.lm["scale_parameter_for_infection_to_death"] = LinearModel.multiplicative(
             Predictor(
-                "age_years",
+                "age_years",  # however not age_exact_years is used
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True)
-            .when("<20", p["infection_to_death_weibull_scale_1519"])
+            .when("==0", p["mean_survival_for_infants_infected_prior_to_birth"])
+            .when(".between(1,4)", p["infection_to_death_infant_infection_after_birth_weibull_scale"])
+            .when(".between(5, 19)", p["infection_to_death_weibull_scale_1519"])  # and delete line below
+            # .when("<20", p["infection_to_death_weibull_scale_1519"])
             .when(".between(20, 24)", p["infection_to_death_weibull_scale_2024"])
             .when(".between(25, 29)", p["infection_to_death_weibull_scale_2529"])
             .when(".between(30, 34)", p["infection_to_death_weibull_scale_3034"])
@@ -466,10 +469,13 @@ class Hiv(Module):
 
         self.lm["shape_parameter_for_infection_to_death"] = LinearModel.multiplicative(
             Predictor(
-                "age_years",
+                "age_years",  # however not age_exact_years is used
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True)
-            .when("<20", p["infection_to_death_weibull_shape_1519"])
+            .when("==0", 1)
+            .when(".between(1,4)", p["infection_to_death_infant_infection_after_birth_weibull_shape"])
+            .when(".between(5, 19)", p["infection_to_death_weibull_shape_1519"])  # and delete line below
+            # .when("<20", p["infection_to_death_weibull_shape_1519"])
             .when(".between(20, 24)", p["infection_to_death_weibull_shape_2024"])
             .when(".between(25, 29)", p["infection_to_death_weibull_shape_2529"])
             .when(".between(30, 34)", p["infection_to_death_weibull_shape_3034"])
@@ -1133,17 +1139,17 @@ class Hiv(Module):
 
         df = self.sim.population.props
         age = df.at[person_id, "age_exact_years"]
-        p = self.parameters
+        #p = self.parameters
         months_since_infection = (self.sim.date - df.at[person_id, "hv_date_inf"]).days / 30.5
-        months_to_aids = -1
+        #months_to_aids = -1
 
-        # - get the shape parameters (unit: years)
+        # - get the scale parameters (unit: years)
         scale = (
             self.lm["scale_parameter_for_infection_to_death"].predict(
                 self.sim.population.props.loc[[person_id]]
             ).values[0]
         )
-        # - get the scale parameter (unit: years)
+        # - get the shape parameter (unit: years)
         shape = (
             self.lm["shape_parameter_for_infection_to_death"].predict(
                 self.sim.population.props.loc[[person_id]]
@@ -1151,64 +1157,84 @@ class Hiv(Module):
         )
 
         while months_since_infection >= months_to_aids:
-            if age == 0.0:
-                # The person is infected prior to, or at, birth:
-                months_to_death = int(self.rng.exponential(
-                    scale=p["mean_survival_for_infants_infected_prior_to_birth"]
-                )
-                                      * 12,
-                                      )
-
+            # - draw from Weibull (exponential for age==0) and convert to months
+            # - compute months to aids, which is somewhat shorter than the months to death
+            months_to_death = self.rng.weibull(shape) * scale * 12
+            if age < 5:
                 months_to_aids = int(
                     max(
                         0.0,
                         np.round(
-                            months_to_death
-                            - self.parameters["mean_months_between_aids_and_death_infant"]
-                        ),
-                    )
-                )
-            elif age < 5.0:
-
-                # The person is infected after birth but before age 5.0:
-                months_to_death = int(
-                    max(
-                        0.0,
-                        self.rng.weibull(
-                            p[
-                                "infection_to_death_infant_infection_after_birth_weibull_shape"
-                            ]
-                        )
-                        * p["infection_to_death_infant_infection_after_birth_weibull_scale"]
-                        * 12,
-                    )
-                )
-                months_to_aids = int(
-                    max(
-                        0.0,
-                        np.round(
-                            months_to_death
-                            - self.parameters["mean_months_between_aids_and_death_infant"]
+                            months_to_death - self.parameters["mean_months_between_aids_and_death_infant"]
                         ),
                     )
                 )
             else:
-                # The person is infected after age 5.0
-                # - draw from Weibull and convert to months
-                months_to_death = self.rng.weibull(shape) * scale * 12
-
-                # - compute months to aids, which is somewhat shorter than the months to death
                 months_to_aids = int(
                     max(
                         0.0,
                         np.round(
-                            months_to_death
-                            - self.parameters["mean_months_between_aids_and_death"]
+                            months_to_death - self.parameters["mean_months_between_aids_and_death"]
                         ),
                     )
-                    )
+                )
 
-
+            # if age == 0.0:
+            #     # The person is infected prior to, or at, birth:
+            #     months_to_death = int(self.rng.exponential(
+            #         scale=p["mean_survival_for_infants_infected_prior_to_birth"]
+            #     )
+            #                           * 12,
+            #                           )
+            #
+            #     months_to_aids = int(
+            #         max(
+            #             0.0,
+            #             np.round(
+            #                 months_to_death
+            #                 - self.parameters["mean_months_between_aids_and_death_infant"]
+            #             ),
+            #         )
+            #     )
+            # elif age < 5.0:
+            #
+            #     # The person is infected after birth but before age 5.0:
+            #     months_to_death = int(
+            #         max(
+            #             0.0,
+            #             self.rng.weibull(
+            #                 p[
+            #                     "infection_to_death_infant_infection_after_birth_weibull_shape"
+            #                 ]
+            #             )
+            #             * p["infection_to_death_infant_infection_after_birth_weibull_scale"]
+            #             * 12,
+            #         )
+            #     )
+            #     months_to_aids = int(
+            #         max(
+            #             0.0,
+            #             np.round(
+            #                 months_to_death
+            #                 - self.parameters["mean_months_between_aids_and_death_infant"]
+            #             ),
+            #         )
+            #     )
+            # else:
+            #     # The person is infected after age 5.0
+            #     # - draw from Weibull and convert to months
+            #     months_to_death = self.rng.weibull(shape) * scale * 12
+            #
+            #     # - compute months to aids, which is somewhat shorter than the months to death
+            #     months_to_aids = int(
+            #         max(
+            #             0.0,
+            #             np.round(
+            #                 months_to_death
+            #                 - self.parameters["mean_months_between_aids_and_death"]
+            #             ),
+            #         )
+            #         )
 
         return pd.DateOffset(months=months_to_aids)
 
