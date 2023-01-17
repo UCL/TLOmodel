@@ -203,14 +203,17 @@ class HealthSeekingBehaviour(Module):
                 *(Predictor(f'sy_{symptom}').when('>0', odds) for symptom, odds in care_seeking_odds_ratios.items())
             )
 
-        # Model for the care-seeking (if it occurs) to be for an EMERGENCY Appointment
-
+        # Model for the care-seeking (if it occurs) to be for an EMERGENCY Appointment:
         def custom_predict(self, df, rng=None, **externals) -> pd.Series:
             """Custom predict function for LinearModel. This finds the probability that a person seeks emergency care
             by finding the highest probability of seeking emergency care for all symptoms they have currently."""
-            prob = (df[[f'sy_{_symptom}' for _symptom in self.prob_emergency_appt.keys()]] > 0) \
-                .mul(self.prob_emergency_appt.values()) \
-                .max(axis=1)
+            prob = pd.Series(
+                (
+                    (df[[f'sy_{s}' for s in self.prob_emergency_appt]].to_numpy() > 0)
+                    * np.array(list(self.prob_emergency_appt.values()))
+                ).max(axis=1),
+                df.index
+            )
             return prob > rng.random_sample(len(prob))
 
         for subgroup, prob_emergency_appt in zip(
