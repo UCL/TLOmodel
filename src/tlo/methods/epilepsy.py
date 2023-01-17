@@ -135,7 +135,8 @@ class Epilepsy(Module):
           Typically modules would read a particular file within here.
         """
         # Update parameters from the resource dataframe
-        dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Epilepsy.xlsx', sheet_name='parameter_values')
+        dfd = pd.read_excel(Path(self.resourcefilepath) / 'epilepsy' / 'ResourceFile_Epilepsy.xlsx',
+                            sheet_name='parameter_values')
         self.load_parameters_from_dataframe(dfd)
 
         p = self.parameters

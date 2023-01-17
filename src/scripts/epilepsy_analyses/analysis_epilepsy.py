@@ -247,7 +247,7 @@ fig.show()
 
 
 # Compare model outputs to GBD study
-gbd_data = pd.read_csv("C:/Users/Robbie Manning Smith/Desktop/gbddata/epilepsy/IHME-GBD_2019_DATA-4a82f00e-1.csv")
+gbd_data = pd.read_csv(resourcefilepath / "epilepsy" / "IHME-GBD_2019_DATA-4a82f00e-1.csv")
 # get incidence estimates
 gbd_inc_data = gbd_data.loc[gbd_data['measure'] == 'Incidence']
 # mean incidence of epilepsy
@@ -256,6 +256,7 @@ mean_inc_gbd = gbd_inc_data.val.mean()
 gbd_inc_death_data = gbd_data.loc[gbd_data['measure'] == 'Deaths']
 # mean incidence of epilepsy
 mean_inc_death_gbd = gbd_inc_death_data.val.mean()
+
 plt.bar(np.arange(2), [mean_inc_gbd, mean_inc_death_gbd], width=0.4, color='lightsteelblue', label='GBD')
 plt.bar(np.arange(2) + 0.4, [np.mean(incidence_epilepsy), np.mean(epi_death_rate)], width=0.4, color='lightsalmon',
         label='Model')
@@ -265,11 +266,12 @@ plt.ylabel('Incidence per 100,000')
 plt.title("The epilepsy model's estimated incidence of epilepsy\nand epilepsy death compared to the GBD study")
 plt.show()
 plt.clf()
+
 plt.bar([1, 2], [mean_inc_death_gbd / mean_inc_gbd, np.mean(epi_death_rate) / np.mean(incidence_epilepsy)],
         color=['lightsteelblue', 'lightsalmon'])
 plt.xticks([1, 2], ['GBD', 'Model'])
 plt.ylabel('CFR')
-plt.title("The epilepsy model's case fatality ratio compared to the GBD's estimate")
+plt.title("The epilepsy model's case fatality ratio compared to the\n GBD's estimate")
 plt.tight_layout()
 plt.show()
 plt.clf()
