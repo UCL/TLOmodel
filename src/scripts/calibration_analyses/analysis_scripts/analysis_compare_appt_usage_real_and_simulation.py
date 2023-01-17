@@ -43,6 +43,38 @@ def get_annual_num_appts_by_level(results_folder: Path) -> pd.DataFrame:
         ).unstack().astype(int)
 
 
+def get_annual_num_appts_by_level_with_confidence_interval(results_folder: Path) -> pd.DataFrame:
+    """Return pd.DataFrame gives the (mean) simulated annual number of appointments of each type at each level,
+    with 95% confidence interval."""
+
+    def get_counts_of_appts(_df):
+        """Get the mean number of appointments of each type being used each year at each level."""
+
+        def unpack_nested_dict_in_series(_raw: pd.Series):
+            return pd.concat(
+                {
+                  idx: pd.DataFrame.from_dict(mydict) for idx, mydict in _raw.iteritems()
+                 }
+             ).unstack().fillna(0.0).astype(int)
+
+        return _df \
+            .loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), 'Number_By_Appt_Type_Code_And_Level'] \
+            .pipe(unpack_nested_dict_in_series) \
+            .mean(axis=0)  # mean over each year (row)
+
+    return summarize(
+        extract_results(
+                results_folder,
+                module='tlo.methods.healthsystem.summary',
+                key='HSI_Event',
+                custom_generate_series=get_counts_of_appts,
+                do_scaling=True
+            ),
+        only_mean=False,
+        collapse_columns=True,
+        ).unstack().astype(int)
+
+
 def get_simulation_usage(results_folder: Path) -> pd.DataFrame:
     """Returns the simulated MEAN USAGE PER YEAR DURING THE TIME_PERIOD, by appointment type and level.
     With reformatting ...
@@ -73,6 +105,48 @@ def get_simulation_usage(results_folder: Path) -> pd.DataFrame:
                  }
     model_output.columns = model_output.columns.map(lambda _name: appt_dict.get(_name, _name))
     return model_output.groupby(axis=1, level=0).sum()
+
+
+def get_simulation_usage_with_confidence_interval(results_folder: Path) -> pd.DataFrame:
+    """Returns the simulated MEAN USAGE PER YEAR DURING THE TIME_PERIOD with 95% confidence interval,
+    by appointment type and level.
+    """
+
+    # Get model outputs
+    model_output = get_annual_num_appts_by_level_with_confidence_interval(results_folder=results_folder)
+
+    # Reformat
+    model_output.columns = [' '.join(col).strip() for col in model_output.columns.values]
+    model_output = model_output.melt(var_name='name', value_name='value', ignore_index=False)
+    model_output['name'] = model_output['name'].str.split(' ')
+    model_output['value_type'] = model_output['name'].str[0]
+    model_output['appt_type'] = model_output['name'].str[1]
+    model_output.drop(columns='name', inplace=True)
+    model_output.reset_index(drop=False, inplace=True)
+    model_output.rename(columns={'index': 'facility_level'}, inplace=True)
+
+    # Rename some appts to be compared with real usage
+    appt_dict = {'Under5OPD': 'OPD',
+                 'Over5OPD': 'OPD',
+                 'AntenatalFirst': 'AntenatalTotal',
+                 'ANCSubsequent': 'AntenatalTotal',
+                 'NormalDelivery': 'Delivery',
+                 'CompDelivery': 'Delivery',
+                 'EstMedCom': 'EstAdult',
+                 'EstNonCom': 'EstAdult',
+                 'VCTPositive': 'VCTTests',
+                 'VCTNegative': 'VCTTests',
+                 'DentAccidEmerg': 'DentalAll',
+                 'DentSurg': 'DentalAll',
+                 'DentU5': 'DentalAll',
+                 'DentO5': 'DentalAll',
+                 'MentOPD': 'MentalAll',
+                 'MentClinic': 'MentalAll'
+                 }
+    model_output['appt_type'] = model_output['appt_type'].replace(appt_dict)
+    model_output = model_output.groupby(['facility_level', 'appt_type', 'value_type']).sum().reset_index()
+
+    return model_output
 
 
 def get_real_usage(resourcefilepath) -> pd.DataFrame:
@@ -169,6 +243,35 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     for _level, _results in rel_diff_by_levels.iterrows():
         ax.plot(_results.index, _results.values, label=_level, linestyle='none', marker=marker_dict[_level])
     ax.axhline(1.0, color='r')
+    format_and_save(fig, ax, name_of_plot)
+
+    # Plot Simulation vs Real usage (Across all levels) (trimmed to 0.1 and 10), with 95% confidence level
+    # Get usage and ratio across all levels
+    simulation_usage_with_ci = get_simulation_usage_with_confidence_interval(results_folder)
+    simulation_usage_with_ci = simulation_usage_with_ci.groupby(
+        ['appt_type', 'value_type'])['value'].sum().reset_index()  # across all levels
+    real_usage_all_levels = real_usage.sum(axis=0).reset_index().rename(
+        columns={0: 'real_usage', 'Appt_Type': 'appt_type'})
+    rel_diff_all_levels_with_ci = simulation_usage_with_ci.merge(real_usage_all_levels, on='appt_type', how='outer')
+    rel_diff_all_levels_with_ci['ratio'] = (rel_diff_all_levels_with_ci['value'] /
+                                            rel_diff_all_levels_with_ci['real_usage']).clip(upper=10, lower=0.1)
+    rel_diff_all_levels_with_ci.drop(columns=['value', 'real_usage'], inplace=True)
+    rel_diff_all_levels_with_ci = rel_diff_all_levels_with_ci.pivot(
+        index='appt_type', columns='value_type', values='ratio')
+    rel_diff_all_levels_with_ci['error'] = (rel_diff_all_levels_with_ci['upper'] -
+                                            rel_diff_all_levels_with_ci['lower'])/2
+    # plot
+    name_of_plot = 'Model vs Real average annual usage by appt type\n[All Facility Levels, 95% Confidence Interval]'
+    fig, ax = plt.subplots()
+    ax.errorbar(rel_diff_all_levels_with_ci.index.values,
+                rel_diff_all_levels_with_ci['mean'].values,
+                rel_diff_all_levels_with_ci['error'].values, fmt='o')
+    for idx in rel_diff_all_levels_with_ci.index:
+        if not pd.isna(rel_diff_all_levels_with_ci.loc[idx, 'mean']):
+            ax.text(idx,
+                    rel_diff_all_levels_with_ci.loc[idx, 'mean']*(1+0.2),
+                    round(rel_diff_all_levels_with_ci.loc[idx, 'mean'], 1),
+                    ha='left', fontsize=8)
     format_and_save(fig, ax, name_of_plot)
 
 
