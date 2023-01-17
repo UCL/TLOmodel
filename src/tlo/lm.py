@@ -446,8 +446,8 @@ class LinearModel(object):
 
         if self.lm_type == LinearModelType.LOGISTIC:
             # Below is equivalent to result = result / (1 + result) but will give correct
-            # output (1.0) where any elements in result are inf
-            result = 1 / (1 + 1 / result)
+            # output where any elements in result are inf (1.0) or 0.0 (0.0).
+            result = (1 / (1 + 1 / result)).fillna(0.0)
 
         # If the user supplied a random number generator then they want outcomes,
         # not probabilities
