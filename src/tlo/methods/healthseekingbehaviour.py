@@ -208,14 +208,9 @@ class HealthSeekingBehaviour(Module):
         def custom_predict(self, df, rng=None, **externals) -> pd.Series:
             """Custom predict function for LinearModel. This finds the probability that a person seeks emergency care
             by finding the highest probability of seeking emergency care for all symptoms they have currently."""
-            prob_emergency_appt_array = np.array(list(self.prob_emergency_appt.values()))
-            prob = pd.Series(
-                (
-                    (df[[f'sy_{s}' for s in prob_emergency_appt]].to_numpy() > 0)
-                    * prob_emergency_appt_array
-                ).max(axis=1),
-                df.index
-            )
+            prob = (df[[f'sy_{_symptom}' for _symptom in self.prob_emergency_appt.keys()]] > 0) \
+                .mul(self.prob_emergency_appt.values()) \
+                .max(axis=1)
             return prob > rng.random_sample(len(prob))
 
         for subgroup, prob_emergency_appt in zip(
