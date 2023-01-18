@@ -11,6 +11,25 @@ PREFIX_ON_FILENAME = '4'
 # Declare period for which the results will be generated (defined inclusively)
 TARGET_PERIOD = (Date(2015, 1, 1), Date(2019, 12, 31))
 
+# appointment dict to match model and data
+appt_dict = {'Under5OPD': 'OPD',
+             'Over5OPD': 'OPD',
+             'AntenatalFirst': 'AntenatalTotal',
+             'ANCSubsequent': 'AntenatalTotal',
+             'NormalDelivery': 'Delivery',
+             'CompDelivery': 'Delivery',
+             'EstMedCom': 'EstAdult',
+             'EstNonCom': 'EstAdult',
+             'VCTPositive': 'VCTTests',
+             'VCTNegative': 'VCTTests',
+             'DentAccidEmerg': 'DentalAll',
+             'DentSurg': 'DentalAll',
+             'DentU5': 'DentalAll',
+             'DentO5': 'DentalAll',
+             'MentOPD': 'MentalAll',
+             'MentClinic': 'MentalAll'
+             }
+
 
 def get_annual_num_appts_by_level(results_folder: Path) -> pd.DataFrame:
     """Return pd.DataFrame gives the (mean) simulated annual number of appointments of each type at each level."""
@@ -86,24 +105,8 @@ def get_simulation_usage(results_folder: Path) -> pd.DataFrame:
     model_output = get_annual_num_appts_by_level(results_folder=results_folder)
 
     # Rename some appts to be compared with real usage
-    appt_dict = {'Under5OPD': 'OPD',
-                 'Over5OPD': 'OPD',
-                 'AntenatalFirst': 'AntenatalTotal',
-                 'ANCSubsequent': 'AntenatalTotal',
-                 'NormalDelivery': 'Delivery',
-                 'CompDelivery': 'Delivery',
-                 'EstMedCom': 'EstAdult',
-                 'EstNonCom': 'EstAdult',
-                 'VCTPositive': 'VCTTests',
-                 'VCTNegative': 'VCTTests',
-                 'DentAccidEmerg': 'DentalAll',
-                 'DentSurg': 'DentalAll',
-                 'DentU5': 'DentalAll',
-                 'DentO5': 'DentalAll',
-                 'MentOPD': 'MentalAll',
-                 'MentClinic': 'MentalAll'
-                 }
     model_output.columns = model_output.columns.map(lambda _name: appt_dict.get(_name, _name))
+
     return model_output.groupby(axis=1, level=0).sum()
 
 
@@ -126,23 +129,6 @@ def get_simulation_usage_with_confidence_interval(results_folder: Path) -> pd.Da
     model_output.rename(columns={'index': 'facility_level'}, inplace=True)
 
     # Rename some appts to be compared with real usage
-    appt_dict = {'Under5OPD': 'OPD',
-                 'Over5OPD': 'OPD',
-                 'AntenatalFirst': 'AntenatalTotal',
-                 'ANCSubsequent': 'AntenatalTotal',
-                 'NormalDelivery': 'Delivery',
-                 'CompDelivery': 'Delivery',
-                 'EstMedCom': 'EstAdult',
-                 'EstNonCom': 'EstAdult',
-                 'VCTPositive': 'VCTTests',
-                 'VCTNegative': 'VCTTests',
-                 'DentAccidEmerg': 'DentalAll',
-                 'DentSurg': 'DentalAll',
-                 'DentU5': 'DentalAll',
-                 'DentO5': 'DentalAll',
-                 'MentOPD': 'MentalAll',
-                 'MentClinic': 'MentalAll'
-                 }
     model_output['appt_type'] = model_output['appt_type'].replace(appt_dict)
     model_output = model_output.groupby(['facility_level', 'appt_type', 'value_type']).sum().reset_index()
 
