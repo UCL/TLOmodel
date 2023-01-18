@@ -712,7 +712,7 @@ def test_initial_distribution_of_contraception(tmpdir, seed):
 def test_contraception_coverage_with_use_healthsystem(tmpdir, seed):
     """Check that the same patterns (approximately) of usage of contraception is achieved when `use_healthsystem=True`
     as when `use_healthsystem=False` (despite the possibility of consumables not being always available when using the
-    healthsystem)."""
+    healthsystem, because this is overcome by there being repeated HSI if consumables not available)."""
 
     def report_availability_of_consumables():
         """Helper function to find the availability of consumables used in the Contraception module."""
@@ -723,6 +723,11 @@ def test_contraception_coverage_with_use_healthsystem(tmpdir, seed):
         def find_average_availability(items: List, level: str):
             """Find the probability that all the items are available at the level."""
             facilities = set([x.id for x in sim.modules['HealthSystem']._facilities_for_each_district[level].values()])
+
+            # Check if item codes are recognised:
+            item_codes_recognised = set(cons.loc[(slice(None), facilities, slice(None))].index.levels[2])
+            assert set(items).issubset(item_codes_recognised), "item_code(s) not recognised."
+
             return np.prod(
                 [cons.loc[(slice(None), facilities, _item)].mean() for _item in items]
             )
