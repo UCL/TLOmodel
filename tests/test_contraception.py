@@ -726,7 +726,8 @@ def test_contraception_coverage_with_use_healthsystem(tmpdir, seed):
 
             # Check if item codes are recognised:
             item_codes_recognised = set(cons.loc[(slice(None), facilities, slice(None))].index.levels[2])
-            assert set(items).issubset(item_codes_recognised), "item_code(s) not recognised."
+            items_being_requested_but_not_recognised = set(items) - set(item_codes_recognised)
+            assert set() == items_being_requested_but_not_recognised, f"item_code(s) not recognised at level {level}: {items_being_requested_but_not_recognised}."
 
             return np.prod(
                 [cons.loc[(slice(None), facilities, _item)].mean() for _item in items]
