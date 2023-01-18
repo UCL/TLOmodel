@@ -258,20 +258,25 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     rel_diff_all_levels_with_ci.drop(columns=['value', 'real_usage'], inplace=True)
     rel_diff_all_levels_with_ci = rel_diff_all_levels_with_ci.pivot(
         index='appt_type', columns='value_type', values='ratio')
-    rel_diff_all_levels_with_ci['error'] = (rel_diff_all_levels_with_ci['upper'] -
-                                            rel_diff_all_levels_with_ci['lower'])/2
+    rel_diff_all_levels_with_ci['lower_error'] = (rel_diff_all_levels_with_ci['mean'] -
+                                                  rel_diff_all_levels_with_ci['lower'])
+    rel_diff_all_levels_with_ci['upper_error'] = (rel_diff_all_levels_with_ci['upper'] -
+                                                  rel_diff_all_levels_with_ci['mean'])
     # plot
     name_of_plot = 'Model vs Real average annual usage by appt type\n[All Facility Levels, 95% Confidence Interval]'
     fig, ax = plt.subplots()
+    asymmetric_error = [rel_diff_all_levels_with_ci['lower_error'].values,
+                        rel_diff_all_levels_with_ci['upper_error'].values]
     ax.errorbar(rel_diff_all_levels_with_ci.index.values,
                 rel_diff_all_levels_with_ci['mean'].values,
-                rel_diff_all_levels_with_ci['error'].values, fmt='o')
+                asymmetric_error, fmt='.',  capsize=3.0)
     for idx in rel_diff_all_levels_with_ci.index:
         if not pd.isna(rel_diff_all_levels_with_ci.loc[idx, 'mean']):
             ax.text(idx,
                     rel_diff_all_levels_with_ci.loc[idx, 'mean']*(1+0.2),
                     round(rel_diff_all_levels_with_ci.loc[idx, 'mean'], 1),
                     ha='left', fontsize=8)
+    ax.axhline(1.0, color='r')
     format_and_save(fig, ax, name_of_plot)
 
 
