@@ -227,7 +227,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
 
-    # %%  Quantify the health gais associated with each TREATMENT_ID (short) individually (i.e., the
+    # %%  Quantify the health gains associated with each TREATMENT_ID (short) individually (i.e., the
     # difference in deaths and DALYS between each scenario and the 'Everything' scenario.)
 
     def get_num_deaths_by_age_group(_df):
@@ -335,6 +335,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # %% Quantify the health associated with each TREATMENT_ID (short) SPLIT BY AGE and WEALTH
 
+    # -- DEATHS
     def get_total_num_death_by_agegrp_and_label(_df):
         """Return the total number of deaths in the TARGET_PERIOD by age-group and cause label."""
         age_group = to_age_group(_df['age'])
@@ -422,6 +423,107 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.axhline(0.0, color='black')
         ax.set_title(name_of_plot)
         ax.set_ylabel('Number of Deaths Averted (/1000)')
+        ax.set_ylim(-50, 150)
+        ax.set_xlabel('Wealth Percentile')
+        ax.grid()
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.legend(ncol=3, fontsize=8, loc='upper right')
+        fig.tight_layout()
+        fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
+        fig.show()
+
+    # -- DALYS
+    def get_total_num_dalys_by_agegrp_and_label(_df):
+        """Return the total number of DALYS in the TARGET_PERIOD by age-group and cause label."""
+        return _df \
+            .loc[_df.year.between(*[i.year for i in TARGET_PERIOD])] \
+            .assign(age_group=_df['age_range']) \
+            .drop(columns=['date', 'year', 'sex', 'age_range']) \
+            .melt(id_vars=['age_group'], var_name='label', value_name='dalys') \
+            .groupby(by=['age_group', 'label'])['dalys'] \
+            .sum()
+
+    total_num_dalys_by_agegrp_and_label = extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+        key="dalys_stacked",  # <-- todo might need to change key!
+        custom_generate_series=get_total_num_dalys_by_agegrp_and_label,
+        do_scaling=True
+    ).pipe(set_param_names_as_column_index_level_0)
+
+    dalys_averted_by_agegrp_and_label = find_mean_difference_extra_relative_to_comparison_dataframe(
+        total_num_dalys_by_agegrp_and_label, comparison='Everything'
+    ).drop(columns=['FirstAttendance*'])
+
+    for _scenario_name, _dalys_av in dalys_averted_by_agegrp_and_label.T.iterrows():
+        format_to_plot = _dalys_av.unstack()
+        format_to_plot.index = format_to_plot.index.astype(make_age_grp_types())
+        format_to_plot = format_to_plot \
+            .sort_index(axis=0) \
+            .reindex(columns=CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.keys(), fill_value=0.0) \
+            .sort_index(axis=1, key=order_of_cause_of_death_or_daly_label)
+
+        fig, ax = plt.subplots()
+        name_of_plot = f'DALYS Averted by {_scenario_name} by Age and Cause {target_period()}'
+        (
+            format_to_plot / 1e6
+        ).plot.bar(stacked=True, ax=ax,
+                   color=[get_color_cause_of_death_or_daly_label(_label) for _label in format_to_plot.columns],
+                   )
+        ax.axhline(0.0, color='black')
+        ax.set_title(name_of_plot)
+        ax.set_ylabel('Number of DALYS Averted (/1e6)')
+        # ax.set_ylim(-50, 150)
+        ax.set_xlabel('Age-group')
+        ax.grid()
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.legend(ncol=3, fontsize=8, loc='upper right')
+        fig.tight_layout()
+        fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
+        fig.show()
+
+    def get_total_num_dalys_by_wealth_and_label(_df):
+        """Return the total number of DALYS in the TARGET_PERIOD by wealth and cause label."""
+        wealth_cats = {5: '0-19%', 4: '20-39%', 3: '40-59%', 2: '60-79%', 1: '80-100%'}
+        wealth_group = _df['li_wealth'] \
+            .map(wealth_cats) \
+            .astype(pd.CategoricalDtype(wealth_cats.values(), ordered=True))
+
+        return _df \
+            .loc[_df['date'].between(*TARGET_PERIOD)] \
+            .groupby([wealth_group, 'label'])['person_id'].size()
+
+    total_num_dalys_by_wealth_and_label = extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+        key="dalys_stacked",
+        custom_generate_series=get_total_num_dalys_by_wealth_and_label,
+        do_scaling=True
+    ).pipe(set_param_names_as_column_index_level_0)
+
+    dalys_averted_by_wealth_and_label = find_mean_difference_extra_relative_to_comparison_dataframe(
+        total_num_dalys_by_wealth_and_label, comparison='Everything'
+    ).drop(columns=['FirstAttendance*'])
+
+    for _scenario_name, _dalys_av in dalys_averted_by_wealth_and_label.T.iterrows():
+        format_to_plot = _dalys_av.unstack()
+        format_to_plot = format_to_plot \
+            .sort_index(axis=0) \
+            .reindex(columns=CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.keys(), fill_value=0.0) \
+            .sort_index(axis=1, key=order_of_cause_of_death_or_daly_label)
+
+        fig, ax = plt.subplots()
+        name_of_plot = f'DALYS Averted by {_scenario_name} by Wealth and Cause {target_period()}'
+        (
+            format_to_plot / 1e6
+        ).plot.bar(stacked=True, ax=ax,
+                   color=[get_color_cause_of_death_or_daly_label(_label) for _label in format_to_plot.columns],
+                   )
+        ax.axhline(0.0, color='black')
+        ax.set_title(name_of_plot)
+        ax.set_ylabel('Number of Deaths Averted (/1e6)')
         ax.set_ylim(-50, 150)
         ax.set_xlabel('Wealth Percentile')
         ax.grid()
