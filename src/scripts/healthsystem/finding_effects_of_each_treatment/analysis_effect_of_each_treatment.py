@@ -517,24 +517,27 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # VERSION WITH COARSE APPOINTMENTS, CONFORMING TO STANDARD ORDERING/COLORS AND ORDER
     fig, ax = plt.subplots()
-    name_of_plot = f'Additional Appointments [Coarse] With Intervention, {target_period()}'
+    name_of_plot = f'Additional Appointments, {target_period()}'
     delta_appts_coarse = delta_appts \
         .groupby(axis=0, by=delta_appts.index.map(get_coarse_appt_type)) \
         .sum() \
         .sort_index(key=order_of_coarse_appt)
-    delta_appts_coarse = delta_appts_coarse.sort_index(axis=1, key=order_of_short_treatment_ids)
+
+    # delta_appts_coarse = delta_appts_coarse.sort_index(axis=1, key=order_of_short_treatment_ids)  # <-- standard order
+    delta_appts_coarse = delta_appts_coarse[num_dalys_averted.index].drop(columns=['*'])  # <-- order as dalys averted
     (
         delta_appts_coarse / 1e6
-    ).T.plot.bar(
+    ).T.plot.barh(
         stacked=True, legend=True, ax=ax, color=[get_color_coarse_appt(_a) for _a in delta_appts_coarse.index]
     )
     ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
-    ax.set_ylabel('(/1e6)')
-    ax.set_xlabel('TREATMENT_ID (Short)')
-    ax.axhline(0, color='grey')
+    ax.set_xlabel('Additional Appointments (/1e6)')
+    ax.set_ylabel('TREATMENT_ID (Short)')
+    ax.axvline(0, color='grey')
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
-    ax.legend(ncol=2, fontsize=7, loc='upper left')
+    ax.grid()
+    ax.legend().set_visible(False)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
