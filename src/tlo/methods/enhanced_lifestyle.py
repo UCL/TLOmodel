@@ -1950,10 +1950,17 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
             elif _property == 'li_in_ed':
                 data = df.loc[df.is_alive & df.age_years.between(5, 19)].groupby(by=[
-                    'sex', 'li_wealth', _property, 'age_years']).size()
+                    df.loc[df.is_alive & df.age_years.between(5, 19), 'sex'],
+                    df.loc[df.is_alive & df.age_years.between(5, 19), 'li_wealth'],
+                    df.loc[df.is_alive & df.age_years.between(5, 19), _property],
+                    df.loc[df.is_alive & df.age_years.between(5, 19), 'age_years']]).size()
 
             elif _property == 'li_ed_lev':
-                data = df.loc[df.is_alive].groupby(by=['sex', 'li_wealth', _property, 'age_range']).size()
+                data = df.loc[df.is_alive & df.age_years.between(15, 49)].groupby(by=[
+                    df.loc[df.is_alive & df.age_years.between(15, 49), 'sex'],
+                    df.loc[df.is_alive & df.age_years.between(15, 49), 'li_wealth'],
+                    df.loc[df.is_alive & df.age_years.between(15, 49), _property],
+                    df.loc[df.is_alive & df.age_years.between(15, 49), 'age_years']]).size()
 
             elif _property == 'li_is_sexworker':
                 data = df.loc[df.is_alive & (df.age_years.between(15, 49))].groupby(by=[

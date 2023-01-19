@@ -227,13 +227,15 @@ class LifeStyleCalibration:
         total_per_prop = pd.DataFrame()
         # for in education property
         if li_property == 'li_in_ed':
+            re_ord_col_df = self.dfs[li_property].reorder_levels(['sex', 'li_in_ed', 'age_years', 'li_wealth'], axis=1)
             for age_years in ['6', '12', '16', '19']:
-                pos_to_prop = self.dfs[li_property]['M']['True'][age_years] + \
-                              self.dfs[li_property]['F']['True'][age_years]
+                pos_to_prop = re_ord_col_df['M']['True'][age_years] + \
+                              re_ord_col_df['F']['True'][age_years]
 
-                neg_to_prop = \
-                    self.dfs[li_property]['M']['False'][age_years] + self.dfs[li_property]['F']['False'][age_years]
+                neg_to_prop = re_ord_col_df['M']['False'][age_years] + re_ord_col_df['F']['False'][age_years]
 
+                pos_to_prop = pos_to_prop.sum(axis=1)
+                neg_to_prop = neg_to_prop.sum(axis=1)
                 # get population positive to the property
                 total_per_prop[f'age_years_{age_years}'] = pos_to_prop / (pos_to_prop + neg_to_prop)
             # get year(to be set as an index and used when plotting)
@@ -711,7 +713,7 @@ def run():
 
 # %% read the results
 # output = parse_log_file(sim.log_filepath)
-output = parse_log_file(Path("./outputs/enhanced_lifestyle__2022-12-13T130809.log"))
+output = parse_log_file(Path("./outputs/enhanced_lifestyle__2023-01-17T093840.log"))
 
 # construct a dict of dataframes using lifestyle logs
 logs_df = output['tlo.methods.enhanced_lifestyle']

@@ -5,14 +5,14 @@ gender and age groups
 # %% Import Statements
 import datetime
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict
 
 import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib import ticker
 
 from tlo import Date, Simulation, logging
-from tlo.analysis.utils import parse_log_file, unflatten_flattened_multi_index_in_logging
+from tlo.analysis.utils import parse_log_file, unflatten_flattened_multi_index_in_logging, make_age_grp_lookup
 from tlo.methods import demography, enhanced_lifestyle, simplified_births
 
 
@@ -55,14 +55,14 @@ class LifeStylePlots:
                                          'Denominator: Sum  of 15+ individuals in all marital status categories per '
                                          'each age-group'],
 
-                         'li_in_ed': ['currently in education', 'Denominator: Sum of all individuals aged between '
+                         'li_in_ed': ['currently in education', 'Denominator: Sum of individuals aged between '
                                                                 '5-19 per gender',
-                                      'Denominator: Sum of all individuals in education per each age year'
+                                      'Denominator: Sum of individuals 5-19 in education in each age-group'
                                       ],
 
-                         'li_ed_lev': ['education level', 'Denominator: Sum of individuals from age 0 in all '
+                         'li_ed_lev': ['education level', 'Denominator: Sum of individuals aged 15-19 in all '
                                                           'education levels per gender',
-                                       'Denominator: Sum of individuals from age 0 in all education levels in each '
+                                       'Denominator: Sum of individuals aged 15-19 in all education levels in each '
                                        'age-group'],
 
                          'li_unimproved_sanitation': ['unimproved sanitation', 'Denominator: Sum of all individuals '
@@ -244,6 +244,35 @@ class LifeStylePlots:
         # 2. if property is not in a group of those that need plotting by urban and rural plot them by age category only
         else:
             if li_property == 'li_ed_lev':
+                # GENERAL EDUCATION PLOTTING
+                counter: int = 0  # counter for indexing purposes
+                # create subplots
+                fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(10, 5))
+                for gender, desc in self.gender_des.items():
+                    # re-order columns
+                    re_ordered_df = self.dfs[li_property].reorder_levels([0, 2, 1, 3], axis=1)
+                    for cat in categories:
+                        gc_df[f'cat_{cat}'] = re_ordered_df[gender][cat].sum(axis=1)
+
+                    # normalise the probabilities
+                    gc_df = gc_df.apply(lambda row: row / row.sum(), axis=1)
+
+                    # do plotting
+                    ax = gc_df.plot(kind='bar', stacked=True, ax=axes[counter],
+                                    title=f"{desc} {self.en_props[li_property][0]}  categories",
+                                    ylabel=f"{self.en_props[li_property][0]} proportions", xlabel="Year"
+                                    )
+                    self.custom_axis_formatter(gc_df, ax, li_property)
+                    # increase counter
+                    counter += 1
+
+                # save and display plots for property categories by gender
+                add_footnote(f'{self.en_props[li_property][1]}')
+                plt.tight_layout()
+                plt.savefig(self.outputpath / (li_property + self.datestamp + '.png'), format='png')
+                plt.show()
+
+                # PLOT EDUCATION BY WEALTH LEVELS
                 # create subplots
                 fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(10, 5))
                 _col_counter: int = 0  # counter for indexing purposes
@@ -352,6 +381,35 @@ class LifeStylePlots:
         # if property is not in a group of those that need plotting by urban and rural plot them by age category only
         else:
             if _property == "li_in_ed":
+                # GENERAL EDUCATION PLOTTING
+                for gender, desc in self.gender_des.items():
+                    # re-order columns
+                    re_ordered_df = self.dfs[_property].reorder_levels([0, 2, 1, 3], axis=1)
+                    # compute proportions on each property per gender
+                    totals_df[gender] = re_ordered_df[gender]["True"].sum(axis=1) / re_ordered_df[gender].sum(axis=1)
+
+                # plot figure
+                _rows_counter: int = 0  # a counter for plotting. setting rows
+                fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(10, 5))
+                for gender, desc in self.gender_des.items():
+                    # do plotting
+                    ax = totals_df.iloc[:, _rows_counter].plot(kind='bar', ax=axes[_rows_counter],
+                                                               ylim=(0, y_lim),
+                                                               ylabel=f'{self.en_props[_property][0]} proportions',
+                                                               xlabel="Year",
+                                                               color='darkturquoise',
+                                                               title=f"{desc} {self.en_props[_property][0]}")
+                    # format x-axis
+                    self.custom_axis_formatter(totals_df, ax, _property)
+                    # increase counter
+                    _rows_counter += 1
+                # save and display plots for property categories by gender
+                add_footnote(f'{self.en_props[_property][1]}')
+                plt.tight_layout()
+                plt.savefig(self.outputpath / (_property + self.datestamp + '.png'), format='png')
+                plt.show()
+
+                # PLOT EDUCATION FOR HIGHEST AND LOWEST WEALTH LEVEL
                 fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(10, 5))
                 _col_counter: int = 0
                 for gender, desc in self.gender_des.items():
@@ -495,11 +553,43 @@ class LifeStylePlots:
         else:
             # create a new dataframe to contain data of age groups against categories
             new_df = pd.DataFrame()
-
             if _property == "li_ed_lev":
+
+                # GENERAL EDUCTION PLOTTING
+                cat_dict = dict()
+                # get individuals per each age group
+                for _wealth_level in ['1', '2', '3', '4', '5']:
+                    edu_categories_df = pd.DataFrame()
+                    for cat in categories:
+                        edu_categories_df[f'cat_{cat}'] = self.dfs[_property]['M'][_wealth_level][cat].sum(axis=0) + \
+                                                          self.dfs[_property]['F'][_wealth_level][cat].sum(axis=0)
+                        cat_dict[_wealth_level] = edu_categories_df
+
+                new_df = cat_dict['1'] + cat_dict['2'] + cat_dict['3'] + cat_dict['4'] + cat_dict['5']
+
+                # convert values to proportions
+                # new_df = new_df.apply(lambda row: row / row.sum(), axis=0)
+                agegrps, age_grp_lookup = make_age_grp_lookup()
+                new_df['age_range'] = new_df.index.astype(int).map(age_grp_lookup)
+                new_df = new_df.groupby(['age_range']).sum()
+                new_df = new_df.apply(lambda row: row / row.sum(), axis=1)
+                # do plotting
+                ax = new_df.plot(kind='bar', stacked=True,
+                                 title=f"{self.en_props[_property][0]}  categories (Year 2021)",
+                                 ylabel=f"{self.en_props[_property][0]} proportions", xlabel="Age Range"
+                                 )
+                ax.legend(self.categories_desc[_property], loc='upper right')
+                # save and display plots
+                add_footnote(f'{self.en_props[_property][2]}')
+                plt.tight_layout()
+                plt.savefig(self.outputpath / (_property + self.datestamp + '.png'), format='png')
+                plt.show()
+
+                # EDUCATION PLOTTING BY WEALTH LEVELS
                 _rows_counter: int = 0  # a counter to set the number of rows when plotting
                 fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(10, 5))
                 for _wealth_level in self.wealth_desc.keys():
+                    new_df = pd.DataFrame()
                     # loop through categories and get age groups data per each category
                     for cat in categories:
                         new_df[f'cat_{cat}'] = self.dfs[_property]['M'][_wealth_level][cat].sum(axis=0) + \
@@ -507,6 +597,8 @@ class LifeStylePlots:
 
                     # convert values to proportions
                     # new_df = new_df.apply(lambda row: row / row.sum(), axis=0)
+                    new_df['age_range'] = new_df.index.astype(int).map(age_grp_lookup)
+                    new_df = new_df.groupby(['age_range']).sum()
                     new_df = new_df.apply(lambda row: row / row.sum(), axis=1)
                     # do plotting
                     ax = new_df.plot(kind='bar', stacked=True, ax=axes[_rows_counter],
@@ -592,9 +684,49 @@ class LifeStylePlots:
         # 2. if property is not in a group of those that need plotting by urban and rural plot them by age category only
         else:
             if _property == "li_in_ed":
+                true_totals = pd.DataFrame()
+                false_totals = pd.DataFrame()
+                # get individuals per each age group
+                for _wealth_level in ['1', '2', '3', '4', '5']:
+                    true_totals[f'True{_wealth_level}'] = self.dfs[_property]['M'][_wealth_level]['True'].sum(axis=0) + \
+                                                          self.dfs[_property]['F'][_wealth_level]['True'].sum(axis=0)
+
+                    false_totals[f'False{_wealth_level}'] = self.dfs[_property]['M'][_wealth_level]['False'].sum(
+                        axis=0) + \
+                                                            self.dfs[_property]['F'][_wealth_level]['False'].sum(axis=0)
+
+                get_age_group_totals['True'] = true_totals.sum(axis=1)
+                get_age_group_totals['False'] = false_totals.sum(axis=1)
+                # group age years into age ranges
+                agegrps, age_grp_lookup = make_age_grp_lookup()
+                get_age_group_totals['age_range'] = get_age_group_totals.index.astype(int).map(age_grp_lookup)
+                get_age_group_totals = \
+                    get_age_group_totals.groupby(['age_range']).sum()
+                get_age_group_totals.sort_values(by='True', ascending=False, inplace=True)
+                # get proportions
+                get_age_group_totals = get_age_group_totals['True'] / get_age_group_totals.sum(axis=1)
+
+                # do plotting
+                get_age_group_totals.plot.bar(color='darkturquoise')
+
+                # set plot title, labels, legends and axis limit
+                plt.title(f"{self.en_props[_property][0]} by age groups (Year 2021)")
+                plt.xlabel("age groups")
+                plt.ylabel(f"{self.en_props[_property][0]} proportions")
+                plt.ylim(0, 1 if not _property == 'li_is_sexworker' else 0.04)
+                plt.legend([self.en_props[_property][0]], loc='upper right')
+                add_footnote(f'{self.en_props[_property][2]}')
+
+                plt.tight_layout()
+                plt.savefig(self.outputpath / (_property + 'by_age_group' + self.datestamp + '.png'), format='png')
+                plt.show()
+
+                # EDUCATION PLOTTING FOR HIGHEST AND LOWEST WEALTH LEVEL
                 _col_counter: int = 0  # a counter for plotting. setting rows
                 fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(10, 5))
-                for _wealth_level in ['1', '5']:
+                for _wealth_level in self.wealth_desc.keys():
+                    # re-initialise dataframe
+                    get_age_group_totals = pd.DataFrame()
                     # get individuals per each age group
                     for _bool_value in ['True', 'False']:
                         get_age_group_totals[_bool_value] = self.dfs[_property]['M'][_wealth_level][_bool_value].sum(
@@ -602,10 +734,17 @@ class LifeStylePlots:
                                                             self.dfs[_property]['F'][_wealth_level][_bool_value].sum(
                                                                 axis=0)
 
-                    get_age_group_props = get_age_group_totals['True'] / get_age_group_totals.sum(axis=1)
+                    # group age years into age ranges
+                    agegrps, age_grp_lookup = make_age_grp_lookup()
+                    get_age_group_totals['age_range'] = get_age_group_totals.index.astype(int).map(age_grp_lookup)
+                    get_age_group_totals = \
+                        get_age_group_totals.groupby(['age_range']).sum()
+                    get_age_group_totals.sort_values(by='True', ascending=False, inplace=True)
+                    # get proportions
+                    get_age_group_totals = get_age_group_totals['True'] / get_age_group_totals.sum(axis=1)
 
                     # do plotting
-                    ax = get_age_group_props.plot(kind='bar', ax=axes[_col_counter], color='darkturquoise',
+                    ax = get_age_group_totals.plot(kind='bar', ax=axes[_col_counter], color='darkturquoise',
                                                   xlabel="age groups",
                                                   title=f"{self.en_props[_property][0]} "
                                                         f"{self.wealth_desc[_wealth_level]} by age groups (Year 2021)",
@@ -642,9 +781,7 @@ class LifeStylePlots:
     def display_all_categorical_and_non_categorical_plots_by_age_group(self):
         """ a function that will display plots of all enhanced lifestyle properties grouped by age group """
         for _property in self.en_props.keys():
-            if _property == 'li_bmi':
-                self.plot_categorical_properties_by_age_group(_property, ['1', '2', '3', '4', '5'])
-            elif _property == 'li_wealth':
+            if _property in ['li_bmi', 'li_wealth']:
                 self.plot_categorical_properties_by_age_group(_property, ['1', '2', '3', '4', '5'])
             elif _property in ['li_mar_stat', 'li_ed_lev']:
                 self.plot_categorical_properties_by_age_group(_property, ['1', '2', '3'])
@@ -707,8 +844,8 @@ def run():
 
     # Basic arguments required for the simulation
     start_date = Date(2010, 1, 1)
-    end_date = Date(2025, 1, 1)
-    pop_size = 50000
+    end_date = Date(2050, 1, 1)
+    pop_size = 100000
 
     # This creates the Simulation instance for this run. Because we"ve passed the `seed` and
     # `log_config` arguments, these will override the default behaviour.
@@ -739,7 +876,7 @@ def run():
 
 # %% read the results
 # output = parse_log_file(sim.log_filepath)
-output = parse_log_file(Path("./outputs/enhanced_lifestyle__2022-12-20T095541.log"))
+output = parse_log_file(Path("./outputs/enhanced_lifestyle__2023-01-17T093840.log"))
 
 # construct a dict of dataframes using lifestyle logs
 logs_df = output['tlo.methods.enhanced_lifestyle']
@@ -747,7 +884,7 @@ logs_df = output['tlo.methods.enhanced_lifestyle']
 # initialise LifestylePlots class
 g_plots = LifeStylePlots(logs=logs_df, path="./outputs")
 # plot by gender
-# g_plots.display_all_categorical_and_non_categorical_plots_by_gender()
+g_plots.display_all_categorical_and_non_categorical_plots_by_gender()
 
 # plot by age groups
-g_plots.display_all_categorical_and_non_categorical_plots_by_age_group()
+# g_plots.display_all_categorical_and_non_categorical_plots_by_age_group()
