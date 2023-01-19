@@ -1,8 +1,8 @@
 import math
 import time
 import timeit
-import bar_chart_costs
 
+import bar_chart_costs
 import fnc_analyse_contraception as a_co
 import pandas as pd
 
