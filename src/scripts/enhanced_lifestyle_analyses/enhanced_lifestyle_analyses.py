@@ -12,7 +12,11 @@ import pandas as pd
 from matplotlib import ticker
 
 from tlo import Date, Simulation, logging
-from tlo.analysis.utils import parse_log_file, unflatten_flattened_multi_index_in_logging, make_age_grp_lookup
+from tlo.analysis.utils import (
+    make_age_grp_lookup,
+    parse_log_file,
+    unflatten_flattened_multi_index_in_logging,
+)
 from tlo.methods import demography, enhanced_lifestyle, simplified_births
 
 
@@ -294,8 +298,12 @@ class LifeStylePlots:
                         # do plotting
                         ax = _all_edu_lev_dfs[gender + _wealth_level].plot(kind='bar', stacked=True,
                                                                            ax=axes[_col_counter, _rows_counter],
-                                                                           title=f"{desc} {self.wealth_desc[_wealth_level]} {self.en_props[li_property][0]}  categories",
-                                                                           ylabel=f"{self.en_props[li_property][0]} proportions",
+                                                                           title=f"{desc} "
+                                                                                 f"{self.wealth_desc[_wealth_level]} "
+                                                                                 f"{self.en_props[li_property][0]}  "
+                                                                                 f"categories",
+                                                                           ylabel=f"{self.en_props[li_property][0]} "
+                                                                                  f"proportions",
                                                                            xlabel="Year"
                                                                            )
                         self.custom_axis_formatter(gc_df, ax, li_property)
@@ -430,7 +438,8 @@ class LifeStylePlots:
                                                                    ylabel=f'{self.en_props[_property][0]} proportions',
                                                                    xlabel="Year",
                                                                    color='darkturquoise',
-                                                                   title=f"{desc} {_wealth_desc} {self.en_props[_property][0]}")
+                                                                   title=f"{desc} {_wealth_desc} "
+                                                                         f"{self.en_props[_property][0]}")
                         # format x-axis
                         self.custom_axis_formatter(totals_df, ax, _property)
                         # increase counter
@@ -602,7 +611,8 @@ class LifeStylePlots:
                     new_df = new_df.apply(lambda row: row / row.sum(), axis=1)
                     # do plotting
                     ax = new_df.plot(kind='bar', stacked=True, ax=axes[_rows_counter],
-                                     title=f"{self.en_props[_property][0]} {self.wealth_desc[_wealth_level]} (Year 2021)",
+                                     title=f"{self.en_props[_property][0]} {self.wealth_desc[_wealth_level]} "
+                                           f"(Year 2021)",
                                      ylabel=f"{self.en_props[_property][0]} proportions", xlabel="Age Range"
                                      )
                     ax.legend(self.categories_desc[_property], loc='upper right')
@@ -688,12 +698,11 @@ class LifeStylePlots:
                 false_totals = pd.DataFrame()
                 # get individuals per each age group
                 for _wealth_level in ['1', '2', '3', '4', '5']:
-                    true_totals[f'True{_wealth_level}'] = self.dfs[_property]['M'][_wealth_level]['True'].sum(axis=0) + \
-                                                          self.dfs[_property]['F'][_wealth_level]['True'].sum(axis=0)
+                    true_totals[f'True{_wealth_level}'] = self.dfs[_property]['M'][_wealth_level]['True'].sum(axis=0) \
+                                                          + self.dfs[_property]['F'][_wealth_level]['True'].sum(axis=0)
 
                     false_totals[f'False{_wealth_level}'] = self.dfs[_property]['M'][_wealth_level]['False'].sum(
-                        axis=0) + \
-                                                            self.dfs[_property]['F'][_wealth_level]['False'].sum(axis=0)
+                        axis=0) + self.dfs[_property]['F'][_wealth_level]['False'].sum(axis=0)
 
                 get_age_group_totals['True'] = true_totals.sum(axis=1)
                 get_age_group_totals['False'] = false_totals.sum(axis=1)
@@ -745,11 +754,11 @@ class LifeStylePlots:
 
                     # do plotting
                     ax = get_age_group_totals.plot(kind='bar', ax=axes[_col_counter], color='darkturquoise',
-                                                  xlabel="age groups",
-                                                  title=f"{self.en_props[_property][0]} "
-                                                        f"{self.wealth_desc[_wealth_level]} by age groups (Year 2021)",
-                                                  ylabel=f"{self.en_props[_property][0]} proportions",
-                                                  ylim=(0, 1 if not _property == 'li_is_sexworker' else 0.04))
+                                                   xlabel="age groups",
+                                                   title=f"{self.en_props[_property][0]} "
+                                                         f"{self.wealth_desc[_wealth_level]} by age groups (Year 2021)",
+                                                   ylabel=f"{self.en_props[_property][0]} proportions",
+                                                   ylim=(0, 1 if not _property == 'li_is_sexworker' else 0.04))
                     # set plot title, labels, legends and axis limit
                     ax.legend([self.en_props[_property][0]], loc='upper right')
                     add_footnote(f'{self.en_props[_property][2]}')
