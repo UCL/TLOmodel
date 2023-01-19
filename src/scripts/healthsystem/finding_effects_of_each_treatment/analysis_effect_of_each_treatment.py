@@ -25,7 +25,8 @@ from tlo.analysis.utils import (
     order_of_short_treatment_ids,
     squarify_neat,
     summarize,
-    to_age_group, CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP,
+    to_age_group,
+    CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP,
 )
 
 
