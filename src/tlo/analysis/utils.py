@@ -805,7 +805,7 @@ CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP = MappingProxyType({
     'AIDS': 'deepskyblue',
     'Malaria': 'lightsteelblue',
     'Measles': 'cornflowerblue',
-    'non_AIDS_TB': 'mediumslateblue',
+    'TB (non-AIDS)': 'mediumslateblue',
     'Schistosomiasis': 'black',  # todo <---- choose different colour
 
     'Heart Disease': 'sienna',
