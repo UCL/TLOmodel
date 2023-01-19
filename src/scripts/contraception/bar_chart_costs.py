@@ -1,4 +1,3 @@
-import math
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -29,21 +28,20 @@ def plot_costs(in_datestamps, in_suffix, in_x_labels, in_cons_costs_without, in_
     x = np.arange(len(x_labels))  # the x_label locations
 
     fig, ax = plt.subplots()
-    bar_without = ax.bar(x - width/2, cons_costs_without, width, label='consumables without intervention',
-                         color=(0.918, .255, 0.47))
+    # bar_without
+    ax.bar(x - width/2, cons_costs_without, width, label='consumables without intervention', color=(0.918, .255, 0.47))
     if int(in_x_labels[0].split("-")[0]) < 2023:
         with_label = 'consumables with intervention since 2023'
     else:
         with_label = 'consumables with intervention'
-    bar_with = ax.bar(x + width/2, cons_costs_with, width, label=with_label,
-                      color=(0.698, 0.875, 0.541))
-
-    bar_with_pop_interv\
-        = ax.bar(x + width/2, pop_interv_costs_with, width, bottom=cons_costs_with,
-                 label='Pop intervention', color=(0.122, .471, 0.706))
-    bar_with_ppfp_interv\
-        = ax.bar(x + width/2, ppfp_interv_costs_with, width, bottom=ppfp_bottom,
-                 label='PPFP intervention', color=(0.651, .808, 0.89))
+    # bar_with
+    ax.bar(x + width/2, cons_costs_with, width, label=with_label, color=(0.698, 0.875, 0.541))
+    # bar_with_pop_interv
+    ax.bar(x + width/2, pop_interv_costs_with, width, bottom=cons_costs_with, label='Pop intervention',
+           color=(0.122, .471, 0.706))
+    # bar_with_ppfp_interv
+    ax.bar(x + width/2, ppfp_interv_costs_with, width, bottom=ppfp_bottom, label='PPFP intervention',
+           color=(0.651, .808, 0.89))
 
     # title, custom x-axis tick labels, set y-axis label and add legend
     ax.set_title('Consumables & Interventions Costs', fontweight="bold")
