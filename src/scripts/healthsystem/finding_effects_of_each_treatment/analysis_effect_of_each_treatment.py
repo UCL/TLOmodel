@@ -39,7 +39,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     TARGET_PERIOD = (Date(2010, 1, 1), Date(2014, 12, 31))
 
     # Definitions of general helper functions
-    make_graph_file_name = lambda stub: output_folder / f"{stub}.png"  # noqa: E731
+    make_graph_file_name = lambda stub: output_folder / f"{stub.replace('*', '_star_')}.png"  # noqa: E731
 
     _, age_grp_lookup = make_age_grp_lookup()
 
