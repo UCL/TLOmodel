@@ -234,6 +234,7 @@ def test_arithmetic_of_disability_aggregation_calcs(seed):
         DiseaseThatCausesC(name='DiseaseThatCausesC1'),  # intentionally two instances of DiseaseThatCausesC
         DiseaseThatCausesC(name='DiseaseThatCausesC2'),
         DiseaseThatCausesNothing(),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         # Disable sorting to allow registering multiple instances of DiseaseThatCausesC
         sort_modules=False
     )
@@ -320,7 +321,8 @@ def test_arithmetic_of_dalys_calcs(seed):
     sim.register(
         demography.Demography(resourcefilepath=rfp),
         healthburden.HealthBurden(resourcefilepath=rfp),
-        DiseaseThatCausesA()
+        DiseaseThatCausesA(),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
     )
     sim.make_initial_population(n=1)
 
@@ -353,6 +355,7 @@ def test_airthmetic_of_lifeyearslost(seed):
     sim.register(
         demography.Demography(resourcefilepath=rfp),
         healthburden.HealthBurden(resourcefilepath=rfp),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
     )
     sim.make_initial_population(n=1)
 
@@ -434,6 +437,7 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
     sim.register(
         demography.Demography(resourcefilepath=rfp),
         healthburden.HealthBurden(resourcefilepath=rfp),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=rfp),
         DiseaseThatCausesA()
     )
     sim.make_initial_population(n=1)
