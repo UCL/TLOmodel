@@ -139,18 +139,6 @@ class Tb(Module):
     }
 
     PARAMETERS = {
-        "beta": Parameter(
-            Types.REAL,
-            "transmission rate for TB",
-        ),
-        "importation_rate_ds": Parameter(
-            Types.REAL,
-            "monthly rate of importation of ds-tb",
-        ),
-        "importation_rate_mdr": Parameter(
-            Types.REAL,
-            "monthly rate of importation of ds-tb",
-        ),
         # ------------------ baseline population ------------------ #
         "prop_mdr2010": Parameter(
             Types.REAL,
@@ -193,6 +181,10 @@ class Tb(Module):
             Types.REAL, "relative risk of relapse for HIV-positive people"
         ),
         # ------------------ active disease ------------------ #
+        "scaling_factor_WHO": Parameter(
+            Types.REAL,
+            "scaling factor applied to WHO estimates to account for the impact of interventions in place",
+        ),
         "duration_active_disease_years": Parameter(
             Types.REAL, "duration of active disease from onset to cure or death"
         ),
@@ -423,9 +415,9 @@ class Tb(Module):
 
         self.district_list = (
             self.sim.modules["Demography"]
-                .parameters["pop_2010"]["District"]
-                .unique()
-                .tolist()
+            .parameters["pop_2010"]["District"]
+            .unique()
+            .tolist()
         )
 
         # 2) Get the DALY weights
@@ -804,7 +796,6 @@ class Tb(Module):
         df["tb_smear"] = False
 
         # ------------------ testing status ------------------ #
-        # todo
         df["tb_date_tested"] = pd.NaT
         df["tb_diagnosed"] = False
         df["tb_date_diagnosed"] = pd.NaT
@@ -822,22 +813,19 @@ class Tb(Module):
 
         # # ------------------ infection status ------------------ #
         # todo set incidence for full yr 2010 then run poll from jan 2011
-        # WHO estimates of active TB for 2010
-        # need an infected initial population
+        # WHO estimates of active TB for 2010 to get infected initial population
+        # don't need to scale or include treated proportion as noone on treatment yet
         inc_estimates = p["who_incidence_estimates"]
         incidence_year = (inc_estimates.loc[
             (inc_estimates.year == self.sim.date.year), "incidence_per_100k"
         ].values[0]) / 100000
 
-        # todo change to incidence year
-        self.assign_baseline_active_tb(
+        self.assign_active_tb(
             population,
             strain="ds",
             incidence=incidence_year)
 
-        # todo changes prop_mdr to 0.0186 (error in resourcefile)
-        # todo change to incidence year
-        self.assign_baseline_active_tb(
+        self.assign_active_tb(
             population,
             strain="mdr",
             incidence=incidence_year * p['prop_mdr2010'])
@@ -968,20 +956,49 @@ class Tb(Module):
 
         return health_values.loc[df.is_alive]
 
-    def assign_baseline_active_tb(self, population, strain, incidence):
+    def calculate_untreated_proportion(self, population, strain):
         """
-        select individuals to be infected during baseline year
+        calculate the proportion of active TB cases not on correct treatment
+        if mdr-tb and on first-line treatment, count case as untreated
+        they will continue to contribute to transmission
+        """
+        df = population.props
+
+        # sum active tb cases
+        num_active_tb_cases = len(df[(df.tb_inf == "active") &
+                                        (df.tb_strain == strain) &
+                                        df.is_alive])
+
+        # sum treated active tb cases
+        # if mdr-tb must be on mdr treatment, otherwise consider as untreated case
+        if strain == "mdr":
+            num_treated_tb_cases = len(df[(df.tb_inf == "active") &
+                                              (df.tb_strain == strain) &
+                                              df.tb_on_treatment &
+                                              (df.tb_treatment_regimen == "tb_mdrtx") &
+                                              df.is_alive])
+        else:
+            num_treated_tb_cases = len(df[(df.tb_inf == "active") &
+                                             (df.tb_strain == strain) &
+                                             df.tb_on_treatment &
+                                             df.is_alive])
+
+        prop_untreated = 1 - (num_active_tb_cases / num_treated_tb_cases)
+
+        return prop_untreated
+
+    def assign_active_tb(self, population, strain, incidence):
+        """
+        select individuals to be infected
         assign scheduled date of active tb onset
         update properties as needed
         symptoms and smear status are assigned in the TbActiveEvent
         """
-        # todo changed this to assign all 2010 tb cases
+
         df = population.props
         rng = self.rng
         now = self.sim.date
-        p = self.parameters
 
-        # ------------------ infection status ------------------ #
         # identify eligible people, not currently with active tb infection
         eligible = df.loc[
             df.is_alive
@@ -993,165 +1010,9 @@ class Tb(Module):
         rr_of_infection = self.lm["active_tb"].predict(
             df.loc[eligible]
         )
-        # todo add this scaling
-        # scale to get overall prevalence correct
-        scaled_rr_of_infection = rr_of_infection / rr_of_infection.mean()
-
-        # todo add scaled rr
-        #  probability of infection
-        p_infection = (scaled_rr_of_infection * incidence)
-
-        # New infections:
-        will_be_infected = (
-            self.rng.random_sample(len(p_infection)) < p_infection
-        )
-        idx_new_infection = will_be_infected[will_be_infected].index
-
-        df.loc[idx_new_infection, "tb_strain"] = strain
-
-        # todo change timeframe to one yr
-        # schedule onset of active tb, time now up to 1 yr
-        for person_id in idx_new_infection:
-            date_progression = now + pd.DateOffset(
-                days=rng.randint(0, 365)
-            )
-
-            # todo reset
-            # set date of active tb - properties will be updated at TbActiveEvent every month
-            df.at[person_id, "tb_scheduled_date_active"] = date_progression
-
-    def assign_active_tb(self, population, strain):
-        """
-        select individuals to be infected - strain-specific
-        assign scheduled date of active tb onset
-        update properties as needed
-        symptoms and smear status are assigned in the TbActiveEvent
-        """
-        df = population.props
-        rng = self.rng
-        now = self.sim.date
-        p = self.parameters
-
-        # ----------------------------------- TRANSMISSION MODEL -----------------------------------
-        # Count current number of alive people with active TB
-        # including children and adults - equally transmissible (assumed)
-        # assume those on treatment not infectious (from day 1 of tx)
-        n_smear_pos = len(
-            df.loc[
-                df.is_alive
-                & (df.tb_inf == "active")
-                & (df.tb_strain == strain)
-                & ~df.tb_on_treatment
-                & df.tb_smear
-                ]
-        )
-        n_smear_neg = len(
-            df.loc[
-                df.is_alive
-                & (df.tb_inf == "active")
-                & (df.tb_strain == strain)
-                & ~df.tb_on_treatment
-                & ~df.tb_smear
-                ]
-        )
-
-        # add in mdr cases on incorrect treatment - will continue to transmit infection
-        if strain == "mdr":
-            mdr_smear_pos_on_wrong_tx = len(
-                df.loc[
-                    df.is_alive
-                    & (df.tb_inf == "active")
-                    & (df.tb_strain == strain)
-                    & df.tb_on_treatment
-                    & (df.tb_treatment_regimen != "tb_mdrtx")
-                    & df.tb_smear
-                    ]
-            )
-            n_smear_pos = n_smear_pos + mdr_smear_pos_on_wrong_tx
-
-            mdr_smear_neg_on_wrong_tx = len(
-                df.loc[
-                    df.is_alive
-                    & (df.tb_inf == "active")
-                    & (df.tb_strain == strain)
-                    & df.tb_on_treatment
-                    & (df.tb_treatment_regimen != "tb_mdrtx")
-                    & ~df.tb_smear
-                    ]
-            )
-            n_smear_neg = n_smear_neg + mdr_smear_neg_on_wrong_tx
-
-        if n_smear_pos > 0:
-
-            # identify susceptible people, not currently with active tb infection
-            # can be latent (prior infection) or never infected
-            susc_idx = df.loc[
-                df.is_alive
-                & (df.tb_inf != "active")
-                ].index
-            n_susc = len(susc_idx)
-
-            # weight risk by individual characteristics
-            # Compute chance that each susceptible person becomes infected:
-            rr_of_infection = self.lm["active_tb"].predict(
-                df.loc[susc_idx]
-            )
-            # todo add brackets around n_smear_neg*0.2
-            #  - probability of infection = beta * I/N
-            # relative infectiousness of smear-negative is lower
-            p_infection = (
-                rr_of_infection * p['beta'] *
-                (
-                    (n_smear_pos + (n_smear_neg * 0.2)) /
-                    (n_smear_pos + n_smear_neg + n_susc)
-                )
-            )
-
-            # New infections:
-            will_be_infected = (
-                self.rng.random_sample(len(p_infection)) < p_infection
-            )
-            idx_new_infection = will_be_infected[will_be_infected].index
-
-            df.loc[idx_new_infection, "tb_strain"] = strain
-
-            # todo change to within one month
-            # schedule onset of active tb, time now up to 1 month
-            for person_id in idx_new_infection:
-                date_progression = now + pd.DateOffset(
-                    days=rng.randint(0, 30)
-                )
-
-                # set date of active tb - properties will be updated at TbActiveEvent every month
-                df.at[person_id, "tb_scheduled_date_active"] = date_progression
-
-    def import_tb_cases(self, population, strain, import_rate):
-        """
-        select individuals to be infected by importation of infection - strain-specific
-        risk of infection is still weighted by individual risk factors
-        assign scheduled date of active tb onset
-        update properties as needed
-        symptoms and smear status are assigned in the TbActiveEvent
-        """
-        df = population.props
-        rng = self.rng
-        now = self.sim.date
-
-        # todo add condition not currently with active tb
-        # apply risk to all susceptible people
-        susc_idx = df.loc[
-            df.is_alive
-            & (df.tb_inf != "active")
-            ].index
-
-        # weight risk by individual characteristics
-        # Compute chance that each susceptible person becomes infected:
-        rr_of_infection = self.lm["active_tb"].predict(
-            df.loc[susc_idx]
-        )
 
         #  probability of infection
-        p_infection = rr_of_infection * import_rate
+        p_infection = (rr_of_infection * incidence)
 
         # New infections:
         will_be_infected = (
@@ -1162,21 +1023,13 @@ class Tb(Module):
         df.loc[idx_new_infection, "tb_strain"] = strain
 
         # schedule onset of active tb, time now up to 1 year
-        # if already active -> do nothing
-        # if already scheduled active -> do nothing
         for person_id in idx_new_infection:
-            if df.at[person_id, "tb_inf"] == "active":
-                return
+            date_progression = now + pd.DateOffset(
+                days=rng.randint(0, 365)
+            )
 
-            # todo importation occurs within this month
-            # if person doesn't already have scheduled date active...
-            if df.at[person_id, "tb_scheduled_date_active"] == pd.NaT:
-                date_progression = now + pd.DateOffset(
-                    days=rng.randint(0, 30)
-                )
-
-                # set date of active tb - properties will be updated at TbActiveEvent every month
-                df.at[person_id, "tb_scheduled_date_active"] = date_progression
+            # set date of active tb - properties will be updated at TbActiveEvent poll daily
+            df.at[person_id, "tb_scheduled_date_active"] = date_progression
 
     def consider_ipt_for_those_initiating_art(self, person_id):
         """
@@ -1606,22 +1459,32 @@ class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))
+        super().__init__(module, frequency=DateOffset(years=1))
 
     def apply(self, population):
+
         p = self.module.parameters
+        inc_estimates = p["who_incidence_estimates"]
+        incidence_year = (inc_estimates.loc[
+            (inc_estimates.year == self.sim.date.year), "incidence_per_100k"
+        ].values[0]) / 100000
+
+        prop_untreated_ds = self.module.calculate_untreated_proportion(population, strain="ds")
+        prop_untreated_mdr = self.module.calculate_untreated_proportion(population, strain="mdr")
+
+        scaled_incidence_ds = incidence_year * \
+                              p["scaling_factor_WHO"] * \
+                              prop_untreated_ds
+        scaled_incidence_mdr = incidence_year * \
+                                p["prop_mdr2010"] * \
+                               p["scaling_factor_WHO"] * \
+                               prop_untreated_mdr
 
         # transmission ds-tb
-        self.module.assign_active_tb(population, strain="ds")
+        self.module.assign_active_tb(population, strain="ds", incidence=scaled_incidence_ds)
 
         # transmission mdr-tb, around 1% of total tb incidence
-        self.module.assign_active_tb(population, strain="mdr")
-
-        # importation of new ds cases - independent of current prevalence
-        self.module.import_tb_cases(population, strain="ds", import_rate=p["importation_rate_ds"])
-
-        # importation of new mdr cases - independent of current prevalence
-        self.module.import_tb_cases(population, strain="mdr", import_rate=p["importation_rate_mdr"])
+        self.module.assign_active_tb(population, strain="mdr", incidence=scaled_incidence_mdr)
 
 
 class TbTreatmentAndRelapseEvents(RegularEvent, PopulationScopeEventMixin):
@@ -2359,11 +2222,11 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # -------- SHINE Trial shorter paediatric regimen -------- #
         if (self.module.parameters["scenario"] == 5) \
-                & (self.sim.date >= self.module.parameters["scenario_start_date"]) \
-                & (person["age_years"] <= 16) \
-                & ~(person["tb_smear"]) \
-                & ~person["tb_ever_treated"] \
-                & ~person["tb_diagnosed_mdr"]:
+            & (self.sim.date >= self.module.parameters["scenario_start_date"]) \
+            & (person["age_years"] <= 16) \
+            & ~(person["tb_smear"]) \
+            & ~person["tb_ever_treated"] \
+            & ~person["tb_diagnosed_mdr"]:
             # shorter treatment for child with minimal tb
             treatment_regimen = "tb_tx_child_shorter"
 
@@ -2420,7 +2283,7 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
 
         # if previously treated:
         if ((person["tb_treatment_regimen"] == "tb_retx_adult") or
-                (person["tb_treatment_regimen"] == "tb_retx_child")):
+            (person["tb_treatment_regimen"] == "tb_retx_child")):
 
             # if strain is ds and person previously treated:
             sputum_fup = follow_up_times["ds_retreatment_sputum"].dropna()
