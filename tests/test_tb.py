@@ -145,12 +145,15 @@ def test_natural_history(seed):
     disable=true, runs all hsi events but doesn't use queue so you won't find them
     """
 
-    popsize = 10
+    popsize = 1000
 
     sim = get_sim(seed, use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
 
+    # todo change active testing rate
     # set very high incidence rates for poll
-    sim.modules['Tb'].parameters['scaling_factor_WHO'] = 5000
+    sim.modules['Tb'].parameters['beta'] = 50
+    sim.modules["Tb"].parameters["rate_testing_active_tb"]["treatment_coverage"] = 100
+    sim.modules['Tb'].parameters['prop_smear_positive'] = 1.0
 
     # Make the population
     sim.make_initial_population(n=popsize)
@@ -186,22 +189,14 @@ def test_natural_history(seed):
     symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
     assert set(sim.modules['SymptomManager'].has_what(tb_case)) == symptom_list
 
-    # run HSI_Tb_ScreeningAndRefer and check outcomes
-    # this schedules the event
-    sim.modules['HealthSystem'].schedule_hsi_event(
-        tb.HSI_Tb_ScreeningAndRefer(person_id=tb_case, module=sim.modules['Tb']),
-        topen=sim.date,
-        tclose=None,
-        priority=0
-    )
-
-    # Check person_id has a ScreeningAndRefer event scheduled
+    # Check person_id has a ScreeningAndRefer event scheduled by TbActiveEvent
     date_event, event = [
         ev for ev in sim.modules['HealthSystem'].find_events_for_person(tb_case) if
         isinstance(ev[1], tb.HSI_Tb_ScreeningAndRefer)
     ][0]
-    assert date_event == sim.date
+    assert date_event > sim.date
 
+    # test and treat this person
     list_of_hsi = [
         'tb.HSI_Tb_ScreeningAndRefer',
         'tb.HSI_Tb_StartTreatment'
@@ -218,8 +213,10 @@ def test_natural_history(seed):
                          )
         hsi_event.run(squeeze_factor=0)
 
-    assert df.at[tb_case, 'tb_ever_tested']
+    assert df.at[tb_case, 'tb_date_tested'] != pd.NaT
     assert df.at[tb_case, 'tb_diagnosed']
+    assert df.at[tb_case, "tb_on_treatment"]
+    assert df.at[tb_case, "tb_date_treated"] == sim.date
 
 
 def test_treatment_schedule(seed):
@@ -269,7 +266,7 @@ def test_treatment_schedule(seed):
                                                  module=sim.modules['Tb'])
     screening_appt.apply(person_id=person_id, squeeze_factor=0.0)
 
-    assert df.at[person_id, 'tb_ever_tested']
+    assert df.at[person_id, 'tb_date_tested'] != pd.NaT
     assert df.at[person_id, 'tb_diagnosed']
     assert not df.at[person_id, 'tb_diagnosed_mdr']
 
@@ -345,7 +342,7 @@ def test_treatment_failure(seed):
                                                  module=sim.modules['Tb'])
     screening_appt.apply(person_id=person_id, squeeze_factor=0.0)
 
-    assert df.at[person_id, 'tb_ever_tested']
+    assert df.at[person_id, 'tb_date_tested'] != pd.NaT
     assert df.at[person_id, 'tb_diagnosed']
     assert not df.at[person_id, 'tb_diagnosed_mdr']
 
@@ -628,7 +625,7 @@ def test_mdr(seed):
                                                  module=sim.modules['Tb'])
     screening_appt.apply(person_id=person_id, squeeze_factor=0.0)
 
-    assert df.at[person_id, 'tb_ever_tested']
+    assert df.at[person_id, 'tb_date_tested'] != pd.NaT
     assert df.at[person_id, 'tb_diagnosed']
     assert not df.at[person_id, 'tb_diagnosed_mdr']
 
@@ -754,7 +751,7 @@ def test_active_tb_linear_model(seed):
     tb_module = sim.modules['Tb']
 
     # set parameters
-    tb_module.parameters['scaling_factor_WHO'] = 1.0
+    tb_module.parameters['beta'] = 5
 
     # Make the population
     sim.make_initial_population(n=popsize)
@@ -813,7 +810,7 @@ def test_active_tb_linear_model(seed):
 @pytest.mark.slow
 def test_basic_run_with_default_parameters(seed):
     """Run the TB module with check and check dtypes consistency"""
-    end_date = Date(2015, 12, 31)
+    end_date = Date(2010, 6, 30)
 
     sim = get_sim(seed=seed)
     sim.make_initial_population(n=1000)

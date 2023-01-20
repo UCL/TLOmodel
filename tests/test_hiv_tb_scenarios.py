@@ -49,6 +49,7 @@ def get_sim(seed):
             capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
             disable=False,  # disables the healthsystem (no constraints and no logging) and every HSI runs
             disable_and_reject_all=False,  # disable healthsystem and no HSI runs
+            store_hsi_events_that_have_run=False,  # convenience function for debugging
         ),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
@@ -77,7 +78,7 @@ def test_scenario_parameters(seed):
     assert sim.modules["Hiv"].parameters["prob_circ_after_hiv_test"] == 0.25
     assert sim.modules["Tb"].parameters["age_eligibility_for_ipt"] == 100
     assert sim.modules["Tb"].parameters["ipt_coverage"]["coverage_plhiv"].all() >= 0.6
-    assert sim.modules["Tb"].parameters["ipt_coverage"]["coverage_paediatric"].all() >= 0.8
+    assert (sim.modules["Tb"].parameters["ipt_coverage"]["coverage_paediatric"] == 80).all()
 
 
 @pytest.mark.slow
@@ -94,7 +95,7 @@ def test_scenario_ipt_expansion(seed):
     # stop PLHIV getting IPT for purpose of tests
     sim.modules['Tb'].parameters['ipt_coverage'].coverage_plhiv = 0
     # set coverage of IPT for TB contacts to 1.0
-    sim.modules['Tb'].parameters['ipt_coverage'].coverage_paediatric = 1.0
+    sim.modules['Tb'].parameters['ipt_coverage'].coverage_paediatric = 100
 
     # Make the population
     sim.make_initial_population(n=popsize)
@@ -136,7 +137,7 @@ def test_scenario_ipt_expansion(seed):
                                                  module=sim.modules['Tb'])
     screening_appt.apply(person_id=person_id, squeeze_factor=0.0)
 
-    assert df.at[person_id, 'tb_ever_tested']
+    assert df.at[person_id, 'tb_date_tested'] != pd.NaT
     assert df.at[person_id, 'tb_diagnosed']
 
     # check ages of those scheduled for HSI_Tb_Start_or_Continue_Ipt
@@ -184,7 +185,7 @@ def test_scenario_ipt_expansion(seed):
     # stop PLHIV getting IPT for purpose of tests
     sim.modules['Tb'].parameters['ipt_coverage'].coverage_plhiv = 0
     # set coverage of IPT for TB contacts to 1.0
-    sim.modules['Tb'].parameters['ipt_coverage'].coverage_paediatric = 1.0
+    sim.modules['Tb'].parameters['ipt_coverage'].coverage_paediatric = 100
 
     assert sim.modules["Tb"].parameters["age_eligibility_for_ipt"] >= 5.0
 
@@ -216,7 +217,7 @@ def test_scenario_ipt_expansion(seed):
                                                  module=sim.modules['Tb'])
     screening_appt.apply(person_id=person_id, squeeze_factor=0.0)
 
-    assert df.at[person_id, 'tb_ever_tested']
+    assert df.at[person_id, 'tb_date_tested'] != pd.NaT
     assert df.at[person_id, 'tb_diagnosed']
 
     # check ages of those scheduled for HSI_Tb_Start_or_Continue_Ipt
@@ -294,7 +295,7 @@ def test_check_tb_test_under_each_scenario(seed):
                                                  module=sim.modules['Tb'])
     screening_appt.apply(person_id=hiv_neg_person, squeeze_factor=0.0)
 
-    assert df.at[hiv_neg_person, 'tb_ever_tested']
+    assert df.at[hiv_neg_person, 'tb_date_tested'] != pd.NaT
     assert df.at[hiv_neg_person, 'tb_diagnosed']
     assert not df.at[hiv_neg_person, 'tb_diagnosed_mdr']
 
@@ -303,7 +304,7 @@ def test_check_tb_test_under_each_scenario(seed):
                                                  module=sim.modules['Tb'])
     screening_appt.apply(person_id=hiv_pos_person, squeeze_factor=0.0)
 
-    assert df.at[hiv_pos_person, 'tb_ever_tested']
+    assert df.at[hiv_pos_person, 'tb_date_tested'] != pd.NaT
     assert df.at[hiv_pos_person, 'tb_diagnosed']
     assert not df.at[hiv_pos_person, 'tb_diagnosed_mdr']
 
