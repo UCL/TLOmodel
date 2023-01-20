@@ -384,8 +384,9 @@ def test_airthmetic_of_lifeyearslost(seed):
 
 @pytest.mark.slow
 def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
-    """Check that the computation of 'stacked' LifeYearsLost and DALYS is done correctly (i.e. when all the
-    future life-years lost are allocated to the year of death."""
+    """Check that the computation of 'stacked' LifeYearsLost and DALYS is done correctly (i.e., when all the
+    future life-years lost are allocated to the year of death (stacked by time); or when all future life-year lost are
+    allocaed to the year of death and age of death (stacked by age and time)."""
 
     rfp = Path(os.path.dirname(__file__)) / '../resources'
 
@@ -398,6 +399,8 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
         CAUSES_OF_DEATH = {'cause_of_death_A': Cause(label='Label_A')}
         CAUSES_OF_DISABILITY = {'cause_of_disability_A': Cause(label='Label_A')}
         daly_wt = 0.5
+        disability_onset_date = Date(2011, 1, 1)
+        death_date = Date(2012, 1, 1)
 
         def read_parameters(self, data_folder):
             pass
@@ -406,12 +409,11 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
             pass
 
         def initialise_simulation(self, sim):
-            disability_onset_date = Date(2011, 1, 1)
-            death_date = Date(2012, 1, 1)
+
 
             self.has_disease = False
-            sim.schedule_event(StartOfDiseaseEvent(self, 0), disability_onset_date)
-            sim.schedule_event(InstantaneousDeath(self, individual_id=0, cause='cause_of_death_A'), death_date)
+            sim.schedule_event(StartOfDiseaseEvent(self, 0), self.disability_onset_date)
+            sim.schedule_event(InstantaneousDeath(self, individual_id=0, cause='cause_of_death_A'), self.death_date)
 
         def report_daly_values(self):
             df = sim.population.props
@@ -444,13 +446,15 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
     df.loc[0, 'sex'] = 'F'
     sim.simulate(end_date=Date(2029, 12, 31))
     daly_wt = sim.modules['DiseaseThatCausesA'].daly_wt
+    death_date = sim.modules['DiseaseThatCausesA'].death_date
+    disability_onset_date = sim.modules['DiseaseThatCausesA'].disability_onset_date
 
     # Examine YLL, YLD and DALYS for 'A' recorded at the end of the simulation
     log = parse_log_file(sim.log_filepath)['tlo.methods.healthburden']
 
     # Examine Years Lived with Disability
     yld = log['yld_by_causes_of_disability']
-    marker_for_disability = (yld.year == 2011) & (yld.age_range == '0-4') & (yld.sex == 'F')
+    marker_for_disability = (yld.year == disability_onset_date.year) & (yld.age_range == '0-4') & (yld.sex == 'F')
     assert (yld.loc[marker_for_disability, 'cause_of_disability_A'] == daly_wt * 1.0).all()
     assert (yld.loc[~marker_for_disability, 'cause_of_disability_A'] == 0.0).all()
 
@@ -461,21 +465,34 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
         (yll_not_stacked.sex == 'F'),
         ['year', 'age_range', 'cause_of_death_A']
     ].groupby('year')['cause_of_death_A'].sum()
-    assert all([yll_by_year_not_stacked.loc[year] == approx(1.0, abs=1/364) for year in range(2012, 2029)])
-    assert all([yll_by_year_not_stacked.loc[year] == approx(0.0, abs=1 / 364) for year in range(2010, 2012)])
+    assert all([yll_by_year_not_stacked.loc[year] == approx(1.0, abs=1/364) for year in range(death_date.year, sim.end_date.year)])
+    assert all([yll_by_year_not_stacked.loc[year] == approx(0.0, abs=1 / 364) for year in range(sim.start_date.year, death_date.year)])
 
-    # For the Non-Stacked Results
-    # -- YLL
-    yll_stacked = log['yll_by_causes_of_death_stacked']
-    yll_by_year_stacked = yll_stacked.loc[
-        (yll_not_stacked.sex == 'F'),
+    # For the Stacked Results
+    # -- YLL (Stacked by time - but not age)
+    yll_stacked_by_time = log['yll_by_causes_of_death_stacked']
+    yll_stacked_by_time = yll_stacked_by_time.loc[
+        (yll_stacked_by_time.sex == 'F'),
         ['year', 'age_range', 'cause_of_death_A']
-    ].groupby('year')['cause_of_death_A'].sum()
-    assert all(
-        [yll_by_year_stacked.loc[year] == (approx(68.0, 1/364) if year == 2012 else 0.0) for year in range(2010, 2030)]
-    )
+    ].groupby(['year', 'age_range'])['cause_of_death_A'].sum().unstack()
 
-    # Check dalys is as expected:
+    assert 0 == yll_stacked_by_time.loc[yll_stacked_by_time.index != death_date.year].sum().sum()  # No Yll for years other than year of death
+    assert yll_stacked_by_time.loc[death_date.year] == approx(68.0, 1/364)  # In year of death, 68 years of lost life.
+    cols_for_age_groups_not_in_age_group = ['70-74', '75-79', '80-84', '85-89', '90-94', '95-99', '100+']
+    assert (yll_stacked_by_time.loc[death_date.year, yll_stacked_by_time.columns[~yll_stacked_by_time.columns.isin(cols_for_age_groups_not_in_age_group)]] > 0).all()
+    assert 0 == yll_stacked_by_time[cols_for_age_groups_not_in_age_group].sum().sum()  # todo Check that age-groups other than 0-4, ... 65-69 there is no loss.
+
+    # -- YLL (Stacked by age and time)
+    yll_stacked_by_age_and_time = log['yll_by_causes_of_death_stacked_by_age_and_time']
+    yll_stacked_by_age_and_time = yll_stacked_by_age_and_time.loc[
+        (yll_stacked_by_age_and_time.sex == 'F'),
+        ['year', 'age_range', 'cause_of_death_A']
+    ].groupby(['year', 'age_range'])['cause_of_death_A'].sum().unstack()
+    assert 0 == yll_stacked_by_age_and_time[yll_stacked_by_age_and_time.columns[yll_stacked_by_age_and_time.columns != '0-4']].sum().sum()  # No YLL for ages other than 0-4
+    assert 0 == yll_stacked_by_age_and_time.loc[yll_stacked_by_age_and_time.index != death_date.year].sum().sum()  # No Yll for years other than year of death
+    assert yll_stacked_by_age_and_time.sum().sum() == yll_stacked_by_time.sum().sum()  # Total YLL matches other disaggregation
+
+    # Check dalys (not stacked) is as expected:
     dalys_by_year_not_stacked = log['dalys'].loc[
         (log['dalys'].sex == 'F'), ['year', 'age_range', 'Label_A']
     ].groupby('year')['Label_A'].sum()
@@ -483,16 +500,19 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
     assert dalys_by_year_not_stacked.at[2011] == approx(0.5, 1/364)
     assert all([dalys_by_year_not_stacked.at[year] == (approx(1.0, 1/364)) for year in range(2012, 2030)])
 
-    # Check dalys_stacked is as expected:
-    dalys_by_year_stacked = log['dalys_stacked'].loc[
+    # Check dalys_stacked_by_time is as expected:
+    dalys_by_year_stacked_by_time = log['dalys_stacked'].loc[
         (log['dalys'].sex == 'F'), ['year', 'age_range', 'Label_A']
     ].groupby('year')['Label_A'].sum()
-    assert dalys_by_year_stacked.at[2010] == 0.0
-    assert dalys_by_year_stacked.at[2011] == approx(0.5, 1/364)
-    assert dalys_by_year_stacked.at[2012] == approx(68.0, 1/364)
-    assert all([dalys_by_year_stacked.at[year] == (approx(0.0, 1/364)) for year in range(2013, 2030)])
+    assert dalys_by_year_stacked_by_time.at[2010] == 0.0
+    assert dalys_by_year_stacked_by_time.at[2011] == approx(0.5, 1/364)
+    assert dalys_by_year_stacked_by_time.at[2012] == approx(68.0, 1/364)
+    assert all([dalys_by_year_stacked_by_time.at[year] == (approx(0.0, 1/364)) for year in range(2013, 2030)])
 
-    # Check that results from daly_stacked can be extract into pd.Series (for use in `extract_results`)
+    # todo Check dalys_stacked_by_age_and_time is as expected:
+    ...
+
+    # Check that results from daly_stacked_by_time can be extract into pd.Series (for use in `extract_results`)
     def fn(df_):
         return df_.drop(columns='date').groupby(['year']).sum().stack()
 
