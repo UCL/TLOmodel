@@ -820,6 +820,8 @@ class Tb(Module):
             (inc_estimates.year == self.sim.date.year), "incidence_per_100k"
         ].values[0]) / 100000
 
+        incidence_year = incidence_year * p["scaling_factor_WHO"]
+
         self.assign_active_tb(
             population,
             strain="ds",
@@ -983,7 +985,7 @@ class Tb(Module):
                                              df.tb_on_treatment &
                                              df.is_alive])
 
-        prop_untreated = 1 - (num_active_tb_cases / num_treated_tb_cases)
+        prop_untreated = 1 - (num_treated_tb_cases / num_active_tb_cases) if num_active_tb_cases else 1
 
         return prop_untreated
 

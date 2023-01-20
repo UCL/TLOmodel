@@ -35,14 +35,14 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2011, 1, 1)
-popsize = 1000
+end_date = Date(2020, 1, 1)
+popsize = 10000
 
-scenario = 4
+scenario = 0
 
 # set up the log config
 log_config = {
-    "filename": "tb_transmission_runs",
+    "filename": "test_runs",
     "directory": outputpath,
     "custom_levels": {
         "*": logging.WARNING,
@@ -77,7 +77,6 @@ sim.register(
         use_funded_or_actual_staffing="funded_plus",  # actual: use numbers/distribution of staff available currently
         disable=False,  # disables the healthsystem (no constraints and no logging) and every HSI runs
         disable_and_reject_all=False,  # disable healthsystem and no HSI runs
-        store_hsi_events_that_have_run=False,  # convenience function for debugging
     ),
     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
@@ -89,10 +88,10 @@ sim.register(
 )
 
 # set the scenario
-sim.modules["Hiv"].parameters["beta"] = 0.129671
-sim.modules["Tb"].parameters["beta"] = 0.19
-sim.modules["Tb"].parameters["scenario"] = scenario
-sim.modules["Tb"].parameters["scenario_start_date"] = Date(2011, 1, 1)
+# sim.modules["Hiv"].parameters["beta"] = 0.129671
+sim.modules["Tb"].parameters["scaling_factor_WHO"] = 1.5
+# sim.modules["Tb"].parameters["scenario"] = scenario
+# sim.modules["Tb"].parameters["scenario_start_date"] = Date(2011, 1, 1)
 # sim.modules["Tb"].parameters["scenario_SI"] = "z"
 
 # sim.modules["Tb"].parameters["rr_tb_hiv"] = 5  # default 13
