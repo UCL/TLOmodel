@@ -333,7 +333,6 @@ class HealthBurden(Module):
         self.YearsLifeLostStackedAgeAndTime[cause_of_death] = self.YearsLifeLostStackedAgeAndTime[cause_of_death].add(
             yll_stacked_by_age_and_time['person_years'], fill_value=0)
 
-
         # Check that the index of the YLL dataframe is not changed
         assert self.YearsLifeLost.index.equals(self.multi_index)
         assert self.YearsLifeLostStackedTime.index.equals(self.multi_index)
