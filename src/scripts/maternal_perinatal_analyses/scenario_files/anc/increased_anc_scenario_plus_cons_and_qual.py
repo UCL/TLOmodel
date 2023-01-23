@@ -29,7 +29,7 @@ from tlo.scenario import BaseScenario
 class Increased(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 562537
+        self.seed = 661184
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2031, 1, 1)
         self.pop_size = 250_000

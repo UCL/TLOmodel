@@ -26,10 +26,10 @@ from tlo.methods import (
 from tlo.scenario import BaseScenario
 
 
-class SBAMaxSensitivityAnalysis(BaseScenario):
+class SBAMinSensitivityAnalysis(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 562537
+        self.seed = 661184
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2031, 1, 1)
         self.pop_size = 250_000
@@ -38,7 +38,7 @@ class SBAMaxSensitivityAnalysis(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'max_sens_analysis_250k', 'directory': './outputs',
+            'filename': 'min_sens_analysis_250k', 'directory': './outputs',
             "custom_levels": {
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
