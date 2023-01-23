@@ -50,7 +50,7 @@ end_date = 2020
 # TB WHO data
 xls_tb = pd.ExcelFile(resourcefilepath / "ResourceFile_TB.xlsx")
 
-data_tb_who = pd.read_excel(xls_tb, sheet_name="WHO_activeTB2020")
+data_tb_who = pd.read_excel(xls_tb, sheet_name="WHO_activeTB2023")
 data_tb_who = data_tb_who.loc[
     (data_tb_who.year >= 2010)
 ]  # include only years post-2010

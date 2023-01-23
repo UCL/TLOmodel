@@ -478,7 +478,7 @@ class Tb(Module):
                 p["rr_tb_bcg"]  # child with bcg
             ),
             Predictor("li_bmi").when(">=4", p["rr_tb_obese"]),
-            # Predictor('diabetes').when(True, p['rr_tb_diabetes1']),
+            Predictor("nc_diabetes").when(True, p['rr_tb_diabetes1']),
             Predictor("li_ex_alc").when(True, p["rr_tb_alcohol"]),
             Predictor("li_tob").when(True, p["rr_tb_smoking"]),
             # -------------- IPT -------------- #
