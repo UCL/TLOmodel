@@ -2109,9 +2109,8 @@ class Labour(Module):
         person_id = hsi_event.target
         df = self.sim.population.props
         params = self.current_parameters
-        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
-        # We log the log the required consumables and condition the surgery happening on the availability of the
+        # We log the required consumables and condition the surgery happening on the availability of the
         # first consumable in this package, the anaesthetic required for the surgery
         avail = pregnancy_helper_functions.return_cons_avail(
             self, hsi_event, self.item_codes_lab_consumables, core='obstetric_surgery_core',
@@ -2121,25 +2120,16 @@ class Labour(Module):
         sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self, sf='surg',
                                                                                    hsi_event=hsi_event)
 
-        if not mni[person_id]['retained_placenta']:
+        # determine if uterine preserving surgery will be successful
+        treatment_success_pph = params['success_rate_pph_surgery'] > self.rng.random_sample()
 
-            # We apply a probability that surgical techniques will be effective
-            treatment_success_pph = params['success_rate_pph_surgery'] > self.rng.random_sample()
-
-            # And store the treatment which will dramatically reduce risk of death
-            if treatment_success_pph and avail and sf_check:
-                self.pph_treatment.set(person_id, 'surgery')
-
-            # If the treatment is unsuccessful then women will require a hysterectomy to stop the bleeding
-            elif not treatment_success_pph and avail and sf_check:
-                self.pph_treatment.set(person_id, 'hysterectomy')
-                df.at[person_id, 'la_has_had_hysterectomy'] = True
-
-        # Next we apply the effect of surgical treatment for women with retained placenta
-        elif (mni[person_id]['retained_placenta'] and not self.pph_treatment.has_all(person_id,
-                                                                                     'manual_removal_placenta')
-              and sf_check and avail):
+        # If resources are available and the surgery is a success then a hysterectomy does not occur
+        if treatment_success_pph and avail and sf_check:
             self.pph_treatment.set(person_id, 'surgery')
+
+        elif not treatment_success_pph and avail and sf_check:
+            self.pph_treatment.set(person_id, 'hysterectomy')
+            df.at[person_id, 'la_has_had_hysterectomy'] = True
 
         # log intervention delivery
         if self.pph_treatment.has_all(person_id, 'surgery') or df.at[person_id, 'la_has_had_hysterectomy']:
@@ -3189,18 +3179,21 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
             sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.module, sf='surg',
                                                                                        hsi_event=self)
 
-            if (avail and sf_check) or (mni[person_id]['cs_indication'] == 'other' and
-                                        params['cemonc_availability'] != 0.0):
-                person = df.loc[person_id]
-                logger.info(key='caesarean_delivery', data=person.to_dict())
-                logger.info(key='cs_indications', data={'id': person_id,
-                                                        'indication': mni[person_id]['cs_indication']})
+            # Block CS delivery for this analysis
+            if params['la_analysis_in_progress'] and (params['cemonc_availability'] == 0.0):
+                logger.debug(key='message', data="cs delivery blocked for this analysis")
 
-                # The appropriate variables in the MNI and dataframe are stored. Current caesarean section reduces risk
-                # of intrapartum still birth and death due to antepartum haemorrhage
-                mni[person_id]['mode_of_delivery'] = 'caesarean_section'
-                mni[person_id]['amtsl_given'] = True
-                df.at[person_id, 'la_previous_cs_delivery'] += 1
+            elif (avail and sf_check) or (mni[person_id]['cs_indication'] == 'other'):
+                    person = df.loc[person_id]
+                    logger.info(key='caesarean_delivery', data=person.to_dict())
+                    logger.info(key='cs_indications', data={'id': person_id,
+                                                            'indication': mni[person_id]['cs_indication']})
+
+                    # The appropriate variables in the MNI and dataframe are stored. Current caesarean section reduces
+                    # risk of intrapartum still birth and death due to antepartum haemorrhage
+                    mni[person_id]['mode_of_delivery'] = 'caesarean_section'
+                    mni[person_id]['amtsl_given'] = True
+                    df.at[person_id, 'la_previous_cs_delivery'] += 1
 
         # ================================ SURGICAL MANAGEMENT OF RUPTURED UTERUS =====================================
         # Women referred after the labour HSI following correct identification of ruptured uterus will also need to

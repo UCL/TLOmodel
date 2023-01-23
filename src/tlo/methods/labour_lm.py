@@ -339,7 +339,7 @@ def predict_postpartum_haem_pp_death(self, df, rng=None, **externals):
 
         result *= treatment_effect
 
-    if (person['ps_anaemia_in_pregnancy'] != 'none') or (person['pn_anaemia_following_pregnancy'] != 'none'):
+    if (person['ps_anaemia_in_pregnancy'] == 'severe') or (person['pn_anaemia_following_pregnancy'] == 'severe'):
         result *= params['rr_pph_death_anaemia']
 
     return pd.Series(data=[result], index=df.index)
