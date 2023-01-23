@@ -69,6 +69,9 @@ def predict_rds_preterm(self, df, rng=None, **externals):
 
     result = params['prob_respiratory_distress_preterm']
 
+    if person['nb_early_preterm']:
+        result *= params['rr_rds_early_preterm']
+
     if main_df.at[mother_id, 'ps_gest_diab'] != 'none':
         result *= params['rr_rds_maternal_gestational_diab']
     if externals['received_corticosteroids']:
