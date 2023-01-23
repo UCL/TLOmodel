@@ -174,6 +174,16 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, sim_ye
             :return: mean, lower quantile, upper quantil of coverage
             """
 
+            all_surviving_mothers = extract_results(
+                folder,
+                module="tlo.methods.postnatal_supervisor",
+                key="total_mat_pnc_visits",
+                custom_generate_series=(
+                    lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])[
+                        'mother'].count()),
+                do_scaling=True
+            )
+
             # Extract data on all women with 1+ PNC visits
             pnc_results_maternal = extract_results(
                 folder,
@@ -186,6 +196,16 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, sim_ye
             )
 
             # Followed by newborns...
+            all_surviving_newborns = extract_results(
+                folder,
+                module="tlo.methods.postnatal_supervisor",
+                key="total_neo_pnc_visits",
+                custom_generate_series=(
+                    lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])[
+                        'child'].count()),
+                do_scaling=True
+            )
+
             pnc_results_newborn = extract_results(
                 folder,
                 module="tlo.methods.postnatal_supervisor",
@@ -197,20 +217,24 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, sim_ye
             )
 
             # Get mean/quantiles
+            all_mat_data = analysis_utility_functions.get_mean_and_quants(all_surviving_mothers, sim_years)
+            all_neo_data = analysis_utility_functions.get_mean_and_quants(all_surviving_newborns, sim_years)
+
             pn_mat_data = analysis_utility_functions.get_mean_and_quants(pnc_results_maternal, sim_years)
             pn_neo_data = analysis_utility_functions.get_mean_and_quants(pnc_results_newborn, sim_years)
 
             # Use birth data to calculate coverage as a proportion of total births
-            pnc_1_plus_rate_mat = [(x / y) * 100 for x, y in zip(pn_mat_data[0], birth_data[0])]
-            pnc_mat_lqs = [(x / y) * 100 for x, y in zip(pn_mat_data[1], birth_data[1])]
-            pnc_mat_uqs = [(x / y) * 100 for x, y in zip(pn_mat_data[2], birth_data[2])]
+            def output_pnc_coverage(data, denom):
+                mean = [(x / y) * 100 for x, y in zip(data[0], denom[0])]
+                lq = [(x / y) * 100 for x, y in zip(data[1], denom[1])]
+                uq = [(x / y) * 100 for x, y in zip(data[2], denom[2])]
 
-            pnc1_plus_rate_neo = [(x / y) * 100 for x, y in zip(pn_neo_data[0], birth_data[0])]
-            pnc_neo_lqs = [(x / y) * 100 for x, y in zip(pn_neo_data[1], birth_data[1])]
-            pnc_neo_uqs = [(x / y) * 100 for x, y in zip(pn_neo_data[2], birth_data[2])]
+                return [mean, lq, uq]
 
-            return {'maternal_pnc': [pnc_1_plus_rate_mat, pnc_mat_lqs, pnc_mat_uqs],
-                    'neonatal_pnc': [pnc1_plus_rate_neo, pnc_neo_lqs, pnc_neo_uqs]}
+            return {'maternal_pnc_births': output_pnc_coverage(pn_mat_data, birth_data),
+                    'maternal_pnc_survivors': output_pnc_coverage(pn_mat_data, all_mat_data),
+                    'neonatal_pnc_births': output_pnc_coverage(pn_neo_data, birth_data),
+                    'neonatal_pnc_survivors': output_pnc_coverage(pn_mat_data, all_neo_data)}
 
         coverage_data = {k: get_pnc_coverage(results_folders[k], births_dict[k]['total_births']) for k in
                          results_folders}
@@ -218,16 +242,28 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, sim_ye
 
         # generate plots showing coverage of ANC intervention in the baseline and intervention scenarios
         analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
-            scen_colours, sim_years, coverage_data, 'maternal_pnc',
+            scen_colours, sim_years, coverage_data, 'maternal_pnc_births',
             '% Total Births',
-            'Proportion of Mothers Receiving PNC following Birth',
-            plot_destination_folder, 'mat_pnc_coverage')
+            'Maternal PNC Coverage as Proportion of Total Births',
+            plot_destination_folder, 'mat_pnc_coverage_births')
 
         analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
-            scen_colours, sim_years, coverage_data, 'neonatal_pnc',
+            scen_colours, sim_years, coverage_data, 'maternal_pnc_survivors',
+            '% Total Survivors at Day 42',
+            'Maternal PNC Coverage as Proportion of Postnatal Survivors',
+            plot_destination_folder, 'mat_pnc_coverage_survivors')
+
+        analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+            scen_colours, sim_years, coverage_data, 'neonatal_pnc_births',
             '% Total Births',
-            'Proportion of Neonates Receiving PNC following Birth',
-            plot_destination_folder, 'neo_pnc_coverage')
+            'Neonatal PNC Coverage as Proportion of Total Births',
+            plot_destination_folder, 'neo_pnc_coverage_births')
+
+        analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+            scen_colours, sim_years, coverage_data, 'neonatal_pnc_survivors',
+            '% Total Survivors at Day 28',
+            'Neonatal PNC Coverage as Proportion of Neonatal Survivors',
+            plot_destination_folder, 'neo_pnc_coverage_survivors')
 
     # --------------------------------------------PRIMARY OUTCOMES ----------------------------------------------------
     # ===================================== MATERNAL/NEONATAL DEATHS ==================================================
@@ -460,10 +496,10 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, sim_ye
     output_df = output_df.append(pd.DataFrame.from_dict(dalys_data))
 
     for data, title, y_lable in \
-        zip(['agg_mat_dalys',
-             'agg_neo_dalys',
-             'avg_mat_dalys_rate',
-             'avg_neo_dalys_rate'],
+        zip(['agg_mat_dalys_stacked',
+             'agg_neo_dalys_stacked',
+             'avg_mat_dalys_rate_stacked',
+             'avg_neo_dalys_rate_stacked'],
             ['Average Total Maternal DALYs (stacked) by Scenario',
              'Average Total Neonatal DALYs (stacked) by Scenario',
              'Average Total Maternal DALYs per 100k PY by Scenario',
@@ -496,11 +532,13 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, sim_ye
         plt.savefig(f'{plot_destination_folder}/{data}.png')
         plt.show()
 
-    for dict_key, axis, title, save_name in zip(['maternal_dalys_crude', 'maternal_dalys_rate', 'maternal_yll_crude',
-                                                 'maternal_yll_rate', 'maternal_yld_crude', 'maternal_yld_rate',
+    for dict_key, axis, title, save_name in zip(['maternal_dalys_crude_stacked', 'maternal_dalys_rate_stacked',
+                                                 'maternal_yll_crude_stacked', 'maternal_yll_rate_stacked',
+                                                 'maternal_yld_crude_unstacked', 'maternal_yld_rate_unstacked',
 
-                                                 'neonatal_dalys_crude', 'neonatal_dalys_rate', 'neonatal_yll_crude',
-                                                 'neonatal_yll_rate', 'neonatal_yld_crude', 'neonatal_yld_rate'],
+                                                 'neonatal_dalys_crude_stacked', 'neonatal_dalys_rate_stacked',
+                                                 'neonatal_yll_crude_stacked', 'neonatal_yll_rate_stacked',
+                                                 'neonatal_yld_crude_unstacked', 'neonatal_yld_rate_unstacked'],
 
                                                 ['DALYs', 'DALYs per 100k Person-Years', 'YLL',
                                                  'YLL per 100k Person-Years', 'YLD', 'YLD per 100k Person-Years',
@@ -660,7 +698,7 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, sim_ye
             scen_colours, sim_years, hs_data, 'anc_contacts_trend',
             'Number of Visits',
             'Total Number of Antenatal Care Visits per Year Per Scenario',
-            plot_destination_folder, f'{service_of_interest}_visits')
+            plot_destination_folder, 'anc_visits_crude_rate')
 
         plot_agg_graph(hs_data, 'agg_anc_contacts', 'Total ANC contacts', 'Total Number of ANC visits per Scenario',
                        'agg_anc_contacts')
@@ -670,16 +708,16 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, sim_ye
         def get_hsi_counts_from_summary_logger(folder, sim_years, intervention_years):
 
             # TODO: this is hacky - have to check that there actually are no visits
-            if 'min' in folder.name:
-                empty = [[0 for y in intervention_years],
-                         [0 for y in intervention_years],
-                         [0 for y in intervention_years]]
-                hsi_data = empty
-                mat_agg = [0, 0, 0]
-                hsi_data_neo = empty
-                neo_agg = [0, 0,0]
-            else:
-                hsi = extract_results(
+            # if 'min_pnc' in folder.name:
+            #     empty = [[0 for y in intervention_years],
+            #              [0 for y in intervention_years],
+            #              [0 for y in intervention_years]]
+            #     hsi_data = empty
+            #     mat_agg = [0, 0, 0]
+            #     hsi_data_neo = empty
+            #     neo_agg = [0, 0,0]
+            # else:
+            hsi = extract_results(
                     folder,
                     module="tlo.methods.healthsystem.summary",
                     key="HSI_Event",
@@ -688,7 +726,7 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, sim_ye
                             year=df['date'].dt.year).groupby(['year'])['PostnatalCare_Maternal'].sum()),
                     do_scaling=True)
 
-                hsi_n = extract_results(
+            hsi_n = extract_results(
                     folder,
                     module="tlo.methods.healthsystem.summary",
                     key="HSI_Event",
@@ -697,21 +735,35 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, sim_ye
                             year=df['date'].dt.year).groupby(['year'])['PostnatalCare_Neonatal'].sum()),
                     do_scaling=True)
 
+            if 'min_pnc' in folder.name:
+                pre_int_years = list(range(2010, intervention_years[0]))
+                hsi_data = analysis_utility_functions.get_mean_and_quants(hsi, pre_int_years)
+                hsi_data_neo = analysis_utility_functions.get_mean_and_quants(hsi_n, pre_int_years)
+
+                for data in [hsi_data, hsi_data_neo]:
+                    for l in data:
+                        for y in intervention_years:
+                            l.append(0)
+                mat_agg = [0, 0, 0]
+                neo_agg = [0, 0, 0]
+
+            else:
+
                 hsi_data = analysis_utility_functions.get_mean_and_quants(hsi, sim_years)
                 hsi_data_int = analysis_utility_functions.get_mean_and_quants(
-                    hsi.loc[intervention_years[0]:intervention_years[-1]], intervention_years)
+                        hsi.loc[intervention_years[0]:intervention_years[-1]], intervention_years)
 
                 mat_agg = [sum(hsi_data_int[0]), sum(hsi_data_int[1]), sum(hsi_data_int[2])]
 
                 hsi_data_neo = analysis_utility_functions.get_mean_and_quants(hsi_n, sim_years)
                 hsi_data_neo_int = analysis_utility_functions.get_mean_and_quants(
-                    hsi_n.loc[intervention_years[0]:intervention_years[-1]], intervention_years)
+                        hsi_n.loc[intervention_years[0]:intervention_years[-1]], intervention_years)
                 neo_agg = [sum(hsi_data_neo_int[0]), sum(hsi_data_neo_int[1]), sum(hsi_data_neo_int[2])]
 
             return {'pnc_visits_mat_trend': hsi_data,
                     'pnc_visits_mat_agg': mat_agg,
                     'pnc_visits_neo_trend': hsi_data_neo,
-                    'pnc_visits_neo_agg':neo_agg}
+                    'pnc_visits_neo_agg': neo_agg}
 
         hs_data = {k: get_hsi_counts_from_summary_logger(results_folders[k], sim_years, intervention_years) for k in
                    results_folders}
@@ -723,13 +775,13 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, sim_ye
             scen_colours, sim_years, hs_data, 'pnc_visits_mat_trend',
             'Crude Number',
             'Total Number of Maternal Postnatal Care Visits per Year Per Scenario',
-            plot_destination_folder, f'{service_of_interest}_mat_visits')
+            plot_destination_folder, 'pnc_mat_visits')
 
         analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
             scen_colours, sim_years, hs_data, 'pnc_visits_neo_trend',
             'Crude Number',
             'Total Number of Neonatal Postnatal Care Visits per Year Per Scenario',
-            plot_destination_folder, f'{service_of_interest}_neo_visits')
+            plot_destination_folder, 'pnc_neo_visits')
 
         for group, title in zip(['mat', 'neo'], ['Maternal', 'Neonatal']):
             plot_agg_graph(hs_data, f'pnc_visits_{group}_agg', 'Total PNC Visist',

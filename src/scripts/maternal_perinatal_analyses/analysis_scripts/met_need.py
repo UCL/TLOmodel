@@ -268,6 +268,7 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
                                                       intervention_years) for k in results_folders}
 
     def get_cs_indication_counts(folder):
+
         cs_df = extract_results(
            folder,
            module="tlo.methods.labour",
@@ -278,21 +279,33 @@ def met_need_and_contributing_factors_for_deaths(scenario_file_dict, outputspath
         cs_results = cs_df.fillna(0)
 
         cs_id_counts = dict()
-        for indication in ['ol', 'ur']:  # 'spe_ec', 'other', 'previous_scar'
-            cs_id_counts.update({f'{indication}_cs': analysis_utility_functions.get_mean_and_quants_from_str_df(
-                cs_results, indication, intervention_years)})
-            treatments.append(f'{indication}_cs')
+        if 'min_sba' in folder.name and (intervention_years[0] not in cs_results.index):
+            l = [0 for y in intervention_years]
+            blank_data = [l, l, l]
+            treatments.append('ur_cs')
+            treatments.append('ol_cs')
+            treatments.append('aph_cs')
 
-        pa_cs = analysis_utility_functions.get_mean_and_quants_from_str_df(cs_results, 'an_aph_pa', intervention_years)
-        pp_cs = analysis_utility_functions.get_mean_and_quants_from_str_df(cs_results, 'an_aph_pp', intervention_years)
-        la_aph_cs = analysis_utility_functions.get_mean_and_quants_from_str_df(cs_results, 'la_aph', intervention_years)
+            cs_id_counts.update({'ol_cs':blank_data,
+                                 'ur_cs' :blank_data,
+                                 'aph_cs':blank_data})
 
-        mean = [a + b + c for a, b, c in zip(pa_cs[0], pp_cs[0], la_aph_cs[0])]
-        lq = [a + b + c for a, b, c, in zip(pa_cs[1], pp_cs[1], la_aph_cs[1])]
-        uq = [a + b + c for a, b, c in zip(pa_cs[2], pp_cs[2], la_aph_cs[2],)]
+        else:
+            for indication in ['ol', 'ur']:  # 'spe_ec', 'other', 'previous_scar'
+                cs_id_counts.update({f'{indication}_cs': analysis_utility_functions.get_mean_and_quants_from_str_df(
+                    cs_results, indication, intervention_years)})
+                treatments.append(f'{indication}_cs')
 
-        cs_id_counts.update({'aph_cs': [mean, lq, uq]})
-        treatments.append('aph_cs')
+            pa_cs = analysis_utility_functions.get_mean_and_quants_from_str_df(cs_results, 'an_aph_pa', intervention_years)
+            pp_cs = analysis_utility_functions.get_mean_and_quants_from_str_df(cs_results, 'an_aph_pp', intervention_years)
+            la_aph_cs = analysis_utility_functions.get_mean_and_quants_from_str_df(cs_results, 'la_aph', intervention_years)
+
+            mean = [a + b + c for a, b, c in zip(pa_cs[0], pp_cs[0], la_aph_cs[0])]
+            lq = [a + b + c for a, b, c, in zip(pa_cs[1], pp_cs[1], la_aph_cs[1])]
+            uq = [a + b + c for a, b, c in zip(pa_cs[2], pp_cs[2], la_aph_cs[2],)]
+
+            cs_id_counts.update({'aph_cs': [mean, lq, uq]})
+            treatments.append('aph_cs')
 
         return cs_id_counts
 

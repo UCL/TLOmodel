@@ -707,7 +707,18 @@ def return_dalys_from_multiple_scenarios(results_folders, sim_years, interventio
         :return: Maternal and neonatal dalys [Mean, LQ, UQ]
         """
 
+        results_dict = dict()
+
         # Get DALY df
+        dalys = extract_results(
+            results_folder,
+            module="tlo.methods.healthburden",
+            key="dalys",
+            custom_generate_series=(
+                lambda df: df.drop(
+                    columns='date').groupby(['year']).sum().stack()),
+            do_scaling=True)
+
         dalys_stacked = extract_results(
             results_folder,
             module="tlo.methods.healthburden",
@@ -729,24 +740,31 @@ def return_dalys_from_multiple_scenarios(results_folders, sim_years, interventio
             do_scaling=True)
 
         denom = get_mean_and_quants(person_years_total, sim_years)
-        dalys_mat = get_comp_mean_and_rate('Maternal Disorders', denom[0], dalys_stacked, 100000, sim_years)
-        dalys_neo = get_comp_mean_and_rate('Neonatal Disorders', denom[0], dalys_stacked, 100000, sim_years)
 
-        denom_int = get_mean_and_quants(person_years_total.loc[intervention_years[0]: intervention_years[-1]],
-                                        intervention_years)
-        dalys_stacked_int = dalys_stacked.loc[intervention_years[0]: intervention_years[-1]]
-        dalys_mat_i = get_comp_mean_and_rate('Maternal Disorders', denom_int[0], dalys_stacked_int, 100000,
-                                             intervention_years)
-        dalys_neo_i = get_comp_mean_and_rate('Neonatal Disorders', denom_int[0], dalys_stacked_int, 100000,
-                                             intervention_years)
+        for type , d in zip(['stacked', 'unstacked'], [dalys_stacked, dalys]):
+            results_dict.update({f'maternal_dalys_rate_{type}':
+                                     get_comp_mean_and_rate('Maternal Disorders', denom[0], d, 100000, sim_years)})
 
-        dalys_mat_agg = [(sum(dalys_mat_i[0])/len(intervention_years)),
-                         (sum(dalys_mat_i[1])/len(intervention_years)),
-                         (sum(dalys_mat_i[2])/len(intervention_years))]
+            results_dict.update({f'neonatal_dalys_rate_{type}':
+                                     get_comp_mean_and_rate('Neonatal Disorders', denom[0], d, 100000, sim_years)})
 
-        dalys_neo_agg = [(sum(dalys_neo_i[0])/len(intervention_years)),
-                         (sum(dalys_neo_i[1])/len(intervention_years)),
-                         (sum(dalys_neo_i[2])/len(intervention_years))]
+            denom_int = get_mean_and_quants(person_years_total.loc[intervention_years[0]: intervention_years[-1]],
+                                            intervention_years)
+            dalys_int = d.loc[intervention_years[0]: intervention_years[-1]]
+            dalys_mat_i = get_comp_mean_and_rate('Maternal Disorders', denom_int[0], dalys_int, 100000,
+                                                 intervention_years)
+            dalys_neo_i = get_comp_mean_and_rate('Neonatal Disorders', denom_int[0], dalys_int, 100000,
+                                                 intervention_years)
+
+            results_dict.update({f'avg_mat_dalys_rate_{type}':
+                                     [(sum(dalys_mat_i[0]) / len(intervention_years)),
+                                      (sum(dalys_mat_i[1]) / len(intervention_years)),
+                                      (sum(dalys_mat_i[2]) / len(intervention_years))]})
+
+            results_dict.update({f'avg_neo_dalys_rate_{type}':
+                                     [(sum(dalys_neo_i[0]) / len(intervention_years)),
+                                      (sum(dalys_neo_i[1]) / len(intervention_years)),
+                                      (sum(dalys_neo_i[2]) / len(intervention_years))]})
 
         mat_causes_death = ['ectopic_pregnancy', 'spontaneous_abortion', 'induced_abortion',
                             'severe_gestational_hypertension', 'severe_pre_eclampsia', 'eclampsia', 'antenatal_sepsis',
@@ -760,6 +778,15 @@ def return_dalys_from_multiple_scenarios(results_folders, sim_years, interventio
 
         neo_causes_disab = ['Retinopathy of Prematurity', 'Neonatal Encephalopathy',
                             'Neonatal Sepsis Long term Disability', 'Preterm Birth Disability']
+
+        yll = extract_results(
+            results_folder,
+            module="tlo.methods.healthburden",
+            key="yll_by_causes_of_death",
+            custom_generate_series=(
+                lambda df: df.drop(
+                    columns='date').groupby(['year']).sum().stack()),
+            do_scaling=True)
 
         yll_stacked = extract_results(
             results_folder,
@@ -807,52 +834,69 @@ def return_dalys_from_multiple_scenarios(results_folders, sim_years, interventio
 
             return [mean, lq, uq]
 
-        mat_yll = get_output(mat_causes_death, yll_stacked)
-        mat_yll_rate = get_as_rate(mat_yll)
-        mat_yld = get_output(mat_causes_disab, yld)
-        mat_yld_rate = get_as_rate(mat_yld)
-        neo_yll = get_output(neo_causes_death, yll_stacked)
-        neo_yll_rate = get_as_rate(neo_yll)
-        neo_yld = get_output(neo_causes_disab, yld)
-        neo_yld_rate = get_as_rate(neo_yld)
+        results_dict.update({'maternal_yll_crude_unstacked': get_output(mat_causes_death, yll)})
+        results_dict.update({'maternal_yll_crude_stacked': get_output(mat_causes_death, yll_stacked)})
 
-        def extract_dalys_tlo_model(group, years):
+        results_dict.update({'maternal_yll_rate_unstacked': get_as_rate(results_dict['maternal_yll_crude_unstacked'])})
+        results_dict.update({'maternal_yll_rate_stacked': get_as_rate(results_dict['maternal_yll_crude_stacked'])})
+
+        results_dict.update({'maternal_yld_crude_unstacked': get_output(mat_causes_disab, yld)})
+
+        results_dict.update({'maternal_yld_rate_unstacked': get_as_rate(results_dict['maternal_yld_crude_unstacked'])})
+
+        results_dict.update({'neonatal_yll_crude_unstacked': get_output(neo_causes_death, yll)})
+        results_dict.update({'neonatal_yll_crude_stacked': get_output(neo_causes_death, yll_stacked)})
+
+        results_dict.update({'neonatal_yll_rate_unstacked': get_as_rate(results_dict['neonatal_yll_crude_unstacked'])})
+        results_dict.update({'neonatal_yll_rate_stacked': get_as_rate(results_dict['neonatal_yll_crude_unstacked'])})
+
+        results_dict.update({'neonatal_yld_crude_unstacked': get_output(neo_causes_disab, yld)})
+
+        results_dict.update({'neonatal_yld_rate_unstacked': get_as_rate(results_dict['neonatal_yld_crude_unstacked'])})
+
+        def extract_dalys_tlo_model(group, daly_df, years):
             """Extract mean, LQ, UQ DALYs for maternal or neonatal disorders"""
 
-            stacked_dalys = [dalys_stacked.loc[year, f'{group} Disorders'].mean() for year in
+            stacked_dalys = [daly_df.loc[year, f'{group} Disorders'].mean() for year in
                              years if year in years]
 
-            stacked_dalys_lq = [dalys_stacked.loc[year, f'{group} Disorders'].quantile(0.025) for year in
+            stacked_dalys_lq = [daly_df.loc[year, f'{group} Disorders'].quantile(0.025) for year in
                                 years if year in years]
 
-            stacked_dalys_uq = [dalys_stacked.loc[year, f'{group} Disorders'].quantile(0.925) for year in
+            stacked_dalys_uq = [daly_df.loc[year, f'{group} Disorders'].quantile(0.925) for year in
                                 years if year in years]
 
             return [stacked_dalys, stacked_dalys_lq, stacked_dalys_uq]
 
-        crude_m_dalys = extract_dalys_tlo_model('Maternal', sim_years)
-        crude_n_dalys = extract_dalys_tlo_model('Neonatal', sim_years)
+        results_dict.update({'maternal_dalys_crude_unstacked': extract_dalys_tlo_model('Maternal', dalys, sim_years)})
+        results_dict.update({'maternal_dalys_crude_stacked': extract_dalys_tlo_model('Maternal', dalys_stacked,
+                                                                                     sim_years)})
 
-        c_m_dalys_int = extract_dalys_tlo_model('Maternal', intervention_years)
-        c_n_dalys_int = extract_dalys_tlo_model('Neonatal', intervention_years)
+        results_dict.update({'neonatal_dalys_crude_unstacked': extract_dalys_tlo_model('Neonatal', dalys, sim_years)})
+        results_dict.update({'neonatal_dalys_crude_stacked': extract_dalys_tlo_model('Neonatal', dalys_stacked,
+                                                                                     sim_years)})
 
+        c_m_dalys_int_stacked = extract_dalys_tlo_model('Maternal', dalys_stacked,  intervention_years)
+        c_m_dalys_int_unstacked = extract_dalys_tlo_model('Maternal', dalys, intervention_years)
 
-        return {'maternal_dalys_crude': crude_m_dalys,
-                'maternal_dalys_rate': dalys_mat,
-                'agg_mat_dalys': [sum(c_m_dalys_int[0]), sum(c_m_dalys_int[1]), sum(c_m_dalys_int[2])],
-                'avg_mat_dalys_rate': dalys_mat_agg,
-                'maternal_yll_crude': mat_yll,
-                'maternal_yll_rate': mat_yll_rate,
-                'maternal_yld_crude': mat_yld,
-                'maternal_yld_rate': mat_yld_rate,
-                'neonatal_dalys_crude': crude_n_dalys,
-                'neonatal_dalys_rate': dalys_neo,
-                'agg_neo_dalys': [sum(c_n_dalys_int[0]), sum(c_n_dalys_int[1]), sum(c_n_dalys_int[2])],
-                'avg_neo_dalys_rate': dalys_neo_agg,
-                'neonatal_yll_crude': neo_yll,
-                'neonatal_yll_rate': neo_yll_rate,
-                'neonatal_yld_crude': neo_yld,
-                'neonatal_yld_rate': neo_yld_rate}
+        c_n_dalys_int_stacked = extract_dalys_tlo_model('Neonatal', dalys_stacked, intervention_years)
+        c_n_dalys_int_unstacked = extract_dalys_tlo_model('Neonatal', dalys, intervention_years)
+
+        results_dict.update({'agg_mat_dalys_stacked': [sum(c_m_dalys_int_stacked[0]),
+                                                       sum(c_m_dalys_int_stacked[1]), sum(c_m_dalys_int_stacked[2])]})
+
+        results_dict.update({'agg_mat_dalys_unstacked': [sum(c_m_dalys_int_unstacked[0]),
+                                                         sum(c_m_dalys_int_unstacked[1]),
+                                                         sum(c_m_dalys_int_unstacked[2])]})
+
+        results_dict.update({'agg_neo_dalys_stacked': [sum(c_n_dalys_int_stacked[0]),
+                                                       sum(c_n_dalys_int_stacked[1]), sum(c_n_dalys_int_stacked[2])]})
+
+        results_dict.update({'agg_neo_dalys_unstacked': [sum(c_n_dalys_int_unstacked[0]),
+                                                         sum(c_n_dalys_int_unstacked[1]),
+                                                         sum(c_n_dalys_int_unstacked[2])]})
+
+        return results_dict
 
     # Store DALYs data for baseline and intervention
     return {k: get_dalys_from_scenario(results_folders[k]) for k in results_folders}
