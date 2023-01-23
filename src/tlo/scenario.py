@@ -85,13 +85,13 @@ class BaseScenario(abc.ABC):
     must implement the following methods:
 
     * ``__init__`` - to set scenario attributes,
-    * ``log_configuration`` - to configure filename, directory and logging levels for 
+    * ``log_configuration`` - to configure filename, directory and logging levels for
       simulation output,
     * ``modules`` - to list disease, intervention and health system modules for the
       simulation.
-      
+
     Users may also optionally implement:
-    
+
     * ``draw_parameters`` - override parameters for draws from the scenario.
     """
     def __init__(
@@ -154,7 +154,7 @@ class BaseScenario(abc.ABC):
                 enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
                 healthsystem.HealthSystem(
                     resourcefilepath=self.resources,
-                    disable=True, 
+                    disable=True,d
                     service_availability=['*']
                 ),
                 ...
