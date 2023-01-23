@@ -369,9 +369,8 @@ def test_on_birth_applies_risk_of_complications_and_death_in_preterm_newborns_de
 
     # set risk of comps to 1 and force care seeking
     params = sim.modules['NewbornOutcomes'].parameters
-    params['prob_retinopathy_preterm'] = 1.0
+    params['prob_retinopathy_preterm_early'] = 1.0
     params['prob_respiratory_distress_preterm'] = 1.0
-    params['prob_retinopathy_severity'] = [[0, 0, 0, 1], [0, 0, 0, 1]]
 
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
@@ -396,6 +395,10 @@ def test_on_birth_applies_risk_of_complications_and_death_in_preterm_newborns_de
     # check complications are applied
     assert sim.population.props.at[child_id, 'nb_preterm_respiratory_distress']
     assert sim.population.props.at[child_id, 'nb_not_breathing_at_birth']
+
+    # check retinopathy risk applied during diasbility function
+    sim.modules['NewbornOutcomes'].current_parameters['prob_retinopathy_severity_no_treatment'] = [0, 0, 0, 0, 1]
+    sim.modules['NewbornOutcomes'].set_disability_status(child_id)
     assert (sim.population.props.at[child_id, 'nb_retinopathy_prem'] == 'blindness')
 
     # ensure homebirths dont receive immediate post delivery care
