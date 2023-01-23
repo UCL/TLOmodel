@@ -289,22 +289,12 @@ class PregnancySupervisor(Module):
             Types.LIST, 'adjusted odds ratio of EANC4+ in women with a parity of 4-5'),
         'aor_early_anc4_parity_6+': Parameter(
             Types.LIST, 'adjusted odds ratio of EANC4+ in women with a parity of 6+'),
-        'aor_early_anc4_primary_edu': Parameter(
-            Types.LIST, 'adjusted odds ratio of EANC4+ in women with primary education'),
         'aor_early_anc4_secondary_edu': Parameter(
             Types.LIST, 'adjusted odds ratio of EANC4+ in women with secondary education'),
         'aor_early_anc4_tertiary_edu': Parameter(
             Types.LIST, 'adjusted odds ratio of EANC4+ in women with tertiary education'),
-        'aor_early_anc4_middle_wealth': Parameter(
-            Types.LIST, 'adjusted odds ratio of EANC4+ in women in the middle wealth quintile'),
-        'aor_early_anc4_richer_wealth': Parameter(
-            Types.LIST, 'adjusted odds ratio of EANC4+ in women in the richer wealth quintile'),
         'aor_early_anc4_richest_wealth': Parameter(
             Types.LIST, 'adjusted odds ratio of EANC4+ in women in the richest wealth quintile'),
-        'aor_early_anc4_married': Parameter(
-            Types.LIST, 'adjusted odds ratio of EANC4+ in women who are married'),
-        'aor_early_anc4_previously_married': Parameter(
-            Types.LIST, 'adjusted odds ratio of EANC4+ in women who were previously married (divorced/widowed)'),
         'prob_late_initiation_anc4': Parameter(
             Types.LIST, 'probability a woman will undertake 4 or more ANC visits with the first being after 4 months'),
         'prob_early_initiation_anc_below4': Parameter(
@@ -647,8 +637,10 @@ class PregnancySupervisor(Module):
             df.at[mother_id, 'ps_date_of_anc1'] = pd.NaT
 
             # And store her anaemia status to calculate the prevalence of anaemia on birth
-            logger.info(key='anaemia_on_birth', data={'mother': mother_id,
-                                                      'anaemia_status': df.at[mother_id, 'ps_anaemia_in_pregnancy']})
+            logger.info(key='conditions_on_birth', data={'mother': mother_id,
+                                                         'anaemia_status': df.at[mother_id, 'ps_anaemia_in_pregnancy'],
+                                                         'gdm_status': df.at[mother_id, 'ps_gest_diab'],
+                                                         'htn_status': df.at[mother_id, 'ps_htn_disorders']})
 
             # We currently assume that hyperglycemia due to gestational diabetes resolves following birth
             if df.at[mother_id, 'ps_gest_diab'] != 'none':
