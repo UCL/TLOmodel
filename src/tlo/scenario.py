@@ -55,10 +55,10 @@ In summary:
 import datetime
 import json
 import pickle
+from itertools import product
 from pathlib import Path, PurePosixPath
 
 import numpy as np
-import pandas as pd
 
 from tlo import Simulation, logging
 from tlo.analysis.utils import parse_log_file
@@ -165,36 +165,6 @@ class BaseScenario:
         else:
             generator.save_config(config, output_path)
             return output_path
-
-    def make_grid(self, ranges: dict) -> pd.DataFrame:
-        """Utility method to flatten an n-dimension grid of parameters for use in scenarios
-
-        Typically used in draw_parameters determining a set of parameters for a draw. This function will check that the
-        number of draws of the scenario is equal to the number of coordinates in the grid.
-
-        Parameter ``ranges`` is a dictionary of { string key: iterable }, where iterable can be, for example, an
-        np.array or list. The function will return a DataFrame where each key is a column and each row represents a
-        single coordinate in the grid.
-
-        Usage (in ``draw_parameters``)::
-
-            grid = self.make_grid({'p_one': np.linspace(0, 1.0, 5), 'p_two': np.linspace(3.0, 4.0, 2)})
-            return {
-                'Mockitis': {
-                    grid['p_one'][draw_number],
-                    grid['p_two'][draw_number]
-                }
-            }
-
-        :param dict ranges: each item of dict represents points across a single dimension
-        """
-        grid = np.meshgrid(*ranges.values())
-        flattened = [g.ravel() for g in grid]
-        positions = np.stack(flattened, axis=1)
-        grid_lookup = pd.DataFrame(positions, columns=ranges.keys())
-        assert self.number_of_draws == len(grid_lookup), f"{len(grid_lookup)} coordinates in grid, " \
-                                                         f"but number_of_draws is {self.number_of_draws}."
-        return grid_lookup
 
 
 class ScenarioLoader:
@@ -393,3 +363,70 @@ class SampleRunner:
         x *= 0x846ca68b
         x ^= x >> 16
         return x % (2 ** 32)
+
+
+def _nested_dictionary_from_flat(flat_dict):
+    """
+    Helper function for transforming a flat dictionary mapping from 2-tuple keys to
+    values to a corresponding nested dictionary with outer dictionary keyed by the first
+    key in the tuple and inner dictionaries keyed by the second key in the tuple.
+    """
+    outer_dict = {}
+    for (key_1, key_2), value in flat_dict.items():
+        inner_dict = outer_dict.setdefault(key_1, {})
+        inner_dict[key_2] = value
+    return outer_dict
+
+
+def make_cartesian_parameter_grid(module_parameter_values_dict):
+    """Make a list of dictionaries corresponding to a grid across parameter space.
+
+    The parameters values in each parameter dictionary corresponds to an element in the
+    Cartesian product of iterables describing the values taken by a collection of
+    module specific parameters.
+
+    Intended for use in ``BaseScenario.draw_parameters`` to determine the set of
+    parameters for a scenario draw.
+
+    Example usage (in ``BaseScenario.draw_parameters``)::
+
+        return make_cartesian_parameter_grid(
+            {
+                "Mockitis": {
+                    "numeric_parameter": np.linspace(0, 1.0, 5),
+                    "categorical_parameter": ["category_a", "category_b"]
+                },
+                "HealthSystem": {
+                    "cons_availability": ["default", "all"]
+                }
+            }
+        )[draw_number]
+
+    In practice it will be more performant to call ``make_cartesian_parameter_grid``
+    once in the scenario ``__init__`` method, store this as an attribute of the scenario
+    and reuse this in each call to ``draw_parameters``.
+
+    :param dict module_parameter_values_dict: A dictionary mapping from module names
+        (as strings) to dictionaries mapping from (string) parameter names associated
+        with the model to iterables of the values over which parameter should take in
+        the grid.
+
+    :returns: A list of dictionaries mapping from module names (as strings) to
+        dictionaries mapping from (string) parameter names associated with the model to
+        parameter values, with each dictionary in the list corresponding to a single
+        point in the Cartesian grid across the parameter space.
+    """
+    flattened_parameter_values_dict = {
+        (module, parameter): values
+        for module, parameter_values_dict in module_parameter_values_dict.items()
+        for parameter, values in parameter_values_dict.items()
+    }
+    return [
+        _nested_dictionary_from_flat(
+            {
+                key: value
+                for key, value in zip(flattened_parameter_values_dict, parameter_values)
+            }
+        )
+        for parameter_values in product(*flattened_parameter_values_dict.values())
+    ]
