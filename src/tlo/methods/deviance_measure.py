@@ -17,7 +17,7 @@ logger.setLevel(logging.INFO)
 
 class Deviance(Module):
     """
-    This modules reads in logged outputs from HIV, TB and demography and compares them with reported data
+    This module reads in logged outputs from HIV, TB and demography and compares them with reported data
     a deviance measure is calculated and returned on simulation end
     """
 

@@ -12,7 +12,7 @@ from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     demography,
-    deviance_measure,
+    # deviance_measure,
     enhanced_lifestyle,
     epi,
     healthburden,

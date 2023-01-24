@@ -24,7 +24,7 @@ resourcefilepath = Path("./resources")
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2020, 1, 1)
-popsize = 100
+popsize = 20000
 
 scenario = 0
 
@@ -50,31 +50,22 @@ sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_p
 sim.register(*fullmodel(
     resourcefilepath=resourcefilepath,
     use_simplified_births=False,
-    symptommanager_spurious_symptoms=True,
-    healthsystem_disable=False,
-    healthsystem_mode_appt_constraints=0,  # no constraints
-    healthsystem_cons_availability="default",  # if "all", all cons always available
-    healthsystem_beds_availability="all",  # all beds always available
-    healthsystem_ignore_priority=False,  # ignore priority in HSI scheduling
-    healthsystem_use_funded_or_actual_staffing="funded_plus",  # daily capabilities of staff
-    healthsystem_capabilities_coefficient=1.0,  # if 'None' set to ratio of init 2010 pop
-    healthsystem_record_hsi_event_details=False
+    module_kwargs={
+        "SymptomManager": {"spurious_symptoms": True},
+        "HealthSystem": {"disable": False,
+                         "service_availability": ["*"],
+                         "mode_appt_constraints": 0,
+                         "cons_availability": "default",
+                         "beds_availability": "all",
+                         "ignore_priority": False,
+                         "use_funded_or_actual_staffing": "funded_plus",
+                         "capabilities_coefficient": 1.0},
+    },
 ))
 
 # # set the scenario
-# sim.modules["Hiv"].parameters["beta"] = 0.135999
-sim.modules["Tb"].parameters["beta"] = 0.3
 # sim.modules["Tb"].parameters["scenario"] = scenario
 # sim.modules["Tb"].parameters["scenario_start_date"] = Date(2023, 1, 1)
-#
-# # to cluster tests in positive people
-# sim.modules["Hiv"].parameters["rr_test_hiv_positive"] = 10  # default 1.5
-# # to account for people starting-> defaulting, or not getting cons
-# # this not used now if perfect referral testing->treatment
-# sim.modules["Hiv"].parameters["treatment_initiation_adjustment"] = 3  # default 1.5
-# # assume all defaulting is due to cons availability
-# sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_6_months"] = 1.0
-# sim.modules["Hiv"].parameters["probability_of_seeking_further_art_appointment_if_drug_not_available"] = 1.0
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)

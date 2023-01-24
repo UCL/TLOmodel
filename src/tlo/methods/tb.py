@@ -1044,22 +1044,22 @@ class Tb(Module):
 
         # sum active tb cases
         num_active_tb_cases = len(df[(df.tb_inf == "active") &
-                                        (df.tb_strain == strain) &
-                                        df.is_alive])
+                                     (df.tb_strain == strain) &
+                                     df.is_alive])
 
         # sum treated active tb cases
         # if mdr-tb must be on mdr treatment, otherwise consider as untreated case
         if strain == "mdr":
             num_treated_tb_cases = len(df[(df.tb_inf == "active") &
-                                              (df.tb_strain == strain) &
-                                              df.tb_on_treatment &
-                                              (df.tb_treatment_regimen == "tb_mdrtx") &
-                                              df.is_alive])
+                                          (df.tb_strain == strain) &
+                                          df.tb_on_treatment &
+                                          (df.tb_treatment_regimen == "tb_mdrtx") &
+                                          df.is_alive])
         else:
             num_treated_tb_cases = len(df[(df.tb_inf == "active") &
-                                             (df.tb_strain == strain) &
-                                             df.tb_on_treatment &
-                                             df.is_alive])
+                                          (df.tb_strain == strain) &
+                                          df.tb_on_treatment &
+                                          df.is_alive])
 
         prop_untreated = 1 - (num_treated_tb_cases / num_active_tb_cases) if num_active_tb_cases else 1
 
@@ -1540,7 +1540,6 @@ class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(years=1))
 
     def apply(self, population):
-
         p = self.module.parameters
         inc_estimates = p["who_incidence_estimates"]
         incidence_year = (inc_estimates.loc[
@@ -1554,7 +1553,7 @@ class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
                               p["scaling_factor_WHO"] * \
                               prop_untreated_ds
         scaled_incidence_mdr = incidence_year * \
-                                p["prop_mdr2010"] * \
+                               p["prop_mdr2010"] * \
                                p["scaling_factor_WHO"] * \
                                prop_untreated_mdr
 
