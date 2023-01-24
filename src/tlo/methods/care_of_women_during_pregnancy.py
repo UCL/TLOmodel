@@ -1049,7 +1049,10 @@ class CareOfWomenDuringPregnancy(Module):
                 mni[person_id]['anc_ints'].append('hiv')
 
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
-                   HSI_Hiv_TestAndRefer(person_id=person_id, module=self.sim.modules['Hiv']),
+                   HSI_Hiv_TestAndRefer(
+                       person_id=person_id,
+                       module=self.sim.modules['Hiv'],
+                       referred_from="CareOfWomenDuringPregnancy"),
                    topen=self.sim.date,
                    tclose=None,
                    priority=0)

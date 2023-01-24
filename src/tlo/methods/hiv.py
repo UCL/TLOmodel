@@ -2064,15 +2064,15 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
         df.at[person_id, "hv_number_tests"] += 1
         df.at[person_id, "hv_last_test_date"] = self.sim.date
 
-        # # Log the test: line-list of summary information about each test
-        # person_details_for_test = {
-        #     'age': person['age_years'],
-        #     'hiv_status': person['hv_inf'],
-        #     'hiv_diagnosed': person['hv_diagnosed'],
-        #     'referred_from': self.referred_from,
-        #     'person_id': person_id
-        # }
-        # logger.info(key='hiv_test', data=person_details_for_test)
+        # Log the test: line-list of summary information about each test
+        person_details_for_test = {
+            'age': person['age_years'],
+            'hiv_status': person['hv_inf'],
+            'hiv_diagnosed': person['hv_diagnosed'],
+            'referred_from': self.referred_from,
+            'person_id': person_id
+        }
+        logger.info(key='hiv_test', data=person_details_for_test)
 
         if test_result is not None:
             # Offer services as needed:
