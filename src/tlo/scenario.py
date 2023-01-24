@@ -21,7 +21,7 @@ A simple example of a subclass of ``BaseScenario``::
                 seed = 12,
                 start_date = Date(2010, 1, 1),
                 end_date = Date(2011, 1, 1),
-                pop_size = 200,
+                initial_population_size = 200,
                 number_of_draws = 2,
                 runs_per_draw = 2,
             )
