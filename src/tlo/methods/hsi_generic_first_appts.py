@@ -126,6 +126,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
             HSI_Hiv_TestAndRefer(
                 person_id=person_id,
                 module=hsi_event.sim.modules['Hiv'],
+                referred_from="hsi_generic_first_appt",
                 suppress_footprint=True,
                 do_not_refer_if_neg=True),
             topen=hsi_event.sim.date,
@@ -368,7 +369,10 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
 
     if 'Hiv' in sim.modules:
         sim.modules['HealthSystem'].schedule_hsi_event(
-            HSI_Hiv_TestAndRefer(person_id=person_id, module=sim.modules['Hiv']),
+            HSI_Hiv_TestAndRefer(
+                person_id=person_id,
+                module=sim.modules['Hiv'],
+                referred_from="hsi_generic_first_appt"),
             topen=sim.date,
             tclose=None,
             priority=0

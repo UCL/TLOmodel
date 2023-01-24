@@ -1075,25 +1075,26 @@ class Hiv(Module):
                     tclose=None,
                 )
 
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    hsi_event=HSI_Hiv_TestAndRefer(
-                        person_id=child_id,
-                        module=self,
-                        referred_from='Infant_testing'),
-                    priority=1,
-                    topen=self.sim.date + pd.DateOffset(months=9),
-                    tclose=None,
-                )
+            # these later infant tests are not in newborn_outcomes
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi_event=HSI_Hiv_TestAndRefer(
+                    person_id=child_id,
+                    module=self,
+                    referred_from='Infant_testing'),
+                priority=1,
+                topen=self.sim.date + pd.DateOffset(months=9),
+                tclose=None,
+            )
 
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    hsi_event=HSI_Hiv_TestAndRefer(
-                        person_id=child_id,
-                        module=self,
-                        referred_from='Infant_testing'),
-                    priority=1,
-                    topen=self.sim.date + pd.DateOffset(months=18),
-                    tclose=None,
-                )
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi_event=HSI_Hiv_TestAndRefer(
+                    person_id=child_id,
+                    module=self,
+                    referred_from='Infant_testing'),
+                priority=1,
+                topen=self.sim.date + pd.DateOffset(months=18),
+                tclose=None,
+            )
 
     def report_daly_values(self):
         """Report DALYS for HIV, based on current symptomatic state of persons."""
