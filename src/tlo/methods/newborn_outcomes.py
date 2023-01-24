@@ -955,7 +955,10 @@ class NewbornOutcomes(Module):
                 if df.at[child_id, 'nb_pnc_check'] == 1:
                     for days in 0, 41:
                         self.sim.modules['HealthSystem'].schedule_hsi_event(
-                            HSI_Hiv_TestAndRefer(person_id=child_id, module=self.sim.modules['Hiv']),
+                            HSI_Hiv_TestAndRefer(
+                                person_id=child_id,
+                                module=self.sim.modules['Hiv'],
+                                referred_from="newborn_outcomes"),
                             topen=self.sim.date + pd.DateOffset(days=days),
                             tclose=None,
                             priority=0
