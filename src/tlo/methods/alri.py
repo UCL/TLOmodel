@@ -3386,7 +3386,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
 
         if facility_level == "0":
             classification = _classification_at_facility_level_0(imci_classification_based_on_symptoms)
-        elif facility_level in ("1a","1b"):
+        elif facility_level in ("1a", "1b"):
             classification = _classification_at_facility_level_1(imci_classification_based_on_symptoms)
         elif facility_level == "2":
             classification = _classification_at_facility_level_2(imci_classification_based_on_symptoms)

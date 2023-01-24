@@ -86,17 +86,63 @@ alri_module_with_imperfect_diagnosis_and_imperfect_treatment = sim0.modules['Alr
 hsi_with_imperfect_diagnosis_and_imperfect_treatment = HSI_Alri_Treatment(
     module=alri_module_with_imperfect_diagnosis_and_imperfect_treatment, person_id=None)
 
-sim0_cp = get_sim(popsize=MODEL_POPSIZE)
-alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy = sim0_cp.modules['Alri']
-_set_current_policy(alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy)
-hsi_with_imperfect_diagnosis_and_imperfect_treatment_current_policy = HSI_Alri_Treatment(
-    module=alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy, person_id=None)
+# current policy -----------------
+sim0_cp_ant = get_sim(popsize=MODEL_POPSIZE)
+alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_ant = sim0_cp_ant.modules['Alri']
+_set_current_policy(alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_ant)
+hsi_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_ant = HSI_Alri_Treatment(
+    module=alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_ant, person_id=None)
 
-sim0_np = get_sim(popsize=MODEL_POPSIZE)
-alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy = sim0_np.modules['Alri']
-_set_new_policy(alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy)
-hsi_with_imperfect_diagnosis_and_imperfect_treatment_new_policy = HSI_Alri_Treatment(
-    module=alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy, person_id=None)
+sim0_cp_po = get_sim(popsize=MODEL_POPSIZE)
+alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_po = sim0_cp_po.modules['Alri']
+_set_current_policy(alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_po)
+hsi_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_po = HSI_Alri_Treatment(
+    module=alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_po, person_id=None)
+
+sim0_cp_ox = get_sim(popsize=MODEL_POPSIZE)
+alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_ox = sim0_cp_ox.modules['Alri']
+_set_current_policy(alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_ox)
+hsi_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_ox = HSI_Alri_Treatment(
+    module=alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_ox, person_id=None)
+
+sim0_cp_po_ox = get_sim(popsize=MODEL_POPSIZE)
+alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_po_ox = sim0_cp_po_ox.modules['Alri']
+_set_current_policy(alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_po_ox)
+hsi_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_po_ox = HSI_Alri_Treatment(
+    module=alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_po_ox, person_id=None)
+
+
+# new policy -----------------
+sim0_np_ant = get_sim(popsize=MODEL_POPSIZE)
+alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_ant = sim0_np_ant.modules['Alri']
+_set_new_policy(alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_ant)
+hsi_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_ant = HSI_Alri_Treatment(
+    module=alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_ant, person_id=None)
+
+sim0_np_po = get_sim(popsize=MODEL_POPSIZE)
+alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_po = sim0_np_po.modules['Alri']
+_set_new_policy(alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_po)
+hsi_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_po = HSI_Alri_Treatment(
+    module=alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_po, person_id=None)
+
+sim0_np_ox = get_sim(popsize=MODEL_POPSIZE)
+alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_ox = sim0_np_ox.modules['Alri']
+_set_new_policy(alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_ox)
+hsi_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_ox = HSI_Alri_Treatment(
+    module=alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_ox, person_id=None)
+
+sim0_np_po_ox = get_sim(popsize=MODEL_POPSIZE)
+alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_po_ox = sim0_np_po_ox.modules['Alri']
+_set_new_policy(alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_po_ox)
+hsi_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_po_ox = HSI_Alri_Treatment(
+    module=alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_po_ox, person_id=None)
+
+# --------------------------------------------------
+# sim0_np = get_sim(popsize=MODEL_POPSIZE)
+# alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy = sim0_np.modules['Alri']
+# _set_new_policy(alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy)
+# hsi_with_imperfect_diagnosis_and_imperfect_treatment_new_policy = HSI_Alri_Treatment(
+#     module=alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy, person_id=None)
 
 # Alri module with perfect diagnosis (and imperfect treatment)
 sim1 = get_sim(popsize=MODEL_POPSIZE)
@@ -225,14 +271,39 @@ def treatment_efficacy(
                 hsi = hsi_with_perfect_diagnosis_new_policy
                 alri_module = alri_module_with_perfect_diagnosis_new_policy
         else:
-            # hsi = hsi_with_imperfect_diagnosis_and_imperfect_treatment
-            # alri_module = alri_module_with_imperfect_diagnosis_and_imperfect_treatment
             if new_policy == False:
-                hsi = hsi_with_imperfect_diagnosis_and_imperfect_treatment_current_policy
-                alri_module = alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy
+                if (oxygen_available == False) and (oximeter_available == False):
+                    hsi = hsi_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_ant
+                    alri_module = alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_ant
+                elif (oxygen_available == True) and (oximeter_available == True):
+                    hsi = hsi_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_po_ox
+                    alri_module = alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_po_ox
+                elif (oxygen_available == True) and (oximeter_available == False):
+                    hsi = hsi_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_ox
+                    alri_module = alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_ox
+                elif (oxygen_available == False) and (oximeter_available == True):
+                    hsi = hsi_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_po
+                    alri_module = alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_po
+                else:
+                    hsi = hsi_with_imperfect_diagnosis_and_imperfect_treatment
+                    alri_module = alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_ant
+
             else:
-                hsi = hsi_with_imperfect_diagnosis_and_imperfect_treatment_new_policy
-                alri_module = alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy
+                if (oxygen_available == False) and (oximeter_available == False):
+                    hsi = hsi_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_ant
+                    alri_module = alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_ant
+                elif (oxygen_available == True) and (oximeter_available == True):
+                    hsi = hsi_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_po_ox
+                    alri_module = alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_po_ox
+                elif (oxygen_available == True) and (oximeter_available == False):
+                    hsi = hsi_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_ox
+                    alri_module = alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_ox
+                elif (oxygen_available == False) and (oximeter_available == True):
+                    hsi = hsi_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_po
+                    alri_module = alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_po
+                else:
+                    hsi = hsi_with_imperfect_diagnosis_and_imperfect_treatment
+                    alri_module = alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_ant
 
     # Get Treatment classification
     classification_for_treatment_decision = hsi._get_disease_classification_for_treatment_decision(
@@ -255,10 +326,6 @@ def treatment_efficacy(
         use_oximeter=oximeter_available,
         oxygen_saturation=oxygen_saturation,
     )
-
-    # # Decide which alri_module configuration to use:
-    # if treatment_perfect:
-    #     alri_module = alri_module_with_perfect_treatment_and_diagnosis
 
     # "Treatment Fails" is the probability that a death is averted (if one is schedule)
     treatment_fails = alri_module.models._prob_treatment_fails(
@@ -982,7 +1049,7 @@ if __name__ == "__main__":
             names=("classification_for_treatment_decision_without_oximeter_perfect_accuracy", "oxygen_saturation"))
         results.index = pd.MultiIndex.from_tuples(
             [('cough/cold', f'SpO2{x[1]}') if x in (('cough_or_cold', '<90%'), ('cough_or_cold', '>=93%')) else (
-            x[0], x[1]) for x in results.index],
+                x[0], x[1]) for x in results.index],
             names=("classification_for_treatment_decision_without_oximeter_perfect_accuracy", "oxygen_saturation"))
         results.index = pd.MultiIndex.from_tuples(
             [('fb-pneumonia', f'SpO2={x[1]}') if x == ('fast_breathing_pneumonia', '90-92%') else (x[0], x[1]) for x in
@@ -990,7 +1057,7 @@ if __name__ == "__main__":
             names=("classification_for_treatment_decision_without_oximeter_perfect_accuracy", "oxygen_saturation"))
         results.index = pd.MultiIndex.from_tuples(
             [('fb-pneumonia', f'SpO2{x[1]}') if x in (
-            ('fast_breathing_pneumonia', '<90%'), ('fast_breathing_pneumonia', '>=93%')) else (x[0], x[1]) for x in
+                ('fast_breathing_pneumonia', '<90%'), ('fast_breathing_pneumonia', '>=93%')) else (x[0], x[1]) for x in
              results.index],
             names=("classification_for_treatment_decision_without_oximeter_perfect_accuracy", "oxygen_saturation"))
         results.index = pd.MultiIndex.from_tuples(
@@ -999,7 +1066,7 @@ if __name__ == "__main__":
             names=("classification_for_treatment_decision_without_oximeter_perfect_accuracy", "oxygen_saturation"))
         results.index = pd.MultiIndex.from_tuples(
             [('ci-pneumonia', f'SpO2{x[1]}') if x in (
-            ('chest_indrawing_pneumonia', '<90%'), ('chest_indrawing_pneumonia', '>=93%')) else (x[0], x[1]) for x in
+                ('chest_indrawing_pneumonia', '<90%'), ('chest_indrawing_pneumonia', '>=93%')) else (x[0], x[1]) for x in
              results.index],
             names=("classification_for_treatment_decision_without_oximeter_perfect_accuracy", "oxygen_saturation"))
         results.index = pd.MultiIndex.from_tuples(
@@ -1008,7 +1075,7 @@ if __name__ == "__main__":
             names=("classification_for_treatment_decision_without_oximeter_perfect_accuracy", "oxygen_saturation"))
         results.index = pd.MultiIndex.from_tuples(
             [('ds-pneumonia', f'SpO2{x[1]}') if x in (
-            ('danger_signs_pneumonia', '<90%'), ('danger_signs_pneumonia', '>=93%')) else (x[0], x[1]) for x in
+                ('danger_signs_pneumonia', '<90%'), ('danger_signs_pneumonia', '>=93%')) else (x[0], x[1]) for x in
              results.index],
             names=("classification_for_treatment_decision_without_oximeter_perfect_accuracy", "oxygen_saturation"))
 
@@ -1201,9 +1268,9 @@ if __name__ == "__main__":
                                 ).groupby(by=[disease_classification2, low_oxygen]).sum()
 
     impact_po_new_pol = 1 - (
-            deaths_po_only_new_pol.mean() / deaths_po_only_current_pol.mean())  # 6.368% vs normal 14.97%
+        deaths_po_only_new_pol.mean() / deaths_po_only_current_pol.mean())  # 6.368% vs normal 14.97%
     impact_po_and_ox = 1 - (
-            deaths_po_and_ox_new_pol.mean() / deaths_po_and_ox_current_pol.mean())  # 13.4979% vs normal 20.715%
+        deaths_po_and_ox_new_pol.mean() / deaths_po_and_ox_current_pol.mean())  # 13.4979% vs normal 20.715%
 
     cfr_po = deaths_po_only_new_pol / number_cases
     cfr_po_and_ox = deaths_po_and_ox_new_pol / number_cases
@@ -1221,13 +1288,13 @@ if __name__ == "__main__":
 
     cfr_df.loc['Total', :] = [(deaths_antibiotics_only_current_pol.sum() / number_cases.sum()) * 100,
                               (deaths_ox_only_current_pol.sum() / number_cases.sum()) * 100,
-                               (deaths_po_only_current_pol.sum() / number_cases.sum()) * 100,
-                               (deaths_po_only_new_pol.sum() / number_cases.sum()) * 100,
-                               (1 - ((deaths_po_only_new_pol.sum() / number_cases.sum()) / (deaths_po_only_current_pol.sum() / number_cases.sum()))) * 100,
-                               (deaths_po_and_ox_current_pol.sum() / number_cases.sum()) * 100,
-                               (deaths_po_and_ox_new_pol.sum() / number_cases.sum()) * 100,
-                               (1 - ((deaths_po_and_ox_new_pol.sum() / number_cases.sum()) / (deaths_po_and_ox_current_pol.sum() / number_cases.sum()))) * 100
-                               ]
+                              (deaths_po_only_current_pol.sum() / number_cases.sum()) * 100,
+                              (deaths_po_only_new_pol.sum() / number_cases.sum()) * 100,
+                              (1 - ((deaths_po_only_new_pol.sum() / number_cases.sum()) / (deaths_po_only_current_pol.sum() / number_cases.sum()))) * 100,
+                              (deaths_po_and_ox_current_pol.sum() / number_cases.sum()) * 100,
+                              (deaths_po_and_ox_new_pol.sum() / number_cases.sum()) * 100,
+                              (1 - ((deaths_po_and_ox_new_pol.sum() / number_cases.sum()) / (deaths_po_and_ox_current_pol.sum() / number_cases.sum()))) * 100
+                              ]
 
 
     # reorder the index:
