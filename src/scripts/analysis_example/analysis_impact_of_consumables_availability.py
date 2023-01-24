@@ -46,7 +46,7 @@ def plot_summarized_total_deaths(summarized_total_deaths, param_strings):
         param_strings,
         statistic_values["mean"],
         yerr=[
-            statistic_values["mean"] - statistic_values["lower"], 
+            statistic_values["mean"] - statistic_values["lower"],
             statistic_values["upper"] - statistic_values["mean"]
         ]
     )
