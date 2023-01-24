@@ -19,7 +19,7 @@ from tlo.analysis.utils import (
 )
 
 
-def extract_total_deaths(results_folder, only_mean=False):
+def extract_total_deaths(results_folder):
 
     def extract_deaths_total(df: pd.DataFrame) -> pd.Series:
         return pd.Series({"Total": len(df)})
@@ -147,7 +147,7 @@ if __name__ == "__main__":
     param_strings = [f"{row.module_param}={row.value}" for _, row in params.iterrows()]
 
     # We first look at total deaths in the scenario runs
-    total_deaths = extract_total_deaths(results_folder, True)
+    total_deaths = extract_total_deaths(results_folder)
 
     # Compute and print the difference between the deaths across the scenario draws
     mean_deaths_difference_by_run = compute_difference_in_deaths_across_runs(
