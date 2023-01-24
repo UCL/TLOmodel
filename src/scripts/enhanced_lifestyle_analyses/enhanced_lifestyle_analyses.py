@@ -64,9 +64,9 @@ class LifeStylePlots:
                                       'Denominator: Sum of individuals 5-19 in education in each age-group'
                                       ],
 
-                         'li_ed_lev': ['education level', 'Denominator: Sum of individuals aged 15-19 in all '
+                         'li_ed_lev': ['education level', 'Denominator: Sum of individuals aged 15-49 in all '
                                                           'education levels per gender',
-                                       'Denominator: Sum of individuals aged 15-19 in all education levels in each '
+                                       'Denominator: Sum of individuals aged 15-49 in all education levels in each '
                                        'age-group'],
 
                          'li_unimproved_sanitation': ['unimproved sanitation', 'Denominator: Sum of all individuals '
@@ -854,7 +854,7 @@ def run():
     # Basic arguments required for the simulation
     start_date = Date(2010, 1, 1)
     end_date = Date(2050, 1, 1)
-    pop_size = 100000
+    pop_size = 20000
 
     # This creates the Simulation instance for this run. Because we"ve passed the `seed` and
     # `log_config` arguments, these will override the default behaviour.
@@ -885,7 +885,7 @@ def run():
 
 # %% read the results
 # output = parse_log_file(sim.log_filepath)
-output = parse_log_file(Path("./outputs/enhanced_lifestyle__2023-01-17T093840.log"))
+output = parse_log_file(Path("./outputs/enhanced_lifestyle__2023-01-23T124916.log"))
 
 # construct a dict of dataframes using lifestyle logs
 logs_df = output['tlo.methods.enhanced_lifestyle']
@@ -896,4 +896,4 @@ g_plots = LifeStylePlots(logs=logs_df, path="./outputs")
 g_plots.display_all_categorical_and_non_categorical_plots_by_gender()
 
 # plot by age groups
-# g_plots.display_all_categorical_and_non_categorical_plots_by_age_group()
+g_plots.display_all_categorical_and_non_categorical_plots_by_age_group()

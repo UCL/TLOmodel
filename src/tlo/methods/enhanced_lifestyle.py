@@ -471,7 +471,21 @@ class EduPropertyInitialiser:
 
             edu_df.loc[age_gte5, 'li_ed_lev'] = dfx['li_ed_lev']
 
-            edu_df.loc[df.age_years.between(5, 12) & (edu_df['li_ed_lev'] == 2) & df.is_alive, 'li_in_ed'] = True
+            # ---- PRIMARY EDUCATION
+            # get index of all children who are alive and between 5 and 5.25 years old
+            age5 = edu_df.index[df.age_years.between(5, 12) & (edu_df['li_ed_lev'] == 2) & df.is_alive]
+
+            # create a series to hold the probablity of primary education for children at age 5
+            prob_primary = pd.Series(data=0.4, index=age5, dtype=float)
+            prob_primary *= \
+                self.module.parameters['rp_ed_primary_higher_wealth'] ** (5 - pd.to_numeric(df.loc[age5, 'li_wealth']))
+
+            # randomly select some to have primary education
+            age5_in_primary = rng.random_sample(len(age5)) < prob_primary
+
+            edu_df.loc[age5[age5_in_primary], 'li_in_ed'] = True
+
+            # edu_df.loc[df.age_years.between(5, 12) & (edu_df['li_ed_lev'] == 2) & df.is_alive, 'li_in_ed'] = True
             edu_df.loc[df.age_years.between(13, 19) & (edu_df['li_ed_lev'] == 3) & df.is_alive, 'li_in_ed'] = True
 
             self.module.models.is_edu_dictionary_empty()['li_in_ed'] = edu_df.li_in_ed
@@ -1437,11 +1451,11 @@ class LifestyleModels:
             edu_trans = df[['li_in_ed', 'li_ed_lev']].copy()
 
             # get all individuals currently in education
-            in_ed = df.index[df.is_alive & df.li_in_ed]
+            in_ed = edu_trans.index[df.is_alive & df.li_in_ed]
 
             # ---- PRIMARY EDUCATION
             # get index of all children who are alive and between 5 and 5.25 years old
-            age5 = df.index[(df.age_exact_years >= 5) & (df.age_exact_years < 5.25) & df.is_alive]
+            age5 = edu_trans.index[(df.age_exact_years >= 5) & (df.age_exact_years < 5.25) & df.is_alive]
 
             # by default, these children are not in education and have education level 1
             edu_trans.loc[age5, 'li_ed_lev'] = 1
@@ -1471,6 +1485,10 @@ class LifestyleModels:
 
             # those who did not go on to secondary education are no longer in education
             edu_trans.loc[age13_in_primary[~age13_to_secondary], 'li_in_ed'] = False
+
+            # print(f"those who did not go on to secondary education "
+            #       f"{edu_trans.loc[age13_in_primary[~age13_to_secondary], 'li_in_ed']}"
+            #       f"{len(edu_trans.loc[age13_in_primary[~age13_to_secondary], 'li_in_ed'])}")
             # ---- DROP OUT OF EDUCATION
 
             # baseline rate of leaving education then adjust for wealth level
