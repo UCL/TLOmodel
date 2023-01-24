@@ -53,6 +53,16 @@ class Demography(Module):
         self.other_death_poll = None    # will hold pointer to the OtherDeathPoll object
         self.districts = None  # will store all the districts in a list
 
+        if "deviance_measure" in self.sim.modules:
+            # initialise empty dict with set keys
+            keys = ["date",
+                    "age",
+                    "sex",
+                    "cause"
+                    ]
+            # initialise empty dict with set keys
+            self.demog_outputs = {k: [] for k in keys}
+
     AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = create_age_range_lookup(
         min_age=MIN_AGE_FOR_RANGE,
         max_age=MAX_AGE_FOR_RANGE,
@@ -404,6 +414,13 @@ class Demography(Module):
             })
 
         logger.info(key='death', data=data_to_log_for_each_death)
+
+        if "deviance_measure" in self.sim.modules:
+            # save outputs to dict for calibration
+            self.demog_outputs["date"] += [self.sim.date.year]
+            self.demog_outputs["age"] += [person['age_years']]
+            self.demog_outputs["sex"] += [person['sex']]
+            self.demog_outputs["cause"] += [cause]
 
         # - log all the properties for the deceased person
         logger_detail.info(key='properties_of_deceased_persons',
