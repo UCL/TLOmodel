@@ -1915,7 +1915,9 @@ class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
 
         # Check that there are on PrEP currently:
         if not person["hv_is_on_prep"]:
-            logger.warning(key="message", data="This event should not be running")
+            logger.warning(
+                key="message",
+                data="This event should not be running: Hiv_DecisionToContinueOnPrEP is for those currently on prep")
 
         # check still eligible, person must be <30 years old or a fsw
         if (person["age_years"] > 30) or not person["li_is_sexworker"]:
@@ -1957,7 +1959,9 @@ class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
 
         # Check that they are on Treatment currently:
         if not (person["hv_art"] in ["on_VL_suppressed", "on_not_VL_suppressed"]):
-            logger.warning(key="message", data="This event should not be running")
+            logger.warning(
+                key="message",
+                data="This event should not be running, Hiv_DecisionToContinueTreatment is for those already on tx")
 
         # Determine if this appointment is actually attended by the person who has already started on ART
         if (

@@ -54,7 +54,7 @@ sim.register(*fullmodel(
         "SymptomManager": {"spurious_symptoms": True},
         "HealthSystem": {"disable": False,
                          "service_availability": ["*"],
-                         "mode_appt_constraints": 0,
+                         "mode_appt_constraints": 0,  # no constraints, no squeeze factor
                          "cons_availability": "default",
                          "beds_availability": "all",
                          "ignore_priority": False,
