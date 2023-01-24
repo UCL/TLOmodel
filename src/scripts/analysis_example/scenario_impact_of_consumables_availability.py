@@ -11,8 +11,6 @@ or locally using:
 """
 import warnings
 
-import pandas as pd
-
 from tlo import Date, logging
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
@@ -27,13 +25,14 @@ warnings.simplefilter("ignore", (UserWarning, RuntimeWarning))
 class ImpactOfConsumablesAvailability(BaseScenario):
 
     def __init__(self):
-        super().__init__()
-        self.seed = 0
-        self.start_date = Date(2010, 1, 1)
-        self.end_date = self.start_date + pd.DateOffset(years=5)
-        self.pop_size = 10_000
-        self.number_of_draws = 2
-        self.runs_per_draw = 2
+        super().__init__(
+            seed=0,
+            start_date=Date(2010, 1, 1),
+            end_date=Date(2015, 1, 1),
+            initial_population_size=10_000,
+            number_of_draws=2,
+            runs_per_draw=2,
+        )
 
     def log_configuration(self):
         return {
