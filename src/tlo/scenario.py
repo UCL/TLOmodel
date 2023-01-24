@@ -1,27 +1,30 @@
-"""Creating and running simulation scenarios for TLOmodel
+"""Creating and running simulation scenarios for TLOmodel.
 
-Scenarios are used to specify, configure and run a single or set of TLOmodel simulations. A scenario is created by
-by subclassing BaseScenario and specifying the scenario options therein. You can override parameters of the module
-in various ways in the scenario. See the BaseScenario class for more information.
+Scenarios are used to specify, configure and run a single or set of TLOmodel
+simulations. A scenario is created by subclassing ``BaseScenario`` and specifying the
+scenario options therein. You can override parameters of the simulation modules in
+various ways in the scenario. See the ``BaseScenario`` class for more information.
 
-The subclass of BaseScenario is then used to create *draws*, which can be considered a fully-specified configuration
-of the scenario, or a parameter draw.
+The subclass of ``BaseScenario`` is then used to create *draws*, which can be considered
+a fully-specified configuration of the scenario, or a parameter draw.
 
-Each draw is *run* one or more times - run is a single execution of the simulation. Each run of a draw has
-a different seed but is otherwise identical. Each run has its own simulation seed, introducing randomness into each
-simulation. A collection of runs for a given draw describes the random variation in the simulation.
+Each draw is *run* one or more times - run is a single execution of the simulation. Each
+run of a draw has a different seed but is otherwise identical. Each run has its own
+simulation seed, introducing randomness into each simulation. A collection of runs for a
+given draw describes the random variation in the simulation.
 
-A simple example of a subclass of BaseScenario::
+A simple example of a subclass of ``BaseScenario``::
 
     class MyTestScenario(BaseScenario):
         def __init__(self):
-            super().__init__()
-            self.seed = 12
-            self.start_date = Date(2010, 1, 1)
-            self.end_date = Date(2011, 1, 1)
-            self.pop_size = 200
-            self.number_of_draws = 2
-            self.runs_per_draw = 2
+            super().__init__(
+                seed = 12,
+                start_date = Date(2010, 1, 1),
+                end_date = Date(2011, 1, 1),
+                initial_population_size = 200,
+                number_of_draws = 2,
+                runs_per_draw = 2,
+            )
 
         def log_configuration(self):
             return {
@@ -45,22 +48,28 @@ A simple example of a subclass of BaseScenario::
 
 In summary:
 
-* A *scenario* specifies the configuration of the simulation. The simulation start and end dates, initial population
-  size, logging setup and registered modules. Optionally, you can also override parameters of modules.
-* A *draw* is a realisation of a scenario configuration. A scenario can have one or more draws. Draws are uninteresting
-  unless you are overriding parameters. If you do not override any model parameters, you would only have one draw.
-* A *run* is the result of running the simulation using a specific configuration. Each draw would run one or more
-  times. Each run for the same draw would have identical configuration except the simulation seed.
+* A *scenario* specifies the configuration of the simulation. The simulation start and
+  end dates, initial population size, logging setup and registered modules. Optionally,
+  you can also override parameters of modules.
+* A *draw* is a realisation of a scenario configuration. A scenario can have one or more
+  draws. Draws are uninteresting unless you are overriding parameters. If you do not
+  override any model parameters, you would only have one draw.
+* A *run* is the result of running the simulation using a specific configuration. Each
+  draw would run one or more times. Each run for the same draw will have an identical
+  configuration except the simulation seed.
 """
+
+import abc
 import datetime
 import json
 import pickle
 from itertools import product
 from pathlib import Path, PurePosixPath
+from typing import Optional
 
 import numpy as np
 
-from tlo import Simulation, logging
+from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 
 logger = logging.getLogger(__name__)
@@ -69,26 +78,55 @@ logger.setLevel(logging.INFO)
 MAX_INT = 2**31 - 1
 
 
-class BaseScenario:
-    """An abstract base class for creating Scenarios
+class BaseScenario(abc.ABC):
+    """An abstract base class for creating scenarios.
 
-    A scenario is a configuration of a simulation. Users should subclass this class and implement the following methods:
+    A scenario is a configuration of a simulation. Users should subclass this class and
+    must implement the following methods:
 
-    * ``__init__`` - to set scenario attributes
-    * ``log_configuration`` - to configure filename, directory and logging levels for simulation output
-    * ``modules`` - to list disease, intervention and health system modules for the simulation
-    * ``draw_parameters`` - override parameters for draws from the scenario
+    * ``__init__`` - to set scenario attributes,
+    * ``log_configuration`` - to configure filename, directory and logging levels for
+      simulation output,
+    * ``modules`` - to list disease, intervention and health system modules for the
+      simulation.
+
+    Users may also optionally implement:
+
+    * ``draw_parameters`` - override parameters for draws from the scenario.
     """
-    def __init__(self):
-        """Constructor for BaseScenario
+    def __init__(
+        self,
+        seed: Optional[int] = None,
+        start_date: Optional[Date] = None,
+        end_date: Optional[Date] = None,
+        initial_population_size: Optional[int] = None,
+        number_of_draws: int = 1,
+        runs_per_draw: int = 1,
+        resources_path: Path = Path("./resources"),
+    ):
         """
-        self.seed = None
+        :param seed: The top-level seed to use for generating per run simulation seeds
+            for random number generators.
+        :param start_date: Date to start simulation at.
+        :param end_date: Date to end simulation at.
+        :param initial_population_size: Number of individuals to initialise population
+            with.
+        :param number_of_draws: Number of draws (distinct parameter sets) over which to
+            run simulation.
+        :param runs_per_draw: Number of independent model runs to perform per draw.
+        :param resources_path: Path to the directory containing resource files.
+        """
+        self.seed = seed
+        self.start_date = start_date
+        self.end_date = end_date
+        self.pop_size = initial_population_size
+        self.number_of_draws = number_of_draws
+        self.runs_per_draw = runs_per_draw
+        self.resources = resources_path
         self.rng = None
-        self.resources = Path("./resources")
-        self.number_of_draws = 1
-        self.runs_per_draw = 1
         self.scenario_path = None
 
+    @abc.abstractmethod
     def log_configuration(self, **kwargs):
         """Implementation must return a dictionary configuring logging.
 
@@ -103,21 +141,25 @@ class BaseScenario:
                 }
             }
         """
-        raise NotImplementedError
 
+    @abc.abstractmethod
     def modules(self):
-        """Implementation must return a list of instances of TLOmodel modules to register in the simulation.
+        """Implementation must return a list of instances of TLOmodel modules to
+        register in the simulation.
 
         Example::
 
             return [
                 demography.Demography(resourcefilepath=self.resources),
                 enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
-                healthsystem.HealthSystem(resourcefilepath=self.resources, disable=True, service_availability=['*']),
+                healthsystem.HealthSystem(
+                    resourcefilepath=self.resources,
+                    disable=True,d
+                    service_availability=['*']
+                ),
                 ...
             ]
         """
-        raise NotImplementedError
 
     def draw_parameters(self, draw_number, rng):
         """Implementation must return a dictionary of parameters to override for each draw.
