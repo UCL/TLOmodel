@@ -2236,7 +2236,10 @@ class Labour(Module):
         if 'Hiv' in self.sim.modules.keys():
             if not df.at[person_id, 'hv_diagnosed']:
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    HSI_Hiv_TestAndRefer(person_id=person_id, module=self.sim.modules['Hiv']),
+                    HSI_Hiv_TestAndRefer(
+                        person_id=person_id,
+                        module=self.sim.modules['Hiv'],
+                        referred_from="labour"),
                     topen=self.sim.date,
                     tclose=None,
                     priority=0)
