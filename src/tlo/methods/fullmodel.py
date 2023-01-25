@@ -77,7 +77,7 @@ def fullmodel(
     module_classes = [
         # Standard modules
         demography.Demography,
-        deviance_measure.Deviance,
+        # deviance_measure.Deviance,
         enhanced_lifestyle.Lifestyle,
         healthburden.HealthBurden,
         healthseekingbehaviour.HealthSeekingBehaviour,
