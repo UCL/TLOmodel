@@ -169,5 +169,5 @@ if __name__ == "__main__":
         plt.show()
 
     if args.save_figures:
-        fig_1.savefig("total_deaths_across_scenario_draws.pdf")
-        fig_2.savefig("death_by_age_across_scenario_draws.pdf")
+        fig_1.savefig(results_folder / "total_deaths_across_scenario_draws.pdf")
+        fig_2.savefig(results_folder / "death_by_age_across_scenario_draws.pdf")
