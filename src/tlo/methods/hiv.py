@@ -451,7 +451,7 @@ class Hiv(Module):
         # LinearModels to give the shape and scale for the Weibull distribution describing time from infection to death
         self.lm["scale_parameter_for_infection_to_death"] = LinearModel.multiplicative(
             Predictor(
-                "age_years",  # however not age_exact_years is used
+                "age_years",
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True)
             .when("==0", p["mean_survival_for_infants_infected_prior_to_birth"])
@@ -469,7 +469,7 @@ class Hiv(Module):
 
         self.lm["shape_parameter_for_infection_to_death"] = LinearModel.multiplicative(
             Predictor(
-                "age_years",  # however not age_exact_years is used
+                "age_years",
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True)
             .when("==0", 1)
@@ -483,6 +483,16 @@ class Hiv(Module):
             .when(".between(40, 44)", p["infection_to_death_weibull_shape_4044"])
             .when(".between(45, 49)", p["infection_to_death_weibull_shape_4549"])
             .when(">= 50", p["infection_to_death_weibull_shape_4549"])
+        )
+
+        # -- Linear Model to give the mean months between aids and death depending on age
+        self.lm["offset_parameter_for_months_from_aids_to_death"] = LinearModel.multiplicative(
+            Predictor(
+                "age_years",
+                conditions_are_mutually_exclusive=True,
+                conditions_are_exhaustive=True)
+            .when("<5", p["mean_months_between_aids_and_death_infant"])
+            .when(">=5", p["mean_months_between_aids_and_death"])
         )
 
         # -- Linear Models for the Uptake of Services
@@ -1141,7 +1151,7 @@ class Hiv(Module):
         age = df.at[person_id, "age_exact_years"]
         #p = self.parameters
         months_since_infection = (self.sim.date - df.at[person_id, "hv_date_inf"]).days / 30.5
-        #months_to_aids = -1
+        months_to_aids = -1
 
         # - get the scale parameters (unit: years)
         scale = (
@@ -1155,86 +1165,26 @@ class Hiv(Module):
                 self.sim.population.props.loc[[person_id]]
             ).values[0]
         )
+        #get the mean months between aids and death
+        offset = (
+            self.lm["offset_parameter_for_months_from_aids_to_death"].predict(
+                self.sim.population.props.loc[[person_id]]
+            ).values[0]
+        )
 
         while months_since_infection >= months_to_aids:
             # - draw from Weibull (exponential for age==0) and convert to months
             # - compute months to aids, which is somewhat shorter than the months to death
             months_to_death = self.rng.weibull(shape) * scale * 12
-            if age < 5:
-                months_to_aids = int(
-                    max(
-                        0.0,
-                        np.round(
-                            months_to_death - self.parameters["mean_months_between_aids_and_death_infant"]
-                        ),
-                    )
+            months_to_aids = int(
+                max(
+                    0.0,
+                    np.round(
+                        months_to_death - offset
+                    ),
                 )
-            else:
-                months_to_aids = int(
-                    max(
-                        0.0,
-                        np.round(
-                            months_to_death - self.parameters["mean_months_between_aids_and_death"]
-                        ),
-                    )
-                )
+            )
 
-            # if age == 0.0:
-            #     # The person is infected prior to, or at, birth:
-            #     months_to_death = int(self.rng.exponential(
-            #         scale=p["mean_survival_for_infants_infected_prior_to_birth"]
-            #     )
-            #                           * 12,
-            #                           )
-            #
-            #     months_to_aids = int(
-            #         max(
-            #             0.0,
-            #             np.round(
-            #                 months_to_death
-            #                 - self.parameters["mean_months_between_aids_and_death_infant"]
-            #             ),
-            #         )
-            #     )
-            # elif age < 5.0:
-            #
-            #     # The person is infected after birth but before age 5.0:
-            #     months_to_death = int(
-            #         max(
-            #             0.0,
-            #             self.rng.weibull(
-            #                 p[
-            #                     "infection_to_death_infant_infection_after_birth_weibull_shape"
-            #                 ]
-            #             )
-            #             * p["infection_to_death_infant_infection_after_birth_weibull_scale"]
-            #             * 12,
-            #         )
-            #     )
-            #     months_to_aids = int(
-            #         max(
-            #             0.0,
-            #             np.round(
-            #                 months_to_death
-            #                 - self.parameters["mean_months_between_aids_and_death_infant"]
-            #             ),
-            #         )
-            #     )
-            # else:
-            #     # The person is infected after age 5.0
-            #     # - draw from Weibull and convert to months
-            #     months_to_death = self.rng.weibull(shape) * scale * 12
-            #
-            #     # - compute months to aids, which is somewhat shorter than the months to death
-            #     months_to_aids = int(
-            #         max(
-            #             0.0,
-            #             np.round(
-            #                 months_to_death
-            #                 - self.parameters["mean_months_between_aids_and_death"]
-            #             ),
-            #         )
-            #         )
 
         return pd.DateOffset(months=months_to_aids)
 
