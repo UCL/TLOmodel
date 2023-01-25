@@ -475,8 +475,9 @@ class EduPropertyInitialiser:
             # get index of all children who are alive and between 5 and 5.25 years old
             age5 = edu_df.index[df.age_years.between(5, 12) & (edu_df['li_ed_lev'] == 2) & df.is_alive]
 
-            # create a series to hold the probablity of primary education for children at age 5
-            prob_primary = pd.Series(data=0.4, index=age5, dtype=float)
+            # create a series to hold the probablity of primary education for children aged betwen 5 and 12.
+            # Here we assume a 50-50 change of starting primary education
+            prob_primary = pd.Series(data=0.5, index=age5, dtype=float)
             prob_primary *= \
                 self.module.parameters['rp_ed_primary_higher_wealth'] ** (5 - pd.to_numeric(df.loc[age5, 'li_wealth']))
 

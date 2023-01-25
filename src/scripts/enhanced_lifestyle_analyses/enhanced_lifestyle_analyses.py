@@ -881,11 +881,11 @@ def run():
 # catch warnings
 # pd.set_option('mode.chained_assignment', 'raise')
 # %% Run the Simulation
-# sim = run()
+sim = run()
 
 # %% read the results
-# output = parse_log_file(sim.log_filepath)
-output = parse_log_file(Path("./outputs/enhanced_lifestyle__2023-01-23T124916.log"))
+output = parse_log_file(sim.log_filepath)
+# output = parse_log_file(Path("./outputs/enhanced_lifestyle__2023-01-23T124916.log"))
 
 # construct a dict of dataframes using lifestyle logs
 logs_df = output['tlo.methods.enhanced_lifestyle']
