@@ -294,7 +294,10 @@ class HealthBurden(Module):
             """Returns pd.Series which is the same as argument _yll except that the multi-index has been expanded to
             include sex and wealth and rearranged so that it matched the expected mutli-index format
             (sex/age_range/wealth/year)."""
-            return pd.DataFrame(_yll).assign(sex=sex, li_wealth=wealth).set_index(['sex', 'li_wealth'], append=True).reorder_levels(['sex', 'age_range', 'li_wealth', 'year'])[_yll.name]
+            return pd.DataFrame(_yll)\
+                     .assign(sex=sex, li_wealth=wealth)\
+                     .set_index(['sex', 'li_wealth'], append=True)\
+                     .reorder_levels(['sex', 'age_range', 'li_wealth', 'year'])[_yll.name]
 
         assert self.YearsLifeLost.index.equals(self.multi_index_for_age_and_wealth_and_time)
         assert self.YearsLifeLostStackedTime.index.equals(self.multi_index_for_age_and_wealth_and_time)
@@ -316,16 +319,23 @@ class HealthBurden(Module):
 
         # Get the years of live lost "stacked by time" (where all the life-years lost up to the age_limit are ascribed
         # to the year of death)
-        yll_stacked_by_time = self.decompose_yll_by_age_and_time(
-            start_date=date_of_death,
-            end_date=date_of_birth + pd.DateOffset(years=self.parameters['Age_Limit_For_YLL']),
-            date_of_birth=date_of_birth
-        ).sum(level=1).assign(year=date_of_death.year).set_index(['year'], append=True)['person_years'].pipe(_format_for_multi_index)
+        yll_stacked_by_time = \
+            self.decompose_yll_by_age_and_time(
+                start_date=date_of_death,
+                end_date=date_of_birth + pd.DateOffset(years=self.parameters['Age_Limit_For_YLL']),
+                date_of_birth=date_of_birth
+            ).sum(level=1)\
+             .assign(year=date_of_death.year)\
+             .set_index(['year'], append=True)['person_years']\
+             .pipe(_format_for_multi_index)
 
         # Get the years of live lost "stacked by age and time" (where all the life-years lost up to the age_limit are
         # ascribed to the age of death and to the year of death).
         age_to_stack_to = age_range
-        yll_stacked_by_age_and_time = pd.DataFrame(yll_stacked_by_time.sum(level=[0, 2, 3])).assign(age_range=age_to_stack_to).set_index(['age_range'], append=True)['person_years'].reorder_levels(['sex', 'age_range', 'li_wealth', 'year'])
+        yll_stacked_by_age_and_time = pd.DataFrame(yll_stacked_by_time.sum(level=[0, 2, 3]))\
+                                        .assign(age_range=age_to_stack_to)\
+                                        .set_index(['age_range'], append=True)['person_years']\
+                                        .reorder_levels(['sex', 'age_range', 'li_wealth', 'year'])
 
         # Add the years-of-life-lost from this death to the overall YLL dataframe keeping track
         if cause_of_death not in self.YearsLifeLost.columns:
@@ -480,7 +490,8 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
         # - add the year into the multi-index
         disability_monthly_summary['year'] = self.sim.date.year
         disability_monthly_summary.set_index('year', append=True, inplace=True)
-        disability_monthly_summary = disability_monthly_summary.reorder_levels(['sex', 'age_range', 'li_wealth', 'year'])
+        disability_monthly_summary = disability_monthly_summary.reorder_levels(
+            ['sex', 'age_range', 'li_wealth', 'year'])
 
         # 5) Add the monthly summary to the overall dataframe for YearsLivedWithDisability
         dalys_to_add = disability_monthly_summary.sum().sum()     # for checking
@@ -494,8 +505,9 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
             overwrite=False)
 
         # Merge into a dataframe with the correct multi-index (the multindex from combine is subtly different)
-        self.module.YearsLivedWithDisability = pd.DataFrame(index=self.module.multi_index_for_age_and_wealth_and_time).merge(
-            combined, left_index=True, right_index=True, how='left')
+        self.module.YearsLivedWithDisability = \
+            pd.DataFrame(index=self.module.multi_index_for_age_and_wealth_and_time)\
+              .merge(combined, left_index=True, right_index=True, how='left')
 
         # Check multi-index is in check and that the addition of DALYS has worked
         assert self.module.YearsLivedWithDisability.index.equals(self.module.multi_index_for_age_and_wealth_and_time)
