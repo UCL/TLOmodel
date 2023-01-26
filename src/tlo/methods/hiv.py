@@ -856,34 +856,16 @@ class Hiv(Module):
         # AIDS Onset Event for those who are infected but not yet AIDS and have not ever started ART
         # NB. This means that those on ART at the start of the simulation may not have an AIDS event --
         # like it happened at some point in the past
+        people_id = list(before_aids_idx)  # transform to a list
+        days_infection_to_aids = self.get_time_from_infection_to_aids(people_id)
 
-        for person_id in before_aids_idx:
-            # get days until develops aids, repeating sampling until a positive number is obtained.
-
-            days_infection_to_aids = (self.get_time_from_infection_to_aids(person_id)).months * 30.5
-            days_since_infection = (self.sim.date - df.at[person_id, "hv_date_inf"]).days
-            days_until_aids = days_infection_to_aids - days_since_infection
-
-            # #DSdf = self.sim.population.props
-            # #DSage = df.at[person_id, "age_exact_years"]
-            # days_until_aids = 0
-            # while days_until_aids <= 0:
-            #   #DS  print(person_id, age)
-            #     days_since_infection = (
-            #         self.sim.date - df.at[person_id, "hv_date_inf"]
-            #     ).days
-            #     days_infection_to_aids = np.round(
-            #         (self.get_time_from_infection_to_aids(person_id)).months * 30.5
-            #     )
-            #     days_until_aids = days_infection_to_aids - days_since_infection
-            # From above I assume the days_until_aids cannot be negative or zero
-            # and therefore days_infection_to_aids > days_since_infection
-            # and months_to_aids (get_time_from_infection_to_aids) > days_since_infection/30.5
-
-            date_onset_aids = self.sim.date + pd.DateOffset(days=days_until_aids)
+        days_since_infection = (self.sim.date - df.loc[people_id, "hv_date_inf"])
+        days_until_aids = days_infection_to_aids - days_since_infection
+        date_onset_aids = self.sim.date + pd.to_timedelta(days_until_aids, unit='D')
+        for idx in range(len(people_id)):
             sim.schedule_event(
-                HivAidsOnsetEvent(person_id=person_id, module=self, cause='AIDS_non_TB'),
-                date=date_onset_aids,
+                HivAidsOnsetEvent(person_id=people_id[idx], module=self, cause='AIDS_non_TB'),
+                date=date_onset_aids.iloc[idx],
             )
 
         # Schedule the AIDS death events for those who have got AIDS already
@@ -1136,7 +1118,7 @@ class Hiv(Module):
             person_id=person_id
         )
         self.sim.schedule_event(
-            event=HivAidsOnsetEvent(self, person_id, cause='AIDS_non_TB'), date=date_onset_aids
+            event=HivAidsOnsetEvent(self, person_id, cause='AIDS_non_TB'), date=date_onset_aids.iloc[0]
         )
 
     def get_time_from_infection_to_aids(self, person_id):
@@ -1148,45 +1130,36 @@ class Hiv(Module):
         """
 
         df = self.sim.population.props
-        age = df.at[person_id, "age_exact_years"]
-        #p = self.parameters
-        months_since_infection = (self.sim.date - df.at[person_id, "hv_date_inf"]).days / 30.5
-        months_to_aids = -1
-
+        if not isinstance(person_id, list):
+            person_id = [person_id]
+        months_since_infection = (self.sim.date - df.loc[person_id, "hv_date_inf"]).dt.days / 30.5
         # - get the scale parameters (unit: years)
         scale = (
             self.lm["scale_parameter_for_infection_to_death"].predict(
-                self.sim.population.props.loc[[person_id]]
-            ).values[0]
+                self.sim.population.props.loc[person_id]
+            )
         )
         # - get the shape parameter (unit: years)
         shape = (
             self.lm["shape_parameter_for_infection_to_death"].predict(
-                self.sim.population.props.loc[[person_id]]
-            ).values[0]
+                self.sim.population.props.loc[person_id]
+            )
         )
-        #get the mean months between aids and death
+        # get the mean months between aids and death
         offset = (
             self.lm["offset_parameter_for_months_from_aids_to_death"].predict(
-                self.sim.population.props.loc[[person_id]]
-            ).values[0]
+                self.sim.population.props.loc[person_id]
+            )
         )
 
-        while months_since_infection >= months_to_aids:
-            # - draw from Weibull (exponential for age==0) and convert to months
-            # - compute months to aids, which is somewhat shorter than the months to death
-            months_to_death = self.rng.weibull(shape) * scale * 12
-            months_to_aids = int(
-                max(
-                    0.0,
-                    np.round(
-                        months_to_death - offset
-                    ),
-                )
-            )
+        months_to_death = self.rng.weibull(shape) * scale * 12
+        months_to_aids = np.round(months_to_death - offset).clip(0).astype(int)
 
+        while any(months_since_infection.ge(months_to_aids)):
+            months_to_aids = np.where(months_since_infection < months_to_aids, months_to_aids,
+                                      np.round(self.rng.weibull(shape) * scale * 12 - offset).clip(0).astype(int))
 
-        return pd.DateOffset(months=months_to_aids)
+        return pd.to_timedelta(months_to_aids * 30.5, unit='D')
 
     def get_time_from_aids_to_death(self):
         """Gives time between onset of AIDS and death, returning a pd.DateOffset.
@@ -1194,6 +1167,7 @@ class Hiv(Module):
         """
         mean = self.parameters["mean_months_between_aids_and_death"]
         draw_number_of_months = int(np.round(self.rng.exponential(mean)))
+
         return pd.DateOffset(months=draw_number_of_months)
 
     def do_when_hiv_diagnosed(self, person_id):
