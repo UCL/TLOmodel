@@ -456,8 +456,7 @@ class Hiv(Module):
                 conditions_are_exhaustive=True)
             .when("==0", p["mean_survival_for_infants_infected_prior_to_birth"])
             .when(".between(1,4)", p["infection_to_death_infant_infection_after_birth_weibull_scale"])
-            .when(".between(5, 19)", p["infection_to_death_weibull_scale_1519"])  # and delete line below
-            # .when("<20", p["infection_to_death_weibull_scale_1519"])
+            .when(".between(5, 19)", p["infection_to_death_weibull_scale_1519"])
             .when(".between(20, 24)", p["infection_to_death_weibull_scale_2024"])
             .when(".between(25, 29)", p["infection_to_death_weibull_scale_2529"])
             .when(".between(30, 34)", p["infection_to_death_weibull_scale_3034"])
@@ -474,8 +473,7 @@ class Hiv(Module):
                 conditions_are_exhaustive=True)
             .when("==0", 1)
             .when(".between(1,4)", p["infection_to_death_infant_infection_after_birth_weibull_shape"])
-            .when(".between(5, 19)", p["infection_to_death_weibull_shape_1519"])  # and delete line below
-            # .when("<20", p["infection_to_death_weibull_shape_1519"])
+            .when(".between(5, 19)", p["infection_to_death_weibull_shape_1519"])
             .when(".between(20, 24)", p["infection_to_death_weibull_shape_2024"])
             .when(".between(25, 29)", p["infection_to_death_weibull_shape_2529"])
             .when(".between(30, 34)", p["infection_to_death_weibull_shape_3034"])
