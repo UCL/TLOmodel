@@ -131,6 +131,7 @@ class Lifestyle(Module):
         'init_or_no_access_handwashing_per_lower_wealth': Parameter(
             Types.REAL, 'initial odds ratio of no_' 'access_handwashing per lower wealth ' 'level'
         ),
+        'init_prop_primary_edu': Parameter(Types.REAL, 'proportion of starting primary education at baseline age 5-12'),
         'init_rp_some_ed_age0513': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 5-13'),
         'init_rp_some_ed_age1320': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 13-20'),
         'init_rp_some_ed_age2030': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 20-30'),
@@ -451,6 +452,7 @@ class EduPropertyInitialiser:
             # create a new dataframe to hold results
             edu_df = pd.DataFrame(data=df[['li_in_ed', 'li_ed_lev']].copy(), index=df.index)
             edu_df['li_ed_lev'] = 1
+
             # select individuals who are alive and 5+ years
             age_gte5 = df.index[(df.age_years >= 5) & df.is_alive]
 
@@ -472,21 +474,21 @@ class EduPropertyInitialiser:
             edu_df.loc[age_gte5, 'li_ed_lev'] = dfx['li_ed_lev']
 
             # ---- PRIMARY EDUCATION
-            # get index of all children who are alive and between 5 and 5.25 years old
+            # get index of all children who are alive and between 5 and 12 years old
             age5 = edu_df.index[df.age_years.between(5, 12) & (edu_df['li_ed_lev'] == 2) & df.is_alive]
 
             # create a series to hold the probablity of primary education for children aged betwen 5 and 12.
-            # Here we assume a 50-50 change of starting primary education
-            prob_primary = pd.Series(data=0.5, index=age5, dtype=float)
+            # Here we assume a 50-50 chance of starting primary education
+            prob_primary = pd.Series(data=self.module.parameters['init_prop_primary_edu'], index=age5, dtype=float)
             prob_primary *= \
                 self.module.parameters['rp_ed_primary_higher_wealth'] ** (5 - pd.to_numeric(df.loc[age5, 'li_wealth']))
 
-            # randomly select some to have primary education
+            # randomly select some individuals to have primary education
             age5_in_primary = rng.random_sample(len(age5)) < prob_primary
 
             edu_df.loc[age5[age5_in_primary], 'li_in_ed'] = True
 
-            # edu_df.loc[df.age_years.between(5, 12) & (edu_df['li_ed_lev'] == 2) & df.is_alive, 'li_in_ed'] = True
+            # SECONDARY EDUCATION
             edu_df.loc[df.age_years.between(13, 19) & (edu_df['li_ed_lev'] == 3) & df.is_alive, 'li_in_ed'] = True
 
             self.module.models.is_edu_dictionary_empty()['li_in_ed'] = edu_df.li_in_ed
