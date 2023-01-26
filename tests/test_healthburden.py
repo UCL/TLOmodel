@@ -345,13 +345,17 @@ def test_arithmetic_of_dalys_calcs(seed):
     assert dalys['Label_A'] == approx(0.5 + 0.25 * daly_wt, abs=1 / 365)
 
 
-def test_airthmetic_of_lifeyearslost(seed):
+def test_airthmetic_of_lifeyearslost(seed, tmpdir):
     """Check that a death causes the right number of life-years-lost to be logged and in the right age-groups"""
 
     rfp = Path(os.path.dirname(__file__)) / '../resources'
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, log_config={
+        'filename': 'tmp',
+        'directory': tmpdir,
+        'custom_levels': {
+            "tlo.methods.healthburden": logging.INFO}})
     sim.register(
         demography.Demography(resourcefilepath=rfp),
         healthburden.HealthBurden(resourcefilepath=rfp),
@@ -366,6 +370,7 @@ def test_airthmetic_of_lifeyearslost(seed):
     df.loc[0, ['sex', 'is_alive', 'date_of_birth']] = ('F', True, dob)
     sim.simulate(end_date=Date(2010, 12, 31))
 
+    # Get pointer to internal storage of lifeyears lost
     hb = sim.modules['HealthBurden']
     yll = hb.YearsLifeLost
 
@@ -376,13 +381,13 @@ def test_airthmetic_of_lifeyearslost(seed):
     sim.date = Date(2010, 1, 1)
     sim.modules['Demography'].do_death(individual_id=0, cause='Other', originating_module=sim.modules['Demography'])
 
-    # check that the the right number of years-life-lost is recorded
+    # check that the right number of years-life-lost is recorded
     # (= 1.0 as the simulation last 1.0 years and the person was dead throughout)
     assert yll.sum().sum() == approx(1.0)
 
     # check that age-range is correct (0.5 ly lost among 0-4 year-olds; 0.5 ly lost to 5-9 year-olds)
-    assert yll.loc[('F', '0-4', 2010)].sum() == approx(0.5, abs=1 / 365)
-    assert yll.loc[('F', '5-9', 2010)].sum() == approx(0.5, abs=1 / 365)
+    assert yll.loc[('F', '0-4', slice(None), 2010)].sum().sum() == approx(0.5, abs=1 / 365)
+    assert yll.loc[('F', '5-9', slice(None), 2010)].sum().sum() == approx(0.5, abs=1 / 365)
 
 
 @pytest.mark.slow
