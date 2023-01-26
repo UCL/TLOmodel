@@ -426,9 +426,9 @@ class Hiv(Module):
             Predictor("age_years",
                       conditions_are_mutually_exclusive=True,
                       conditions_are_exhaustive=True,
-                      ) .when("<15", 0.0)
-                        .when("<49", 1.0)
-                        .otherwise(0.0),
+                      ).when("<15", 0.0)
+            .when("<49", 1.0)
+            .otherwise(0.0),
             Predictor("sex").when("F", p["rr_sex_f"]),
             Predictor("li_is_circ").when(True, p["rr_circumcision"]),
             Predictor("hv_is_on_prep")
@@ -437,14 +437,14 @@ class Hiv(Module):
             Predictor("li_wealth",
                       conditions_are_mutually_exclusive=True,
                       conditions_are_exhaustive=True,
-                      ) .when(2, p["rr_windex_poorer"])
-                        .when(3, p["rr_windex_middle"])
-                        .when(4, p["rr_windex_richer"])
-                        .when(5, p["rr_windex_richest"]),
+                      ).when(2, p["rr_windex_poorer"])
+            .when(3, p["rr_windex_middle"])
+            .when(4, p["rr_windex_richer"])
+            .when(5, p["rr_windex_richest"]),
             Predictor("li_ed_lev", conditions_are_mutually_exclusive=True,
                       conditions_are_exhaustive=True,
-                      ) .when(2, p["rr_edlevel_primary"])
-                        .when(3, p["rr_edlevel_secondary"]),
+                      ).when(2, p["rr_edlevel_primary"])
+            .when(3, p["rr_edlevel_secondary"]),
             Predictor("hv_behaviour_change").when(True, p["rr_behaviour_change"]),
         )
 
@@ -1031,7 +1031,7 @@ class Hiv(Module):
             # usually performed by care_of_women_during_pregnancy module
             if not mother.hv_diagnosed and \
                 mother.is_alive and (
-                self.rng.random_sample() < params["prob_anc_test_at_delivery"]):
+                    self.rng.random_sample() < params["prob_anc_test_at_delivery"]):
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_TestAndRefer(
                         person_id=mother_id,
@@ -1045,7 +1045,7 @@ class Hiv(Module):
             # if mother known HIV+, schedule test for infant in 6 weeks (EI
             if mother.hv_diagnosed and \
                 df.at[child_id, "is_alive"] and (
-                self.rng.random_sample() < params["prob_anc_test_at_delivery"]):
+                    self.rng.random_sample() < params["prob_anc_test_at_delivery"]):
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_TestAndRefer(
                         person_id=child_id,
@@ -1193,7 +1193,6 @@ class Hiv(Module):
         """
         mean = self.parameters["mean_months_between_aids_and_death"]
         draw_number_of_months = int(np.round(self.rng.exponential(mean)))
-
         return pd.DateOffset(months=draw_number_of_months)
 
     def do_when_hiv_diagnosed(self, person_id):
@@ -1689,7 +1688,7 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
 
         # need to delay onset of AIDS (non-tb) to compensate for AIDS-TB
         if (self.cause == "AIDS_non_TB") and (
-            self.sim.modules["Hiv"].rng.rand() < self.sim.modules["Hiv"].parameters["prop_delayed_aids_onset"]):
+                self.sim.modules["Hiv"].rng.rand() < self.sim.modules["Hiv"].parameters["prop_delayed_aids_onset"]):
 
             # redraw time to aids and reschedule
             months_to_aids = int(
@@ -1765,12 +1764,12 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
         # Do nothing if person is now on ART and VL suppressed (non VL suppressed has no effect)
         # only if no current TB infection
         if (df.at[person_id, "hv_art"] == "on_VL_suppressed") and (
-            df.at[person_id, "tb_inf"] != "active"):
+                df.at[person_id, "tb_inf"] != "active"):
             return
 
         # off ART, no TB infection
         if (df.at[person_id, "hv_art"] != "on_VL_suppressed") and (
-            df.at[person_id, "tb_inf"] != "active"):
+                df.at[person_id, "tb_inf"] != "active"):
             # cause is HIV (no TB)
             self.sim.modules["Demography"].do_death(
                 individual_id=person_id,
