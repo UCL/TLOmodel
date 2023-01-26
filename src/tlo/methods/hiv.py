@@ -426,9 +426,9 @@ class Hiv(Module):
             Predictor("age_years",
                       conditions_are_mutually_exclusive=True,
                       conditions_are_exhaustive=True,
-                      ).when("<15", 0.0)
-            .when("<49", 1.0)
-            .otherwise(0.0),
+                      ) .when("<15", 0.0)
+                        .when("<49", 1.0)
+                        .otherwise(0.0),
             Predictor("sex").when("F", p["rr_sex_f"]),
             Predictor("li_is_circ").when(True, p["rr_circumcision"]),
             Predictor("hv_is_on_prep")
@@ -437,14 +437,14 @@ class Hiv(Module):
             Predictor("li_wealth",
                       conditions_are_mutually_exclusive=True,
                       conditions_are_exhaustive=True,
-                      ).when(2, p["rr_windex_poorer"])
-            .when(3, p["rr_windex_middle"])
-            .when(4, p["rr_windex_richer"])
-            .when(5, p["rr_windex_richest"]),
+                      ) .when(2, p["rr_windex_poorer"])
+                        .when(3, p["rr_windex_middle"])
+                        .when(4, p["rr_windex_richer"])
+                        .when(5, p["rr_windex_richest"]),
             Predictor("li_ed_lev", conditions_are_mutually_exclusive=True,
                       conditions_are_exhaustive=True,
-                      ).when(2, p["rr_edlevel_primary"])
-            .when(3, p["rr_edlevel_secondary"]),
+                      ) .when(2, p["rr_edlevel_primary"])
+                        .when(3, p["rr_edlevel_secondary"]),
             Predictor("hv_behaviour_change").when(True, p["rr_behaviour_change"]),
         )
 
