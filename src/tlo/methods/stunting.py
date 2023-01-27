@@ -120,6 +120,11 @@ class Stunting(Module):
         'effectiveness_of_food_supplementation_in_stunting_reduction': Parameter(
             Types.REAL,
             'Probability of stunting being reduced by one standard deviation (category) by supplementary feeding.'),
+
+        # The probability of a (severe) stunting person seeking healthcare/treatment
+        'prob_of_seeking_healthcare_per_stunting_person': Parameter(
+            Types.REAL,
+            'Probability of seeking healthcare per (severe) stunting person'),
     }
 
     PROPERTIES = {
