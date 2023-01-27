@@ -10,9 +10,8 @@ from pathlib import Path
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import (
+from tlo.methods import (  # deviance_measure,
     demography,
-    # deviance_measure,
     enhanced_lifestyle,
     epi,
     healthburden,

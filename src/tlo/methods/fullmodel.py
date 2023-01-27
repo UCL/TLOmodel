@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from tlo import Module
-from tlo.methods import (
+from tlo.methods import (  # deviance_measure,
     alri,
     bladder_cancer,
     breast_cancer,
@@ -11,7 +11,6 @@ from tlo.methods import (
     contraception,
     demography,
     depression,
-    # deviance_measure,
     diarrhoea,
     enhanced_lifestyle,
     epi,
