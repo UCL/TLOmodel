@@ -2,7 +2,7 @@
 This scenario runs the full model under a set of scenario in which each one TREATMENT_ID is excluded.
 
 * No spurious symptoms
-* Appts Contraints: Mode 0 (No Constraints)
+* Appts Constraints: Mode 0 (No Constraints)
 * Consumables Availability: All
 * Health care seeking as per defaults
 
