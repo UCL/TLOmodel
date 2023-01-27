@@ -290,7 +290,7 @@ class Stunting(Module):
                 hsi_event=HSI_Stunting_ComplementaryFeeding(module=self, person_id=person_id),
                 priority=2,  # <-- lower priority that for wasting and most other HSI
                 topen=self.sim.date)
-        
+
     def do_treatment(self, person_id, prob_success):
         """Represent the treatment with supplementary feeding. If treatment is successful, effect the recovery
         of the person immediately."""
