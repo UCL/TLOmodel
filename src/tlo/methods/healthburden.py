@@ -279,10 +279,10 @@ class HealthBurden(Module):
 
         return daly_wt
 
-    def report_live_years_lost(self, sex, wealth, date_of_birth, age_range, cause_of_death):
+    def report_live_years_lost(self, sex=None, wealth=None, date_of_birth=None, age_range=None, cause_of_death=None):
         """
-        Calculate the start and end dates of the period for which there is 'years of lost life' when someone died
-        (assuming that the person has died on today's date in the simulation).
+        Calculate and store the period for which there is 'years of lost life' when someone dies (assuming that the
+        person has died on today's date in the simulation).
         :param sex: sex of the person that had died
         :param wealth: the value 'li_wealth' for the person at the time of death
         :param date_of_birth: date_of_birth of the person that has died
@@ -291,9 +291,9 @@ class HealthBurden(Module):
         """
 
         def _format_for_multi_index(_yll: pd.Series):
-            """Returns pd.Series which is the same as argument _yll except that the multi-index has been expanded to
-            include sex and wealth and rearranged so that it matched the expected mutli-index format
-            (sex/age_range/wealth/year)."""
+            """Returns pd.Series which is the same as in the argument `_yll` except that the multi-index has been
+            expanded to include sex and li_wealth and rearranged so that it matched the expected multi-index format
+            (sex/age_range/li_wealth/year)."""
             return pd.DataFrame(_yll)\
                      .assign(sex=sex, li_wealth=wealth)\
                      .set_index(['sex', 'li_wealth'], append=True)\
@@ -306,8 +306,8 @@ class HealthBurden(Module):
         # date from which years of life are lost
         date_of_death = self.sim.date
 
-        # Get the years of life lost split out by year and age-group (counting years of life lost up to the earliest of
-        # the age_limit or end of simulation)
+        # Get the years of life lost split out by year and age-group: Not Stacked by time... so counting years of life
+        # lost up to the earliest of the age_limit or end of simulation.
         yll = self.decompose_yll_by_age_and_time(start_date=date_of_death,
                                                  end_date=min(
                                                      self.sim.end_date,
@@ -317,8 +317,8 @@ class HealthBurden(Module):
                                                  date_of_birth=date_of_birth
                                                  )['person_years'].pipe(_format_for_multi_index)
 
-        # Get the years of live lost "stacked by time" (where all the life-years lost up to the age_limit are ascribed
-        # to the year of death)
+        # Get the years of live lost "stacked by time", whereby all the life-years lost up to the age_limit are ascribed
+        # to the year of death.
         yll_stacked_by_time = \
             self.decompose_yll_by_age_and_time(
                 start_date=date_of_death,
@@ -330,11 +330,12 @@ class HealthBurden(Module):
              .set_index(['year'], append=True)['person_years']\
              .pipe(_format_for_multi_index)
 
-        # Get the years of live lost "stacked by age and time" (where all the life-years lost up to the age_limit are
-        # ascribed to the age of death and to the year of death).
-        age_to_stack_to = age_range
+        # Get the years of live lost "stacked by age and time", whereby all the life-years lost up to the age_limit are
+        # ascribed to the age of death and to the year of death. This is computed by collapsing the age-dimension of
+        # `yll_stacked_by_time` onto the age(-range) of death.
+        age_range_to_stack_to = age_range
         yll_stacked_by_age_and_time = pd.DataFrame(yll_stacked_by_time.sum(level=[0, 2, 3]))\
-                                        .assign(age_range=age_to_stack_to)\
+                                        .assign(age_range=age_range_to_stack_to)\
                                         .set_index(['age_range'], append=True)['person_years']\
                                         .reorder_levels(['sex', 'age_range', 'li_wealth', 'year'])
 
@@ -367,7 +368,7 @@ class HealthBurden(Module):
 
         df = pd.DataFrame()
 
-        # Get all the days between start and end
+        # Get all the days between start and end (inclusively)
         df['days'] = pd.date_range(start=start_date, end=end_date, freq='D')
         df['year'] = df['days'].dt.year
 
@@ -506,7 +507,7 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
             func=np.add,
             overwrite=False)
 
-        # Merge into a dataframe with the correct multi-index (the multindex from combine is subtly different)
+        # Merge into a dataframe with the correct multi-index (the multi-index from combine is subtly different)
         self.module.YearsLivedWithDisability = \
             pd.DataFrame(index=self.module.multi_index_for_age_and_wealth_and_time)\
               .merge(combined, left_index=True, right_index=True, how='left')
