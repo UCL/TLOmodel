@@ -23,7 +23,7 @@ class LongRun(BaseScenario):
         self.start_date = Date(2010, 1, 1)
         self.end_date = self.start_date + pd.DateOffset(years=10)
         self.pop_size = 20_000
-        self.number_of_draws = 1
+        self.number_of_draws = 3
         self.runs_per_draw = 10
 
     def log_configuration(self):
@@ -45,7 +45,11 @@ class LongRun(BaseScenario):
         return fullmodel(resourcefilepath=self.resources)
 
     def draw_parameters(self, draw_number, rng):
-        return  # Using default parameters in all cases
+        return {
+            'Stunting': {
+                'prob_stunting_diagnosed_at_generic_appt': [0.6, 0.1, 0.03][draw_number]
+            }
+        }
 
 
 if __name__ == '__main__':
