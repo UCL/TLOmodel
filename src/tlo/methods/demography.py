@@ -414,8 +414,11 @@ class Demography(Module):
         if 'HealthBurden' in self.sim.modules.keys():
             # report the death so that a computation of lost life-years due to this cause to be recorded
             self.sim.modules['HealthBurden'].report_live_years_lost(sex=person['sex'],
+                                                                    wealth=person['li_wealth'],
                                                                     date_of_birth=person['date_of_birth'],
-                                                                    cause_of_death=cause)
+                                                                    age_range=person['age_range'],
+                                                                    cause_of_death=cause,
+                                                                    )
 
         # Release any beds-days that would be used by this person:
         if 'HealthSystem' in self.sim.modules:
