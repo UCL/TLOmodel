@@ -322,7 +322,8 @@ class HealthBurden(Module):
         yll_stacked_by_time = \
             self.decompose_yll_by_age_and_time(
                 start_date=date_of_death,
-                end_date=date_of_birth + pd.DateOffset(years=self.parameters['Age_Limit_For_YLL']),
+                end_date=(
+                    date_of_birth + pd.DateOffset(years=self.parameters['Age_Limit_For_YLL']) - pd.DateOffset(days=1)),
                 date_of_birth=date_of_birth
             ).sum(level=1)\
              .assign(year=date_of_death.year)\
@@ -370,8 +371,9 @@ class HealthBurden(Module):
         df['days'] = pd.date_range(start=start_date, end=end_date, freq='D')
         df['year'] = df['days'].dt.year
 
-        # Get the age that this person will be on each day
-        df['age_in_years'] = ((df['days'] - date_of_birth).dt.days.values / 365).astype(int)
+        # Get the age (in whole years) that this person will be on each day.
+        # N.B. This is a slight approximation as it doesn't make allowance for leap-years.
+        df['age_in_years'] = ((df['days'] - date_of_birth) / np.timedelta64(1, 'Y')).astype(int)
 
         age_range_lookup = self.sim.modules['Demography'].AGE_RANGE_LOOKUP  # get the age_range_lookup from demography
         df['age_range'] = df['age_in_years'].map(age_range_lookup)
