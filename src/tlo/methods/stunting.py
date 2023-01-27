@@ -279,16 +279,18 @@ class Stunting(Module):
         df = self.sim.population.props
         person = df.loc[person_id]
         is_stunted = person.un_HAZ_category in ('HAZ<-3', '-3<=HAZ<-2')
+        p_seeking_healthcare = self.parameters['prob_of_seeking_healthcare_per_stunting_person']
 
         if not is_stunted:
             return
 
-        # Schedule the HSI for provision of treatment
-        self.sim.modules['HealthSystem'].schedule_hsi_event(
-            hsi_event=HSI_Stunting_ComplementaryFeeding(module=self, person_id=person_id),
-            priority=2,  # <-- lower priority that for wasting and most other HSI
-            topen=self.sim.date)
-
+        # Schedule the HSI for provision of treatment based on the probability of seeking healthcare
+        if p_seeking_healthcare > self.rng.random_sample():
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=HSI_Stunting_ComplementaryFeeding(module=self, person_id=person_id),
+                priority=2,  # <-- lower priority that for wasting and most other HSI
+                topen=self.sim.date)
+        
     def do_treatment(self, person_id, prob_success):
         """Represent the treatment with supplementary feeding. If treatment is successful, effect the recovery
         of the person immediately."""
