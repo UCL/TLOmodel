@@ -518,7 +518,6 @@ def test_aids_symptoms_lead_to_treatment_being_initiated(seed):
     assert 1 == len(
         [ev[0] for ev in sim.find_events_for_person(person_id) if isinstance(ev[1], hiv.HivAidsTbDeathEvent)])
 
-    # HIV testing through generic first appt has been removed
     # Run the health-seeking poll and run the GenericFirstApptLevel0 that is Created
     hsp = HealthSeekingBehaviourPoll(module=sim.modules['HealthSeekingBehaviour'])
     hsp.apply(sim.population)

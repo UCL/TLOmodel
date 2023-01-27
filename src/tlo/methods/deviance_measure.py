@@ -112,11 +112,6 @@ class Deviance(Module):
             (data_tb_who.year >= 2010), "incidence_per_100k"
         ]
 
-        # # TB latent data (Houben & Dodd 2016)
-        # data_tb_latent = pd.read_excel(xls_tb, sheet_name="latent_TB2014_summary")
-        # data_tb_latent_all_ages = data_tb_latent.loc[data_tb_latent.Age_group == "0_80"]
-        # self.data_dict["who_tb_latent_prev"] = data_tb_latent_all_ages.proportion_latent_TB.values[0]
-
         # TB mortality per 100k excluding HIV: 2010-2017
         self.data_dict["who_tb_deaths_per_100k"] = data_tb_who.loc[
             (data_tb_who.year >= 2010), "mortality_tb_excl_hiv_per_100k"
@@ -148,9 +143,6 @@ class Deviance(Module):
 
         # tb active incidence per 100k - all ages
         self.model_dict["TB_active_inc_per100k"] = (tb["num_new_active_tb"] / pop) * 100000
-
-        # tb latent prevalence 2014
-        # self.model_dict["TB_latent_prev"] = tb["tbPrevLatent"][4]
 
         # ------------------ DEATHS ------------------ #
         # convert dict to df for easier processing
@@ -252,11 +244,6 @@ class Deviance(Module):
                                )
                            ) / 8
 
-        # tb latent prevalence
-        # tb_latent_prev = deviance_function(
-        #     data_dict["who_tb_latent_prev"], model_dict["TB_latent_prev"]
-        # )
-
         # ------------------ DEATHS ------------------ #
 
         # aids deaths unaids 2010-2019
@@ -345,29 +332,29 @@ class Deviance(Module):
             + hiv_prev_child
             + hiv_inc_adult
             + (tb_incidence_who * model_weight)
-            # + (tb_latent_prev * model_weight)
             + (hiv_deaths_unaids * model_weight)
             + (tb_mortality_who * model_weight)
         )
 
         hiv_beta = self.sim.modules["Hiv"].parameters["beta"]
-        tb_beta = self.sim.modules["Tb"].parameters["beta"]
+        tb_scaling_factor_WHO = self.sim.modules["Tb"].parameters["scaling_factor_WHO"]
 
-        return_values = [calibration_score, hiv_beta, tb_beta]
-        # return_values = [calibration_score, hiv_beta]
+        return_values = [calibration_score, hiv_beta, tb_scaling_factor_WHO]
 
         return return_values
 
     def on_simulation_end(self):
-        self.read_data_files()
-        self.read_model_outputs()
-        deviance_measure = self.weighted_mean(model_dict=self.model_dict, data_dict=self.data_dict)
 
-        logger.info(
-            key="deviance_measure",
-            description="Deviance measure for HIV and TB",
-            data={"deviance_measure": deviance_measure[0],
-                  "hiv_transmission_rate": deviance_measure[1],
-                  "tb_transmission_rate": deviance_measure[2]
-                  }
-        )
+        if self.sim.date.year >= 2020:
+            self.read_data_files()
+            self.read_model_outputs()
+            deviance_measure = self.weighted_mean(model_dict=self.model_dict, data_dict=self.data_dict)
+
+            logger.info(
+                key="deviance_measure",
+                description="Deviance measure for HIV and TB",
+                data={"deviance_measure": deviance_measure[0],
+                      "hiv_transmission_rate": deviance_measure[1],
+                      "tb_scaling_factor_WHO": deviance_measure[2]
+                      }
+            )
