@@ -221,9 +221,9 @@ def test_polling_event_progression(seed):
     assert (df.loc[df.is_alive & (df.age_years >= 5), 'un_HAZ_category'] == 'HAZ>=-2').all()
 
 
-def test_routine_assessment_for_chronic_undernutrition_if_stunted_and_seeking_healthcare(seed):
+def test_routine_assessment_for_chronic_undernutrition_if_stunted_and_correctly_diagnosed(seed):
     """Check that a call to `do_routine_assessment_for_chronic_undernutrition` can lead to immediate recovery for a
-    stunted child (via an HSI), if there is healthcare seeking."""
+    stunted child (via an HSI), if there is correct diagnosis."""
     popsize = 100
     sim = get_sim(seed)
     sim.make_initial_population(n=popsize)
@@ -238,7 +238,7 @@ def test_routine_assessment_for_chronic_undernutrition_if_stunted_and_seeking_he
     df.loc[person_id, 'un_HAZ_category'] = '-3<=HAZ<-2'
 
     # Make the probability of healthcare seeking as 1.0
-    sim.modules['Stunting'].parameters['prob_of_seeking_healthcare_per_stunting_person'] = 1.0
+    sim.modules['Stunting'].parameters['p_correct_diagnosis_per_stunted_person'] = 1.0
 
     # Subject the person to `do_routine_assessment_for_chronic_undernutrition`
     sim.modules['Stunting'].do_routine_assessment_for_chronic_undernutrition(person_id=person_id)
@@ -284,9 +284,9 @@ def test_routine_assessment_for_chronic_undernutrition_if_stunted_and_seeking_he
     ]
 
 
-def test_routine_assessment_for_chronic_undernutrition_if_stunted_but_not_seeking_healthcare(seed):
-    """Check that a call to `do_routine_assessment_for_chronic_undernutrition` does not lead to an HSI if
-    there is no healthcare seeking"""
+def test_routine_assessment_for_chronic_undernutrition_if_stunted_but_incorrectly_diagnosed(seed):
+    """Check that a call to `do_routine_assessment_for_chronic_undernutrition` does not lead to an HSI for a stunted
+    child, if there is incorrect diagnosis."""
     popsize = 100
     sim = get_sim(seed)
     sim.make_initial_population(n=popsize)
@@ -298,10 +298,10 @@ def test_routine_assessment_for_chronic_undernutrition_if_stunted_but_not_seekin
     person_id = 0
     df.loc[person_id, 'age_years'] = 2
     df.loc[person_id, 'age_exact_year'] = 2.0
-    df.loc[person_id, 'un_HAZ_category'] = 'HAZ>=-2'
+    df.loc[person_id, 'un_HAZ_category'] = '-3<=HAZ<-2'
 
     # Make the probability of healthcare seeking as 0.0
-    sim.modules['Stunting'].parameters['prob_of_seeking_healthcare_per_stunting_person'] = 0.0
+    sim.modules['Stunting'].parameters['p_correct_diagnosis_per_stunted_person'] = 0.0
 
     # Subject the person to `do_routine_assessment_for_chronic_undernutrition`
     sim.modules['Stunting'].do_routine_assessment_for_chronic_undernutrition(person_id=person_id)

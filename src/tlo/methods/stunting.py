@@ -121,10 +121,10 @@ class Stunting(Module):
             Types.REAL,
             'Probability of stunting being reduced by one standard deviation (category) by supplementary feeding.'),
 
-        # The probability of a (severe) stunting person seeking healthcare/treatment
-        'prob_of_seeking_healthcare_per_stunting_person': Parameter(
+        # The probability of a (severe) stunting person being checked and correctly diagnosed
+        'prob_stunting_diagnosed_at_generic_appt': Parameter(
             Types.REAL,
-            'Probability of seeking healthcare per (severe) stunting person'),
+            'Probability of a stunted or severely stunted person being checked and correctly diagnosed'),
     }
 
     PROPERTIES = {
@@ -279,13 +279,13 @@ class Stunting(Module):
         df = self.sim.population.props
         person = df.loc[person_id]
         is_stunted = person.un_HAZ_category in ('HAZ<-3', '-3<=HAZ<-2')
-        p_seeking_healthcare = self.parameters['prob_of_seeking_healthcare_per_stunting_person']
+        p_correct_diagnosis_per_stunted_person = self.parameters['prob_stunting_diagnosed_at_generic_appt']
 
         if not is_stunted:
             return
 
-        # Schedule the HSI for provision of treatment based on the probability of seeking healthcare
-        if p_seeking_healthcare > self.rng.random_sample():
+        # Schedule the HSI for provision of treatment based on the probability of correct diagnosis of stunting
+        if p_correct_diagnosis_per_stunted_person > self.rng.random_sample():
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_Stunting_ComplementaryFeeding(module=self, person_id=person_id),
                 priority=2,  # <-- lower priority that for wasting and most other HSI
