@@ -223,7 +223,7 @@ def test_polling_event_progression(seed):
 
 def test_routine_assessment_for_chronic_undernutrition_if_stunted_and_correctly_diagnosed(seed):
     """Check that a call to `do_routine_assessment_for_chronic_undernutrition` can lead to immediate recovery for a
-    stunted child (via an HSI), if there is correct diagnosis."""
+    stunted child (via an HSI), if there is checking and correct diagnosis."""
     popsize = 100
     sim = get_sim(seed)
     sim.make_initial_population(n=popsize)
@@ -284,9 +284,9 @@ def test_routine_assessment_for_chronic_undernutrition_if_stunted_and_correctly_
     ]
 
 
-def test_routine_assessment_for_chronic_undernutrition_if_stunted_but_incorrectly_diagnosed(seed):
+def test_routine_assessment_for_chronic_undernutrition_if_stunted_but_no_checking(seed):
     """Check that a call to `do_routine_assessment_for_chronic_undernutrition` does not lead to an HSI for a stunted
-    child, if there is incorrect diagnosis."""
+    child, if there is no checking/diagnosis."""
     popsize = 100
     sim = get_sim(seed)
     sim.make_initial_population(n=popsize)
