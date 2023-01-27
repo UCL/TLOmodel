@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import pytest
 from pytest import approx
@@ -51,11 +52,11 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            disable_and_reject_all=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome())
 
@@ -71,13 +72,14 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
     # correctly configured index (outputs on 31st december in each year of simulation for each age/sex group)
     dalys = output['tlo.methods.healthburden']['dalys']
     dalys = dalys.drop(columns=['date'])
+
     age_index = sim.modules['Demography'].AGE_RANGE_CATEGORIES
     sex_index = ['M', 'F']
     year_index = list(range(start_date.year, end_date.year + 1))
     correct_multi_index = pd.MultiIndex.from_product([sex_index, age_index, year_index],
                                                      names=['sex', 'age_range', 'year'])
     output_multi_index = dalys.set_index(['sex', 'age_range', 'year']).index
-    assert output_multi_index.equals(correct_multi_index)
+    pd.testing.assert_index_equal(output_multi_index, correct_multi_index, check_order=False)
 
     # check that there is a column for each 'label' that is registered
     assert set(dalys.set_index(['sex', 'age_range', 'year']).columns) == \
@@ -227,6 +229,7 @@ def test_arithmetic_of_disability_aggregation_calcs(seed):
     sim = Simulation(start_date=start_date, seed=seed)
     sim.register(
         demography.Demography(resourcefilepath=rfp),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=rfp),
         DiseaseThatCausesA(),
         DiseaseThatCausesB(),
@@ -234,7 +237,6 @@ def test_arithmetic_of_disability_aggregation_calcs(seed):
         DiseaseThatCausesC(name='DiseaseThatCausesC1'),  # intentionally two instances of DiseaseThatCausesC
         DiseaseThatCausesC(name='DiseaseThatCausesC2'),
         DiseaseThatCausesNothing(),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         # Disable sorting to allow registering multiple instances of DiseaseThatCausesC
         sort_modules=False
     )
@@ -320,9 +322,9 @@ def test_arithmetic_of_dalys_calcs(seed):
     sim = Simulation(start_date=start_date, seed=seed)
     sim.register(
         demography.Demography(resourcefilepath=rfp),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=rfp),
         DiseaseThatCausesA(),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
     )
     sim.make_initial_population(n=1)
 
@@ -346,20 +348,17 @@ def test_arithmetic_of_dalys_calcs(seed):
 
 
 def test_airthmetic_of_lifeyearslost(seed, tmpdir):
-    """Check that a death causes the right number of life-years-lost to be logged and in the right age-groups"""
+    """Check that a death causes the right number of life-years-lost to be logged and in the right age-groups (when
+    there is no stacking by age or time)."""
 
     rfp = Path(os.path.dirname(__file__)) / '../resources'
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed, log_config={
-        'filename': 'tmp',
-        'directory': tmpdir,
-        'custom_levels': {
-            "tlo.methods.healthburden": logging.INFO}})
+    sim = Simulation(start_date=start_date, seed=seed)
     sim.register(
         demography.Demography(resourcefilepath=rfp),
-        healthburden.HealthBurden(resourcefilepath=rfp),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        healthburden.HealthBurden(resourcefilepath=rfp),
     )
     sim.make_initial_population(n=1)
 
@@ -370,7 +369,7 @@ def test_airthmetic_of_lifeyearslost(seed, tmpdir):
     df.loc[0, ['sex', 'is_alive', 'date_of_birth']] = ('F', True, dob)
     sim.simulate(end_date=Date(2010, 12, 31))
 
-    # Get pointer to internal storage of lifeyears lost
+    # Get pointer to internal storage of life-years lost
     hb = sim.modules['HealthBurden']
     yll = hb.YearsLifeLost
 
@@ -386,22 +385,23 @@ def test_airthmetic_of_lifeyearslost(seed, tmpdir):
     assert yll.sum().sum() == approx(1.0)
 
     # check that age-range is correct (0.5 ly lost among 0-4 year-olds; 0.5 ly lost to 5-9 year-olds)
-    assert yll.loc[('F', '0-4', slice(None), 2010)].sum().sum() == approx(0.5, abs=1 / 365)
-    assert yll.loc[('F', '5-9', slice(None), 2010)].sum().sum() == approx(0.5, abs=1 / 365)
+    assert yll.loc[('F', '0-4', slice(None), 2010)].sum().sum() == approx(0.5, abs=2.0 / 365.25)
+    assert yll.loc[('F', '5-9', slice(None), 2010)].sum().sum() == approx(0.5, abs=2.0 / 365.25)
+    assert yll.loc[('F', ['0-4', '5-9'], slice(None), 2010)].sum().sum() == approx(1.0, abs=0.5 / 365.25)
 
 
 @pytest.mark.slow
 def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
     """Check that the computation of 'stacked' LifeYearsLost and DALYS is done correctly (i.e., when all the
     future life-years lost are allocated to the year of death (stacked by time); or when all future life-year lost are
-    allocaed to the year of death and age of death (stacked by age and time)."""
+    allocated to the year of death and age of death (stacked by age and time)."""
 
     rfp = Path(os.path.dirname(__file__)) / '../resources'
 
     class DiseaseThatCausesA(Module):
         """Disease that will:
-          * impose disability on person_id=0 at the point 25% through the year;
-          * cause the death of the person_id=0 at the point 50% through the year;
+          * impose a disability on person_id=0 on a given date
+          * cause the death of the person_id=0 on a given date
         """
         METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHBURDEN}
         CAUSES_OF_DEATH = {'cause_of_death_A': Cause(label='Label_A')}
@@ -441,27 +441,50 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
                      )
     sim.register(
         demography.Demography(resourcefilepath=rfp),
-        healthburden.HealthBurden(resourcefilepath=rfp),
         enhanced_lifestyle.Lifestyle(resourcefilepath=rfp),
+        healthburden.HealthBurden(resourcefilepath=rfp),
         DiseaseThatCausesA()
     )
     sim.make_initial_population(n=1)
 
-    # To make calcs easy, set the date_of_birth of the person_id=0, to be 1st January 2010
+    AGE_RANGE_LOOKUP = sim.modules['Demography'].AGE_RANGE_LOOKUP
+    AGE_RANGE_CATEGORIES = sim.modules['Demography'].AGE_RANGE_CATEGORIES
+
+    # Determine the properties of person_id = 0
+    date_of_birth = Date(2010, 1, 1)  # 1st January 2010 will make the calculations easier
+    sex = 'F'
+
     df = sim.population.props
-    df.loc[0, ['is_alive', 'date_of_birth']] = (True, Date(2010, 1, 1))
-    df.loc[0, 'sex'] = 'F'
+    df.loc[0, ['is_alive', 'date_of_birth']] = (True, date_of_birth)
+    df.loc[0, 'sex'] = sex
     sim.simulate(end_date=Date(2029, 12, 31))
+
     daly_wt = sim.modules['DiseaseThatCausesA'].daly_wt
     death_date = sim.modules['DiseaseThatCausesA'].death_date
     disability_onset_date = sim.modules['DiseaseThatCausesA'].disability_onset_date
 
-    # Examine YLL, YLD and DALYS for 'A' recorded at the end of the simulation
+    age_range_at_disability_onset = AGE_RANGE_LOOKUP[
+        int(np.round((disability_onset_date - date_of_birth) / np.timedelta64(1, 'Y')))]
+    age_at_death = int(np.round((death_date - date_of_birth) / np.timedelta64(1, 'Y')))
+    age_range_at_death = AGE_RANGE_LOOKUP[age_at_death]
+
+    age_groups_where_yll_are_accrued = set(
+        [_grp for _age, _grp in AGE_RANGE_LOOKUP.items()
+         if age_at_death <= _age < sim.modules['HealthBurden'].parameters['Age_Limit_For_YLL']
+         ]
+    )
+    age_groups_where_yll_are_not_accrued = set(AGE_RANGE_CATEGORIES) - age_groups_where_yll_are_accrued
+
+    # Examine YLL, YLD and DALYS recorded at the end of the simulation
     log = parse_log_file(sim.log_filepath)['tlo.methods.healthburden']
 
     # Examine Years Lived with Disability
     yld = log['yld_by_causes_of_disability']
-    marker_for_disability = (yld.year == disability_onset_date.year) & (yld.age_range == '0-4') & (yld.sex == 'F')
+    marker_for_disability = (
+        (yld.year == disability_onset_date.year)
+        & (yld.age_range == age_range_at_disability_onset)
+        & (yld.sex == sex)
+    )
     assert (yld.loc[marker_for_disability, 'cause_of_disability_A'] == daly_wt * 1.0).all()
     assert (yld.loc[~marker_for_disability, 'cause_of_disability_A'] == 0.0).all()
 
@@ -469,7 +492,7 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
     # -- YLL
     yll_not_stacked = log['yll_by_causes_of_death']
     yll_by_year_not_stacked = yll_not_stacked.loc[
-        (yll_not_stacked.sex == 'F'),
+        (yll_not_stacked.sex == sex),
         ['year', 'age_range', 'cause_of_death_A']
     ].groupby('year')['cause_of_death_A'].sum()
     assert all([yll_by_year_not_stacked.loc[year] == approx(1.0, abs=1 / 364) for year in
@@ -481,43 +504,47 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
     # -- YLL (Stacked by time - but not age)
     yll_stacked_by_time = log['yll_by_causes_of_death_stacked']
     yll_stacked_by_time = yll_stacked_by_time.loc[
-        (yll_stacked_by_time.sex == 'F'),
+        (yll_stacked_by_time.sex == sex),
         ['year', 'age_range', 'cause_of_death_A']
     ].groupby(['year', 'age_range'])['cause_of_death_A'].sum().unstack()
     assert 0.0 == yll_stacked_by_time.loc[
         yll_stacked_by_time.index != death_date.year].sum().sum()  # No Yll for years other than year of death
     assert approx(68.0, 1 / 364) == yll_stacked_by_time.loc[
         death_date.year].sum()  # In year of death, 68 years of lost life.
-    cols_for_age_groups_not_in_age_group = ['70-74', '75-79', '80-84', '85-89', '90-94', '95-99', '100+']
     assert (yll_stacked_by_time.loc[death_date.year, yll_stacked_by_time.columns[
-        ~yll_stacked_by_time.columns.isin(cols_for_age_groups_not_in_age_group)]] > 0).all()
-    # assert 0.0 == yll_stacked_by_time[cols_for_age_groups_not_in_age_group].sum().sum()
-    # todo There should be no yll for ages above 70 because that is the definition, but this fails! Investigate!
+        yll_stacked_by_time.columns.isin(age_groups_where_yll_are_accrued)]] > 0).all()
+    assert 0.0 == yll_stacked_by_time[age_groups_where_yll_are_not_accrued].sum().sum()  # There should be no yll for
+    #                                                                                      ages above 70 because that
+    #                                                                                      is the definition
 
     # -- YLL (Stacked by age and time)
     yll_stacked_by_age_and_time = log['yll_by_causes_of_death_stacked_by_age_and_time']
     yll_stacked_by_age_and_time = yll_stacked_by_age_and_time.loc[
-        (yll_stacked_by_age_and_time.sex == 'F'),
+        (yll_stacked_by_age_and_time.sex == sex),
         ['year', 'age_range', 'cause_of_death_A']
     ].groupby(['year', 'age_range'])['cause_of_death_A'].sum().unstack()
     assert 0 == yll_stacked_by_age_and_time[yll_stacked_by_age_and_time.columns[
-        yll_stacked_by_age_and_time.columns != '0-4']].sum().sum()  # No YLL for ages other than 0-4
+        yll_stacked_by_age_and_time.columns != age_range_at_death]].sum().sum()  # No YLL for ages other than age at
+    #                                                                              death
     assert 0 == yll_stacked_by_age_and_time.loc[
         yll_stacked_by_age_and_time.index != death_date.year].sum().sum()  # No Yll for years other than year of death
     assert yll_stacked_by_age_and_time.sum().sum() == approx(
-        yll_stacked_by_time.sum().sum())  # Total YLL matches other disaggregation
+        yll_stacked_by_time.sum().sum())  # Total YLL matches YLL when stacked by time only
 
     # Check dalys (not stacked) is as expected:
     dalys_by_year_not_stacked = log['dalys'].loc[
-        (log['dalys'].sex == 'F'), ['year', 'age_range', 'Label_A']
+        (log['dalys'].sex == sex), ['year', 'age_range', 'Label_A']
     ].groupby('year')['Label_A'].sum()
-    assert dalys_by_year_not_stacked.at[2010] == 0.0
-    assert dalys_by_year_not_stacked.at[2011] == approx(0.5, 1 / 364)
-    assert all([dalys_by_year_not_stacked.at[year] == (approx(1.0, 1 / 364)) for year in range(2012, 2030)])
+    assert dalys_by_year_not_stacked.at[sim.start_date.year] == 0.0
+    assert dalys_by_year_not_stacked.at[disability_onset_date.year] == approx(0.5, 1 / 364)
+    assert all(
+        [dalys_by_year_not_stacked.at[year] == (approx(1.0, 1 / 364))
+         for year in range(death_date.year, sim.end_date.year + 1)]
+    )
 
     # Check dalys_stacked_by_time is as expected:
     dalys_by_year_stacked_by_time = log['dalys_stacked'].loc[
-        (log['dalys'].sex == 'F'), ['year', 'age_range', 'Label_A']
+        (log['dalys'].sex == sex), ['year', 'age_range', 'Label_A']
     ].groupby(['year', 'age_range'])['Label_A'].sum().unstack()
     assert dalys_by_year_stacked_by_time.loc[sim.start_date.year].sum() == 0.0
     assert dalys_by_year_stacked_by_time.loc[disability_onset_date.year].sum() == approx(0.5, 1 / 364)
@@ -527,19 +554,20 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
 
     # Check dalys_stacked_by_age_and_time is as expected
     dalys_by_year_stacked_by_age_and_time = log['dalys_stacked_by_age_and_time'].loc[
-        (log['dalys'].sex == 'F'), ['year', 'age_range', 'Label_A']
+        (log['dalys'].sex == sex), ['year', 'age_range', 'Label_A']
     ].groupby(['year', 'age_range'])['Label_A'].sum().unstack()
     assert 0.0 == dalys_by_year_stacked_by_age_and_time.loc[
         dalys_by_year_stacked_by_age_and_time.index != death_date.year,
-        dalys_by_year_stacked_by_age_and_time.columns[dalys_by_year_stacked_by_age_and_time.columns != '0-4']
+        dalys_by_year_stacked_by_age_and_time.columns[
+            dalys_by_year_stacked_by_age_and_time.columns != age_range_at_death]
     ].sum().sum()
-    assert dalys_by_year_stacked_by_age_and_time['0-4'].values == approx(
+    assert dalys_by_year_stacked_by_age_and_time[age_range_at_death].values == approx(
         dalys_by_year_stacked_by_time.sum(axis=1).values, 1 / 364)
 
-    # Check that results from daly_stacked_by_time can be extract into pd.Series (for use in `extract_results`)
+    # Check that results from daly_stacked_by_time can be extracted into a pd.Series (for use in `extract_results`)
     def fn(df_):
         return df_.drop(columns='date').groupby(['year']).sum().stack()
 
     ser = fn(log['dalys_stacked'])
-    assert ser.loc[(slice(None), 'Label_A')].at[2011] == approx(0.5, 1 / 364)
-    assert ser.loc[(slice(None), 'Label_A')].at[2012] == approx(68.0, 1 / 364)
+    assert ser.loc[(slice(None), 'Label_A')].at[disability_onset_date.year] == approx(0.5, 1 / 364)
+    assert ser.loc[(slice(None), 'Label_A')].at[death_date.year] == approx(68.0, 1 / 364)
