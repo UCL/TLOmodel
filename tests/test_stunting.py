@@ -238,7 +238,7 @@ def test_routine_assessment_for_chronic_undernutrition_if_stunted_and_correctly_
     df.loc[person_id, 'un_HAZ_category'] = '-3<=HAZ<-2'
 
     # Make the probability of healthcare seeking as 1.0
-    sim.modules['Stunting'].parameters['p_correct_diagnosis_per_stunted_person'] = 1.0
+    sim.modules['Stunting'].parameters['prob_stunting_diagnosed_at_generic_appt'] = 1.0
 
     # Subject the person to `do_routine_assessment_for_chronic_undernutrition`
     sim.modules['Stunting'].do_routine_assessment_for_chronic_undernutrition(person_id=person_id)
@@ -301,7 +301,7 @@ def test_routine_assessment_for_chronic_undernutrition_if_stunted_but_incorrectl
     df.loc[person_id, 'un_HAZ_category'] = '-3<=HAZ<-2'
 
     # Make the probability of healthcare seeking as 0.0
-    sim.modules['Stunting'].parameters['p_correct_diagnosis_per_stunted_person'] = 0.0
+    sim.modules['Stunting'].parameters['prob_stunting_diagnosed_at_generic_appt'] = 0.0
 
     # Subject the person to `do_routine_assessment_for_chronic_undernutrition`
     sim.modules['Stunting'].do_routine_assessment_for_chronic_undernutrition(person_id=person_id)
