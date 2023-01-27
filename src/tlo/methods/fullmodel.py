@@ -11,7 +11,7 @@ from tlo.methods import (
     contraception,
     demography,
     depression,
-    deviance_measure,
+    # deviance_measure,
     diarrhoea,
     enhanced_lifestyle,
     epi,
