@@ -221,9 +221,9 @@ def test_polling_event_progression(seed):
     assert (df.loc[df.is_alive & (df.age_years >= 5), 'un_HAZ_category'] == 'HAZ>=-2').all()
 
 
-def test_routine_assessment_for_chronic_undernutrition_if_stunted(seed):
+def test_routine_assessment_for_chronic_undernutrition_if_stunted_and_seeking_healthcare(seed):
     """Check that a call to `do_routine_assessment_for_chronic_undernutrition` can lead to immediate recovery for a
-    stunted child (via an HSI)."""
+    stunted child (via an HSI), if there is healthcare seeking."""
     popsize = 100
     sim = get_sim(seed)
     sim.make_initial_population(n=popsize)
@@ -236,6 +236,9 @@ def test_routine_assessment_for_chronic_undernutrition_if_stunted(seed):
     df.loc[person_id, 'age_years'] = 2
     df.loc[person_id, 'age_exact_year'] = 2.0
     df.loc[person_id, 'un_HAZ_category'] = '-3<=HAZ<-2'
+
+    # Make the probability of healthcare seeking as 1.0
+    sim.modules['Stunting'].parameters['prob_of_seeking_healthcare_per_stunting_person'] = 1.0
 
     # Subject the person to `do_routine_assessment_for_chronic_undernutrition`
     sim.modules['Stunting'].do_routine_assessment_for_chronic_undernutrition(person_id=person_id)
@@ -281,6 +284,34 @@ def test_routine_assessment_for_chronic_undernutrition_if_stunted(seed):
     ]
 
 
+def test_routine_assessment_for_chronic_undernutrition_if_stunted_but_not_seeking_healthcare(seed):
+    """Check that a call to `do_routine_assessment_for_chronic_undernutrition` does not lead to an HSI if
+    there is no healthcare seeking"""
+    popsize = 100
+    sim = get_sim(seed)
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=sim.start_date)
+    sim.modules['HealthSystem'].reset_queue()
+
+    # Make one person have no stunting
+    df = sim.population.props
+    person_id = 0
+    df.loc[person_id, 'age_years'] = 2
+    df.loc[person_id, 'age_exact_year'] = 2.0
+    df.loc[person_id, 'un_HAZ_category'] = 'HAZ>=-2'
+
+    # Make the probability of healthcare seeking as 0.0
+    sim.modules['Stunting'].parameters['prob_of_seeking_healthcare_per_stunting_person'] = 0.0
+
+    # Subject the person to `do_routine_assessment_for_chronic_undernutrition`
+    sim.modules['Stunting'].do_routine_assessment_for_chronic_undernutrition(person_id=person_id)
+
+    # Check that there is no HSI scheduled for this person
+    hsi_event_scheduled = [ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+                           isinstance(ev[1], HSI_Stunting_ComplementaryFeeding)]
+    assert 0 == len(hsi_event_scheduled)
+
+
 def test_routine_assessment_for_chronic_undernutrition_if_not_stunted(seed):
     """Check that a call to `do_routine_assessment_for_chronic_undernutrition` does not lead to an HSI if there is no
     stunting."""
@@ -300,7 +331,7 @@ def test_routine_assessment_for_chronic_undernutrition_if_not_stunted(seed):
     # Subject the person to `do_routine_assessment_for_chronic_undernutrition`
     sim.modules['Stunting'].do_routine_assessment_for_chronic_undernutrition(person_id=person_id)
 
-    # Check that there is an HSI scheduled for this person
+    # Check that there is no HSI scheduled for this person
     hsi_event_scheduled = [ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
                            isinstance(ev[1], HSI_Stunting_ComplementaryFeeding)]
     assert 0 == len(hsi_event_scheduled)
