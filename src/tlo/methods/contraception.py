@@ -950,13 +950,13 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
 
         if self._number_of_times_run > 0:  # if it is to re-schedule
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
-        elif (new_contraceptive != old_contraceptive) & (new_contraceptive in 'female_sterilization'):
+        elif (new_contraceptive != old_contraceptive) & (new_contraceptive in ['female_sterilization']):
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MinorSurg': 1})
-        elif (new_contraceptive != old_contraceptive) & (new_contraceptive not in 'female_sterilization'):
+        elif (new_contraceptive != old_contraceptive) & (new_contraceptive not in ['female_sterilization']):
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'FamPlan': 1})
-        elif new_contraceptive in ('injections', 'IUD', 'implant'):
+        elif new_contraceptive in ['injections', 'IUD', 'implant']:
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'FamPlan': 1})
-        elif new_contraceptive in ('other_modern', 'pill'):
+        elif new_contraceptive in ['other_modern', 'pill']:
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'PharmDispensing': 1})
 
     def apply(self, person_id, squeeze_factor):
