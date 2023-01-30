@@ -334,7 +334,7 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'relative rate of acquiring Alri for children with HIV+/AIDS '
                       ),
-        'rr_concurrent_measles_infection':  
+        'rr_concurrent_measles_infection':
             Parameter(Types.REAL,
                       'relative rate of acquiring Alri if Measles infection is ongoing'
                       ),
@@ -985,7 +985,7 @@ class Alri(Module):
         # Split out by pathogen that causes the Alri
         dummies_for_pathogen = pd.get_dummies(df.loc[total_daly_values.index, 'ri_primary_pathogen'], dtype='float')
 
-        #Make dummies for measles and no measles case
+        # Make dummies for measles and no measles case
         dummies_for_pathogen_no_measles = dummies_for_pathogen
         dummies_for_pathogen_measles = dummies_for_pathogen
         dummies_for_pathogen_no_measles.loc[who_has_measles.index] = 0.0
