@@ -855,15 +855,20 @@ class Hiv(Module):
         # NB. This means that those on ART at the start of the simulation may not have an AIDS event --
         # like it happened at some point in the past
         people_id = list(before_aids_idx)  # transform to a list
-        days_infection_to_aids = self.get_time_from_infection_to_aids(people_id)
-
+        [scale, shape, offset] = self.get_linear_model_parameters(people_id)
+        days_infection_to_aids = self.get_time_from_infection_to_aids(scale, shape, offset)
         days_since_infection = (self.sim.date - df.loc[people_id, "hv_date_inf"])
+        # If days_since_infection >= days_infection_to_aids resample
+        while any(days_since_infection.ge(days_infection_to_aids)):
+            days_infection_to_aids = np.where(days_since_infection < days_infection_to_aids, days_infection_to_aids,
+                                              self.get_time_from_infection_to_aids(scale, shape, offset))
+
         days_until_aids = days_infection_to_aids - days_since_infection
         date_onset_aids = self.sim.date + pd.to_timedelta(days_until_aids, unit='D')
-        for idx in range(len(people_id)):
+        for person_id, date in zip(people_id, date_onset_aids):
             sim.schedule_event(
-                HivAidsOnsetEvent(person_id=people_id[idx], module=self, cause='AIDS_non_TB'),
-                date=date_onset_aids.iloc[idx],
+                HivAidsOnsetEvent(person_id=person_id, module=self, cause='AIDS_non_TB'),
+                date=date,
             )
 
         # Schedule the AIDS death events for those who have got AIDS already
@@ -1111,81 +1116,56 @@ class Hiv(Module):
         df.at[person_id, "hv_inf"] = True
         df.at[person_id, "hv_date_inf"] = self.sim.date
 
+        [scale, shape, offset] = self.get_linear_model_parameters(person_id)
+
         # Schedule AIDS onset events for this person
         date_onset_aids = self.sim.date + self.get_time_from_infection_to_aids(
-            person_id=person_id
+             scale.values[0], shape.values[0], offset.values[0]
         )
         self.sim.schedule_event(
             event=HivAidsOnsetEvent(self, person_id, cause='AIDS_non_TB'), date=date_onset_aids
         )
 
-    def get_time_from_infection_to_aids(self, person_id):
-        """Gives time between onset of infection and AIDS, returning a pd.DateOffset.
+    def get_time_from_infection_to_aids(self, scale, shape, offset):
+        """Gives time between onset of infection and AIDS, returning a pd.to_timedelta.
         For those infected prior to, or at, birth: (this is a draw from an exponential distribution)
         For those infected after birth but before reaching age 5.0 (this is drawn from a weibull distribution)
         For adults: (this is a drawn from a weibull distribution (with scale depending on age);
         * NB. It is further assumed that the time from aids to death is 18 months.
         """
 
-        df = self.sim.population.props
-        if isinstance(person_id, list):
-            months_since_infection = (self.sim.date - df.loc[person_id, "hv_date_inf"]).dt.days / 30.5
-            # - get the scale parameters (unit: years)
-            scale = (
-                self.lm["scale_parameter_for_infection_to_death"].predict(
-                    self.sim.population.props.loc[person_id]
-                )
-            )
-            # - get the shape parameter (unit: years)
-            shape = (
-                self.lm["shape_parameter_for_infection_to_death"].predict(
-                    self.sim.population.props.loc[person_id]
-                )
-            )
-            # get the mean months between aids and death
-            offset = (
-                self.lm["offset_parameter_for_months_from_aids_to_death"].predict(
-                    self.sim.population.props.loc[person_id]
-                )
-            )
-
-            months_to_death = self.rng.weibull(shape) * scale * 12
-            months_to_aids = np.round(months_to_death - offset).clip(0).astype(int)
-
-            while any(months_since_infection.ge(months_to_aids)):
-                months_to_aids = np.where(months_since_infection < months_to_aids, months_to_aids,
-                                          np.round(self.rng.weibull(shape) * scale * 12 - offset).clip(0).astype(int))
-        else:
-
-            months_since_infection = (self.sim.date - df.at[person_id, "hv_date_inf"]).days / 30.5
-
-            # - get the scale parameters (unit: years)
-            scale = (
-                self.lm["scale_parameter_for_infection_to_death"].predict(
-                    self.sim.population.props.loc[[person_id]]
-                ).values[0]
-            )
-            # - get the shape parameter (unit: years)
-            shape = (
-                self.lm["shape_parameter_for_infection_to_death"].predict(
-                    self.sim.population.props.loc[[person_id]]
-                ).values[0]
-            )
-            # get the mean months between aids and death
-            offset = (
-                self.lm["offset_parameter_for_months_from_aids_to_death"].predict(
-                    self.sim.population.props.loc[[person_id]]
-                ).values[0]
-            )
-
-            months_to_death = self.rng.weibull(shape) * scale * 12
-            months_to_aids = np.round(months_to_death - offset).clip(0).astype(int)
-
-            while months_since_infection >= months_to_aids:
-                months_to_aids = np.where(months_since_infection < months_to_aids, months_to_aids,
-                                          np.round(self.rng.weibull(shape) * scale * 12 - offset).clip(0).astype(int))
+        months_to_death = self.rng.weibull(shape) * scale * 12
+        months_to_aids = np.round(months_to_death - offset).clip(0).astype(int)
 
         return pd.to_timedelta(months_to_aids * 30.5, unit='D')
+
+    def get_linear_model_parameters(self, person_id):
+        """ Gives the shape, scale and offset parameters to calculate months_to_aids
+        in get_time_from_infection_to_aids.
+        The parameter values vary depending on the peron's age.
+        """
+        if not isinstance(person_id, list):
+            person_id = [person_id]
+        # - get the scale parameters (unit: years)
+        scale = (
+            self.lm["scale_parameter_for_infection_to_death"].predict(
+                self.sim.population.props.loc[person_id]
+            )
+        )
+        # - get the shape parameter (unit: years)
+        shape = (
+            self.lm["shape_parameter_for_infection_to_death"].predict(
+                self.sim.population.props.loc[person_id]
+            )
+        )
+        # get the mean months between aids and death
+        offset = (
+            self.lm["offset_parameter_for_months_from_aids_to_death"].predict(
+                self.sim.population.props.loc[person_id]
+            )
+        )
+
+        return scale, shape, offset
 
     def get_time_from_aids_to_death(self):
         """Gives time between onset of AIDS and death, returning a pd.DateOffset.
