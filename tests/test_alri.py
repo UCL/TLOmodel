@@ -1142,6 +1142,9 @@ def test_treatment_pathway_if_no_consumables_mild_case(seed, tmpdir):
     """Examine the treatment pathway for a person with a particular category of disease if consumables are available."""
     # Mild case (fast_breathing_pneumonia) and not available consumables --> successive referrals up to level 2,
     # following non-emergency appointment, plus follow-up appointment because treatment was not successful.
+    print(generate_hsi_sequence(sim=get_sim(seed=seed, tmpdir=tmpdir, cons_available='none'),
+                                incident_case_event=AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia,
+                                treatment_effect='perfectly_ineffective'))
     assert [
                ('FirstAttendance_NonEmergency', '0'),
                ('Alri_Pneumonia_Treatment_Outpatient', '0'),

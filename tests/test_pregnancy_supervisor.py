@@ -24,6 +24,7 @@ from tlo.methods import (
     hiv,
     labour,
     malaria,
+    measles,
     newborn_outcomes,
     postnatal_supervisor,
     pregnancy_helper_functions,
@@ -199,6 +200,7 @@ def test_run_with_all_referenced_modules_registered(seed, tmpdir):
                  # Register all the modules that are reference in the maternal perinatal health suite (including their
                  # dependencies)
                  alri.Alri(resourcefilepath=resourcefilepath),
+                 measles.Measles(resourcefilepath=resourcefilepath),
                  hiv.Hiv(resourcefilepath=resourcefilepath),
                  malaria.Malaria(resourcefilepath=resourcefilepath),
                  cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),

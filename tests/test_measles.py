@@ -91,7 +91,7 @@ def test_single_person(sim):
     events_for_this_person = sim.find_events_for_person(person_id)
     assert len(events_for_this_person) > 0
     next_event_date, next_event_obj = events_for_this_person[0]
-    assert isinstance(next_event_obj, (measles.MeaslesDeathEvent, measles.MeaslesSymptomResolveEvent))
+    assert isinstance(next_event_obj, (measles.MeaslesSymptomResolveEvent))
 
 
 @pytest.mark.slow
@@ -149,26 +149,11 @@ def test_measles_cases_and_hsi_occurring(sim):
     if current_measles_tx.any():
         assert set(current_measles_tx) <= set(has_rash)
 
-    # check if any measles deaths occurred
-    assert df.cause_of_death.loc[~df.is_alive].str.startswith('Measles').any()
+    # Check that no deaths where scheduled by the measles module
+    assert not df.cause_of_death.loc[~df.is_alive].str.startswith('Measles').any()
 
 
 @pytest.mark.slow
 def test_measles_zero_death_rate(sim):
-
-    end_date = Date(2010, 12, 31)
-    popsize = 10_000
-
-    # set zero death rate
-    cfr = sim.modules['Measles'].parameters["case_fatality_rate"]
-    sim.modules['Measles'].parameters["case_fatality_rate"] = {k: 0.0 for k, v in cfr.items()}
-
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=end_date)
-    df = sim.population.props
-
-    # no symptoms should equal no treatment (unless other rash has prompted incorrect tx: unlikely)
-    assert not (df.loc[df.is_alive, 'me_on_treatment']).all()
-
-    # check that there have been no deaths caused by measles
-    assert not df.cause_of_death.loc[~df.is_alive].str.startswith('Measles').any()
+    # This test has become reduntant
+    print("Test reduntant, no deaths in measles module")

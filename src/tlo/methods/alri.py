@@ -57,6 +57,7 @@ class Alri(Module):
         'Demography',
         'Epi',
         'Hiv',
+        'Measles',
         'Lifestyle',
         'NewbornOutcomes',
         'SymptomManager',
@@ -105,17 +106,21 @@ class Alri(Module):
     # Make set of all pathogens combined:
     all_pathogens = sorted(set(chain.from_iterable(pathogens.values())))
 
-    # Declare Causes of Death
-    CAUSES_OF_DEATH = {
-        f"ALRI_{path}": Cause(gbd_causes={'Lower respiratory infections'}, label='Lower respiratory infections')
-        for path in all_pathogens
-    }
+    # Create key list from list of pathogens, and with additional measles option
+    key_list = sorted(set(f"ALRI_{path}" for path in all_pathogens))
+    key_list_me = sorted(set(f"Measles_ALRI_{path}" for path in all_pathogens))
+    CAUSES_OF_DEATH = {}
+    CAUSES_OF_DISABILITY = {}
 
-    # Declare Causes of Disability
-    CAUSES_OF_DISABILITY = {
-        f"ALRI_{path}": Cause(gbd_causes={'Lower respiratory infections'}, label='Lower respiratory infections')
-        for path in all_pathogens
-    }
+    for i in key_list:
+        CAUSES_OF_DEATH[i] = Cause(gbd_causes={'Lower respiratory infections'},
+                                   label='Lower respiratory infections')
+        CAUSES_OF_DISABILITY[i] = Cause(gbd_causes={'Lower respiratory infections'},
+                                        label='Lower respiratory infections')
+
+    for i in key_list_me:
+        CAUSES_OF_DEATH[i] = Cause(gbd_causes={'Measles'}, label='Measles')
+        CAUSES_OF_DISABILITY[i] = Cause(gbd_causes={'Measles'}, label='Measles')
 
     # Declare the disease types:
     disease_types = sorted({
@@ -329,9 +334,9 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'relative rate of acquiring Alri for children with HIV+/AIDS '
                       ),
-        'rr_ALRI_incomplete_measles_immunisation':
+        'rr_concurrent_measles_infection':  # This needs to be modified to rr_ALRI_concurrent_measles_infection
             Parameter(Types.REAL,
-                      'relative rate of acquiring Alri for children with incomplete measles immunisation'
+                      'relative rate of acquiring Alri if concurrent Measles infection is ongoing'
                       ),
         'rr_ALRI_low_birth_weight':
             Parameter(Types.REAL,
@@ -968,18 +973,35 @@ class Alri(Module):
             self.sim.modules['SymptomManager'].who_has('chest_indrawing')
         ) - has_danger_signs
 
-        # report the DALYs occurred
+        # report the DALYs occurred if don't have measles
         total_daly_values = pd.Series(data=0.0, index=df.index[df.is_alive])
+        who_has_no_measles = pd.Series(data=0.0, index=df.index[df.is_alive & ~df.me_has_measles])
+        who_has_measles = pd.Series(data=0.0, index=df.index[df.is_alive & df.me_has_measles])
+
+        print("Length of total daly values", len(total_daly_values))
+        print("who has no measles", len(who_has_no_measles))
+
         total_daly_values.loc[has_danger_signs] = self.daly_wts['daly_severe_ALRI']
         total_daly_values.loc[
             has_fast_breathing_or_chest_indrawing_but_not_danger_signs] = self.daly_wts['daly_non_severe_ALRI']
 
         # Split out by pathogen that causes the Alri
         dummies_for_pathogen = pd.get_dummies(df.loc[total_daly_values.index, 'ri_primary_pathogen'], dtype='float')
-        daly_values_by_pathogen = dummies_for_pathogen.mul(total_daly_values, axis=0)
 
-        # add prefix to label according to the name of the causes of disability declared
-        daly_values_by_pathogen = daly_values_by_pathogen.add_prefix('ALRI_')
+        dummies_for_pathogen_no_measles = dummies_for_pathogen
+        dummies_for_pathogen_measles = dummies_for_pathogen
+        dummies_for_pathogen_no_measles.loc[who_has_measles.index] = 0.0
+        dummies_for_pathogen_measles.loc[who_has_no_measles.index] = 0.0
+
+        daly_values_by_pathogen_no_measles = dummies_for_pathogen_no_measles.mul(total_daly_values, axis=0)
+        daly_values_by_pathogen_measles = dummies_for_pathogen_measles.mul(total_daly_values, axis=0)
+
+        daly_values_by_pathogen_no_measles = daly_values_by_pathogen_no_measles.add_prefix('ALRI_')
+        daly_values_by_pathogen_measles = daly_values_by_pathogen_measles.add_prefix('Measles_ALRI_')
+
+        daly_values_by_pathogen = pd.concat([daly_values_by_pathogen_no_measles,
+                                             daly_values_by_pathogen_measles], axis=1)
+
         return daly_values_by_pathogen
 
     def over_ride_availability_of_certain_consumables(self):
@@ -1479,8 +1501,8 @@ class Models:
                                                        .when(4, age_effects[4])
                                                        .when('>= 5', 0.0),
                     Predictor('li_wood_burn_stove').when(False, p['rr_ALRI_indoor_air_pollution']),
-                    Predictor().when('(va_measles_all_doses == False) & (age_years >= 1)',
-                                     p['rr_ALRI_incomplete_measles_immunisation']),
+                    Predictor().when('(me_has_measles == True)',
+                                     p['rr_concurrent_measles_infection']),
                     Predictor().when('(hv_inf == True) & (hv_art!= "on_VL_suppressed")', p['rr_ALRI_HIV/AIDS']),
                     Predictor().when('(nb_breastfeeding_status != "exclusive") & (age_exact_years < 1/6)',
                                      p['rr_ALRI_non_exclusive_breastfeeding'])
@@ -2254,9 +2276,14 @@ class AlriDeathEvent(Event, IndividualScopeEventMixin):
             # Do the death:
             pathogen = person.ri_primary_pathogen
 
+            if (df.at[person_id, 'me_has_measles']):
+                cause_of_death = 'Measles_ALRI_' + pathogen
+            else:
+                cause_of_death = 'ALRI_' + pathogen
+
             self.module.sim.modules['Demography'].do_death(
                 individual_id=person_id,
-                cause='ALRI_' + pathogen,
+                cause=cause_of_death,
                 originating_module=self.module
             )
 
@@ -2951,7 +2978,7 @@ class AlriPropertiesOfOtherModules(Module):
     # Though this module provides some properties from NewbornOutcomes we do not list
     # NewbornOutcomes in the ALTERNATIVE_TO set to allow using in conjunction with
     # SimplifiedBirths which can also be used as an alternative to NewbornOutcomes
-    ALTERNATIVE_TO = {'Hiv', 'Epi', 'Wasting'}
+    ALTERNATIVE_TO = {'Hiv', 'Epi', 'Wasting', 'Measles'}
 
     PROPERTIES = {
         'hv_inf': Property(Types.BOOL, 'temporary property'),
@@ -2965,7 +2992,7 @@ class AlriPropertiesOfOtherModules(Module):
                                             categories=['none', 'non_exclusive', 'exclusive']),
         'va_pneumo_all_doses': Property(Types.BOOL, 'temporary property'),
         'va_hib_all_doses': Property(Types.BOOL, 'temporary property'),
-        'va_measles_all_doses': Property(Types.BOOL, 'temporary property'),
+        'me_has_measles': Property(Types.BOOL, 'temporary property'),
         'un_clinical_acute_malnutrition': Property(Types.CATEGORICAL, 'temporary property',
                                                    categories=['MAM', 'SAM', 'well']),
     }
@@ -2981,7 +3008,7 @@ class AlriPropertiesOfOtherModules(Module):
         df.loc[df.is_alive, 'nb_breastfeeding_status'] = 'non_exclusive'
         df.loc[df.is_alive, 'va_pneumo_all_doses'] = False
         df.loc[df.is_alive, 'va_hib_all_doses'] = False
-        df.loc[df.is_alive, 'va_measles_all_doses'] = False
+        df.loc[df.is_alive, 'me_has_measles'] = False
         df.loc[df.is_alive, 'un_clinical_acute_malnutrition'] = 'well'
 
     def initialise_simulation(self, sim):
@@ -2995,7 +3022,7 @@ class AlriPropertiesOfOtherModules(Module):
         df.at[child, 'nb_breastfeeding_status'] = 'non_exclusive'
         df.at[child, 'va_pneumo_all_doses'] = False
         df.at[child, 'va_hib_all_doses'] = False
-        df.at[child, 'va_measles_all_doses'] = False
+        df.at[child, 'me_has_measles'] = False
         df.at[child, 'un_clinical_acute_malnutrition'] = 'well'
 
 

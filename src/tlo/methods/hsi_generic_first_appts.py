@@ -117,6 +117,10 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                 priority=0,
                 topen=hsi_event.sim.date,
                 tclose=None)
+        if 'Alri' in sim.modules:
+            if age > 5:
+                if ('cough' in symptoms) or ('difficult_breathing' in symptoms):
+                    sim.modules['Alri'].on_presentation(person_id=person_id, hsi_event=hsi_event)
 
     # 'Automatic' testing for HIV for everyone attending care:
     #  - suppress the footprint (as it done as part of another appointment)
