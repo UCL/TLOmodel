@@ -948,12 +948,12 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
 
         old_contraceptive = self.sim.population.props.loc[person_id].co_contraception
 
-        if self._number_of_times_run > 0:  # if it is to re-schedule
-            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
-        elif (new_contraceptive != old_contraceptive) & (new_contraceptive in ['female_sterilization']):
+        # if to switch to a new method
+        if (new_contraceptive != old_contraceptive) & (new_contraceptive in ['female_sterilization']):
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MinorSurg': 1})
         elif (new_contraceptive != old_contraceptive) & (new_contraceptive not in ['female_sterilization']):
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'FamPlan': 1})
+        # if to maintain on a method
         elif new_contraceptive in ['injections', 'IUD', 'implant']:
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'FamPlan': 1})
         elif new_contraceptive in ['other_modern', 'pill']:
@@ -994,6 +994,9 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
 
     def reschedule(self):
         """Schedule for this same HSI_Event to occur tomorrow."""
+        # make blank appt footprint first as we record only the one successful provision of the care/method in the
+        # health service and HCW working time usage
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.module.sim.modules['HealthSystem'].schedule_hsi_event(hsi_event=self,
                                                                    topen=self.sim.date + pd.DateOffset(days=1),
                                                                    tclose=None,
