@@ -34,7 +34,7 @@ parser.add_argument(
     "--months",
     type=int,
     help="Number of months to simulate for (plus any years specified by --years)",
-    default=1
+    default=0
 )
 parser.add_argument(
     "--initial-population",
