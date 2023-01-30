@@ -946,11 +946,17 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         self.TREATMENT_ID = "Contraception_Routine"
         self.ACCEPTED_FACILITY_LEVEL = _facility_level
 
-        if new_contraceptive in ('implant', 'female_sterilization'):
+        old_contraceptive = self.sim.population.props.loc[person_id].co_contraception
+
+        if self._number_of_times_run > 0:  # if it is to re-schedule
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+        elif (new_contraceptive != old_contraceptive) & (new_contraceptive in 'female_sterilization'):
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MinorSurg': 1})
-        elif self._number_of_times_run == 0:
+        elif (new_contraceptive != old_contraceptive) & (new_contraceptive not in 'female_sterilization'):
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'FamPlan': 1})
-        else:
+        elif new_contraceptive in ('injections', 'IUD', 'implant'):
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'FamPlan': 1})
+        elif new_contraceptive in ('other_modern', 'pill'):
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'PharmDispensing': 1})
 
     def apply(self, person_id, squeeze_factor):
