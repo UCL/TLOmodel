@@ -191,7 +191,7 @@ class Measles(Module):
         """Process the parameters (following being read-in) prior to the simulation starting.
         Make `self.symptom_probs` to be a dictionary keyed by age, with values of dictionaries keyed by symptoms and
         the probability of symptom onset."""
-        df = self.parameters["symptom_prob"].set_index(["age", "symptom"])["probability"]
+        probs = self.parameters["symptom_prob"].set_index(["age", "symptom"])["probability"]
         self.symptom_probs = {level: probs.loc[(level, slice(None))].to_dict() for level in probs.index.levels[0]}
 
         # Check that a sensible value for a probability of symptom onset is declared for each symptom and for each age
