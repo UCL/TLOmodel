@@ -28,7 +28,7 @@ parser.add_argument(
     "--years",
     type=int,
     help="Number of years to simulate for (plus any months specified by --months)",
-    default=0
+    default=20
 )
 parser.add_argument(
     "--months",
