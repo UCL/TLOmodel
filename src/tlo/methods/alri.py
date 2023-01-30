@@ -106,7 +106,7 @@ class Alri(Module):
     # Make set of all pathogens combined:
     all_pathogens = sorted(set(chain.from_iterable(pathogens.values())))
 
-    # Create key list from list of pathogens, and with additional measles option
+    # Create key list from list of pathogens. When Measles infection concurrent, log cause as measles.
     key_list = sorted(set(f"ALRI_{path}" for path in all_pathogens))
     key_list_me = sorted(set(f"Measles_ALRI_{path}" for path in all_pathogens))
     CAUSES_OF_DEATH = {}
@@ -334,9 +334,9 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'relative rate of acquiring Alri for children with HIV+/AIDS '
                       ),
-        'rr_concurrent_measles_infection':  # This needs to be modified to rr_ALRI_concurrent_measles_infection
+        'rr_concurrent_measles_infection':  
             Parameter(Types.REAL,
-                      'relative rate of acquiring Alri if concurrent Measles infection is ongoing'
+                      'relative rate of acquiring Alri if Measles infection is ongoing'
                       ),
         'rr_ALRI_low_birth_weight':
             Parameter(Types.REAL,
@@ -973,13 +973,10 @@ class Alri(Module):
             self.sim.modules['SymptomManager'].who_has('chest_indrawing')
         ) - has_danger_signs
 
-        # report the DALYs occurred if don't have measles
+        # report the DALYs occurred and store who has measles
         total_daly_values = pd.Series(data=0.0, index=df.index[df.is_alive])
         who_has_no_measles = pd.Series(data=0.0, index=df.index[df.is_alive & ~df.me_has_measles])
         who_has_measles = pd.Series(data=0.0, index=df.index[df.is_alive & df.me_has_measles])
-
-        print("Length of total daly values", len(total_daly_values))
-        print("who has no measles", len(who_has_no_measles))
 
         total_daly_values.loc[has_danger_signs] = self.daly_wts['daly_severe_ALRI']
         total_daly_values.loc[
@@ -988,6 +985,7 @@ class Alri(Module):
         # Split out by pathogen that causes the Alri
         dummies_for_pathogen = pd.get_dummies(df.loc[total_daly_values.index, 'ri_primary_pathogen'], dtype='float')
 
+        #Make dummies for measles and no measles case
         dummies_for_pathogen_no_measles = dummies_for_pathogen
         dummies_for_pathogen_measles = dummies_for_pathogen
         dummies_for_pathogen_no_measles.loc[who_has_measles.index] = 0.0
