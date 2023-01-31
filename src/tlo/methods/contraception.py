@@ -946,12 +946,12 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         self.TREATMENT_ID = "Contraception_Routine"
         self.ACCEPTED_FACILITY_LEVEL = _facility_level
 
-        old_contraceptive = self.sim.population.props.loc[person_id].co_contraception
+        self.current_method = self.sim.population.props.loc[person_id].co_contraception
 
         # if to switch to a new method
-        if (new_contraceptive != old_contraceptive) & (new_contraceptive in ['female_sterilization']):
+        if new_contraceptive in ['female_sterilization']:
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MinorSurg': 1})
-        elif (new_contraceptive != old_contraceptive) & (new_contraceptive not in ['female_sterilization']):
+        elif new_contraceptive != self.current_method:
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'FamPlan': 1})
         # if to maintain on a method
         elif new_contraceptive in ['injections', 'IUD', 'implant']:
@@ -965,7 +965,6 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         self._number_of_times_run += 1
 
         person = self.sim.population.props.loc[person_id]
-        current_method = person.co_contraception
 
         if not (person.is_alive and not person.is_pregnant):
             return
@@ -977,11 +976,11 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         cons_available = self.get_consumables(self.module.cons_codes[self.new_contraceptive])
         _new_contraceptive = self.new_contraceptive if cons_available else "not_using"
 
-        if current_method != _new_contraceptive:
+        if self.current_method != _new_contraceptive:
             # Do the change:
             self.module.do_and_log_individual_contraception_change(
                 woman_id=self.target,
-                old=current_method,
+                old=self.current_method,
                 new=_new_contraceptive
             )
             # (N.B. If the current method is the same as the new method, there is no logging.)
