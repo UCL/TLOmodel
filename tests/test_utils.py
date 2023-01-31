@@ -236,8 +236,8 @@ def test_get_person_id_to_inherit_from(rng: np.random.RandomState):
         )
 
     # Test direct birth mothers, whose scope in person_id is [-population_size, -1]
-    for child_id in rng.randint(0, population_size, size=(num_test)):
-        for mother_id in rng.randint(-population_size, -1, size=(num_test)):
+    for child_id in rng.randint(0, population_size, size=num_test):
+        for mother_id in rng.randint(-population_size, -1, size=num_test):
             assert abs(mother_id) == tlo.util.get_person_id_to_inherit_from(
                 child_id, mother_id, population_dataframe=None, rng=None)
 

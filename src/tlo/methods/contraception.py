@@ -632,7 +632,7 @@ class Contraception(Module):
 
         # schedule births, passing negative of mother's id:
         for _id in give_birth_women_ids:
-            self.sim.schedule_event(DirectBirth(person_id=(_id)*(-1), module=self),
+            self.sim.schedule_event(DirectBirth(person_id=_id * (-1), module=self),
                                     random_date(self.sim.date, self.sim.date + pd.DateOffset(months=9), self.rng)
                                     )
 

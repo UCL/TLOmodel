@@ -421,7 +421,7 @@ def get_person_id_to_inherit_from(child_id, mother_id, population_dataframe, rng
             population_dataframe.is_alive
         ].drop(child_id, errors="ignore")
         return rng.choice(alive_persons_not_including_child)
-    elif ((mother_id < 0) & (mother_id > DEFAULT_MOTHER_ID)):
+    elif 0 > mother_id > DEFAULT_MOTHER_ID:
         return abs(mother_id)
-    elif (mother_id >= 0):
+    elif mother_id >= 0:
         return mother_id

@@ -6,7 +6,6 @@ The core demography module and its associated events.
 """
 
 import math
-import warnings
 from collections import defaultdict
 from pathlib import Path
 
@@ -250,12 +249,13 @@ class Demography(Module):
 
         # Ensure first individual in df is a man, to safely exclude person_id=0 from selection of direct birth mothers.
         # If no men are found in df, issue a warning and proceed with female individual at person_id = 0.
-        if (df.loc[0].sex == 'F'):
+        if df.loc[0].sex == 'F':
             diff_id = (df.sex.values != 'F').argmax()
-            if (diff_id != 0):
+            if diff_id != 0:
                 swap_rows(df, 0, diff_id)
             else:
-                warnings.warn("No men found. Direct birth mothers search will exclude woman at person_id=0.")
+                logger.warning(key="warning",
+                               data="No men found. Direct birth mothers search will exclude woman at person_id=0.")
 
     def initialise_simulation(self, sim):
         """
