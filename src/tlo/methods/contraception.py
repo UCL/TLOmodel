@@ -948,16 +948,26 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
 
         self.current_method = self.sim.population.props.loc[person_id].co_contraception
 
-        # if to switch to a new method
-        if new_contraceptive in ['female_sterilization']:
-            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MinorSurg': 1})
-        elif new_contraceptive != self.current_method:
-            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'FamPlan': 1})
+        self._number_of_times_reschedule = 0  # record the re-schedules of the HSI due to unavailable consumables
+
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})  # initialise the appt footprint
+
+    @Property
+    def assign_expected_appt_footprint(self):
+        """Return the expected appt footprint based on contraception method and whether it is to re-schedule the HSI"""
+        if self._number_of_times_reschedule > 0:  # if it is to re-schedule due to unavailable consumables
+            expected_appt_footprint = self.make_appt_footprint({})
+        elif self.new_contraceptive in ['female_sterilization']:
+            expected_appt_footprint = self.make_appt_footprint({'MinorSurg': 1})
+        elif self.new_contraceptive != self.current_method:
+            expected_appt_footprint = self.make_appt_footprint({'FamPlan': 1})
         # if to maintain on a method
-        elif new_contraceptive in ['injections', 'IUD', 'implant']:
-            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'FamPlan': 1})
-        elif new_contraceptive in ['other_modern', 'pill']:
-            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'PharmDispensing': 1})
+        elif self.new_contraceptive in ['injections', 'IUD', 'implant']:
+            expected_appt_footprint = self.make_appt_footprint({'FamPlan': 1})
+        elif self.new_contraceptive in ['other_modern', 'pill']:
+            expected_appt_footprint = self.make_appt_footprint({'PharmDispensing': 1})
+
+        return expected_appt_footprint
 
     def apply(self, person_id, squeeze_factor):
         """If the relevant consumable is available, do change in contraception and log it"""
@@ -968,6 +978,9 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
 
         if not (person.is_alive and not person.is_pregnant):
             return
+
+        # update the appt footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.assign_expected_appt_footprint()
 
         # Record the date that Family Planning Appointment happened for this person
         self.sim.population.props.at[person_id, "co_date_of_last_fp_appt"] = self.sim.date
@@ -993,9 +1006,7 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
 
     def reschedule(self):
         """Schedule for this same HSI_Event to occur tomorrow."""
-        # make blank appt footprint first as we record only the one successful provision of the care/method in the
-        # health service and HCW working time usage
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+        self._number_of_times_reschedule += 1  # record the number of reschedules
         self.module.sim.modules['HealthSystem'].schedule_hsi_event(hsi_event=self,
                                                                    topen=self.sim.date + pd.DateOffset(days=1),
                                                                    tclose=None,
