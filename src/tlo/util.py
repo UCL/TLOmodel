@@ -10,7 +10,7 @@ from pandas import DateOffset
 from tlo import Population
 
 # Default mother_id value, assigned to individuals initialised as adults at the start of the simulation.
-DEFAULT_mother_id = -1e7
+DEFAULT_MOTHER_ID = -1e7
 
 
 def create_age_range_lookup(min_age: int, max_age: int, range_size: int = 5) -> (list, Dict[int, str]):
@@ -414,14 +414,14 @@ def get_person_id_to_inherit_from(child_id, mother_id, population_dataframe, rng
     """Get index of person to inherit properties from.
     """
 
-    if mother_id == DEFAULT_mother_id:
+    if mother_id == DEFAULT_MOTHER_ID:
         # Get indices of alive persons and try to drop child_id from these indices if
         # present, ignoring any errors if child_id not currently in population dataframe
         alive_persons_not_including_child = population_dataframe.index[
             population_dataframe.is_alive
         ].drop(child_id, errors="ignore")
         return rng.choice(alive_persons_not_including_child)
-    elif ((mother_id < 0) & (mother_id > DEFAULT_mother_id)):
+    elif ((mother_id < 0) & (mother_id > DEFAULT_MOTHER_ID)):
         return abs(mother_id)
     elif (mother_id >= 0):
         return mother_id

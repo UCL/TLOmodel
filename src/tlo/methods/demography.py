@@ -20,7 +20,7 @@ from tlo.methods.causes import (
     collect_causes_from_disease_modules,
     create_mappers_from_causes_to_label,
 )
-from tlo.util import DEFAULT_mother_id, create_age_range_lookup, get_person_id_to_inherit_from
+from tlo.util import DEFAULT_MOTHER_ID, create_age_range_lookup, get_person_id_to_inherit_from
 
 # Standard logger
 logger = logging.getLogger(__name__)
@@ -238,7 +238,7 @@ class Demography(Module):
         df.loc[df.is_alive, 'date_of_death'] = pd.NaT
         df.loc[df.is_alive, 'cause_of_death'] = np.nan
         df.loc[df.is_alive, 'sex'] = demog_char_to_assign['Sex']
-        df.loc[df.is_alive, 'mother_id'] = DEFAULT_mother_id  # Motherless, and their characterists are not inherited
+        df.loc[df.is_alive, 'mother_id'] = DEFAULT_MOTHER_ID  # Motherless, and their characterists are not inherited
         df.loc[df.is_alive, 'district_num_of_residence'] = demog_char_to_assign['District_Num'].values[:]
         df.loc[df.is_alive, 'district_of_residence'] = demog_char_to_assign['District'].values[:]
         df.loc[df.is_alive, 'region_of_residence'] = demog_char_to_assign['Region'].values[:]

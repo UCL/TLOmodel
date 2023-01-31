@@ -14,7 +14,7 @@ import tlo.util
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import demography
-from tlo.util import DEFAULT_mother_id
+from tlo.util import DEFAULT_MOTHER_ID
 
 path_to_files = Path(os.path.dirname(__file__))
 
@@ -250,7 +250,7 @@ def test_get_person_id_to_inherit_from(rng: np.random.RandomState):
     )
 
     # Test case of individuals initialised as adults at the start of the simulation
-    mother_id = DEFAULT_mother_id
+    mother_id = DEFAULT_MOTHER_ID
     for child_id in rng.choice(
         population_dataframe.index[population_dataframe.is_alive], size=num_test
     ):
