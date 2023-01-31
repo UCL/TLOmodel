@@ -100,7 +100,9 @@ class HSI_Event:
 
         # Defaults for the HSI information:
         self.TREATMENT_ID = ''
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+        # self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})  # HSI needs this property, but it is not defined
+        #                                                                 in the Base class to allow overwriting with a
+        #                                                                 property function.
         self.ACCEPTED_FACILITY_LEVEL = None
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({})
 
