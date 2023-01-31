@@ -950,22 +950,21 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
 
         self._number_of_times_reschedule = 0  # record the re-schedules of the HSI due to unavailable consumables
 
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})  # initialise the appt footprint
-
-    def assign_expected_appt_footprint(self):
-        """Return the expected appt footprint based on contraception method and whether it is to re-schedule the HSI"""
+    @property
+    def EXPECTED_APPT_FOOTPRINT(self):
+        """Return the expected appt footprint based on contraception method and whether the HSI has been rescheduled."""
         if self._number_of_times_reschedule > 0:  # if it is to re-schedule due to unavailable consumables
-            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+            return self.make_appt_footprint({})
         # if to switch to a method
         elif self.new_contraceptive in ['female_sterilization']:
-            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MinorSurg': 1})
+            return self.make_appt_footprint({'MinorSurg': 1})
         elif self.new_contraceptive != self.current_method:
-            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'FamPlan': 1})
+            return self.make_appt_footprint({'FamPlan': 1})
         # if to maintain on a method
         elif self.new_contraceptive in ['injections', 'IUD', 'implant']:
-            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'FamPlan': 1})
+            return self.make_appt_footprint({'FamPlan': 1})
         elif self.new_contraceptive in ['other_modern', 'pill']:
-            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'PharmDispensing': 1})
+            return self.make_appt_footprint({'PharmDispensing': 1})
 
     def apply(self, person_id, squeeze_factor):
         """If the relevant consumable is available, do change in contraception and log it"""
@@ -976,9 +975,6 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
 
         if not (person.is_alive and not person.is_pregnant):
             return
-
-        # update the appt footprint
-        self.assign_expected_appt_footprint()
 
         # Record the date that Family Planning Appointment happened for this person
         self.sim.population.props.at[person_id, "co_date_of_last_fp_appt"] = self.sim.date
