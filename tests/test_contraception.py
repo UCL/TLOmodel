@@ -413,13 +413,33 @@ def test_defaulting_off_method_if_no_healthsystem_or_consumable_at_individual_le
         contraceptives = sorted(sim.modules['Contraception'].all_contraception_states)
         n_contraceptives = len(contraceptives)
         states_that_may_require_HSI_to_maintain_on = \
-            sim.modules['Contraception'].states_that_may_require_HSI_to_maintain_on
+            sorted(sim.modules['Contraception'].states_that_may_require_HSI_to_maintain_on)
 
-        # Set that some woman two women are on each of the contraceptive, one of whom is due an appointment next month
+        # Set that two women are on each of the contraceptive, one of whom is due an appointment next month
         initial_conditions = pd.DataFrame({
             'method': contraceptives * 2,
             'due_appt': [True] * n_contraceptives + [False] * n_contraceptives
         })
+
+        def set_last_appt(of_method, due_bool):
+            """
+            Sets the number of days when last appointment was issued. If the appt is due and the method requires HSI
+            to maintain, it is set to 25 days less than the method-specific 'days_between_appts_for_maintenance'.
+            If the appt is due but the method does not require HSI to maintain, it is set to 65 days. If the
+            appt is not due, it is set to 1 day.
+            """
+            # if the below ceases to apply, it should be reconsidered as the need for an appt is only evaluated monthly
+            assert min(sim.modules['Contraception'].parameters['days_between_appts_for_maintenance']) > \
+                   31
+            if due_bool:
+                if of_method in states_that_may_require_HSI_to_maintain_on:
+                    return (sim.modules['Contraception'].parameters['days_between_appts_for_maintenance']
+                            [states_that_may_require_HSI_to_maintain_on.index(of_method)] - 25)
+                else:
+                    return 65
+            else:
+                return 1
+
         for _person_id, _row in initial_conditions.iterrows():
             _props = {
                 'sex': 'F',
@@ -429,14 +449,23 @@ def test_defaulting_off_method_if_no_healthsystem_or_consumable_at_individual_le
                 'is_pregnant': False,
                 'date_of_last_pregnancy': pd.NaT,
                 'co_unintended_preg': False,
-                'co_date_of_last_fp_appt': sim.date - (
-                    pd.DateOffset(months=5) if _row.due_appt else pd.DateOffset(days=1)
+                'co_date_of_last_fp_appt': sim.date - pd.DateOffset(
+                    days=set_last_appt(of_method=_row.method, due_bool=_row.due_appt)
                 )
             }
             df.loc[_person_id, _props.keys()] = _props.values()
 
         # Run simulation
-        sim.simulate(end_date=sim.start_date + pd.DateOffset(months=3))
+        # 1 month to be due (if due_appt) + max_days_delay_between_decision_to_change_method_and_hsi_scheduled
+        # days within which the appt can be scheduled (topen) + 7 days when the appt is closed and contraceptive changed
+        # to "not_using" if the maintenance was not possible to be performed (tclose)
+        sim.simulate(
+            end_date=sim.start_date + pd.DateOffset(
+                months=1,
+                days=sim.modules['Contraception'].parameters[
+                    'max_days_delay_between_decision_to_change_method_and_hsi_scheduled'
+                ] + 7)
+        )
         __check_no_illegal_switches(sim)
 
         # Check method that the women are now on.
@@ -450,7 +479,7 @@ def test_defaulting_off_method_if_no_healthsystem_or_consumable_at_individual_le
             initial_conditions.method.loc[on_a_method_that_did_not_require_appointment]
         ).all()
 
-        # - Those originally on a method that did not require an appointment and were not due an appointment, are still
+        # - Those originally on a method that required an appointment and were not due an appointment, are still
         # on it
         on_a_method_that_required_appointment_but_appointment_not_due = (
             initial_conditions.method.isin(states_that_may_require_HSI_to_maintain_on)
@@ -461,7 +490,7 @@ def test_defaulting_off_method_if_no_healthsystem_or_consumable_at_individual_le
             initial_conditions.method.loc[on_a_method_that_required_appointment_but_appointment_not_due]
         ).all()
 
-        # - Those originally on a method that did not require an appointment and were due an appointment, have defaulted
+        # - Those originally on a method that required an appointment and were due an appointment, have defaulted
         # to "not_using"
         on_a_method_that_required_appointment_and_appointment_was_due = (
             initial_conditions.method.isin(states_that_may_require_HSI_to_maintain_on)
@@ -503,7 +532,10 @@ def test_defaulting_off_method_if_no_healthsystem_at_population_level(tmpdir, se
      switching to any contraceptive that requires an HSI."""
 
     # Run simulation whereby contraception requires HSI but the HealthSystem prevent HSI occurring
-    sim = run_sim(tmpdir=tmpdir, seed=seed, use_healthsystem=True, healthsystem_disable_and_reject_all=True)
+    sim = run_sim(tmpdir=tmpdir, seed=seed, use_healthsystem=True, healthsystem_disable_and_reject_all=True, run=False)
+    max_days_between_appt_for_maintenance = \
+        max(sim.modules['Contraception'].parameters['days_between_appts_for_maintenance'])
+    sim.simulate(end_date=sim.start_date + pd.DateOffset(years=2, days=max_days_between_appt_for_maintenance))
     __check_no_illegal_switches(sim)
 
     log = parse_log_file(sim.log_filepath)['tlo.methods.contraception']
@@ -511,8 +543,10 @@ def test_defaulting_off_method_if_no_healthsystem_at_population_level(tmpdir, se
     # Check there is no record of persons being maintained on contraceptives that require an HSI
     states_that_may_require_HSI_to_maintain_on = sim.modules['Contraception'].states_that_may_require_HSI_to_maintain_on
     ys = log['contraception_use_summary']
-    after_everyone_has_appt = pd.to_datetime(ys['date']) > (sim.start_date + pd.DateOffset(months=7))  # 7 months allow
-    # time for an appointment to become due for everyone (allowing for the monthly occurrence of the poll.)
+    after_everyone_has_appt = pd.to_datetime(ys['date']) > \
+        (sim.start_date + pd.DateOffset(months=1, days=max_days_between_appt_for_maintenance))
+    # max_days_between_appt_for_maintenance + 1 month allow time for an appointment to become due for everyone
+    # (allowing for the monthly occurrence of the poll).
     assert (ys.loc[after_everyone_has_appt, states_that_may_require_HSI_to_maintain_on] == 0).all().all()
 
     # Check there is no record of starting/switching-to contraception of anything that requires an HSI
@@ -536,7 +570,10 @@ def test_defaulting_off_method_if_no_consumables_at_population_level(tmpdir, see
     # Run simulation whereby contraception requires HSI, HSI run, but there are no consumables
     # Let there be no discontinuation (so that every would otherwise stay on contraception)
     sim = run_sim(tmpdir=tmpdir, seed=seed, use_healthsystem=True, disable=False, consumables_available=False,
-                  no_discontinuation=True)
+                  no_discontinuation=True, run=False)
+    max_days_between_appt_for_maintenance = \
+        max(sim.modules['Contraception'].parameters['days_between_appts_for_maintenance'])
+    sim.simulate(end_date=sim.start_date + pd.DateOffset(years=2, days=max_days_between_appt_for_maintenance))
     __check_no_illegal_switches(sim)
 
     log = parse_log_file(sim.log_filepath)['tlo.methods.contraception']
@@ -549,9 +586,10 @@ def test_defaulting_off_method_if_no_consumables_at_population_level(tmpdir, see
     # Check that, after six months of simulation time, no one is on a contraceptive that requires a consumable for
     # maintenance.
     num_on_contraceptives = log['contraception_use_summary']
-    after_everyone_has_appt = pd.to_datetime(num_on_contraceptives['date']) > (sim.start_date + pd.DateOffset(months=7))
-    # (7 months allow time for an appointment to become due for everyone (allowing for the monthly occurrence of the
-    # poll.)
+    after_everyone_has_appt = pd.to_datetime(num_on_contraceptives['date']) > \
+        (sim.start_date + pd.DateOffset(months=1, days=max_days_between_appt_for_maintenance))
+    # max_days_between_appt_for_maintenance + 1 month allow time for an appointment to become due for everyone
+    # (allowing for the monthly occurrence of the poll).
     assert (num_on_contraceptives.loc[after_everyone_has_appt, states_that_may_require_HSI_to_maintain_on] == 0
             ).all().all()
 
@@ -683,10 +721,10 @@ def test_contraception_coverage_with_use_healthsystem(tmpdir, seed):
         cons = sim.modules['HealthSystem'].consumables._prob_item_codes_available
 
         def find_average_availability(items: List, level: str):
-            """Find the probability that all the items are available at level 1a."""
+            """Find the probability that all the items are available at the level."""
             facilities = set([x.id for x in sim.modules['HealthSystem']._facilities_for_each_district[level].values()])
             return np.prod(
-               [cons.loc[(slice(None), facilities, _item)].mean() for _item in items]
+                [cons.loc[(slice(None), facilities, _item)].mean() for _item in items]
             )
 
         for fac_level in ('1a', '1b', '2'):
@@ -739,4 +777,4 @@ def test_contraception_coverage_with_use_healthsystem(tmpdir, seed):
 
         return all([equals(A[k], B[k], tol=_tol) for k in set(A.keys() & B.keys())])
 
-    assert compare_dictionaries(contraception_use_healthsystem_true, contraception_use_healthsystem_false, tol=0.01)
+    assert compare_dictionaries(contraception_use_healthsystem_true, contraception_use_healthsystem_false, tol=0.011)

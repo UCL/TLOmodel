@@ -2865,19 +2865,22 @@ def unpack_raw_output_dict(raw_dict):
 
 
 class DummyHivModule(Module):
-    """Dummy HIV Module - it's only job is to create and maintain the 'hv_inf' property.
+    """Dummy HIV Module - it's only job is to create and maintain the 'hv_inf' and 'hv_art' properties.
     This can be used in test files."""
 
     INIT_DEPENDENCIES = {"Demography"}
     ALTERNATIVE_TO = {"Hiv"}
 
     PROPERTIES = {
-        "hv_inf": Property(Types.BOOL, "DUMMY version of the property for hv_inf")
+        "hv_inf": Property(Types.BOOL, "DUMMY version of the property for hv_inf"),
+        "hv_art": Property(Types.CATEGORICAL, "DUMMY version of the property for hv_art.",
+                           categories=["not", "on_VL_suppressed", "on_not_VL_suppressed"]),
     }
 
-    def __init__(self, name=None, hiv_prev=0.1):
+    def __init__(self, name=None, hiv_prev=0.1, art_cov=0.75):
         super().__init__(name)
         self.hiv_prev = hiv_prev
+        self.art_cov = art_cov
 
     def read_parameters(self, data_folder):
         pass
@@ -2885,9 +2888,12 @@ class DummyHivModule(Module):
     def initialise_population(self, population):
         df = population.props
         df.loc[df.is_alive, "hv_inf"] = self.rng.rand(sum(df.is_alive)) < self.hiv_prev
+        df.loc[df.is_alive, "hv_art"] = pd.Series(
+            self.rng.rand(sum(df.is_alive)) < self.art_cov).replace({True: "on_VL_suppressed", False: "not"}).values
 
     def initialise_simulation(self, sim):
         pass
 
     def on_birth(self, mother, child):
         self.sim.population.props.at[child, "hv_inf"] = self.rng.rand() < self.hiv_prev
+        self.sim.population.props.at[child, "hv_art"] = "on_VL_suppressed" if self.rng.rand() < self.art_cov else "not"
