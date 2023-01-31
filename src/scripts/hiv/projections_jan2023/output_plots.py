@@ -71,6 +71,19 @@ data_tb_latent_upper = abs(
 )
 data_tb_latent_yerr = [data_tb_latent_lower, data_tb_latent_upper]
 
+# TB deaths WHO
+deaths_2010_2014 = data_tb_who.loc["2010-01-01":"2014-01-01"]
+deaths_2015_2019 = data_tb_who.loc["2015-01-01":"2019-01-01"]
+
+deaths_2010_2014_average = deaths_2010_2014.loc[:, "num_deaths_tb_nonHiv"].values.mean()
+deaths_2010_2014_average_low = deaths_2010_2014.loc[:, "num_deaths_tb_nonHiv_low"].values.mean()
+deaths_2010_2014_average_high = deaths_2010_2014.loc[:, "num_deaths_tb_nonHiv_high"].values.mean()
+
+deaths_2015_2019_average = deaths_2015_2019.loc[:, "num_deaths_tb_nonHiv"].values.mean()
+deaths_2015_2019_average_low = deaths_2015_2019.loc[:, "num_deaths_tb_nonHiv_low"].values.mean()
+deaths_2015_2019_average_high = deaths_2015_2019.loc[:, "num_deaths_tb_nonHiv_high"].values.mean()
+
+
 # TB treatment coverage
 data_tb_ntp = pd.read_excel(xls_tb, sheet_name="NTP2019")
 data_tb_ntp.index = pd.to_datetime(data_tb_ntp["year"], format="%Y")
@@ -381,7 +394,7 @@ plt.show()
 # ---------------------------------------------------------------------- #
 
 # HIV Incidence Children
-title_str = "HIV Incidence in Children (0-14) (per 100 pyar)"
+title_str = "HIV Incidence in Children (0-14) per 100 py"
 make_plot(
     title_str=title_str,
     model=prev_and_inc_over_time["hiv_child_inc"] * 100,
@@ -514,15 +527,15 @@ deaths2010 = death_compare.loc[("2010-2014", slice(None), slice(None), "AIDS")].
 deaths2015 = death_compare.loc[("2015-2019", slice(None), slice(None), "AIDS")].sum()
 
 # include all ages and both sexes
-deaths2010_TB = death_compare.loc[("2010-2014", slice(None), slice(None), "non_AIDS_TB")].sum()
-deaths2015_TB = death_compare.loc[("2015-2019", slice(None), slice(None), "non_AIDS_TB")].sum()
+deaths2010_TB = death_compare.loc[("2010-2014", slice(None), slice(None), "TB (non-AIDS)")].sum()
+deaths2015_TB = death_compare.loc[("2015-2019", slice(None), slice(None), "TB (non-AIDS)")].sum()
 
 x_vals = [1, 2, 3, 4]
 labels = ["2010-2014", "2010-2014", "2015-2019", "2015-2019"]
-col = ["mediumblue", "mediumseagreen", "mediumblue", "mediumseagreen"]
+col = ["mediumblue", "red", "mediumblue", "red"]
 # handles for legend
 blue_patch = mpatches.Patch(color="mediumblue", label="GBD")
-green_patch = mpatches.Patch(color="mediumseagreen", label="TLO")
+red_patch = mpatches.Patch(color="red", label="TLO")
 
 # plot AIDS deaths
 y_vals = [
@@ -550,54 +563,68 @@ plt.errorbar(
     yerr=[y_lower, y_upper],
     ls="none",
     marker="o",
-    markeredgecolor="red",
-    markerfacecolor="red",
-    ecolor="red",
+    markeredgecolor="lightskyblue",
+    markerfacecolor="lightskyblue",
+    ecolor="lightskyblue",
 )
 plt.xticks(ticks=x_vals, labels=labels)
 plt.title("Deaths per year due to AIDS")
-plt.legend(handles=[blue_patch, green_patch])
+plt.legend(handles=[blue_patch, red_patch])
 plt.tight_layout()
 # plt.savefig(outputpath / ("HIV_TB_deaths_with_GBD" + datestamp + ".png"), format='png')
 plt.show()
 
 
 # plot TB deaths
+x_vals = [1, 2, 3, 4, 5, 6]
+labels = ["2010-2014", "2010-2014", "2010-2014", "2015-2019", "2015-2019", "2015-2019"]
+col = ["mediumblue", "mediumseagreen", "red", "mediumblue", "mediumseagreen", "red"]
+# handles for legend
+blue_patch = mpatches.Patch(color="mediumblue", label="GBD")
+green_patch = mpatches.Patch(color="mediumseagreen", label="WHO")
+red_patch = mpatches.Patch(color="red", label="TLO")
+
 y_vals = [
     deaths2010_TB["GBD_mean"],
+    deaths_2010_2014_average,
     deaths2010_TB["model"],
     deaths2015_TB["GBD_mean"],
+    deaths_2015_2019_average,
     deaths2015_TB["model"],
 ]
 y_lower = [
     abs(deaths2010_TB["GBD_lower"] - deaths2010_TB["GBD_mean"]),
+    deaths_2010_2014_average_low,
     np.NAN,
     abs(deaths2015_TB["GBD_lower"] - deaths2015_TB["GBD_mean"]),
+    deaths_2015_2019_average_low,
     np.NAN,
 ]
 y_upper = [
     abs(deaths2010_TB["GBD_upper"] - deaths2010_TB["GBD_mean"]),
+    deaths_2010_2014_average_high,
     np.NAN,
     abs(deaths2015_TB["GBD_upper"] - deaths2015_TB["GBD_mean"]),
+    deaths_2015_2019_average_high,
     np.NAN,
 ]
 plt.bar(x_vals, y_vals, color=col)
 plt.errorbar(
     x_vals,
-    [y_vals[0], np.NAN, y_vals[2], np.NAN],
+    [y_vals[0], y_vals[1], np.NAN, y_vals[3], y_vals[4], np.NAN],
     yerr=[y_lower, y_upper],
     ls="none",
     marker="o",
-    markeredgecolor="red",
-    markerfacecolor="red",
-    ecolor="red",
+    markeredgecolor="lightskyblue",
+    markerfacecolor="lightskyblue",
+    ecolor="lightskyblue",
 )
 plt.xticks(ticks=x_vals, labels=labels)
 
 plt.title("Deaths per year due to non-AIDS TB")
-plt.legend(handles=[blue_patch, green_patch])
+plt.legend(handles=[blue_patch, green_patch, red_patch])
 plt.tight_layout()
-plt.savefig(outputpath / ("TB_deaths_with_GBD" + datestamp + ".png"), format='png')
+# plt.savefig(outputpath / ("TB_deaths_with_GBD" + datestamp + ".png"), format='png')
 plt.show()
 
 # ---------------------------------------------------------------------- #

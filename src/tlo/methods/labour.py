@@ -2233,8 +2233,10 @@ class Labour(Module):
         params = self.current_parameters
 
         # HIV testing occurs within the HIV module for women who havent already been diagnosed
+        # probability of HIV test determined by parameter in ResourceFile_HIV.xlsx
         if 'Hiv' in self.sim.modules.keys():
-            if not df.at[person_id, 'hv_diagnosed']:
+            if not df.at[person_id, 'hv_diagnosed'] and (
+                    self.rng.random_sample() < self.sim.modules['Hiv'].parameters['prob_hiv_test_at_anc_or_delivery']):
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     HSI_Hiv_TestAndRefer(
                         person_id=person_id,

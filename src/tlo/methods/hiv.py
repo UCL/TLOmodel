@@ -293,9 +293,13 @@ class Hiv(Module):
             Types.REAL,
             "adjustment to current viral suppression levels to account for defaulters",
         ),
-        "prob_anc_test_at_delivery": Parameter(
+        "prob_hiv_test_at_anc_or_delivery": Parameter(
             Types.REAL,
-            "probability of a women having hiv test at anc following delivery",
+            "probability of a women having hiv test at anc or following delivery",
+        ),
+        "prob_hiv_test_for_newborn_infant": Parameter(
+            Types.REAL,
+            "probability of a newborn infant having HIV test pre-discharge",
         ),
         "prob_start_art_or_vs": Parameter(
             Types.REAL,
@@ -858,7 +862,7 @@ class Hiv(Module):
             # schedule a HSI_Test_and_Refer otherwise initial AIDS rates and deaths are far too high
             date_test = self.sim.date + pd.DateOffset(days=self.rng.randint(0, 60))
             self.sim.modules["HealthSystem"].schedule_hsi_event(
-                hsi_event=HSI_Hiv_TestAndRefer(person_id=person_id, module=self),
+                hsi_event=HSI_Hiv_TestAndRefer(person_id=person_id, module=self, referred_from="initialise_simulation"),
                 priority=1,
                 topen=date_test,
                 tclose=self.sim.date + pd.DateOffset(days=365),
@@ -1037,7 +1041,7 @@ class Hiv(Module):
             # todo change prob_anc_test_at_delivery to 1 in resourcefile
             if not mother.hv_diagnosed and \
                 mother.is_alive and (
-                    self.rng.random_sample() < params["prob_anc_test_at_delivery"]):
+                    self.rng.random_sample() < params["prob_hiv_test_at_anc_or_delivery"]):
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_TestAndRefer(
                         person_id=mother_id,
@@ -1279,7 +1283,7 @@ class Hiv(Module):
         else:
             # refer for another test in 6 months
             self.sim.modules["HealthSystem"].schedule_hsi_event(
-                HSI_Hiv_TestAndRefer(person_id=person_id, module=self),
+                HSI_Hiv_TestAndRefer(person_id=person_id, module=self, referred_from="HSI_Hiv_TestAndRefer"),
                 topen=self.sim.date + pd.DateOffset(months=6),
                 tclose=None,
                 priority=0,

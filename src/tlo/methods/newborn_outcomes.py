@@ -950,7 +950,8 @@ class NewbornOutcomes(Module):
         child_id = int(child_id)
 
         if 'Hiv' in self.sim.modules:
-            if not df.at[child_id, 'hv_diagnosed']:
+            if not df.at[child_id, 'hv_diagnosed'] and (
+                    self.rng.random_sample() < self.sim.modules['Hiv'].parameters['prob_hiv_test_for_newborn_infant']):
 
                 if df.at[child_id, 'nb_pnc_check'] == 1:
                     for days in 0, 41:
