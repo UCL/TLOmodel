@@ -948,12 +948,10 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
 
         self.current_method = self.sim.population.props.loc[person_id].co_contraception
 
-        self._number_of_times_reschedule = 0  # record the re-schedules of the HSI due to unavailable consumables
-
     @property
     def EXPECTED_APPT_FOOTPRINT(self):
         """Return the expected appt footprint based on contraception method and whether the HSI has been rescheduled."""
-        if self._number_of_times_reschedule > 0:  # if it is to re-schedule due to unavailable consumables
+        if self._number_of_times_run > 0:  # if it is to re-schedule due to unavailable consumables
             return self.make_appt_footprint({})
         # if to switch to a method
         elif self.new_contraceptive in ['female_sterilization']:
@@ -1000,7 +998,6 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
 
     def reschedule(self):
         """Schedule for this same HSI_Event to occur tomorrow."""
-        self._number_of_times_reschedule += 1  # record the number of reschedules
         self.module.sim.modules['HealthSystem'].schedule_hsi_event(hsi_event=self,
                                                                    topen=self.sim.date + pd.DateOffset(days=1),
                                                                    tclose=None,
