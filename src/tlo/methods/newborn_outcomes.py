@@ -1109,7 +1109,7 @@ class NewbornOutcomes(Module):
         params = self.current_parameters
         nci = self.newborn_care_info
 
-        if mother_id == -1:
+        if mother_id < 0:  # select direct births
             # The child has been born without a mother identified (from contraception.DirectBirth), so give the child
             # the default properties:
             child = {
