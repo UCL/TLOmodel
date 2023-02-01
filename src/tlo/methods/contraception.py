@@ -946,17 +946,18 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         self.TREATMENT_ID = "Contraception_Routine"
         self.ACCEPTED_FACILITY_LEVEL = _facility_level
 
-        self.current_method = self.sim.population.props.loc[person_id].co_contraception
+        self.person_id = person_id
 
     @property
     def EXPECTED_APPT_FOOTPRINT(self):
         """Return the expected appt footprint based on contraception method and whether the HSI has been rescheduled."""
+        current_method = self.sim.population.props.loc[self.person_id].co_contraception
         if self._number_of_times_run > 0:  # if it is to re-schedule due to unavailable consumables
             return self.make_appt_footprint({})
         # if to switch to a method
         elif self.new_contraceptive in ['female_sterilization']:
             return self.make_appt_footprint({'MinorSurg': 1})
-        elif self.new_contraceptive != self.current_method:
+        elif self.new_contraceptive != current_method:
             return self.make_appt_footprint({'FamPlan': 1})
         # if to maintain on a method
         elif self.new_contraceptive in ['injections', 'IUD', 'implant']:
@@ -970,6 +971,7 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         self._number_of_times_run += 1
 
         person = self.sim.population.props.loc[person_id]
+        current_method = person.co_contraception
 
         if not (person.is_alive and not person.is_pregnant):
             return
@@ -981,11 +983,11 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         cons_available = self.get_consumables(self.module.cons_codes[self.new_contraceptive])
         _new_contraceptive = self.new_contraceptive if cons_available else "not_using"
 
-        if self.current_method != _new_contraceptive:
+        if current_method != _new_contraceptive:
             # Do the change:
             self.module.do_and_log_individual_contraception_change(
                 woman_id=self.target,
-                old=self.current_method,
+                old=current_method,
                 new=_new_contraceptive
             )
             # (N.B. If the current method is the same as the new method, there is no logging.)
