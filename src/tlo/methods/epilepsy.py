@@ -149,7 +149,7 @@ class Epilepsy(Module):
 
         # Register Symptom that this module will use
         self.sim.modules['SymptomManager'].register_symptom(
-            Symptom("seizures", emergency_in_children=True, emergency_in_adults=True))
+            Symptom.emergency("seizures"))
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
