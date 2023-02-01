@@ -157,7 +157,7 @@ class HealthBurden(Module):
 
         # 1) Log the Years Lived With Disability (YLD) (by the 'causes of disability' declared by disease modules).
         #    (Collapsing the wealth index [level 2] so that the output is by sex/age/cause only)
-        for index, row in self.YearsLivedWithDisability.groupby(level=[0, 1, 3]).sum().reset_index().iterrows():
+        for _, row in self.YearsLivedWithDisability.groupby(level=[0, 1, 3]).sum().reset_index().iterrows():
             logger.info(
                 key='yld_by_causes_of_disability',
                 data=row.to_dict(),
@@ -167,7 +167,7 @@ class HealthBurden(Module):
 
         # 2) Log the Years of Live Lost (YLL) (by the 'causes of death' declared by disease modules).
         #    (Collapsing the wealth index [level 2] so that the output is by sex/age/cause only)
-        for index, row in self.YearsLifeLost.groupby(level=[0, 1, 3]).sum().reset_index().iterrows():
+        for _, row in self.YearsLifeLost.groupby(level=[0, 1, 3]).sum().reset_index().iterrows():
             logger.info(
                 key='yll_by_causes_of_death',
                 data=row.to_dict(),
@@ -176,7 +176,7 @@ class HealthBurden(Module):
                             'No stacking: i.e., each year of life lost is ascribed to the'
                             ' age and year that the person would have lived.'
             )
-        for index, row in self.YearsLifeLostStackedTime.groupby(level=[0, 1, 3]).sum().reset_index().iterrows():
+        for _, row in self.YearsLifeLostStackedTime.groupby(level=[0, 1, 3]).sum().reset_index().iterrows():
             logger.info(
                 key='yll_by_causes_of_death_stacked',
                 data=row.to_dict(),
@@ -186,7 +186,7 @@ class HealthBurden(Module):
                             ' the year of the death, but each is ascribed to the age that '
                             'the person would have lived, .'
             )
-        for index, row in self.YearsLifeLostStackedAgeAndTime.groupby(level=[0, 1, 3]).sum().reset_index().iterrows():
+        for _, row in self.YearsLifeLostStackedAgeAndTime.groupby(level=[0, 1, 3]).sum().reset_index().iterrows():
             logger.info(
                 key='yll_by_causes_of_death_stacked_by_age_and_time',
                 data=row.to_dict(),
@@ -200,7 +200,7 @@ class HealthBurden(Module):
         #    (Collapsing the wealth index [level 2] so that the output is by sex/age/cause only)
         dalys, dalys_stacked_by_time, dalys_stacked_by_age_and_time = self.compute_dalys()
         # - dump to log, line-by-line
-        for index, row in dalys.groupby(level=[0, 1, 3]).sum().reset_index().iterrows():
+        for _, row in dalys.groupby(level=[0, 1, 3]).sum().reset_index().iterrows():
             logger.info(
                 key='dalys',
                 data=row.to_dict(),
@@ -209,7 +209,7 @@ class HealthBurden(Module):
                             'No stacking: i.e., each year of life lost is ascribed to the'
                             ' age and year that the person would have lived.'
             )
-        for index, row in dalys_stacked_by_time.groupby(level=[0, 1, 3]).sum().reset_index().iterrows():
+        for _, row in dalys_stacked_by_time.groupby(level=[0, 1, 3]).sum().reset_index().iterrows():
             logger.info(
                 key='dalys_stacked',
                 data=row.to_dict(),
@@ -219,7 +219,7 @@ class HealthBurden(Module):
                             ' the year of the death, but each is ascribed to the age that '
                             'the person would have lived, .'
             )
-        for index, row in dalys_stacked_by_age_and_time.groupby(level=[0, 1, 3]).sum().reset_index().iterrows():
+        for _, row in dalys_stacked_by_age_and_time.groupby(level=[0, 1, 3]).sum().reset_index().iterrows():
             logger.info(
                 key='dalys_stacked_by_age_and_time',
                 data=row.to_dict(),
@@ -441,7 +441,7 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
 
                 # Check type is in acceptable form and make into dataframe if not already
                 assert type(dalys_from_disease_module) in (pd.Series, pd.DataFrame)
-                if type(dalys_from_disease_module) is pd.Series:
+                if isinstance(dalys_from_disease_module, pd.Series):
                     # if a pd.Series is returned, it implies there is only one cause of disability registered by module:
                     assert 1 == len(declared_causes_of_disability_module), \
                         "pd.Series returned but number of causes of disability declared is not equal to one."
