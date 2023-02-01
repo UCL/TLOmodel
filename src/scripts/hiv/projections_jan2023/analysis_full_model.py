@@ -23,8 +23,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
-popsize = 10000
+end_date = Date(2019, 1, 1)
+popsize = 1000
 # todo check if deviance_measure needed in fullmodel.py
 scenario = 0
 

@@ -1291,7 +1291,7 @@ class Hiv(Module):
 
     def prob_art_start_after_test(self, year):
         """ returns the probability of starting ART after a positive HIV test
-        this value for initiation will be higher than the current reported coverage levels
+        this value for initiation can be higher than the current reported coverage levels
         to account for defaulters
         """
         prob_art = self.parameters["prob_start_art_or_vs"]
