@@ -23,6 +23,7 @@ from tlo.methods.hsi_generic_first_appts import (
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
 
+HIGH_ODDS_RATIO = 1e5
 
 class HealthSeekingBehaviour(Module):
     """

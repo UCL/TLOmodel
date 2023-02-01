@@ -21,6 +21,7 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
+from tlo.methods.healthseekingbehaviour import HIGH_ODDS_RATIO
 from tlo.methods.symptommanager import Symptom
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -92,8 +93,8 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_healthcareseek
             self.sim.modules['SymptomManager'].register_symptom(
                 Symptom(
                     name='Symptom_that_does_cause_healthcare_seeking',
-                    odds_ratio_health_seeking_in_adults=np.inf,  # <--- very high odds of seeking care
-                    odds_ratio_health_seeking_in_children=np.inf  # <--- very high odds of seeking care
+                    odds_ratio_health_seeking_in_adults=HIGH_ODDS_RATIO,  # <--- very high odds of seeking care
+                    odds_ratio_health_seeking_in_children=HIGH_ODDS_RATIO  # <--- very high odds of seeking care
                 ),
             )
 
@@ -750,8 +751,8 @@ def test_everyone_seeks_care_for_symptom_with_high_odds_ratio_of_seeking_care(se
         def read_parameters(self, data_folder):
             self.sim.modules['SymptomManager'].register_symptom(
                 Symptom(name='NonEmergencySymptom',
-                        odds_ratio_health_seeking_in_adults=np.inf,  # <--- very high odds of seeking care
-                        odds_ratio_health_seeking_in_children=np.inf  # <--- very high odds of seeking care
+                        odds_ratio_health_seeking_in_adults=HIGH_ODDS_RATIO,  # <--- very high odds of seeking care
+                        odds_ratio_health_seeking_in_children=HIGH_ODDS_RATIO  # <--- very high odds of seeking care
                         ),
             )
 
@@ -921,8 +922,8 @@ def test_care_seeking_from_symptoms_with_different_levels_of_prob_emergency(seed
             def read_parameters(self, data_folder):
                 self.sim.modules['SymptomManager'].register_symptom(
                     Symptom(name='TestSymptom',
-                            odds_ratio_health_seeking_in_adults=np.inf,  # <--- high odds of seeking care
-                            odds_ratio_health_seeking_in_children=np.inf,  # <--- high odds of seeking care
+                            odds_ratio_health_seeking_in_adults=HIGH_ODDS_RATIO,  # <--- high odds of seeking care
+                            odds_ratio_health_seeking_in_children=HIGH_ODDS_RATIO,  # <--- high odds of seeking care
                             prob_seeks_emergency_appt_in_adults=prob_seeks_emergency_appt,
                             prob_seeks_emergency_appt_in_children=prob_seeks_emergency_appt,
                             ),
