@@ -25,6 +25,7 @@ from tlo.methods.hsi_generic_first_appts import (
 
 HIGH_ODDS_RATIO = 1e5
 
+
 class HealthSeekingBehaviour(Module):
     """
     This modules determines if the onset of symptoms will lead to that person presenting at the health
