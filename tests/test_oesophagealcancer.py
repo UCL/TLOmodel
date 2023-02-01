@@ -265,7 +265,7 @@ def test_check_progression_through_stages_is_happeneing(seed):
     assert (df.loc[df.is_alive].oc_status.value_counts().drop(index='none') > 0).all()
 
     # check that some people have died of oesophagal cancer
-    yll = sim.modules['HealthBurden'].YearsLifeLost
+    yll = sim.modules['HealthBurden'].years_life_lost
     assert yll['OesophagealCancer'].sum() > 0
 
     # check that people are being diagnosed, going onto treatment and palliative care:
@@ -315,7 +315,7 @@ def test_that_there_is_no_treatment_without_the_hsi_running(seed):
     assert (df.loc[df.is_alive].oc_status.value_counts().drop(index='none') > 0).all()
 
     # check that some people have died of oesophagal cancer
-    yll = sim.modules['HealthBurden'].YearsLifeLost
+    yll = sim.modules['HealthBurden'].years_life_lost
     assert yll['OesophagealCancer'].sum() > 0
 
     # w/o healthsystem - check that people are NOT being diagnosed, going onto treatment and palliative care:
@@ -377,5 +377,5 @@ def test_check_progression_through_stages_is_blocked_by_treatment(seed):
     assert (df.loc[has_lgd.index[has_lgd].tolist(), "oc_status"] == "low_grade_dysplasia").all()
 
     # check that no people have died of oesophageal cancer
-    yll = sim.modules['HealthBurden'].YearsLifeLost
+    yll = sim.modules['HealthBurden'].years_life_lost
     assert 'YLL_OesophagealCancer_OesophagealCancer' not in yll.columns
