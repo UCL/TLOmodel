@@ -113,6 +113,8 @@ class Symptom:
     @staticmethod
     def emergency(name: str, which: str = "both"):
         """Return an instance of `Symptom` that will guarantee healthcare-seeking for an Emergency Appointment."""
+        from tlo.methods.healthseekingbehaviour import HIGH_ODDS_RATIO
+
         if name is None:
             raise ValueError('No name given.')
 
@@ -128,8 +130,8 @@ class Symptom:
             no_healthcareseeking_in_children=False,
             prob_seeks_emergency_appt_in_adults=1.0 if emergency_in_adults else 0.0,
             prob_seeks_emergency_appt_in_children=1.0 if emergency_in_children else 0.0,
-            odds_ratio_health_seeking_in_adults=10_000.0 if emergency_in_adults else 0.0,
-            odds_ratio_health_seeking_in_children=10_000.0 if emergency_in_children else 0.0,
+            odds_ratio_health_seeking_in_adults=HIGH_ODDS_RATIO if emergency_in_adults else 0.0,
+            odds_ratio_health_seeking_in_children=HIGH_ODDS_RATIO if emergency_in_children else 0.0,
             #                                      10_000 is an arbitrarily large odds ratio that will practically
             #                                       ensure that there is healthcare-seeking. `np.inf` might have been
             #                                       used but this is not does not work within the LinearModel.
