@@ -351,8 +351,8 @@ class HealthBurden(Module):
             yll, fill_value=0)
         self.years_life_lost_stacked_time[cause_of_death] = self.years_life_lost_stacked_time[cause_of_death].add(
             yll_stacked_by_time, fill_value=0)
-        self.years_life_lost_stacked_age_and_time[cause_of_death] = self.years_life_lost_stacked_age_and_time[cause_of_death].add(
-            yll_stacked_by_age_and_time, fill_value=0)
+        self.years_life_lost_stacked_age_and_time[cause_of_death] = \
+            self.years_life_lost_stacked_age_and_time[cause_of_death].add(yll_stacked_by_age_and_time, fill_value=0)
 
         # Check that the index of the YLL dataframe is not changed
         assert self.years_life_lost.index.equals(self.multi_index_for_age_and_wealth_and_time)
