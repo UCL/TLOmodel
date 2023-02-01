@@ -946,12 +946,11 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         self.TREATMENT_ID = "Contraception_Routine"
         self.ACCEPTED_FACILITY_LEVEL = _facility_level
 
-        self.person_id = person_id
-
     @property
     def EXPECTED_APPT_FOOTPRINT(self):
         """Return the expected appt footprint based on contraception method and whether the HSI has been rescheduled."""
-        current_method = self.sim.population.props.loc[self.person_id].co_contraception
+        person_id = self.target
+        current_method = self.sim.population.props.loc[person_id].co_contraception
         if self._number_of_times_run > 0:  # if it is to re-schedule due to unavailable consumables
             return self.make_appt_footprint({})
         # if to switch to a method
