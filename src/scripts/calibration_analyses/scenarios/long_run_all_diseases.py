@@ -45,11 +45,7 @@ class LongRun(BaseScenario):
         return fullmodel(resourcefilepath=self.resources)
 
     def draw_parameters(self, draw_number, rng):
-        return {
-            'Stunting': {
-                'prob_stunting_diagnosed_at_generic_appt': 0.01
-            }
-        }
+        return  # Using default parameters in all cases
 
 
 if __name__ == '__main__':
