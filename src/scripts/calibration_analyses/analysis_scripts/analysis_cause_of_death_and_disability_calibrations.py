@@ -85,7 +85,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             results = extract_results(
                 results_folder,
                 module="tlo.methods.healthburden",
-                key="dalys",
+                key="dalys_stacked_by_age_and_time",  # <-- for DALYS stacked by age and time
                 custom_generate_series=(
                     lambda df_: df_.drop(
                         columns='date'
@@ -348,10 +348,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         plt.close(fig)
 
     # %% Make graphs for each of Deaths and DALYS for a specific period
-    make_std_graphs(what='Deaths', period='2010-2014')
-    # make_std_graphs(what='DALYs', period='2010-2014')  # <-- todo colormapping and order for DALYS
+    # make_std_graphs(what='Deaths', period='2010-2014')
+    make_std_graphs(what='DALYs', period='2010-2014')  # <-- todo colormapping and order for DALYS
 
-    make_std_graphs(what='Deaths', period='2015-2019')
+    # make_std_graphs(what='Deaths', period='2015-2019')
     # make_std_graphs(what='DALYs', period='2015-2019')  # <-- todo colormapping and order for DALYS
 
 
