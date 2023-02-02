@@ -1,0 +1,27 @@
+{
+  "scenario_script_path": "src/scripts/analysis_example/scenario_impact_of_consumables_availability.py",
+  "scenario_seed": 0,
+  "runs_per_draw": 2,
+  "draws": [
+    {
+      "draw_number": 0,
+      "draw_seed": 209652396,
+      "parameters": {
+        "HealthSystem": {
+          "cons_availability": "default"
+        }
+      }
+    },
+    {
+      "draw_number": 1,
+      "draw_seed": 398764591,
+      "parameters": {
+        "HealthSystem": {
+          "cons_availability": "all"
+        }
+      }
+    }
+  ],
+  "commit": "7f62ce8d160c4916657dbbf3efed8065921468f4",
+  "github": "https://github.com/UCL/TLOmodel/tree/7f62ce8d160c4916657dbbf3efed8065921468f4"
+}
