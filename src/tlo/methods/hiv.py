@@ -859,14 +859,15 @@ class Hiv(Module):
 
         # Schedule the AIDS death events for those who have got AIDS already
         for person_id in has_aids_idx:
+            # todo reinstate this if initial AIDS deaths too high
             # schedule a HSI_Test_and_Refer otherwise initial AIDS rates and deaths are far too high
-            date_test = self.sim.date + pd.DateOffset(days=self.rng.randint(0, 60))
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                hsi_event=HSI_Hiv_TestAndRefer(person_id=person_id, module=self, referred_from="initialise_simulation"),
-                priority=1,
-                topen=date_test,
-                tclose=self.sim.date + pd.DateOffset(days=365),
-            )
+            # date_test = self.sim.date + pd.DateOffset(days=self.rng.randint(0, 60))
+            # self.sim.modules["HealthSystem"].schedule_hsi_event(
+            #     hsi_event=HSI_Hiv_TestAndRefer(person_id=person_id, module=self, referred_from="initialise_simulation"),
+            #     priority=1,
+            #     topen=date_test,
+            #     tclose=self.sim.date + pd.DateOffset(days=365),
+            # )
 
             date_aids_death = (
                 self.sim.date + self.get_time_from_aids_to_death()
