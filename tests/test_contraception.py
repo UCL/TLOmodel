@@ -410,12 +410,13 @@ def test_record_of_appt_footprint_for_switching_to_methods(tmpdir, seed):
     sim.event_queue.queue = []
     sim.modules['HealthSystem'].reset_queue()
 
-    # Let there be no chance of discontinuing and 100% chance of switching from pill to injections
+    # Let there be no chance of discontinuing and
+    # 100% chance of switching from pill to injections (or other_modern, female_sterilization) for test purpose
     pp = sim.modules['Contraception'].processed_params
     pp['p_stop_per_month'] = zero_param(pp['p_stop_per_month'])
     pp['p_switch_from_per_month']['pill'] = 1.0
     pp['p_switching_to']['pill'] = 0
-    pp['p_switching_to'].loc['injections', 'pill'] = 1.0
+    pp['p_switching_to'].loc['injections', 'pill'] = 1.0  # or 'other_modern', 'female_sterilization'
 
     # Set that person_id=0 is a woman on "pill" for about one month
     # who is now switching to "injections"
@@ -425,7 +426,7 @@ def test_record_of_appt_footprint_for_switching_to_methods(tmpdir, seed):
         'sex': 'F',
         'age_years': 30,
         'date_of_birth': sim.date - pd.DateOffset(years=30),
-        'co_contraception': 'pill',  # <-- to switch to injections
+        'co_contraception': 'pill',  # <-- to switch to injections/other_modern/female_sterilization
         'is_pregnant': False,
         'date_of_last_pregnancy': pd.NaT,
         'co_unintended_preg': False,
@@ -437,23 +438,26 @@ def test_record_of_appt_footprint_for_switching_to_methods(tmpdir, seed):
     poll = contraception.ContraceptionPoll(module=sim.modules['Contraception'])
     poll.apply(sim.population)
 
-    # Confirm that an HSI_FamilyPlanningAppt has been made for her as by 100% she is switching to injections
+    # Confirm that an HSI_FamilyPlanningAppt has been made for her as by 100% she is switching the method
     events = sim.modules['HealthSystem'].find_events_for_person(person_id)
     assert 1 == len(events)
     ev = events[0]
     assert isinstance(ev[1], contraception.HSI_Contraception_FamilyPlanningAppt)
 
-    # Run that HSI_FamilyPlanningAppt and confirm her state has changed to injections
+    # Run that HSI_FamilyPlanningAppt and confirm her state has changed to the new method
     sim.date = ev[0]
     ev[1].apply(person_id=person_id, squeeze_factor=0.0)
 
     df = sim.population.props  # update shortcut df
     assert df.at[person_id, 'co_date_of_last_fp_appt'] == sim.date
-    assert df.at[person_id, 'co_contraception'] == 'injections'
+    assert df.at[person_id, 'co_contraception'] == 'injections'  # or 'other_modern', 'female_sterilization'
 
     # further check the appt footprint
     appt_footprint = pd.DataFrame.from_dict(ev[1].EXPECTED_APPT_FOOTPRINT, orient='index')
     # add necessary assertions
+    # todo: check right appt footprint and right expected time requests (especially for PharmDispensing)
+    # todo: check when no available consumable, how HSI are scheduled and rescheduled and the right appt footprint
+    # are recorded
 
 
 @pytest.mark.slow
