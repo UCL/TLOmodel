@@ -863,7 +863,8 @@ class Hiv(Module):
             # schedule a HSI_Test_and_Refer otherwise initial AIDS rates and deaths are far too high
             # date_test = self.sim.date + pd.DateOffset(days=self.rng.randint(0, 60))
             # self.sim.modules["HealthSystem"].schedule_hsi_event(
-            #     hsi_event=HSI_Hiv_TestAndRefer(person_id=person_id, module=self, referred_from="initialise_simulation"),
+            #     hsi_event=HSI_Hiv_TestAndRefer(
+            #     person_id=person_id, module=self, referred_from="initialise_simulation"),
             #     priority=1,
             #     topen=date_test,
             #     tclose=self.sim.date + pd.DateOffset(days=365),
@@ -913,7 +914,6 @@ class Hiv(Module):
         self.item_codes_for_consumables_required['prep'] = {
             hs.get_item_code_from_item_name("Tenofovir (TDF)/Emtricitabine (FTC), tablet, 300/200 mg"): 1}
 
-        # todo add consumable
         # infant NVP given in 3-monthly dosages
         self.item_codes_for_consumables_required['infant_prep'] = {
             hs.get_item_code_from_item_name("Nevirapine, oral solution, 10 mg/ml"): 1}
@@ -1039,7 +1039,6 @@ class Hiv(Module):
         if "CareOfWomenDuringPregnancy" not in self.sim.modules:
             # if mother's HIV status not known, schedule test at delivery
             # usually performed by care_of_women_during_pregnancy module
-            # todo change prob_anc_test_at_delivery to 1 in resourcefile
             if not mother.hv_diagnosed and \
                 mother.is_alive and (
                     self.rng.random_sample() < params["prob_hiv_test_at_anc_or_delivery"]):
@@ -1056,7 +1055,6 @@ class Hiv(Module):
         # if mother known HIV+, schedule virological test for infant in 6wks, 9mths, 18mths
         if mother.hv_diagnosed and df.at[child_id, "is_alive"]:
 
-            # todo add infant NVP prophylaxis
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 hsi_event=HSI_Hiv_StartInfantProphylaxis(
                     person_id=child_id,
@@ -1709,7 +1707,6 @@ class HivInfectionDuringBreastFeedingEvent(Event, IndividualScopeEventMixin):
         if df.at[person_id, "nb_breastfeeding_status"] == "none":
             return
 
-        # todo add effect of NVP prophylaxis
         # If child is on NVP for HIV prophylaxis, no further action
         if df.at[person_id, "hv_is_on_prep"]:
             return
@@ -1991,7 +1988,6 @@ class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
             # Defaults to being off Treatment
             m.stops_treatment(person_id)
 
-            # todo change module
             # refer for another treatment again in 1 month
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Hiv_StartOrContinueTreatment(person_id=person_id, module=m,
@@ -2050,12 +2046,10 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
         if not person["is_alive"]:
             return
 
-        # todo add condition on treatment, so allow for repeat testing
         # If person is diagnosed and on treatment do nothing do not occupy any resources
         if person["hv_diagnosed"] and (person["hv_art"] != "not"):
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
-        # todo
         # if person has had test in last week, do not repeat test
         if person["hv_last_test_date"] >= (self.sim.date - DateOffset(days=7)):
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
@@ -2213,8 +2207,6 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
             )
 
 
-# todo add infant prophylaxis
-# todo cap this at 5 repeat visits
 class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id, referred_from, repeat_visits):
         super().__init__(module, person_id=person_id)
@@ -2458,7 +2450,6 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
                 else:
                     # refer to higher facility level
-                    # todo change this to level 2
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         hsi_event=HSI_Hiv_StartOrContinueTreatment(
                             person_id=person_id, module=self.module,
@@ -3015,10 +3006,6 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[df.is_alive & (df.sex == "M") & (df.age_years >= 15) & df.li_is_circ]
         ) / len(df[df.is_alive & (df.sex == "M") & (df.age_years >= 15)]) if len(
             df[df.is_alive & (df.sex == "M") & (df.age_years >= 15)]) else 0
-
-        # todo remove
-        print("diagnosed", dx_adult)
-        print("on art", art_cov_adult)
 
         logger.info(
             key="hiv_program_coverage",
