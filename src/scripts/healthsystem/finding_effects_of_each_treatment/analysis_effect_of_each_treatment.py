@@ -447,7 +447,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     total_num_dalys_by_agegrp_and_label = extract_results(
         results_folder,
         module="tlo.methods.healthburden",
-        key="dalys_stacked",  # <-- todo might need to change key!
+        key='dalys_stacked_by_age_and_time',  # <-- for stacking by age and time
         custom_generate_series=get_total_num_dalys_by_agegrp_and_label,
         do_scaling=True
     ).pipe(set_param_names_as_column_index_level_0)
@@ -474,12 +474,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.axhline(0.0, color='black')
         ax.set_title(name_of_plot)
         ax.set_ylabel('Number of DALYS Averted (/1e6)')
-        # ax.set_ylim(-50, 150)
+        ax.set_ylim(-0.2, 20)
         ax.set_xlabel('Age-group')
         ax.grid()
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
-        ax.legend(ncol=3, fontsize=8, loc='upper right')
+        # ax.legend(ncol=3, fontsize=8, loc='upper right')
+        ax.legend().set_visible(False)
         fig.tight_layout()
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
         fig.show()
@@ -498,7 +499,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     total_num_dalys_by_wealth_and_label = extract_results(
         results_folder,
         module="tlo.methods.healthburden",
-        key="dalys_stacked",
+        key="dalys_stacked_by_age_and_time",
         custom_generate_series=get_total_num_dalys_by_wealth_and_label,
         do_scaling=True
     ).pipe(set_param_names_as_column_index_level_0)
