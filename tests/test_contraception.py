@@ -455,6 +455,14 @@ def test_record_of_appt_footprint_for_switching_to_methods(tmpdir, seed):
     ev = events[0]
     assert isinstance(ev[1], contraception.HSI_Contraception_FamilyPlanningAppt)
 
+    # further, check that the right appt footprint is recorded following the HSI scheduled
+    appt_footprint_old = pd.DataFrame.from_dict(ev[1].EXPECTED_APPT_FOOTPRINT, orient='index')
+    assert ev[1]._number_of_times_run == 0
+    assert 'FamPlan' in list(appt_footprint_old.index)  # should be 'MinorSurg' if 'female_sterilization'
+
+    # store expected time requests
+    appt_time_old = pd.DataFrame.from_dict(ev[1].expected_time_requests, orient='index')
+
     # Run that HSI_FamilyPlanningAppt and confirm her state has changed to the new method
     sim.date = ev[0]
     ev[1].apply(person_id=person_id, squeeze_factor=0.0)
@@ -463,10 +471,15 @@ def test_record_of_appt_footprint_for_switching_to_methods(tmpdir, seed):
     assert df.at[person_id, 'co_date_of_last_fp_appt'] == sim.date
     assert df.at[person_id, 'co_contraception'] == 'injections'  # or 'other_modern', 'female_sterilization'
 
-    # further check the appt footprint
-    appt_footprint = pd.DataFrame.from_dict(ev[1].EXPECTED_APPT_FOOTPRINT, orient='index')
-    # add necessary assertions
-    # todo: check right appt footprint and right expected time requests (especially for PharmDispensing)
+    # now check that the appt footprint is blank because _number_of_times_run = 1 (>0)
+    # and that the expected time requests however did not change to blank, but remained.
+    appt_footprint_new = pd.DataFrame.from_dict(ev[1].EXPECTED_APPT_FOOTPRINT, orient='index')
+    assert ev[1]._number_of_times_run == 1
+    assert len(appt_footprint_new) == 0
+    appt_time_new = pd.DataFrame.from_dict(ev[1].expected_time_requests, orient='index')
+    assert (appt_time_new.index == appt_time_old.index).all()
+    assert (appt_time_new.values == appt_time_old.values).all()
+
     # todo: check when no available consumable, how HSI are scheduled and rescheduled and the right appt footprint
     # are recorded
 
