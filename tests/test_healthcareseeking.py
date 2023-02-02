@@ -92,7 +92,7 @@ def get_dataframe_of_run_events_count(_sim):
     return count_df
 
 
-def test_healthcareseeking_does_occur_from_symptom_that_does_give_healthcareseeking_behaviour(seed):
+def test_healthcareseeking_does_occur_from_symptom_that_does_give_healthcareseeking_behaviour(seed, tmpdir):
     """test that a symptom that gives healthcare seeking results in generic HSI scheduled (and that those without the
     symptom do not seek care)."""
 
@@ -381,13 +381,13 @@ def test_healthcareseeking_occurs_with_nonemergency_spurious_symptoms_only(seed,
         assert 0 < len(sim.modules['SymptomManager'].has_what(person))
 
 
-def test_healthcareseeking_occurs_with_emergency_spurious_symptom_only(seed):
+def test_healthcareseeking_occurs_with_emergency_spurious_symptom_only(seed, tmpdir):
     """Spurious emergency symptom should generate SpuriousEmergencyCare, and with such care provided,
     the symptom should be removed. Also, because SpuriousEmergencyCare is the secondary HSI and
     its primary HSI is FirstAttendance_Emergency, we further check that the counts of the two HSI
     match with each other."""
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir))
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -471,7 +471,7 @@ def test_healthcareseeking_no_error_if_hsi_emergencycare_spurioussymptom_is_run_
     assert blank_footprint == hsi.run(squeeze_factor=None)
 
 
-def test_healthcareseeking_occurs_with_emergency_and_nonemergency_spurious_symptoms(seed):
+def test_healthcareseeking_occurs_with_emergency_and_nonemergency_spurious_symptoms(seed, tmpdir):
     """This is to test that persons with spurious emergency symptom should generate SpuriousEmergencyCare,
     those with only non-emergency spurious symptoms should generate HSI_GenericFirstApptAtFacilityLevel0.
     This has overlaps with above tests of test_healthcareseeking_occurs_with_nonemergency_spurious_symptoms_only and
@@ -479,7 +479,7 @@ def test_healthcareseeking_occurs_with_emergency_and_nonemergency_spurious_sympt
     and emergency spurious symptoms on the population.
     """
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir))
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -515,10 +515,10 @@ def test_healthcareseeking_occurs_with_emergency_and_nonemergency_spurious_sympt
     assert 'HSI_GenericFirstApptAtFacilityLevel0' in events_run_and_scheduled
 
 
-def test_healthcareseeking_occurs_when_triggerd_from_disease_modules(seed):
+def test_healthcareseeking_occurs_when_triggerd_from_disease_modules(seed, tmpdir):
     """Mockitis and Chronic Syndrome should lead to there being emergency and non-emergency generic HSI"""
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir))
 
     # Register the core modules including Chronic Syndrome and Mockitis -
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -544,11 +544,11 @@ def test_healthcareseeking_occurs_when_triggerd_from_disease_modules(seed):
     assert 'HSI_EmergencyCare_SpuriousSymptom' not in events_run_and_scheduled
 
 
-def test_healthcareseeking_occurs_with_nonemergency_spurious_symptoms_and_disease_modules(seed):
+def test_healthcareseeking_occurs_with_nonemergency_spurious_symptoms_and_disease_modules(seed, tmpdir):
     """This is to test that when the population have non-emergency spurious symptoms as well as diseases of
     Mockitis and Chronic Syndrome, emergency and non-emergency generic HSI will be triggered."""
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir))
 
     # Register the core modules including Chronic Syndrome and Mockitis -
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -581,14 +581,14 @@ def test_healthcareseeking_occurs_with_nonemergency_spurious_symptoms_and_diseas
     assert 'HSI_EmergencyCare_SpuriousSymptom' not in events_run_and_scheduled
 
 
-def test_healthcareseeking_occurs_with_emergency_spurious_symptom_and_disease_modules(seed):
+def test_healthcareseeking_occurs_with_emergency_spurious_symptom_and_disease_modules(seed, tmpdir):
     """This is to test that when the population have emergency spurious symptom as well as diseases of Mockitis
     and Chronic Syndrome, emergency and non-emergency generic HSI and spurious emergency care will be all triggered.
     Also, because the population have both spurious emergency symptom and emergency symptoms from the diseases,
     which will trigger generic emergency HSI and specific emergency care HSI, this is to check that the count of
     spurious emergency care HSI will not exceed that of generic emergency HSI."""
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir))
 
     # Register the core modules including Chronic Syndrome and Mockitis -
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -640,12 +640,12 @@ def test_healthcareseeking_occurs_with_emergency_spurious_symptom_and_disease_mo
     )
 
 
-def test_healthcareseeking_occurs_with_emergency_and_nonemergency_spurious_symptoms_and_disease_modules(seed):
+def test_healthcareseeking_occurs_with_emergency_and_nonemergency_spurious_symptoms_and_disease_modules(seed, tmpdir):
     """This is to test that when the population have emergency and non-emergency symptoms as well as diseases of
     Mockitis and Chronic Syndrome, emergency and non-emergency generic HSI and spurious emergency care will be all
     triggered."""
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir))
 
     # Register the core modules including Chronic Syndrome and Mockitis -
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -677,19 +677,18 @@ def test_healthcareseeking_occurs_with_emergency_and_nonemergency_spurious_sympt
     assert 'HSI_EmergencyCare_SpuriousSymptom' in events_run_and_scheduled
 
 
-def test_hsi_schedules_with_emergency_spurious_symptom_and_mockitis_module(seed):
+def test_hsi_schedules_with_emergency_spurious_symptom_and_mockitis_module(seed, tmpdir):
     """This is to test that when the population have both spurious emergency symptom and the mockitis disease, the
     emergency HSIs are triggered. More specifically, for persons with both spurious emergency symptom and emergency
     symptom from the disease, generic emergency HSI and specific emergency care HSIs are all triggered.
     """
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir))
 
     # Register the core modules including Chronic Syndrome and Mockitis -
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, hsi_event_count_log_period="simulation",
-                                           store_hsi_events_that_have_run=True),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, hsi_event_count_log_period="simulation"),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
