@@ -330,7 +330,8 @@ def test_woman_starting_contraceptive_after_birth(tmpdir, seed):
 
 
 def test_occurrence_of_HSI_for_maintaining_on_and_switching_to_methods(tmpdir, seed):
-    """Check HSI for the maintenance of a person on a contraceptive are scheduled as expected.."""
+    """Check HSI for the maintenance of a person on a contraceptive are scheduled as expected.
+    Further, check that right appt footprint is recorded following the HSI scheduled."""
 
     # Create a simulation that has run for zero days and clear the event queue
     sim = run_sim(tmpdir,
@@ -376,6 +377,11 @@ def test_occurrence_of_HSI_for_maintaining_on_and_switching_to_methods(tmpdir, s
     date_of_hsi = ev[0]
     assert date_of_hsi <= (sim.date + pd.DateOffset(days=28))
 
+    # further, check that the right appt footprint is recorded following the HSI scheduled
+    appt_footprint = pd.DataFrame.from_dict(ev[1].EXPECTED_APPT_FOOTPRINT, orient='index')
+    assert ev[1]._number_of_times_run == 0
+    assert 'PharmDispensing' in list(appt_footprint.index)
+
     # Run that HSI_FamilyPlanningAppt and confirm there is no change in her state except that the date of last
     # appointment has been updated.
     sim.date = date_of_hsi
@@ -385,6 +391,11 @@ def test_occurrence_of_HSI_for_maintaining_on_and_switching_to_methods(tmpdir, s
     props_to_be_same = [k for k in original_props.keys() if k != "co_date_of_last_fp_appt"]
     assert list(df.loc[person_id, props_to_be_same].values) == [original_props[p] for p in props_to_be_same]
     assert sim.population.props.at[person_id, "co_date_of_last_fp_appt"] == sim.date
+
+    # now check that the appt footprint is blank because _number_of_times_run = 1 (>0)
+    appt_footprint = pd.DataFrame.from_dict(ev[1].EXPECTED_APPT_FOOTPRINT, orient='index')
+    assert ev[1]._number_of_times_run == 1
+    assert len(appt_footprint) == 0
 
     # CLear the HealthSystem queue and run the ContraceptivePoll again
     sim.modules['HealthSystem'].reset_queue()
