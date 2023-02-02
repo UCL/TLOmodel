@@ -194,10 +194,10 @@ def test_coarse_appt_type():
     coarse_appts = appts['coarse'].drop_duplicates()
 
     assert not pd.isnull(appts).any().any()
-    assert 12 == len(coarse_appts)  # 12 coarse categories
+    assert 13 == len(coarse_appts)  # 12 coarse categories
 
     # Check can run sorting on these
-    assert 12 == len(sorted(coarse_appts, key=order_of_coarse_appt))
+    assert 13 == len(sorted(coarse_appts, key=order_of_coarse_appt))
 
 
 def test_colormap_coarse_appts():

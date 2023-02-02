@@ -15,6 +15,7 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
+from tlo.methods.healthseekingbehaviour import HIGH_ODDS_RATIO
 from tlo.methods.symptommanager import (
     DuplicateSymptomWithNonIdenticalPropertiesError,
     Symptom,
@@ -67,8 +68,8 @@ def test_emergency_symptom_defined_through_static_method():
     assert symp.no_healthcareseeking_in_adults is False
     assert symp.prob_seeks_emergency_appt_in_children == 1.0
     assert symp.prob_seeks_emergency_appt_in_adults == 1.0
-    assert symp.odds_ratio_health_seeking_in_children >= 10_000.0
-    assert symp.odds_ratio_health_seeking_in_adults >= 10_000.0
+    assert symp.odds_ratio_health_seeking_in_children >= HIGH_ODDS_RATIO
+    assert symp.odds_ratio_health_seeking_in_adults >= HIGH_ODDS_RATIO
 
     # Emergency in adults only
     symp = Symptom.emergency(name='emergency_symptom', which='adults')
@@ -78,7 +79,7 @@ def test_emergency_symptom_defined_through_static_method():
     assert symp.prob_seeks_emergency_appt_in_children == 0.0
     assert symp.prob_seeks_emergency_appt_in_adults == 1.0
     assert symp.odds_ratio_health_seeking_in_children == 0.0
-    assert symp.odds_ratio_health_seeking_in_adults >= 10_000.0
+    assert symp.odds_ratio_health_seeking_in_adults >= HIGH_ODDS_RATIO
 
     # Emergency in children only
     symp = Symptom.emergency(name='emergency_symptom', which='children')
@@ -87,7 +88,7 @@ def test_emergency_symptom_defined_through_static_method():
     assert symp.no_healthcareseeking_in_adults is False
     assert symp.prob_seeks_emergency_appt_in_children == 1.0
     assert symp.prob_seeks_emergency_appt_in_adults == 0.0
-    assert symp.odds_ratio_health_seeking_in_children >= 10_000.0
+    assert symp.odds_ratio_health_seeking_in_children >= HIGH_ODDS_RATIO
     assert symp.odds_ratio_health_seeking_in_adults == 0.0
 
 

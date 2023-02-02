@@ -40,11 +40,11 @@ class Symptom:
       (`odds_ratio_health_seeking_in_`)
      * the probability that emergency care is sought, if care is sought at all (`prob_seeks_emergency_appt_in_`).
 
-    The default behaviour is for a symptom that causes healthcare-seeking for non-emergency care with the same chance
-    as the "average symptom".
+    The default behaviour is for a symptom that causes healthcare-seeking for non-emergency care with the same
+    probability as the "average symptom".
 
     The in-built method `emergency_symptom_with_automatic_healthcareseeking` produces another common type of symptom,
-    which gives a very high chance that emergency care is sought.
+    which gives a very high probability that emergency care is sought.
 
     The characteristics of Symptoms is separate for adults (peron aged 15+) and children (those aged aged <15).
     """
@@ -113,6 +113,8 @@ class Symptom:
     @staticmethod
     def emergency(name: str, which: str = "both"):
         """Return an instance of `Symptom` that will guarantee healthcare-seeking for an Emergency Appointment."""
+        from tlo.methods.healthseekingbehaviour import HIGH_ODDS_RATIO
+
         if name is None:
             raise ValueError('No name given.')
 
@@ -128,11 +130,11 @@ class Symptom:
             no_healthcareseeking_in_children=False,
             prob_seeks_emergency_appt_in_adults=1.0 if emergency_in_adults else 0.0,
             prob_seeks_emergency_appt_in_children=1.0 if emergency_in_children else 0.0,
-            odds_ratio_health_seeking_in_adults=10_000.0 if emergency_in_adults else 0.0,
-            odds_ratio_health_seeking_in_children=10_000.0 if emergency_in_children else 0.0,
+            odds_ratio_health_seeking_in_adults=HIGH_ODDS_RATIO if emergency_in_adults else 0.0,
+            odds_ratio_health_seeking_in_children=HIGH_ODDS_RATIO if emergency_in_children else 0.0,
             #                                      10_000 is an arbitrarily large odds ratio that will practically
             #                                       ensure that there is healthcare-seeking. `np.inf` might have been
-            #                                       used but this is not does not within the LinearModel.
+            #                                       used but this is not does not work within the LinearModel.
         )
 
     def __eq__(self, other):

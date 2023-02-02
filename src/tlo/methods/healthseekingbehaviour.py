@@ -23,6 +23,8 @@ from tlo.methods.hsi_generic_first_appts import (
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
 
+HIGH_ODDS_RATIO = 1e5
+
 
 class HealthSeekingBehaviour(Module):
     """
@@ -158,9 +160,6 @@ class HealthSeekingBehaviour(Module):
         # Define the linear models that govern healthcare seeking
         self.define_linear_models()
 
-        # Define the linear models that govern healthcare seeking
-        self.define_linear_models()
-
     def on_birth(self, mother_id, child_id):
         """Nothing to handle on_birth
         """
@@ -203,17 +202,20 @@ class HealthSeekingBehaviour(Module):
                            .when(5, p[f'odds_ratio_{subgroup}_wealth_higher']),
 
                 # Second set of predictors are the symptom-specific odd ratios
-                *(Predictor(f'sy_{_symptom}').when('>0', _odds) for _symptom, _odds in care_seeking_odds_ratios.items())
+                *(Predictor(f'sy_{symptom}').when('>0', odds) for symptom, odds in care_seeking_odds_ratios.items())
             )
 
-        # Model for the care-seeking (if it occurs) to be for an EMERGENCY Appointment
-
+        # Model for the care-seeking (if it occurs) to be for an EMERGENCY Appointment:
         def custom_predict(self, df, rng=None, **externals) -> pd.Series:
             """Custom predict function for LinearModel. This finds the probability that a person seeks emergency care
             by finding the highest probability of seeking emergency care for all symptoms they have currently."""
-            prob = (df[[f'sy_{_symptom}' for _symptom in self.prob_emergency_appt.keys()]] > 0) \
-                .mul(self.prob_emergency_appt.values()) \
-                .max(axis=1)
+            prob = pd.Series(
+                (
+                    (df[[f'sy_{s}' for s in self.prob_emergency_appt]].to_numpy() > 0)
+                    * np.array(list(self.prob_emergency_appt.values()))
+                ).max(axis=1),
+                df.index
+            )
             return prob > rng.random_sample(len(prob))
 
         for subgroup, prob_emergency_appt in zip(
@@ -291,7 +293,7 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         alive_newly_symptomatic_children = alive_newly_symptomatic_persons[are_under_15]
         alive_newly_symptomatic_adults = alive_newly_symptomatic_persons[~are_under_15]
 
-        idx_where_true = lambda ser: set(ser.loc[ser].index)  # noqa: E731
+        idx_where_true = lambda series: set(series.loc[series].index)  # noqa: E731
 
         # Separately schedule HSI events for child and adult subgroups
         for subgroup, symptoms_that_allow_healthcareseeking, hsb_model, emergency_appt_model in zip(
@@ -317,9 +319,7 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                 # If forcing any person with symptoms to seek care, find all those with any symptoms which cause
                 # any degree of healthcare seeking (i.e., excluding symptoms declared to have no healthcare-seeking
                 # behaviour).
-                will_seek_care = set(
-                    idx_where_true(self._has_any_symptoms(subgroup, symptoms_that_allow_healthcareseeking))
-                )
+                will_seek_care = idx_where_true(self._has_any_symptoms(subgroup, symptoms_that_allow_healthcareseeking))
             else:
                 # If not forcing, run the linear model to predict which persons will seek care, from among those with
                 # symptoms that cause any degree of healthcare seeking.

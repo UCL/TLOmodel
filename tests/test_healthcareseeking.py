@@ -1,13 +1,14 @@
 """Test for HealthCareSeeking Module"""
 import os
 from pathlib import Path
-from typing import Iterable, List
+from typing import Iterable, List, Optional
 
 import numpy as np
 import pandas as pd
 from pandas import DateOffset
 
-from tlo import Date, Module, Simulation
+from tlo import Date, Module, Simulation, logging
+from tlo.analysis.utils import parse_log_file
 from tlo.events import Event, IndividualScopeEventMixin
 from tlo.methods import (
     Metadata,
@@ -20,36 +21,60 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
+from tlo.methods.healthseekingbehaviour import HIGH_ODDS_RATIO
 from tlo.methods.symptommanager import Symptom
 
-try:
-    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-except NameError:
-    # running interactively
-    resourcefilepath = './resources'
+resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+
+log_config = lambda _tmpdir: {  # noqa: E731
+        'filename': 'temp',
+        'directory': _tmpdir,
+        'custom_levels': {
+            "tlo.methods.healthsystem": logging.DEBUG
+        }
+}
+
+
+def get_hsi_events_that_ran(sim, person_ids: Optional[Iterable] = None) -> List:
+    """Get list of events that ran already (optionally, limiting to an iterable of person_ids). """
+
+    healthsystem_log = parse_log_file(sim.log_filepath, level=logging.DEBUG)["tlo.methods.healthsystem"]
+    try:
+        all_hsi = healthsystem_log["HSI_Event"]
+    except KeyError:
+        # If no logged entry, it implies no HSI have run: return an empty list.
+        return []
+
+    if person_ids is None:
+        return all_hsi.loc[all_hsi.did_run, 'Event_Name'].to_list()
+    else:
+        return all_hsi.loc[all_hsi.did_run & all_hsi['Person_ID'].isin(person_ids), 'Event_Name'].to_list()
 
 
 def get_events_run_and_scheduled(sim) -> List:
     """Returns a list of HSI_Events that have been run already or are scheduled to run."""
-    return [
-        event_details.event_name
-        for event_details in sim.modules['HealthSystem'].hsi_event_counts.keys()
-    ] + [
-        type(event_queue_item.hsi_event).__name__
-        for event_queue_item in sim.modules['HealthSystem'].HSI_EVENT_QUEUE
-    ]
+    return (
+        get_hsi_events_that_ran(sim)  # <-- events already run
+        +
+        [
+            type(event_queue_item.hsi_event).__name__
+            for event_queue_item in sim.modules['HealthSystem'].HSI_EVENT_QUEUE  # <-- events scheduled
+        ]
+    )
 
 
 def get_events_run_and_scheduled_for_person(_sim, person_ids: Iterable) -> List:
     """Returns a list of HSI_Events that have been run already or are scheduled to run, for a particular set of
     persons"""
-    return [
-               ev['HSI_Event'] for ev in _sim.modules['HealthSystem'].store_of_hsi_events_that_have_run
-               if ev['Person_ID'] in person_ids
-           ] + [
-               e[4].__class__.__name__ for e in _sim.modules['HealthSystem'].HSI_EVENT_QUEUE
-               if e[4].target in person_ids
-           ]
+
+    return (
+        get_hsi_events_that_ran(_sim, person_ids)  # <-- events already run
+        +
+        [
+            e[4].__class__.__name__ for e in _sim.modules['HealthSystem'].HSI_EVENT_QUEUE
+            if e[4].target in person_ids  # <-- events scheduled
+        ]
+    )
 
 
 def get_dataframe_of_run_events_count(_sim):
@@ -83,8 +108,8 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_healthcareseek
             self.sim.modules['SymptomManager'].register_symptom(
                 Symptom(
                     name='Symptom_that_does_cause_healthcare_seeking',
-                    odds_ratio_health_seeking_in_adults=1000000.0,  # <--- very high odds of seeking care
-                    odds_ratio_health_seeking_in_children=1000000.0  # <--- very high odds of seeking care
+                    odds_ratio_health_seeking_in_adults=HIGH_ODDS_RATIO,  # <--- very high odds of seeking care
+                    odds_ratio_health_seeking_in_children=HIGH_ODDS_RATIO  # <--- very high odds of seeking care
                 ),
             )
 
@@ -104,13 +129,12 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_healthcareseek
             pass
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir))
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, hsi_event_count_log_period="simulation",
-                                           store_hsi_events_that_have_run=True),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, hsi_event_count_log_period="simulation"),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  DummyDisease()
@@ -144,7 +168,7 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_healthcareseek
     assert 0 == len(get_events_run_and_scheduled_for_person(sim, idx_no_symptom))
 
 
-def test_healthcareseeking_does_not_occurs_from_symptom_that_do_not_give_healthcareseeking_behaviour(seed):
+def test_healthcareseeking_does_not_occurs_from_symptom_that_do_not_give_healthcareseeking_behaviour(seed, tmpdir):
     """test that a symptom that should not give healthseeeking does not give health seeking."""
 
     class DummyDisease(Module):
@@ -177,7 +201,7 @@ def test_healthcareseeking_does_not_occurs_from_symptom_that_do_not_give_healthc
             pass
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir))
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -214,7 +238,7 @@ def test_healthcareseeking_does_not_occurs_from_symptom_that_do_not_give_healthc
     assert 'HSI_GenericEmergencyFirstApptAtFacilityLevel1' not in events_run_and_scheduled
 
 
-def test_healthcareseeking_does_occur_from_symptom_that_does_give_emergency_healthcareseeking_behaviour(seed):
+def test_healthcareseeking_does_occur_from_symptom_that_does_give_emergency_healthcareseeking_behaviour(seed, tmpdir):
     """test that a symptom that give emergency healthcare seeking results in emergency HSI scheduled."""
 
     class DummyDisease(Module):
@@ -243,7 +267,7 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_emergency_heal
             pass
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir))
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -280,10 +304,10 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_emergency_heal
     assert all(map(lambda x: x == 'HSI_GenericEmergencyFirstApptAtFacilityLevel1', events_run_and_scheduled))
 
 
-def test_no_healthcareseeking_when_no_spurious_symptoms_and_no_disease_modules(seed):
+def test_no_healthcareseeking_when_no_spurious_symptoms_and_no_disease_modules(seed, tmpdir):
     """there should be no generic HSI if there are no spurious symptoms or disease module"""
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir))
 
     # Register the core modules including Chronic Syndrome and Mockitis -
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -308,10 +332,10 @@ def test_no_healthcareseeking_when_no_spurious_symptoms_and_no_disease_modules(s
     assert 'HSI_EmergencyCare_SpuriousSymptom' not in events_run_and_scheduled
 
 
-def test_healthcareseeking_occurs_with_nonemergency_spurious_symptoms_only(seed):
+def test_healthcareseeking_occurs_with_nonemergency_spurious_symptoms_only(seed, tmpdir):
     """Non-emergency spurious symptoms should generate non-emergency HSI"""
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config(tmpdir))
 
     # Register the core modules including Chronic Syndrome and Mockitis -
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -1127,8 +1151,8 @@ def test_everyone_seeks_care_for_symptom_with_high_odds_ratio_of_seeking_care(se
         def read_parameters(self, data_folder):
             self.sim.modules['SymptomManager'].register_symptom(
                 Symptom(name='NonEmergencySymptom',
-                        odds_ratio_health_seeking_in_adults=1000000.0,  # <--- very high odds of seeking care
-                        odds_ratio_health_seeking_in_children=1000000.0  # <--- very high odds of seeking care
+                        odds_ratio_health_seeking_in_adults=HIGH_ODDS_RATIO,  # <--- very high odds of seeking care
+                        odds_ratio_health_seeking_in_children=HIGH_ODDS_RATIO  # <--- very high odds of seeking care
                         ),
             )
 
@@ -1298,8 +1322,8 @@ def test_care_seeking_from_symptoms_with_different_levels_of_prob_emergency(seed
             def read_parameters(self, data_folder):
                 self.sim.modules['SymptomManager'].register_symptom(
                     Symptom(name='TestSymptom',
-                            odds_ratio_health_seeking_in_adults=10_000.0,  # <--- high odds of seeking care
-                            odds_ratio_health_seeking_in_children=10_000.0,  # <--- high odds of seeking care
+                            odds_ratio_health_seeking_in_adults=HIGH_ODDS_RATIO,  # <--- high odds of seeking care
+                            odds_ratio_health_seeking_in_children=HIGH_ODDS_RATIO,  # <--- high odds of seeking care
                             prob_seeks_emergency_appt_in_adults=prob_seeks_emergency_appt,
                             prob_seeks_emergency_appt_in_children=prob_seeks_emergency_appt,
                             ),
