@@ -103,7 +103,6 @@ class Tb(Module):
             "smear positivity with active infection: False=negative, True=positive",
         ),
         # ------------------ testing status ------------------ #
-        # todo
         "tb_date_tested": Property(Types.DATE, "Date of last tb test"),
         "tb_diagnosed": Property(
             Types.BOOL, "person has current diagnosis of active tb"
@@ -400,7 +399,6 @@ class Tb(Module):
         p = self.parameters
 
         # assume cases distributed equally across districts
-        # todo updated WHO data
         p["who_incidence_estimates"] = workbook["WHO_activeTB2023"]
 
         # use NTP reported treatment rates as testing rates (perfect referral)
@@ -888,9 +886,8 @@ class Tb(Module):
         df["tb_date_ipt"] = pd.NaT
 
         # # ------------------ infection status ------------------ #
-        # todo set incidence for full yr 2010 then run poll from jan 2011
         # WHO estimates of active TB for 2010 to get infected initial population
-        # don't need to scale or include treated proportion as noone on treatment yet
+        # don't need to scale or include treated proportion as no-one on treatment yet
         inc_estimates = p["who_incidence_estimates"]
         incidence_year = (inc_estimates.loc[
             (inc_estimates.year == self.sim.date.year), "incidence_per_100k"
@@ -957,7 +954,6 @@ class Tb(Module):
         df.at[child_id, "tb_smear"] = False
 
         # ------------------ testing status ------------------ #
-        # todo
         df.at[child_id, "tb_date_tested"] = pd.NaT
 
         df.at[child_id, "tb_diagnosed"] = False
@@ -1124,12 +1120,10 @@ class Tb(Module):
         eligible = df.at[person_id, "tb_inf"] != "active"
 
         # select coverage rate by year:
-        # todo add this condition
         now = self.sim.date
         year = now.year if now.year <= 2050 else 2050
 
         ipt = self.parameters["ipt_coverage"]
-        # todo change to == year
         ipt_year = ipt.loc[ipt.year == year]
         ipt_coverage_plhiv = ipt_year.coverage_plhiv
 
@@ -1522,7 +1516,6 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
 
                 # increase coverage of IPT
                 p["ipt_coverage"]["coverage_plhiv"] = 0.6
-                # todo change from 0.8 to 80
                 p["ipt_coverage"]["coverage_paediatric"] = 80  # this will apply to contacts of all ages
 
                 # retention on IPT (PLHIV)
@@ -1850,7 +1843,6 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
 
         # refer for HIV testing: all ages
-        # todo exclude if hiv test within last week
         # do not run if already HIV diagnosed or had test in last week
         if not person["hv_diagnosed"] or (person["hv_last_test_date"] >= (now - DateOffset(days=7))):
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -1954,7 +1946,6 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
         # if a test has been performed, update person's properties
         if test_result is not None:
-            # todo
             df.at[person_id, "tb_date_tested"] = now
 
         # if any test returns positive result, refer for appropriate treatment
@@ -1977,12 +1968,10 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
             # ------------------------- give IPT to contacts ------------------------- #
             # if diagnosed, trigger ipt outreach event for up to 5 contacts of case
             # only high-risk districts are eligible
-            # todo add condition for year
             year = now.year if now.year < 2020 else 2019
 
             district = person["district_of_residence"]
             ipt = self.module.parameters["ipt_coverage"]
-            # todo change to == year
             ipt_year = ipt.loc[ipt.year == year]
             ipt_coverage_paed = ipt_year.coverage_paediatric.values[0] / 100
 
@@ -2585,7 +2574,6 @@ class TbDeathEvent(Event, IndividualScopeEventMixin):
         )
 
         # use linear model to determine whether this person will die:
-        # todo change death rate for treated to 10.7%
         rng = self.module.rng
         result = self.module.lm["death_rate"].predict(df.loc[[person_id]], rng=rng)
 
@@ -2627,12 +2615,10 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         new_tb_cases = len(
             df[(df.tb_date_active >= (now - DateOffset(months=self.repeat)))]
         )
-        # # todo remove
-        print("active", new_tb_cases)
+
         scheduled_tb_cases = len(
             df[(df.tb_scheduled_date_active >= (now - DateOffset(months=self.repeat)))]
         )
-        print("scheduled", scheduled_tb_cases)
 
         # number of latent cases
         new_latent_cases = len(
@@ -2748,8 +2734,6 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 & (df.tb_date_active >= (now - DateOffset(months=self.repeat)))
                 ]
         )
-        # # todo remove
-        # print("mdr", new_mdr_cases)
 
         if new_mdr_cases:
             prop_mdr = new_mdr_cases / new_tb_cases

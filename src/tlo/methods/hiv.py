@@ -787,7 +787,7 @@ class Hiv(Module):
 
     def initialise_simulation(self, sim):
         """
-        * 1) Schedule the Main HIV Regular Polling Event
+        * 1) Schedule the Main HI]V Regular Polling Event
         * 2) Schedule the Logging Event
         * 3) Determine who has AIDS and impose the Symptoms 'aids_symptoms'
         * 4) Schedule the AIDS onset events and AIDS death event for those infected already
@@ -870,9 +870,15 @@ class Hiv(Module):
             #     tclose=self.sim.date + pd.DateOffset(days=365),
             # )
 
+            # todo change so max time 18 months
+            # don't know date of AIDS onset
+            # date_aids_death = (
+            #     self.sim.date + self.get_time_from_aids_to_death()
+            # )  # (assumes AIDS onset on this day)
+
             date_aids_death = (
-                self.sim.date + self.get_time_from_aids_to_death()
-            )  # (assumes AIDS onset on this day)
+                self.sim.date + pd.DateOffset(months=self.rng.randint(low=0, high=18))
+            )
 
             # 30% AIDS deaths have TB co-infection
             cause_of_death = self.rng.choice(a=["AIDS_non_TB", "AIDS_TB"], size=1, p=[0.7, 0.3])
