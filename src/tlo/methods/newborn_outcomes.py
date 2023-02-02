@@ -948,9 +948,11 @@ class NewbornOutcomes(Module):
         """
         df = self.sim.population.props
         child_id = int(child_id)
+        mother_id = df.at[child_id, 'mother_id']
 
         if 'Hiv' in self.sim.modules:
-            if not df.at[child_id, 'hv_diagnosed'] and (
+            # schedule test if child not already diagnosed and mother is known hiv+
+            if not df.at[child_id, 'hv_diagnosed'] and df.at[mother_id, 'hv_diagnosed'] and (
                     self.rng.random_sample() < self.sim.modules['Hiv'].parameters['prob_hiv_test_for_newborn_infant']):
 
                 if df.at[child_id, 'nb_pnc_check'] == 1:
