@@ -469,7 +469,7 @@ total_aids_deaths_rate_100kpy = (tot_aids_deaths / py) * 100000
 #
 # AIDS deaths (including HIV/TB deaths)
 make_plot(
-    title_str="Mortality to HIV-AIDS per 1000 capita",
+    title_str="Mortality to HIV-AIDS per 1000 capita, data=UNAIDS",
     model=total_aids_deaths_rate_100kpy,
     data_mid=data_hiv_unaids_deaths["AIDS_mortality_per_100k"],
     data_low=data_hiv_unaids_deaths["AIDS_mortality_per_100k_lower"],
@@ -483,7 +483,7 @@ plt.show()
 
 # TB deaths (excluding HIV/TB deaths)
 make_plot(
-    title_str="TB mortality rate (excl HIV) per 100,000 population",
+    title_str="TB mortality rate (excl HIV) per 100,000 population, data=WHO",
     model=tot_tb_non_hiv_deaths_rate_100kpy,
     data_mid=data_tb_who["mortality_tb_excl_hiv_per_100k"],
     data_low=data_tb_who["mortality_tb_excl_hiv_per_100k_low"],
@@ -497,7 +497,7 @@ plt.show()
 
 # HIV/TB deaths only
 make_plot(
-    title_str="TB_HIV mortality rate per 100,000 population",
+    title_str="TB_HIV mortality rate per 100,000 population, data=WHO",
     model=tot_tb_hiv_deaths_rate_100kpy,
     data_mid=data_tb_who["mortality_tb_hiv_per_100k"],
     data_low=data_tb_who["mortality_tb_hiv_per_100k_low"],
