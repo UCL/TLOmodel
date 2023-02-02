@@ -22,7 +22,7 @@ from tlo.analysis.utils import (
     make_calendar_period_type,
     order_of_cause_of_death_label,
     plot_clustered_stacked,
-    summarize,
+    summarize, get_scenario_outputs,
 )
 
 PREFIX_ON_FILENAME = '2'
@@ -361,6 +361,6 @@ if __name__ == "__main__":
 
     # Find results folder (most recent run generated using that scenario_filename)
     scenario_filename = 'long_run_all_diseases.py'
-    results_folder = outputspath / "long_run_all_diseases-2022-12-06T144559Z"
+    results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
 
     apply(results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
