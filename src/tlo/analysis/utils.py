@@ -1021,11 +1021,12 @@ def plot_stacked_bar_chart(
     ax.legend()
 
 
-def plot_clustered_stacked(dfall, ax, color_for_column_map=None, legends=True, H="/", **kwargs):
+def plot_clustered_stacked(dfall, ax, color_for_column_map=None, scaled=False, legends=True, H="/", **kwargs):
     """Given a dict of dataframes, with identical columns and index, create a clustered stacked bar plot.
     * H is the hatch used for identification of the different dataframe.
     * color_for_column_map should return a color for every column in the dataframes
     * legends=False, suppresses generation of the legends
+    With `scaled=True`, the height of the stacked-bar is scaled to 1.0.
     From: https://stackoverflow.com/questions/22787209/how-to-have-clusters-of-stacked-bars"""
 
     n_df = len(dfall)
@@ -1033,6 +1034,9 @@ def plot_clustered_stacked(dfall, ax, color_for_column_map=None, legends=True, H
     n_ind = len(list(dfall.values())[0].index)
 
     for i, df in enumerate(dfall.values()):  # for each data frame
+        if scaled:
+            df = df.apply(lambda row: (row / row.sum()).fillna(0.0), axis=1)
+
         ax = df.plot.bar(
             stacked=True,
             ax=ax,

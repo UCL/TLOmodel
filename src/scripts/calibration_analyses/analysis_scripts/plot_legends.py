@@ -25,9 +25,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig, ax = plt.subplots()
         for i, (_label, _color) in enumerate(zip(labels, colors)):
             ax.bar(i, np.nan, color=_color, label=_label)
-        ax.legend(fontsize=14, ncol=2, loc='center')
+        ax.legend(fontsize=12, ncol=2, loc='center')
         ax.axis('off')
         ax.set_title(title, fontsize=14)
+        fig.tight_layout()
         fig.savefig(output_folder / f"{PREFIX_ON_FILENAME}_{title.replace(' ', '_')}.png")
         return fig, ax
 

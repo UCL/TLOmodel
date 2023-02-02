@@ -165,33 +165,43 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             _dat = {_dat: outcome_by_age_pt[_dat].loc[sex].loc[:, pd.IndexSlice['mean']].pipe(_sort_columns)
                     for _dat in outcome_by_age_pt.keys()}
 
-            fig, ax = plt.subplots()
-            plot_clustered_stacked(ax=ax,
-                                   dfall=_dat,
-                                   color_for_column_map=get_color_cause_of_death_or_daly_label,
-                                   legends=False,
-                                   H='',
-                                   edgecolor='black',
-                                   linewidth=0.4,
-                                   )
-            ax.set_title(f'{sexname(sex)}, {period}', fontsize=18)
-            ax.set_xlabel('Age Group')
-            ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
-            ax.set_ylabel(f"{what} per year\n(thousands)")
-            ax.set_ylim([0, 25_000])
-            ax.set_yticks(np.arange(0, 25_000, 5_000))
-            ax.grid(axis='y')
+            for scaled in (False, True):
+                fig, ax = plt.subplots()
+                plot_clustered_stacked(ax=ax,
+                                       dfall=_dat,
+                                       color_for_column_map=get_color_cause_of_death_or_daly_label,
+                                       scaled=scaled,
+                                       legends=False,
+                                       H='',
+                                       edgecolor='black',
+                                       linewidth=0.4,
+                                       )
+                ax.set_title(f'{sexname(sex)}, {period}', fontsize=18)
+                ax.set_xlabel('Age Group')
+                ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
+                ax.set_ylabel(f"{what} per year\n(thousands)")
+                if scaled:
+                    ax.set_ylim([0, 1.05])
+                    ax.set_xlim([0, 17.5])
+                else:
+                    ax.set_ylim([0, 25_000])
+                    ax.set_yticks(np.arange(0, 25_000, 5_000))
+                    ax.grid(axis='y')
 
-            # Create figure legend and remove duplicated entries, but keep the first entries
-            handles, labels = ax.get_legend_handles_labels()
-            lgd = dict()
-            for k, v in zip(labels, handles):
-                lgd.setdefault(k, v)
-            ax.legend(reversed(lgd.values()), reversed(lgd.keys()), loc="upper right", ncol=2, fontsize=8)
+                # Create figure legend and remove duplicated entries, but keep the first entries
+                handles, labels = ax.get_legend_handles_labels()
+                lgd = dict()
+                for k, v in zip(labels, handles):
+                    lgd.setdefault(k, v)
+                ax.legend(reversed(lgd.values()), reversed(lgd.keys()), loc="upper right", ncol=2, fontsize=8)
 
-            fig.tight_layout()
-            fig.savefig(make_graph_file_name(f"{what}_{period}_{sex}_StackedBars_ModelvsGBD"))
-            ax.text(5.2, 11_000, 'GBD || Model', horizontalalignment='left',  verticalalignment='bottom', fontsize=8)
+                fig.tight_layout()
+                fig.savefig(make_graph_file_name(
+                    f"{what}_{period}_{sex}_StackedBars_ModelvsGBD_{'scaled' if scaled else ''}"))
+
+            # ax.text(5.2, 11_000, 'GBD || Model', horizontalalignment='left',  verticalalignment='bottom', fontsize=8)
+            ax.legend().set_visible(False)
+
             fig.show()
             plt.close(fig)
 
