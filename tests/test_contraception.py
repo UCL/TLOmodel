@@ -395,6 +395,67 @@ def test_occurrence_of_HSI_for_maintaining_on_and_switching_to_methods(tmpdir, s
     assert not len(sim.modules['HealthSystem'].find_events_for_person(person_id))
 
 
+def test_record_of_appt_footprint_for_switching_to_methods(tmpdir, seed):
+    """Check HSI for a person switching to a contraceptive are scheduled as expected.
+    Furthermore, the right appointment footprints are recorded."""
+
+    # Create a simulation that has run for zero days with no consumable and clear the event queue
+    sim = run_sim(tmpdir,
+                  seed=seed,
+                  use_healthsystem=True,
+                  disable=False,
+                  consumables_available=True,
+                  end_date=Date(2010, 1, 1)
+                  )
+    sim.event_queue.queue = []
+    sim.modules['HealthSystem'].reset_queue()
+
+    # Let there be no chance of discontinuing and 100% chance of switching from pill to injections
+    pp = sim.modules['Contraception'].processed_params
+    pp['p_stop_per_month'] = zero_param(pp['p_stop_per_month'])
+    pp['p_switch_from_per_month']['pill'] = 1.0
+    pp['p_switching_to']['pill'] = 0
+    pp['p_switching_to'].loc['injections', 'pill'] = 1.0
+
+    # Set that person_id=0 is a woman on "pill" for about one month
+    # who is now switching to "injections"
+    person_id = 0
+    df = sim.population.props
+    original_props = {
+        'sex': 'F',
+        'age_years': 30,
+        'date_of_birth': sim.date - pd.DateOffset(years=30),
+        'co_contraception': 'pill',  # <-- to switch to injections
+        'is_pregnant': False,
+        'date_of_last_pregnancy': pd.NaT,
+        'co_unintended_preg': False,
+        'co_date_of_last_fp_appt': sim.date - pd.DateOffset(months=1)  # <-- to facilitate monthly poll
+    }
+    df.loc[person_id, original_props.keys()] = original_props.values()
+
+    # Run the ContraceptivePoll
+    poll = contraception.ContraceptionPoll(module=sim.modules['Contraception'])
+    poll.apply(sim.population)
+
+    # Confirm that an HSI_FamilyPlanningAppt has been made for her as by 100% she is switching to injections
+    events = sim.modules['HealthSystem'].find_events_for_person(person_id)
+    assert 1 == len(events)
+    ev = events[0]
+    assert isinstance(ev[1], contraception.HSI_Contraception_FamilyPlanningAppt)
+
+    # Run that HSI_FamilyPlanningAppt and confirm her state has changed to injections
+    sim.date = ev[0]
+    ev[1].apply(person_id=person_id, squeeze_factor=0.0)
+
+    df = sim.population.props  # update shortcut df
+    assert df.at[person_id, 'co_date_of_last_fp_appt'] == sim.date
+    assert df.at[person_id, 'co_contraception'] == 'injections'
+
+    # further check the appt footprint
+    appt_footprint = pd.DataFrame.from_dict(ev[1].EXPECTED_APPT_FOOTPRINT, orient='index')
+    # add necessary assertions
+
+
 @pytest.mark.slow
 def test_defaulting_off_method_if_no_healthsystem_or_consumable_at_individual_level(tmpdir, seed):
     """Check that if someone is on a method that requires an HSI and consumable for maintenance, but that HSI do not
