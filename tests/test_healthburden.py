@@ -260,7 +260,7 @@ def test_arithmetic_of_disability_aggregation_calcs(seed):
         'DiseaseThatCausesA', 'DiseaseThatCausesB', 'DiseaseThatCausesAandB', 'DiseaseThatCausesNothing',
         'DiseaseThatCausesC1', 'DiseaseThatCausesC2'])
 
-    yld = hb.YearsLivedWithDisability.sum()
+    yld = hb.years_lived_with_disability.sum()
 
     # check that dalys for A and B are being aggregated appropriately despite being declared in multiple modules
     # nb. the record is only for one month.
@@ -335,8 +335,8 @@ def test_arithmetic_of_dalys_calcs(seed):
 
     # Examine YLL, YLD and DALYS for 'A' recorded at the end of the simulation
     hb = sim.modules['HealthBurden']
-    yld = hb.YearsLivedWithDisability.sum()
-    yll = hb.YearsLifeLost.sum()
+    yld = hb.years_lived_with_disability.sum()
+    yll = hb.years_life_lost.sum()
     dalys = hb.compute_dalys()[0].sum()
 
     daly_wt = sim.modules['DiseaseThatCausesA'].daly_wt
@@ -371,7 +371,7 @@ def test_airthmetic_of_lifeyearslost(seed, tmpdir):
 
     # Get pointer to internal storage of life-years lost
     hb = sim.modules['HealthBurden']
-    yll = hb.YearsLifeLost
+    yll = hb.years_life_lost
 
     # check that no life-years-lost
     assert yll.sum().sum() == 0.0

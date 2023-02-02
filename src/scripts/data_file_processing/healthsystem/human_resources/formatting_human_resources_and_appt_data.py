@@ -1198,6 +1198,47 @@ new_appt_for_CHW = pd.Series(index=data_import.index,
 data_import = pd.concat([data_import, new_appt_for_CHW], axis=1)
 assert data_import.loc['HP', :].sum() == 10.0
 
+# We further create a new appointment type for pharmacy dispensing service that requires 5-minute working time
+# from P03-Pharm Assist at facilities at levels 1a, 1b and 2, and 5 minutes from P02-Pharm Technician at
+# central hospitals at level 3
+new_appt_for_pharmdispensing_p03 = pd.Series(index=data_import.index,
+                                             name='P03_PharmDispensing',
+                                             data=[
+                                                   0,  # Central Hosp - Time
+                                                   0,  # Central Hosp - Percent
+                                                   5.0,  # District Hosp - Time
+                                                   1.0,  # District Hosp - Percent
+                                                   5.0,  # Comm Hosp - Time
+                                                   1.0,  # Comm Hosp - Percent
+                                                   5.0,  # Urban Health Centre - Time
+                                                   1.0,  # Urban Health Centre - Percent
+                                                   5.0,  # Rural Health Centre - Time
+                                                   1.0,  # Rural Health Centre - Percent
+                                                   0.0,  # Health Post - Time
+                                                   0.0,  # Health Post - Percent
+                                                   5.0,  # Dispensary - Time
+                                                   1.0,  # Dispensary - Percent
+                                                   ])
+new_appt_for_pharmdispensing_p02 = pd.Series(index=data_import.index,
+                                             name='P02_PharmDispensing',
+                                             data=[
+                                                   5.0,  # Central Hosp - Time
+                                                   1.0,  # Central Hosp - Percent
+                                                   0.0,  # District Hosp - Time
+                                                   0.0,  # District Hosp - Percent
+                                                   0.0,  # Comm Hosp - Time
+                                                   0.0,  # Comm Hosp - Percent
+                                                   0.0,  # Urban Health Centre - Time
+                                                   0.0,  # Urban Health Centre - Percent
+                                                   0.0,  # Rural Health Centre - Time
+                                                   0.0,  # Rural Health Centre - Percent
+                                                   0.0,  # Health Post - Time
+                                                   0.0,  # Health Post - Percent
+                                                   0.0,  # Dispensary - Time
+                                                   0.0,  # Dispensary - Percent
+                                                   ])
+data_import = pd.concat([data_import, new_appt_for_pharmdispensing_p03, new_appt_for_pharmdispensing_p02], axis=1)
+
 # We now do not add service time for DHO as we think DHO does not deliver services directly
 # Also, DHO itself in both DHIS2 and CHAI updated data does not have service record
 
@@ -1242,6 +1283,10 @@ appt_types_table.loc[appt_types_table['Appt_Type_Code'] == new_appt_for_CHW.name
     new_appt_for_CHW.name.split('_')[1]
 appt_types_table.loc[appt_types_table['Appt_Type_Code'] == new_appt_for_CHW.name.split('_')[1], 'Appt_Type'] = \
     new_appt_for_CHW.name.split('_')[1]
+appt_types_table.loc[appt_types_table['Appt_Type_Code'] == new_appt_for_pharmdispensing_p03.name.split('_')[1],
+                     'Appt_Cat'] = new_appt_for_pharmdispensing_p03.name.split('_')[1]
+appt_types_table.loc[appt_types_table['Appt_Type_Code'] == new_appt_for_pharmdispensing_p03.name.split('_')[1],
+                     'Appt_Type'] = new_appt_for_pharmdispensing_p03.name.split('_')[1]
 
 # drop the merge check column
 appt_types_table.drop(columns='_merge', inplace=True)
