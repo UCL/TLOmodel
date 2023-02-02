@@ -1551,21 +1551,23 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
             # extract annual testing rates from MoH Reports
             test_rates = p["hiv_testing_rates"]
 
-            testing_rate_children = test_rates.loc[
-                test_rates.year == current_year, "annual_testing_rate_children"
-            ].values[0]
+            # todo reduce testing rates to account for multiple routes into testing
+            # todo remove testing rates for children as they're picked up through newborn care or symptoms
+            # testing_rate_children = test_rates.loc[
+            #     test_rates.year == current_year, "annual_testing_rate_children"
+            # ].values[0]
             testing_rate_adults = test_rates.loc[
                 test_rates.year == current_year, "annual_testing_rate_adults"
-            ].values[0]
+            ].values[0] * 0.75
 
             # relative probability of testing - this may skew testing rates higher or lower than moh reports
-            rr_of_test = self.module.lm["lm_spontaneous_test_12m"].predict(df[df.is_alive & (df.age_years < 15)])
-            mean_prob_test = (rr_of_test * testing_rate_children).mean()
-            scaled_prob_test = (rr_of_test * testing_rate_children) / mean_prob_test
-            overall_prob_test = scaled_prob_test * testing_rate_children
-
-            random_draw = rng.random_sample(size=len(df[df.is_alive & (df.age_years < 15)]))
-            child_tests_idx = df.loc[df.is_alive & (df.age_years < 15) & (random_draw < overall_prob_test)].index
+            # rr_of_test = self.module.lm["lm_spontaneous_test_12m"].predict(df[df.is_alive & (df.age_years < 15)])
+            # mean_prob_test = (rr_of_test * testing_rate_children).mean()
+            # scaled_prob_test = (rr_of_test * testing_rate_children) / mean_prob_test
+            # overall_prob_test = scaled_prob_test * testing_rate_children
+            #
+            # random_draw = rng.random_sample(size=len(df[df.is_alive & (df.age_years < 15)]))
+            # child_tests_idx = df.loc[df.is_alive & (df.age_years < 15) & (random_draw < overall_prob_test)].index
 
             # adult testing trends also informed by demographic characteristics
             # relative probability of testing - this may skew testing rates higher or lower than moh reports
@@ -1577,7 +1579,9 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
             random_draw = rng.random_sample(size=len(df[df.is_alive & (df.age_years >= 15)]))
             adult_tests_idx = df.loc[df.is_alive & (df.age_years >= 15) & (random_draw < overall_prob_test)].index
 
-            idx_will_test = child_tests_idx.union(adult_tests_idx)
+            # idx_will_test = child_tests_idx.union(adult_tests_idx)
+            # todo remove
+            idx_will_test = adult_tests_idx
 
             for person_id in idx_will_test:
                 date_test = self.sim.date + pd.DateOffset(
@@ -3010,6 +3014,10 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[df.is_alive & (df.sex == "M") & (df.age_years >= 15) & df.li_is_circ]
         ) / len(df[df.is_alive & (df.sex == "M") & (df.age_years >= 15)]) if len(
             df[df.is_alive & (df.sex == "M") & (df.age_years >= 15)]) else 0
+
+        # todo remove
+        print("diagnosed", dx_adult)
+        print("on art", art_cov_adult)
 
         logger.info(
             key="hiv_program_coverage",
