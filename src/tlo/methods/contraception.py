@@ -537,7 +537,15 @@ class Contraception(Module):
         date_today = self.sim.date
         days_between_appts = self.parameters['days_between_appts_for_maintenance']
 
-        date_of_last_appt = df.loc[ids, "co_date_of_last_fp_appt"].to_dict()
+        # date_of_last_appt = df.loc[ids, "co_date_of_last_fp_appt"].to_dict()
+        if isinstance(ids, int):  # if there is only one person id
+            date_of_last_appt = {ids: df.loc[ids, "co_date_of_last_fp_appt"]}
+            # turn int ids to a list that is iterable
+            ids_list = []
+            ids_list = [ids]
+            ids = ids_list
+        else:
+            date_of_last_appt = df.loc[ids, "co_date_of_last_fp_appt"].to_dict()
 
         for _woman_id, _old, _new in zip(ids, old, new):
             # Does this change require an HSI?
