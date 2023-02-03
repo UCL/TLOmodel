@@ -158,8 +158,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # %% Make figures of overall summaries of outcomes by cause
         def _sort_columns(df):
             """ Reverse the standard order of the columns so that 'Other' is at base"""
-            return df[reversed(order_of_cause_of_death_or_daly_label(df.columns))]  #
-            return df[reversed(sorted(df.columns, key=order_of_cause_of_death_label))]  #
+            return df.sort_index(axis=1, key=order_of_cause_of_death_or_daly_label, ascending=False)
 
         for sex in sexes:
             _dat = {_dat: outcome_by_age_pt[_dat].loc[sex].loc[:, pd.IndexSlice['mean']].pipe(_sort_columns)
@@ -179,14 +178,19 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 ax.set_title(f'{sexname(sex)}, {period}', fontsize=18)
                 ax.set_xlabel('Age Group')
                 ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
-                ax.set_ylabel(f"{what} per year\n(thousands)")
+
                 if scaled:
                     ax.set_ylim([0, 1.05])
                     ax.set_xlim([0, 17.5])
                 else:
-                    ax.set_ylim([0, 25_000])
-                    ax.set_yticks(np.arange(0, 25_000, 5_000))
                     ax.grid(axis='y')
+                    if what == 'Deaths':
+                        ax.set_ylabel(f"{what} per year\n")
+                        ax.set_ylim([0, 25_000])
+                        ax.set_yticks(np.arange(0, 25_000, 5_000))
+                    else:
+                        ax.set_ylabel(f"{what} per year\n")
+
 
                 # Create figure legend and remove duplicated entries, but keep the first entries
                 handles, labels = ax.get_legend_handles_labels()
@@ -309,21 +313,21 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # %% Assess the "coverage" of the model: i.e. the fraction of deaths/dalys that are causes that are represented
         # the model.
 
-        # Causes of death not in the model and the fraction of total deaths they cause
+        # Causes of death/dalys not in the model and the fraction of total deaths they cause
         unmodelled_causes = gbd \
             .loc[(period == period) & (gbd['measure_name'] == what)] \
-            .assign(frac_deaths=lambda df: df['mean'] / df['mean'].sum()) \
-            .groupby(by=['cause_name', 'label'])['frac_deaths'].sum() \
+            .assign(frac_cause=lambda df: df['mean'] / df['mean'].sum()) \
+            .groupby(by=['cause_name', 'label'])['frac_cause'].sum() \
             .sort_values(ascending=False) \
             .pipe(lambda df: df.loc[(slice(None), "Other")])
 
-        top_five_causes_of_death_not_modelled = ''.join([
+        top_five_causes_not_modelled = ''.join([
             f"* {_cause} ({round(100 * _percent_deaths, 1)}%)\n"
             for _cause, _percent_deaths in unmodelled_causes[0:10].iteritems() if _percent_deaths >= 0.005
         ])
 
         outcomes = outcome_by_age_pt['GBD'][("mean")]
-        fraction_causes_modelled = 1.0 - outcomes['Other'] / outcomes.sum(axis=1)
+        fraction_causes_modelled = (1.0 - outcomes['Other'] / outcomes.sum(axis=1))
         fig, ax = plt.subplots()
         for sex in sexes:
             fraction_causes_modelled.loc[(sex, slice(None))].droplevel(0).plot(
@@ -342,7 +346,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.set_xlabel('Age-Group')
         ax.set_ylabel('Fraction')
         ax.set_title(f"Fraction of {what} Represented in the Model")
-        ax.text(x=0.5, y=0.05, s=('Main causes not included explicitly:\n\n' + top_five_causes_of_death_not_modelled),
+        ax.text(x=0.5, y=0.05, s=('Main causes not included explicitly:\n\n' + top_five_causes_not_modelled),
                 bbox={'edgecolor': 'r', 'facecolor': 'w'})
         fig.tight_layout()
         plt.savefig(make_graph_file_name(f"C_{what}_{period}_coverage"))
@@ -350,11 +354,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         plt.close(fig)
 
     # %% Make graphs for each of Deaths and DALYS for a specific period
-    # make_std_graphs(what='Deaths', period='2010-2014')
-    make_std_graphs(what='DALYs', period='2010-2014')  # <-- todo colormapping and order for DALYS
+    make_std_graphs(what='Deaths', period='2010-2014')
+    make_std_graphs(what='DALYs', period='2010-2014')
 
-    # make_std_graphs(what='Deaths', period='2015-2019')
-    # make_std_graphs(what='DALYs', period='2015-2019')  # <-- todo colormapping and order for DALYS
+    make_std_graphs(what='Deaths', period='2015-2019')
+    make_std_graphs(what='DALYs', period='2015-2019')
+    
 
 
 if __name__ == "__main__":
