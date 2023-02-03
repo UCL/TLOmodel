@@ -1285,14 +1285,15 @@ class Hiv(Module):
                 priority=0,
             )
 
-        else:
-            # refer for another test in 6 months
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                HSI_Hiv_TestAndRefer(person_id=person_id, module=self, referred_from="HSI_Hiv_TestAndRefer"),
-                topen=self.sim.date + pd.DateOffset(months=6),
-                tclose=None,
-                priority=0,
-            )
+        # todo no re-test if decline ART
+        # else:
+        #     # refer for another test in 6 months
+        #     self.sim.modules["HealthSystem"].schedule_hsi_event(
+        #         HSI_Hiv_TestAndRefer(person_id=person_id, module=self, referred_from="HSI_Hiv_TestAndRefer"),
+        #         topen=self.sim.date + pd.DateOffset(months=6),
+        #         tclose=None,
+        #         priority=0,
+        #     )
 
     def prob_art_start_after_test(self, year):
         """ returns the probability of starting ART after a positive HIV test

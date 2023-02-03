@@ -23,7 +23,7 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
+end_date = Date(2016, 1, 1)
 popsize = 1000
 # todo check if deviance_measure needed in fullmodel.py
 scenario = 0
@@ -38,6 +38,7 @@ log_config = {
         "tlo.methods.tb": logging.INFO,
         "tlo.methods.demography": logging.INFO,
         # "tlo.methods.healthsystem.summary": logging.INFO,
+        "tlo.methods.labour.detail": logging.WARNING,  # this logger keeps outputting even when set to warning
     },
 }
 
