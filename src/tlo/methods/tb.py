@@ -2616,10 +2616,6 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[(df.tb_date_active >= (now - DateOffset(months=self.repeat)))]
         )
 
-        scheduled_tb_cases = len(
-            df[(df.tb_scheduled_date_active >= (now - DateOffset(months=self.repeat)))]
-        )
-
         # number of latent cases
         new_latent_cases = len(
             df[(df.tb_date_latent >= (now - DateOffset(months=self.repeat)))]
