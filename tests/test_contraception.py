@@ -61,7 +61,8 @@ def run_sim(tmpdir,
         'custom_levels': {
             "*": logging.WARNING,
             "tlo.methods.contraception": logging.INFO,
-            "tlo.methods.demography": logging.INFO
+            "tlo.methods.demography": logging.INFO,
+            'tlo.methods.healthsystem.summary': logging.INFO
         }
     }
 
@@ -702,7 +703,7 @@ def test_record_of_appt_footprint_and_schedule_of_hsi_when_no_available_consumab
     assert ev[1]._number_of_times_reschedule == 0
     assert 'FamPlan' in list(appt_footprint_0.index)
     # store expected time requests
-    appt_time_0 = pd.DataFrame.from_dict(ev[1].expected_time_requests, orient='index')
+    # appt_time_0 = pd.DataFrame.from_dict(ev[1].expected_time_requests, orient='index')
     # and check that the state has not been changed yet because the HSI is only scheduled but not applied
     df = sim.population.props
     assert df.at[person_id, 'co_contraception'] == 'pill'
