@@ -203,18 +203,8 @@ class Measles(Module):
         """Process the parameters (following being read-in) prior to the simulation starting.
         Make `self.symptom_probs` to be a dictionary keyed by age, with values of dictionaries keyed by symptoms and
         the probability of symptom onset."""
-        pd.set_option("display.precision", 8)
-        print("This is when I am about to process")
-        print(self.parameters["symptom_prob"])
-        print("Check single prob ")
-        df = self.parameters["symptom_prob"]
-        print(df.loc[df["symptom"] == "respiratory_symptoms"])
         probs = self.parameters["symptom_prob"].set_index(["age", "symptom"])["probability"]
-        print("These are the probs")
-        print(probs)
         self.symptom_probs = {level: probs.loc[(level, slice(None))].to_dict() for level in probs.index.levels[0]}
-        print("These are ALL symptoms probs")
-        print(self.symptom_probs)
         # Check that a sensible value for a probability of symptom onset is declared for each symptom and for each age
         # up to and including age 30
         for _age in range(30 + 1):
@@ -345,12 +335,6 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
             ) if _rand < _prob
         ]
 
-        if _age < 5:
-            print("My age is", _age)
-            print(symptoms_to_onset)
-            assert not 'respiratory_symptoms' in symptoms_to_onset
-
-
         # schedule symptoms onset
         self.sim.modules["SymptomManager"].change_symptom(
             person_id=person_id,
@@ -399,7 +383,6 @@ class MeaslesDeathEvent(Event, IndividualScopeEventMixin):
     """
     Performs the Death operation on an individual and logs it.
     """
-
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
@@ -408,6 +391,8 @@ class MeaslesDeathEvent(Event, IndividualScopeEventMixin):
 
         if not df.at[person_id, "is_alive"]:
             return
+
+        assert df.at[person_id, "age_years"] >= 5, "Deaths for <5yo handled by alri module"
 
         # reduction in risk of death if being treated for measles complications
         # check still infected (symptoms not resolved)
