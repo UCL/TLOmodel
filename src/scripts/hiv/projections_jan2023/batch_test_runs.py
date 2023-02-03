@@ -2,7 +2,7 @@
 This file defines a batch run through which the hiv and tb modules are run across a set of parameter values
 
 check the batch configuration gets generated without error:
-tlo scenario-run --draw-only src/scripts/hiv/deviance_for_calibration/calibration_script.py
+tlo scenario-run --draw-only src/scripts/hiv/projections_jan2023/batch_test_runs.py
 
 Test the scenario starts running without problems:
 tlo scenario-run src/scripts/hiv/deviance_for_calibration/calibration_script.py
