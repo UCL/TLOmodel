@@ -67,10 +67,12 @@ class Contraception(Module):
         'Prob_Switch_From_And_To': Parameter(Types.DATA_FRAME,
                                              'The probability of switching to a new method, by method, conditional that'
                                              ' the woman will switch to a new method.'),
-        'days_between_appts_for_maintenance': Parameter(Types.INT,
+        'days_between_appts_for_maintenance': Parameter(Types.LIST,
                                                         'The number of days between successive family planning '
                                                         'appointments for women that are maintaining the use of a '
-                                                        'method.'),
+                                                        'method (for each method in'
+                                                        'sorted(self.states_that_may_require_HSI_to_maintain_on), i.e.'
+                                                        '[IUD, implant, injections, other_modern, pill]).'),
         'age_specific_fertility_rates': Parameter(
             Types.DATA_FRAME, 'Data table from official source (WPP) for age-specific fertility rates and calendar '
                               'period'),
@@ -110,7 +112,7 @@ class Contraception(Module):
                                             'determine if a Family Planning appointment is needed to maintain the '
                                             'person on their current contraceptive. If the person is to maintain use of'
                                             ' the current contraceptive, they will have an HSI only if the days elapsed'
-                                            ' since this value exceeds the parameter '
+                                            ' since this value exceeds the method-specific parameter '
                                             '`days_between_appts_for_maintenance`.'
                                             )
     }
@@ -188,12 +190,16 @@ class Contraception(Module):
 
         # 3) Give a notional date on which the last appointment occurred for those that need them
         needs_appts = females1549 & df['co_contraception'].isin(self.states_that_may_require_HSI_to_maintain_on)
-        df.loc[needs_appts, 'co_date_of_last_fp_appt'] = pd.Series([
-            random_date(
-                self.sim.date - pd.DateOffset(days=self.parameters['days_between_appts_for_maintenance']),
+        states_to_maintain_on = sorted(self.states_that_may_require_HSI_to_maintain_on)
+        df.loc[needs_appts, 'co_date_of_last_fp_appt'] = df.loc[needs_appts, 'co_contraception'].astype('string').apply(
+            lambda _co_contraception: random_date(
+                self.sim.date - pd.DateOffset(
+                    days=self.parameters['days_between_appts_for_maintenance']
+                    [states_to_maintain_on.index(_co_contraception)]),
                 self.sim.date - pd.DateOffset(days=1),
-                self.rng) for _ in range(len(needs_appts))
-        ])
+                self.rng
+            )
+        )
 
     def initialise_simulation(self, sim):
         """
@@ -226,7 +232,7 @@ class Contraception(Module):
         """
         df = self.sim.population.props
 
-        if mother_id != -1:
+        if mother_id >= 0:  # check if direct birth look for positive mother ids
             self.end_pregnancy(person_id=mother_id)
 
         # Initialise child's properties:
@@ -537,6 +543,7 @@ class Contraception(Module):
         date_today = self.sim.date
         days_between_appts = self.parameters['days_between_appts_for_maintenance']
 
+        states_to_maintain_on = sorted(self.states_that_may_require_HSI_to_maintain_on)
         # date_of_last_appt = df.loc[ids, "co_date_of_last_fp_appt"].to_dict()
         if isinstance(ids, int):  # if there is only one person id
             date_of_last_appt = {ids: df.loc[ids, "co_date_of_last_fp_appt"]}
@@ -548,13 +555,17 @@ class Contraception(Module):
             date_of_last_appt = df.loc[ids, "co_date_of_last_fp_appt"].to_dict()
 
         for _woman_id, _old, _new in zip(ids, old, new):
+            # if _new == 'female_sterilization':
+            #     assert df.loc[_woman_id, 'age_years'] >= 30
             # Does this change require an HSI?
             is_a_switch = _old != _new
             reqs_appt = _new in self.states_that_may_require_HSI_to_switch_to if is_a_switch \
                 else _new in self.states_that_may_require_HSI_to_maintain_on
-            due_appt = pd.isnull(date_of_last_appt[_woman_id]) or (
-                (date_today - date_of_last_appt[_woman_id]).days >= days_between_appts
-            )
+            if (not is_a_switch) & reqs_appt:
+                due_appt = (pd.isnull(date_of_last_appt[_woman_id]) or
+                            (date_today - date_of_last_appt[_woman_id]).days >=
+                            days_between_appts[states_to_maintain_on.index(_old)]
+                            )
             do_appt = self.use_healthsystem and reqs_appt and (is_a_switch or due_appt)
 
             # If the new method requires an HSI to be implemented, schedule the HSI:
@@ -609,15 +620,17 @@ class Contraception(Module):
         no women are pregnant, so the first births generated endogenously (through pregnancy -> gestation -> labour)
         occur after 9 months of simulation time. This method examines age-specific fertility rate data and causes there
         to be the appropriate number of births, scattered uniformly over the first 9 months of the simulation. These are
-         "direct live births" that are not subjected to any of the processes (e.g. risk of loss of pregnancy, or risk
-         of death to mother) represented in the `PregnancySupervisor`, `CareOfWomenDuringPregnancy` or `Labour`."""
+        "direct live births" that are not subjected to any of the processes (e.g.  isk of loss of pregnancy, or risk of
+        death to mother) represented in the `PregnancySupervisor`, `CareOfWomenDuringPregnancy` or `Labour`.
+        When initialising population ensured person_id=0 is a man, so can safely exclude person_id=0 from choice of
+        direct birth mothers without loss of generality."""
 
         risk_of_birth = get_medium_variant_asfr_from_wpp_resourcefile(
             dat=self.parameters['age_specific_fertility_rates'], months_exposure=9)
 
         df = self.sim.population.props
-        prob_birth = df.loc[
-            (df.sex == 'F') & df.is_alive & ~df.is_pregnant]['age_range'].map(
+        # don't use person_id=0 for direct birth mother
+        prob_birth = df.loc[(df.index != 0) & (df.sex == 'F') & df.is_alive & ~df.is_pregnant]['age_range'].map(
             risk_of_birth[self.sim.date.year]).fillna(0)
 
         # determine which women will get pregnant
@@ -625,21 +638,22 @@ class Contraception(Module):
             (self.rng.random_sample(size=len(prob_birth)) < prob_birth)
         ]
 
-        # schedule births:
+        # schedule births, passing negative of mother's id:
         for _id in give_birth_women_ids:
-            self.sim.schedule_event(DirectBirth(person_id=None, module=self),
+            self.sim.schedule_event(DirectBirth(person_id=_id * (-1), module=self),
                                     random_date(self.sim.date, self.sim.date + pd.DateOffset(months=9), self.rng)
                                     )
 
 
 class DirectBirth(Event, IndividualScopeEventMixin):
-    """Do birth, with the mother_id set to -1 (we do not associate the child with a particular mother)."""
+    """Do birth, with the mother_id set to person_id*(-1) to reflect that this was a `DirectBirth`."""
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
     def apply(self, person_id):
-        self.sim.do_birth(-1)
+        assert person_id < 0  # check that mother is correctly logged as direct birth mother
+        self.sim.do_birth(person_id)  # use actual id for mother
 
 
 class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
