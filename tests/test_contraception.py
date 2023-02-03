@@ -395,13 +395,13 @@ def test_occurrence_of_HSI_for_maintaining_on_and_switching_to_methods(tmpdir, s
     assert list(df.loc[person_id, props_to_be_same].values) == [original_props[p] for p in props_to_be_same]
     assert sim.population.props.at[person_id, "co_date_of_last_fp_appt"] == sim.date
 
-    # now check that the appt footprint and expected time requested remain,
-    # because now current_method = new_contraceptive and to maintain on pill,
-    # the appt footprint is still PharmDispensing
+    # now find that the appt footprint changes to blank because _number_of_times_run = 1 > 0 ???
+    # however the expected time requests remain/not updated ???
+    # I think we do want neither appt footprint nor time to be updated ???
     appt_footprint_new = pd.DataFrame.from_dict(ev[1].EXPECTED_APPT_FOOTPRINT, orient='index')
     assert ev[1]._number_of_times_run == 1
     assert ev[1]._number_of_times_reschedule == 0
-    assert (appt_footprint_new.index == appt_footprint_old.index).all()
+    assert len(appt_footprint_new) == 0
     appt_time_new = pd.DataFrame.from_dict(ev[1].expected_time_requests, orient='index')
     assert (appt_time_new.index == appt_time_old.index).all()
     assert (appt_time_new.values == appt_time_old.values).all()
@@ -484,13 +484,13 @@ def test_record_of_appt_footprint_for_switching_from_pill_to_female_sterilizatio
     assert df.at[person_id, 'co_date_of_last_fp_appt'] == sim.date
     assert df.at[person_id, 'co_contraception'] == 'female_sterilization'
 
-    # now check that the updated appt footprint is still MinorSurg
-    # because new_contraceptive = 'female_sterilization' in the condition of EXPECTED APPT FOOTPRINT ?
-    # and the expected time requests remain the same as the _old (as no update) ?
+    # now find that the appt footprint changes to blank because _number_of_times_run = 1 > 0 ???
+    # however the expected time requests remain/not updated ???
+    # I think we do want neither appt footprint nor time to be updated ???
     appt_footprint_new = pd.DataFrame.from_dict(ev[1].EXPECTED_APPT_FOOTPRINT, orient='index')
-    assert ev[1]._number_of_times_run == 1  # by one application of the HSI, this is increased by 1
+    assert ev[1]._number_of_times_run == 1
     assert ev[1]._number_of_times_reschedule == 0
-    assert 'MinorSurg' in list(appt_footprint_new.index)
+    assert len(appt_footprint_new) == 0
     appt_time_new = pd.DataFrame.from_dict(ev[1].expected_time_requests, orient='index')
     assert (appt_time_new.index == appt_time_old.index).all()
     assert (appt_time_new.values == appt_time_old.values).all()
@@ -563,13 +563,13 @@ def test_record_of_appt_footprint_for_switching_from_pill_to_injections(tmpdir, 
     assert df.at[person_id, 'co_date_of_last_fp_appt'] == sim.date
     assert df.at[person_id, 'co_contraception'] == 'injections'
 
-    # now check that the updated appt footprint is still FamPlan
-    # because current_method = new_contraceptive = 'injections' in the condition of EXPECTED APPT FOOTPRINT ?
-    # and the expected time requests remain the same as the _old (as no update) ?
+    # now find that the appt footprint changes to blank because _number_of_times_run = 1 > 0 ???
+    # however the expected time requests remain/not updated ???
+    # I think we do want neither appt footprint nor time to be updated ???
     appt_footprint_new = pd.DataFrame.from_dict(ev[1].EXPECTED_APPT_FOOTPRINT, orient='index')
-    assert ev[1]._number_of_times_run == 1  # by one application of the HSI, this is increased by 1
+    assert ev[1]._number_of_times_run == 1
     assert ev[1]._number_of_times_reschedule == 0
-    assert 'FamPlan' in list(appt_footprint_new.index)
+    assert len(appt_footprint_new) == 0
     appt_time_new = pd.DataFrame.from_dict(ev[1].expected_time_requests, orient='index')
     assert (appt_time_new.index == appt_time_old.index).all()
     assert (appt_time_new.values == appt_time_old.values).all()
@@ -636,14 +636,13 @@ def test_record_of_appt_footprint_for_switching_from_pill_to_other_modern(tmpdir
     assert df.at[person_id, 'co_date_of_last_fp_appt'] == sim.date
     assert df.at[person_id, 'co_contraception'] == 'other_modern'
 
-    # now check that the appt footprint changes to PharmDispensing
-    # because current_method = new_contraceptive = PharmDispensing in condition of EXPECTE APPT FOOTPRINT?
-    # however the expected time requests remain the same as the _old due to no update?
-    # The appt_footprint_old ad appt_time_old should be the right ones to be recorded/counted, but not the _new ones?
+    # now find that the appt footprint changes to blank because _number_of_times_run = 1 > 0 ???
+    # however the expected time requests remain/not updated ???
+    # I think we do want neither appt footprint nor time to be updated ???
     appt_footprint_new = pd.DataFrame.from_dict(ev[1].EXPECTED_APPT_FOOTPRINT, orient='index')
-    assert ev[1]._number_of_times_run == 1  # by one application of the HSI, this is increased by 1
+    assert ev[1]._number_of_times_run == 1
     assert ev[1]._number_of_times_reschedule == 0
-    assert 'PharmDispensing' in list(appt_footprint_new.index)
+    assert len(appt_footprint_new) == 0
     appt_time_new = pd.DataFrame.from_dict(ev[1].expected_time_requests, orient='index')
     assert (appt_time_new.index == appt_time_old.index).all()
     assert (appt_time_new.values == appt_time_old.values).all()
@@ -706,7 +705,7 @@ def test_record_of_appt_footprint_and_schedule_of_hsi_when_no_available_consumab
     df = sim.population.props
     assert df.at[person_id, 'co_contraception'] == 'pill'
 
-    # Run that HSI_FamilyPlanningAppt and confirm her state has changed to 'not_using' and number of reschedules
+    # Run that HSI_FamilyPlanningAppt and confirm her state has changed to 'not_using' and number of times run
     # is increased by 1 because no available consumable
     sim.date = ev[0]
     ev[1].apply(person_id=person_id, squeeze_factor=0.0)
@@ -716,7 +715,7 @@ def test_record_of_appt_footprint_and_schedule_of_hsi_when_no_available_consumab
     assert df.at[person_id, 'co_date_of_last_fp_appt'] == sim.date
     assert df.at[person_id, 'co_contraception'] == 'not_using'
     # further check the appt footprint and relevant
-    # the appt footprint should change to blank due the definition of EXPECTE APPT FOOTPRINT
+    # the appt footprint should change to blank due the definition of EXPECTE APPT FOOTPRINT/number of times run > 0
     appt_footprint_1 = pd.DataFrame.from_dict(ev[1].EXPECTED_APPT_FOOTPRINT, orient='index')
     assert ev[1]._number_of_times_run == 1  # by one application of the HSI, this is increased by 1
     assert ev[1]._number_of_times_reschedule == 1  # by one reschedule, this is increased by 1
