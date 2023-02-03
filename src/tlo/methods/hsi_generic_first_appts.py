@@ -22,6 +22,7 @@ from tlo.methods.care_of_women_during_pregnancy import (
     HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy,
 )
 from tlo.methods.chronicsyndrome import HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment
+from tlo.methods.epilepsy import HSI_Epilepsy_Start_Anti_Epileptic
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.methods.labour import HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour
@@ -419,6 +420,14 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
     # ------ CARDIO-METABOLIC DISORDERS ------
     if 'CardioMetabolicDisorders' in sim.modules:
         sim.modules['CardioMetabolicDisorders'].determine_if_will_be_investigated_events(person_id=person_id)
+
+    if "Epilepsy" in sim.modules:
+        if 'seizures' in symptoms:
+            schedule_hsi(HSI_Epilepsy_Start_Anti_Epileptic(person_id=person_id,
+                                                           module=sim.modules['Epilepsy']),
+                         priority=0,
+                         topen=sim.date,
+                         tclose=None)
 
     # -----  EXAMPLES FOR MOCKITIS AND CHRONIC SYNDROME  -----
     if 'craving_sandwiches' in symptoms:

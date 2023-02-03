@@ -268,7 +268,7 @@ def test_check_progression_through_stages_is_happening(seed):
     assert (df.loc[df.is_alive & (df.age_years >= 15)].bc_status.value_counts().drop(index='none') > 0).all()
 
     # check that some people have died of bladder cancer
-    yll = sim.modules['HealthBurden'].YearsLifeLost
+    yll = sim.modules['HealthBurden'].years_life_lost
     assert yll['BladderCancer'].sum() > 0
 
     # check that people are being diagnosed, going onto treatment and palliative care:
@@ -318,7 +318,7 @@ def test_that_there_is_no_treatment_without_the_hsi_running(seed):
     assert (df.loc[df.is_alive].bc_status.value_counts().drop(index='none') > 0).all()
 
     # check that some people have died of bladder cancer
-    yll = sim.modules['HealthBurden'].YearsLifeLost
+    yll = sim.modules['HealthBurden'].years_life_lost
     assert yll['BladderCancer'].sum() > 0
 
     # w/o healthsystem - check that people are NOT being diagnosed, going onto treatment and palliative care:
@@ -383,5 +383,5 @@ def test_check_progression_through_stages_is_blocked_by_treatment(seed):
 #   assert (df.loc[has_lgd.index[has_lgd].tolist(), "bc_status"] == "tis_t1").all()
 
     # check that no people have died of Bladder cancer
-    yll = sim.modules['HealthBurden'].YearsLifeLost
+    yll = sim.modules['HealthBurden'].years_life_lost
     assert 'YLL_BladderCancer_BladderCancer' not in yll.columns

@@ -682,7 +682,8 @@ APPT_TYPE_TO_COARSE_APPT_TYPE_MAP = MappingProxyType({
     'Mammography': 'Lab / Diagnostics',
     'MRI': 'Lab / Diagnostics',
     'Tomography': 'Lab / Diagnostics',
-    'DiagRadio': 'Lab / Diagnostics'
+    'DiagRadio': 'Lab / Diagnostics',
+    'PharmDispensing': 'Pharm Dispensing'
 })
 
 
@@ -698,7 +699,8 @@ COARSE_APPT_TYPE_TO_COLOR_MAP = MappingProxyType({
     'Mental Health': 'lightsalmon',
     'Surgery / Radiotherapy': 'orange',
     'STI': 'slateblue',
-    'Lab / Diagnostics': 'dodgerblue'
+    'Lab / Diagnostics': 'dodgerblue',
+    'Pharm Dispensing': 'springgreen'
 })
 
 

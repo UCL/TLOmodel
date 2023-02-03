@@ -995,12 +995,7 @@ class Hiv(Module):
 
         # ----------------------------------- MTCT - AT OR PRIOR TO BIRTH --------------------------
         #  DETERMINE IF THE CHILD IS INFECTED WITH HIV FROM THEIR MOTHER DURING PREGNANCY / DELIVERY
-        # if mother_id set to -1 by contraception DirectBirth, randomly sample from female pop
-        mother_id = mother_id if mother_id != -1 else self.rng.choice(
-            df.index[df.is_alive & (df.sex == "F") & (df.age_years > 16)])
-        assert mother_id != -1
-
-        mother = df.loc[mother_id]
+        mother = df.loc[abs(mother_id)]  # Not interested whether true or direct birth
 
         mother_infected_prior_to_pregnancy = mother.hv_inf & (
             mother.hv_date_inf <= mother.date_of_last_pregnancy
@@ -1039,7 +1034,8 @@ class Hiv(Module):
             and (df.at[child_id, "nb_breastfeeding_status"] != "none")
             and mother.hv_inf
         ):
-            self.mtct_during_breastfeeding(mother_id, child_id)
+            # Pass mother's id, whether from true or direct birth
+            self.mtct_during_breastfeeding(abs(mother_id), child_id)
 
         # ----------------------------------- HIV testing --------------------------
         if "CareOfWomenDuringPregnancy" not in self.sim.modules:
@@ -1050,7 +1046,7 @@ class Hiv(Module):
                     self.rng.random_sample() < params["prob_hiv_test_at_anc_or_delivery"]):
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_TestAndRefer(
-                        person_id=mother_id,
+                        person_id=abs(mother_id),  # Pass mother's id, whether from true or direct birth
                         module=self,
                         referred_from='ANC_routine'),
                     priority=1,
@@ -3124,19 +3120,22 @@ def unpack_raw_output_dict(raw_dict):
 
 
 class DummyHivModule(Module):
-    """Dummy HIV Module - it's only job is to create and maintain the 'hv_inf' property.
+    """Dummy HIV Module - it's only job is to create and maintain the 'hv_inf' and 'hv_art' properties.
     This can be used in test files."""
 
     INIT_DEPENDENCIES = {"Demography"}
     ALTERNATIVE_TO = {"Hiv"}
 
     PROPERTIES = {
-        "hv_inf": Property(Types.BOOL, "DUMMY version of the property for hv_inf")
+        "hv_inf": Property(Types.BOOL, "DUMMY version of the property for hv_inf"),
+        "hv_art": Property(Types.CATEGORICAL, "DUMMY version of the property for hv_art.",
+                           categories=["not", "on_VL_suppressed", "on_not_VL_suppressed"]),
     }
 
-    def __init__(self, name=None, hiv_prev=0.1):
+    def __init__(self, name=None, hiv_prev=0.1, art_cov=0.75):
         super().__init__(name)
         self.hiv_prev = hiv_prev
+        self.art_cov = art_cov
 
     def read_parameters(self, data_folder):
         pass
@@ -3144,9 +3143,12 @@ class DummyHivModule(Module):
     def initialise_population(self, population):
         df = population.props
         df.loc[df.is_alive, "hv_inf"] = self.rng.rand(sum(df.is_alive)) < self.hiv_prev
+        df.loc[df.is_alive, "hv_art"] = pd.Series(
+            self.rng.rand(sum(df.is_alive)) < self.art_cov).replace({True: "on_VL_suppressed", False: "not"}).values
 
     def initialise_simulation(self, sim):
         pass
 
     def on_birth(self, mother, child):
         self.sim.population.props.at[child, "hv_inf"] = self.rng.rand() < self.hiv_prev
+        self.sim.population.props.at[child, "hv_art"] = "on_VL_suppressed" if self.rng.rand() < self.art_cov else "not"
