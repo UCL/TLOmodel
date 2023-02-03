@@ -864,7 +864,7 @@ class Hiv(Module):
             date_test = self.sim.date + pd.DateOffset(days=self.rng.randint(0, 60))
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 hsi_event=HSI_Hiv_TestAndRefer(
-                person_id=person_id, module=self, referred_from="initialise_simulation"),
+                    person_id=person_id, module=self, referred_from="initialise_simulation"),
                 priority=1,
                 topen=date_test,
                 tclose=self.sim.date + pd.DateOffset(days=365),
