@@ -1,17 +1,21 @@
 """
 This scenario runs the full model under a set of scenario in which each one TREATMENT_ID is excluded.
 
+This version of the scenario represents actual healthcare capacity/performance and normal healthcare seeking.
+
+
 * No spurious symptoms
-* Appts Constraints: Mode 0 (No Constraints)
-* Consumables Availability: All
+* Appts Constraints: Mode 0 (No Constraints - so can estimate total demand for appointments)
+* use_funded_or_actual_staffing = 'funded_plus' (so can estimate total demand for appointments)
+* Consumables Availability: Default
 * Health care seeking as per defaults
 
 Run on the batch system using:
-```tlo batch-submit src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_effect_of_each_treatment.py```
+```tlo batch-submit src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_effect_of_each_treatment_min.py```
 
 or locally using:
-    ```tlo scenario-run src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_effect_of_each_treatment.py
-    ```
+```tlo scenario-run src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_effect_of_each_treatment_min.py
+ ```
 
 """
 from pathlib import Path
@@ -57,7 +61,7 @@ class EffectOfEachTreatment(BaseScenario):
         return {
             'HealthSystem': {
                 'Service_Availability': list(self._scenarios.values())[draw_number],
-                'cons_availability': 'all',
+                'cons_availability': 'default',
                 },
         }
 

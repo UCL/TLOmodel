@@ -1,17 +1,21 @@
 """
 This scenario runs the full model under a set of scenario in which each one TREATMENT_ID is excluded.
 
+This version of the scenario represents maximum healthcare capacity/peformance and full healthcare seeking.
+
 * No spurious symptoms
-* Appts Contraints: Mode 0 (No Constraints)
+* Appts Contraints: Mode 0 (No Constraints - so can estimate total demand for appointments)
+* use_funded_or_actual_staffing = 'funded_plus'
 * Consumables Availability: All
 * Health care seeking forced to occur for every symptom
 
 Run on the batch system using:
-```tlo batch-submit src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_force_healthcare_seeking.py```
+```tlo batch-submit src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_effect_of_each_treatment_max.py
+```
 
 or locally using:
-    ```tlo scenario-run src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_force_healthcare_seeking.py
-    ```
+```tlo scenario-run src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_effect_of_each_treatment_max.py
+```
 
 """
 from pathlib import Path
