@@ -485,55 +485,60 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
         fig.show()
 
-    # def get_total_num_dalys_by_wealth_and_label(_df):
-    #     """Return the total number of DALYS in the TARGET_PERIOD by wealth and cause label."""
-    #     wealth_cats = {5: '0-19%', 4: '20-39%', 3: '40-59%', 2: '60-79%', 1: '80-100%'}
-    #     wealth_group = _df['li_wealth'] \
-    #         .map(wealth_cats) \
-    #         .astype(pd.CategoricalDtype(wealth_cats.values(), ordered=True))
-    #
-    #     return _df \
-    #         .loc[_df['date'].between(*TARGET_PERIOD)] \
-    #         .groupby([wealth_group, 'label'])['person_id'].size()
-    #
-    # total_num_dalys_by_wealth_and_label = extract_results(
-    #     results_folder,
-    #     module="tlo.methods.healthburden",
-    #     key="dalys_stacked_by_age_and_time",
-    #     custom_generate_series=get_total_num_dalys_by_wealth_and_label,
-    #     do_scaling=True
-    # ).pipe(set_param_names_as_column_index_level_0)
-    #
-    # dalys_averted_by_wealth_and_label = find_mean_difference_extra_relative_to_comparison_dataframe(
-    #     total_num_dalys_by_wealth_and_label, comparison='Everything'
-    # ).drop(columns=['FirstAttendance*'])
-    #
-    # for _scenario_name, _dalys_av in dalys_averted_by_wealth_and_label.T.iterrows():
-    #     format_to_plot = _dalys_av.unstack()
-    #     format_to_plot = format_to_plot \
-    #         .sort_index(axis=0) \
-    #         .reindex(columns=CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.keys(), fill_value=0.0) \
-    #         .sort_index(axis=1, key=order_of_cause_of_death_or_daly_label)
-    #
-    #     fig, ax = plt.subplots()
-    #     name_of_plot = f'DALYS Averted by {_scenario_name} by Wealth and Cause {target_period()}'
-    #     (
-    #         format_to_plot / 1e6
-    #     ).plot.bar(stacked=True, ax=ax,
-    #                color=[get_color_cause_of_death_or_daly_label(_label) for _label in format_to_plot.columns],
-    #                )
-    #     ax.axhline(0.0, color='black')
-    #     ax.set_title(name_of_plot)
-    #     ax.set_ylabel('Number of DALYs Averted (/1e6)')
-    #     ax.set_ylim(-50, 150)
-    #     ax.set_xlabel('Wealth Percentile')
-    #     ax.grid()
-    #     ax.spines['top'].set_visible(False)
-    #     ax.spines['right'].set_visible(False)
-    #     ax.legend(ncol=3, fontsize=8, loc='upper right')
-    #     fig.tight_layout()
-    #     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-    #     fig.show()
+
+    def get_total_num_dalys_by_wealth_and_label(_df):
+        """Return the total number of DALYS in the TARGET_PERIOD by wealth and cause label."""
+        wealth_cats = {5: '0-19%', 4: '20-39%', 3: '40-59%', 2: '60-79%', 1: '80-100%'}
+
+        return _df \
+            .loc[_df['year'].between(*[d.year for d in TARGET_PERIOD])] \
+            .drop(columns=['date', 'year'])\
+            .assign(
+                li_wealth=lambda x: x['li_wealth'].map(wealth_cats).astype(pd.CategoricalDtype(wealth_cats.values(), ordered=True))
+            )\
+            .melt(id_vars=['li_wealth'], var_name='label')\
+            .groupby(by=['li_wealth', 'label'])['value']\
+            .sum()
+
+    total_num_dalys_by_wealth_and_label = extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+        key="dalys_by_wealth_stacked_by_age_and_time",
+        custom_generate_series=get_total_num_dalys_by_wealth_and_label,
+        do_scaling=True
+    ).pipe(set_param_names_as_column_index_level_0)
+
+    dalys_averted_by_wealth_and_label = find_mean_difference_extra_relative_to_comparison_dataframe(
+        total_num_dalys_by_wealth_and_label, comparison='Everything'
+    ).drop(columns=['FirstAttendance*'])
+
+    for _scenario_name, _dalys_av in dalys_averted_by_wealth_and_label.T.iterrows():
+        format_to_plot = _dalys_av.unstack()
+        format_to_plot = format_to_plot \
+            .sort_index(axis=0) \
+            .reindex(columns=CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.keys(), fill_value=0.0) \
+            .sort_index(axis=1, key=order_of_cause_of_death_or_daly_label)
+
+        fig, ax = plt.subplots()
+        name_of_plot = f'DALYS Averted by {_scenario_name} by Wealth and Cause {target_period()}'
+        (
+            format_to_plot / 1e6
+        ).plot.bar(stacked=True, ax=ax,
+                   color=[get_color_cause_of_death_or_daly_label(_label) for _label in format_to_plot.columns],
+                   )
+        ax.axhline(0.0, color='black')
+        ax.set_title(name_of_plot)
+        ax.set_ylabel('Number of DALYs Averted (/1e6)')
+        ax.set_ylim(-5, 10)
+        ax.set_xlabel('Wealth Percentile')
+        ax.grid()
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.legend(ncol=3, fontsize=8, loc='upper right')
+        ax.legend().set_visible(False)
+        fig.tight_layout()
+        fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
+        fig.show()
 
     # %% Quantify the healthcare system resources used with each TREATMENT_ID (short) (The difference in the number of
     # appointments between each scenario and the 'Everything' scenario.)
