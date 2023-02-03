@@ -353,9 +353,9 @@ red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO")
 blue_line = mlines.Line2D([], [], color="C0", markersize=15, label="UNAIDS")
 orange_ci = mlines.Line2D([], [], color="C1", marker=".", markersize=15, label="MPHIA")
 plt.legend(handles=[red_line, blue_line, orange_ci])
-plt.savefig(
-    outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
-)
+# plt.savefig(
+#     outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
+# )
 plt.show()
 
 # ---------------------------------------------------------------------- #
