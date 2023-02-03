@@ -191,7 +191,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     else:
                         ax.set_ylabel(f"{what} per year\n")
 
-
                 # Create figure legend and remove duplicated entries, but keep the first entries
                 handles, labels = ax.get_legend_handles_labels()
                 lgd = dict()
@@ -291,7 +290,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 vals.at[('upper', cause), 'Model'] - y
             ]).reshape(2, 1)
 
-            ax.errorbar(x=x, y=y, xerr=xerr, yerr=yerr, label=cause, color=get_color_cause_of_death_or_daly_label(cause))
+            ax.errorbar(
+                x=x,
+                y=y,
+                xerr=xerr,
+                yerr=yerr,
+                label=cause,
+                color=get_color_cause_of_death_or_daly_label(cause)
+            )
 
             # add labels to selected points
             if cause in select_labels:
@@ -359,7 +365,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     make_std_graphs(what='Deaths', period='2015-2019')
     make_std_graphs(what='DALYs', period='2015-2019')
-    
 
 
 if __name__ == "__main__":

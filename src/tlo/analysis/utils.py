@@ -840,12 +840,9 @@ def order_of_cause_of_death_or_daly_label(
     if isinstance(cause_of_death_label, str):
         return ordered_cause_of_death_labels.index(cause_of_death_label)
     else:
-        try:
-            return pd.Index(
-                ordered_cause_of_death_labels.index(c) for c in cause_of_death_label
-            )
-        except:
-            print("hello")
+        return pd.Index(
+            ordered_cause_of_death_labels.index(c) for c in cause_of_death_label
+        )
 
 
 def get_color_cause_of_death_or_daly_label(cause_of_death_label: str) -> str:

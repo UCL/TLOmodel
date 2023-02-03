@@ -13,6 +13,7 @@ from scripts.calibration_analyses.analysis_scripts import plot_legends
 from scripts.healthsystem.finding_effects_of_each_treatment import plot_org_chart_treatment_ids
 from tlo import Date
 from tlo.analysis.utils import (
+    CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP,
     extract_results,
     get_coarse_appt_type,
     get_color_cause_of_death_or_daly_label,
@@ -22,11 +23,9 @@ from tlo.analysis.utils import (
     make_age_grp_types,
     order_of_cause_of_death_or_daly_label,
     order_of_coarse_appt,
-    order_of_short_treatment_ids,
     squarify_neat,
     summarize,
     to_age_group,
-    CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP,
 )
 
 
@@ -485,7 +484,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
         fig.show()
 
-
     def get_total_num_dalys_by_wealth_and_label(_df):
         """Return the total number of DALYS in the TARGET_PERIOD by wealth and cause label."""
         wealth_cats = {5: '0-19%', 4: '20-39%', 3: '40-59%', 2: '60-79%', 1: '80-100%'}
@@ -494,7 +492,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             .loc[_df['year'].between(*[d.year for d in TARGET_PERIOD])] \
             .drop(columns=['date', 'year'])\
             .assign(
-                li_wealth=lambda x: x['li_wealth'].map(wealth_cats).astype(pd.CategoricalDtype(wealth_cats.values(), ordered=True))
+                li_wealth=lambda x: x['li_wealth'].map(wealth_cats)
+                                                  .astype(pd.CategoricalDtype(wealth_cats.values(),
+                                                                              ordered=True))
             )\
             .melt(id_vars=['li_wealth'], var_name='label')\
             .groupby(by=['li_wealth', 'label'])['value']\

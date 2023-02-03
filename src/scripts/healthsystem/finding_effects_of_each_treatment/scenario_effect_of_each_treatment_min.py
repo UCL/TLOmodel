@@ -11,11 +11,12 @@ This version of the scenario represents actual healthcare capacity/performance a
 * Health care seeking as per defaults
 
 Run on the batch system using:
-```tlo batch-submit src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_effect_of_each_treatment_min.py```
+```tlo batch-submit src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_effect_of_each_treatment_min.py
+```
 
 or locally using:
 ```tlo scenario-run src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_effect_of_each_treatment_min.py
- ```
+```
 
 """
 from pathlib import Path
