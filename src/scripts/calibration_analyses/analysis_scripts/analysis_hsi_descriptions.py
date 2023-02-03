@@ -167,6 +167,7 @@ def figure2_appointments_used(results_folder: Path, output_folder: Path, resourc
     ax.spines['right'].set_visible(False)
     ax.tick_params(axis='x', labelrotation=90)
     ax.legend(ncol=2, prop={'size': 8}, loc='upper left')
+    ax.legend().set_visible(False)  # suppress legend
     ax.set_ylabel('Number of appointments (millions)')
     ax.set_xlabel('TREATMENT_ID (Short)')
     ax.set_ylim(0, 80)
@@ -176,6 +177,7 @@ def figure2_appointments_used(results_folder: Path, output_folder: Path, resourc
         output_folder
         / f"{PREFIX_ON_FILENAME}_Fig2_{name_of_plot.replace(' ', '_')}.png"
     )
+    fig.show()
     plt.close(fig)
 
 
