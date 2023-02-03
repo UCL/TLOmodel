@@ -891,7 +891,13 @@ class Alri(Module):
         * Schedules the main logging event
         * Establishes the linear models and other data structures using the parameters that have been read-in
         """
+      
         p = self.parameters
+
+        # Capture list of disease modules:
+        self.recognised_modules_names = [
+            m.name for m in self.sim.modules.values() if Metadata.USES_ALRI in m.METADATA
+        ]
 
         # Schedule the main polling event (to first occur immediately)
         sim.schedule_event(AlriPollingEvent(self), sim.date)

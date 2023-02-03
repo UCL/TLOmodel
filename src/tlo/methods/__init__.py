@@ -6,3 +6,4 @@ class Metadata(Enum):
     USES_SYMPTOMMANAGER = auto()  # The 'Symptom Manager' recognises modules with this label.
     USES_HEALTHSYSTEM = auto()    # The 'HealthSystem' recognises modules with this label.
     USES_HEALTHBURDEN = auto()    # The 'HealthBurden' module recognises modules with this label.
+    USES_ALRI = auto()    # The 'Alri' module recognises modules with this label.

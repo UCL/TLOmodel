@@ -12,6 +12,10 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
+    tb,
+    hiv,
+    wasting,
+    alri,
     measles,
     simplified_births,
     symptommanager,
@@ -60,6 +64,10 @@ def sim(seed):
             disable=True,  # disables the health system constraints so all HSI events run
         ),
         epi.Epi(resourcefilepath=resources),
+        wasting.Wasting(resourcefilepath=resources),
+        tb.Tb(resourcefilepath=resources),
+        hiv.Hiv(resourcefilepath=resources),
+        alri.Alri(resourcefilepath=resources),
         measles.Measles(resourcefilepath=resources),
     )
 

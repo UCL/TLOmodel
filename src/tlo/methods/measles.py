@@ -6,7 +6,9 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
+from tlo.methods import alri
 from tlo.methods.causes import Cause
+from tlo.methods.alri import Models
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date
@@ -18,7 +20,7 @@ logger.setLevel(logging.INFO)
 class Measles(Module):
     """This module represents measles infections and disease."""
 
-    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
+    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager', 'Alri'}
 
     OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
 
@@ -27,7 +29,8 @@ class Measles(Module):
         Metadata.DISEASE_MODULE,
         Metadata.USES_HEALTHBURDEN,
         Metadata.USES_HEALTHSYSTEM,
-        Metadata.USES_SYMPTOMMANAGER
+        Metadata.USES_SYMPTOMMANAGER,
+        Metadata.USES_ALRI
     }
 
     # Declare Causes of Death
@@ -152,6 +155,11 @@ class Measles(Module):
         df.loc[df.is_alive, "me_on_treatment"] = False
 
     def initialise_simulation(self, sim):
+
+
+        self.sim.modules['Alri'].models = Models(self.sim.modules['Alri'])
+
+
         """Schedule measles event to start straight away. Each month it will assign new infections"""
         sim.schedule_event(MeaslesEvent(self), sim.date)
         sim.schedule_event(MeaslesLoggingEvent(self), sim.date)
@@ -284,6 +292,23 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
         df.at[person_id, "me_on_treatment"] = False
 
         symp_onset = self.assign_symptoms(ref_age)  # Assign symptoms for this person
+        # Capture list of disease modules:
+       
+
+        mask_could_get_new_alri_event = (
+            df.is_alive & (df.age_years < 5) & ~df.ri_current_infection_status &
+            ((df.ri_end_of_current_episode < self.sim.date) | pd.isnull(df.ri_end_of_current_episode))
+        )
+ 
+        inc_of_acquiring_alri = pd.DataFrame(index=df.loc[mask_could_get_new_alri_event].index)
+
+        if "Alri" in self.sim.modules.keys():
+            for pathogen in self.sim.modules["Alri"].all_pathogens:
+                inc_of_acquiring_alri[pathogen] = self.sim.modules["Alri"].models.compute_risk_of_acquisition(
+                    pathogen=pathogen,
+                    df=df.loc[mask_could_get_new_alri_event]
+            )    
+
         prob_death = self.get_prob_death(ref_age)  # Look-up the probability of death for this person
 
         # Schedule either the DeathEvent of the SymptomResolution event, depending on the expected outcome of this case
