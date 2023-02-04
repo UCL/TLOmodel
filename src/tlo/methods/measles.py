@@ -156,10 +156,6 @@ class Measles(Module):
 
     def initialise_simulation(self, sim):
 
-
-        self.sim.modules['Alri'].models = Models(self.sim.modules['Alri'])
-
-
         """Schedule measles event to start straight away. Each month it will assign new infections"""
         sim.schedule_event(MeaslesEvent(self), sim.date)
         sim.schedule_event(MeaslesLoggingEvent(self), sim.date)
@@ -295,10 +291,10 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
         # Capture list of disease modules:
        
 
-        mask_could_get_new_alri_event = (
-            df.is_alive & (df.age_years < 5) & ~df.ri_current_infection_status &
-            ((df.ri_end_of_current_episode < self.sim.date) | pd.isnull(df.ri_end_of_current_episode))
-        )
+        mask_could_get_new_alri_event = (df.is_alive & (df.age_years < 5) & ~df.ri_current_infection_status &
+            ((df.ri_end_of_current_episode < self.sim.date) | pd.isnull(df.ri_end_of_current_episode)))
+        print("This is type")
+        print(type(mask_could_get_new_alri_event))
  
         inc_of_acquiring_alri = pd.DataFrame(index=df.loc[mask_could_get_new_alri_event].index)
 

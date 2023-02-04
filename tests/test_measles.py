@@ -85,6 +85,8 @@ def test_single_person(sim):
     sim.modules['Measles'].parameters["symptom_prob"]["probability"] = 1
 
     sim.make_initial_population(n=1)  # why does this throw an error if n=1??
+
+
     # ValueError: Wrong number of items passed 5, placement implies 1
     df = sim.population.props
     person_id = 0
