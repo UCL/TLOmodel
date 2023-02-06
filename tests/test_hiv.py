@@ -440,7 +440,7 @@ def test_test_and_refer_event_scheduled_by_main_event_poll(seed):
     sim = get_sim(seed=seed)
 
     # set baseline testing probability to far exceed 1.0 to ensure everyone assigned a test after lm and scaling
-    sim.modules['Hiv'].parameters["hiv_testing_rates"]["annual_testing_rate_children"] = 100
+    # sim.modules['Hiv'].parameters["hiv_testing_rates"]["annual_testing_rate_children"] = 100
     sim.modules['Hiv'].parameters["hiv_testing_rates"]["annual_testing_rate_adults"] = 100
 
     # Simulate for 0 days so as to complete all the initialisation steps
@@ -456,9 +456,9 @@ def test_test_and_refer_event_scheduled_by_main_event_poll(seed):
     ]
 
     df = sim.population.props
-    num_not_diagnosed = sum(~df.hv_diagnosed & df.is_alive)
+    num_adults_not_diagnosed = sum(~df.hv_diagnosed & df.is_alive & (df.age_years > 15))
     # diagnosed adults can re-test, so should have more tests than undiagnosed people
-    assert num_not_diagnosed <= len(dates_of_tr_events)
+    assert num_adults_not_diagnosed <= len(dates_of_tr_events)
     assert all([(sim.date <= d <= (sim.date + pd.DateOffset(months=12))) for d in dates_of_tr_events])
 
 
@@ -549,6 +549,7 @@ def test_art_is_initiated_for_infants(seed):
 
     # change prob ART start after diagnosis
     sim.modules["Hiv"].parameters["prob_start_art_or_vs"]["prob_art_if_dx"] = 1.0
+    sim.modules["Hiv"].parameters["prob_hiv_test_for_newborn_infant"] = 1.0
 
     # Manipulate CFR for deaths due to not breathing at birth
     sim.modules['NewbornOutcomes'].parameters['cfr_failed_to_transition'] = 0.0
@@ -560,6 +561,8 @@ def test_art_is_initiated_for_infants(seed):
     df.at[mother_id, 'is_pregnant'] = True
     df.at[mother_id, 'hv_date_inf'] = sim.date
     df.at[mother_id, 'date_of_last_pregnancy'] = sim.date
+    # mother has to be diagnosed for HIV test to run
+    df.at[mother_id, "hv_diagnosed"] = True
 
     # Populate the mni
     pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
