@@ -390,8 +390,6 @@ class Hiv(Module):
         # Load probability of art / viral suppression start after positive HIV test
         p["prob_start_art_or_vs"] = workbook["spectrum_treatment_cascade"]
 
-        # p["prob_viral_suppression"] = workbook["spectrum_treatment_cascade"]
-
         # Load spectrum estimates of treatment cascade
         p["treatment_cascade"] = workbook["spectrum_treatment_cascade"]
 
@@ -859,7 +857,6 @@ class Hiv(Module):
 
         # Schedule the AIDS death events for those who have got AIDS already
         for person_id in has_aids_idx:
-            # todo reinstate this if initial AIDS deaths too high
             # schedule a HSI_Test_and_Refer otherwise initial AIDS rates and deaths are far too high
             date_test = self.sim.date + pd.DateOffset(days=self.rng.randint(0, 60))
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -869,12 +866,6 @@ class Hiv(Module):
                 topen=date_test,
                 tclose=self.sim.date + pd.DateOffset(days=365),
             )
-
-            # todo change so max time 18 months
-            # don't know date of AIDS onset
-            # date_aids_death = (
-            #     self.sim.date + self.get_time_from_aids_to_death()
-            # )  # (assumes AIDS onset on this day)
 
             date_aids_death = (
                 self.sim.date + pd.DateOffset(months=self.rng.randint(low=0, high=18))
@@ -1281,16 +1272,6 @@ class Hiv(Module):
                 priority=0,
             )
 
-        # todo no re-test if decline ART
-        # else:
-        #     # refer for another test in 6 months
-        #     self.sim.modules["HealthSystem"].schedule_hsi_event(
-        #         HSI_Hiv_TestAndRefer(person_id=person_id, module=self, referred_from="HSI_Hiv_TestAndRefer"),
-        #         topen=self.sim.date + pd.DateOffset(months=6),
-        #         tclose=None,
-        #         priority=0,
-        #     )
-
     def prob_art_start_after_test(self, year):
         """ returns the probability of starting ART after a positive HIV test
         this value for initiation can be higher than the current reported coverage levels
@@ -1553,23 +1534,9 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
             # extract annual testing rates from MoH Reports
             test_rates = p["hiv_testing_rates"]
 
-            # todo reduce testing rates to account for multiple routes into testing
-            # todo remove testing rates for children as they're picked up through newborn care or symptoms
-            # testing_rate_children = test_rates.loc[
-            #     test_rates.year == current_year, "annual_testing_rate_children"
-            # ].values[0]
             testing_rate_adults = test_rates.loc[
                 test_rates.year == current_year, "annual_testing_rate_adults"
             ].values[0] * 0.75
-
-            # relative probability of testing - this may skew testing rates higher or lower than moh reports
-            # rr_of_test = self.module.lm["lm_spontaneous_test_12m"].predict(df[df.is_alive & (df.age_years < 15)])
-            # mean_prob_test = (rr_of_test * testing_rate_children).mean()
-            # scaled_prob_test = (rr_of_test * testing_rate_children) / mean_prob_test
-            # overall_prob_test = scaled_prob_test * testing_rate_children
-            #
-            # random_draw = rng.random_sample(size=len(df[df.is_alive & (df.age_years < 15)]))
-            # child_tests_idx = df.loc[df.is_alive & (df.age_years < 15) & (random_draw < overall_prob_test)].index
 
             # adult testing trends also informed by demographic characteristics
             # relative probability of testing - this may skew testing rates higher or lower than moh reports
@@ -1581,8 +1548,6 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
             random_draw = rng.random_sample(size=len(df[df.is_alive & (df.age_years >= 15)]))
             adult_tests_idx = df.loc[df.is_alive & (df.age_years >= 15) & (random_draw < overall_prob_test)].index
 
-            # idx_will_test = child_tests_idx.union(adult_tests_idx)
-            # todo remove
             idx_will_test = adult_tests_idx
 
             for person_id in idx_will_test:
@@ -2369,17 +2334,6 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         assert person["hv_diagnosed"]
 
         if art_status_at_beginning_of_hsi == "not":
-            # todo could make confirmatory test optional
-            # # Do a confirmatory test and do not run the rest of the event if negative.
-            # # NB. It is assumed that the sensitivity and specificity of the rapid test is perfect.
-            # test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
-            #     dx_tests_to_run="hiv_rapid_test", hsi_event=self
-            # )
-            # df.at[person_id, "hv_number_tests"] += 1
-            # df.at[person_id, "hv_last_test_date"] = self.sim.date
-
-            # if not test_result:
-            #     return self.make_appt_footprint({"Over5OPD": 1})
 
             assert person[
                 "hv_inf"
