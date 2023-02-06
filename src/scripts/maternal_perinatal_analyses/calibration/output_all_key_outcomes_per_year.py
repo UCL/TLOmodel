@@ -226,7 +226,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
                 x = results.loc[year, row]
                 mean = x.mean()
                 lq = x.quantile(0.025)
-                uq = x.quantile(0.925)
+                uq = x.quantile(0.975)
                 anc_count_df.at[row, year] = [mean, lq, uq]
             else:
                 anc_count_df.at[row, year] = [0, 0, 0]

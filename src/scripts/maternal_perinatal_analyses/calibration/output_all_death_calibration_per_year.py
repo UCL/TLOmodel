@@ -488,7 +488,7 @@ def output_all_death_calibrations(scenario_filename, outputspath, pop_size, sim_
     for column in simplified_df.columns:
         all_values.append(simplified_df[column].mean())
         av_lq.append(simplified_df[column].quantile(0.025))
-        av_uq.append(simplified_df[column].quantile(0.925))
+        av_uq.append(simplified_df[column].quantile(0.975))
         all_labels.append(f'{column} ({round(simplified_df[column].mean(), 2)} %)')
 
     pie_prop_cause_of_death(all_values, '2010-2020', all_labels, 'total')
@@ -767,7 +767,7 @@ def output_all_death_calibrations(scenario_filename, outputspath, pop_size, sim_
                 causes_prop[complication][0] += (death_results.loc[year, complication].mean() / total_deaths_py) * 100
                 causes_prop[complication][1] += (death_results.loc[year, complication].quantile(0.025) /
                                                  total_deaths_py) * 100
-                causes_prop[complication][2] += (death_results.loc[year, complication].quantile(0.925) /
+                causes_prop[complication][2] += (death_results.loc[year, complication].quantile(0.975) /
                                                  total_deaths_py) * 100
 
     for c in causes_prop:
@@ -1055,7 +1055,7 @@ def output_all_death_calibrations(scenario_filename, outputspath, pop_size, sim_
             if year in dalys_stacked.index:
                 stacked_dalys.append(dalys_stacked.loc[year, f'{group} Disorders'].mean())
                 stacked_dalys_lq.append(dalys_stacked.loc[year, f'{group} Disorders'].quantile(0.025))
-                stacked_dalys_uq.append(dalys_stacked.loc[year, f'{group} Disorders'].quantile(0.925))
+                stacked_dalys_uq.append(dalys_stacked.loc[year, f'{group} Disorders'].quantile(0.975))
 
         return [stacked_dalys, stacked_dalys_lq, stacked_dalys_uq]
 

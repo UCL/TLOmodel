@@ -19,7 +19,7 @@ def get_mean_and_quants_from_str_df(df, complication, sim_years):
         if complication in df.loc[year].index:
             yearly_mean_number.append(df.loc[year, complication].mean())
             yearly_lq.append(df.loc[year, complication].quantile(0.025))
-            yearly_uq.append(df.loc[year, complication].quantile(0.925))
+            yearly_uq.append(df.loc[year, complication].quantile(0.975))
         else:
             yearly_mean_number.append(0)
             yearly_lq.append(0)
@@ -49,7 +49,7 @@ def get_mean_and_quants(df, sim_years):
         if year in df.index:
             year_means.append(df.loc[year].mean())
             lower_quantiles.append(df.loc[year].quantile(0.025))
-            upper_quantiles.append(df.loc[year].quantile(0.925))
+            upper_quantiles.append(df.loc[year].quantile(0.975))
         else:
             year_means.append(0)
             lower_quantiles.append(0)
@@ -68,7 +68,7 @@ def get_comp_mean_and_rate_across_multiple_dataframes(complication, denominators
                 if complication in df.loc[year].index:
                     rates = (df.loc[year, complication].mean() / denominator) * rate
                     lq = (df.loc[year, complication].quantile(0.025) / denominator) * rate
-                    uq = (df.loc[year, complication].quantile(0.925) / denominator) * rate
+                    uq = (df.loc[year, complication].quantile(0.975) / denominator) * rate
                     rates_per_year.append(rates)
                     lq_per_year.append(lq)
                     uq_per_year.append(uq)
@@ -179,9 +179,9 @@ def line_graph_with_ci_and_target_rate(sim_years, mean_list, lq_list, uq_list, t
 def basic_comparison_graph(intervention_years, bdata, idata, x_label, title, graph_location, save_name):
     fig, ax = plt.subplots()
     ax.plot(intervention_years, bdata[0], label="Baseline (mean)", color='deepskyblue')
-    ax.fill_between(intervention_years, bdata[1], bdata[2], color='b', alpha=.1, label="UI (2.5-92.5)")
+    ax.fill_between(intervention_years, bdata[1], bdata[2], color='b', alpha=.1, label="UI (2.5-97.5)")
     ax.plot(intervention_years, idata[0], label="Intervention (mean)", color='olivedrab')
-    ax.fill_between(intervention_years, idata[1], idata[2], color='g', alpha=.1, label="UI (2.5-92.5)")
+    ax.fill_between(intervention_years, idata[1], idata[2], color='g', alpha=.1, label="UI (2.5-97.5)")
     plt.ylabel('Year')
     plt.xlabel(x_label)
     plt.title(title)
@@ -217,7 +217,7 @@ def simple_line_chart_with_target(sim_years, model_rate, target_rate, y_title, t
 def simple_line_chart_with_ci(sim_years, data, y_title, title, file_name, graph_location):
     fig, ax = plt.subplots()
     ax.plot(sim_years, data[0], label="Model (mean)", color='deepskyblue')
-    ax.fill_between(sim_years, data[1], data[2], color='b', alpha=.1, label="UI (2.5-92.5)")
+    ax.fill_between(sim_years, data[1], data[2], color='b', alpha=.1, label="UI (2.5-97.5)")
     plt.ylabel(y_title)
     plt.xlabel('Year')
     plt.title(title)
@@ -260,7 +260,7 @@ def return_median_and_mean_squeeze_factor_for_hsi(folder, hsi_string, sim_years,
 
     median = [hsi_med.loc[year].median() for year in sim_years]
     lq = [hsi_med.loc[year].quantile(0.025) for year in sim_years]
-    uq = [hsi_med.loc[year].quantile(0.925) for year in sim_years]
+    uq = [hsi_med.loc[year].quantile(0.975) for year in sim_years]
     data = [median, lq, uq]
 
     simple_line_chart_with_ci(sim_years, data, 'Median Squeeze Factor', f'Median Yearly Squeeze for HSI {hsi_string}',
@@ -268,7 +268,7 @@ def return_median_and_mean_squeeze_factor_for_hsi(folder, hsi_string, sim_years,
 
     mean = [hsi_mean.loc[year].mean() for year in sim_years]
     lq = [hsi_mean.loc[year].quantile(0.025) for year in sim_years]
-    uq = [hsi_mean.loc[year].quantile(0.925) for year in sim_years]
+    uq = [hsi_mean.loc[year].quantile(0.975) for year in sim_years]
     data = [mean, lq, uq]
 
     simple_line_chart_with_ci(sim_years, data, 'Mean Squeeze Factor', f'Mean Yearly Squeeze for HSI {hsi_string}',
@@ -287,7 +287,7 @@ def return_squeeze_plots_for_hsi(folder, hsi_string, sim_years, graph_location):
 
     mean_squeeze_per_year = [hsi.loc[year].to_numpy().mean() for year in sim_years]
     lq_squeeze_per_year = [np.percentile(hsi.loc[year].to_numpy(), 2.5) for year in sim_years]
-    uq_squeeze_per_year = [np.percentile(hsi.loc[year].to_numpy(), 92.5) for year in sim_years]
+    uq_squeeze_per_year = [np.percentile(hsi.loc[year].to_numpy(), 97.5) for year in sim_years]
     mean_data = [mean_squeeze_per_year, lq_squeeze_per_year, uq_squeeze_per_year]
 
     hsi_med = extract_results(
@@ -324,8 +324,8 @@ def return_squeeze_plots_for_hsi(folder, hsi_string, sim_years, graph_location):
          np.percentile(hsi_count.loc[year].to_numpy(), 2.5)) * 100 for year in sim_years]
 
     prop_squeeze_uq = [
-        (np.percentile(hsi_squeeze.loc[year].to_numpy(), 92.5) /
-         np.percentile(hsi_count.loc[year].to_numpy(), 92.5)) * 100 for year in sim_years]
+        (np.percentile(hsi_squeeze.loc[year].to_numpy(), 97.5) /
+         np.percentile(hsi_count.loc[year].to_numpy(), 97.5)) * 100 for year in sim_years]
 
     prop_data = [prop_squeeze_year, prop_squeeze_lq, prop_squeeze_uq]
 
@@ -819,7 +819,7 @@ def return_dalys_from_multiple_scenarios(results_folders, sim_years, interventio
                     if cause in df.loc[year].index:
                         per_year += df.loc[year, cause].mean()
                         per_year_lq += df.loc[year, cause].quantile(0.025)
-                        per_year_uq += df.loc[year, cause].quantile(0.925)
+                        per_year_uq += df.loc[year, cause].quantile(0.975)
 
                 mean.append(per_year)
                 lq.append(per_year_lq)
@@ -863,7 +863,7 @@ def return_dalys_from_multiple_scenarios(results_folders, sim_years, interventio
             stacked_dalys_lq = [daly_df.loc[year, f'{group} Disorders'].quantile(0.025) for year in
                                 years if year in years]
 
-            stacked_dalys_uq = [daly_df.loc[year, f'{group} Disorders'].quantile(0.925) for year in
+            stacked_dalys_uq = [daly_df.loc[year, f'{group} Disorders'].quantile(0.975) for year in
                                 years if year in years]
 
             return [stacked_dalys, stacked_dalys_lq, stacked_dalys_uq]
