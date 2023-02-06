@@ -2,6 +2,8 @@
 
 import argparse
 import glob
+import os
+import zipfile
 from pathlib import Path
 from typing import Tuple
 
@@ -168,8 +170,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # Plots.....
     def do_bar_plot_with_ci(_df, _ax):
         """Make a vertical bar plot for each Cause-of-Death Label for the _df onto axis _ax"""
-        _df_sorted = _df\
-            .reindex(index=CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.keys(), fill_value=0.0)\
+        _df_sorted = _df \
+            .reindex(index=CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.keys(), fill_value=0.0) \
             .sort_index(axis=0, key=order_of_cause_of_death_or_daly_label)  # include all labels and sort
 
         for i, cause_label in enumerate(_df_sorted.index):
@@ -357,9 +359,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     for _scenario_name, _deaths_av in deaths_averted_by_agegrp_and_label.T.iterrows():
         format_to_plot = _deaths_av.unstack()
         format_to_plot.index = format_to_plot.index.astype(make_age_grp_types())
-        format_to_plot = format_to_plot\
-            .sort_index(axis=0)\
-            .reindex(columns=CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.keys(), fill_value=0.0)\
+        format_to_plot = format_to_plot \
+            .sort_index(axis=0) \
+            .reindex(columns=CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.keys(), fill_value=0.0) \
             .sort_index(axis=1, key=order_of_cause_of_death_or_daly_label)
 
         fig, ax = plt.subplots()
@@ -407,9 +409,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     for _scenario_name, _deaths_av in deaths_averted_by_wealth_and_label.T.iterrows():
         format_to_plot = _deaths_av.unstack()
-        format_to_plot = format_to_plot\
-            .sort_index(axis=0)\
-            .reindex(columns=CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.keys(), fill_value=0.0)\
+        format_to_plot = format_to_plot \
+            .sort_index(axis=0) \
+            .reindex(columns=CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.keys(), fill_value=0.0) \
             .sort_index(axis=1, key=order_of_cause_of_death_or_daly_label)
 
         fig, ax = plt.subplots()
@@ -490,14 +492,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         return _df \
             .loc[_df['year'].between(*[d.year for d in TARGET_PERIOD])] \
-            .drop(columns=['date', 'year'])\
+            .drop(columns=['date', 'year']) \
             .assign(
-                li_wealth=lambda x: x['li_wealth'].map(wealth_cats)
-                                                  .astype(pd.CategoricalDtype(wealth_cats.values(),
-                                                                              ordered=True))
-            )\
-            .melt(id_vars=['li_wealth'], var_name='label')\
-            .groupby(by=['li_wealth', 'label'])['value']\
+            li_wealth=lambda x: x['li_wealth'].map(wealth_cats)
+            .astype(pd.CategoricalDtype(wealth_cats.values(),
+                                        ordered=True))
+        ) \
+            .melt(id_vars=['li_wealth'], var_name='label') \
+            .groupby(by=['li_wealth', 'label'])['value'] \
             .sum()
 
     total_num_dalys_by_wealth_and_label = extract_results(
@@ -722,3 +724,7 @@ if __name__ == "__main__":
     # Plot the organisation chart of the TREATMENT_IDs
     plot_org_chart_treatment_ids.apply(
         results_folder=None, output_folder=results_path, resourcefilepath=None)
+
+    with zipfile.ZipFile(output_path / f"images_{output_path.parts[-1]}.zip", mode="w") as archive:
+        for filename in sorted(glob.glob(str(output_path / "*.png"))):
+            archive.write(filename, os.path.basename(filename))
