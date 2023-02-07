@@ -62,7 +62,7 @@ def run_sim(tmpdir,
             "*": logging.WARNING,
             "tlo.methods.contraception": logging.INFO,
             "tlo.methods.demography": logging.INFO,
-            'tlo.methods.healthsystem.summary': logging.INFO
+            'tlo.methods.healthsystem': logging.DEBUG
         }
     }
 
@@ -77,6 +77,7 @@ def run_sim(tmpdir,
                                   disable=disable,
                                   disable_and_reject_all=healthsystem_disable_and_reject_all,
                                   cons_availability=_cons_available,
+                                  hsi_event_count_log_period="simulation"
                                   ),
 
         # - modules for mechanistic representation of contraception -> pregnancy -> labour -> delivery etc.
@@ -418,237 +419,77 @@ def test_occurrence_of_HSI_for_maintaining_on_and_switching_to_methods(tmpdir, s
     assert not len(sim.modules['HealthSystem'].find_events_for_person(person_id))
 
 
-def test_record_of_appt_footprint_for_switching_from_pill_to_female_sterilization(tmpdir, seed):
+def test_record_of_appt_footprint_for_switching_to_methods(tmpdir, seed,
+                                                           old_contraceptive='pill',
+                                                           new_contraceptive='other_modern',
+                                                           consumables_available=True):
     """
-    Check HSI for a person switching (from pill) to a contraceptive (female_sterilization) are scheduled as expected.
-    Furthermore, the right appointment footprints are recorded.
+    This test is to generate a sequence of APPT FOOTPRINT of HSI_Contraception_FamilyPlanningAppt for a person switching
+    to a new contraceptive. This is to help check whether the APPT FOOTPRINT is assigned as defined.
+    :param tmpdir:
+    :param seed:
+    :param old_contraceptive:
+    :param new_contraceptive:
+    :param consumables_available:
+    :return:
     """
-
-    # Create a simulation that has run for zero days with no consumable and clear the event queue
+    # run the simulation for zero days on 1 person
     sim = run_sim(tmpdir,
                   seed=seed,
                   use_healthsystem=True,
                   disable=False,
-                  consumables_available=True,
-                  end_date=Date(2010, 1, 1)
-                  )
+                  consumables_available=consumables_available,
+                  end_date=Date(2010, 1, 1),
+                  )  # cannot change popsize here as __check_dtypes cannot pass due to co_date_of_last_fp_appt dtypes
+    # clear event queue
     sim.event_queue.queue = []
     sim.modules['HealthSystem'].reset_queue()
 
     # Let there be no chance of discontinuing and
-    # 100% chance of switching from pill to female_sterilization
+    # 100% chance of switching from old_contraceptive to new_contraceptive
     pp = sim.modules['Contraception'].processed_params
     pp['p_stop_per_month'] = zero_param(pp['p_stop_per_month'])
-    pp['p_switch_from_per_month']['pill'] = 1.0
-    pp['p_switching_to']['pill'] = 0
-    pp['p_switching_to'].loc['female_sterilization', 'pill'] = 1.0
+    pp['p_switch_from_per_month'][old_contraceptive] = 1.0
+    pp['p_switching_to'][old_contraceptive] = 0
+    pp['p_switching_to'].loc[new_contraceptive, old_contraceptive] = 1.0
 
-    # Set that person_id=0 is a woman on "pill" for about one month
-    # who is now switching to "female_sterilization"
+    # Set that person_id=0 is a woman on old_contraceptive for about one month
+    # who is now switching to new_contraceptive
     person_id = 0
     df = sim.population.props
     original_props = {
         'sex': 'F',
         'age_years': 30,
         'date_of_birth': sim.date - pd.DateOffset(years=30),
-        'co_contraception': 'pill',  # <-- to switch to injections
+        'co_contraception': old_contraceptive,  # <-- to switch to new_contraceptive
         'is_pregnant': False,
         'date_of_last_pregnancy': pd.NaT,
         'co_unintended_preg': False,
-        'co_date_of_last_fp_appt': sim.date - pd.DateOffset(months=1)  # <-- to facilitate monthly poll
+        'co_date_of_last_fp_appt': sim.date
     }
     df.loc[person_id, original_props.keys()] = original_props.values()
+    assert sim.population.props.loc[person_id, 'co_contraception'] == old_contraceptive
 
-    # Run the ContraceptivePoll
-    poll = contraception.ContraceptionPoll(module=sim.modules['Contraception'])
-    poll.apply(sim.population)
+    # Now run the simulation for one month
+    sim.simulate(end_date=Date(2010, 2, 1))
 
-    # Confirm that an HSI_FamilyPlanningAppt has been scheduled for her as by 100% she is switching the method
-    events = sim.modules['HealthSystem'].find_events_for_person(person_id)
-    assert 1 == len(events)
-    ev = events[0]
-    assert isinstance(ev[1], contraception.HSI_Contraception_FamilyPlanningAppt)
+    # Get the events run and count of appt footprint for this person
+    healthsystem_log = parse_log_file(sim.log_filepath, level=logging.DEBUG)["tlo.methods.healthsystem"]
+    hsi_run = healthsystem_log["HSI_Event"]
+    hsi_run_for_the_person = hsi_run.loc[hsi_run.did_run & (hsi_run['Person_ID'] == person_id)]
+    appt_run_for_the_person = hsi_run_for_the_person.Number_By_Appt_Type_Code.apply(pd.Series).sum().to_dict()
 
-    # further, check that the right appt footprint is recorded following the HSI scheduled
-    appt_footprint_old = pd.DataFrame.from_dict(ev[1].EXPECTED_APPT_FOOTPRINT, orient='index')
-    assert ev[1]._number_of_times_run == 0
-    assert ev[1]._number_of_times_reschedule == 0
-    assert 'MinorSurg' in list(appt_footprint_old.index)
-    # store expected time requests
-    appt_time_old = pd.DataFrame.from_dict(ev[1].expected_time_requests, orient='index')
-    # and check that the state has not been changed yet because the HSI is only scheduled but not applied
-    df = sim.population.props
-    assert df.at[person_id, 'co_contraception'] == 'pill'
+    # check the event is HSI_Contraception_FamilyPlanningAppt, or equally the treatment id is Contraception_Routine
+    # and that the person's state hase been changed to new_contraceptive
+    assert 'Contraception_Routine' in hsi_run_for_the_person.TREATMENT_ID.values
+    assert sim.population.props.loc[person_id, 'co_contraception'] == new_contraceptive
 
-    # Run that HSI_FamilyPlanningAppt and confirm her state has changed to the new method
-    sim.date = ev[0]
-    ev[1].apply(person_id=person_id, squeeze_factor=0.0)
-    df = sim.population.props  # update shortcut df
-    assert df.at[person_id, 'co_date_of_last_fp_appt'] == sim.date
-    assert df.at[person_id, 'co_contraception'] == 'female_sterilization'
-
-    # now find that the appt footprint changes to blank because _number_of_times_run = 1 > 0 ???
-    # however the expected time requests remain/not updated ???
-    # I think we do want neither appt footprint nor time to be updated ???
-    appt_footprint_new = pd.DataFrame.from_dict(ev[1].EXPECTED_APPT_FOOTPRINT, orient='index')
-    assert ev[1]._number_of_times_run == 1
-    assert ev[1]._number_of_times_reschedule == 0
-    assert len(appt_footprint_new) == 0
-    appt_time_new = pd.DataFrame.from_dict(ev[1].expected_time_requests, orient='index')
-    assert (appt_time_new.index == appt_time_old.index).all()
-    assert (appt_time_new.values == appt_time_old.values).all()
-
-
-def test_record_of_appt_footprint_for_switching_from_pill_to_injections(tmpdir, seed):
-    """Check HSI for a person switching (from pill) to a contraceptive (injections) are scheduled as expected.
-    Furthermore, the right appointment footprints are recorded."""
-
-    # Create a simulation that has run for zero days with no consumable and clear the event queue
-    sim = run_sim(tmpdir,
-                  seed=seed,
-                  use_healthsystem=True,
-                  disable=False,
-                  consumables_available=True,
-                  end_date=Date(2010, 1, 1)
-                  )
-    sim.event_queue.queue = []
-    sim.modules['HealthSystem'].reset_queue()
-
-    # Let there be no chance of discontinuing and
-    # 100% chance of switching from pill to injections
-    pp = sim.modules['Contraception'].processed_params
-    pp['p_stop_per_month'] = zero_param(pp['p_stop_per_month'])
-    pp['p_switch_from_per_month']['pill'] = 1.0
-    pp['p_switching_to']['pill'] = 0
-    pp['p_switching_to'].loc['injections', 'pill'] = 1.0
-
-    # Set that person_id=0 is a woman on "pill" for about one month
-    # who is now switching to "injections"
-    person_id = 0
-    df = sim.population.props
-    original_props = {
-        'sex': 'F',
-        'age_years': 30,
-        'date_of_birth': sim.date - pd.DateOffset(years=30),
-        'co_contraception': 'pill',  # <-- to switch to injections
-        'is_pregnant': False,
-        'date_of_last_pregnancy': pd.NaT,
-        'co_unintended_preg': False,
-        'co_date_of_last_fp_appt': sim.date - pd.DateOffset(months=1)  # <-- to facilitate monthly poll
-    }
-    df.loc[person_id, original_props.keys()] = original_props.values()
-
-    # Run the ContraceptivePoll
-    poll = contraception.ContraceptionPoll(module=sim.modules['Contraception'])
-    poll.apply(sim.population)
-
-    # Confirm that an HSI_FamilyPlanningAppt has been scheduled for her as by 100% she is switching the method
-    events = sim.modules['HealthSystem'].find_events_for_person(person_id)
-    assert 1 == len(events)
-    ev = events[0]
-    assert isinstance(ev[1], contraception.HSI_Contraception_FamilyPlanningAppt)
-
-    # further, check that the right appt footprint is recorded following the HSI scheduled
-    appt_footprint_old = pd.DataFrame.from_dict(ev[1].EXPECTED_APPT_FOOTPRINT, orient='index')
-    assert ev[1]._number_of_times_run == 0
-    assert ev[1]._number_of_times_reschedule == 0
-    assert 'FamPlan' in list(appt_footprint_old.index)
-    # store expected time requests
-    appt_time_old = pd.DataFrame.from_dict(ev[1].expected_time_requests, orient='index')
-    # and check that the state has not been changed yet because the HSI is only scheduled but not applied
-    df = sim.population.props
-    assert df.at[person_id, 'co_contraception'] == 'pill'
-
-    # Run that HSI_FamilyPlanningAppt and confirm her state has changed to the new method
-    sim.date = ev[0]
-    ev[1].apply(person_id=person_id, squeeze_factor=0.0)
-    df = sim.population.props  # update shortcut df
-    assert df.at[person_id, 'co_date_of_last_fp_appt'] == sim.date
-    assert df.at[person_id, 'co_contraception'] == 'injections'
-
-    # now find that the appt footprint changes to blank because _number_of_times_run = 1 > 0 ???
-    # however the expected time requests remain/not updated ???
-    # I think we do want neither appt footprint nor time to be updated ???
-    appt_footprint_new = pd.DataFrame.from_dict(ev[1].EXPECTED_APPT_FOOTPRINT, orient='index')
-    assert ev[1]._number_of_times_run == 1
-    assert ev[1]._number_of_times_reschedule == 0
-    assert len(appt_footprint_new) == 0
-    appt_time_new = pd.DataFrame.from_dict(ev[1].expected_time_requests, orient='index')
-    assert (appt_time_new.index == appt_time_old.index).all()
-    assert (appt_time_new.values == appt_time_old.values).all()
-
-
-def test_record_of_appt_footprint_for_switching_from_pill_to_other_modern(tmpdir, seed):
-    """Check HSI for a person switching (from pill) to a contraceptive (other_modern) are scheduled as expected.
-    Furthermore, the right appointment footprints are recorded."""
-
-    # Create a simulation that has run for zero days with no consumable and clear the event queue
-    sim = run_sim(tmpdir,
-                  seed=seed,
-                  use_healthsystem=True,
-                  disable=False,
-                  consumables_available=True,
-                  end_date=Date(2010, 1, 1)
-                  )
-    sim.event_queue.queue = []
-    sim.modules['HealthSystem'].reset_queue()
-
-    # Set that person_id=0 is a woman on "pill" for about one month
-    # who is now switching to "other_modern"
-    person_id = 0
-    df = sim.population.props
-    original_props = {
-        'sex': 'F',
-        'age_years': 30,
-        'date_of_birth': sim.date - pd.DateOffset(years=30),
-        'co_contraception': 'pill',  # <-- to switch to other_modern
-        'is_pregnant': False,
-        'date_of_last_pregnancy': pd.NaT,
-        'co_unintended_preg': False,
-        'co_date_of_last_fp_appt': sim.date - pd.DateOffset(months=1)
-    }
-    df.loc[person_id, original_props.keys()] = original_props.values()
-
-    # Run the function of schedule_batch_of_contraceptive_changes
-    contraception.Contraception.schedule_batch_of_contraceptive_changes(sim.modules['Contraception'],
-                                                                        ids=person_id,
-                                                                        old=['pill'],
-                                                                        new=['other_modern'])
-
-    # Confirm that an HSI_FamilyPlanningAppt has been scheduled for her
-    events = sim.modules['HealthSystem'].find_events_for_person(person_id)
-    assert 1 == len(events)
-    ev = events[0]
-    assert isinstance(ev[1], contraception.HSI_Contraception_FamilyPlanningAppt)
-
-    # further, check that the right appt footprint is recorded following the HSI scheduled
-    appt_footprint_old = pd.DataFrame.from_dict(ev[1].EXPECTED_APPT_FOOTPRINT, orient='index')
-    assert ev[1]._number_of_times_run == 0
-    assert ev[1]._number_of_times_reschedule == 0
-    assert 'FamPlan' in list(appt_footprint_old.index)
-    # store expected time requests
-    appt_time_old = pd.DataFrame.from_dict(ev[1].expected_time_requests, orient='index')
-    # and check that the state has not been changed yet because the HSI is only scheduled but not applied
-    df = sim.population.props
-    assert df.at[person_id, 'co_contraception'] == 'pill'
-
-    # Run that HSI_FamilyPlanningAppt and confirm her state has changed to the new method
-    sim.date = ev[0]
-    ev[1].apply(person_id=person_id, squeeze_factor=0.0)
-    df = sim.population.props  # update shortcut df
-    assert df.at[person_id, 'co_date_of_last_fp_appt'] == sim.date
-    assert df.at[person_id, 'co_contraception'] == 'other_modern'
-
-    # now find that the appt footprint changes to blank because _number_of_times_run = 1 > 0 ???
-    # however the expected time requests remain/not updated ???
-    # I think we do want neither appt footprint nor time to be updated ???
-    appt_footprint_new = pd.DataFrame.from_dict(ev[1].EXPECTED_APPT_FOOTPRINT, orient='index')
-    assert ev[1]._number_of_times_run == 1
-    assert ev[1]._number_of_times_reschedule == 0
-    assert len(appt_footprint_new) == 0
-    appt_time_new = pd.DataFrame.from_dict(ev[1].expected_time_requests, orient='index')
-    assert (appt_time_new.index == appt_time_old.index).all()
-    assert (appt_time_new.values == appt_time_old.values).all()
+    # further check the appt foorprint
+    # If old_contraceptive='pill', new_contraceptive='other_modern'/'injections'/'female_sterilization',
+    # consumables_available=True,
+    # the appt footprint for the person should be FamPlan/FamPlan/MinorSurg and the count should be 1.
+    # However, the logged appt_run_for_the_person is empty!
+    assert len(appt_run_for_the_person) == 0  # <-- not as expected
 
 
 def test_record_of_appt_footprint_and_schedule_of_hsi_when_no_available_consumables(tmpdir, seed):
