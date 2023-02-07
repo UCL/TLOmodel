@@ -482,7 +482,10 @@ def test_record_of_appt_footprint_for_switching_to_methods(tmpdir, seed,
     # check the event is HSI_Contraception_FamilyPlanningAppt, or equally the treatment id is Contraception_Routine
     # and that the person's state hase been changed to new_contraceptive
     assert 'Contraception_Routine' in hsi_run_for_the_person.TREATMENT_ID.values
-    assert sim.population.props.loc[person_id, 'co_contraception'] == new_contraceptive
+    if consumables_available:
+        assert sim.population.props.loc[person_id, 'co_contraception'] == new_contraceptive
+    else:
+        assert sim.population.props.loc[person_id, 'co_contraception'] == 'not_using'
 
     # further check the appt foorprint
     # If old_contraceptive='pill', new_contraceptive='other_modern'/'injections'/'female_sterilization',
