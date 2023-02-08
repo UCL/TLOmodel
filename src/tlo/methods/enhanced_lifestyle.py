@@ -485,7 +485,7 @@ class EduPropertyInitialiser:
         edu_df.loc[age512[age512_in_edu], 'li_in_ed'] = True
 
         # --- SECONDARY EDUCATION
-        edu_df.loc[df.age_years.between(13, 19) & (edu_df.li_ed_lev == 3) & df.is_alive] = True
+        edu_df.loc[df.age_years.between(13, 19) & (edu_df.li_ed_lev == 3) & df.is_alive, 'li_in_ed'] = True
 
         # return results based on the selected property
         return edu_df.li_in_ed if self.edu_property == 'li_in_ed' else edu_df.li_ed_lev
