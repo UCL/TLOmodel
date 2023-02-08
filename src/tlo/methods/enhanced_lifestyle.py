@@ -472,7 +472,7 @@ class EduPropertyInitialiser:
 
         # ---- PRIMARY EDUCATION
         # get index of all individuals alive and aged between 5 and 12 years old
-        age512 = edu_df.index[df.age_years.between(5, 12) & (edu_df.li_ed_lev== 2) & df.is_alive]
+        age512 = edu_df.index[df.age_years.between(5, 12) & (edu_df.li_ed_lev == 2) & df.is_alive]
 
         # create a series to hold the probablity of being in primary education for all individuals aged 5 to 12.
         # Here we assume a 50-50 chance of being in education
