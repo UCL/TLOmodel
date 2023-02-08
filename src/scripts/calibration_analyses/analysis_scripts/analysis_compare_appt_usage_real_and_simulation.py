@@ -119,6 +119,7 @@ def adjust_real_usage_on_mentalall(real_usage_df) -> pd.DataFrame:
     We now directly adjust its annual usage by facility level using the aggregated average annual reporting rates by
     facility level. The latter is calculated based on DHIS2 Mental Health Report reporting rates."""
     # the average annual reporting rates for Mental Health Report by facility level (%), 2015-2019
+    # could turn the reporting rates data into a ResourceFile if necessary
     rr = {'0': None, '1a': 70.93, '1b': 31.25, '2': 46.78, '3': 47.50, '4': None}
     rr_df = pd.DataFrame.from_dict(rr, orient='index').rename(columns={0: 'avg_annual_rr'})
     # make the adjustment assuming 100% reporting rates
