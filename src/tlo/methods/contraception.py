@@ -1021,6 +1021,9 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         ):
             self.reschedule()
 
+        # return appt footprint
+        return self.EXPECTED_APPT_FOOTPRINT
+
     def reschedule(self):
         """Schedule for this same HSI_Event to occur tomorrow."""
         self._number_of_times_reschedule += 1
