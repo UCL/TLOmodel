@@ -446,56 +446,49 @@ class EduPropertyInitialiser:
         :param self: a reference to EduProperties class
         :param df: population dataframe
         :param rng: random number generator """
+        # create a new dataframe to hold results
+        edu_df = pd.DataFrame(data=df[['li_in_ed', 'li_ed_lev']].copy(), index=df.index)
+        edu_df['li_ed_lev'] = 1
 
-        # check to see if education linear model is not arleady initialised
-        if len(self.module.models.is_edu_dictionary_empty()) == 0:
-            # create a new dataframe to hold results
-            edu_df = pd.DataFrame(data=df[['li_in_ed', 'li_ed_lev']].copy(), index=df.index)
-            edu_df['li_ed_lev'] = 1
+        # select individuals who are alive and 5+ years
+        age_gte5 = df.index[(df.age_years >= 5) & df.is_alive]
 
-            # select individuals who are alive and 5+ years
-            age_gte5 = df.index[(df.age_years >= 5) & df.is_alive]
+        # store population eligible for education
+        edu_pop = df.loc[(df.age_years >= 5) & df.is_alive]
+        rnd_draw = pd.Series(data=rng.random_sample(size=len(age_gte5)), index=age_gte5, dtype=float)
 
-            # store population eligible for education
-            edu_pop = df.loc[(df.age_years >= 5) & df.is_alive]
-            rnd_draw = pd.Series(data=rng.random_sample(size=len(age_gte5)), index=age_gte5, dtype=float)
+        # make some predictions
+        p_some_ed = self.module.models.education_linear_models()['some_edu_linear_model'].predict(edu_pop)
+        p_ed_lev_3 = self.module.models.education_linear_models()['level_3_edu_linear_model'].predict(edu_pop)
 
-            # make some predictions
-            p_some_ed = self.module.models.education_linear_models()['some_edu_linear_model'].predict(edu_pop)
-            p_ed_lev_3 = self.module.models.education_linear_models()['level_3_edu_linear_model'].predict(edu_pop)
+        dfx = pd.concat([(1 - p_ed_lev_3), (1 - p_some_ed)], axis=1)
+        dfx.columns = ['cut_off_ed_levl_3', 'p_ed_lev_1']
 
-            dfx = pd.concat([(1 - p_ed_lev_3), (1 - p_some_ed)], axis=1)
-            dfx.columns = ['cut_off_ed_levl_3', 'p_ed_lev_1']
+        dfx['li_ed_lev'] = 2
+        dfx.loc[dfx['cut_off_ed_levl_3'] < rnd_draw, 'li_ed_lev'] = 3
+        dfx.loc[dfx['p_ed_lev_1'] > rnd_draw, 'li_ed_lev'] = 1
 
-            dfx['li_ed_lev'] = 2
-            dfx.loc[dfx['cut_off_ed_levl_3'] < rnd_draw, 'li_ed_lev'] = 3
-            dfx.loc[dfx['p_ed_lev_1'] > rnd_draw, 'li_ed_lev'] = 1
+        edu_df.loc[age_gte5, 'li_ed_lev'] = dfx['li_ed_lev']
 
-            edu_df.loc[age_gte5, 'li_ed_lev'] = dfx['li_ed_lev']
+        # ---- PRIMARY EDUCATION
+        # get index of all individuals alive and aged between 5 and 12 years old
+        age512 = edu_df.index[df.age_years.between(5, 12) & (edu_df.li_ed_lev== 2) & df.is_alive]
 
-            # ---- PRIMARY EDUCATION
-            # get index of all children who are alive and between 5 and 12 years old
-            age5 = edu_df.index[df.age_years.between(5, 12) & (edu_df['li_ed_lev'] == 2) & df.is_alive]
+        # create a series to hold the probablity of being in primary education for all individuals aged 5 to 12.
+        # Here we assume a 50-50 chance of being in education
+        prob_primary_edu = pd.Series(data=self.module.parameters['init_prop_primary_edu'], index=age512, dtype=float)
 
-            # create a series to hold the probablity of primary education for children aged betwen 5 and 12.
-            # Here we assume a 50-50 chance of starting primary education
-            prob_primary = pd.Series(data=self.module.parameters['init_prop_primary_edu'], index=age5, dtype=float)
-            prob_primary *= \
-                self.module.parameters['rp_ed_primary_higher_wealth'] ** (5 - pd.to_numeric(df.loc[age5, 'li_wealth']))
+        # randomly select some individuals to be in education
+        age512_in_edu = rng.random_sample(len(age512)) < prob_primary_edu
 
-            # randomly select some individuals to have primary education
-            age5_in_primary = rng.random_sample(len(age5)) < prob_primary
+        # for the selected individuals, set their in education property to true
+        edu_df.loc[age512[age512_in_edu], 'li_in_ed'] = True
 
-            edu_df.loc[age5[age5_in_primary], 'li_in_ed'] = True
-
-            # SECONDARY EDUCATION
-            edu_df.loc[df.age_years.between(13, 19) & (edu_df['li_ed_lev'] == 3) & df.is_alive, 'li_in_ed'] = True
-
-            self.module.models.is_edu_dictionary_empty()['li_in_ed'] = edu_df.li_in_ed
-            self.module.models.is_edu_dictionary_empty()['li_ed_lev'] = edu_df.li_ed_lev
+        # --- SECONDARY EDUCATION
+        edu_df.loc[df.age_years.between(13, 19) & (edu_df.li_ed_lev == 3) & df.is_alive] = True
 
         # return results based on the selected property
-        return self.module.models.is_edu_dictionary_empty()[self.edu_property]
+        return edu_df.li_in_ed if self.edu_property == 'li_in_ed' else edu_df.li_ed_lev
 
 
 class BmiPropertyInitialiser:

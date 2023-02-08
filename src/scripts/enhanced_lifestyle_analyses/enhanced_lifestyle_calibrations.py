@@ -74,16 +74,7 @@ class LifeStyleCalibration:
                 'source': 'UNAIDS',
                 'data': 0.006
             },
-            'li_in_ed': {
-                'ob_year': 2015,
-                'source': 'Malawi DHS 2015',
-                'data': {
-                    '6': 0.85,
-                    '12': 0.95,
-                    '16': 0.75,
-                    '19': 0.35
-                }
-            }
+            # currently no data source for individuals in education
         }
         # 2. Lifestyle properties that are logged by rural urban
         self.obs_data_prop_rural_urban = {
