@@ -117,12 +117,15 @@ class Contraception(Module):
                                             )
     }
 
-    def __init__(self, name=None, resourcefilepath=None, use_healthsystem=True):
+    def __init__(self, name=None, resourcefilepath=None, use_healthsystem=True, run_update_contraceptive=True):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
         self.use_healthsystem = use_healthsystem  # if True: initiation and switches to contraception require an HSI;
         # if False: initiation and switching do not occur through an HSI
+
+        self.run_update_contraceptive = run_update_contraceptive  # If 'False' prevents any logic occurring for
+        #                                                           updating/changing/maintaining contraceptive methods.
 
         self.states_that_may_require_HSI_to_switch_to = {'male_condom', 'injections', 'other_modern', 'IUD', 'pill',
                                                          'female_sterilization', 'implant'}
@@ -213,7 +216,7 @@ class Contraception(Module):
         sim.schedule_event(ContraceptionLoggingEvent(self), sim.date)
 
         # Schedule first occurrences of Contraception Poll to occur at the beginning of the simulation
-        sim.schedule_event(ContraceptionPoll(self), sim.date)
+        sim.schedule_event(ContraceptionPoll(self, run_update_contraceptive=self.run_update_contraceptive), sim.date)
 
         # Retrieve the consumables codes for the consumables used
         if self.use_healthsystem:
@@ -543,16 +546,8 @@ class Contraception(Module):
         date_today = self.sim.date
         days_between_appts = self.parameters['days_between_appts_for_maintenance']
 
+        date_of_last_appt = df.loc[ids, "co_date_of_last_fp_appt"].to_dict()
         states_to_maintain_on = sorted(self.states_that_may_require_HSI_to_maintain_on)
-        # date_of_last_appt = df.loc[ids, "co_date_of_last_fp_appt"].to_dict()
-        if isinstance(ids, int):  # if there is only one person id
-            date_of_last_appt = {ids: df.loc[ids, "co_date_of_last_fp_appt"]}
-            # turn int ids to a list that is iterable
-            ids_list = []
-            ids_list = [ids]
-            ids = ids_list
-        else:
-            date_of_last_appt = df.loc[ids, "co_date_of_last_fp_appt"].to_dict()
 
         for _woman_id, _old, _new in zip(ids, old, new):
             # if _new == 'female_sterilization':
@@ -968,8 +963,6 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         self.TREATMENT_ID = "Contraception_Routine"
         self.ACCEPTED_FACILITY_LEVEL = _facility_level
 
-        self._number_of_times_reschedule = 0  # introduce this parameter for tests only
-
     @property
     def EXPECTED_APPT_FOOTPRINT(self):
         """Return the expected appt footprint based on contraception method and whether the HSI has been rescheduled."""
@@ -990,8 +983,6 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
 
     def apply(self, person_id, squeeze_factor):
         """If the relevant consumable is available, do change in contraception and log it"""
-
-        self._number_of_times_run += 1
 
         person = self.sim.population.props.loc[person_id]
         current_method = person.co_contraception
@@ -1021,12 +1012,11 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         ):
             self.reschedule()
 
-        # return appt footprint
-        return self.EXPECTED_APPT_FOOTPRINT
+    def post_apply_hook(self):
+        self._number_of_times_run += 1
 
     def reschedule(self):
         """Schedule for this same HSI_Event to occur tomorrow."""
-        self._number_of_times_reschedule += 1
         self.module.sim.modules['HealthSystem'].schedule_hsi_event(hsi_event=self,
                                                                    topen=self.sim.date + pd.DateOffset(days=1),
                                                                    tclose=None,
