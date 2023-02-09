@@ -2236,7 +2236,7 @@ class Labour(Module):
         if 'Hiv' in self.sim.modules.keys():
             # decide whether HIV test should be scheduled for mother
             # this function will check conditions and schedule the HSI
-            self.sim.modules['Hiv'].decide_whether_hiv_test_for_mother(person_id)
+            self.sim.modules['Hiv'].decide_whether_hiv_test_for_mother(person_id, referred_from="labour")
 
         # ------------------------------- Postnatal iron and folic acid ---------------------------------------------
         cons = {_i: params['number_ifa_tablets_required_postnatally'] for _i in

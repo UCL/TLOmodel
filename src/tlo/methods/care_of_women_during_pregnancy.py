@@ -1040,18 +1040,10 @@ class CareOfWomenDuringPregnancy(Module):
 
             # Women who are already diagnosed will not be tested again, testing is managed in the HIV module
             # probability of HIV test determined by parameter in ResourceFile_HIV.xlsx
-            if not df.at[person_id, 'hv_diagnosed'] and (
-                    self.rng.random_sample() < self.sim.modules['Hiv'].parameters['prob_hiv_test_at_anc_or_delivery']):
-                mni[person_id]['anc_ints'].append('hiv')
+            test_scheduled = self.sim.modules['Hiv'].decide_whether_hiv_test_for_mother(person_id, referred_from="care_of_women_during_pregnancy")
 
-                self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    HSI_Hiv_TestAndRefer(
-                        person_id=person_id,
-                        module=self.sim.modules['Hiv'],
-                        referred_from="CareOfWomenDuringPregnancy"),
-                    topen=self.sim.date,
-                    tclose=None,
-                    priority=0)
+            if test_scheduled:
+                mni[person_id]['anc_ints'].append('hiv')
 
             logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'hiv_screen'})
 
