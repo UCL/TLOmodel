@@ -8,7 +8,6 @@ from tlo.methods import Metadata, pregnancy_helper_functions
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.epi import HSI_TdVaccine
 from tlo.methods.healthsystem import HSI_Event
-from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.methods.labour import LabourOnsetEvent
 from tlo.methods.malaria import HSI_MalariaIPTp
 from tlo.methods.tb import HSI_Tb_ScreeningAndRefer
@@ -1028,7 +1027,6 @@ class CareOfWomenDuringPregnancy(Module):
         This function contains the scheduling for HIV testing and is provided to women during ANC.
         :param hsi_event: HSI event in which the function has been called
         """
-        df = self.sim.population.props
         person_id = hsi_event.target
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
@@ -1040,7 +1038,8 @@ class CareOfWomenDuringPregnancy(Module):
 
             # Women who are already diagnosed will not be tested again, testing is managed in the HIV module
             # probability of HIV test determined by parameter in ResourceFile_HIV.xlsx
-            test_scheduled = self.sim.modules['Hiv'].decide_whether_hiv_test_for_mother(person_id, referred_from="care_of_women_during_pregnancy")
+            test_scheduled = self.sim.modules['Hiv'].decide_whether_hiv_test_for_mother(
+                person_id, referred_from="care_of_women_during_pregnancy")
 
             if test_scheduled:
                 mni[person_id]['anc_ints'].append('hiv')
