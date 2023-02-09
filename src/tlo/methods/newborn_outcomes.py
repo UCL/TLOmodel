@@ -953,21 +953,7 @@ class NewbornOutcomes(Module):
 
         if 'Hiv' in self.sim.modules:
             # schedule test if child not already diagnosed and mother is known hiv+
-            if not df.at[child_id, 'hv_diagnosed'] and \
-                df.at[mother_id, 'hv_diagnosed'] and (
-                df.at[child_id, 'nb_pnc_check'] == 1) and (
-                    self.rng.random_sample() < self.sim.modules['Hiv'].parameters['prob_hiv_test_for_newborn_infant']):
-
-                for days in 0, 41:
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(
-                        HSI_Hiv_TestAndRefer(
-                            person_id=child_id,
-                            module=self.sim.modules['Hiv'],
-                            referred_from="newborn_outcomes"),
-                        topen=self.sim.date + pd.DateOffset(days=days),
-                        tclose=None,
-                        priority=0
-                    )
+            self.sim.modules['Hiv'].decide_whether_hiv_test_for_infant(mother_id, child_id)
 
     def assessment_and_initiation_of_neonatal_resus(self, hsi_event):
         """

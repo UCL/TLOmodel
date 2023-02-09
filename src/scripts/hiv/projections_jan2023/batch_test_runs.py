@@ -25,6 +25,7 @@ import warnings
 
 from tlo import Date, logging
 from tlo.methods.fullmodel import fullmodel
+from tlo.methods import deviance_measure
 from tlo.scenario import BaseScenario
 
 # Ignore warnings to avoid cluttering output from simulation
@@ -38,8 +39,8 @@ class TestScenario(BaseScenario):
         super().__init__(
             seed=0,
             start_date=Date(2010, 1, 1),
-            end_date=Date(2020, 1, 1),
-            initial_population_size=100000,
+            end_date=Date(2046, 1, 1),
+            initial_population_size=50000,
             number_of_draws=1,
             runs_per_draw=5,
         )
@@ -57,7 +58,10 @@ class TestScenario(BaseScenario):
         }
 
     def modules(self):
-        return fullmodel(resourcefilepath=self.resources)
+        return [
+            fullmodel(resourcefilepath=self.resources),
+            deviance_measure.Deviance(resourcefilepath=self.resources),
+        ]
 
     def draw_parameters(self, draw_number, rng):
         return

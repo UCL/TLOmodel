@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from tlo import Module
-from tlo.methods import (  # deviance_measure,
+from tlo.methods import (
     alri,
     bladder_cancer,
     breast_cancer,
@@ -76,7 +76,6 @@ def fullmodel(
     module_classes = [
         # Standard modules
         demography.Demography,
-        # deviance_measure.Deviance,
         enhanced_lifestyle.Lifestyle,
         healthburden.HealthBurden,
         healthseekingbehaviour.HealthSeekingBehaviour,

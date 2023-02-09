@@ -2235,16 +2235,9 @@ class Labour(Module):
         # HIV testing occurs within the HIV module for women who havent already been diagnosed
         # probability of HIV test determined by parameter in ResourceFile_HIV.xlsx
         if 'Hiv' in self.sim.modules.keys():
-            if not df.at[person_id, 'hv_diagnosed'] and (
-                    self.rng.random_sample() < self.sim.modules['Hiv'].parameters['prob_hiv_test_at_anc_or_delivery']):
-                self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    HSI_Hiv_TestAndRefer(
-                        person_id=person_id,
-                        module=self.sim.modules['Hiv'],
-                        referred_from="labour"),
-                    topen=self.sim.date,
-                    tclose=None,
-                    priority=0)
+            # decide whether HIV test should be scheduled for mother
+            # this function will check conditions and schedule the HSI
+            self.sim.modules['Hiv'].decide_whether_hiv_test_for_mother(person_id)
 
         # ------------------------------- Postnatal iron and folic acid ---------------------------------------------
         cons = {_i: params['number_ifa_tablets_required_postnatally'] for _i in

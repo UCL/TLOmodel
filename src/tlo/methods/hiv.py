@@ -42,6 +42,9 @@ from tlo.util import create_age_range_lookup
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+logger_detail = logging.getLogger(f"{__name__}.detail")
+logger_detail.setLevel(logging.INFO)
+
 
 class Hiv(Module):
     """
@@ -1366,6 +1369,49 @@ class Hiv(Module):
 
         # return updated value for time-period
         return per_capita_testing
+
+    def decide_whether_hiv_test_for_mother(self, person_id):
+        """ called from labour.py under interventions_delivered_pre_discharge
+        mothers who are not already diagnosed with have an HIV test with
+        probability defined in ResourceFile_HIV.xlsx
+        """
+
+        df = self.sim.population.props
+
+        if not df.at[person_id, 'hv_diagnosed'] and (
+                self.rng.random_sample() < self.parameters['prob_hiv_test_at_anc_or_delivery']):
+
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                HSI_Hiv_TestAndRefer(
+                    person_id=person_id,
+                    module=self,
+                    referred_from="labour"),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0)
+
+    def decide_whether_hiv_test_for_infant(self, mother_id, child_id):
+        """ called from newborn_outcomes.py under hiv_screening_for_at_risk_newborns
+        """
+
+        df = self.sim.population.props
+        mother_id = mother_id
+        child_id = child_id
+
+        if not df.at[child_id, 'hv_diagnosed'] and \
+            df.at[mother_id, 'hv_diagnosed'] and (
+            df.at[child_id, 'nb_pnc_check'] == 1) and (
+                self.rng.random_sample() < self.parameters['prob_hiv_test_for_newborn_infant']):
+
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                HSI_Hiv_TestAndRefer(
+                    person_id=child_id,
+                    module=self,
+                    referred_from="newborn_outcomes"),
+                topen=self.sim.date + pd.DateOffset(weeks=6),
+                tclose=None,
+                priority=0
+            )
 
     def check_config_of_properties(self):
         """check that the properties are currently configured correctly"""

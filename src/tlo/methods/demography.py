@@ -65,8 +65,8 @@ class Demography(Module):
                 "sex",
                 "cause"
                 ]
-        # initialise empty dict with set keys
-        self.demog_outputs = {k: [] for k in keys}
+        # initialise empty dict with set keys - this is just for deviance_measure module
+        self.__demog_outputs = {k: [] for k in keys}
 
     AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = create_age_range_lookup(
         min_age=MIN_AGE_FOR_RANGE,
@@ -432,10 +432,10 @@ class Demography(Module):
 
         if "deviance_measure" in self.sim.modules:
             # save outputs to dict for calibration
-            self.demog_outputs["date"] += [self.sim.date.year]
-            self.demog_outputs["age"] += [person['age_years']]
-            self.demog_outputs["sex"] += [person['sex']]
-            self.demog_outputs["cause"] += [cause]
+            self.__demog_outputs["date"] += [self.sim.date.year]
+            self.__demog_outputs["age"] += [person['age_years']]
+            self.__demog_outputs["sex"] += [person['sex']]
+            self.__demog_outputs["cause"] += [cause]
 
         # - log all the properties for the deceased person
         logger_detail.info(key='properties_of_deceased_persons',
