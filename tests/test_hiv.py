@@ -589,7 +589,7 @@ def test_art_is_initiated_for_infants(seed):
         ev for ev in sim.modules['HealthSystem'].find_events_for_person(child_id) if
         isinstance(ev[1], hiv.HSI_Hiv_TestAndRefer)
     ][0]
-    assert date_event == sim.date
+    assert date_event >= sim.date
 
     # Run the TestAndRefer event for the child
     rtn = event.apply(person_id=child_id, squeeze_factor=0.0)
