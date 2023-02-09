@@ -23,7 +23,7 @@ class LongRun(BaseScenario):
         self.start_date = Date(2010, 1, 1)
         self.end_date = self.start_date + pd.DateOffset(years=10)
         self.pop_size = 20_000
-        self.number_of_draws = 1
+        self.number_of_draws = 4
         self.runs_per_draw = 10
 
     def log_configuration(self):
@@ -45,7 +45,11 @@ class LongRun(BaseScenario):
         return fullmodel(resourcefilepath=self.resources)
 
     def draw_parameters(self, draw_number, rng):
-        return  # Using default parameters in all cases
+        return {
+            'Depression': {
+                'pr_assessed_for_depression_in_generic_appt_level1': [0.1, 0.07, 0.05, 0.01][draw_number]
+            }
+        }
 
 
 if __name__ == '__main__':
