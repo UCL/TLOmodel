@@ -970,7 +970,7 @@ class Hiv(Module):
         * schedule testing;
         * schedule infection during breastfeeding
         """
-        params = self.parameters
+        p = self.parameters
         df = self.sim.population.props
 
         # Default Settings:
@@ -1001,17 +1001,17 @@ class Hiv(Module):
         if mother_infected_prior_to_pregnancy:
             if mother.hv_art == "on_VL_suppressed":
                 #  mother has existing infection, mother ON ART and VL suppressed at time of delivery
-                child_infected = self.rng.random_sample() < params["prob_mtct_treated"]
+                child_infected = self.rng.random_sample() < p["prob_mtct_treated"]
             else:
                 # mother was infected prior to pregnancy but is not on VL suppressed at time of delivery
                 child_infected = (
-                    self.rng.random_sample() < params["prob_mtct_untreated"]
+                    self.rng.random_sample() < p["prob_mtct_untreated"]
                 )
 
         elif mother_infected_during_pregnancy:
             #  mother has incident infection during pregnancy, NO ART
             child_infected = (
-                self.rng.random_sample() < params["prob_mtct_incident_preg"]
+                self.rng.random_sample() < p["prob_mtct_incident_preg"]
             )
 
         else:
@@ -1037,7 +1037,7 @@ class Hiv(Module):
             # usually performed by care_of_women_during_pregnancy module
             if not mother.hv_diagnosed and \
                 mother.is_alive and (
-                    self.rng.random_sample() < params["prob_hiv_test_at_anc_or_delivery"]):
+                    self.rng.random_sample() < p["prob_hiv_test_at_anc_or_delivery"]):
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_TestAndRefer(
                         person_id=abs(mother_id),  # Pass mother's id, whether from true or direct birth
@@ -1048,7 +1048,8 @@ class Hiv(Module):
                     tclose=None,
                 )
 
-        # if mother known HIV+, schedule virological test for infant in 6wks, 9mths, 18mths
+        # if mother known HIV+, schedule virological test for infant in 6 weeks, 9mths, 18mths
+        # 6 week test called by newborn_outcomes.py
         if mother.hv_diagnosed and df.at[child_id, "is_alive"]:
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -1062,7 +1063,8 @@ class Hiv(Module):
                 tclose=None,
             )
 
-            if "newborn_outcomes" not in self.sim.modules:
+            if "newborn_outcomes" not in self.sim.modules and (
+                    self.rng.random_sample() < p['prob_hiv_test_for_newborn_infant']):
 
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_TestAndRefer(
@@ -1075,25 +1077,26 @@ class Hiv(Module):
                 )
 
             # these later infant tests are not in newborn_outcomes
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                hsi_event=HSI_Hiv_TestAndRefer(
-                    person_id=child_id,
-                    module=self,
-                    referred_from='Infant_testing'),
-                priority=1,
-                topen=self.sim.date + pd.DateOffset(months=9),
-                tclose=None,
-            )
+            if self.rng.random_sample() < p['prob_hiv_test_for_newborn_infant']:
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=HSI_Hiv_TestAndRefer(
+                        person_id=child_id,
+                        module=self,
+                        referred_from='Infant_testing'),
+                    priority=1,
+                    topen=self.sim.date + pd.DateOffset(months=9),
+                    tclose=None,
+                )
 
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                hsi_event=HSI_Hiv_TestAndRefer(
-                    person_id=child_id,
-                    module=self,
-                    referred_from='Infant_testing'),
-                priority=1,
-                topen=self.sim.date + pd.DateOffset(months=18),
-                tclose=None,
-            )
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=HSI_Hiv_TestAndRefer(
+                        person_id=child_id,
+                        module=self,
+                        referred_from='Infant_testing'),
+                    priority=1,
+                    topen=self.sim.date + pd.DateOffset(months=18),
+                    tclose=None,
+                )
 
     def report_daly_values(self):
         """Report DALYS for HIV, based on current symptomatic state of persons."""

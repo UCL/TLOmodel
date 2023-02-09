@@ -24,8 +24,8 @@ tlo batch-download calibration_script-2022-04-12T190518Z
 import warnings
 
 from tlo import Date, logging
-from tlo.methods.fullmodel import fullmodel
 from tlo.methods import deviance_measure
+from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
 
 # Ignore warnings to avoid cluttering output from simulation
