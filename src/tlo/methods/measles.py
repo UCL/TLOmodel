@@ -312,7 +312,7 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
                     event=AlriIncidentCase(
                         module=self.sim.modules["Alri"],
                         person_id=person_id,
-                        pathogen=self.sim.modules["Alri"].all_pathogens[0],
+                        pathogen=self.sim.modules["Alri"].all_pathogens[0], #For now passing fixed pathogen, will have to randomise
                     ),
                     date=random_date(self.sim.date, symp_resolve, self.module.rng)
                 )
