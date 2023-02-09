@@ -474,7 +474,7 @@ def test_record_of_appt_footprint_for_switching_to_methods(tmpdir, seed):
         )
 
     assert is_list_longer_than_length_of_one_and_with_first_element_nonblank_and_subsequent_blank(
-        get_appt_footprints(switch_from='not_using', switch_to='pill', consumables_available=False)
+        get_appt_footprints(switch_from='not_using', switch_to='female_sterilization', consumables_available=False)
     )
     assert is_list_longer_than_length_of_one_and_with_first_element_nonblank_and_subsequent_blank(
         get_appt_footprints(switch_from='not_using', switch_to='pill', consumables_available=False)
