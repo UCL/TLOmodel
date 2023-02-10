@@ -42,9 +42,6 @@ from tlo.util import create_age_range_lookup
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-logger_detail = logging.getLogger(f"{__name__}.detail")
-logger_detail.setLevel(logging.INFO)
-
 
 class Hiv(Module):
     """
