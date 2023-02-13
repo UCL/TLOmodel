@@ -11,6 +11,7 @@ from pathlib import Path
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods.fullmodel import fullmodel
+from tlo.methods import deviance_measure
 
 # Where will outputs go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
@@ -23,8 +24,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2014, 1, 1)
-popsize = 1000
+end_date = Date(2022, 1, 1)
+popsize = 100
 scenario = 0
 
 # set up the log config
@@ -34,10 +35,11 @@ log_config = {
     "directory": outputpath,
     "custom_levels": {
         "*": logging.WARNING,
-        "tlo.methods.hiv": logging.INFO,
-        "tlo.methods.tb": logging.INFO,
-        "tlo.methods.demography": logging.INFO,
+        # "tlo.methods.hiv": logging.INFO,
+        # "tlo.methods.tb": logging.INFO,
+        # "tlo.methods.demography": logging.INFO,
         # "tlo.methods.healthsystem.summary": logging.INFO,
+        'tlo.methods.deviance_measure': logging.INFO,
         "tlo.methods.labour.detail": logging.WARNING,  # this logger keeps outputting even when set to warning
     },
 }
@@ -62,7 +64,9 @@ sim.register(*fullmodel(
                          "use_funded_or_actual_staffing": "funded_plus",
                          "capabilities_coefficient": 1.0},
     },
-))
+    ),
+    deviance_measure.Deviance(resourcefilepath=resourcefilepath),
+)
 
 # # set the scenario
 # sim.modules["Tb"].parameters["scenario"] = scenario

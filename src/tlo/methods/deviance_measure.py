@@ -216,7 +216,7 @@ class Deviance(Module):
 
         # ------------------ TB ------------------ #
 
-        # tb active incidence (WHO estimates) 2010 -2017
+        # tb active incidence (WHO estimates) 2010 -2021
         tb_incidence_who = (
                                deviance_function(
                                    data_dict["who_tb_inc_per_100k"].values[0], model_dict["TB_active_inc_per100k"][0]
@@ -241,12 +241,24 @@ class Deviance(Module):
                                ) +
                                deviance_function(
                                    data_dict["who_tb_inc_per_100k"].values[7], model_dict["TB_active_inc_per100k"][7]
+                               ) +
+                               deviance_function(
+                                   data_dict["who_tb_inc_per_100k"].values[8], model_dict["TB_active_inc_per100k"][8]
+                               ) +
+                               deviance_function(
+                                   data_dict["who_tb_inc_per_100k"].values[9], model_dict["TB_active_inc_per100k"][9]
+                               ) +
+                               deviance_function(
+                                   data_dict["who_tb_inc_per_100k"].values[10], model_dict["TB_active_inc_per100k"][10]
+                               ) +
+                               deviance_function(
+                                   data_dict["who_tb_inc_per_100k"].values[11], model_dict["TB_active_inc_per100k"][11]
                                )
-                           ) / 8
+                           ) / 12
 
         # ------------------ DEATHS ------------------ #
 
-        # aids deaths unaids 2010-2019
+        # aids deaths unaids 2010-2021
         hiv_deaths_unaids = (
                                 deviance_function(
                                     data_dict["unaids_deaths_per_100k"][0],
@@ -288,9 +300,17 @@ class Deviance(Module):
                                     data_dict["unaids_deaths_per_100k"][9],
                                     model_dict["AIDS_mortality_per_100k"][9],
                                 )
-                            ) / 10
+                                + deviance_function(
+                                data_dict["unaids_deaths_per_100k"][10],
+                                model_dict["AIDS_mortality_per_100k"][10],
+                                )
+                                + deviance_function(
+                                data_dict["unaids_deaths_per_100k"][11],
+                                model_dict["AIDS_mortality_per_100k"][11],
+                                )
+                            ) / 12
 
-        # tb death rate who 2010-2017
+        # tb death rate who 2010-2021
         tb_mortality_who = (
                                deviance_function(
                                    data_dict["who_tb_deaths_per_100k"].values[0],
@@ -321,10 +341,26 @@ class Deviance(Module):
                                    model_dict["TB_mortality_per_100k"][6],
                                ) +
                                deviance_function(
-                                   data_dict["who_tb_deaths_per_100k"].values[7],
-                                   model_dict["TB_mortality_per_100k"][7],
+                                   data_dict["who_tb_deaths_per_100k"].values[8],
+                                   model_dict["TB_mortality_per_100k"][8],
+                               ) +
+                               deviance_function(
+                                   data_dict["who_tb_deaths_per_100k"].values[9],
+                                   model_dict["TB_mortality_per_100k"][9],
+                               ) +
+                               deviance_function(
+                                   data_dict["who_tb_deaths_per_100k"].values[10],
+                                   model_dict["TB_mortality_per_100k"][10],
+                               ) +
+                               deviance_function(
+                                   data_dict["who_tb_deaths_per_100k"].values[11],
+                                   model_dict["TB_mortality_per_100k"][11],
+                               ) +
+                               deviance_function(
+                                   data_dict["who_tb_deaths_per_100k"].values[12],
+                                   model_dict["TB_mortality_per_100k"][12],
                                )
-                           ) / 8
+                           ) / 12
 
         # tb who is a model estimate, also tb cnr depends on estimated incidence
         calibration_score = (
@@ -345,7 +381,7 @@ class Deviance(Module):
 
     def on_simulation_end(self):
 
-        if self.sim.date.year >= 2020:
+        if self.sim.date.year >= 2021:
             self.read_data_files()
             self.read_model_outputs()
             deviance_measure = self.weighted_mean(model_dict=self.model_dict, data_dict=self.data_dict)
