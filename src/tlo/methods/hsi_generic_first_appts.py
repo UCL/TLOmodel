@@ -100,7 +100,6 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
 
     # Gather useful shortcuts
     sim = hsi_event.sim
-    rng = hsi_event.module.rng
     person_id = hsi_event.target
     df = hsi_event.sim.population.props
     symptoms = hsi_event.sim.modules['SymptomManager'].has_what(person_id=person_id)
