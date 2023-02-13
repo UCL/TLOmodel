@@ -507,6 +507,20 @@ class Depression(Module):
 
         return av_daly_wt_last_month
 
+    def do_on_presentation_to_care(self, person_id, hsi_event, squeeze_factor):
+        """This member function is called when a person is in an HSI, and there may need to be screening for depression.
+        """
+        if hsi_event.TREATMENT_ID == "FirstAttendance_NonEmergency":
+            if (squeeze_factor == 0.0) and (self.rng.rand() <
+                                            self.parameters['pr_assessed_for_depression_in_generic_appt_level1']):
+                self.do_when_suspected_depression(person_id=person_id, hsi_event=hsi_event)
+
+        elif hsi_event.TREATMENT_ID == "FirstAttendance_Emergency":
+            symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
+            if 'Injuries_From_Self_Harm' in symptoms:
+                self.do_when_suspected_depression(person_id=person_id, hsi_event=hsi_event)
+                # TODO: Trigger surgical care for injuries.
+
     def do_when_suspected_depression(self, person_id, hsi_event):
         """
         This is called by the a generic HSI event when depression is suspected or otherwise investigated.
