@@ -46,9 +46,9 @@ class TestScenario(BaseScenario):
             seed=0,
             start_date=Date(2010, 1, 1),
             end_date=Date(2022, 1, 1),
-            initial_population_size=75000,
-            number_of_draws=1,
-            runs_per_draw=1,
+            initial_population_size=100000,
+            number_of_draws=number_of_draws,
+            runs_per_draw=runs_per_draw,
         )
 
         self.sampled_parameters = pd.read_excel(
