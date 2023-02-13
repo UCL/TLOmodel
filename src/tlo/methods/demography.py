@@ -430,7 +430,7 @@ class Demography(Module):
 
         logger.info(key='death', data=data_to_log_for_each_death)
 
-        if "deviance_measure" in self.sim.modules:
+        if "Deviance" in self.sim.modules:
             # save outputs to dict for calibration
             self.__demog_outputs["date"] += [self.sim.date.year]
             self.__demog_outputs["age"] += [person['age_years']]
