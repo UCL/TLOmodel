@@ -29,7 +29,7 @@ class Deviance(Module):
         self.data_dict = dict()
         self.model_dict = dict()
 
-        # Initialise empty dict (with factory method of list) to store lists containing information abuot each day
+        # Initialise empty dict (with factory method of list) to store lists containing information about each death
         # that is used by the `Deviance` module
         self.__demog_outputs__ = defaultdict(list)
 
@@ -45,28 +45,19 @@ class Deviance(Module):
     PROPERTIES = {}
 
     def read_parameters(self, data_folder):
-        """Read in ResourceFile"""
-        # Load parameters from resource file:
-        # todo could read in params here instead of read_data_files
         pass
 
     def initialise_population(self, population):
-        """Nothing to initialise in the population
-        """
         pass
 
     def initialise_simulation(self, sim):
-        """ nothing to initialise
-        """
         pass
 
     def on_birth(self, mother_id, child_id):
-        """Nothing to handle on_birth
-        """
         pass
 
     def read_data_files(self):
-        # make a dict of all data to be used in calculating calibration score
+        """Make a dict of all data to be used in calculating calibration score"""
 
         # # HIV read in resource files for data
         xls = pd.ExcelFile(self.resourcefilepath / "ResourceFile_HIV.xlsx")
