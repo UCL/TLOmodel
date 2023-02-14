@@ -301,6 +301,9 @@ class Tb(Module):
         "spec_xray_smear_positive": Parameter(
             Types.REAL, "specificity of x-ray diagnosis in smear positive TB cases"
         ),
+        "probability_community_chest_xray": Parameter(
+            Types.REAL, "probability of being selected for outreach xray"
+        ),
         # ------------------ treatment success rates ------------------ #
         "prob_tx_success_ds": Parameter(
             Types.REAL, "Probability of treatment success for new and relapse TB cases"
@@ -941,6 +944,9 @@ class Tb(Module):
         sim.schedule_event(TbTreatmentAndRelapseEvents(self), sim.date + DateOffset(days=0))
         sim.schedule_event(TbSelfCureEvent(self), sim.date + DateOffset(days=0))
         sim.schedule_event(TbActiveCasePoll(self), sim.date + DateOffset(years=1))
+
+        # schedule outreach xrays for tb screening from 2023
+        sim.schedule_event(TbCommunityXray(self), sim.date + DateOffset(years=13))
 
         # log at the end of the year
         sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(years=1))

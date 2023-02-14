@@ -35,7 +35,7 @@ log_config = {
     "custom_levels": {
         "*": logging.WARNING,
         "tlo.methods.hiv": logging.INFO,
-        "tlo.methods.tb": logging.INFO,
+        "tlo.methods.tb": logging.DEBUG,
         "tlo.methods.demography": logging.INFO,
         # "tlo.methods.healthsystem.summary": logging.INFO,
         "tlo.methods.labour.detail": logging.WARNING,  # this logger keeps outputting even when set to warning
@@ -64,9 +64,8 @@ sim.register(*fullmodel(
     },
 ))
 
-# # set the scenario
-# sim.modules["Tb"].parameters["scenario"] = scenario
-# sim.modules["Tb"].parameters["scenario_start_date"] = Date(2023, 1, 1)
+# set the scenario
+sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.99
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
