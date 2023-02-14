@@ -528,13 +528,13 @@ class Depression(Module):
 
         elif hsi_event.TREATMENT_ID == "AntenatalCare_Outpatient":  # module care_of_women_during_pregnancy
             if (not df.at[person_id, 'de_ever_diagnosed_depression']) and (
-                self.rng.rand() < self.paremeters['pr_assessed_for_depression_for_perinatal_female']
+                self.rng.rand() < self.parameters['pr_assessed_for_depression_for_perinatal_female']
             ):
                 self.do_when_suspected_depression(person_id, hsi_event)
 
         elif hsi_event.TREATMENT_ID == "PostnatalCare_Maternal":  # module labour
             if (not df.at[person_id, 'de_ever_diagnosed_depression']) and (
-                self.rng.rand() < self.paremeters['pr_assessed_for_depression_for_perinatal_female']
+                self.rng.rand() < self.parameters['pr_assessed_for_depression_for_perinatal_female']
             ):
                 self.do_when_suspected_depression(person_id=person_id, hsi_event=hsi_event)
 
