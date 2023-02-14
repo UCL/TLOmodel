@@ -157,21 +157,35 @@ class Deviance(Module):
         keep = (deaths.age >= 15) & (
             (deaths.cause == "AIDS_TB") | (deaths.cause == "AIDS_non_TB")
         )
-        deaths_AIDS = deaths.loc[keep].copy()
-        tot_aids_deaths = deaths_AIDS.groupby(by=["date"]).size()
-        tot_aids_deaths.index = pd.to_datetime(tot_aids_deaths.index, format="%Y")
 
-        # aids mortality rates per 1000 person-years
-        self.model_dict["AIDS_mortality_per_100k"] = (tot_aids_deaths / pop) * 100000
+        deaths_AIDS = deaths.loc[keep].copy()
+
+        if not deaths_AIDS.empty:
+            tot_aids_deaths = deaths_AIDS.groupby(by=["date"]).size()
+            tot_aids_deaths.index = pd.to_datetime(tot_aids_deaths.index, format="%Y")
+
+            # aids mortality rates per 1000 person-years
+            self.model_dict["AIDS_mortality_per_100k"] = (tot_aids_deaths / pop) * 100000
+
+        else:
+            tot_aids_deaths = pd.Series(0, index=pop.index)
+
+            self.model_dict["AIDS_mortality_per_100k"] = tot_aids_deaths
 
         # TB deaths (non-hiv only, all ages)
         keep = deaths.cause == "TB"
         deaths_TB = deaths.loc[keep].copy()
-        tot_tb_non_hiv_deaths = deaths_TB.groupby(by=["date"]).size()
-        tot_tb_non_hiv_deaths.index = pd.to_datetime(tot_tb_non_hiv_deaths.index, format="%Y")
+        if not deaths_TB.empty:
 
-        # tb mortality rates per 100k person-years
-        self.model_dict["TB_mortality_per_100k"] = (tot_tb_non_hiv_deaths / pop) * 100000
+            tot_tb_non_hiv_deaths = deaths_TB.groupby(by=["date"]).size()
+            tot_tb_non_hiv_deaths.index = pd.to_datetime(tot_tb_non_hiv_deaths.index, format="%Y")
+
+            # tb mortality rates per 100k person-years
+            self.model_dict["TB_mortality_per_100k"] = (tot_tb_non_hiv_deaths / pop) * 100000
+        else:
+            tot_tb_non_hiv_deaths = pd.Series(0, index=pop.index)
+
+            self.model_dict["TB_mortality_per_100k"] = tot_tb_non_hiv_deaths
 
     def weighted_mean(self, model_dict, data_dict):
         # assert model_output is not empty
