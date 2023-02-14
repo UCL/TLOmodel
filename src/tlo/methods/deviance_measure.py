@@ -6,6 +6,7 @@ for a given set of parameters using outputs from the demography (deaths), HIV an
 
 """
 import math
+from collections import defaultdict
 
 import pandas as pd
 
@@ -27,6 +28,10 @@ class Deviance(Module):
 
         self.data_dict = dict()
         self.model_dict = dict()
+
+        # Initialise empty dict (with factory method of list) to store lists containing information abuot each day
+        # that is used by the `Deviance` module
+        self.__demog_outputs__ = defaultdict(list)
 
     INIT_DEPENDENCIES = {'Demography', 'Hiv', 'Tb'}
 
@@ -120,7 +125,7 @@ class Deviance(Module):
     def read_model_outputs(self):
         hiv = self.sim.modules['Hiv'].hiv_outputs
         tb = self.sim.modules['Tb'].tb_outputs
-        demog = self.sim.modules['Demography'].demog_outputs
+        demog = self.__demog_outputs__
 
         # get logged outputs for calibration into dict
         # population size each year
@@ -378,6 +383,13 @@ class Deviance(Module):
         return_values = [calibration_score, hiv_beta, tb_scaling_factor_WHO]
 
         return return_values
+
+    def record_death(self, year, age_years, sex, cause):
+        """Save outputs about one death"""
+        self.__demog_outputs__["date"] += [year]
+        self.__demog_outputs__["age"] += [age_years]
+        self.__demog_outputs__["sex"] += [sex]
+        self.__demog_outputs__["cause"] += [cause]
 
     def on_simulation_end(self):
 
