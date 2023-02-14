@@ -2231,11 +2231,9 @@ class Labour(Module):
         person_id = int(hsi_event.target)
         params = self.current_parameters
 
-        # HIV testing occurs within the HIV module for women who havent already been diagnosed
-        # probability of HIV test determined by parameter in ResourceFile_HIV.xlsx
-        if 'Hiv' in self.sim.modules.keys():
-            # decide whether HIV test should be scheduled for mother
-            # this function will check conditions and schedule the HSI
+        # HIV testing occurs within the HIV module for women who haven't already been diagnosed.
+        # The probability of getting the HIV test is determined by the Hiv module.
+        if 'Hiv' in self.sim.modules:
             self.sim.modules['Hiv'].decide_whether_hiv_test_for_mother(person_id, referred_from="labour")
 
         # ------------------------------- Postnatal iron and folic acid ---------------------------------------------
