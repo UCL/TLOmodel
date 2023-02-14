@@ -369,16 +369,6 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
             sim.modules['Depression'].do_when_suspected_depression(person_id=person_id, hsi_event=hsi_event)
             # TODO: Trigger surgical care for injuries.
 
-    # if 'Hiv' in sim.modules:
-    #     sim.modules['HealthSystem'].schedule_hsi_event(
-    #         HSI_Hiv_TestAndRefer(
-    #             person_id=person_id,
-    #             module=sim.modules['Hiv'],
-    #             referred_from="hsi_generic_first_appt"),
-    #         topen=sim.date,
-    #         tclose=None,
-    #         priority=0
-    #     )
 
     if "Malaria" in sim.modules:
         # Quick diagnosis algorithm - just perfectly recognises the symptoms of severe malaria
