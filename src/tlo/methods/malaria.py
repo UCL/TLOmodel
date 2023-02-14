@@ -1237,7 +1237,7 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         )
 
         pop2_10 = len(df[df.is_alive & (df.age_years.between(2, 10))])
-        inc_1000py_2_10 = (tmp2 / pop2_10) * 1000
+        inc_1000py_2_10 = (tmp2 / pop2_10) * 1000 if pop2_10 else 0
 
         inc_1000py_hiv = 0  # if running without hiv/tb
 

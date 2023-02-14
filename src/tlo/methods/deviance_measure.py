@@ -120,7 +120,7 @@ class Deviance(Module):
     def read_model_outputs(self):
         hiv = self.sim.modules['Hiv'].hiv_outputs
         tb = self.sim.modules['Tb'].tb_outputs
-        demog = self.sim.modules['Demography'].__demog_outputs
+        demog = self.sim.modules['Demography']._Demography__demog_outputs
 
         # get logged outputs for calibration into dict
         # population size each year
