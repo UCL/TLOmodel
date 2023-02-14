@@ -1,7 +1,7 @@
 {
   "scenario_script_path": "src/scripts/hiv/projections_jan2023/batch_test_runs.py",
   "scenario_seed": 0,
-  "runs_per_draw": 5,
+  "runs_per_draw": 1,
   "draws": [
     {
       "draw_number": 0,
@@ -9,6 +9,6 @@
       "parameters": null
     }
   ],
-  "commit": "e903d463fdac2705d7c785bf58de7c6024f07aff",
-  "github": "https://github.com/UCL/TLOmodel/tree/e903d463fdac2705d7c785bf58de7c6024f07aff"
+  "commit": "aa45a4bc518099b6753f12f7f88edbfc51333e5d",
+  "github": "https://github.com/UCL/TLOmodel/tree/aa45a4bc518099b6753f12f7f88edbfc51333e5d"
 }
