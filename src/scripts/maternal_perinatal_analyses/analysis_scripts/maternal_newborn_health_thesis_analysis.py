@@ -38,6 +38,8 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
     if not os.path.isdir(secondary_oc_path):
         os.makedirs(f'{path}/secondary_outcomes')
 
+    scenario_titles = list(results_folders.keys())
+
     output_df = pd.DataFrame(
         columns=['scenario',
                  'output',
@@ -84,7 +86,6 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
         return values
 
     def get_diff_between_runs(dfs, baseline, intervention, keys, intervention_years, output_df):
-
 
         def get_mean_and_confidence_interval(data, confidence=0.95):
             a = 1.0 * np.array(data)
@@ -148,6 +149,14 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
 
         return output_df
 
+    def save_outputs(folder, keys, save_name, save_folder):
+        dfs = []
+        for k in scenario_names:
+            scen_df = get_diff_between_runs(folder, scenario_names[0], k, keys, intervention_years, output_df)
+            dfs.append(scen_df)
+
+        final_df = pd.concat(dfs)
+        final_df.to_csv(f'{save_folder}/{save_name}.csv')
 
     # Get denominator and complications folders
     births_dict = analysis_utility_functions.return_birth_data_from_multiple_scenarios(
@@ -462,78 +471,7 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
             f'Total {group} Deaths (scaled)', f'Yearly Baseline {group} Deaths Compared to Intervention',
             primary_oc_path, f'{group}_crude_deaths_comparison.png')
 
-    def extract_deaths_by_cause(results_folder, births_df, intervention_years, scenario_name, final_df):
-
-        dd = extract_results(
-            results_folder,
-            module="tlo.methods.demography.detail",
-            key="properties_of_deceased_persons",
-            custom_generate_series=(
-                lambda df: df.loc[(df['date'].dt.year >= intervention_years[0]) &
-                                  (df['date'].dt.year <= intervention_years[-1]) &
-                                  df['cause_of_death'].str.contains(
-                                      'ectopic_pregnancy|spontaneous_abortion|induced_abortion|'
-                                      'severe_gestational_hypertension|severe_pre_eclampsia|eclampsia|antenatal_sepsis|'
-                                      'uterine_rupture|intrapartum_sepsis|postpartum_sepsis|postpartum_haemorrhage|'
-                                      'secondary_postpartum_haemorrhage|antepartum_haemorrhage')].assign(
-                    year=df['date'].dt.year).groupby(['cause_of_death'])['year'].count()),
-            do_scaling=True)
-        direct_deaths = dd.fillna(0)
-
-        id = extract_results(
-            results_folder,
-            module="tlo.methods.demography.detail",
-            key="properties_of_deceased_persons",
-            custom_generate_series=(
-                lambda df: df.loc[(df['date'].dt.year >= intervention_years[0]) &
-                                  (df['date'].dt.year <= intervention_years[-1]) &
-                                  (df['is_pregnant'] | df['la_is_postpartum']) &
-                                  df['cause_of_death'].str.contains(
-                                      'AIDS_non_TB|AIDS_TB|TB|Malaria|Suicide|ever_stroke|diabetes|chronic_ischemic_hd|'
-                                      'ever_heart_attack|chronic_kidney_disease')].assign(
-                    year=df['date'].dt.year).groupby(['cause_of_death'])['year'].count()),
-            do_scaling=True)
-
-        indirect_deaths = id.fillna(0)
-
-        total = direct_deaths.append(indirect_deaths)
-        df_index = list(range(0, len(total.index)))
-        df = final_df.reindex(df_index)
-
-        births_int = births_df.loc[intervention_years[0]: intervention_years[-1]]
-        sum_births_int_by_run = analysis_utility_functions.get_mean_from_columns(births_int, 'sum')
-        births_agg_data = get_mean_95_CI_from_list(sum_births_int_by_run)
-
-        for comp, v in zip(total.index, df_index):
-            df.update(
-                pd.DataFrame({'Scenario': scenario_name,
-                              'Complication/Disease': comp,
-                              'MMR': (total.loc[comp].mean() / births_agg_data[0]) * 100_000},
-                             index=[v]))
-
-        return df
-
-    cause_df = pd.DataFrame(columns=['Scenario', 'Complication/Disease', 'MMR'])
-    scenario_titles = list(results_folders.keys())
-    t = []
-    for k in scenario_titles:
-        sq_df = extract_deaths_by_cause(results_folders[k], births_dict[k]['births_data_frame'],
-                                        intervention_years, k,
-                                        cause_df)
-        t.append(sq_df)
-
-    final_df = pd.concat(t)
-
-    import seaborn as sns
-
-    g = sns.catplot(kind='bar', data=final_df, col='Scenario', x='Complication/Disease', y='MMR')
-    g.set_xticklabels(rotation=75, fontdict={'fontsize': 7}, horizontalalignment='right')
-    plt.savefig(f'{primary_oc_path}/deaths_by_cause_by_scenario.png', bbox_inches='tight')
-    plt.show()
-
-    final_df.to_csv(f'{primary_oc_path}/mmrs_by_cause.csv')
-
-    def extract_deaths_by_causeTEST(results_folder, births_df, intervention_years):
+    def extract_deaths_by_cause(results_folder, births_df, intervention_years):
 
         d_causes = ['ectopic_pregnancy', 'spontaneous_abortion', 'induced_abortion', 'severe_gestational_hypertension',
                     'severe_pre_eclampsia', 'eclampsia', 'antenatal_sepsis', 'uterine_rupture',
@@ -543,6 +481,21 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
         ind_causes = ['AIDS_non_TB', 'AIDS_TB', 'TB', 'Malaria', 'Suicide', 'ever_stroke', 'diabetes',
                       'chronic_ischemic_hd', 'ever_heart_attack',
                       'chronic_kidney_disease']
+
+        def update_dfs_to_replace_missing_causes(df, causes):
+            t = []
+            for year in sim_years:
+                for cause in causes:
+                    if cause not in df.loc[year].index:
+                        index = pd.MultiIndex.from_tuples([(year, cause)], names=["year", "cause_of_death"])
+                        new_row = pd.DataFrame(columns=df.columns, index=index)
+                        f_df = new_row.fillna(0.0)
+                        t.append(f_df)
+
+            causes_df = pd.concat(t)
+            updated_df = df.append(causes_df)
+
+            return updated_df
 
         dd = extract_results(
             results_folder,
@@ -564,6 +517,9 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
             do_scaling=True)
         indirect_deaths = id.fillna(0)
 
+        updated_dd = update_dfs_to_replace_missing_causes(direct_deaths, d_causes)
+        updated_ind = update_dfs_to_replace_missing_causes(indirect_deaths, ind_causes)
+
         results = dict()
 
         def extract_mmr_data(cause, df):
@@ -571,66 +527,89 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
             mmr_df = (death_df / births_df) * 100_000
             results.update({f'{cause}_mmr_df': mmr_df})
             mmr_df_int = mmr_df.loc[intervention_years[0]:intervention_years[-1]]
-            list_mmr = get_mean_from_columns(mmr_df_int, 'mean')
+            list_mmr = get_mean_from_columns(mmr_df_int, 'avg')
             results.update({f'{cause}_mmr_avg': get_mean_95_CI_from_list(list_mmr)})
 
         for cause in d_causes:
-            extract_mmr_data(cause, direct_deaths)
+            extract_mmr_data(cause, updated_dd)
 
         for cause in ind_causes:
-            extract_mmr_data(cause, indirect_deaths)
+            extract_mmr_data(cause, updated_ind)
 
         return results
 
-    # test_data = {k: extract_deaths_by_causeTEST(results_folders[k], births_dict[k]['births_data_frame'],
-    #                                             intervention_years) for k in results_folders}
-
-
-    # NEONATAL DEATH BY CAUSE
-    def extract_neo_deaths_by_cause(results_folder, births_df, intervention_years, scenario_name, final_df):
+    def extract_neonatal_deaths_by_cause(results_folder, births_df, intervention_years):
 
         nd = extract_results(
             results_folder,
             module="tlo.methods.demography.detail",
             key="properties_of_deceased_persons",
             custom_generate_series=(
-                lambda df: df.loc[(df['date'].dt.year >= intervention_years[0]) &
-                                  (df['date'].dt.year <= intervention_years[-1]) &
-                                  (df['age_days'] < 29)].assign(
-                    year=df['date'].dt.year).groupby(['cause_of_death'])['year'].count()),
+                lambda df: df.loc[(df['age_days'] < 29)].assign(
+                    year=df['date'].dt.year).groupby(['year', 'cause_of_death'])['year'].count()),
             do_scaling=True)
         neo_deaths = nd.fillna(0)
 
-        births_int = births_df.loc[intervention_years[0]: intervention_years[-1]]
-        sum_births_int_by_run = analysis_utility_functions.get_mean_from_columns(births_int, 'sum')
-        births_agg_data = analysis_utility_functions.get_mean_and_quants_from_list(sum_births_int_by_run)
+        results = dict()
+        n_causes = list(neo_deaths.loc[2010].index)
 
-        df_index = list(range(0, len(neo_deaths.index)))
-        df = final_df.reindex(df_index)
+        for cause in n_causes:
+            death_df = neo_deaths.loc[(slice(None), cause), slice(None)].droplevel(1)
+            nmr_df = (death_df / births_df) * 1000
+            nmr_df_final = nmr_df.fillna(0)
+            results.update({f'{cause}_nmr_df': nmr_df_final})
+            nmr_df_int = nmr_df_final.loc[intervention_years[0]:intervention_years[-1]]
+            list_nmr = get_mean_from_columns(nmr_df_int, 'avg')
+            results.update({f'{cause}_nmr_avg': get_mean_95_CI_from_list(list_nmr)})
 
-        for comp, v in zip(neo_deaths.index, df_index):
-            df.update(
-                pd.DataFrame({'Scenario': scenario_name,
-                              'Complication/Disease': comp,
-                              'NMR': (neo_deaths.loc[comp].mean()/births_agg_data[0]) * 1000},
-                             index=[v]))
+        return results
 
-        return df
+    cod_data = {k: extract_deaths_by_cause(results_folders[k], births_dict[k]['births_data_frame'],
+                                                intervention_years) for k in results_folders}
 
-    ncause_df = pd.DataFrame(columns=['Scenario', 'Complication/Disease', 'NMR'])
-    t = []
-    for k in scenario_titles:
-        sq_df = extract_neo_deaths_by_cause(results_folders[k], births_dict[k]['births_data_frame'],
-                                            intervention_years, k, ncause_df)
-        t.append(sq_df)
-    final_df_n = pd.concat(t)
+    cod_neo_data = {k: extract_neonatal_deaths_by_cause(results_folders[k], births_dict[k]['births_data_frame'],
+                                                        intervention_years) for k in results_folders}
+    def save_mr_by_cause_data_and_output_graphs(group, cause_d):
+        if group == 'mat':
+            d = ['m', 'MMR']
+        else:
+            d = ['n', 'NMR']
 
-    g = sns.catplot(kind='bar', data=final_df_n, col='Scenario', x='Complication/Disease', y='NMR')
-    g.set_xticklabels(rotation=75, fontdict={'fontsize': 6}, horizontalalignment='right')
-    plt.savefig(f'{primary_oc_path}/neo_deaths_by_cause_by_scenario.png', bbox_inches='tight')
-    plt.show()
+        cod_keys = list()
+        for k in cause_d[scenario_titles[0]].keys():
+            if 'df' in k:
+                cod_keys.append(k)
 
-    final_df_n.to_csv(f'{primary_oc_path}/nmrs_by_cause.csv')
+        save_outputs(cause_d, cod_keys, f'diff_in_cause_specific_{d[0]}mr', primary_oc_path)
+
+        labels = [l.replace(f'_{d[0]}mr_df', '') for l in cod_keys]
+
+        for k, colour in zip(cause_d, scen_colours):
+            mean_vals = list()
+            lq_vals = list()
+            uq_vals = list()
+            for key in cause_d[k]:
+                if 'avg' in key:
+                    mean_vals.append(cause_d[k][key][0])
+                    lq_vals.append(cause_d[k][key][1])
+                    uq_vals.append(cause_d[k][key][2])
+
+            width = 0.55  # the width of the bars: can also be len(x) sequence
+            fig, ax = plt.subplots()
+
+            ci = [(x - y) / 2 for x, y in zip(uq_vals, lq_vals)]
+            ax.bar(labels, mean_vals, color=colour, width=width, yerr=ci)
+            ax.tick_params(axis='x', which='major', labelsize=8, labelrotation=90)
+            plt.gca().set_ylim(bottom=0)
+
+            ax.set_ylabel(d[1])
+            ax.set_xlabel('Complication')
+            ax.set_title(f'Cause specific {d[1]} for {k} scenario')
+            plt.savefig(f'{primary_oc_path}/{k}_{d[0]}mr_by_cause.png', bbox_inches='tight')
+            plt.show()
+
+    save_mr_by_cause_data_and_output_graphs('mat', cod_data)
+    save_mr_by_cause_data_and_output_graphs('neo', cod_neo_data)
 
     #  ---------------- STILLBIRTH GRAPHS ---------------
     analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
@@ -690,16 +669,6 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
         ax.set_title(title)
         plt.savefig(f'{primary_oc_path}/{data}.png')
         plt.show()
-
-    # Store differences in outcomes
-    def save_outputs(folder, keys, save_name, save_folder):
-        dfs = []
-        for k in scenario_names:
-            scen_df = get_diff_between_runs(folder, scenario_names[0], k, keys, intervention_years, output_df)
-            dfs.append(scen_df)
-
-        final_df = pd.concat(dfs)
-        final_df.to_csv(f'{save_folder}/{save_name}.csv')
 
     keys = ['mmr_df', 'nmr_df', 'sbr_df', 'an_sbr_df', 'ip_sbr_df', 'mat_deaths_total_df', 'neo_deaths_total_df']
     save_outputs(death_data, keys, 'diff_in_mortality_outcomes', primary_oc_path)
