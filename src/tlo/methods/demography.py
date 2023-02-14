@@ -59,14 +59,9 @@ class Demography(Module):
         self.other_death_poll = None    # will hold pointer to the OtherDeathPoll object
         self.districts = None  # will store all the districts in a list
 
-        # if deviance_measure registered, need empty dict with set keys
-        keys = ["date",
-                "age",
-                "sex",
-                "cause"
-                ]
-        # initialise empty dict with set keys - this is just for deviance_measure module
-        self.__demog_outputs = {k: [] for k in keys}
+        # Initialise empty dict (with factory method of list) to store lists containing information abuot each day
+        # that is used by the `Deviance` module
+        self.__demog_outputs = defaultdict(list)
 
     AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = create_age_range_lookup(
         min_age=MIN_AGE_FOR_RANGE,
