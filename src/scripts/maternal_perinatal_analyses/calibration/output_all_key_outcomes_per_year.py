@@ -1129,7 +1129,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         'sepsis', birth_data[0], la_comps, 1000, sim_years)
 
     pn_la_sep_data = analysis_utility_functions.get_comp_mean_and_rate(
-        'sepsis_postnatal', birth_data_ex2010[0], la_comps, 1000, sim_years)
+        'sepsis_postnatal', birth_data_ex2010[0], pn_comps, 1000, sim_years)
 
     pn_sep_data = analysis_utility_functions.get_comp_mean_and_rate(
         'sepsis', birth_data_ex2010[0], pn_comps, 1000, sim_years)

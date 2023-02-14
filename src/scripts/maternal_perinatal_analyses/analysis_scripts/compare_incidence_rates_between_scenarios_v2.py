@@ -29,9 +29,9 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
         lq_vals = list()
         uq_vals = list()
         for k in dict:
-            mean_vals.append(dict[k][0])
-            lq_vals.append(dict[k][1])
-            uq_vals.append(dict[k][2])
+            mean_vals.append(dict[k][file_name][0])
+            lq_vals.append(dict[k][file_name][1])
+            uq_vals.append(dict[k][file_name][2])
 
         width = 0.55  # the width of the bars: can also be len(x) sequence
         fig, ax = plt.subplots()
@@ -44,27 +44,6 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
         ax.set_title(title)
         plt.savefig(f'{plot_destination_folder}/{file_name}.png')
         plt.show()
-
-    def get_agg_values(yr_dict, key):
-        agg_dict = dict()
-
-        for k in yr_dict:
-            agg_dict.update({k: [sum(yr_dict[k][key][0]), sum(yr_dict[k][key][1]), sum(yr_dict[k][key][2])]})
-
-        return agg_dict
-
-    def get_avg_rate_per_scenario(rate_dict, multi_level,  *key):
-        avg_dict = dict()
-        for k in rate_dict:
-            if not multi_level:
-                avg_dict.update({k: [sum(rate_dict[k][0]) / len(rate_dict[k][0]),
-                                     sum(rate_dict[k][1]) / len(rate_dict[k][0]),
-                                     sum(rate_dict[k][2]) / len(rate_dict[k][0])]})
-            else:
-                avg_dict.update({k: [sum(rate_dict[k][key[0]][0]) / len(rate_dict[k][key[0]][0]),
-                                     sum(rate_dict[k][key[0]][1]) / len(rate_dict[k][key[0]][0]),
-                                     sum(rate_dict[k][key[0]][2]) / len(rate_dict[k][key[0]][0])]})
-        return avg_dict
 
     # Find results folder (most recent run generated using that scenario_filename)
     results_folders = {k: get_scenario_outputs(scenario_file_dict[k], outputspath)[-1] for k in scenario_file_dict}
@@ -100,7 +79,7 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
                     lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'type'])['newborn'].count()),
                 do_scaling=True
             )
-        nb_comp_dfs['newborn_postnatal'] = nb_pn_df.fillna(0)
+        nb_comp_dfs['postnatal_supervisor'] = nb_pn_df.fillna(0)
 
         return nb_comp_dfs
 
@@ -110,8 +89,8 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
     # Extract and plot pregnancies and births across scenarios
     preg_dict = analysis_utility_functions.return_pregnancy_data_from_multiple_scenarios(results_folders,
                                                                                          sim_years, intervention_years)
-    agg_pregs = get_agg_values(preg_dict, 'int_preg')
-    bar_chart_from_dict(agg_pregs, 'Pregnancies', 'Total Pregnancies by Scenario', plot_destination_folder, 'agg_preg')
+
+    bar_chart_from_dict(preg_dict, 'Pregnancies', 'Total Pregnancies by Scenario', plot_destination_folder, 'agg_preg')
 
     analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
         scen_colours, sim_years, preg_dict, 'total_preg',
@@ -121,9 +100,8 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
 
     births_dict = analysis_utility_functions.return_birth_data_from_multiple_scenarios(results_folders,
                                                                                        sim_years, intervention_years)
-    agg_births = get_agg_values(births_dict,  'int_births')
 
-    bar_chart_from_dict(agg_births, 'Births', 'Total Births by Scenario', plot_destination_folder, 'agg_births')
+    bar_chart_from_dict(births_dict, 'Births', 'Total Births by Scenario', plot_destination_folder, 'agg_births')
 
     analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
         scen_colours, sim_years, births_dict, 'total_births',
@@ -131,51 +109,111 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
         'Total Number of Births Per Year By Scenario',
         plot_destination_folder, 'births')
 
-    # TOTAL COMPLETED PREGNANCIES
-    def get_completed_pregnancies(comps_df, birth_dict, results_folder):
-        """Sums the number of pregnancies that have ended in a given year including ectopic pregnancies,
-        abortions, stillbirths and births"""
+    comp_pregs = {k: analysis_utility_functions.get_completed_pregnancies_from_multiple_scenarios(
+        comp_dfs[k], births_dict[k],results_folders[k], sim_years, intervention_years) for k in results_folders}
 
-        def get_comps_p_all_or_int(years, birth_key):
-            ectopic_mean_numbers_per_year = analysis_utility_functions.get_mean_and_quants_from_str_df(
-                comps_df['pregnancy_supervisor'], 'ectopic_unruptured', years)[0]
+    # =================================== AVERAGE RATES DURING INTERVENTION ===========================================
+    comp_inc_folders = {k: analysis_utility_functions.extract_comp_inc_folders(
+        results_folders[k], comp_dfs[k], neo_comp_dfs[k], preg_dict[k]['preg_data_frame'],
+        births_dict[k]['births_data_frame'], comp_pregs[k]['comp_preg_data_frame']) for k in results_folders}
 
-            ia_mean_numbers_per_year = analysis_utility_functions.get_mean_and_quants_from_str_df(
-                comps_df['pregnancy_supervisor'], 'induced_abortion', years)[0]
+    def get_avg_rate_dict(comp_inc_folder):
+        avg_dict = dict()
 
-            sa_mean_numbers_per_year = analysis_utility_functions.get_mean_and_quants_from_str_df(
-                comps_df['pregnancy_supervisor'], 'spontaneous_abortion', years)[0]
+        for k in comp_inc_folder:
+            comp_int = comp_inc_folder[k].loc[intervention_years[0]:intervention_years[-1]]
+            avg_comp_int = analysis_utility_functions.get_mean_from_columns(comp_int, 'avg')
 
-            ansb_df = extract_results(
-                results_folder,
-                module="tlo.methods.pregnancy_supervisor",
-                key="antenatal_stillbirth",
-                custom_generate_series=(
-                    lambda df: df.loc[df['date'].dt.year > years[0]].assign(
-                        year=df['date'].dt.year).groupby(['year'])['year'].count()),
-                do_scaling=True
-            )
-            an_stillbirth_results = ansb_df.fillna(0)
+            avg_final = [np.mean(avg_comp_int),
+                        np.quantile(avg_comp_int, 0.025),
+                        np.quantile(avg_comp_int, 0.975)]
 
-            an_still_birth_data = analysis_utility_functions.get_mean_and_quants(an_stillbirth_results, years)
+            avg_dict.update({k: avg_final})
 
-            total_completed_pregnancies_per_year = [a + b + c + d + e for a, b, c, d, e in
-                                                    zip(birth_dict[birth_key][0], ectopic_mean_numbers_per_year,
-                                                        ia_mean_numbers_per_year, sa_mean_numbers_per_year,
-                                                        an_still_birth_data[0])]
-            return total_completed_pregnancies_per_year
+        return avg_dict
 
-        tcp_all = get_comps_p_all_or_int(sim_years, 'total_births')
-        tcp_int = get_comps_p_all_or_int(intervention_years, 'int_births')
+    avg_rates = {k: get_avg_rate_dict(comp_inc_folders[k]) for k in results_folders}
 
-        return {'total_cp': tcp_all,
-                'int_cp': tcp_int}
+    scenario_names = list(results_folders.keys())
+    rates_keys = list(avg_rates[scenario_names[0]].keys())
 
-    comp_pregs = {k: get_completed_pregnancies(comp_dfs[k], births_dict[k], results_folders[k]) for k in
-                  results_folders}
-    agg_c_pregs = dict()
-    for k in comp_pregs:
-        agg_c_pregs.update({k: sum(comp_pregs[k]['int_cp'])})
+    for comp, y_title, title in zip(rates_keys,
+                                    ['Rate per 1000 pregnancies', 'Rate per 1000 pregnancies',
+                                     'Rate per 1000 pregnancies', 'Rate per 1000 pregnancies',
+                                     'Rate per 1000 Births', 'Rate per 1000 Births',
+                                     'Rate per 1000 Births',
+                                     'Rate per 1000 Births',
+                                     'Rate per 100 Births',
+                                     'Rate per 1000 Births',
+                                                 'Rate per 1000 Births',
+                                                 'Rate per 1000 Births',
+                                                 'Rate per 1000 Births',
+                                                 'Rate per 1000 Births',
+                                                 'Rate per 1000 Births',
+                                                 'Rate per 1000 Births',
+                                                 'Rate per 1000 Births',
+                                                 'Rate per 100 Births',
+                                                 'Rate per 1000 Births',
+                                                 'Rate per 1000 Births',
+                                                 'Prevalence at birth',
+                                                 'Prevalence following birth',
+                                                 'Rate per 100 Births',
+                                                 'Rate per 100 Births',
+                                                 'Rate per 1000 Births',
+                                                 'Rate per 1000 Births',
+                                                 'Rate per 1000 Births',
+                                                'Rate per 1000 Births',],
+
+                                    ['Mean Rate of Ectopic Pregnancy During Intervention by Scenario',
+                                     'Mean Rate of Spontaneous Abortion During Intervention by Scenario',
+                                     'Mean Rate of Induced Abortion During Intervention by Scenario',
+                                     'Mean Rate of Syphilis During Intervention by Scenario',
+                                     'Mean Rate of Gestational Diabetes During Intervention by Scenario',
+                                     'Mean Rate of PROM During Intervention by Scenario',
+                                     'Mean Rate of Placenta Praevia During Intervention by Scenario',
+                                     'Mean Rate of Placental Abruption During Intervention by Scenario',
+                                     'Mean Rate of Post term labour During Intervention by Scenario',
+                                     'Mean Rate of Obstructed Labour During Intervention by Scenario',
+                                     'Mean Rate of Uterine Rupture During Intervention by Scenario',
+                                     'Mean Rate of Gestational Hypertension During Intervention by Scenario',
+                                     'Mean Rate of Mild Pre-eclampsia During Intervention by Scenario',
+                                     'Mean Rate of Severe Gestational Hypertension During Intervention by Scenario',
+                                     'Mean Rate of Severe Pre-eclampsia During Intervention by Scenario',
+                                     'Mean Rate of Eclampsia During Intervention by Scenario',
+                                     'Mean Rate of Antepartum Haemorrhage During Intervention by Scenario',
+                                     'Mean Rate of Preterm Labour During Intervention by Scenario',
+                                     'Mean Rate of Maternal Sepsis During Intervention by Scenario',
+                                     'Mean Rate of Postpartum Haemorrhage During Intervention by Scenario',
+                                     'Mean Prevalence of Anaemia at birth During Intervention by Scenario',
+                                     'Mean Prevalence of Anaemia following birth During Intervention by Scenario',
+                                     'Mean Rate of Macrosomia During Intervention by Scenario',
+                                     'Mean Rate of Small for Gestational Age During Intervention by Scenario',
+                                     'Mean Rate of  Newborn Respiratory Depression During Intervention by Scenario',
+                                     'Mean Rate of Preterm Respiratory Distress Syndrome During Intervention by '
+                                     'Scenario',
+                                     'Mean Rate of Neonatal Sepsis During Intervention by Scenario',
+                                     'Mean Rate of Neonatal Encephalopathy During Intervention by Scenario']):
+        mean_vals = list()
+        lq_vals = list()
+        uq_vals = list()
+        for k in avg_rates:
+            mean_vals.append(avg_rates[k][comp][0])
+            lq_vals.append(avg_rates[k][comp][1])
+            uq_vals.append(avg_rates[k][comp][2])
+
+        width = 0.55  # the width of the bars: can also be len(x) sequence
+        fig, ax = plt.subplots()
+
+        ci = [(x - y) / 2 for x, y in zip(uq_vals, lq_vals)]
+        ax.bar(scenario_names, mean_vals, color=scen_colours, width=width, yerr=ci)
+        ax.tick_params(axis='x', which='major', labelsize=8)
+        ax.set_ylabel(y_title)
+        ax.set_xlabel('Scenario')
+        ax.set_title(title)
+        plt.savefig(f'{plot_destination_folder}/{comp}_avg.png')
+        plt.show()
+
+    # =========================================== YEARLY RATES ====================================================
 
     # TWINS....
     # Extract and plot the twin birth rate across scenarios
@@ -387,86 +425,8 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
                 plot_destination_folder, 'rds')
 
         else:
-            avg_data = get_avg_rate_per_scenario(ep_data, False)
-            avg_sa_data = get_avg_rate_per_scenario(sa_data, False)
-            avg_ia_data = get_avg_rate_per_scenario(ia_data, False)
-            avg_syph_data = get_avg_rate_per_scenario(syph_data, False)
-            avg_gdm_data = get_avg_rate_per_scenario(gdm_data, False)
-            avg_prom_data = get_avg_rate_per_scenario(prom_data, False)
-            avg_praevia_data = get_avg_rate_per_scenario(praevia_data, False)
-            avg_abruption = get_avg_rate_per_scenario(abruption, False)
-            avg_potl = get_avg_rate_per_scenario(potl, False)
-            avg_lbw = get_avg_rate_per_scenario(lbw, False)
-            avg_macro = get_avg_rate_per_scenario(macro, False)
-            avg_sga = get_avg_rate_per_scenario(sga, False)
-            avg_ol = get_avg_rate_per_scenario(ol, False)
-            avg_ur = get_avg_rate_per_scenario(ur, False)
-            avg_rd = get_avg_rate_per_scenario(rd, False)
-            avg_rds_data = get_avg_rate_per_scenario(rds_data, False)
+            pass
 
-            bar_chart_from_dict(avg_data, 'Avg. Rate per 1000 Completed Pregnancies',
-                                'Average Ectopic Pregnancy Rate by Scenario',
-                                plot_destination_folder, 'avg_ectopic')
-
-            bar_chart_from_dict(avg_sa_data, 'Avg. Rate per 1000 Completed Pregnancies',
-                                'Average Spontaneous Abortion Rate by Scenario',
-                                plot_destination_folder, 'avg_miscarriage')
-
-            bar_chart_from_dict(avg_ia_data, 'Avg. Rate per 1000 Completed Pregnancies',
-                                'Average Induced Abortion Rate by Scenario',
-                                plot_destination_folder, 'avg_abortion')
-
-            bar_chart_from_dict(avg_syph_data, 'Avg. Rate per 1000 Completed Pregnancies',
-                                'Average Maternal Syphilis Rate by Scenario',
-                                plot_destination_folder, 'avg_syphilis')
-
-            bar_chart_from_dict(avg_gdm_data, 'Avg. Rate per 1000 Completed Pregnancies',
-                                'Average Gestational Diabetes Rate by Scenario',
-                                plot_destination_folder, 'avg_gdm')
-
-            bar_chart_from_dict(avg_prom_data, 'Avg. Rate per 1000 Births',
-                                'Average Premature Rupture of Membranes Rate by Scenario',
-                                plot_destination_folder, 'avg_prom')
-
-            bar_chart_from_dict(avg_praevia_data, 'Avg. Rate per 1000 Pregnancies',
-                                'Average Rate of Placenta Praevia by Scenario',
-                                plot_destination_folder, 'avg_praevia')
-
-            bar_chart_from_dict(avg_abruption, 'Avg. Rate per 1000 Births',
-                                'Average Rate of Placental Abruption by Scenario',
-                                plot_destination_folder, 'avg_abruption')
-
-            bar_chart_from_dict(avg_potl, 'Avg. Rate per 100 Births',
-                                'Average Rate of Post Term Labour by Scenario',
-                                plot_destination_folder, 'avg_potl')
-
-            bar_chart_from_dict(avg_lbw, 'Avg. Rate per 100 Births',
-                                'Average Rate of Low Birth Weight by Scenario',
-                                plot_destination_folder, 'avg_lbw')
-
-            bar_chart_from_dict(avg_macro, 'Avg. Rate per 100 Births',
-                                'Average Rate of Macrosomia by Scenario',
-                                plot_destination_folder, 'avg_macro')
-
-            bar_chart_from_dict(avg_sga, 'Avg. Rate per 100 Births',
-                                'Average Rate of Small For Gestational Age by Scenario',
-                                plot_destination_folder, 'avg_sga')
-
-            bar_chart_from_dict(avg_ol, 'Avg. Rate per 1000 Births',
-                                'Average Rate of Obstructed Labour by Scenario',
-                                plot_destination_folder, 'avg_ol')
-
-            bar_chart_from_dict(avg_ur, 'Avg. Rate per 1000 Births',
-                                'Average Rate of Uterine Rupture by Scenario',
-                                plot_destination_folder, 'avg_ur')
-
-            bar_chart_from_dict(avg_rd, 'Avg. Rate per 1000 Births',
-                                'Average Rate of Respiratory Depression by Scenario',
-                                plot_destination_folder, 'avg_rd')
-
-            bar_chart_from_dict(avg_rds_data, 'Avg. Rate per 1000 Births',
-                                'Average Rate of Preterm Respiratory Distress Syndrome by Scenario',
-                                plot_destination_folder, 'avg_rds')
 
     # OTHER COMPLICATIONS
 
@@ -498,7 +458,7 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
     anaemia_birth_data_int = {k: get_anaemia_output_at_birth(results_folders[k], births_dict[k]['int_births'][0],
                                                              intervention_years) for k in results_folders}
 
-    avg_anaemia_birth_data = get_avg_rate_per_scenario(anaemia_birth_data_int, False)
+    # avg_anaemia_birth_data = get_avg_rate_per_scenario(anaemia_birth_data_int, False)
 
     # Repeat this process looking at anaemia at the time of delivery
     def get_anaemia_output_at_delivery(results_folder, total_births_per_year, years):
@@ -526,7 +486,7 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
     anaemia_delivery_data_int = {k: get_anaemia_output_at_delivery(
         results_folders[k], births_dict[k]['int_births'][0], intervention_years) for k in results_folders}
 
-    avg_anaemia_delivery_data = get_avg_rate_per_scenario(anaemia_delivery_data_int, False)
+    # avg_anaemia_delivery_data = get_avg_rate_per_scenario(anaemia_delivery_data_int, False)
 
     analysis_utility_functions.comparison_graph_multiple_scenarios(
         scen_colours, sim_years, anaemia_birth_data, '% Total Births',
@@ -538,13 +498,13 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
         'Prevalence of Anaemia at End of Postnatal Period Per Year By Scenario',
         plot_destination_folder, 'anaemia_pn')
 
-    bar_chart_from_dict(avg_anaemia_birth_data, 'Avg. % of Total Births',
-                        'Prevalence of Anaemia at Birth by Scenario',
-                        plot_destination_folder, 'avg_anaemia_birth')
-
-    bar_chart_from_dict(avg_anaemia_delivery_data, 'Avg. % of Total Births',
-                        'Prevalence of Anaemia at End of Postnatal Period by Scenario',
-                        plot_destination_folder, 'avg_anaemia_pn')
+    # bar_chart_from_dict(avg_anaemia_birth_data, 'Avg. % of Total Births',
+    #                     'Prevalence of Anaemia at Birth by Scenario',
+    #                     plot_destination_folder, 'avg_anaemia_birth')
+    #
+    # bar_chart_from_dict(avg_anaemia_delivery_data, 'Avg. % of Total Births',
+    #                     'Prevalence of Anaemia at End of Postnatal Period by Scenario',
+    #                     plot_destination_folder, 'avg_anaemia_pn')
 
     # Hypertensive disorders ...
     def get_htn_disorders_outputs(comps_df, total_births_per_year, years):
@@ -582,8 +542,8 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
                               ['Gestational Hypertension', 'Severe Gestational Hypertension',
                                 'Mild Pre-eclampsia', 'Severe pre-eclampsia', 'Eclampsia']):
 
-        avg_data = get_avg_rate_per_scenario(htn_data_int, True, key)
-        d = {key: avg_data}
+        # avg_data = get_avg_rate_per_scenario(htn_data_int, True, key)
+        # d = {key: avg_data}
         output_df = output_df.append(pd.DataFrame.from_dict(d, orient='index'))
 
         analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
@@ -592,9 +552,9 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
             f'{condition} Rate Per Year Per Scenario',
             plot_destination_folder, key)
 
-        bar_chart_from_dict(avg_data, 'Avg. Rate per 1000 Births',
-                            f'Average Rate of {condition} per Scenario',
-                            plot_destination_folder, f'avg_{key}')
+        # bar_chart_from_dict(avg_data, 'Avg. Rate per 1000 Births',
+        #                     f'Average Rate of {condition} per Scenario',
+        #                     plot_destination_folder, f'avg_{key}')
 
     #  Antepartum Haemorrhage...
 
@@ -620,7 +580,7 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
     aph_data_int = {k: get_aph_data(comp_dfs[k], births_dict[k]['int_births'][0], intervention_years) for k in
                     results_folders}
 
-    avg_aph_data = get_avg_rate_per_scenario(aph_data_int, False)
+    # avg_aph_data = get_avg_rate_per_scenario(aph_data_int, False)
 
     analysis_utility_functions.comparison_graph_multiple_scenarios(
         scen_colours, sim_years, aph_data, 'Rate per 1000 Births',
@@ -719,7 +679,7 @@ def compare_key_rates_between_multiple_scenarios(scenario_file_dict, service_of_
         pn_la_sep_data = analysis_utility_functions.get_comp_mean_and_rate(
             'sepsis_postnatal', total_births_per_year, comps_df['labour'], 1000, years)
         pn_la_number = analysis_utility_functions.get_mean_and_quants_from_str_df(
-            comps_df['labour'], 'sepsis_postnatal', years)
+            comps_df['postnatal_supervisor'], 'sepsis_postnatal', years)
 
         pn_sep_data = analysis_utility_functions.get_comp_mean_and_rate(
             'sepsis', total_births_per_year, comps_df['postnatal_supervisor'], 1000, years)
