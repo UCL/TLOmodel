@@ -183,7 +183,11 @@ class Depression(Module):
 
         'anti_depressant_medication_item_code': Parameter(Types.INT,
                                                           'The item code used for one month of anti-depressant '
-                                                          'treatment')
+                                                          'treatment'),
+
+        'pr_assessed_for_depression_for_perinatal_female': Parameter(
+            Types.REAL,
+            'Probability that a perinatal female is assessed for depression during antenatal or postnatal services'),
     }
 
     # Properties of individuals 'owned' by this module
@@ -523,11 +527,15 @@ class Depression(Module):
                 # TODO: Trigger surgical care for injuries.
 
         elif hsi_event.TREATMENT_ID == "AntenatalCare_Outpatient":  # module care_of_women_during_pregnancy
-            if not df.at[person_id, 'de_ever_diagnosed_depression']:
+            if (not df.at[person_id, 'de_ever_diagnosed_depression']) and (
+                self.rng.rand() < self.paremeters['pr_assessed_for_depression_for_perinatal_female']
+            ):
                 self.do_when_suspected_depression(person_id, hsi_event)
 
         elif hsi_event.TREATMENT_ID == "PostnatalCare_Maternal":  # module labour
-            if not df.at[person_id, 'de_ever_diagnosed_depression']:
+            if (not df.at[person_id, 'de_ever_diagnosed_depression']) and (
+                self.rng.rand() < self.paremeters['pr_assessed_for_depression_for_perinatal_female']
+            ):
                 self.do_when_suspected_depression(person_id=person_id, hsi_event=hsi_event)
 
         else:
