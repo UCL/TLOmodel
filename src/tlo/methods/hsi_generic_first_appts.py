@@ -283,9 +283,9 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                     tclose=None)
 
         if 'Depression' in sim.modules:
-            if squeeze_factor == 0.0:
-                sim.modules['Depression'].do_on_presentation_to_care(person_id=person_id,
-                                                                     hsi_event=hsi_event)
+            sim.modules['Depression'].do_on_presentation_to_care(person_id=person_id,
+                                                                 hsi_event=hsi_event,
+                                                                 squeeze_factor=squeeze_factor)
 
         if "Malaria" in sim.modules:
             if 'fever' in symptoms:
@@ -361,7 +361,8 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
 
     if "Depression" in sim.modules:
         sim.modules['Depression'].do_on_presentation_to_care(person_id=person_id,
-                                                             hsi_event=hsi_event)
+                                                             hsi_event=hsi_event,
+                                                             squeeze_factor=squeeze_factor)
 
     if 'Hiv' in sim.modules:
         sim.modules['HealthSystem'].schedule_hsi_event(
