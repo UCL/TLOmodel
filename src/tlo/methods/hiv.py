@@ -1370,22 +1370,19 @@ class Hiv(Module):
         # return updated value for time-period
         return per_capita_testing
 
-    def decide_whether_hiv_test_for_mother(self, person_id, referred_from):
-        """ called from labour.py under interventions_delivered_pre_discharge and
-        care_of_women_during_pregnancy.py
-        mothers who are not already diagnosed will have an HIV test with
-        probability defined in ResourceFile_HIV.xlsx
-        this will return True/False whether test is scheduled/not scheduled which is
-        used by care_of_women_during_pregnancy.py
+    def decide_whether_hiv_test_for_mother(self, person_id, referred_from) -> bool:
         """
-
+        This will return a True/False for whether an HIV test should be scheduled for a mother; and schedule the HIV
+        Test if a test should be scheduled.
+        This is called from `labour.py` under `interventions_delivered_pre_discharge` and
+        `care_of_women_during_pregnancy.py`.
+        Mothers who are not already diagnosed will have an HIV test with a certain probability defined by a parameter;
+         mothers who are diagnosed already will not have another HIV test.
+        """
         df = self.sim.population.props
-        test = False
 
         if not df.at[person_id, 'hv_diagnosed'] and (
                 self.rng.random_sample() < self.parameters['prob_hiv_test_at_anc_or_delivery']):
-
-            test = True
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Hiv_TestAndRefer(
@@ -1396,7 +1393,11 @@ class Hiv(Module):
                 tclose=None,
                 priority=0)
 
-        return test
+            return True
+
+        else:
+            return False
+
 
     def decide_whether_hiv_test_for_infant(self, mother_id, child_id):
         """ called from newborn_outcomes.py under hiv_screening_for_at_risk_newborns
