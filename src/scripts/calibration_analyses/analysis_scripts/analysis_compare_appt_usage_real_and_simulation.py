@@ -112,6 +112,24 @@ def get_real_usage(resourcefilepath) -> pd.DataFrame:
     return pd.concat([annual_mean, annual_mean_TB], axis=0).T
 
 
+def adjust_real_usage_on_mentalall(real_usage_df) -> pd.DataFrame:
+    """This is to adjust the average annual MentalAll usage in real usage dataframe that is output by get_real_usage.
+    The MentalAll usage was not adjusted in the preprocessing stage considering individual facilities and very low
+    reporting rates.
+    We now directly adjust its annual usage by facility level using the aggregated average annual reporting rates by
+    facility level. The latter is calculated based on DHIS2 Mental Health Report reporting rates."""
+    # the average annual reporting rates for Mental Health Report by facility level (%), 2015-2019
+    # could turn the reporting rates data into a ResourceFile if necessary
+    rr = {'0': None, '1a': 70.93, '1b': 31.25, '2': 46.78, '3': 47.50, '4': None}
+    rr_df = pd.DataFrame.from_dict(rr, orient='index').rename(columns={0: 'avg_annual_rr'})
+    # make the adjustment assuming 100% reporting rates
+    real_usage_df.loc[['1a', '1b', '2', '3'], 'MentalAll'] = (
+        real_usage_df.loc[['1a', '1b', '2', '3'], 'MentalAll'] * 100 /
+        rr_df.loc[['1a', '1b', '2', '3'], 'avg_annual_rr'])
+
+    return real_usage_df
+
+
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Compare appointment usage from model output with real appointment usage.
     The real appointment usage is collected from DHIS2 system and HIV Dept."""
@@ -138,6 +156,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     simulation_usage = get_simulation_usage(results_folder)
 
     real_usage = get_real_usage(resourcefilepath)
+    real_usage = adjust_real_usage_on_mentalall(real_usage)
 
     # Plot Simulation vs Real usage (Across all levels) (trimmed to 0.1 and 10)
     rel_diff_all_levels = (
