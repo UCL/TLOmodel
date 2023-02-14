@@ -849,7 +849,7 @@ class CareOfWomenDuringPregnancy(Module):
         """
 
         # Currently we schedule women to the TB screening HSI in the TB module
-        if 'Tb' in self.sim.modules.keys():
+        if 'Tb' in self.sim.modules:
             tb_screen = HSI_Tb_ScreeningAndRefer(
                 module=self.sim.modules['Tb'], person_id=hsi_event.target)
 
@@ -1035,9 +1035,7 @@ class CareOfWomenDuringPregnancy(Module):
             return
 
         if 'Hiv' in self.sim.modules:
-
-            # Women who are already diagnosed will not be tested again, testing is managed in the HIV module
-            # probability of HIV test determined by parameter in ResourceFile_HIV.xlsx
+            # The decision of whether the woman gets a test is determined by the Hiv module
             test_scheduled = self.sim.modules['Hiv'].decide_whether_hiv_test_for_mother(
                 person_id, referred_from="care_of_women_during_pregnancy")
 
