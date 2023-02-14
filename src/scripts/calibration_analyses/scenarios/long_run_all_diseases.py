@@ -45,11 +45,7 @@ class LongRun(BaseScenario):
         return fullmodel(resourcefilepath=self.resources)
 
     def draw_parameters(self, draw_number, rng):
-        return {
-            'Depression': {
-                'pr_assessed_for_depression_in_generic_appt_level1': 0.0
-            }
-        }
+        return  # Using default parameters in all cases
 
 
 if __name__ == '__main__':
