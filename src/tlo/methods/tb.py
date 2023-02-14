@@ -795,6 +795,26 @@ class Tb(Module):
             )
         )
 
+        # add two further chest xray tests which don't require consumables
+        self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
+            tb_xray_smear_positive_outreach=DxTest(
+                property="tb_inf",
+                target_categories=["active"],
+                sensitivity=p["sens_xray_smear_positive"],
+                specificity=p["spec_xray_smear_positive"],
+                item_codes=[]
+            )
+        )
+        self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
+            tb_xray_smear_negative_outreach=DxTest(
+                property="tb_inf",
+                target_categories=["active"],
+                sensitivity=p["sens_xray_smear_negative"],
+                specificity=p["spec_xray_smear_negative"],
+                item_codes=[]
+            )
+        )
+
         # TB clinical diagnosis
         self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
             tb_clinical=DxTest(
@@ -2499,6 +2519,98 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
                         tclose=self.sim.date + pd.DateOffset(days=14),
                         priority=0,
                     )
+
+
+class TbCommunityXray(RegularEvent, PopulationScopeEventMixin):
+    """
+    * run a regular event which selects people to be screened in the community
+    * occurs randomly across all districts
+    * everyone equally likely to be selected (independent of symptoms)
+    * excludes people with current diagnosis of TB
+    """
+
+    def __init__(self, module):
+        self.repeat = 3
+        super().__init__(module, frequency=DateOffset(months=self.repeat))
+
+    def apply(self, population):
+        df = population.props
+        now = self.sim.date
+        p = self.module.parameters
+        rng = self.module.rng
+
+        prob_screening = p['probability_community_chest_xray']
+
+        # 1. get (and hold) index of eligible people
+        eligible = df.index[~df.tb_diagnosed & df.is_alive]
+
+        # 2. select people for screening
+        select_for_screening = rng.choice([True, False],
+                                          size=len(eligible),
+                                          p=[prob_screening, 1 - prob_screening])
+
+        # 3. if any are selected for screening
+        if select_for_screening.sum():
+            screen_idx = eligible[select_for_screening]
+
+            # send for community xray
+            for person_id in screen_idx:
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    HSI_Tb_CommunityXray(person_id=person_id, module=self.module),
+                    topen=now + DateOffset(days=7),
+                    tclose=None,
+                    priority=0,
+                )
+
+
+class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
+    """
+    This is a Health System Interaction Event
+    give a chest xray to person
+    don't request any consumables as this is an outreach programme which is
+    independent of the main health system
+    request DCSA time
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        self.TREATMENT_ID = "Tb_Test_ScreeningOutreach"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"ConWithDCSA": 1})
+        self.ACCEPTED_FACILITY_LEVEL = '0'
+
+    def apply(self, person_id, squeeze_factor):
+
+        logger.debug(key="message", data=f"Performing outreach chest x-ray for {person_id}")
+
+        df = self.sim.population.props  # shortcut to the dataframe
+
+        person = df.loc[person_id]
+        smear_status = person['tb_smear']
+
+        # perform the xray and decide the result
+        test_result = False
+
+        # select sensitivity/specificity of test based on smear status
+        if smear_status:
+            test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+                dx_tests_to_run="tb_xray_smear_positive_outreach", hsi_event=self
+            )
+        else:
+            test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+                dx_tests_to_run="tb_xray_smear_negative_outreach", hsi_event=self
+            )
+
+        # if test returns positive result, refer for appropriate treatment
+        if test_result:
+            df.at[person_id, "tb_diagnosed"] = True
+            df.at[person_id, "tb_date_diagnosed"] = self.sim.date
+
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0,
+            )
 
 
 class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):
