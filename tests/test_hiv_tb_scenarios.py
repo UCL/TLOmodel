@@ -136,7 +136,7 @@ def test_scenario_ipt_expansion(seed):
                                                  module=sim.modules['Tb'])
     screening_appt.apply(person_id=person_id, squeeze_factor=0.0)
 
-    assert df.at[person_id, 'tb_date_tested'] != pd.NaT
+    assert pd.notnull(df.at[person_id, 'tb_date_tested'])
     assert df.at[person_id, 'tb_diagnosed']
 
     # check ages of those scheduled for HSI_Tb_Start_or_Continue_Ipt
@@ -216,7 +216,7 @@ def test_scenario_ipt_expansion(seed):
                                                  module=sim.modules['Tb'])
     screening_appt.apply(person_id=person_id, squeeze_factor=0.0)
 
-    assert df.at[person_id, 'tb_date_tested'] != pd.NaT
+    assert pd.notnull(df.at[person_id, 'tb_date_tested'])
     assert df.at[person_id, 'tb_diagnosed']
 
     # check ages of those scheduled for HSI_Tb_Start_or_Continue_Ipt
@@ -294,7 +294,7 @@ def test_check_tb_test_under_each_scenario(seed):
                                                  module=sim.modules['Tb'])
     screening_appt.apply(person_id=hiv_neg_person, squeeze_factor=0.0)
 
-    assert df.at[hiv_neg_person, 'tb_date_tested'] != pd.NaT
+    assert pd.notnull(df.at[hiv_neg_person, 'tb_date_tested'])
     assert df.at[hiv_neg_person, 'tb_diagnosed']
     assert not df.at[hiv_neg_person, 'tb_diagnosed_mdr']
 
@@ -303,7 +303,7 @@ def test_check_tb_test_under_each_scenario(seed):
                                                  module=sim.modules['Tb'])
     screening_appt.apply(person_id=hiv_pos_person, squeeze_factor=0.0)
 
-    assert df.at[hiv_pos_person, 'tb_date_tested'] != pd.NaT
+    assert pd.notnull(df.at[hiv_pos_person, 'tb_date_tested'])
     assert df.at[hiv_pos_person, 'tb_diagnosed']
     assert not df.at[hiv_pos_person, 'tb_diagnosed_mdr']
 
