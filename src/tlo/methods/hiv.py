@@ -1396,7 +1396,6 @@ class Hiv(Module):
         else:
             return False
 
-
     def decide_whether_hiv_test_for_infant(self, mother_id, child_id) -> None:
         """ This will schedule an HIV testing HSI for a child under certain conditions.
         It is called from newborn_outcomes.py under hiv_screening_for_at_risk_newborns.
