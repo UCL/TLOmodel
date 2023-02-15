@@ -105,17 +105,21 @@ class Alri(Module):
     # Make set of all pathogens combined:
     all_pathogens = sorted(set(chain.from_iterable(pathogens.values())))
 
-    # Declare Causes of Death
-    CAUSES_OF_DEATH = {
-        f"ALRI_{path}": Cause(gbd_causes={'Lower respiratory infections'}, label='Lower respiratory infections')
-        for path in all_pathogens
-    }
+    # Create key list from list of pathogens. When Measles infection concurrent, log cause as measles.
+    key_list = sorted(set(f"ALRI_{path}" for path in all_pathogens))
+    key_list_me = sorted(set(f"Measles_ALRI_{path}" for path in all_pathogens))
+    CAUSES_OF_DEATH = {}
+    CAUSES_OF_DISABILITY = {}
 
-    # Declare Causes of Disability
-    CAUSES_OF_DISABILITY = {
-        f"ALRI_{path}": Cause(gbd_causes={'Lower respiratory infections'}, label='Lower respiratory infections')
-        for path in all_pathogens
-    }
+    for i in key_list:
+        CAUSES_OF_DEATH[i] = Cause(gbd_causes={'Lower respiratory infections'},
+                                   label='Lower respiratory infections')
+        CAUSES_OF_DISABILITY[i] = Cause(gbd_causes={'Lower respiratory infections'},
+                                        label='Lower respiratory infections')
+
+    for i in key_list_me:
+        CAUSES_OF_DEATH[i] = Cause(gbd_causes={'Measles'}, label='Measles')
+        CAUSES_OF_DISABILITY[i] = Cause(gbd_causes={'Measles'}, label='Measles')
 
     # Declare the disease types:
     disease_types = sorted({
@@ -331,7 +335,7 @@ class Alri(Module):
                       ),
         'rr_ALRI_incomplete_measles_immunisation':
             Parameter(Types.REAL,
-                      'relative rate of acquiring Alri for children with incomplete measles immunisation'
+                      'risk of incomplete measles vaccination'
                       ),
         'rr_ALRI_low_birth_weight':
             Parameter(Types.REAL,
@@ -766,9 +770,10 @@ class Alri(Module):
             Property(Types.CATEGORICAL, 'Peripheral oxygen saturation level (Sp02), measure for hypoxaemia',
                      categories=['<90%', '90-92%', '>=93%']
                      ),
-
         # ---- Treatment Status ----
         'ri_on_treatment': Property(Types.BOOL, 'Is this person currently receiving treatment.'),
+        # ---- Treatment Status ----
+        'ri_caused_by_measles': Property(Types.BOOL, 'This alri incident was caused by measles.'),
 
         # < --- (N.B. Other properties of the form 'ri_complication_{complication-name}' are added later.) -->
 
@@ -883,6 +888,7 @@ class Alri(Module):
         df.loc[df.is_alive, 'ri_scheduled_death_date'] = pd.NaT
         df.loc[df.is_alive, 'ri_end_of_current_episode'] = pd.NaT
         df.loc[df.is_alive, 'ri_on_treatment'] = False
+        df.loc[df.is_alive, 'ri_caused_by_measles'] = False
 
     def initialise_simulation(self, sim):
         """
@@ -891,13 +897,7 @@ class Alri(Module):
         * Schedules the main logging event
         * Establishes the linear models and other data structures using the parameters that have been read-in
         """
-      
         p = self.parameters
-
-        # Capture list of disease modules:
-        self.recognised_modules_names = [
-            m.name for m in self.sim.modules.values() if Metadata.USES_ALRI in m.METADATA
-        ]
 
         # Schedule the main polling event (to first occur immediately)
         sim.schedule_event(AlriPollingEvent(self), sim.date)
@@ -956,6 +956,7 @@ class Alri(Module):
                           'ri_scheduled_death_date',
                           'ri_end_of_current_episode']] = pd.NaT
         df.at[child_id, 'ri_on_treatment'] = False
+        df.at[child_id, 'ri_caused_by_measles'] = False
 
     def report_daly_values(self):
         """Report DALY incurred in the population in the last month due to ALRI"""
@@ -974,18 +975,33 @@ class Alri(Module):
             self.sim.modules['SymptomManager'].who_has('chest_indrawing')
         ) - has_danger_signs
 
-        # report the DALYs occurred
+        # report the DALYs occurred and store who has measles
         total_daly_values = pd.Series(data=0.0, index=df.index[df.is_alive])
+        who_has_no_measles = pd.Series(data=0.0, index=df.index[df.is_alive & ~df.ri_caused_by_measles])
+        who_has_measles = pd.Series(data=0.0, index=df.index[df.is_alive & df.ri_caused_by_measles])
+
         total_daly_values.loc[has_danger_signs] = self.daly_wts['daly_severe_ALRI']
         total_daly_values.loc[
             has_fast_breathing_or_chest_indrawing_but_not_danger_signs] = self.daly_wts['daly_non_severe_ALRI']
 
         # Split out by pathogen that causes the Alri
         dummies_for_pathogen = pd.get_dummies(df.loc[total_daly_values.index, 'ri_primary_pathogen'], dtype='float')
-        daly_values_by_pathogen = dummies_for_pathogen.mul(total_daly_values, axis=0)
 
-        # add prefix to label according to the name of the causes of disability declared
-        daly_values_by_pathogen = daly_values_by_pathogen.add_prefix('ALRI_')
+        # Make dummies for measles and no measles case
+        dummies_for_pathogen_no_measles = dummies_for_pathogen
+        dummies_for_pathogen_measles = dummies_for_pathogen
+        dummies_for_pathogen_no_measles.loc[who_has_measles.index] = 0.0
+        dummies_for_pathogen_measles.loc[who_has_no_measles.index] = 0.0
+
+        daly_values_by_pathogen_no_measles = dummies_for_pathogen_no_measles.mul(total_daly_values, axis=0)
+        daly_values_by_pathogen_measles = dummies_for_pathogen_measles.mul(total_daly_values, axis=0)
+
+        daly_values_by_pathogen_no_measles = daly_values_by_pathogen_no_measles.add_prefix('ALRI_')
+        daly_values_by_pathogen_measles = daly_values_by_pathogen_measles.add_prefix('Measles_ALRI_')
+
+        daly_values_by_pathogen = pd.concat([daly_values_by_pathogen_no_measles,
+                                             daly_values_by_pathogen_measles], axis=1)
+
         return daly_values_by_pathogen
 
     def over_ride_availability_of_certain_consumables(self):
@@ -1194,6 +1210,7 @@ class Alri(Module):
             'ri_disease_type': np.nan,
             'ri_SpO2_level': '>=93%',
             'ri_on_treatment': False,
+            'ri_caused_by_measles': False,
             'ri_start_of_current_episode': pd.NaT,
             'ri_scheduled_recovery_date': pd.NaT,
             'ri_scheduled_death_date': pd.NaT,
@@ -1485,8 +1502,6 @@ class Models:
                                                        .when(4, age_effects[4])
                                                        .when('>= 5', 0.0),
                     Predictor('li_wood_burn_stove').when(False, p['rr_ALRI_indoor_air_pollution']),
-                    Predictor().when('(va_measles_all_doses == False) & (age_years >= 1)',
-                                     p['rr_ALRI_incomplete_measles_immunisation']),
                     Predictor().when('(hv_inf == True) & (hv_art!= "on_VL_suppressed")', p['rr_ALRI_HIV/AIDS']),
                     Predictor().when('(nb_breastfeeding_status != "exclusive") & (age_exact_years < 1/6)',
                                      p['rr_ALRI_non_exclusive_breastfeeding'])
@@ -2164,6 +2179,10 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
         if not person.is_alive:
             return
 
+        # The event should not run if person was infected with alri by the other module since this event was scheduled:
+        if person.ri_current_infection_status:
+            return
+
         # Get the characteristics of the case
         chars = self.determine_nature_of_the_case(
             pathogen=self.pathogen,
@@ -2260,9 +2279,14 @@ class AlriDeathEvent(Event, IndividualScopeEventMixin):
             # Do the death:
             pathogen = person.ri_primary_pathogen
 
+            if (df.at[person_id, 'ri_caused_by_measles']):
+                cause_of_death = 'Measles_ALRI_' + pathogen
+            else:
+                cause_of_death = 'ALRI_' + pathogen
+
             self.module.sim.modules['Demography'].do_death(
                 individual_id=person_id,
-                cause='ALRI_' + pathogen,
+                cause=cause_of_death,
                 originating_module=self.module
             )
 
@@ -2971,7 +2995,6 @@ class AlriPropertiesOfOtherModules(Module):
                                             categories=['none', 'non_exclusive', 'exclusive']),
         'va_pneumo_all_doses': Property(Types.BOOL, 'temporary property'),
         'va_hib_all_doses': Property(Types.BOOL, 'temporary property'),
-        'va_measles_all_doses': Property(Types.BOOL, 'temporary property'),
         'un_clinical_acute_malnutrition': Property(Types.CATEGORICAL, 'temporary property',
                                                    categories=['MAM', 'SAM', 'well']),
     }
@@ -2987,7 +3010,6 @@ class AlriPropertiesOfOtherModules(Module):
         df.loc[df.is_alive, 'nb_breastfeeding_status'] = 'non_exclusive'
         df.loc[df.is_alive, 'va_pneumo_all_doses'] = False
         df.loc[df.is_alive, 'va_hib_all_doses'] = False
-        df.loc[df.is_alive, 'va_measles_all_doses'] = False
         df.loc[df.is_alive, 'un_clinical_acute_malnutrition'] = 'well'
 
     def initialise_simulation(self, sim):
@@ -3001,7 +3023,6 @@ class AlriPropertiesOfOtherModules(Module):
         df.at[child, 'nb_breastfeeding_status'] = 'non_exclusive'
         df.at[child, 'va_pneumo_all_doses'] = False
         df.at[child, 'va_hib_all_doses'] = False
-        df.at[child, 'va_measles_all_doses'] = False
         df.at[child, 'un_clinical_acute_malnutrition'] = 'well'
 
 

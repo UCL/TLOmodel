@@ -6,20 +6,21 @@ import pytest
 
 from tlo import Date, Simulation, logging
 from tlo.methods import (
+    alri,
     demography,
     enhanced_lifestyle,
     epi,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    tb,
     hiv,
-    wasting,
-    alri,
     measles,
     simplified_births,
     symptommanager,
+    tb,
+    wasting,
 )
+from tlo.methods.alri import AlriPropertiesOfOtherModules
 
 try:
     resources = Path(os.path.dirname(__file__)) / "../resources"
@@ -67,8 +68,10 @@ def sim(seed):
         wasting.Wasting(resourcefilepath=resources),
         tb.Tb(resourcefilepath=resources),
         hiv.Hiv(resourcefilepath=resources),
-        alri.Alri(resourcefilepath=resources),
+        alri.Alri(resourcefilepath=resources, log_indivdual=0, do_checks=True),
+        AlriPropertiesOfOtherModules(),
         measles.Measles(resourcefilepath=resources),
+
     )
 
     return sim
@@ -81,11 +84,12 @@ def test_single_person(sim):
     check symptoms scheduled
     check symptoms resolved correctly
     """
+
     # set high death rate - change all symptom probabilities to 1
     sim.modules['Measles'].parameters["symptom_prob"]["probability"] = 1
 
     sim.make_initial_population(n=1)  # why does this throw an error if n=1??
-
+#    sim.simulate(end_date=Date(2010, 2, 1)
 
     # ValueError: Wrong number of items passed 5, placement implies 1
     df = sim.population.props
@@ -102,6 +106,61 @@ def test_single_person(sim):
     assert len(events_for_this_person) > 0
     next_event_date, next_event_obj = events_for_this_person[0]
     assert isinstance(next_event_obj, (measles.MeaslesDeathEvent, measles.MeaslesSymptomResolveEvent))
+
+
+@pytest.mark.slow
+def test_measles_and_alri_merge(sim):
+    """ Run the measles module
+    check dtypes consistency
+    check infections occurring
+    check measles onset event scheduled
+    check symptoms assigned
+    check treatments occurring
+    """
+
+    end_date = Date(2011, 12, 31)
+    popsize = 1000
+
+    # set high transmission probability
+    sim.modules['Measles'].parameters['beta_baseline'] = 1.0
+
+    # Set probability of <5yo getting alri if also measles as 1
+    sim.modules['Measles'].parameters['p_alri_if_measles'] = 1.0
+
+    # check that measles deaths are (only) scheduled by alri module
+    cfr = sim.modules['Measles'].parameters["case_fatality_rate"]
+    sim.modules['Measles'].parameters["case_fatality_rate"] = {k: 0.0 for k, v in cfr.items()}
+
+    # Make the population
+    sim.make_initial_population(n=popsize)
+
+    # check data types
+    check_dtypes(sim)
+    sim.simulate(end_date=end_date)
+    check_dtypes(sim)
+
+    df = sim.population.props
+
+    # check people getting measles & alri
+    assert df['me_has_measles'].values.sum() > 0  # current cases of measles
+    assert df['ri_caused_by_measles'].values.sum() > 0  # Check alri labelled as being caused by measles
+    assert df['ri_current_infection_status'].values.sum() > 0  # Check alri infection actually takes place
+
+    # check that everyone who is infected with measles gets an alri onset or symptom resolve event
+    inf = df.loc[df.is_alive & df.me_has_measles & df.ri_caused_by_measles].index.tolist()
+
+    for idx in inf:
+        events_for_this_person = sim.find_events_for_person(idx)
+        assert len(events_for_this_person) > 0
+        # assert alri event in event list for this person
+        assert "tlo.methods.alri" in str(events_for_this_person)
+        # find the first alri event
+        alri_event_date = [date for (date, event) in events_for_this_person if "tlo.methods.alri" in str(event)]
+        assert alri_event_date[0] >= df.loc[idx, "me_date_measles"]
+
+    # check if any measles deaths occurred in correct age group
+    assert df.cause_of_death.loc[~df.is_alive].str.startswith('Measles').any()
+    assert not df.cause_of_death.loc[~df.is_alive & df.age_years >= 5].str.startswith('Measles').any()
 
 
 @pytest.mark.slow

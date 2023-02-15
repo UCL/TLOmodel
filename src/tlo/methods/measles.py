@@ -6,10 +6,10 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
-from tlo.methods import alri
+# from tlo.methods.alri import Models Include this when applying lm to pathogen selection
+from tlo.methods.alri import AlriIncidentCase
+# from tlo.methods import alri Include this when applying lm to pathogen selection
 from tlo.methods.causes import Cause
-from tlo.methods.alri import Models
-from tlo.methods.alri import AlriIncidentCase 
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date
@@ -106,8 +106,6 @@ class Measles(Module):
             os.path.join(self.resourcefilepath, "ResourceFile_Measles.xlsx"),
             sheet_name=None,
         )
-
-        self.parameters["p_alri_if_measles"] = 0.3 #Eventually make this parameter in document
 
         self.load_parameters_from_dataframe(workbook["parameters"])
 
@@ -293,43 +291,57 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
         df.at[person_id, "me_date_measles"] = self.sim.date
         df.at[person_id, "me_on_treatment"] = False
 
-        symp_onset = self.assign_symptoms(ref_age)  # Assign symptoms for this person. Input file ensures risk of respiratory complications
-            #under five is 0 (as these will be handled by alri module).
-        # Capture list of disease modules:
-         
+        symp_onset = self.assign_symptoms(ref_age)  # Assign symptoms for this person.
 
-        if(ref_age < 5.):
-            
-            # schedule measles symptom resolution without treatment - this will always occur for < 5yo because death only in alri 
+        if (ref_age < 5):
+
+            # schedule measles symptom resolution without treatment
             symp_resolve = symp_onset + DateOffset(days=rng.randint(7, 14))
             self.sim.schedule_event(MeaslesSymptomResolveEvent(self.module, person_id), symp_resolve)
 
-            if rng.random_sample() < self.module.parameters["p_alri_if_measles"]:
-                #Schedule an alri onset event for tihs person
-           
-                #  Create the event for the onset of infection:
-                self.sim.schedule_event(
-                    event=AlriIncidentCase(
-                        module=self.sim.modules["Alri"],
-                        person_id=person_id,
-                        pathogen=self.sim.modules["Alri"].all_pathogens[0], #For now passing fixed pathogen, will have to randomise
-                    ),
-                    date=random_date(self.sim.date, symp_resolve, self.module.rng)
-                )
- 
+            # If child already infected with alri, cannot schedule additional alri as the two infections
+            # would then be overlapping
+            # Opt 1. Do nothing, can therefore never die from this measles event.
+            # Opt 2. Label potential future alri death as measles, even though it wasn't scheduled by measles,
+            # therefore artificially lowering alri deaths.
+            # Opt 3. Roll another die to schedule additional death for ongoing alri, i.e. increase probability
+            # of dying from alri if concurrent measles infection.
+            # Opt 4. Schedule an alri infection at the end of this one, therefore won't be realistically concurrent.
 
-        #if "Alri" in self.sim.modules.keys():
-        #    for pathogen in self.sim.modules["Alri"].all_pathogens:
-        #        inc_of_acquiring_alri[pathogen] = self.sim.modules["Alri"].models.compute_risk_of_acquisition(
-        #            pathogen=pathogen,
-        #            df=df.loc[mask_could_get_new_alri_event]
-        #    )    
+            if not df.at[person_id, "ri_current_infection_status"]:
 
-        elif(ref_age >= 5.) :
+                if rng.random_sample() < self.module.parameters["p_alri_if_measles"]:
+
+                    # Eventually use this to chose pathogen
+                    # inc_of_acquiring_alri = pd.DataFrame(index=df.loc[person_id].index)
+                    # if "Alri" in self.sim.modules.keys():
+                    #     for pathogen in self.sim.modules["Alri"].all_pathogens:
+                    #         inc_of_acquiring_alri[pathogen] =
+                    #         self.sim.modules["Alri"].models.compute_risk_of_acquisition(
+                    #         pathogen=pathogen,
+                    #         df=df.loc[person_id]
+                    #         )
+
+                    #  Create an alri event for the onset of infection:
+                    self.sim.schedule_event(
+                        event=AlriIncidentCase(
+                            module=self.sim.modules["Alri"],
+                            person_id=person_id,
+                            pathogen=self.sim.modules["Alri"].all_pathogens[0],  # For now passing fixed pathogen
+                        ),
+                        date=random_date(self.sim.date, symp_resolve, self.module.rng)
+                    )
+
+                    # Label this alri incident as having been "caused" by measles.
+                    df.at[person_id, "ri_caused_by_measles"] = True
+                    # Note: There may be cases where alri module had scheduled alri onset
+                    # between now and measles-scheduled alri event. This means the measles-scheduled
+                    # alri will not take place, but other one labelled as measles-caused
+
+        elif (ref_age >= 5):
             prob_death = self.get_prob_death(ref_age)  # Look-up the probability of death for this person
 
-
-            # Schedule either the DeathEvent of the SymptomResolution event, depending on the expected outcome of this case
+            # Schedule either the DeathEvent of the SymptomResolution event
             if rng.random_sample() < prob_death:
                 logger.debug(key="MeaslesOnsetEvent",
                              data=f"This is MeaslesOnsetEvent, scheduling measles death for {person_id}")

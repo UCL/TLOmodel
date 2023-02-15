@@ -152,7 +152,7 @@ class HSI_Event:
         return updated_appt_footprint
 
     def get_consumables(self,
-                       item_codes: Union[None, np.integer, int, list, set, dict] = None,
+                        item_codes: Union[None, np.integer, int, list, set, dict] = None,
                         optional_item_codes: Union[None, np.integer, int, list, set, dict] = None,
                         to_log: Optional[bool] = True,
                         return_individual_results: Optional[bool] = False
