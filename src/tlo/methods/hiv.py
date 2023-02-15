@@ -598,7 +598,7 @@ class Hiv(Module):
         df.loc[infec, "hv_inf"] = True
 
         # Assign date that persons were infected by drawing from assumed distribution (for adults)
-        # Clipped to prevent dates of infection before before the person was born.
+        # Clipped to prevent dates of infection before the person was born.
         time_inf = params["time_inf"]
         years_ago_inf = self.rng.choice(
             time_inf["year"],
@@ -785,7 +785,7 @@ class Hiv(Module):
 
     def initialise_simulation(self, sim):
         """
-        * 1) Schedule the Main HI]V Regular Polling Event
+        * 1) Schedule the Main HIV Regular Polling Event
         * 2) Schedule the Logging Event
         * 3) Determine who has AIDS and impose the Symptoms 'aids_symptoms'
         * 4) Schedule the AIDS onset events and AIDS death event for those infected already
@@ -1045,10 +1045,8 @@ class Hiv(Module):
                     tclose=None,
                 )
 
-        # if mother known HIV+, schedule virological test for infant in 6 weeks, 9mths, 18mths
-        # 6 week test called by newborn_outcomes.py
+        # if mother known HIV+, schedule virological test for infant
         if mother.hv_diagnosed and df.at[child_id, "is_alive"]:
-
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 hsi_event=HSI_Hiv_StartInfantProphylaxis(
                     person_id=child_id,
@@ -1339,11 +1337,11 @@ class Hiv(Module):
         df.at[person_id, "hv_art"] = "not"
 
     def per_capita_testing_rate(self):
-        """this calculates the numbers of hiv tests performed in each time period
-        it looks at the cumulative number of tests ever performed and subtracts the
-        number calculated at the last time point
-        values are converted to per capita testing rates
-        this function is called by the logger and can be called at any frequency
+        """This calculates the numbers of hiv tests performed in each time period.
+        It looks at the cumulative number of tests ever performed and subtracts the
+        number calculated at the last time point.
+        Values are converted to per capita testing rates.
+        This function is called by the logger and can be called at any frequency
         """
 
         df = self.sim.population.props
@@ -1399,8 +1397,9 @@ class Hiv(Module):
             return False
 
 
-    def decide_whether_hiv_test_for_infant(self, mother_id, child_id):
-        """ called from newborn_outcomes.py under hiv_screening_for_at_risk_newborns
+    def decide_whether_hiv_test_for_infant(self, mother_id, child_id) -> None:
+        """ This will schedule an HIV testing HSI for a child under certain conditions.
+        It is called from newborn_outcomes.py under hiv_screening_for_at_risk_newborns.
         """
 
         df = self.sim.population.props
