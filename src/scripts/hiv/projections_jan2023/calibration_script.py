@@ -52,7 +52,6 @@ class TestScenario(BaseScenario):
         )
 
         self.sampled_parameters = pd.read_excel(
-            # os.path.join(self.resources, "../../../../resources/ResourceFile_HIV.xlsx"),
             os.path.join(self.resources, "ResourceFile_HIV.xlsx"),
             sheet_name="LHC_samples",
         )
@@ -68,10 +67,7 @@ class TestScenario(BaseScenario):
         }
 
     def modules(self):
-        return [
-            fullmodel(resourcefilepath=self.resources),
-            deviance_measure.Deviance(resourcefilepath=self.resources),
-        ]
+        return fullmodel(resourcefilepath=self.resources) + [deviance_measure.Deviance(resourcefilepath=self.resources)]
 
     def draw_parameters(self, draw_number, rng):
 
