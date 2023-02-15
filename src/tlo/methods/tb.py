@@ -891,7 +891,7 @@ class Tb(Module):
         inc_estimates = p["who_incidence_estimates"]
         incidence_year = (inc_estimates.loc[
             (inc_estimates.year == self.sim.date.year), "incidence_per_100k"
-        ].values[0]) / 100000
+        ].values[0]) / 100_000
 
         incidence_year = incidence_year * p["scaling_factor_WHO"]
 
@@ -917,9 +917,9 @@ class Tb(Module):
         """
 
         # 1) Regular events
-        sim.schedule_event(TbActiveEvent(self), sim.date + DateOffset(days=0))
-        sim.schedule_event(TbTreatmentAndRelapseEvents(self), sim.date + DateOffset(days=0))
-        sim.schedule_event(TbSelfCureEvent(self), sim.date + DateOffset(days=0))
+        sim.schedule_event(TbActiveEvent(self), sim.date)
+        sim.schedule_event(TbTreatmentAndRelapseEvents(self), sim.date)
+        sim.schedule_event(TbSelfCureEvent(self), sim.date)
         sim.schedule_event(TbActiveCasePoll(self), sim.date + DateOffset(years=1))
 
         # log at the end of the year
