@@ -5,7 +5,7 @@ check the batch configuration gets generated without error:
 tlo scenario-run --draw-only src/scripts/hiv/projections_jan2023/batch_test_runs.py
 
 Test the scenario starts running without problems:
-tlo scenario-run src/scripts/hiv/deviance_for_calibration/calibration_script.py
+tlo scenario-run src/scripts/hiv/projections_jan2023/batch_test_runs.py
 
 or execute a single run:
 tlo scenario-run src/scripts/hiv/deviance_for_calibration/calibration_script.py --draw 1 0
@@ -58,10 +58,7 @@ class TestScenario(BaseScenario):
         }
 
     def modules(self):
-        return [
-            fullmodel(resourcefilepath=self.resources),
-            deviance_measure.Deviance(resourcefilepath=self.resources),
-        ]
+        return fullmodel(resourcefilepath=self.resources) + [deviance_measure.Deviance(resourcefilepath=self.resources)]
 
     def draw_parameters(self, draw_number, rng):
         return
