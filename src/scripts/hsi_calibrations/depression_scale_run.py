@@ -47,8 +47,7 @@ class LongRun(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         return {
             'Depression': {
-                'pr_assessed_for_depression_in_generic_appt_level1': 0.0,
-                'pr_assessed_for_depression_for_perinatal_female': 0.0
+                'init_pr_ever_diagnosed_depression': 0.1
             }
         }
 
