@@ -326,9 +326,7 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
             # of dying from alri if concurrent measles infection.
             # Opt 4. Schedule an alri infection at the end of this one, therefore won't be realistically concurrent.
 
-            if not df.at[person_id, "ri_current_infection_status"]:
-
-                if rng.random_sample() < self.module.parameters["p_alri_if_measles"]:
+                else:
 
                     # Eventually use this to chose pathogen
                     # inc_of_acquiring_alri = pd.DataFrame(index=df.loc[person_id].index)
