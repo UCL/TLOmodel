@@ -2181,6 +2181,8 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
 
         # The event should not run if person was infected with alri by the other module since this event was scheduled:
         if person.ri_current_infection_status:
+            logger.warning(key="warning",
+                           data="Clash in scheduling of alri events by measles and alri modules.")
             return
 
         # Get the characteristics of the case

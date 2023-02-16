@@ -14,8 +14,16 @@ from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date
 
+# Standard logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+# Detailed logger
+logger_detail = logging.getLogger(f"{__name__}.detail")
+logger_detail.setLevel(logging.INFO)
+
+# Percentage of measles cases above which alri merge would need reconsideration
+MEASLES_ALRI_THRESHOLD = 0.05
 
 
 class Measles(Module):
@@ -236,6 +244,11 @@ class MeaslesEvent(RegularEvent, PopulationScopeEventMixin):
 
         month = self.sim.date.month  # integer month
 
+        frac_measles_cases = sum(df['is_alive'] & df['me_has_measles'])/sum(df['is_alive'])
+        if frac_measles_cases > MEASLES_ALRI_THRESHOLD:
+            logger.warning(key="warning",
+                           data="Number of measles cases too large to safely merge measles and alri.")
+
         # transmission probability follows a sinusoidal function with peak in May
         # value is per person per month
         trans_prob = p["beta_baseline"] * (1 + p["beta_scale"] *
@@ -299,9 +312,14 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
             symp_resolve = symp_onset + DateOffset(days=rng.randint(7, 14))
             self.sim.schedule_event(MeaslesSymptomResolveEvent(self.module, person_id), symp_resolve)
 
+            if rng.random_sample() < self.module.parameters["p_alri_if_measles"]:
+
+                if df.at[person_id, "ri_current_infection_status"]:
+                    logger.warning(key="warning",
+                                   data="Couldn't schedule alri event for this person due to ongoing incident.")
             # If child already infected with alri, cannot schedule additional alri as the two infections
             # would then be overlapping
-            # Opt 1. Do nothing, can therefore never die from this measles event.
+            # Opt 1. (currently implemented) Do nothing, can therefore never die from this measles event.
             # Opt 2. Label potential future alri death as measles, even though it wasn't scheduled by measles,
             # therefore artificially lowering alri deaths.
             # Opt 3. Roll another die to schedule additional death for ongoing alri, i.e. increase probability
@@ -336,7 +354,7 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
                     df.at[person_id, "ri_caused_by_measles"] = True
                     # Note: There may be cases where alri module had scheduled alri onset
                     # between now and measles-scheduled alri event. This means the measles-scheduled
-                    # alri will not take place, but other one labelled as measles-caused
+                    # alri will not take place, but other one labelled as measles-caused.
 
         elif (ref_age >= 5):
             prob_death = self.get_prob_death(ref_age)  # Look-up the probability of death for this person
