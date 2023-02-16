@@ -19,7 +19,8 @@ from tlo.analysis.utils import (
     plot_stacked_bar_chart,
     squarify_neat,
     summarize,
-    unflatten_flattened_multi_index_in_logging,
+    unflatten_flattened_multi_index_in_logging, SHORT_TREATMENT_ID_TO_COLOR_MAP, order_of_coarse_appt,
+    _standardize_short_treatment_id,
 )
 
 PREFIX_ON_FILENAME = '3'
@@ -155,7 +156,8 @@ def figure2_appointments_used(results_folder: Path, output_folder: Path, resourc
             True
         )
     )[0]
-    name_of_plot = 'Appointment Types Used'
+
+    name_of_plot = 'Appointment Used by Each TREATMENT_ID'
     fig, ax = plt.subplots()
     plot_stacked_bar_chart(
         ax,
@@ -170,6 +172,40 @@ def figure2_appointments_used(results_folder: Path, output_folder: Path, resourc
     ax.legend().set_visible(False)  # suppress legend
     ax.set_ylabel('Number of appointments (millions)')
     ax.set_xlabel('TREATMENT_ID (Short)')
+    ax.set_ylim(0, 80)
+    ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
+    fig.tight_layout()
+    fig.savefig(
+        output_folder
+        / f"{PREFIX_ON_FILENAME}_Fig2_{name_of_plot.replace(' ', '_')}.png"
+    )
+    fig.show()
+    plt.close(fig)
+
+    # Pivot the data so that Appt Types are on Horizontal Axis
+    df = pd.Series(counts_by_treatment_id_and_coarse_appt_type).reset_index()
+    df['Appt_Type'] = df.level_1.astype(pd.CategoricalDtype(categories=list(COARSE_APPT_TYPE_TO_COLOR_MAP.keys()), ordered=True))
+    df['TREATMENT_ID'] = df.level_0.map(lambda x: _standardize_short_treatment_id(x)).astype(pd.CategoricalDtype(categories=list(SHORT_TREATMENT_ID_TO_COLOR_MAP.keys()), ordered=True))
+    df = df.sort_values(by=['Appt_Type', 'TREATMENT_ID'])
+    df = df.groupby(by=['Appt_Type', 'TREATMENT_ID'])[0].sum().unstack(fill_value=0).stack()
+    # .set_index(['Appt_Type', 'TREATMENT_ID'])[0]
+    counts_by_coarse_appt_type_and_treatment_id = Counter(df.to_dict())
+
+    name_of_plot = 'Appointment Types Used'
+    fig, ax = plt.subplots()
+    plot_stacked_bar_chart(
+        ax,
+        counts_by_coarse_appt_type_and_treatment_id,
+        # SHORT_TREATMENT_ID_TO_COLOR_MAP,
+        count_scale=1e-6
+    )
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.tick_params(axis='x', labelrotation=90)
+    ax.legend(ncol=2, prop={'size': 8}, loc='upper left')
+    ax.legend().set_visible(False)  # suppress legend
+    ax.set_ylabel('Number of appointments (millions)')
+    ax.set_xlabel('Appointment Types')
     ax.set_ylim(0, 80)
     ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
     fig.tight_layout()
