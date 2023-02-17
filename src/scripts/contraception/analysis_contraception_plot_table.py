@@ -36,6 +36,7 @@ logFile_without = 'run_analysis_contraception_' + with_diseases + '_diseases__' 
 logFile_with = 'run_analysis_contraception_' + with_diseases + '_diseases__' + datestamp_with_log + '.log'
 ##
 # OUTPUT REQUIREMENTS
+# %%%% plots
 # %% Plot Contraception Use Over time?
 # plot_use_time_bool = False
 plot_use_time_bool = True
@@ -50,6 +51,8 @@ set_ylims_bool = False
 # If the above is True (otherwise it doesn't matter),
 # upper limits for the figures (in the order [Use, Use By Method, Pregnancies]
 ylims_l = [1.2576e7, 0.41265e7, 0.174885e7]
+#
+# %%%% table
 # %% Table the Use and Costs (By Method) Over time?
 # table_use_costs_bool = False
 table_use_costs_bool = True
@@ -77,6 +80,9 @@ do_interv_analysis = True
 # If False, no output is printed, but the output table is still saved in the 'outputs' folder.
 print_bool = False
 # print_bool = True
+# %% Plot Consumables & Intervention Costs Over Time from the Table?
+# plot_costs = False
+plot_costs = True
 ################################################################################
 if table_use_costs_bool:
     assert do_no_interv_analysis | do_interv_analysis,\
@@ -112,7 +118,7 @@ def timeitprint(in_what_measures, in_fnc, in_timeit_rep_nmb=1):  # TODO: remove
 def do_analysis(ID, logFile, in_calc_intervention_costs_bool):
     use_df, percentage_use_df, costs_df, interv_costs_df =\
         a_co.analyse_contraception(
-            ID, logFile,
+            ID, logFile, suffix,
             # %% Plot Contraception Use Over time?
             plot_use_time_bool,
             # %% Plot Contraception Use By Method Over time?
@@ -139,7 +145,7 @@ if do_no_interv_analysis:
     print()
     print("analysis without interventions in progress")
     print('--------------------')
-    ID_without = datestamp_without_log + "_without" + suffix
+    ID_without = datestamp_without_log + "_without"
     use_without_df, percentage_use_without_df, costs_without_df, interv_costs_without_df =\
         do_analysis(ID_without, logFile_without, False)  # no calc of intervention costs for sim without interv
 
@@ -148,7 +154,7 @@ if do_no_interv_analysis:
         print()
         print("analysis with interventions in progress")
         print('--------------------')
-        ID_with = datestamp_with_log + "_with" + suffix
+        ID_with = datestamp_with_log + "_with"
         use_with_df, percentage_use_with_df, costs_with_df, interv_costs_with_df =\
             do_analysis(ID_with, logFile_with, calc_intervention_costs_bool)
     else:
