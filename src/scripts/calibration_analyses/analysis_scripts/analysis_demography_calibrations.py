@@ -470,9 +470,24 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig.legend(loc=7)
         fig.tight_layout()
         fig.subplots_adjust(right=0.65)
-        plt.savefig(make_graph_file_name(f"Contraception_{_age}"))
+        plt.savefig(make_graph_file_name(f"Contraception_use_over_time_{_age}"))
         plt.show()
         plt.close(fig)
+
+    # Show Distribution of use at different ages at one time point (2015)
+    year_of_interest = 2015
+    contaceptive_use_in_year_of_interest = mean_usage_by_age.loc[(year_of_interest, slice(None))].T
+    fig, ax = plt.subplots()
+    contaceptive_use_in_year_of_interest.plot.bar(stacked=True, ax=ax, legend=False)
+    ax.set_title(f'Contraceptive Method Use in {year_of_interest}')
+    ax.set_xlabel('Age-Group')
+    ax.set_ylabel('Proportion')
+    fig.tight_layout()
+    fig.show()
+    fig.savefig(make_graph_file_name(f"Contraception_use_by_age_in_year_{year_of_interest}"))
+    plt.close(fig)
+
+
 
     # %% Age-specific fertility
 
