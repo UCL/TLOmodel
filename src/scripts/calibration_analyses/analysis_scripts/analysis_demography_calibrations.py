@@ -545,8 +545,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    # Plot with respect to age, averaged in the five year periods:
-
+    # Plot with respect to age, averaged in the five-year periods:
     model_asfr = asfr.unstack() \
                      .droplevel(axis=1, level=0) \
                      .groupby(by=asfr.index.levels[0].map(calperiodlookup)) \
@@ -557,19 +556,19 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         wpp.Variant.isin(['WPP_Estimates', 'WPP_Medium variant']), ['Age_Grp', 'Period', 'asfr']
     ].groupby(by=['Age_Grp', 'Period'])['asfr'].mean().unstack().T
 
-    fig, axs = plt.subplots(nrows=2, sharex=True, sharey=True)
-    for ax, _period in zip(axs, ['2010-2014', '2015-2019']):
-        to_plot = pd.concat([model_asfr.loc[_period], data_asfr.loc[_period]], axis=1)
-        ax.plot(to_plot.index, to_plot[_period], label='WPP', color=colors['WPP'])
-        ax.plot(to_plot.index, to_plot['mean'], label='Model', color=colors['Model'])
-        ax.fill_between(to_plot.index, to_plot['lower'], to_plot['upper'], color=colors['Model'], alpha=0.2)
-        ax.set_xlabel('Age at Conception')
-        ax.set_ylabel('Live births per woman-year')
-        ax.set_title(f'{_period}')
-        ax.legend()
+    fig, ax = plt.subplots()
+    _period = '2015-2019'
+    to_plot = pd.concat([model_asfr.loc[_period], data_asfr.loc[_period]], axis=1)
+    ax.plot(to_plot.index, to_plot[_period], label='WPP', color=colors['WPP'])
+    ax.plot(to_plot.index, to_plot['mean'], label='Model', color=colors['Model'])
+    ax.fill_between(to_plot.index, to_plot['lower'], to_plot['upper'], color=colors['Model'], alpha=0.2)
+    ax.set_xlabel('Age at Conception')
+    ax.set_ylabel('Live births per woman-year')
+    ax.set_title(f'{_period}')
+    ax.legend()
     fig.suptitle('Live Births By Age of Mother At Conception')
     fig.tight_layout()
-    fig.savefig(make_graph_file_name("asfr_model_vs_data_average_by_age"))
+    fig.savefig(make_graph_file_name("asfr_model_vs_data_average_by_age_2015-2019"))
     fig.show()
     plt.close(fig)
 
