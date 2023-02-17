@@ -212,6 +212,7 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
     bar_chart_from_dict(preg_dict, 'Pregnancies', 'Total Pregnancies by Scenario', primary_oc_path, 'agg_preg')
     bar_chart_from_dict(births_dict, 'Births', 'Total Births by Scenario', primary_oc_path, 'agg_births')
 
+
     # ------------------------------------ PRIMARY OUTCOMES... -------------------------------------------------------
     def extract_death_and_stillbirth_data_frames_and_summ_outcomes(folder, birth_df):
         # MATERNAL
@@ -600,7 +601,10 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
             ci = [(x - y) / 2 for x, y in zip(uq_vals, lq_vals)]
             ax.bar(labels, mean_vals, color=colour, width=width, yerr=ci)
             ax.tick_params(axis='x', which='major', labelsize=8, labelrotation=90)
-            plt.gca().set_ylim(bottom=0)
+            if group == 'mat':
+                plt.gca().set_ylim(bottom=0, top=70)
+            else:
+                plt.gca().set_ylim(bottom=0, top=7)
 
             ax.set_ylabel(d[1])
             ax.set_xlabel('Complication')
@@ -918,7 +922,203 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
             'maternal_dalys_rate_df_stacked', 'neonatal_dalys_rate_df_stacked']
     save_outputs(dalys_folders, keys, 'diff_in_daly_outcomes', primary_oc_path)
 
-    # SECONDARY OUTCOMES
+    # ----------------------------------------- SECONDARY OUTCOMES --------------------------------------------------
+    def get_coverage_of_key_maternity_services(folder, births_df):
+
+        results = dict()
+
+        # --- ANC ---
+        anc_coverage = extract_results(
+            folder,
+            module="tlo.methods.care_of_women_during_pregnancy",
+            key="anc_count_on_birth",
+            custom_generate_series=(
+                lambda df: df.assign(
+                    year=df['date'].dt.year).groupby(['year'])['person_id'].count()),
+            do_scaling=True
+        )
+
+        # Next get a version of that DF with women who attended >= 4/8 visits by birth
+        an = extract_results(
+            folder,
+            module="tlo.methods.care_of_women_during_pregnancy",
+            key="anc_count_on_birth",
+            custom_generate_series=(
+                lambda df: df.loc[df['total_anc'] >= 4].assign(
+                    year=df['date'].dt.year).groupby(['year'])['person_id'].count()),
+            do_scaling=True
+        )
+        anc_cov_of_interest = an.fillna(0)
+
+        cd = (anc_cov_of_interest / anc_coverage) * 100
+        coverage_df = cd.fillna(0)
+
+        results.update({'anc_cov_df': coverage_df})
+        results.update({'anc_cov_rate': return_95_CI_across_runs(coverage_df, sim_years)})
+
+        # ---SBA--
+        all_deliveries = extract_results(
+            folder,
+            module="tlo.methods.labour",
+            key="delivery_setting_and_mode",
+            custom_generate_series=(
+                lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year'])[
+                    'mother'].count()),
+            do_scaling=True
+        )
+
+        for facility_type in ['home_birth', 'hospital', 'health_centre', 'facility']:
+            if facility_type == 'facility':
+                deliver_setting_results = extract_results(
+                    folder,
+                    module="tlo.methods.labour",
+                    key="delivery_setting_and_mode",
+                    custom_generate_series=(
+                        lambda df: df.loc[df['facility_type'] != 'home_birth'].assign(
+                            year=df['date'].dt.year).groupby(['year'])[
+                            'mother'].count()),
+                    do_scaling=True
+                )
+
+            else:
+                deliver_setting_results = extract_results(
+                    folder,
+                    module="tlo.methods.labour",
+                    key="delivery_setting_and_mode",
+                    custom_generate_series=(
+                        lambda df: df.loc[df['facility_type'] == facility_type].assign(
+                            year=df['date'].dt.year).groupby(['year'])[
+                            'mother'].count()),
+                    do_scaling=True
+                )
+            rate_df = (deliver_setting_results / all_deliveries) * 100
+            results.update({f'{facility_type}_df': rate_df})
+            results.update({f'{facility_type}_rate': return_95_CI_across_runs(rate_df, sim_years)})
+
+        # --- PNC ---
+        all_surviving_mothers = extract_results(
+            folder,
+            module="tlo.methods.postnatal_supervisor",
+            key="total_mat_pnc_visits",
+            custom_generate_series=(
+                lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['mother'].count()),
+            do_scaling=True)
+
+        # Extract data on all women with 1+ PNC visits
+        pnc_results_maternal = extract_results(
+            folder,
+            module="tlo.methods.postnatal_supervisor",
+            key="total_mat_pnc_visits",
+            custom_generate_series=(
+                lambda df: df.loc[df['visits'] > 0].assign(year=df['date'].dt.year).groupby(['year'])[
+                    'mother'].count()),
+            do_scaling=True
+        )
+
+        # Followed by newborns...
+        all_surviving_newborns = extract_results(
+            folder,
+            module="tlo.methods.postnatal_supervisor",
+            key="total_neo_pnc_visits",
+            custom_generate_series=(
+                lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])[
+                    'child'].count()),
+            do_scaling=True
+        )
+
+        pnc_results_newborn = extract_results(
+            folder,
+            module="tlo.methods.postnatal_supervisor",
+            key="total_neo_pnc_visits",
+            custom_generate_series=(
+                lambda df: df.loc[df['visits'] > 0].assign(year=df['date'].dt.year).groupby(['year'])[
+                    'child'].count()),
+            do_scaling=True
+        )
+        cov_mat_birth_df = (pnc_results_maternal / births_df) * 100
+        cov_mat_surv_df = (pnc_results_maternal / all_surviving_mothers) * 100
+        cov_neo_birth_df = (pnc_results_newborn / births_df) * 100
+        cov_neo_surv_df = (pnc_results_newborn / all_surviving_newborns) * 100
+
+        results.update({'pnc_mat_cov_birth_df': cov_mat_birth_df})
+        results.update({'pnc_mat_cov_birth_rate': return_95_CI_across_runs(cov_mat_birth_df, sim_years)})
+
+        results.update({'pnc_mat_cov_surv_df': cov_mat_surv_df})
+        results.update({'pnc_mat_cov_surv_rate': return_95_CI_across_runs(cov_mat_surv_df, sim_years)})
+
+        results.update({'pnc_neo_cov_birth_df': cov_neo_birth_df})
+        results.update({'pnc_neo_cov_birth_rate': return_95_CI_across_runs(cov_neo_birth_df, sim_years)})
+
+        results.update({'pnc_neo_cov_surv_df': cov_neo_surv_df})
+        results.update({'pnc_neo_cov_surv_rate': return_95_CI_across_runs(cov_mat_surv_df, sim_years)})
+
+        return results
+
+    cov_data = {k: get_coverage_of_key_maternity_services(results_folders[k], births_dict[k]['births_data_frame'])
+                for k in results_folders}
+
+    cov_keys = list()
+    for k in cov_data[scenario_titles[0]].keys():
+        if 'df' in k:
+            cov_keys.append(k)
+
+    save_outputs(cov_data, cov_keys, 'diff_in_mat_service_coverage', secondary_oc_path)
+
+    analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+        scen_colours, sim_years, cov_data, 'anc_cov_rate',
+        '% Total Births',
+        'Proportion of women receiving four (or more) ANC visits at birth',
+        secondary_oc_path, 'anc4_cov')
+
+    analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+        scen_colours, sim_years, cov_data, 'facility_rate',
+        '% Total Births',
+        'Facility Delivery Rate per Year Per Scenario',
+        secondary_oc_path, 'fd_rate')
+
+    analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+        scen_colours, sim_years, cov_data, 'home_birth_rate',
+        '% Total Births',
+        'Home birth Rate per Year Per Scenario',
+        secondary_oc_path, 'hb_rate')
+
+    analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+        scen_colours, sim_years, cov_data, 'hospital_rate',
+        '% Total Births',
+        'Hospital birth Rate per Year Per Scenario',
+        secondary_oc_path, 'hp_rate')
+
+    analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+        scen_colours, sim_years, cov_data, 'health_centre_rate',
+        '% Total Births',
+        'Health Centre Birth Rate per Year Per Scenario',
+        secondary_oc_path, 'hc_rate')
+
+    analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+        scen_colours, sim_years, cov_data, 'pnc_mat_cov_birth_rate',
+        '% Total Births',
+        'Maternal PNC Coverage as Proportion of Total Births',
+        secondary_oc_path, 'mat_pnc_coverage_births')
+
+    analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+        scen_colours, sim_years, cov_data, 'pnc_mat_cov_surv_rate',
+        '% Total Survivors at Day 42',
+        'Maternal PNC Coverage as Proportion of Postnatal Survivors',
+        secondary_oc_path, 'mat_pnc_coverage_survivors')
+
+    analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+        scen_colours, sim_years, cov_data, 'pnc_neo_cov_birth_rate',
+        '% Total Births',
+        'Neonatal PNC Coverage as Proportion of Total Births',
+        secondary_oc_path, 'neo_pnc_coverage_births')
+
+    analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+        scen_colours, sim_years, cov_data, 'pnc_neo_cov_surv_rate',
+        '% Total Survivors at Day 28',
+        'Neonatal PNC Coverage as Proportion of Neonatal Survivors',
+        secondary_oc_path, 'neo_pnc_coverage_survivors')
+
+
     # COMPLICATION INCIDCENE
     def extract_comp_inc_folders(folder, comps_df, neo_comps_df, pregnancy_df, births_df, comp_preg_df):
         def get_rate_df(comp_df, denom_df, denom):

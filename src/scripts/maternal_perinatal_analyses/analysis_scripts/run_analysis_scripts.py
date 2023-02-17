@@ -33,11 +33,11 @@ sim_years = list(range(2010, 2031))
 output_path = './outputs/sejjj49@ucl.ac.uk/'
 
 
-for scenario_dict, service, colours in zip([scenario_dict1, scenario_dict2, scenario_dict3],
-                                           ['anc', 'sba', 'pnc'],
-                                           [['lightcoral', 'firebrick', 'red', 'chocolate', 'darkorange'],
-                                            ['cadetblue', 'deepskyblue', 'midnightblue', 'green', 'palegreen'],
-                                            ['plum', 'purple', 'deeppink', 'crimson', 'maroon']]):
+for scenario_dict, service, colours in zip([ scenario_dict3],
+                                           ['pnc'],
+                                           # [['lightcoral', 'firebrick', 'red', 'chocolate', 'darkorange'],
+                                           #  [['cadetblue', 'deepskyblue', 'midnightblue', 'green', 'palegreen'],
+                                             [['plum', 'purple', 'deeppink', 'crimson', 'maroon']]):
 
 
     service_of_interest = service
