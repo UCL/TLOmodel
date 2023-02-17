@@ -136,7 +136,7 @@ def analyse_contraception(in_datestamp: str, in_log_file: str, in_suffix: str,
         plt.ylabel("Number of women")
         # plt.gca().set_xlim(Date(2010, 1, 1), Date(2023, 1, 1)) to see only 2010-2023 (excl)
         plt.legend(['Total women age 15-49 years', 'Not Using Contraception', 'Using Contraception'])
-        plt.savefig(outputpath / ('Contraception Use' + in_datestamp + '.png'), format='png')
+        plt.savefig(outputpath / ('Contraception Use' + in_datestamp + in_suffix + '.png'), format='png')
         print("Fig: Contraception Use Over time saved.")
 
     # %% Plot Contraception Use By Method Over time:
@@ -175,7 +175,7 @@ def analyse_contraception(in_datestamp: str, in_log_file: str, in_suffix: str,
         plt.ylabel("Number using method")
         plt.legend(['pill', 'IUD', 'injections', 'implant', 'male_condom', 'female_sterilization',
                     'other_modern', 'periodic_abstinence', 'withdrawal', 'other_traditional'])
-        plt.savefig(outputpath / ('Contraception Use By Method' + in_datestamp + '.png'), format='png')
+        plt.savefig(outputpath / ('Contraception Use By Method' + in_datestamp + in_suffix + '.png'), format='png')
         # plt.show()
         print("Fig: Contraception Use By Method Over time saved.")
 
@@ -198,7 +198,7 @@ def analyse_contraception(in_datestamp: str, in_log_file: str, in_suffix: str,
         plt.xlabel("Year")
         plt.ylabel("Number of pregnancies")
         plt.legend(['total', 'pregnant', 'not_pregnant'])
-        plt.savefig(outputpath / ('Pregnancies Over Time' + in_datestamp + '.png'), format='png')
+        plt.savefig(outputpath / ('Pregnancies Over Time' + in_datestamp + in_suffix + '.png'), format='png')
         # plt.show()
         print("Fig: Pregnancies Over time saved.")
 
@@ -559,23 +559,24 @@ def analyse_contraception(in_datestamp: str, in_log_file: str, in_suffix: str,
             """
             l_costs = []
             for i in in_df_cons_avail_by_time_and_method.index:
-                # if the method == males or females condoms calculate from the
-                # mean numbers of women using them (there is only one item for
-                # condoms)
+                # if the method == males or females condoms (f. condoms as other_modern), calculate from the mean
+                # numbers of women using them (there is only one item for condoms), these are calculated from rescaled
+                # numbers of women, hence no need to rescale the costs
                 costs = 0
                 if (i[1] == "male_condom") | (i[1] == "other_modern"):
                     unit_cost = float(in_df_resource_items_pkgs['Unit_Cost'].loc[
                                           in_df_resource_items_pkgs['Intervention_Pkg']
                                           == get_intervention_pkg_name(i[1])])
-                    # costs = unit_cost *
-                    # nmb of years within the time period (tp_len) *
-                    # 2/3 of 365.25 days as approximation of number of condom used per year *
+                    # costs = unit_cost * nmb of years within the time period (tp_len) * 2 *
+                    # Expected_Units_Per_Case as approximation of number of condom used per 6 months *
                     # mean nmb of women using
-                    costs = unit_cost *\
-                        int(in_df_mean_use['tp_len'].loc[in_df_mean_use.index == i[0]]) *\
-                        2 / 3 * 365.25 *\
-                        float(in_df_mean_use[i[1]].loc[in_df_mean_use.index == i[0]])
-                # otherwise calculate from the logs
+                    costs = unit_cost * \
+                        int(in_df_mean_use['tp_len'].loc[in_df_mean_use.index == i[0]]) * 2 * \
+                        float(in_df_resource_items_pkgs['Expected_Units_Per_Case'].loc[
+                                  in_df_resource_items_pkgs['Intervention_Pkg'] == get_intervention_pkg_name(i[1])
+                              ]) * float(in_df_mean_use[i[1]].loc[in_df_mean_use.index == i[0]])
+
+                    # otherwise calculate from the logs and rescale to the pop. size of Malawi
                 else:
                     item_avail_dict = in_df_cons_avail_by_time_and_method.loc[
                         i, 'Item_Available_summation'
@@ -585,6 +586,7 @@ def analyse_contraception(in_datestamp: str, in_log_file: str, in_suffix: str,
                                 (in_df_resource_items_pkgs['Intervention_Pkg'] == get_intervention_pkg_name(i[1]))
                                 & (in_df_resource_items_pkgs['Item_Code'] == time_method_key)])
                         costs = costs + (unit_cost * item_avail_dict[time_method_key])
+                        costs = costs * scaling_factor
                 l_costs.append(costs)
             return l_costs
 
@@ -627,10 +629,6 @@ def analyse_contraception(in_datestamp: str, in_log_file: str, in_suffix: str,
         cons_costs_by_time_and_method_df =\
             cons_costs_by_time_and_method_df\
             .append(sum_costs_all_times(cons_costs_by_time_and_method_df))
-
-        # Rescale the numbers of contraception costs to the population size of Malawi
-        # (from the nmbs for simulation pop_size)
-        cons_costs_by_time_and_method_df.loc[:, :] = cons_costs_by_time_and_method_df.loc[:, :] * scaling_factor
 
         print("Calculations of Consumables Costs finished.")
 

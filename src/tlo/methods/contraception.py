@@ -53,7 +53,7 @@ class Contraception(Module):
         'Interventions_Pop': Parameter(Types.DATA_FRAME,
                                        'Pop (population scale contraception intervention) intervention multiplier.'),
         'Interventions_PPFP': Parameter(Types.DATA_FRAME,
-                                       'PPFP (post-partum family planning) intervention multiplier.'),
+                                        'PPFP (post-partum family planning) intervention multiplier.'),
         'Initiation_ByAge': Parameter(Types.DATA_FRAME,
                                       'The effect of age on the probability of starting use of contraceptive (add one '
                                       'for multiplicative effect).'),
@@ -645,8 +645,8 @@ class Contraception(Module):
         states_to_maintain_on = sorted(self.states_that_may_require_HSI_to_maintain_on)
 
         for _woman_id, _old, _new in zip(ids, old, new):
-            # if _new == 'female_sterilization':
-            #     assert df.loc[_woman_id, 'age_years'] >= 30
+            if _new == 'female_sterilization':
+                assert df.loc[_woman_id, 'age_years'] >= 30
             # Does this change require an HSI?
             is_a_switch = _old != _new
             reqs_appt = _new in self.states_that_may_require_HSI_to_switch_to if is_a_switch \
