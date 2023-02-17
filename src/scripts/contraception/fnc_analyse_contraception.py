@@ -576,7 +576,7 @@ def analyse_contraception(in_datestamp: str, in_log_file: str, in_suffix: str,
                                   in_df_resource_items_pkgs['Intervention_Pkg'] == get_intervention_pkg_name(i[1])
                               ]) * float(in_df_mean_use[i[1]].loc[in_df_mean_use.index == i[0]])
 
-                    # otherwise calculate from the logs and rescale to the pop. size of Malawi
+                # otherwise calculate from the logs and rescale to the pop. size of Malawi
                 else:
                     item_avail_dict = in_df_cons_avail_by_time_and_method.loc[
                         i, 'Item_Available_summation'
@@ -586,7 +586,7 @@ def analyse_contraception(in_datestamp: str, in_log_file: str, in_suffix: str,
                                 (in_df_resource_items_pkgs['Intervention_Pkg'] == get_intervention_pkg_name(i[1]))
                                 & (in_df_resource_items_pkgs['Item_Code'] == time_method_key)])
                         costs = costs + (unit_cost * item_avail_dict[time_method_key])
-                        costs = costs * scaling_factor
+                    costs = costs * scaling_factor
                 l_costs.append(costs)
             return l_costs
 
