@@ -207,7 +207,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 fig.savefig(make_graph_file_name(
                     f"{what}_{period}_{sex}_StackedBars_ModelvsGBD_{'scaled' if scaled else ''}"))
 
-                # ax.text(5.2, 11_000, 'GBD || Model', horizontalalignment='left',  verticalalignment='bottom', fontsize=8)
+                # ax.text(
+                # 5.2, 11_000, 'GBD || Model', horizontalalignment='left',  verticalalignment='bottom', fontsize=8)
                 ax.legend().set_visible(False)
 
                 fig.show()

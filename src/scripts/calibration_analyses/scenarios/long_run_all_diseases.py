@@ -9,7 +9,6 @@ or locally using:
     ```tlo scenario-run src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py```
 
 """
-import pandas as pd
 
 from tlo import Date, logging
 from tlo.methods.fullmodel import fullmodel

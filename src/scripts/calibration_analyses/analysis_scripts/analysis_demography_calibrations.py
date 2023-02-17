@@ -487,8 +487,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.savefig(make_graph_file_name(f"Contraception_use_by_age_in_year_{year_of_interest}"))
     plt.close(fig)
 
-
-
     # %% Age-specific fertility
 
     def get_births_by_year_and_age_range_of_mother_at_pregnancy(_df):

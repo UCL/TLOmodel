@@ -494,10 +494,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             .loc[_df['year'].between(*[d.year for d in TARGET_PERIOD])] \
             .drop(columns=['date', 'year']) \
             .assign(
-            li_wealth=lambda x: x['li_wealth'].map(wealth_cats)
-            .astype(pd.CategoricalDtype(wealth_cats.values(),
-                                        ordered=True))
-        ) \
+                li_wealth=lambda x: x['li_wealth'].map(wealth_cats)
+                .astype(pd.CategoricalDtype(wealth_cats.values(), ordered=True))
+            ) \
             .melt(id_vars=['li_wealth'], var_name='label') \
             .groupby(by=['li_wealth', 'label'])['value'] \
             .sum()
