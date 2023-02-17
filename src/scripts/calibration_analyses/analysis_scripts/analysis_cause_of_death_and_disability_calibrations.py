@@ -260,7 +260,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             except KeyError:
                 print(f"Could not produce plot for {what}: {reformat_cause(cause)}")
 
-        # %% Plots comparing between model and actual across all ages and sexes:
+        # %% "Scatter" Plots comparing between model and actual across all ages and sexes:
 
         tot_outcomes_by_cause = pd.concat(
             {
@@ -277,7 +277,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         xylim = tot_outcomes_by_cause.loc[('upper', slice(None))].max().max() / 1e3
         line_x = np.linspace(0, xylim)
         ax.plot(line_x, line_x, 'k--')
-        ax.fill_between(line_x, line_x*0.9, line_x*1.1, color='grey', alpha=0.5)
+        # ax.fill_between(line_x, line_x*0.9, line_x*1.1, color='grey', alpha=0.5)  # grey ribbon around 1:1 line
         ax.set(xlim=(0, xylim), ylim=(0, xylim))
 
         for cause in all_causes:
@@ -317,6 +317,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.set_ylabel('Model (thousands)')
         ax.set_title(f'{what} per year by Cause {period}')
         ax.legend(ncol=1, prop={'size': 8}, loc='lower right')
+        ax.legend().set_visible(False)
         plt.savefig(make_graph_file_name(f"A_{what}_{period}_Scatter_Plot"))
         plt.show()
         plt.close(fig)
@@ -368,7 +369,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # make_std_graphs(what='Deaths', period='2010-2014')
     # make_std_graphs(what='DALYs', period='2010-2014')
 
-    # make_std_graphs(what='Deaths', period='2015-2019')
+    make_std_graphs(what='Deaths', period='2015-2019')
     make_std_graphs(what='DALYs', period='2015-2019')
 
 
