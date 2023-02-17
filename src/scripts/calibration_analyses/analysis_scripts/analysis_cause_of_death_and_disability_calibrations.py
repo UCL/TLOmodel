@@ -161,10 +161,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             return df.sort_index(axis=1, key=order_of_cause_of_death_or_daly_label, ascending=False)
 
         for sex in sexes:
-            _dat = {_dat: outcome_by_age_pt[_dat].loc[sex].loc[:, pd.IndexSlice['mean']].pipe(_sort_columns)
-                    for _dat in outcome_by_age_pt.keys()}
-
             for scaled in (False, True):
+
+                _dat = {_dat: outcome_by_age_pt[_dat].loc[sex].loc[:, pd.IndexSlice['mean']].pipe(_sort_columns)
+                        for _dat in outcome_by_age_pt.keys()}
+
+                # For scaled plots, zero-out models for age-groups where GBD is zero:
+                if scaled:
+                    _dat['Model'].loc[(_dat['GBD'].sum(axis=1) == 0.0)] = 0.0
+
                 fig, ax = plt.subplots()
                 plot_clustered_stacked(ax=ax,
                                        dfall=_dat,
@@ -175,19 +180,19 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                                        edgecolor='black',
                                        linewidth=0.4,
                                        )
-                ax.set_title(f'{sexname(sex)}, {period}', fontsize=18)
+                ax.set_title(f'{what}: {sexname(sex)}, {period}', fontsize=18)
                 ax.set_xlabel('Age Group')
                 ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
 
+                # ax.set_xlim([0, 17.5])
                 if scaled:
                     ax.set_ylim([0, 1.05])
-                    ax.set_xlim([0, 17.5])
                 else:
                     ax.grid(axis='y')
                     if what == 'Deaths':
                         ax.set_ylabel(f"{what} per year\n")
                         ax.set_ylim([0, 25_000])
-                        ax.set_yticks(np.arange(0, 25_000, 5_000))
+                        ax.set_yticks(np.arange(0, 30_000, 5_000))
                     else:
                         ax.set_ylabel(f"{what} per year\n")
 
@@ -202,11 +207,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 fig.savefig(make_graph_file_name(
                     f"{what}_{period}_{sex}_StackedBars_ModelvsGBD_{'scaled' if scaled else ''}"))
 
-            # ax.text(5.2, 11_000, 'GBD || Model', horizontalalignment='left',  verticalalignment='bottom', fontsize=8)
-            ax.legend().set_visible(False)
+                # ax.text(5.2, 11_000, 'GBD || Model', horizontalalignment='left',  verticalalignment='bottom', fontsize=8)
+                ax.legend().set_visible(False)
 
-            fig.show()
-            plt.close(fig)
+                fig.show()
+                plt.close(fig)
 
         # %% Plots of age-breakdown of outcomes patten for each cause:
 
@@ -360,10 +365,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         plt.close(fig)
 
     # %% Make graphs for each of Deaths and DALYS for a specific period
-    make_std_graphs(what='Deaths', period='2010-2014')
-    make_std_graphs(what='DALYs', period='2010-2014')
+    # make_std_graphs(what='Deaths', period='2010-2014')
+    # make_std_graphs(what='DALYs', period='2010-2014')
 
-    make_std_graphs(what='Deaths', period='2015-2019')
+    # make_std_graphs(what='Deaths', period='2015-2019')
     make_std_graphs(what='DALYs', period='2015-2019')
 
 
