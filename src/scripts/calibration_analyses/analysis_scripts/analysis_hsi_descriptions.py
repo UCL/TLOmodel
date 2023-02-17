@@ -26,7 +26,7 @@ from tlo.analysis.utils import (
 PREFIX_ON_FILENAME = '3'
 
 # Declare period for which the results will be generated (defined inclusively)
-TARGET_PERIOD = (Date(2010, 1, 1), Date(2010, 12, 31))
+TARGET_PERIOD = (Date(2015, 1, 1), Date(2019, 12, 31))
 
 
 def drop_outside_period(_df):
@@ -172,7 +172,7 @@ def figure2_appointments_used(results_folder: Path, output_folder: Path, resourc
     ax.legend().set_visible(False)  # suppress legend
     ax.set_ylabel('Number of appointments (millions)')
     ax.set_xlabel('TREATMENT_ID (Short)')
-    ax.set_ylim(0, 80)
+    ax.set_ylim(0, 600)
     ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
     fig.tight_layout()
     fig.savefig(
@@ -206,7 +206,7 @@ def figure2_appointments_used(results_folder: Path, output_folder: Path, resourc
     ax.legend().set_visible(False)  # suppress legend
     ax.set_ylabel('Number of appointments (millions)')
     ax.set_xlabel('Appointment Types')
-    ax.set_ylim(0, 80)
+    ax.set_ylim(0, 600)
     ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
     fig.tight_layout()
     fig.savefig(
