@@ -31,13 +31,15 @@ from tlo.analysis.utils import (
 )
 
 
-def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
+def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None, rtn_results=False):
     """Produce standard set of plots describing the effect of each TREATMENT_ID.
     - We estimate the epidemiological impact as the EXTRA deaths that would occur if that treatment did not occur.
     - We estimate the draw on healthcare system resources as the FEWER appointments when that treatment does not occur.
     """
 
-    TARGET_PERIOD = (Date(2015, 1, 1), Date(2019, 12, 31))
+    results = dict()  # <-- will be a store of results that can be returned if needed.
+
+    TARGET_PERIOD = (Date(2010, 1, 1), Date(2014, 12, 31))
 
     # Definitions of general helper functions
     make_graph_file_name = lambda stub: output_folder / f"{stub.replace('*', '_star_')}.png"  # noqa: E731
@@ -301,6 +303,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             find_difference_extra_relative_to_comparison(num_dalys, comparison='Everything', scaled=True)).T
     ).iloc[0].unstack().drop(['FirstAttendance*']).sort_values(by='mean', ascending=True)
 
+    results["num_dalys_averted"] = num_dalys_averted
+    results["pc_dalys_averted"] = pc_dalys_averted
+
     # PLOTS FOR EACH TREATMENT_ID (Short)
     fig, ax = plt.subplots()
     name_of_plot = f'Deaths Averted by Each TREATMENT_ID, {target_period()}'
@@ -323,7 +328,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     do_barh_plot_with_ci(num_dalys_averted.drop(['*']) / 1e6, ax)
     ax.set_title(name_of_plot)
     ax.set_ylabel('TREATMENT_ID (Short)')
-    ax.set_xlabel('Number of DALYS Averted (1/1e6)')
+    ax.set_xlabel('Number of DALYS Averted (/1e6)')
     ax.set_xlim(0, 6)
     do_label_barh_plot(pc_dalys_averted.drop(['*']), ax)
     ax.grid()
@@ -650,6 +655,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
+
+    # Return results, if option `rtn_results` is True
+    if rtn_results:
+        return results
 
 
 if __name__ == "__main__":
