@@ -40,10 +40,20 @@ class Copd(Module):
         'Asthma',
         'Lower respiratory infections',
         'Upper respiratory infections',
-        'Other chronic respiratory diseases'
+        'Other chronic respiratory diseases',
+        'Tuberculosis',
+        'Tracheal, bronchus, and lung cancer'
+
         ]
     # Declare Causes of Death
     CAUSES_OF_DEATH = {
+        'ChronicObstructivePulmonaryDiseases':
+            Cause(gbd_causes={gbd_causes_of_copd_represented_in_this_module},
+                  label='copd')
+    }
+
+    # Declare Causes of Disability
+    CAUSES_OF_DISABILITY = {
         'ChronicObstructivePulmonaryDiseases':
             Cause(gbd_causes={gbd_causes_of_copd_represented_in_this_module},
                   label='copd')
