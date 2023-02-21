@@ -36,6 +36,10 @@ end_date = Date(2012, 1, 1)
 popsize = 100
 
 
+def extract_mapper(key):
+    return pd.Series(key.drop(columns={'date'}).loc[0]).to_dict()
+
+
 def check_dtypes(simulation):
     # check types of columns
     df = simulation.population.props
@@ -110,12 +114,16 @@ def test_cause_of_disability_being_registered(seed):
     sim.simulate(end_date=Date(2010, 1, 2))
     check_dtypes(sim)
 
-    mapper_from_tlo_causes, mapper_from_gbd_causes = \
-        sim.modules['HealthBurden'].create_mappers_from_causes_of_disability_to_label()
+    hblog = parse_log_file(sim.log_filepath)['tlo.methods.healthburden']
+    disability_mapper_from_gbd_causes = extract_mapper(hblog['disability_mapper_from_gbd_cause_to_common_label'])
+    disability_mapper_from_tlo_causes = extract_mapper(hblog['disability_mapper_from_tlo_cause_to_common_label'])
 
-    assert set(mapper_from_tlo_causes.keys()) == set(sim.modules['HealthBurden'].causes_of_disability.keys())
-    assert set(mapper_from_gbd_causes.keys()) == set(sim.modules['HealthBurden'].parameters['gbd_causes_of_disability'])
-    assert set(mapper_from_gbd_causes.values()) == set(mapper_from_tlo_causes.values())
+    assert set(disability_mapper_from_tlo_causes.keys()) == \
+           set(sim.modules['HealthBurden'].causes_of_disability.keys())
+    assert set(disability_mapper_from_gbd_causes .keys()) == \
+           set(sim.modules['HealthBurden'].parameters['gbd_causes_of_disability'])
+    assert set(disability_mapper_from_gbd_causes .values()) == \
+           set(disability_mapper_from_tlo_causes.values())
 
 
 def test_arithmetic_of_disability_aggregation_calcs(seed):
@@ -571,3 +579,61 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
     ser = fn(log['dalys_stacked'])
     assert ser.loc[(slice(None), 'Label_A')].at[disability_onset_date.year] == approx(0.5, 1 / 364)
     assert ser.loc[(slice(None), 'Label_A')].at[death_date.year] == approx(68.0, 1 / 364)
+
+
+def test_mapper_for_dalys_created(tmpdir, seed):
+    """Check that causes of DALYS can be mapped between TLO cause and GBD cause in the case of a cause causing
+    deaths but not disability (e.g. 'Congenital birth defects')."""
+
+    rfp = Path(os.path.dirname(__file__)) / '../resources'
+
+    class DiseaseThatCausesDeathOnly(Module):
+        METADATA = {Metadata.DISEASE_MODULE}
+        CAUSES_OF_DEATH = {
+            'TLOCauseNameFor_CBD': Cause(gbd_causes='Congenital birth defects', label='Chosen_Label_For_CBD')
+        }
+        CAUSES_OF_DISABILITY = {}
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            pass
+
+    start_date = Date(2010, 1, 1)
+    sim = Simulation(start_date=start_date, seed=seed, log_config={'filename': 'test_log', 'directory': tmpdir})
+    sim.register(
+        demography.Demography(resourcefilepath=rfp),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        healthburden.HealthBurden(resourcefilepath=rfp),
+        DiseaseThatCausesDeathOnly(),
+        sort_modules=False
+    )
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=start_date)
+
+    hblog = parse_log_file(sim.log_filepath)['tlo.methods.healthburden']
+    disability_mapper_from_gbd_causes = extract_mapper(hblog['disability_mapper_from_gbd_cause_to_common_label'])
+    disability_mapper_from_tlo_causes = extract_mapper(hblog['disability_mapper_from_tlo_cause_to_common_label'])
+    daly_mapper_from_gbd_causes = extract_mapper(hblog['daly_mapper_from_gbd_cause_to_common_label'])
+    daly_mapper_from_tlo_causes = extract_mapper(hblog['daly_mapper_from_tlo_cause_to_common_label'])
+
+    demog = sim.modules['Demography']
+    hb = sim.modules['HealthBurden']
+
+    # 'Congenital birth defects' is a recognised cause of death and disability
+    assert 'Congenital birth defects' in set(demog.parameters['gbd_causes_of_death_data'].columns)
+    assert 'Congenital birth defects' in set(hb.parameters['gbd_causes_of_disability'])
+
+    # As 'Congenital birth defects' is not defined as a disability per se, it does not need to feature in the
+    # mappers for disabilities.
+    assert disability_mapper_from_gbd_causes['Congenital birth defects'] == 'Other'
+    assert 'TLOCauseNameFor_CBD' not in disability_mapper_from_tlo_causes
+
+    # But... as 'Congenital birth defects' is defined as a cause of death by the TLO module, which can therefore cause a
+    # loss of DALYS, the mappers for DALYS should attach it to the chosen label.
+    assert daly_mapper_from_tlo_causes['TLOCauseNameFor_CBD'] == 'Chosen_Label_For_CBD'
+    assert daly_mapper_from_gbd_causes['Congenital birth defects'] == 'Chosen_Label_For_CBD'
