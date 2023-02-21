@@ -111,7 +111,7 @@ def test_cause_of_disability_being_registered(seed):
     check_dtypes(sim)
 
     mapper_from_tlo_causes, mapper_from_gbd_causes = \
-        sim.modules['HealthBurden'].create_mappers_from_causes_of_death_to_label()
+        sim.modules['HealthBurden'].create_mappers_from_causes_of_disability_to_label()
 
     assert set(mapper_from_tlo_causes.keys()) == set(sim.modules['HealthBurden'].causes_of_disability.keys())
     assert set(mapper_from_gbd_causes.keys()) == set(sim.modules['HealthBurden'].parameters['gbd_causes_of_disability'])

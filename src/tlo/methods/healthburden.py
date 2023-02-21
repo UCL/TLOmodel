@@ -128,7 +128,7 @@ class HealthBurden(Module):
         )
 
         # 3) Output to the log mappers for causes of disability
-        mapper_from_tlo_causes, mapper_from_gbd_causes = self.create_mappers_from_causes_of_death_to_label()
+        mapper_from_tlo_causes, mapper_from_gbd_causes = self.create_mappers_from_causes_of_disability_to_label()
         logger.info(
             key='mapper_from_tlo_cause_to_common_label',
             data=mapper_from_tlo_causes
@@ -398,7 +398,7 @@ class HealthBurden(Module):
 
         return set(self.parameters['gbd_causes_of_disability']) - all_gbd_causes_in_sim
 
-    def create_mappers_from_causes_of_death_to_label(self):
+    def create_mappers_from_causes_of_disability_to_label(self):
         """Use a helper function to create mappers for causes of disability to label."""
         return create_mappers_from_causes_to_label(
             causes=self.causes_of_disability,
