@@ -9,7 +9,7 @@ outputpath = Path("./outputs")  # folder for convenience of storing outputs
 width = 0.3
 
 
-def plot_costs(in_datestamps, in_suffix, in_x_labels, in_cons_costs_without, in_cons_costs_with,
+def plot_costs(in_id, in_suffix, in_x_labels, in_cons_costs_without, in_cons_costs_with,
                in_pop_interv_costs_with, in_ppfp_interv_costs_with, in_reduce_magnitude=1e3):
 
     x_labels = in_x_labels
@@ -62,6 +62,6 @@ def plot_costs(in_datestamps, in_suffix, in_x_labels, in_cons_costs_without, in_
 
     plt.grid(axis='y')
 
-    plt.savefig(outputpath / ('Consumables and Interventions Costs ' + in_datestamps[0] + "_" + in_datestamps[1] +
+    plt.savefig(outputpath / ('Consumables and Interventions Costs ' + in_id[0] + "_" + in_id[1] +
                               in_suffix + '.png'), format='png')
     print("Fig: Consumables and Interventions Costs Over time saved.")
