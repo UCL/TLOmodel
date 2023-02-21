@@ -13,10 +13,8 @@ time_start = time.time()
 
 ################################################################################
 # TO SET:  # TODO: update with final sims
-# sims with 'no'/'all' diseases
-with_diseases = 'no'
 # suffix if you want to (if not just set to '') for the output figure(s) and/or table
-suffix = '_Dec2022_FigCosts_1e6_2K_' + with_diseases + "_dis"
+suffix = '_co_2023-02_inclPR807/FixFailingTests'
 # which results to use
 # - Without interv
 datestamp_without_log = '2022-12-08T224955'
@@ -56,7 +54,7 @@ ylims_l = [1.2576e7, 0.41265e7, 0.174885e7]
 # %% Table the Use and Costs (By Method) Over time?
 # table_use_costs_bool = False
 table_use_costs_bool = True
-# If the above is True (otherwise it doesn't mother),
+# If the above is True (otherwise all the table inputs below doesn't mother),
 # years to summarise in the table of use and costs (totals for time periods between each 2 consecutive years;
 # first year included, last year excluded)
 TimePeriods_starts = [2023, 2031, 2041, 2051]
@@ -70,10 +68,11 @@ contraceptives_order = ['pill', 'IUD', 'injections', 'implant', 'male_condom',
 calc_intervention_costs_bool = True
 # %% Round the costs? No => None, Yes => set to what nearest to round them (e.g. to nearest million => 1e6).
 rounding_costs_to = 1e6
-# %% Parameters only for test runs
+#
+# %%%% Parameters only for test runs
 # # Do you want to do both analysis? If not (set one of the below to False). The analysis won't be done and the outputs
 # from the other analysis (set to True below) will be used instead.
-# #TODO: both need to be True to get final results
+# #TODO: to get final results: True-True-False-True
 do_no_interv_analysis = True
 do_interv_analysis = True
 # Do you want prints to see costs, use, percentage use and table?
@@ -116,7 +115,7 @@ def timeitprint(in_what_measures, in_fnc, in_timeit_rep_nmb=1):  # TODO: remove
 
 # Use and Consumables Costs of Contraception methods Over time
 def do_analysis(ID, logFile, in_calc_intervention_costs_bool):
-    use_df, percentage_use_df, costs_df, interv_costs_df =\
+    use_df, percentage_use_df, costs_df, interv_costs_df, scaling_factor_out =\
         a_co.analyse_contraception(
             ID, logFile, suffix,
             # %% Plot Contraception Use Over time?
@@ -137,7 +136,7 @@ def do_analysis(ID, logFile, in_calc_intervention_costs_bool):
             in_calc_intervention_costs_bool
             # and default: in_use_output="mean"
         )
-    return use_df, percentage_use_df, costs_df, interv_costs_df
+    return use_df, percentage_use_df, costs_df, interv_costs_df, scaling_factor_out
 
 
 if do_no_interv_analysis:
@@ -146,7 +145,7 @@ if do_no_interv_analysis:
     print("analysis without interventions in progress")
     print('--------------------')
     ID_without = datestamp_without_log + "_without"
-    use_without_df, percentage_use_without_df, costs_without_df, interv_costs_without_df =\
+    use_without_df, percentage_use_without_df, costs_without_df, interv_costs_without_df, scaling_factor_without =\
         do_analysis(ID_without, logFile_without, False)  # no calc of intervention costs for sim without interv
 
     if do_interv_analysis:
@@ -155,7 +154,7 @@ if do_no_interv_analysis:
         print("analysis with interventions in progress")
         print('--------------------')
         ID_with = datestamp_with_log + "_with"
-        use_with_df, percentage_use_with_df, costs_with_df, interv_costs_with_df =\
+        use_with_df, percentage_use_with_df, costs_with_df, interv_costs_with_df, scaling_factor_with =\
             do_analysis(ID_with, logFile_with, calc_intervention_costs_bool)
     else:
         # use as WITH interventions outputs from the sim WITHOUT interventions
@@ -164,6 +163,7 @@ if do_no_interv_analysis:
         costs_with_df = costs_without_df
         interv_costs_with_df = interv_costs_without_df
         ID_with = ID_without + "-again"
+        scaling_factor_with = scaling_factor_without
 
 else:
     # WITH interventions:
@@ -171,7 +171,7 @@ else:
     print("analysis with interventions in progress")
     print('--------------------')
     ID_with = datestamp_with_log + "_with"
-    use_with_df, percentage_use_with_df, costs_with_df, interv_costs_with_df = \
+    use_with_df, percentage_use_with_df, costs_with_df, interv_costs_with_df, scaling_factor_with = \
         do_analysis(ID_with, logFile_with, calc_intervention_costs_bool)
     # use as WITHOUT interventions outputs from the sim WITH interventions
     use_without_df = use_with_df
@@ -179,7 +179,9 @@ else:
     costs_without_df = costs_with_df
     interv_costs_without_df = interv_costs_with_df
     ID_without = ID_with + "-again"
+    scaling_factor_without = scaling_factor_with
 
+# prints
 if print_bool:
     if do_no_interv_analysis:
         print("\n")
@@ -209,8 +211,13 @@ if print_bool:
         fullprint(percentage_use_without_df)
         print(list(percentage_use_without_df.columns))
 
+# %% Check both sims done with the same population size - if not Warning
+# TODO: if both analyses done, check whether both were simulated for the same pop_size (ie scaling factors
+#  scaling_factor_without and scaling_factor_with are equal)
+#  if not => Warning (just to inform about it)
+
 # %% Table Use and Consumables Costs of Contraception methods Over time
-# with and without intervention?
+# with and without intervention:
 if table_use_costs_bool:
     if not ('use_output' in locals() or 'use_output' in globals()):
         use_output = "mean"
@@ -222,7 +229,7 @@ if table_use_costs_bool:
         use_with_df.round(2).astype(str) +\
         " (" + percentage_use_with_df.round(2).astype(str) + ")"
 
-    # # %% Round the costs?
+    # %% Round the costs:
     if rounding_costs_to:
         round_index = math.log10(rounding_costs_to)
         costs_without_df = round(costs_without_df, -int(round_index)) / rounding_costs_to
@@ -251,7 +258,7 @@ if table_use_costs_bool:
                 print(interv_costs_with_df)
                 print()
 
-    # %% Plot Consumables & Intervention Costs Over Time from the Table?
+    # %% Plot Consumables & Intervention Costs Over Time from the Table:
     if plot_costs:
         # group consumables costs by time periods
         cons_costs_without_tp_l = costs_without_df.groupby(level=[0], sort=False).sum()['Costs'].tolist()
@@ -261,6 +268,9 @@ if table_use_costs_bool:
         ppfp_interv_costs_with_tp_l = interv_costs_with_df['ppfp_intervention_cost'].tolist()
         bar_chart_costs.plot_costs(
             [datestamp_without_log, datestamp_with_log], suffix, list(interv_costs_with_df.index),
+            # TODO: (1) verify it's not longer than simulated without interv (2) allow to table less years than
+            #  simulated with/without interv, eg both simulated till 2099, but allow plot only to 2050 (as max year for
+            #  table)
             cons_costs_without_tp_l, cons_costs_with_tp_l, pop_interv_costs_with_tp_l, ppfp_interv_costs_with_tp_l
         )
 
