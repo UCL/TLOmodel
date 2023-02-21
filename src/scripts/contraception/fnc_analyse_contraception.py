@@ -76,12 +76,13 @@ def analyse_contraception(in_datestamp: str, in_log_file: str, in_suffix: str,
 
 
     :return: Four data frames by time periods:
-        number of women using contraception methods,
-        percentage of women using contraception methods,
-        costs of contraception methods,
+        * number of women using contraception methods,
+        * percentage of women using contraception methods,
+        * costs of contraception methods,
         (if 'in_calc_use_costs_bool' is False, returns 3 empty lists for the above)
-        costs of contraception interventions (Pop, PPFP, Pop+PPFP)
-        (if 'in_calc_intervention_costs_bool' is False, returns an empty DataFrame for the above)
+        * costs of contraception interventions (Pop, PPFP, Pop+PPFP)
+        (if 'in_calc_use_costs_bool' or 'in_calc_intervention_costs_bool' is False,
+        returns an empty DataFrame for the above)
     """
 
     def fullprint(in_to_print):  # TODO: remove
@@ -720,4 +721,5 @@ def analyse_contraception(in_datestamp: str, in_log_file: str, in_suffix: str,
     print("Calculations of Intervention Costs finished.")
 
     return co_output_use_modern_tp_df, co_output_percentage_use_df,\
-        cons_costs_by_time_and_method_df, co_interv_costs_sum_by_tp_df
+        cons_costs_by_time_and_method_df, co_interv_costs_sum_by_tp_df,\
+        scaling_factor
