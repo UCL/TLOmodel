@@ -946,7 +946,7 @@ class Tb(Module):
         sim.schedule_event(TbActiveCasePoll(self), sim.date + DateOffset(years=1))
 
         # schedule outreach xrays for tb screening from 2023
-        sim.schedule_event(TbCommunityXray(self), sim.date + DateOffset(years=23))
+        sim.schedule_event(TbCommunityXray(self), sim.date + DateOffset(years=13))
 
         # log at the end of the year
         sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(years=1))
@@ -2579,7 +2579,7 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
     independent of the main health system
     this will rely on community health workers and radiographer time
     but as this HSI occurs outside of the usual health system we do not formally request them
-    so set blank appt footprint
+    so set footprint to ConWithDCSA
     """
 
     def __init__(self, module, person_id):
