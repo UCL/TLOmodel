@@ -65,7 +65,7 @@ sim.register(*fullmodel(
 ))
 
 # set the scenario
-sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.99
+# sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.01
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)

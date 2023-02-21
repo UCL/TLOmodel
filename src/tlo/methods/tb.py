@@ -946,7 +946,7 @@ class Tb(Module):
         sim.schedule_event(TbActiveCasePoll(self), sim.date + DateOffset(years=1))
 
         # schedule outreach xrays for tb screening from 2023
-        sim.schedule_event(TbCommunityXray(self), sim.date + DateOffset(years=0))
+        sim.schedule_event(TbCommunityXray(self), sim.date + DateOffset(years=23))
 
         # log at the end of the year
         sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(years=1))
@@ -2544,6 +2544,8 @@ class TbCommunityXray(RegularEvent, PopulationScopeEventMixin):
         now = self.sim.date
         p = self.module.parameters
         rng = self.module.rng
+
+        logger.debug(key="message", data=f"Selecting persons for outreach xray services")
 
         prob_screening = p['probability_community_chest_xray']
 
