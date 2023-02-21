@@ -235,7 +235,7 @@ make_plot(
     model=mdr["tbPropActiveCasesMdr"],
 )
 # data from ResourceFile_TB sheet WHO_mdrTB2017
-plt.errorbar(mdr.index[7], 0.0075, yerr=[[0.0059], [0.0105]], fmt="o")
+plt.errorbar(mdr.index[2], 0.0075, yerr=[[0.0059], [0.0105]], fmt="o")
 plt.legend(["TLO", "WHO reported MDR cases"])
 # plt.savefig(
 #     outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
@@ -279,7 +279,7 @@ make_plot(
 
 # MPHIA
 plt.plot(
-    prev_and_inc_over_time.index[6],
+    prev_and_inc_over_time.index[2],
     data_hiv_mphia_prev.loc[
         data_hiv_mphia_prev.age == "Total 15-49", "total percent hiv positive"
     ].values[0],
@@ -287,7 +287,7 @@ plt.plot(
 )
 
 # DHS
-x_values = [prev_and_inc_over_time.index[0], prev_and_inc_over_time.index[5]]
+x_values = [prev_and_inc_over_time.index[0], prev_and_inc_over_time.index[2]]
 y_values = data_hiv_dhs_prev.loc[
     (data_hiv_dhs_prev.Year >= 2010), "HIV prevalence among general population 15-49"
 ]
@@ -342,7 +342,7 @@ make_plot(
 
 # MPHIA
 plt.errorbar(
-    prev_and_inc_over_time.index[6],
+    prev_and_inc_over_time.index[2],
     data_hiv_mphia_inc_estimate,
     yerr=[[data_hiv_mphia_inc_yerr[0]], [data_hiv_mphia_inc_yerr[1]]],
     fmt="o",
@@ -371,7 +371,7 @@ make_plot(
 )
 # MPHIA
 plt.plot(
-    prev_and_inc_over_time.index[6],
+    prev_and_inc_over_time.index[2],
     data_hiv_mphia_prev.loc[
         data_hiv_mphia_prev.age == "Total 0-14", "total percent hiv positive"
     ].values[0],
@@ -772,7 +772,7 @@ plt.plot(
     "gx",
 )
 plt.plot(
-    cov_over_time["prop_men_circ"].index[5], 0.279,
+    cov_over_time["prop_men_circ"].index[3], 0.279,
     "bx",
 )
 plt.ylim((0, 0.4))
