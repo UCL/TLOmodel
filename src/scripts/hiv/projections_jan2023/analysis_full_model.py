@@ -35,9 +35,9 @@ log_config = {
     "custom_levels": {
         "*": logging.WARNING,
         "tlo.methods.hiv": logging.INFO,
-        "tlo.methods.tb": logging.DEBUG,
+        "tlo.methods.tb": logging.INFO,
         "tlo.methods.demography": logging.INFO,
-        # "tlo.methods.healthsystem.summary": logging.INFO,
+        "tlo.methods.healthsystem.summary": logging.INFO,
         "tlo.methods.labour.detail": logging.WARNING,  # this logger keeps outputting even when set to warning
     },
 }
