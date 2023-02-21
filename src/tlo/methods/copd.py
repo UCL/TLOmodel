@@ -35,7 +35,7 @@ class Copd(Module):
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN}
 
-    # a list of causes of death
+    # a list of causes of death and disability
     gbd_causes_of_copd_represented_in_this_module = [
         'Asthma',
         'Lower respiratory infections',
