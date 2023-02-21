@@ -91,14 +91,14 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
 
 
 @pytest.mark.slow
-def test_cause_of_disability_being_registered(seed):
+def test_cause_of_disability_being_registered(seed, tmpdir):
     """Test that the modules can declare causes of disability, and that the mappers between tlo causes of disability
     and gbd causes of disability can be created correctly and that these make sense with respect to the corresponding
     mappers for deaths."""
 
     rfp = Path(os.path.dirname(__file__)) / '../resources'
 
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, log_config={'filename': 'test_log', 'directory': tmpdir})
     sim.register(
         *fullmodel(
             resourcefilepath=rfp,
