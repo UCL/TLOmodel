@@ -946,7 +946,7 @@ class Tb(Module):
         sim.schedule_event(TbActiveCasePoll(self), sim.date + DateOffset(years=1))
 
         # schedule outreach xrays for tb screening from 2023
-        sim.schedule_event(TbCommunityXray(self), sim.date + DateOffset(years=13))
+        sim.schedule_event(TbCommunityXray(self), sim.date + DateOffset(years=0))
 
         # log at the end of the year
         sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(years=1))
@@ -2575,13 +2575,15 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
     give a chest xray to person
     don't request any consumables as this is an outreach programme which is
     independent of the main health system
-    request DCSA time
+    this will rely on community health workers and radiographer time
+    but as this HSI occurs outside of the usual health system we do not formally request them
+    so set blank appt footprint
     """
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         self.TREATMENT_ID = "Tb_Test_ScreeningOutreach"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"ConWithDCSA": 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '0'
 
     def apply(self, person_id, squeeze_factor):
