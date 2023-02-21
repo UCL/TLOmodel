@@ -9,47 +9,74 @@ Overview:
 from pathlib import Path
 
 import pandas as pd
+from tlo.methods import Metadata
 
 from tlo import Module, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.methods.causes import Cause
 from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.symptommanager import Symptom
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class COPD(Module):
-    """ The module responsible for infecting individuals with COPD. It defines and initialises parameters and
+class Copd(Module):
+    """ The module responsible for infecting individuals with Chronic Obstructive Pulmonary Diseases. It defines and initialises parameters and
     properties associated with COPD plus functions and events related to COPD
     """
 
     INIT_DEPENDENCIES = {}  # any other COPD dependency
 
     # Declare Metadata
-    METADATA = {}
+    METADATA = {
+        Metadata.DISEASE_MODULE,
+        Metadata.USES_SYMPTOMMANAGER,
+        Metadata.USES_HEALTHSYSTEM,
+        Metadata.USES_HEALTHBURDEN}
+
+    # a list of causes of death
+    gbd_causes_of_copd_represented_in_this_module = [
+        'Asthma',
+        'Lower respiratory infections',
+        'Upper respiratory infections',
+        'Other chronic respiratory diseases'
+        ]
+    # Declare Causes of Death
+    CAUSES_OF_DEATH = {
+        'ChronicObstructivePulmonaryDiseases':
+            Cause(gbd_causes={gbd_causes_of_copd_represented_in_this_module},
+                  label='copd')
+    }
 
     PARAMETERS = {
-        'COPD parameters goes here'
+
     }
 
     PROPERTIES = {
-        'co_copd_sev': Property(
-            Types.CATEGORICAL, 'Current underlying COPD severity', categories=[]),
-        'co_breath_lev': Property(
-            Types.CATEGORICAL, 'Current symptom breathlessness level', categories=[]),
         'co_copd_diag': Property(
-            Types.BOOL, 'Current COPD diagnosed'),
+            Types.BOOL, 'Has the COPD ever been diagnosed'),
     }
 
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
+        self.resourcefilepath = Path(resourcefilepath)
 
     def read_parameters(self, data_folder):
         """ A function to read all COPD parameters """
+        # Create and register symptoms that this module will use:
+        self.sim.modules['SymptomManager'].register_symptom(
+            Symptom(
+                name='breathless_mild',
+            ),
+            Symptom(
+                name='breathless_severe',
+            ),
+        )
 
         p = self.parameters
         df = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_copd.xlsx')
+        self.load_parameters_from_dataframe(df)
 
     def initialise_population(self, population):
         """ set COPD baseline values for all individuals
