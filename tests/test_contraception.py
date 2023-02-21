@@ -1,4 +1,5 @@
 import os
+import warnings
 from pathlib import Path
 from typing import Dict, List
 
@@ -712,7 +713,7 @@ def test_initial_distribution_of_contraception(tmpdir, seed):
 def test_contraception_coverage_with_use_healthsystem(tmpdir, seed):
     """Check that the same patterns (approximately) of usage of contraception is achieved when `use_healthsystem=True`
     as when `use_healthsystem=False` (despite the possibility of consumables not being always available when using the
-    healthsystem)."""
+    healthsystem, because this is overcome by there being repeated HSI if consumables not available)."""
 
     def report_availability_of_consumables():
         """Helper function to find the availability of consumables used in the Contraception module."""
@@ -723,6 +724,28 @@ def test_contraception_coverage_with_use_healthsystem(tmpdir, seed):
         def find_average_availability(items: List, level: str):
             """Find the probability that all the items are available at the level."""
             facilities = set([x.id for x in sim.modules['HealthSystem']._facilities_for_each_district[level].values()])
+
+            # Warn if some item codes are not recognised and hence average availability is calculated for the remaining
+            # item(s)
+            item_codes_recognised = set(cons.loc[(slice(None), facilities, slice(None))].index.levels[2])
+            items_being_requested_but_not_recognised = set(items) - set(item_codes_recognised)
+            if items_being_requested_but_not_recognised != set():
+                methods_with_unrecognised_items = []
+                for co_method, methods_items_dict in item_codes.items():
+                    for item in items_being_requested_but_not_recognised:
+                        if item in methods_items_dict:
+                            methods_with_unrecognised_items.append(co_method)
+                warnings.warn('\nWarning: item_code(s) ' + str(items_being_requested_but_not_recognised) +
+                              ' from method(s) ' + str(set(methods_with_unrecognised_items)) +
+                              ' not recognised at level ' + level + '.' +
+                              '\nAverage availability(ies) for purpose of the ' +
+                              'test_contraception_coverage_with_use_healthsystem calculated for remaining item(s).')
+
+            # If some items are not recognised, the average availability is calculated for the remaining item(s)
+            items = items - items_being_requested_but_not_recognised
+            # Check there are some items to calculate the average availability
+            assert items != set()
+
             return np.prod(
                 [cons.loc[(slice(None), facilities, _item)].mean() for _item in items]
             )
