@@ -58,10 +58,7 @@ class TestScenario(BaseScenario):
         }
 
     def modules(self):
-        return [
-            fullmodel(resourcefilepath=self.resources),
-            deviance_measure.Deviance(resourcefilepath=self.resources),
-        ]
+        return fullmodel(resourcefilepath=self.resources) + [deviance_measure.Deviance(resourcefilepath=self.resources)]
 
     def draw_parameters(self, draw_number, rng):
         return
