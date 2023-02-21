@@ -480,7 +480,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.axhline(0.0, color='black')
         ax.set_title(name_of_plot)
         ax.set_ylabel('Number of DALYS Averted (/1e6)')
-        ax.set_ylim(-0.2, 20)
+        ax.set_ylim(-0.2, 12)
         ax.set_xlabel('Age-group')
         ax.grid()
         ax.spines['top'].set_visible(False)
