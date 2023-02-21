@@ -115,23 +115,28 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
     df_scale = log_df['tlo.methods.population']['scaling_factor'].set_index('date').copy()
     scaling_factor = df_scale.loc['2010-01-01', 'scaling_factor']
 
+    # %% Plot any? Contraception Use (By Method) and/or Pregnancies Over Time?
+    if in_plot_use_time_bool or in_plot_use_time_method_bool:
+
+        # Load Model Results
+        co_df = log_df['tlo.methods.contraception']['contraception_use_summary'].set_index('date').copy()
+        model_months = pd.to_datetime(co_df.index)
+        # TODO: likely it's always index of some of the data used, eg women1549_total - hence might be used from that
+
     # %% Plot Contraception Use Over time:
     if in_plot_use_time_bool:
 
         # Load Model Results
-        co_df = log_df['tlo.methods.contraception']['contraception_use_summary'].set_index('date').copy()
-        Model_Years = pd.to_datetime(co_df.index)
-        Model_total = co_df.sum(axis=1)
-        Model_not_using = co_df.not_using
-        Model_using = Model_total - Model_not_using
+        women1549_total = co_df.sum(axis=1)
+        women_not_using = co_df.not_using
+        women_using = women1549_total - women_not_using
 
         fig, ax = plt.subplots()
-        ax.plot(np.asarray(Model_Years), Model_total * scaling_factor)
-        ax.plot(np.asarray(Model_Years), Model_not_using * scaling_factor)
-        ax.plot(np.asarray(Model_Years), Model_using * scaling_factor)
+        ax.plot(np.asarray(model_months), women1549_total * scaling_factor)
+        ax.plot(np.asarray(model_months), women_not_using * scaling_factor)
+        ax.plot(np.asarray(model_months), women_using * scaling_factor)
         if in_set_ylims_bool:
             ax.set_ylim([0, in_ylims_l[0]])
-
         plt.title("Contraception Use")
         plt.xlabel("Year")
         plt.ylabel("Number of women")
@@ -146,33 +151,30 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
     if in_plot_use_time_method_bool:
 
         # Load Model Results
-        com_df = log_df['tlo.methods.contraception']['contraception_use_summary'].copy()
-        Model_Years = pd.to_datetime(com_df.date)  # TODO: confusing name, as these are dates not just years
-        Model_pill = com_df.pill
-        Model_IUD = com_df.IUD
-        Model_injections = com_df.injections
-        Model_implant = com_df.implant
-        Model_male_condom = com_df.male_condom
-        Model_female_sterilization = com_df.female_sterilization
-        Model_other_modern = com_df.other_modern
-        Model_periodic_abstinence = com_df.periodic_abstinence
-        Model_withdrawal = com_df.withdrawal
-        Model_other_traditional = com_df.other_traditional
+        Model_pill = co_df.pill
+        Model_IUD = co_df.IUD
+        Model_injections = co_df.injections
+        Model_implant = co_df.implant
+        Model_male_condom = co_df.male_condom
+        Model_female_sterilization = co_df.female_sterilization
+        Model_other_modern = co_df.other_modern
+        Model_periodic_abstinence = co_df.periodic_abstinence
+        Model_withdrawal = co_df.withdrawal
+        Model_other_traditional = co_df.other_traditional
 
         fig, ax = plt.subplots()
-        ax.plot(np.asarray(Model_Years), Model_pill * scaling_factor)
-        ax.plot(np.asarray(Model_Years), Model_IUD * scaling_factor)
-        ax.plot(np.asarray(Model_Years), Model_injections * scaling_factor)
-        ax.plot(np.asarray(Model_Years), Model_implant * scaling_factor)
-        ax.plot(np.asarray(Model_Years), Model_male_condom * scaling_factor)
-        ax.plot(np.asarray(Model_Years), Model_female_sterilization * scaling_factor)
-        ax.plot(np.asarray(Model_Years), Model_other_modern * scaling_factor)
-        ax.plot(np.asarray(Model_Years), Model_periodic_abstinence * scaling_factor)
-        ax.plot(np.asarray(Model_Years), Model_withdrawal * scaling_factor)
-        ax.plot(np.asarray(Model_Years), Model_other_traditional * scaling_factor)
+        ax.plot(np.asarray(model_months), Model_pill * scaling_factor)
+        ax.plot(np.asarray(model_months), Model_IUD * scaling_factor)
+        ax.plot(np.asarray(model_months), Model_injections * scaling_factor)
+        ax.plot(np.asarray(model_months), Model_implant * scaling_factor)
+        ax.plot(np.asarray(model_months), Model_male_condom * scaling_factor)
+        ax.plot(np.asarray(model_months), Model_female_sterilization * scaling_factor)
+        ax.plot(np.asarray(model_months), Model_other_modern * scaling_factor)
+        ax.plot(np.asarray(model_months), Model_periodic_abstinence * scaling_factor)
+        ax.plot(np.asarray(model_months), Model_withdrawal * scaling_factor)
+        ax.plot(np.asarray(model_months), Model_other_traditional * scaling_factor)
         if in_set_ylims_bool:
             ax.set_ylim([0, in_ylims_l[1]])
-
         plt.title("Contraception Use By Method")
         plt.xlabel("Year")
         plt.ylabel("Number using method")
@@ -189,14 +191,13 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
         preg_df = log_df['tlo.methods.contraception']['pregnancy'].set_index('date').copy()
         preg_df.index = pd.to_datetime(preg_df.index).year
         num_pregs_by_year = preg_df.groupby(by=preg_df.index).size()
-        Model_Years = num_pregs_by_year.index
-        Model_pregnancy = num_pregs_by_year.values
+        model_years = num_pregs_by_year.index
+        model_pregnancy = num_pregs_by_year.values
 
         fig, ax = plt.subplots()
-        ax.plot(np.asarray(Model_Years), Model_pregnancy * scaling_factor)
+        ax.plot(np.asarray(model_years), model_pregnancy * scaling_factor)
         if in_set_ylims_bool:
             ax.set_ylim([0, in_ylims_l[2]])
-
         plt.title("Pregnancies Over Time")
         plt.xlabel("Year")
         plt.ylabel("Number of pregnancies")
@@ -385,7 +386,7 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
 
         print("Calculations of Contraception Methods Use finished.")
 
-#  ###### CONSUMABLES ##########################################################
+#  ###### CONSUMABLES COSTS ##########################################################
         # Add a column with the nmb of years within the time periods to mean_use_df
         def calculate_tp_len(in_tp_as_string):
             l_start_end_tp = [int(x) for x in in_tp_as_string.split("-")]
@@ -544,7 +545,8 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
                             in_df_cons_avail_by_time_and_method,
                             in_df_mean_use):
             """
-            Calculates costs of available items per time period per method.
+            Calculates costs of available items per time period per method rescaled (from the nmbs for simulation
+            pop_size) to the population size of Malawi.
 
             :param in_df_resource_items_pkgs: resource data frame with
                 information about items and pkgs for contraception methods only
@@ -635,89 +637,93 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
 
         print("Calculations of Consumables Costs finished.")
 
+        # If calculation of intervention costs requested,
+        # warn if simulation ends before the interventions are implemented
+        calc_intervention_costs_bool = in_calc_intervention_costs_bool
+        if in_calc_intervention_costs_bool:
+            df_interv_implem = log_df['tlo.methods.contraception']['contraception_intervention'].set_index('date').copy()
+            interv_implem_date = Date(df_interv_implem.loc['2010-01-01', 'date_co_interv_implemented'])
+            if Date(last_day_simulated) < interv_implem_date:
+                warnings.warn('\nWarning: Calculations of intervention costs are not provided as the simulation ends before'
+                              ' interventions are introduced.')
+                calc_intervention_costs_bool = False
+        # %% Calculate annual Pop and PPFP intervention costs:
+        if calc_intervention_costs_bool:
+            # @@ Load Population Totals (Demography Model Results)
+            # females 15-49 by year:
+            demog_df_f = log_df['tlo.methods.demography']['age_range_f'].set_index('date').copy()
+            demog_df_f['year'] = pd.to_datetime(demog_df_f.index).year
+            demog_df_f.index = pd.to_datetime(demog_df_f.index).year
+            demog_df_f.index.name = 'year'
+            demog_df_f['15-49'] =\
+                demog_df_f.loc[:, ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49']].sum(axis=1)
+            # males 15-49 by year:
+            demog_df_m = log_df['tlo.methods.demography']['age_range_m'].set_index('date').copy()
+            demog_df_m['year'] = pd.to_datetime(demog_df_m.index).year
+            demog_df_m.index = pd.to_datetime(demog_df_m.index).year
+            demog_df_m.index.name = 'year'
+            demog_df_m['15-49'] =\
+                demog_df_m.loc[:, ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49']].sum(axis=1)
+            # total females & males 15-49 as both targeted by Pop and PPFP interventions, by year:
+            popsize1549 = demog_df_f['15-49'] + demog_df_m['15-49']
+            popsize1549 = pd.DataFrame(popsize1549)
+            popsize1549['year'] = demog_df_f['year']
+            # Calculate ratio of population compared to 2016 as base year (when Pop and PPFP interventions start):
+            popsize1549['ratio'] = popsize1549.loc[:, '15-49'] / popsize1549.loc[2016, '15-49']
+            # Mulitply Pop and PPFP intervention costs by this ratio for each year:
+            # TODO: pull the 2 parameters below from RF_Contraception.xlsx
+            #  (Parameters/pop_intervention_cost & ppfp_intervention_cost)
+            # cost of Pop intervention for whole population of Malawi in 2016 (MWK - Malawi Kwacha)
+            pop_interv_cost_2016 = 1300000000
+            # cost of PPFP intervention for whole population of Malawi in 2016 (MWK - Malawi Kwacha)
+            ppfp_interv_cost_2016 = 146000000
+            # calculate interventions costs for each year
+            popsize1549['pop_intervention_cost'] = popsize1549['ratio'] * pop_interv_cost_2016
+            popsize1549['ppfp_intervention_cost'] = popsize1549['ratio'] * ppfp_interv_cost_2016
+            popsize1549['interventions_total'] =\
+                popsize1549['pop_intervention_cost'] + popsize1549['ppfp_intervention_cost']
+            # interventions costs before implementation = 0
+            popsize1549.loc[range(2010, interv_implem_date.year),
+                            ['pop_intervention_cost', 'ppfp_intervention_cost', 'interventions_total']] = 0
+            # Assign time_periods to the data
+            co_interv_costs_tp_df = \
+                create_time_period_data(in_required_time_period_starts,
+                                        popsize1549)
+            # Group intervention costs by time period:
+            co_interv_costs_tp_df.index = co_interv_costs_tp_df['Time_Period']
+            co_interv_costs_sum_by_tp_df =\
+                co_interv_costs_tp_df.loc[:, ['pop_intervention_cost', 'ppfp_intervention_cost', 'interventions_total']]\
+                .dropna().groupby(['Time_Period']).sum()
+
+            def sum_interv_costs_all_times(in_df_interv_costs_by_tp):
+                """
+                Adds a row with sum of intervention costs in all time periods.
+                :param in_df_interv_costs_by_tp: 'Time_Period' as index;
+                    'pop_intervention_cost', 'ppfp_intervention_cost', 'interventions_total' as columns.
+                :return: The sum row with interventions costs in all time periods.
+                """
+                # tp of all times, ie very first to very last year of time periods
+                y_first = in_df_interv_costs_by_tp.index[0].split("-")[0]
+                y_last = in_df_interv_costs_by_tp.index[len(in_df_interv_costs_by_tp) - 1].split("-")[1]
+                sum_tp = (str(y_first) + "-" + str(y_last))
+                # sum the costs in all time periods
+                sum_costs = in_df_interv_costs_by_tp.sum(axis=0).to_frame().transpose()
+                sum_costs.index = [sum_tp]
+                return sum_costs
+
+            co_interv_costs_sum_by_tp_df = co_interv_costs_sum_by_tp_df.append(
+                sum_interv_costs_all_times(co_interv_costs_sum_by_tp_df)
+            )
+
+        # If calculation of intervention costs is not required
+        else:
+            co_interv_costs_sum_by_tp_df =\
+                pd.DataFrame({'pop_intervention_cost': [], 'ppfp_intervention_cost': [], 'interventions_total': []})
+
     # If calculation of Use and Consumables Costs of Contraception methods are not required
     else:
         co_output_use_modern_tp_df, co_output_percentage_use_df, cons_costs_by_time_and_method_df = [], [], []
-
-    # If calculation of intervention costs requested, warn if simulation ends before the interventions are implemented
-    if in_calc_intervention_costs_bool:
-        df_interv_implem = log_df['tlo.methods.contraception']['contraception_intervention'].set_index('date').copy()
-        interv_implem_date = Date(df_interv_implem.loc['2010-01-01', 'date_co_interv_implemented'])
-        if Date(last_day_simulated) < interv_implem_date:
-            warnings.warn('\nWarning: Calculations of intervention costs are not provided as the simulation ends before'
-                          ' interventions are introduced.')
-            in_calc_intervention_costs_bool = False
-    # %% Calculate annual Pop and PPFP intervention costs:
-    if in_calc_intervention_costs_bool:
-        # @@ Load Population Totals (Demography Model Results)
-        # females 15-49 by year:
-        demog_df_f = log_df['tlo.methods.demography']['age_range_f'].set_index('date').copy()
-        demog_df_f['year'] = pd.to_datetime(demog_df_f.index).year
-        demog_df_f.index = pd.to_datetime(demog_df_f.index).year
-        demog_df_f.index.name = 'year'
-        demog_df_f['15-49'] =\
-            demog_df_f.loc[:, ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49']].sum(axis=1)
-        # males 15-49 by year:
-        demog_df_m = log_df['tlo.methods.demography']['age_range_m'].set_index('date').copy()
-        demog_df_m['year'] = pd.to_datetime(demog_df_m.index).year
-        demog_df_m.index = pd.to_datetime(demog_df_m.index).year
-        demog_df_m.index.name = 'year'
-        demog_df_m['15-49'] =\
-            demog_df_m.loc[:, ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49']].sum(axis=1)
-        # total females & males 15-49 as both targeted by Pop and PPFP interventions, by year:
-        popsize1549 = demog_df_f['15-49'] + demog_df_m['15-49']
-        popsize1549 = pd.DataFrame(popsize1549)
-        popsize1549['year'] = demog_df_f['year']
-        # Calculate ratio of population compared to 2016 as base year (when Pop and PPFP interventions start):
-        popsize1549['ratio'] = popsize1549.loc[:, '15-49'] / popsize1549.loc[2016, '15-49']
-        # Mulitply Pop and PPFP intervention costs by this ratio for each year:
-        # TODO: pull the 2 parameters below from RF_Contraception.xlsx
-        #  (Parameters/pop_intervention_cost & ppfp_intervention_cost)
-        # cost of Pop intervention for whole population of Malawi in 2016 (MWK - Malawi Kwacha)
-        pop_interv_cost_2016 = 1300000000
-        # cost of PPFP intervention for whole population of Malawi in 2016 (MWK - Malawi Kwacha)
-        ppfp_interv_cost_2016 = 146000000
-        # calculate interventions costs for each year
-        popsize1549['pop_intervention_cost'] = popsize1549['ratio'] * pop_interv_cost_2016
-        popsize1549['ppfp_intervention_cost'] = popsize1549['ratio'] * ppfp_interv_cost_2016
-        popsize1549['interventions_total'] =\
-            popsize1549['pop_intervention_cost'] + popsize1549['ppfp_intervention_cost']
-        # interventions costs before implementation = 0
-        popsize1549.loc[range(2010, interv_implem_date.year),
-                        ['pop_intervention_cost', 'ppfp_intervention_cost', 'interventions_total']] = 0
-        # Assign time_periods to the data
-        co_interv_costs_tp_df = \
-            create_time_period_data(in_required_time_period_starts,
-                                    popsize1549)
-        # Group intervention costs by time period:
-        co_interv_costs_tp_df.index = co_interv_costs_tp_df['Time_Period']
-        co_interv_costs_sum_by_tp_df =\
-            co_interv_costs_tp_df.loc[:, ['pop_intervention_cost', 'ppfp_intervention_cost', 'interventions_total']]\
-            .dropna().groupby(['Time_Period']).sum()
-
-        def sum_interv_costs_all_times(in_df_interv_costs_by_tp):
-            """
-            Adds a row with sum of intervention costs in all time periods.
-            :param in_df_interv_costs_by_tp: 'Time_Period' as index;
-                'pop_intervention_cost', 'ppfp_intervention_cost', 'interventions_total' as columns.
-            :return: The sum row with interventions costs in all time periods.
-            """
-            # tp of all times, ie very first to very last year of time periods
-            y_first = in_df_interv_costs_by_tp.index[0].split("-")[0]
-            y_last = in_df_interv_costs_by_tp.index[len(in_df_interv_costs_by_tp) - 1].split("-")[1]
-            sum_tp = (str(y_first) + "-" + str(y_last))
-            # sum the costs in all time periods
-            sum_costs = in_df_interv_costs_by_tp.sum(axis=0).to_frame().transpose()
-            sum_costs.index = [sum_tp]
-            return sum_costs
-
-        co_interv_costs_sum_by_tp_df = co_interv_costs_sum_by_tp_df.append(
-            sum_interv_costs_all_times(co_interv_costs_sum_by_tp_df)
-        )
-
-    # If calculation of intervention costs is not required
-    else:
-        co_interv_costs_sum_by_tp_df =\
+        co_interv_costs_sum_by_tp_df = \
             pd.DataFrame({'pop_intervention_cost': [], 'ppfp_intervention_cost': [], 'interventions_total': []})
 
     print("Calculations of Intervention Costs finished.")
