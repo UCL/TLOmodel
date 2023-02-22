@@ -33,7 +33,7 @@ class RunAnalysisCo(BaseScenario):
             'directory': './outputs',  # <- (specified only for local running)
             'custom_levels': {
                 '*': logging.WARNING,
-                "tlo.methods.contraception": logging.DEBUG,
+                "tlo.methods.contraception": logging.INFO,
                 "tlo.methods.demography": logging.INFO
             }
         }
