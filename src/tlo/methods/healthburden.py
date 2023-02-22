@@ -156,19 +156,39 @@ class HealthBurden(Module):
         3) Output to the log mappers for causes of disability to the label
         """
         ...
-        # 1) Collect causes of death and disability that are reported by each disease module
-        causes_of_death_and_disability = {
-            **collect_causes_from_disease_modules(
+        # 1) Collect causes of death and disability that are reported by each disease module,
+        #    merging the gbd_causes declared for deaths or disabilities under the same label,
+
+        def merge_dicts_of_causes(d1: dict[str: Cause], d2: dict[str: Cause]) -> dict[str: Cause]:
+            """Combine two dictionaries of the form {tlo_cause_name: Cause}, merging the values of `Cause.gbd_causes`
+             where the values of `Cause.label` are common, attaching to the first key in d1 that uses that label."""
+            labels_seen = dict()  # Look-up of the form {label: tlo_cause_name} for the tlo_cause_name associated
+            #                       (first) with a label.
+            merged_causes = dict()  # Dict that will build-up as {tlo_cause_name: Cause} and be returned
+            for d in (d1, d2):
+                for _tlo_cause_name, _cause in d.items():
+                    if _cause.label not in labels_seen:
+                        # If label is not already included, add this cause to the merged dict
+                        merged_causes[_tlo_cause_name] = _cause
+                        labels_seen[_cause.label] = _tlo_cause_name
+                    else:
+                        # If label is already included, merge the gbd_causes into the cause defined.
+                        tlo_cause_name_to_merge_into = labels_seen[_cause.label]
+                        merged_causes[tlo_cause_name_to_merge_into].gbd_causes = \
+                            merged_causes[tlo_cause_name_to_merge_into].gbd_causes.union(_cause.gbd_causes)
+
+            return merged_causes
+
+        causes_of_death_and_disability = merge_dicts_of_causes(
+            collect_causes_from_disease_modules(
                 all_modules=self.sim.modules.values(),
                 collect='CAUSES_OF_DEATH',
-                acceptable_causes=self.sim.modules['Demography'].gbd_causes_of_death
-            ),
-            **collect_causes_from_disease_modules(
+                acceptable_causes=self.sim.modules['Demography'].gbd_causes_of_death),
+            collect_causes_from_disease_modules(
                 all_modules=self.sim.modules.values(),
                 collect='CAUSES_OF_DISABILITY',
-                acceptable_causes=set(self.parameters['gbd_causes_of_disability'])
-            )
-        }
+                acceptable_causes=set(self.parameters['gbd_causes_of_disability']))
+        )
 
         # N.B. In the GBD definitions, MANY things which disable but don't kill; but NO things that kill but which
         # don't also disable (because things that kill cause DALYS that way.)
