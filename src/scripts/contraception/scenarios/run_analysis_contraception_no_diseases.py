@@ -25,7 +25,7 @@ class RunAnalysisCo(BaseScenario):
             seed=0,
             start_date=Date(2010, 1, 1),
             end_date=Date(2050, 12, 31),
-            initial_population_size=250_000,
+            initial_population_size=1_000,
             number_of_draws=1,  # <- one scenario
             runs_per_draw=1,  # <- repeated this many times
         )
