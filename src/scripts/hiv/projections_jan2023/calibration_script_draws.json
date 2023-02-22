@@ -1,0 +1,21 @@
+{
+  "scenario_script_path": "src/scripts/hiv/projections_jan2023/calibration_script.py",
+  "scenario_seed": 0,
+  "runs_per_draw": 1,
+  "draws": [
+    {
+      "draw_number": 0,
+      "draw_seed": 209652396,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1021786963027109
+        },
+        "Tb": {
+          "scaling_factor_WHO": 1.843554454421913
+        }
+      }
+    }
+  ],
+  "commit": "0c864ab75c925f165a56c3f43cbbbcfd201b5bad",
+  "github": "https://github.com/UCL/TLOmodel/tree/0c864ab75c925f165a56c3f43cbbbcfd201b5bad"
+}
