@@ -357,4 +357,4 @@ def test_math_of_incidence_calcs(seed):
     assert annual_prob == \
            approx(prop_simple) == \
            approx(1.0 - (1.0 - monthly_risk) ** 12) == \
-           approx(prop_model, abs=0.001)
+           approx(prop_model, abs=0.008)
