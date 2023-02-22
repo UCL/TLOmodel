@@ -854,10 +854,9 @@ class Hiv(Module):
         # AIDS Onset Event for those who are infected but not yet AIDS and have not ever started ART
         # NB. This means that those on ART at the start of the simulation may not have an AIDS event --
         # like it happened at some point in the past
-        people_id = list(before_aids_idx)  # transform to a list
-        [scale, shape, offset] = self.get_linear_model_parameters(people_id)
+        [scale, shape, offset] = self.get_linear_model_parameters(before_aids_idx)
         days_infection_to_aids = self.get_time_from_infection_to_aids(scale, shape, offset)
-        days_since_infection = (self.sim.date - df.loc[people_id, "hv_date_inf"])
+        days_since_infection = (self.sim.date - df.loc[before_aids_idx, "hv_date_inf"])
         # If days_since_infection >= days_infection_to_aids resample
         while any(days_since_infection.ge(days_infection_to_aids)):
             days_infection_to_aids = np.where(days_since_infection < days_infection_to_aids, days_infection_to_aids,
@@ -865,7 +864,7 @@ class Hiv(Module):
 
         days_until_aids = days_infection_to_aids - days_since_infection
         date_onset_aids = self.sim.date + pd.to_timedelta(days_until_aids, unit='D')
-        for person_id, date in zip(people_id, date_onset_aids):
+        for person_id, date in zip(before_aids_idx, date_onset_aids):
             sim.schedule_event(
                 HivAidsOnsetEvent(person_id=person_id, module=self, cause='AIDS_non_TB'),
                 date=date,
@@ -1116,7 +1115,7 @@ class Hiv(Module):
         df.at[person_id, "hv_inf"] = True
         df.at[person_id, "hv_date_inf"] = self.sim.date
 
-        [scale, shape, offset] = self.get_linear_model_parameters(person_id)
+        [scale, shape, offset] = self.get_linear_model_parameters([person_id])
 
         # Schedule AIDS onset events for this person
         date_onset_aids = self.sim.date + self.get_time_from_infection_to_aids(
@@ -1144,8 +1143,6 @@ class Hiv(Module):
         in get_time_from_infection_to_aids.
         The parameter values vary depending on the peron's age.
         """
-        if not isinstance(person_id, list):
-            person_id = [person_id]
         # - get the scale parameters (unit: years)
         scale = (
             self.lm["scale_parameter_for_infection_to_death"].predict(
