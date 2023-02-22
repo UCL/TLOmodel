@@ -13,6 +13,10 @@ import timeit
 import warnings
 from collections import Counter
 from pathlib import Path
+from tlo.analysis.utils import (
+    extract_results,
+    summarize,
+)
 
 import numpy as np
 import pandas as pd
@@ -121,90 +125,224 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
         # Load Model Results
         co_df = log_df['tlo.methods.contraception']['contraception_use_summary'].set_index('date').copy()
         model_months = pd.to_datetime(co_df.index)
-        # TODO: likely it's always index of some of the data used, eg women1549_total - hence might be used from that
+        if (model_months.year[-1]) > 2050:
+            plot_months = model_months[model_months.year <= 2050]
+        else:
+            plot_months = model_months
+            if (model_months.year[-1]) < 2050:
+                # warn that the sim ended before 2050, hence the plots will be prepared till then only
+                warnings.warn(
+                    '\nWarning: The simulation ended before the year 2050, specifically in ' +
+                    str(model_months.year[-1]) + ', hence all the figs are till then only.')
 
-    # %% Plot Contraception Use Over time:
-    if in_plot_use_time_bool:
+        # %% Plot Contraception Use Over time:
+        if in_plot_use_time_bool:
 
-        # Load Model Results
-        women1549_total = co_df.sum(axis=1)
-        women_not_using = co_df.not_using
-        women_using = women1549_total - women_not_using
+            # Load Model Results
+            women1549_total = co_df.sum(axis=1)[0:len(plot_months)]
+            women_not_using = co_df.not_using[0:len(plot_months)]
+            women_using = women1549_total - women_not_using
 
-        fig, ax = plt.subplots()
-        ax.plot(np.asarray(model_months), women1549_total * scaling_factor)
-        ax.plot(np.asarray(model_months), women_not_using * scaling_factor)
-        ax.plot(np.asarray(model_months), women_using * scaling_factor)
-        if in_set_ylims_bool:
-            ax.set_ylim([0, in_ylims_l[0]])
-        plt.title("Contraception Use")
-        plt.xlabel("Year")
-        plt.ylabel("Number of women")
-        # plt.gca().set_xlim(Date(2010, 1, 1), Date(2023, 1, 1)) to see only 2010-2023 (excl)
-        plt.legend(['Total women age 15-49 years', 'Not Using Contraception', 'Using Contraception'])
-        plt.savefig(outputpath / ('Contraception Use' + in_id + "_UpTo" + str(model_months.year[-1]) + in_suffix
-                                  + '.png'), format='png')
+            # Plot total values
+            fig, ax = plt.subplots()
+            ax.plot(np.asarray(plot_months), women1549_total * scaling_factor)
+            ax.plot(np.asarray(plot_months), women_not_using * scaling_factor)
+            ax.plot(np.asarray(plot_months), women_using * scaling_factor, color=(51/255, 160/255, 44/255))
+            if in_set_ylims_bool:
+                ax.set_ylim([0, in_ylims_l[0]])
+            plt.title("Contraception Use")
+            plt.xlabel("Year")
+            plt.ylabel("Number of women")
+            # plt.gca().set_xlim(Date(2010, 1, 1), Date(2023, 1, 1)) to see only 2010-2023 (excl)
+            plt.legend(['Total women age 15-49 years', 'Not Using Contraception', 'Using Contraception'])
+            plt.savefig(outputpath / ('Contraception Use' + in_id + "_UpTo" + str(plot_months.year[-1]) + in_suffix
+                                      + '.png'), format='png')
 
-        print("Fig: Contraception Use Over time saved.")
+            # Plot proportions within 15-49 population
+            fig, ax = plt.subplots()
+            # # Since when (incl) are more than 50% women using
+            # women_using_prop = women_using / women1549_total
+            # women_using_prop_gt_half = women_using_prop[women_using_prop.gt(0.5)].index[0]
+            # print("Since when (incl) are more than 50% women using")
+            # print(women_using_prop_gt_half)
+            ax.plot(np.asarray(plot_months), women_using / women1549_total, color=(51/255, 160/255, 44/255))
+            if in_set_ylims_bool:
+                ax.set_ylim([0, in_ylims_l[1]])
+            plt.title("Proportion Females 15-49 Using Contraceptive Over Time")
+            plt.xlabel("Year")
+            plt.savefig(outputpath / ('Prop Fem1549 Using Contraceptive Over Time ' + in_id +
+                                      "_UpTo" + str(plot_months.year[-1]) + in_suffix + '.png'), format='png')
 
-    # %% Plot Contraception Use By Method Over time:
-    if in_plot_use_time_method_bool:
+            print("Figs: Contraception Use Over time saved.")
 
-        # Load Model Results
-        Model_pill = co_df.pill
-        Model_IUD = co_df.IUD
-        Model_injections = co_df.injections
-        Model_implant = co_df.implant
-        Model_male_condom = co_df.male_condom
-        Model_female_sterilization = co_df.female_sterilization
-        Model_other_modern = co_df.other_modern
-        Model_periodic_abstinence = co_df.periodic_abstinence
-        Model_withdrawal = co_df.withdrawal
-        Model_other_traditional = co_df.other_traditional
+        # %% Plot Contraception Use By Method Over time:
+        if in_plot_use_time_method_bool:
 
-        fig, ax = plt.subplots()
-        ax.plot(np.asarray(model_months), Model_pill * scaling_factor)
-        ax.plot(np.asarray(model_months), Model_IUD * scaling_factor)
-        ax.plot(np.asarray(model_months), Model_injections * scaling_factor)
-        ax.plot(np.asarray(model_months), Model_implant * scaling_factor)
-        ax.plot(np.asarray(model_months), Model_male_condom * scaling_factor)
-        ax.plot(np.asarray(model_months), Model_female_sterilization * scaling_factor)
-        ax.plot(np.asarray(model_months), Model_other_modern * scaling_factor)
-        ax.plot(np.asarray(model_months), Model_periodic_abstinence * scaling_factor)
-        ax.plot(np.asarray(model_months), Model_withdrawal * scaling_factor)
-        ax.plot(np.asarray(model_months), Model_other_traditional * scaling_factor)
-        if in_set_ylims_bool:
-            ax.set_ylim([0, in_ylims_l[1]])
-        plt.title("Contraception Use By Method")
-        plt.xlabel("Year")
-        plt.ylabel("Number using method")
-        plt.legend(['pill', 'IUD', 'injections', 'implant', 'male_condom', 'female_sterilization',
-                    'other_modern', 'periodic_abstinence', 'withdrawal', 'other_traditional'])
-        plt.savefig(outputpath / ('Contraception Use By Method' + in_id + "_UpTo" + str(model_months.year[-1]) + in_suffix + '.png'), format='png')
+            # Load Model Results
+            Model_pill = co_df.pill[0:len(plot_months)]
+            Model_IUD = co_df.IUD[0:len(plot_months)]
+            Model_injections = co_df.injections[0:len(plot_months)]
+            Model_implant = co_df.implant[0:len(plot_months)]
+            Model_male_condom = co_df.male_condom[0:len(plot_months)]
+            Model_female_sterilization = co_df.female_sterilization[0:len(plot_months)]
+            Model_other_modern = co_df.other_modern[0:len(plot_months)]
+            Model_periodic_abstinence = co_df.periodic_abstinence[0:len(plot_months)]
+            Model_withdrawal = co_df.withdrawal[0:len(plot_months)]
+            Model_other_traditional = co_df.other_traditional[0:len(plot_months)]
 
-        print("Fig: Contraception Use By Method Over time saved.")
+            # TODO: add comments with names of the colours
+            # define colours for all contraception methods
+            colours_all_meths = [(166 / 255, 206 / 255, 227 / 255),
+                                 (227 / 255, 26 / 255, 28 / 255),
+                                 (51 / 255, 160 / 255, 44 / 255),
+                                 (253 / 255, 191 / 255, 111 / 255),
+                                 (31 / 255, 120 / 255, 180 / 255),
+                                 (255 / 255, 127 / 255, 0 / 255),
+                                 (178 / 255, 223 / 255, 138 / 255),
+                                 (251 / 255, 154 / 255, 153 / 255),
+                                 (202 / 255, 178 / 255, 214 / 255),
+                                 (106 / 255, 61 / 255, 154 / 255)]
+            # TODO: Find better way to use own colour palette.
+
+            # Plot absolut values
+            fig, ax = plt.subplots()
+            ax.plot(np.asarray(plot_months), Model_pill * scaling_factor, color=colours_all_meths[0])
+            ax.plot(np.asarray(plot_months), Model_IUD * scaling_factor, color=colours_all_meths[1])
+            ax.plot(np.asarray(plot_months), Model_injections * scaling_factor, color=colours_all_meths[2])
+            ax.plot(np.asarray(plot_months), Model_implant * scaling_factor, color=colours_all_meths[3])
+            ax.plot(np.asarray(plot_months), Model_male_condom * scaling_factor, color=colours_all_meths[4])
+            ax.plot(np.asarray(plot_months), Model_female_sterilization * scaling_factor, color=colours_all_meths[5])
+            ax.plot(np.asarray(plot_months), Model_other_modern * scaling_factor, color=colours_all_meths[6])
+            ax.plot(np.asarray(plot_months), Model_periodic_abstinence * scaling_factor, color=colours_all_meths[7])
+            ax.plot(np.asarray(plot_months), Model_withdrawal * scaling_factor, color=colours_all_meths[8])
+            ax.plot(np.asarray(plot_months), Model_other_traditional * scaling_factor, color=colours_all_meths[9])
+            if in_set_ylims_bool:
+                ax.set_ylim([0, in_ylims_l[2]])
+            contraceptives_order_all_meths = ['pill', 'IUD', 'injections', 'implant', 'male_condom',
+                                              'female_sterilization', 'other_modern', 'periodic_abstinence',
+                                              'withdrawal', 'other_traditional']
+            # TODO: make the order of non-modern methods as input parameter
+            #  (then join ordered modern & non-modern methods)
+            plt.title("Contraception Use By Method")
+            plt.xlabel("Year")
+            plt.ylabel("Number using method")
+            plt.legend(contraceptives_order_all_meths)
+            plt.savefig(outputpath / ('Contraception Use By Method ' + in_id +
+                                      "_UpTo" + str(plot_months.year[-1]) + in_suffix + '.png'), format='png')
+
+            # Plot proportions within 15-49 population
+            def get_annual_mean_usage(_df):
+                _x = _df \
+                    .assign(year=_df['date'].dt.year) \
+                    .set_index('year') \
+                    .drop(columns=['date']) \
+                    .apply(lambda row: row / row.sum(),
+                           axis=1
+                           )
+                return _x.groupby(_x.index).mean().stack()
+
+            if in_log_file == 'run_analysis_contraception_no_diseases__2023-02-02T194158.log':
+                # without interv, 250K, till 2050; enhanced_lifestyle, healthseekingbehaviour, symptommanager excluded
+                results_folder_name = 'run_analysis_contraception_no_diseases-2023-02-02T193933Z'
+            elif in_log_file == 'run_analysis_contraception_no_diseases__2023-02-02T194458.log':
+                # with interv, 250K, till 2050; enhanced_lifestyle, healthseekingbehaviour, symptommanager excluded
+                results_folder_name = 'run_analysis_contraception_no_diseases-2023-02-02T194247Z'
+            else:
+                raise ValueError(
+                    "Unknown results_folder_name for the log file " + str(in_log_file) +
+                    ". Needs to be defined in the code for Figs: Contraception Use By Method Over time."
+                )
+            results_folder = Path('./outputs/sejjej5@ucl.ac.uk/' + results_folder_name)
+            # TODO: make the whole analysis to take the results from the folder
+            #  (hence no need of extracting the log file)
+
+            mean_usage = summarize(extract_results(results_folder,
+                                                   module="tlo.methods.contraception",
+                                                   key="contraception_use_summary",
+                                                   custom_generate_series=get_annual_mean_usage,
+                                                   do_scaling=False),
+                                   collapse_columns=True,
+                                   only_mean=True
+                                   ).unstack()
+
+            # print("Mean usage of injections")
+            # print("by 2030: " + str(mean_usage.loc[2030, 'injections']) + "; by 2050: "
+            #       + str(mean_usage.loc[2050, 'injections']))
+
+            contraceptives_order_notusing_all_meths = ["not_using"]
+            contraceptives_order_notusing_all_meths.extend(contraceptives_order_all_meths)
+            # define a colour for not using
+            colours_notusing_all_meths = [(255/255, 255/255, 153/255)]  # pale canary yellow green ~ ie light yellow
+            colours_notusing_all_meths.extend(colours_all_meths)
+
+            # to draw last method the lowest
+            mean_usage = mean_usage.loc[:, reversed(contraceptives_order_notusing_all_meths)]
+
+            fig, ax = plt.subplots()
+            # colours defined in the same order as methods, hence need to be reversed too
+            mean_usage.plot.area(stacked=True, ax=ax, legend=False, color=list(reversed(colours_notusing_all_meths)))
+            plt.title('Proportion Females 15-49 Using Contraception Methods', x=0.7)
+            plt.xlabel('Year')
+            plt.ylabel('Proportion')
+            # move the fig title so it fits with others in the panel
+            handles, labels = ax.get_legend_handles_labels()
+            fig.legend(handles[::-1], labels[::-1], title='Contraception Method', loc=7)
+            fig.subplots_adjust(right=0.65)
+            plt.savefig(outputpath / ('Prop Fem1549 Using Method ' + in_id +
+                                      "_UpTo" + str(model_months.year[-1]) + in_suffix + '.png'), format='png')
+
+            print("Figs: Contraception Use By Method Over time saved.")
 
     # %% Plot Pregnancies Over time:
     if in_plot_pregnancies_bool:
 
-        # Load Model Results
-        preg_df = log_df['tlo.methods.contraception']['pregnancy'].set_index('date').copy()
-        preg_df.index = pd.to_datetime(preg_df.index).year
-        num_pregs_by_year = preg_df.groupby(by=preg_df.index).size()
-        model_years = num_pregs_by_year.index
-        model_pregnancy = num_pregs_by_year.values
+        # Load Model Results by Months up to 2050
+        preg_df_by_months = log_df['tlo.methods.contraception']['pregnancy'].set_index('date').copy()
+        if preg_df_by_months.index.year[-1] > 2050:
+            preg_df_by_months = preg_df_by_months[preg_df_by_months.index.year <= 2050]
+        # if not warn yet, warn that the sim ended before 2050, hence the plots will be prepared till then only
+        elif preg_df_by_months.index.year[-1] < 2050 and not in_plot_use_time_bool and not in_plot_use_time_method_bool:
+            warnings.warn(
+                '\nWarning: The simulation ended before the year 2050, specifically in ' +
+                str(preg_df_by_months.index.year[-1]) + ', hence all the figs are till then only.')
+        # Create Data by Years (NB. Figs by Months are too noisy.)
+        preg_df_by_years = preg_df_by_months.copy()
+        preg_df_by_years.index = pd.to_datetime(preg_df_by_years.index).year
+        num_pregs_by_year = preg_df_by_years.groupby(by=preg_df_by_years.index).size()
+        plot_years = num_pregs_by_year.index
+        pregnancy_by_years = num_pregs_by_year.values
 
+        # Plot total pregnancies per Year
         fig, ax = plt.subplots()
-        ax.plot(np.asarray(model_years), model_pregnancy * scaling_factor)
+        ax.plot(np.asarray(plot_years), pregnancy_by_years * scaling_factor)
         if in_set_ylims_bool:
-            ax.set_ylim([0, in_ylims_l[2]])
-        plt.title("Pregnancies Over Time")
+            ax.set_ylim([0, in_ylims_l[3]])
+        plt.title("Pregnancies per Year")
         plt.xlabel("Year")
         plt.ylabel("Number of pregnancies")
-        plt.legend(['total', 'pregnant', 'not_pregnant'])
-        plt.savefig(outputpath / ('Pregnancies Over Time' + in_id + "_UpTo" + str(model_years[-1]) + in_suffix + '.png'), format='png')
+        plt.savefig(outputpath / ('Pregnancies per Year ' + in_id +
+                                  "_UpTo" + str(plot_years[-1]) + in_suffix + '.png'), format='png')
 
-        print("Fig: Pregnancies Over time saved.")
+        # Calculate Means of Pregnancies Proportions within Women 15-49 per Year
+        # (women1549_total are monthly data, hence pregnancy monthly data used to calculate the means )
+        num_pregs_by_months = preg_df_by_months.groupby(by=preg_df_by_months.index).size()
+        model_pregnancy_by_month = num_pregs_by_months.values
+        preg_props = model_pregnancy_by_month / women1549_total
+        preg_props.index = pd.to_datetime(preg_props.index).year
+        mean_preg_props_by_year = preg_props.groupby(by=preg_props.index).mean()
+
+        # Plot mean proportion of pregnancies in 15-49 women pop per Years
+        fig, ax = plt.subplots()
+        ax.plot(np.asarray(plot_years), mean_preg_props_by_year)
+        if in_set_ylims_bool:
+            ax.set_ylim([0, in_ylims_l[4]])
+        plt.title("Mean Proportion of Pregnancies in Females 15-49 per Year")
+        plt.xlabel("Year")
+        plt.ylabel("Mean proportion of pregnancies")
+        plt.savefig(outputpath / ('Mean Prop of Pregnancies in Fem15-49 per Year ' + in_id +
+                                  "_UpTo" + str(plot_years[-1]) + in_suffix + '.png'), format='png')
+
+        print("Figs: Pregnancies Over time saved.")
 
     # %% Calculate Use and Consumables Costs of Contraception methods within
     # some time periods:
@@ -457,20 +595,22 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
             :return: Contraception method as string.
             """
         # TODO: soft code this (use resource_items_pkgs_df)
+        #  (note: similar thing done in co_test in analyses combined branch)
             if in_d == dict({1: 8}):
                 return 'pill'
             if in_d == dict({2: 120}):
                 return 'male_condom'
             if in_d == dict({25: 120}):
                 return 'other_modern'
-            if in_d == dict({4: 3, 7: 1}):
+            if in_d == dict({7: 1}):
                 return 'IUD'
-            if in_d == dict({3: 1, 4: 1, 5: 1, 6: 1}):
+            # TODO: remove zeros from logging
+            if in_d == dict({3: 1, 5: 1, 6: 0}):
                 return 'injections'
-            if in_d == dict({4: 2, 5: 2, 8: 2, 9: 2, 10: 0.1, 11: 0.2, 12: 0.5}):
+            if in_d == dict({8: 2, 5: 2, 9: 2, 10: 0.1, 247: 2, 12: 0.5}):
                 return 'implant'
             if in_d == dict(
-                {5: 2, 9: 3, 14: 1, 15: 1, 16: 1, 17: 0.02, 18: 2, 19: 3, 20: 3, 21: 1, 22: 2, 23: 8, 24: 2}
+                {14: 1, 15: 1, 16: 1, 17: 0.02, 9: 3, 101: 0.0006, 247: 1, 21: 1, 23: 8, 5: 2}
             ):
                 return 'female_sterilization'
             else:
@@ -545,7 +685,7 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
                             in_df_cons_avail_by_time_and_method,
                             in_df_mean_use):
             """
-            Calculates costs of available items per time period per method rescaled (from the nmbs for simulation
+            Calculates costs of available items per time period per method rescaled (from the nmbs for simulated
             pop_size) to the population size of Malawi.
 
             :param in_df_resource_items_pkgs: resource data frame with
@@ -673,6 +813,8 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
             # Mulitply Pop and PPFP intervention costs by this ratio for each year:
             # TODO: pull the 2 parameters below from RF_Contraception.xlsx
             #  (Parameters/pop_intervention_cost & ppfp_intervention_cost)
+            # TODO?: it's approximated from costs for 2016-2020 -
+            #  ie not approximation for pop of 2016 but average pop of 2016-2020
             # cost of Pop intervention for whole population of Malawi in 2016 (MWK - Malawi Kwacha)
             pop_interv_cost_2016 = 1300000000
             # cost of PPFP intervention for whole population of Malawi in 2016 (MWK - Malawi Kwacha)
@@ -715,18 +857,19 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
                 sum_interv_costs_all_times(co_interv_costs_sum_by_tp_df)
             )
 
-        # If calculation of intervention costs is not required
+            print("Calculations of Intervention Costs finished.")
+
+        # If calculation of intervention costs is not required:
         else:
             co_interv_costs_sum_by_tp_df =\
                 pd.DataFrame({'pop_intervention_cost': [], 'ppfp_intervention_cost': [], 'interventions_total': []})
 
-    # If calculation of Use and Consumables Costs of Contraception methods are not required
+    # If calculation of Use and Consumables Costs of Contraception methods are not required,
+    # and hence also no intervention costs calculated:
     else:
         co_output_use_modern_tp_df, co_output_percentage_use_df, cons_costs_by_time_and_method_df = [], [], []
         co_interv_costs_sum_by_tp_df = \
             pd.DataFrame({'pop_intervention_cost': [], 'ppfp_intervention_cost': [], 'interventions_total': []})
-
-    print("Calculations of Intervention Costs finished.")
 
     return co_output_use_modern_tp_df, co_output_percentage_use_df,\
         cons_costs_by_time_and_method_df, co_interv_costs_sum_by_tp_df,\
