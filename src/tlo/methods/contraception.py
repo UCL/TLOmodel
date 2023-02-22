@@ -301,7 +301,7 @@ class Contraception(Module):
         birth."""
 
         # Check whether it is appropriate and time to implement interventions
-        if self.use_interventions and not self.interventions_on and self.sim.date == self.interventions_start_date:
+        if self.use_interventions and self.sim.date == self.interventions_start_date and not self.interventions_on:
             # Update module parameters to enable interventions
             self.processed_params = self.process_params()
             self.interventions_on = True
@@ -482,6 +482,7 @@ class Contraception(Module):
             if self.use_interventions & (self.sim.date >= self.interventions_start_date):
                 probs = self.parameters['Initiation_AfterBirth'].loc[0].drop('not_using')
                 probs = probs.mul(self.parameters['Interventions_PPFP'].loc[0])
+                assert probs.sum() < 1
                 not_using = pd.Series((1 - probs.sum()), index=['not_using'])
                 probs = not_using.append(probs)
 
@@ -765,8 +766,8 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         Determine who will become pregnant and update contraceptive method."""
 
         # Check whether it is appropriate and time to implement interventions
-        if self.module.use_interventions and not self.module.interventions_on and \
-           self.sim.date == self.module.interventions_start_date:
+        if self.module.use_interventions and self.sim.date == self.module.interventions_start_date\
+                and not self.module.interventions_on:
             # Update module parameters to enable interventions
             self.module.processed_params = self.module.process_params()
             self.module.interventions_on = True
@@ -809,7 +810,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
 
     def initiate(self, individuals_not_using: pd.Index):
         """Check all females not using contraception to determine if contraception starts
-        (i.e. category should change from 'not_using' to something else) with reference to  initiation_rate1 (irate_1).
+        (i.e. category should change from 'not_using' to something else) with reference to initiation_rate1 (irate_1).
         """
 
         # Exit if there are no individuals currently not using a contraceptive:
@@ -1253,7 +1254,7 @@ def get_medium_variant_asfr_from_wpp_resourcefile(dat: pd.DataFrame, months_expo
     :param dat: Raw form of the data in `ResourceFile_ASFR_WPP.csv`
     :param months_exposure: The time (in integer number of months) over which the risk of pregnancy should be
     computed.
-    :returns: a dict, keyed by year, giving a dataframe of risk of pregnancy over a the period, by age """
+    :returns: a dict, keyed by year, giving a dataframe of risk of pregnancy over a period, by age """
 
     dat = dat.drop(dat[~dat.Variant.isin(['WPP_Estimates', 'WPP_Medium variant'])].index)
     dat['Period-Start'] = dat['Period'].str.split('-').str[0].astype(int)
