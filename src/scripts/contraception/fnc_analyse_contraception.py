@@ -452,7 +452,7 @@ def analyse_contraception(in_datestamp: str, in_log_file: str, in_suffix: str,
 
             :return: Contraception method as string.
             """
-        # TODO: Create dictionaries for contraception methods from the ResourceFile (resource_items_pkgs_df)
+        # TODO: soft code this (use resource_items_pkgs_df)
             if in_d == dict({1: 8}):
                 return 'pill'
             if in_d == dict({2: 120}):
@@ -542,8 +542,6 @@ def analyse_contraception(in_datestamp: str, in_log_file: str, in_suffix: str,
                             in_df_mean_use):
             """
             Calculates costs of available items per time period per method.
-            Rescaled to the population size of Malawi (from the nmbs for
-            simulation pop_size).
 
             :param in_df_resource_items_pkgs: resource data frame with
                 information about items and pkgs for contraception methods only
@@ -572,8 +570,8 @@ def analyse_contraception(in_datestamp: str, in_log_file: str, in_suffix: str,
                     # costs = unit_cost * nmb of years within the time period (tp_len) * 2 *
                     # Expected_Units_Per_Case as approximation of number of condom used per 6 months *
                     # mean nmb of women using
-                    costs = unit_cost *\
-                        int(in_df_mean_use['tp_len'].loc[in_df_mean_use.index == i[0]]) * 2 *\
+                    costs = unit_cost * \
+                        int(in_df_mean_use['tp_len'].loc[in_df_mean_use.index == i[0]]) * 2 * \
                         float(in_df_resource_items_pkgs['Expected_Units_Per_Case'].loc[
                                   in_df_resource_items_pkgs['Intervention_Pkg'] == get_intervention_pkg_name(i[1])
                               ]) * float(in_df_mean_use[i[1]].loc[in_df_mean_use.index == i[0]])

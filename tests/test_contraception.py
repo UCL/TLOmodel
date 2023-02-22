@@ -117,8 +117,10 @@ def run_sim(tmpdir,
         )
         sim.modules['Contraception'].processed_params['p_switch_from_per_month'] *= 0.0
 
-        sim.modules['Contraception'].processed_params['p_start_after_birth']['not_using'] = 1.0
-        sim.modules['Contraception'].processed_params['p_start_after_birth'][list(states - {'not_using'})] = 0.0
+        sim.modules['Contraception'].processed_params['p_start_after_birth_below30']['not_using'] = 1.0
+        sim.modules['Contraception'].processed_params['p_start_after_birth_30plus']['not_using'] = 1.0
+        sim.modules['Contraception'].processed_params['p_start_after_birth_below30'][list(states - {'not_using'})] = 0.0
+        sim.modules['Contraception'].processed_params['p_start_after_birth_30plus'][list(states - {'not_using'})] = 0.0
 
     if equalised_risk_of_preg is not None:
         sim.modules['Contraception'].processed_params['p_pregnancy_no_contraception_per_month'].loc[:, :] = \
@@ -323,7 +325,7 @@ def test_woman_starting_contraceptive_after_birth(tmpdir, seed):
         sim.population.props.at[person_id, 'co_contraception'] = "not_using"
 
         # Run `select_contraceptive_following_birth`
-        sim.modules['Contraception'].select_contraceptive_following_birth(person_id)
+        sim.modules['Contraception'].select_contraceptive_following_birth(person_id, _props["age_years"])
 
         # Get new status
         co_after_birth.append(sim.population.props.at[person_id, 'co_contraception'])

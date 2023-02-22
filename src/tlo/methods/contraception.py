@@ -484,9 +484,6 @@ class Contraception(Module):
             # Scale so that the probability of all outcomes sum to 1.0
             probs = probs / probs.sum()
 
-            # assert set(p_start_after_birth.index) == self.all_contraception_states
-            # assert np.isclose(1.0, p_start_after_birth.sum())
-
             # Prevent women below 30 years having 'female_sterilization'
             probs_below30 = probs.copy()
             probs_below30['female_sterilization'] = 0.0
@@ -644,6 +641,8 @@ class Contraception(Module):
         states_to_maintain_on = sorted(self.states_that_may_require_HSI_to_maintain_on)
 
         for _woman_id, _old, _new in zip(ids, old, new):
+            if _new == 'female_sterilization':
+                assert df.loc[_woman_id, 'age_years'] >= 30
             # Does this change require an HSI?
             is_a_switch = _old != _new
             reqs_appt = _new in self.states_that_may_require_HSI_to_switch_to if is_a_switch \
@@ -707,7 +706,7 @@ class Contraception(Module):
         no women are pregnant, so the first births generated endogenously (through pregnancy -> gestation -> labour)
         occur after 9 months of simulation time. This method examines age-specific fertility rate data and causes there
         to be the appropriate number of births, scattered uniformly over the first 9 months of the simulation. These are
-        "direct live births" that are not subjected to any of the processes (e.g.  isk of loss of pregnancy, or risk of
+        "direct live births" that are not subjected to any of the processes (e.g. risk of loss of pregnancy, or risk of
         death to mother) represented in the `PregnancySupervisor`, `CareOfWomenDuringPregnancy` or `Labour`.
         When initialising population ensured person_id=0 is a man, so can safely exclude person_id=0 from choice of
         direct birth mothers without loss of generality."""
