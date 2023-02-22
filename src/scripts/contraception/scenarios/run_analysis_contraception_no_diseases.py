@@ -10,11 +10,8 @@ from tlo import Date, logging
 from tlo.methods import (
     contraception,
     demography,
-    enhanced_lifestyle,
-    healthseekingbehaviour,
     healthsystem,
     hiv,
-    symptommanager,
 )
 from tlo.scenario import BaseScenario
 
@@ -45,9 +42,6 @@ class RunAnalysisCo(BaseScenario):
         return [
             # Core Modules
             demography.Demography(resourcefilepath=self.resources),
-            enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
-            symptommanager.SymptomManager(resourcefilepath=self.resources),
-            healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
             healthsystem.HealthSystem(resourcefilepath=self.resources,
                                       cons_availability="all",
                                       disable=False),  # <-- HealthSystem functioning
