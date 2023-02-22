@@ -10,11 +10,15 @@ import pandas as pd
 # TODO: once finalised, remove unused imports
 
 time_start = time.time()
-
+# running time: both analysis all figs & tab for 250K pop till 2050 ~ 34 mins
 ################################################################################
 # TO SET:  # TODO: update with final sims
 # suffix if you want to (if not just set to '') for the output figure(s) and/or table
-suffix = '_co_2023-02_inclPR807/FixFailingTests'
+# TODO: estimate from scaling_factor (and if not same for both sims, add them to IDs instead to suffix) & return last
+#  year of sims (the same for that) // separate them as pop_size_simulated & last_year_simulated
+pop_size_simulated = "2K"
+# pop_size_simulated = "250K_till2050"
+branch_name = 'co_2023-02_inclPR807/AnalysisUpdates'
 # which results to use
 # - Without interv
 # datestamp_without_log = '2023-01-20T185253'
@@ -36,7 +40,8 @@ logFile_without = 'run_analysis_contraception_no_diseases__' + datestamp_without
 logFile_with = 'run_analysis_contraception_no_diseases__' + datestamp_with_log + '.log'
 ##
 # OUTPUT REQUIREMENTS
-# %%%% plots
+# %%%% plots up to the year 2050 (regarding of how long are the simulations)
+# TODO: have the last year included in figs as input parameter?
 # %% Plot Contraception Use Over time?
 # plot_use_time_bool = False
 plot_use_time_bool = True
@@ -47,28 +52,33 @@ plot_use_time_method_bool = True
 # plot_pregnancies_bool = False
 plot_pregnancies_bool = True
 # %% Do you want to set the upper limits for the y-axes for the 3 plots above?
-set_ylims_bool = False
+set_ylims_bool = True
 # If the above is True (otherwise it doesn't matter),
-# upper limits for the figures (in the order [Use, Use By Method, Pregnancies]
-ylims_l = [1.2576e7, 0.41265e7, 0.174885e7]
+# upper limits for the figures (in the order [Use, Props of Use, Use By Method, Pregnancies, Props of Pregnancies ]
+ylims_l = [1.08e7, 0.88, 3.6e6, 1.37e6, 0.019]
 #
 # %%%% table
 # %% Table the Use and Costs (By Method) Over time?
 # table_use_costs_bool = False
 table_use_costs_bool = True
+# TODO: if there is no debug (ie lookup the key) logging - set the table_use_costs_bool = False and display a Warning
 # If the above is True (otherwise all the table inputs below doesn't mother),
 # years to summarise in the table of use and costs (totals for time periods between each 2 consecutive years;
 # first year included, last year excluded)
 TimePeriods_starts = [2023, 2031, 2041, 2051]
 # The use & cost values within the time periods in table can be "mean" (default) or can be changed to "max"
 # use_output = "max"  # TODO: test whether it still works
-# Order of contraceptives for the table
+# Order of contraceptives for a fig and a table
 contraceptives_order = ['pill', 'IUD', 'injections', 'implant', 'male_condom',
                         'female_sterilization', 'other_modern']
 # %% Calculate Contraception Pop and PPFP Intervention Costs over time?
 # calc_intervention_costs_bool = False
 calc_intervention_costs_bool = True
-# %% Round the costs? No => None, Yes => set to what nearest to round them (e.g. to nearest million => 1e6).
+# %% Round the number of women using contraception? No => None, Yes => set to nearest what to round them
+# (e.g. to nearest thousands => 1e3).
+# rounding_use_to = 1e3
+rounding_use_to = 1e3
+# %% Round the costs? No => None, Yes => set to nearest what to round them.
 rounding_costs_to = 1e6
 #
 # %%%% Parameters only for test runs
@@ -85,6 +95,12 @@ print_bool = False
 # plot_costs = False
 plot_costs = True
 ################################################################################
+# suffix for the output figure(s) and/or table
+if set_ylims_bool:
+    branch_name = branch_name + '_yaxis-lims-united'
+suffix = '_' + branch_name + '_' + 'useTo_' + str(rounding_use_to) + '_costsTo_' + str(rounding_costs_to) +\
+         '_' + pop_size_simulated
+###
 if table_use_costs_bool:
     assert do_no_interv_analysis | do_interv_analysis,\
         "If you request to create a table of use & costs, at least one analysis needs to be done, ie " +\
@@ -224,12 +240,34 @@ if table_use_costs_bool:
     if not ('use_output' in locals() or 'use_output' in globals()):
         use_output = "mean"
 
-    use_without_val_perc_df =\
-        use_without_df.round(2).astype(str) +\
-        " (" + percentage_use_without_df.round(2).astype(str) + ")"
-    use_with_val_perc_df =\
-        use_with_df.round(2).astype(str) +\
-        " (" + percentage_use_with_df.round(2).astype(str) + ")"
+    def round_format(in_df, in_rounding_to):
+        if in_rounding_to:
+            round_index = math.log10(in_rounding_to) # TODO: fix the round_index warning
+        else:
+            round_index = math.log10(1)
+        df_rounded = (round(in_df, -int(round_index)) / in_rounding_to).astype(int)
+        df_formatted = pd.DataFrame()
+        for col_name in df_rounded.columns:
+            df_formatted[col_name] = df_rounded[col_name].map('{:,.0f}'.format)
+        return df_formatted
+
+    def use_perc_val_df_round_format(use_df, percentage_use_df):
+        # %% Round the nmb of women using?
+        if rounding_use_to:
+            round_use_index = math.log10(rounding_use_to)
+        else:
+            round_use_index = math.log10(1)
+        use_df_rounded = (round(use_df, -int(round_use_index)) / rounding_use_to).astype(int)
+        use_df_formatted = pd.DataFrame()
+        for col_name in use_df_rounded.columns:
+            use_df_formatted[col_name] = use_df_rounded[col_name].map('{:,.0f}'.format)
+        return percentage_use_df.round(1).astype(str) + '%' + " (" + use_df_formatted.astype(str) + ")"
+
+
+    use_without_perc_val_df = percentage_use_without_df.round(1).astype(str) + '%' + " (" +\
+        round_format(use_without_df, rounding_use_to) .astype(str) + ")"
+    use_with_perc_val_df = percentage_use_with_df.round(1).astype(str) + '%' + " (" +\
+        round_format(use_with_df, rounding_use_to) .astype(str) + ")"
 
     # %% Round the costs:
     if rounding_costs_to:
@@ -242,23 +280,26 @@ if table_use_costs_bool:
             interv_costs_without_df = interv_costs_with_df
 
         if print_bool:
-            if do_no_interv_analysis:
-                print("\n")
-                print("COSTS WITHOUT rounded")
-                print(costs_without_df)
-                print()
-                print("\n")
-                print("INTERVENTION COSTS WITHOUT")
-                print(interv_costs_without_df)
-                print()
-            if do_interv_analysis:
-                print("\n")
-                print("COSTS WITH rounded")
-                print(costs_with_df)
-                print("\n")
-                print("INTERVENTION COSTS WITH rounded")
-                print(interv_costs_with_df)
-                print()
+            if rounding_costs_to:
+                if do_no_interv_analysis:
+                    print("\n")
+                    print("COSTS WITHOUT rounded")
+                    print(costs_without_df)
+                if do_interv_analysis:
+                    print("\n")
+                    print("COSTS WITH rounded")
+                    print(costs_with_df)
+            if calc_intervention_costs_bool:
+                if do_no_interv_analysis:
+                    print("\n")
+                    print("INTERVENTION COSTS WITHOUT")
+                    print(interv_costs_without_df)
+                    print()
+                if do_interv_analysis:
+                    print("\n")
+                    print("INTERVENTION COSTS WITH rounded")
+                    print(interv_costs_with_df)
+                    print()
 
     # %% Plot Consumables & Intervention Costs Over Time from the Table:
     if plot_costs:
@@ -318,24 +359,24 @@ if table_use_costs_bool:
         table_cols.append('pop_ppfp_interv')
         table_cols.append('co_modern_all_interv_total')
 
-        def costs_name(in_rounding_costs_to):
-            if in_rounding_costs_to:
-                if in_rounding_costs_to == 1e9:
+        def rounding_name(in_rounding_scale):
+            if in_rounding_scale:
+                if in_rounding_scale == 1e9:
                     return "billions "
-                elif in_rounding_costs_to == 1e6:
+                elif in_rounding_scale == 1e6:
                     return "millions "
-                elif in_rounding_costs_to == 1e5:
+                elif in_rounding_scale == 1e5:
                     return "hundreds of thousands "
-                elif in_rounding_costs_to == 1e4:
+                elif in_rounding_scale == 1e4:
                     return "tens of thousands "
-                elif in_rounding_costs_to == 1e3:
+                elif in_rounding_scale == 1e3:
                     return "thousands "
-                elif in_rounding_costs_to == 100:
+                elif in_rounding_scale == 100:
                     return "hundreds "
-                elif in_rounding_costs_to == 10:
+                elif in_rounding_scale == 10:
                     return "tens "
                 else:
-                    return str(in_rounding_costs_to) + " "
+                    return str(in_rounding_scale) + " "
             else:
                 return ""
 
@@ -345,14 +386,16 @@ if table_use_costs_bool:
                                    index=pd.MultiIndex.from_product([
                                        in_df_use_without.index,
                                        ['Without interventions', 'With Pop and PPFP interventions'],
-                                       [str(use_output).capitalize() + ' number of women using (%)',
-                                        'Costs (' + costs_name(rounding_costs_to) + 'MWK)']
+                                       [str(use_output).capitalize() + ' % of women using (' +
+                                        rounding_name(rounding_use_to) + ' women)',
+                                        'Costs (' + rounding_name(rounding_costs_to) + ' MWK ~ '
+                                        + rounding_name(rounding_costs_to / 1000) + 'USD)']
                                    ]))
         return df_combined.loc[:, :].transpose()
 
     use_costs_table_df = combine_use_costs_with_without_interv(
-        use_without_df, use_without_val_perc_df, costs_without_df, interv_costs_without_df,
-        use_with_df, use_with_val_perc_df, costs_with_df, interv_costs_with_df
+        use_without_df, use_without_perc_val_df, costs_without_df, interv_costs_without_df,
+        use_with_df, use_with_perc_val_df, costs_with_df, interv_costs_with_df
     )
 
     # Change the names of totals
