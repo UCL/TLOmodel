@@ -17,21 +17,23 @@ time_start = time.time()
 suffix = '_co_2023-02_inclPR807/FixFailingTests'
 # which results to use
 # - Without interv
-datestamp_without_log = '2022-12-08T224955'
-# 2K no dis: '2022-12-08T224955' from 2022-12-08T224709Z
-# datestamp_without_log = '2022-12-15T092305'
-# 50K, no dis: '2022-12-15T092305' from 2022-12-14T114522Z
-# datestamp_without_log = '2023-01-12T163853'
-# 200K, no dis, no interv: '2023-01-12T163853' from 2023-01-12T163637Z
+# datestamp_without_log = '2023-01-20T185253'
+# 2K till 2099: '2023-01-20T185253' from 2023-01-20T185037Z
+# datestamp_without_log = '2023-01-20T123330'
+# 200K till 2099: '2023-01-20T123330' from 2023-01-20T123126Z
+datestamp_without_log = '2023-02-02T194158'
+# 250K till 2050; enhanced_lifestyle, healthseekingbehaviour, symptommanager excluded:
+#     '2023-02-02T194158' from 2023-02-02T193933Z
 # # - With interv
-datestamp_with_log = '2022-12-09T173334'
-# 2K no dis, with the interv logging: '2022-12-2022-12-09T173334' from 2022-12-09T173111Z
-# datestamp_with_log = '2022-12-30T175440'
-# 50K, no dis, with interv
-# datestamp_with_log = '2023-01-12T163457'
-# 200K, no dis: '2023-01-12T163457' from 2023-01-12T163240Z
-logFile_without = 'run_analysis_contraception_' + with_diseases + '_diseases__' + datestamp_without_log + '.log'
-logFile_with = 'run_analysis_contraception_' + with_diseases + '_diseases__' + datestamp_with_log + '.log'
+# datestamp_with_log = '2023-01-20T185048'
+# 2K till 2050: '2023-01-20T185048' from 2023-01-20T184840Z
+# datestamp_with_log = '2023-01-20T184725'
+# 200K till 2050: '2023-01-20T184725' from 2023-01-20T184505Z
+datestamp_with_log = '2023-02-02T194458'
+# 250K till 2050; enhanced_lifestyle, healthseekingbehaviour, symptommanager excluded:
+#     '2023-02-02T194458' from 2023-02-02T194247Z
+logFile_without = 'run_analysis_contraception_no_diseases__' + datestamp_without_log + '.log'
+logFile_with = 'run_analysis_contraception_no_diseases__' + datestamp_with_log + '.log'
 ##
 # OUTPUT REQUIREMENTS
 # %%%% plots
