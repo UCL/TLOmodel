@@ -34,8 +34,10 @@ import os
 # Ignore warnings to avoid cluttering output from simulation
 warnings.simplefilter("ignore", (UserWarning, RuntimeWarning))
 
-number_of_draws = 30
-runs_per_draw = 3
+# number_of_draws = 30
+# runs_per_draw = 3
+number_of_draws = 1
+runs_per_draw = 1
 
 
 class TestScenario(BaseScenario):
@@ -46,7 +48,7 @@ class TestScenario(BaseScenario):
             seed=0,
             start_date=Date(2010, 1, 1),
             end_date=Date(2023, 1, 1),
-            initial_population_size=100000,
+            initial_population_size=1000,
             number_of_draws=number_of_draws,
             runs_per_draw=runs_per_draw,
         )
