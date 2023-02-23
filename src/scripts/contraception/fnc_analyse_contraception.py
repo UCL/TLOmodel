@@ -82,21 +82,6 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
         returns an empty DataFrame for the above)
     """
 
-    def fullprint(in_to_print):  # TODO: remove
-        with pd.option_context('display.max_rows', None, 'display.max_columns',
-                               None):
-            print(in_to_print)
-
-    # timeit_rep_nmb = 600
-
-    def timeitprint(in_what_measures: str, in_fnc, in_timeit_rep_nmb=1):  # TODO: remove
-        if in_timeit_rep_nmb > 1:
-            print("time (s) of " + in_what_measures +
-                  " (" + str(in_timeit_rep_nmb) + " repetitions):")
-        else:
-            print("time (s) of " + in_what_measures + ":")
-        print(timeit.timeit(in_fnc, number=in_timeit_rep_nmb))
-
     # Where will outputs go - by default, wherever this script is run
     outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
@@ -571,12 +556,6 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
 
         cons_df['Request'] = join_avail_notavail_items(cons_df)
 
-        # TODO: remove
-        # # All individual requests
-        # print(cons_df['Request'].value_counts(dropna=False))
-        # # All records of Item_Available
-        # fullprint(cons_df['Item_Available'].value_counts(dropna=False))
-
         # Limit consumables data to those which were processed (contraception
         # was given to a woman as all items were available)
         # TODO: make it to work with essential and optional items
@@ -586,7 +565,7 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
         # Assign a contraceptive method to each record according to the request.
         resource_items_pkgs_df = pd.read_csv(
             'resources/healthsystem/consumables/ResourceFile_Consumables_Items_and_Packages.csv'
-        )  # TODO: Use this in the function below.
+        )
 
         def get_contraceptive_method_for_request(in_d):
             """
@@ -683,7 +662,7 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
 
         # Calculate the costs of available items for all except male_condom
         # & other_modern (= female condom only currently)
-        # TODO: change if Male sterilization is modelled as other_modern as well
+        # TODO in future?: change if Male sterilization is modelled as other_modern as well
         def calculate_costs(in_df_resource_items_pkgs,
                             in_df_cons_avail_by_time_and_method,
                             in_df_mean_use):
