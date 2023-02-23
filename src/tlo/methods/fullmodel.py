@@ -2,9 +2,9 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 import pandas as pd
-from tlo import Date
-from tlo import Module, Simulation
-from tlo.analysis.utils import parse_log_file, get_root_path
+
+from tlo import Date, Module, Simulation
+from tlo.analysis.utils import get_root_path, parse_log_file
 from tlo.methods import (
     alri,
     bladder_cancer,
