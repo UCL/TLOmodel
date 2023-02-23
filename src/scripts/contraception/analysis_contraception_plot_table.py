@@ -16,9 +16,9 @@ time_start = time.time()
 # suffix if you want to (if not just set to '') for the output figure(s) and/or table
 # TODO: estimate from scaling_factor (and if not same for both sims, add them to IDs instead to suffix) & return last
 #  year of sims (the same for that) // separate them as pop_size_simulated & last_year_simulated
-pop_size_simulated = "2K"
+pop_size_simulated = "250K"
 # pop_size_simulated = "250K_till2050"
-branch_name = 'co_2023-02_inclPR807/AnalysisUpdates'
+branch_name = 'co_2023-02_inclPR807-AnalysisUpdates'
 # which results to use
 # - Without interv
 # datestamp_without_log = '2023-01-20T185253'
