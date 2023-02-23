@@ -22,7 +22,7 @@ from tlo.methods import (
 from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.diarrhoea import increase_risk_of_death, make_treatment_perfect
-from tlo.methods.fullmodel import fullmodel
+from tlo.methods.fullmodel import fullmodel, get_mappers_in_fullmodel
 from tlo.methods.healthburden import Get_Current_DALYS
 
 try:
@@ -585,8 +585,6 @@ def test_mapper_for_dalys_created(tmpdir, seed):
     """Check that causes of DALYS can be mapped between TLO cause and GBD cause in the case of a cause causing
     deaths but not disability (e.g. 'Congenital birth defects')."""
 
-    rfp = Path(os.path.dirname(__file__)) / '../resources'
-
     class DiseaseThatCausesDeathOnly(Module):
         METADATA = {Metadata.DISEASE_MODULE}
         CAUSES_OF_DEATH = {
@@ -606,9 +604,9 @@ def test_mapper_for_dalys_created(tmpdir, seed):
     start_date = Date(2010, 1, 1)
     sim = Simulation(start_date=start_date, seed=seed, log_config={'filename': 'test_log', 'directory': tmpdir})
     sim.register(
-        demography.Demography(resourcefilepath=rfp),
+        demography.Demography(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        healthburden.HealthBurden(resourcefilepath=rfp),
+        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         DiseaseThatCausesDeathOnly(),
         sort_modules=False
     )
@@ -637,3 +635,11 @@ def test_mapper_for_dalys_created(tmpdir, seed):
     # loss of DALYS, the mappers for DALYS should attach it to the chosen label.
     assert daly_mapper_from_tlo_causes['TLOCauseNameFor_CBD'] == 'Chosen_Label_For_CBD'
     assert daly_mapper_from_gbd_causes['Congenital birth defects'] == 'Chosen_Label_For_CBD'
+
+
+def test_get_mappers_in_fullmodel():
+    """Check that `get_mappers_in_fullmodel` works as expected; and, in particular that things that cause death but not
+    disability are captured correctly as a cause of DALYS (i.e., 'Congenital birth defects'). """
+
+    mappers = get_mappers_in_fullmodel()
+    assert mappers['daly_mapper_from_gbd_cause_to_common_label']['Congenital birth defects'] != 'Other'

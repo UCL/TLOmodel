@@ -3,6 +3,7 @@ This Module runs the counting of Life-years Lost, Life-years Lived with Disabili
 and Disability-Adjusted Life-years (DALYS).
 """
 from pathlib import Path
+from typing import Dict
 
 import numpy as np
 import pandas as pd
@@ -159,7 +160,7 @@ class HealthBurden(Module):
         # 1) Collect causes of death and disability that are reported by each disease module,
         #    merging the gbd_causes declared for deaths or disabilities under the same label,
 
-        def merge_dicts_of_causes(d1: dict[str: Cause], d2: dict[str: Cause]) -> dict[str: Cause]:
+        def merge_dicts_of_causes(d1: Dict, d2: Dict) -> Dict:
             """Combine two dictionaries of the form {tlo_cause_name: Cause}, merging the values of `Cause.gbd_causes`
              where the values of `Cause.label` are common, attaching to the first key in d1 that uses that label."""
             labels_seen = dict()  # Look-up of the form {label: tlo_cause_name} for the tlo_cause_name associated
@@ -176,7 +177,6 @@ class HealthBurden(Module):
                         tlo_cause_name_to_merge_into = labels_seen[_cause.label]
                         merged_causes[tlo_cause_name_to_merge_into].gbd_causes = \
                             merged_causes[tlo_cause_name_to_merge_into].gbd_causes.union(_cause.gbd_causes)
-
             return merged_causes
 
         causes_of_death_and_disability = merge_dicts_of_causes(
