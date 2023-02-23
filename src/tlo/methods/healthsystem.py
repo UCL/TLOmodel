@@ -1532,6 +1532,8 @@ class HealthSystem(Module):
                 event = event.hsi_event
                 squeeze_factor = squeeze_factor_per_hsi_event[ev_num]                  # todo use zip here!
 
+                _appt_footprint_before_running = event.EXPECTED_APPT_FOOTPRINT  # store appt_footprint before running
+
                 ok_to_run = (
                     (self.mode_appt_constraints == 0)
                     or (self.mode_appt_constraints == 1)
@@ -1585,8 +1587,9 @@ class HealthSystem(Module):
                                 compute_squeeze_factor_to_district_level=self.compute_squeeze_factor_to_district_level,
                             )
                     else:
-                        # no actual footprint is returned so take the expected initial declaration as the actual
-                        actual_appt_footprint = event.EXPECTED_APPT_FOOTPRINT
+                        # no actual footprint is returned so take the expected initial declaration as the actual,
+                        # as recorded before the HSI event run
+                        actual_appt_footprint = _appt_footprint_before_running
 
                     # Write to the log
                     self.record_hsi_event(
