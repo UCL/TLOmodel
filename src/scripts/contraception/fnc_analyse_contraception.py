@@ -13,20 +13,13 @@ import timeit
 import warnings
 from collections import Counter
 from pathlib import Path
-from tlo.analysis.utils import (
-    extract_results,
-    summarize,
-)
 
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
 from tlo import Date
-from tlo.analysis.utils import parse_log_file
-
-# import functools
-# TODO: once finalised, remove unused imports
+from tlo.analysis.utils import extract_results, parse_log_file, summarize
 
 
 def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
@@ -745,14 +738,6 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
                 l_costs.append(costs)
             return l_costs
 
-        # TODO: remove
-        # timeitprint("calc costs",
-        #             functools.partial(calculate_costs,
-        #                               resource_items_pkgs_df,
-        #                               cons_avail_grouped_by_time_and_method_df,
-        #                               mean_use_df),
-        #             6000)
-        # 26.302437201999055 s for 6000 repetitions
         cons_avail_grouped_by_time_and_method_df['Costs'] =\
             calculate_costs(resource_items_pkgs_df,
                             cons_avail_grouped_by_time_and_method_df,
@@ -791,11 +776,14 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
         # warn if simulation ends before the interventions are implemented
         calc_intervention_costs_bool = in_calc_intervention_costs_bool
         if in_calc_intervention_costs_bool:
-            df_interv_implem = log_df['tlo.methods.contraception']['contraception_intervention'].set_index('date').copy()
+            df_interv_implem =\
+                log_df['tlo.methods.contraception']['contraception_intervention'].set_index('date').copy()
             interv_implem_date = Date(df_interv_implem.loc['2010-01-01', 'date_co_interv_implemented'])
             if Date(last_day_simulated) < interv_implem_date:
-                warnings.warn('\nWarning: Calculations of intervention costs are not provided as the simulation ends before'
-                              ' interventions are introduced.')
+                warnings.warn(
+                    '\nWarning: Calculations of intervention costs are not provided as the simulation ends before'
+                    ' interventions are introduced.'
+                )
                 calc_intervention_costs_bool = False
         # %% Calculate annual Pop and PPFP intervention costs:
         if calc_intervention_costs_bool:
@@ -844,8 +832,9 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
             # Group intervention costs by time period:
             co_interv_costs_tp_df.index = co_interv_costs_tp_df['Time_Period']
             co_interv_costs_sum_by_tp_df =\
-                co_interv_costs_tp_df.loc[:, ['pop_intervention_cost', 'ppfp_intervention_cost', 'interventions_total']]\
-                .dropna().groupby(['Time_Period']).sum()
+                co_interv_costs_tp_df.loc[
+                    :, ['pop_intervention_cost', 'ppfp_intervention_cost', 'interventions_total']
+                ].dropna().groupby(['Time_Period']).sum()
 
             def sum_interv_costs_all_times(in_df_interv_costs_by_tp):
                 """

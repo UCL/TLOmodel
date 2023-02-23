@@ -1,24 +1,19 @@
 import math
 import time
-import timeit
 
 import bar_chart_costs
 import fnc_analyse_contraception as a_co
 import pandas as pd
 
-# import collections
-# TODO: once finalised, remove unused imports
-
 time_start = time.time()
 # running time: both analysis all figs & tab for 250K pop till 2050 ~ 34 mins
 ################################################################################
-# TO SET:  # TODO: update with final sims
 # suffix if you want to (if not just set to '') for the output figure(s) and/or table
 # TODO: estimate from scaling_factor (and if not same for both sims, add them to IDs instead to suffix) & return last
 #  year of sims (the same for that) // separate them as pop_size_simulated & last_year_simulated
-pop_size_simulated = "250K"
-# pop_size_simulated = "250K_till2050"
-branch_name = 'co_2023-02_inclPR807-AnalysisUpdates'
+# pop_size_simulated = "2K"
+pop_size_simulated = "250K_till2050"
+branch_name = 'co_2023-02_inclPR807'
 # which results to use
 # - Without interv
 # datestamp_without_log = '2023-01-20T185253'
@@ -84,7 +79,6 @@ rounding_costs_to = 1e6
 # %%%% Parameters only for test runs
 # # Do you want to do both analysis? If not (set one of the below to False). The analysis won't be done and the outputs
 # from the other analysis (set to True below) will be used instead.
-# #TODO: to get final results: True-True-False-True
 do_no_interv_analysis = True
 do_interv_analysis = True
 # Do you want prints to see costs, use, percentage use and table?
@@ -116,19 +110,10 @@ if not ('use_output' in locals() or 'use_output' in globals()):
     use_output = "mean"
 
 
-def fullprint(in_to_print):  # TODO: remove
+def fullprint(in_to_print):
     with pd.option_context('display.max_rows', None, 'display.max_columns',
                            None):
         print(in_to_print)
-
-
-def timeitprint(in_what_measures, in_fnc, in_timeit_rep_nmb=1):  # TODO: remove
-    if in_timeit_rep_nmb > 1:
-        print("time (s) of " + in_what_measures +
-              " (" + str(in_timeit_rep_nmb) + " repetitions):")
-    else:
-        print("time (s) of " + in_what_measures + ":")
-    print(timeit.timeit(in_fnc, number=in_timeit_rep_nmb))
 
 
 # Use and Consumables Costs of Contraception methods Over time
@@ -242,7 +227,7 @@ if table_use_costs_bool:
 
     def round_format(in_df, in_rounding_to):
         if in_rounding_to:
-            round_index = math.log10(in_rounding_to) # TODO: fix the round_index warning
+            round_index = math.log10(in_rounding_to)  # TODO: fix the round_index warning
         else:
             round_index = math.log10(1)
         df_rounded = (round(in_df, -int(round_index)) / in_rounding_to).astype(int)
@@ -262,7 +247,6 @@ if table_use_costs_bool:
         for col_name in use_df_rounded.columns:
             use_df_formatted[col_name] = use_df_rounded[col_name].map('{:,.0f}'.format)
         return percentage_use_df.round(1).astype(str) + '%' + " (" + use_df_formatted.astype(str) + ")"
-
 
     use_without_perc_val_df = percentage_use_without_df.round(1).astype(str) + '%' + " (" +\
         round_format(use_without_df, rounding_use_to) .astype(str) + ")"
@@ -333,6 +317,7 @@ if table_use_costs_bool:
                 data.append(l_tp_use)
                 # costs
                 l_tp_costs = []
+                co_modern_total = "NA"
                 for meth in in_df_use.columns:
                     if meth in list(in_df_costs.loc[tp].index.get_level_values('Contraceptive_Method')):
                         l_tp_costs.append(round(float(in_df_costs.loc[(tp, meth), :]), 2))
