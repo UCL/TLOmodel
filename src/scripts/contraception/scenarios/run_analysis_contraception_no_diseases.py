@@ -37,12 +37,7 @@ CONTRACEPTION PAPER (Tim C at al. 2023):
 """
 
 from tlo import Date, logging
-from tlo.methods import (
-    contraception,
-    demography,
-    healthsystem,
-    hiv,
-)
+from tlo.methods import contraception, demography, healthsystem, hiv
 from tlo.scenario import BaseScenario
 
 
