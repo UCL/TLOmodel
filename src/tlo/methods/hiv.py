@@ -709,10 +709,10 @@ class Hiv(Module):
 
         # all those on ART need to have event scheduled for continuation/cessation of treatment
         for person in art_idx:
-            days = self.rng.randint(low=100, high=200, size=1, dtype=np.int64)[0]
+            days = self.rng.randint(low=100, high=200, dtype=np.int64)
             self.sim.schedule_event(
                 Hiv_DecisionToContinueTreatment(person_id=person, module=self),
-                self.sim.date + pd.to_timedelta(days),
+                self.sim.date + pd.to_timedelta(days, unit="days"),
             )
 
     def initialise_baseline_tested(self, population):
