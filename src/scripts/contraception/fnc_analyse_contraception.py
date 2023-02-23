@@ -125,6 +125,7 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
         # Load Model Results
         co_df = log_df['tlo.methods.contraception']['contraception_use_summary'].set_index('date').copy()
         model_months = pd.to_datetime(co_df.index)
+        # keep only data up to 2050
         if (model_months.year[-1]) > 2050:
             plot_months = model_months[model_months.year <= 2050]
         else:
@@ -155,7 +156,7 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
             plt.ylabel("Number of women")
             # plt.gca().set_xlim(Date(2010, 1, 1), Date(2023, 1, 1)) to see only 2010-2023 (excl)
             plt.legend(['Total women age 15-49 years', 'Not Using Contraception', 'Using Contraception'])
-            plt.savefig(outputpath / ('Contraception Use' + in_id + "_UpTo" + str(plot_months.year[-1]) + in_suffix
+            plt.savefig(outputpath / ('Contraception Use ' + in_id + "_UpTo" + str(plot_months.year[-1]) + in_suffix
                                       + '.png'), format='png')
 
             # Plot proportions within 15-49 population
@@ -247,6 +248,12 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
             elif in_log_file == 'run_analysis_contraception_no_diseases__2023-02-02T194458.log':
                 # with interv, 250K, till 2050; enhanced_lifestyle, healthseekingbehaviour, symptommanager excluded
                 results_folder_name = 'run_analysis_contraception_no_diseases-2023-02-02T194247Z'
+            elif in_log_file == 'run_analysis_contraception_no_diseases__2023-01-20T185253.log':
+                # without interv, 2K, till 2099
+                results_folder_name = 'run_analysis_contraception_no_diseases-2023-01-20T185037Z'
+            elif in_log_file == 'run_analysis_contraception_no_diseases__2023-01-20T185048.log':
+                # with interv, 2K, till 2050
+                results_folder_name = 'run_analysis_contraception_no_diseases-2023-01-20T184840Z'
             else:
                 raise ValueError(
                     "Unknown results_folder_name for the log file " + str(in_log_file) +
@@ -275,7 +282,10 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
             colours_notusing_all_meths = [(255/255, 255/255, 153/255)]  # pale canary yellow green ~ ie light yellow
             colours_notusing_all_meths.extend(colours_all_meths)
 
-            # to draw last method the lowest
+            # keep only data up to 2050
+            mean_usage = mean_usage[0:(2050-2010+1)]
+            # reverse methods so the last method is plotted lowest
+            mean_usage = mean_usage.loc[:, reversed(contraceptives_order_notusing_all_meths)]
             mean_usage = mean_usage.loc[:, reversed(contraceptives_order_notusing_all_meths)]
 
             fig, ax = plt.subplots()
@@ -289,7 +299,7 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
             fig.legend(handles[::-1], labels[::-1], title='Contraception Method', loc=7)
             fig.subplots_adjust(right=0.65)
             plt.savefig(outputpath / ('Prop Fem1549 Using Method ' + in_id +
-                                      "_UpTo" + str(model_months.year[-1]) + in_suffix + '.png'), format='png')
+                                      "_UpTo" + str(plot_months.year[-1]) + in_suffix + '.png'), format='png')
 
             print("Figs: Contraception Use By Method Over time saved.")
 
