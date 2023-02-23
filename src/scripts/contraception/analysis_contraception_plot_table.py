@@ -422,10 +422,15 @@ if table_use_costs_bool:
     use_costs_table_df.to_excel(writer, index_label=use_costs_table_df.columns.name)
 
     writer.save()
-    print("\n")
-    print(
-        "Tab: Contraception Use (total & percentage) & Costs within Time Periods With and Without Interventions saved."
-    )
+    to_print = "Tab: Contraception Use (total & percentage) & Costs within Time Periods "
+    if do_no_interv_analysis:
+        if do_interv_analysis:
+            to_print += "Without and With Interventions saved."
+        else:
+            to_print += "Without and Without-again Interventions saved."
+    else:
+        to_print += "With and With-again Interventions saved."
+    print(to_print)
 
 time_end = time.time()
 
