@@ -854,14 +854,21 @@ class Hiv(Module):
         # AIDS Onset Event for those who are infected but not yet AIDS and have not ever started ART
         # NB. This means that those on ART at the start of the simulation may not have an AIDS event --
         # like it happened at some point in the past
-        [scale, shape, offset] = self.get_linear_model_parameters(before_aids_idx)
-        days_infection_to_aids = self.get_time_from_infection_to_aids(scale, shape, offset)
+        scale, shape, offset = self.get_time_from_infection_to_aids_distribution_parameters(before_aids_idx)
+        days_infection_to_aids = self.sample_time_from_infection_to_aids_given_parameters(scale, shape, offset)
         days_since_infection = (self.sim.date - df.loc[before_aids_idx, "hv_date_inf"])
-        # If days_since_infection >= days_infection_to_aids resample
-        while any(days_since_infection.ge(days_infection_to_aids)):
-            days_infection_to_aids = np.where(days_since_infection < days_infection_to_aids, days_infection_to_aids,
-                                              self.get_time_from_infection_to_aids(scale, shape, offset))
-
+        # If any days_since_infection >= days_infection_to_aids are negative resample
+        # these values until all are positive
+        days_until_aids_is_negative = days_since_infection >= days_infection_to_aids
+        while np.any(days_until_aids_is_negative):
+            days_infection_to_aids[days_until_aids_is_negative] = (
+                self.sample_time_from_infection_to_aids_given_parameters(
+                    scale[days_until_aids_is_negative],
+                    shape[days_until_aids_is_negative],
+                    offset[days_until_aids_is_negative],
+                )
+            )
+            days_until_aids_is_negative = days_since_infection >= days_infection_to_aids
         days_until_aids = days_infection_to_aids - days_since_infection
         date_onset_aids = self.sim.date + pd.to_timedelta(days_until_aids, unit='D')
         for person_id, date in zip(before_aids_idx, date_onset_aids):
@@ -1115,22 +1122,30 @@ class Hiv(Module):
         df.at[person_id, "hv_inf"] = True
         df.at[person_id, "hv_date_inf"] = self.sim.date
 
-        [scale, shape, offset] = self.get_linear_model_parameters([person_id])
-
         # Schedule AIDS onset events for this person
-        date_onset_aids = self.sim.date + self.get_time_from_infection_to_aids(
-             scale.values[0], shape.values[0], offset.values[0]
+        parameters = self.get_time_from_infection_to_aids_distribution_parameters(
+            [person_id]
         )
+        date_onset_aids = (
+            self.sim.date
+            + self.sample_time_from_infection_to_aids_given_parameters(*parameters)
+        ).iloc[0]
         self.sim.schedule_event(
-            event=HivAidsOnsetEvent(self, person_id, cause='AIDS_non_TB'), date=date_onset_aids
+            event=HivAidsOnsetEvent(self, person_id, cause='AIDS_non_TB'),
+            date=date_onset_aids,
         )
 
-    def get_time_from_infection_to_aids(self, scale, shape, offset):
-        """Gives time between onset of infection and AIDS, returning a pd.to_timedelta.
-        For those infected prior to, or at, birth: (this is a draw from an exponential distribution)
-        For those infected after birth but before reaching age 5.0 (this is drawn from a weibull distribution)
-        For adults: (this is a drawn from a weibull distribution (with scale depending on age);
-        * NB. It is further assumed that the time from aids to death is 18 months.
+    def sample_time_from_infection_to_aids_given_parameters(self, scale, shape, offset):
+        """Generate time(s) between onset of infection and AIDS as Pandas time deltas.
+
+        The times are generated from translated Weibull distributions discretised to
+        an integer number of months.
+
+        :param scale: Scale parameters of Weibull distributions (unit: years).
+        :param shape: Shape parameters of Weibull distributions.
+        :param offset: Offset to (negatively) shift Weibull variable by (unit: months).
+
+        :return: Generated time deltas.
         """
 
         months_to_death = self.rng.weibull(shape) * scale * 12
@@ -1138,10 +1153,23 @@ class Hiv(Module):
 
         return pd.to_timedelta(months_to_aids * 30.5, unit='D')
 
-    def get_linear_model_parameters(self, person_id):
-        """ Gives the shape, scale and offset parameters to calculate months_to_aids
-        in get_time_from_infection_to_aids.
-        The parameter values vary depending on the peron's age.
+    def get_time_from_infection_to_aids_distribution_parameters(self, person_ids):
+        """Compute per-person parameters of distribution of time from infection to aids.
+
+        Evaluates three linear models which output age specific scale, shape and offset
+        parameters for the (translated) Weibull distribution used to generate the time
+        from infection to aids for an individual.
+
+        For those infected prior to, or at, birth, a Weibull distribution with shape
+        parameter 1 (equivalent to an exponential distribution) is used.
+
+        For those infected after birth a Weibull distribution with both shape and
+        scale depending on age is used.
+
+        :param person_ids: Iterable of ID indices of individuals to get parameters for.
+
+        :return: Per-person parameters as a 3-tuple ``(scale, shape, offset)`` of
+            ``pandas.Series`` objects.
         """
         subpopulation = self.sim.population.props.loc[person_ids]
         # get the scale parameters (unit: years)
