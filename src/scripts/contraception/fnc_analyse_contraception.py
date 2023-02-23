@@ -9,7 +9,6 @@ data for a table of use and costs of contraception methods and or intervention
 costs (whichever required)
 """
 import logging
-import timeit
 import warnings
 from collections import Counter
 from pathlib import Path
