@@ -1143,25 +1143,15 @@ class Hiv(Module):
         in get_time_from_infection_to_aids.
         The parameter values vary depending on the peron's age.
         """
-        # - get the scale parameters (unit: years)
-        scale = (
-            self.lm["scale_parameter_for_infection_to_death"].predict(
-                self.sim.population.props.loc[person_id]
-            )
+        subpopulation = self.sim.population.props.loc[person_ids]
+        # get the scale parameters (unit: years)
+        scale = self.lm["scale_parameter_for_infection_to_death"].predict(subpopulation)
+        # get the shape parameter
+        shape = self.lm["shape_parameter_for_infection_to_death"].predict(subpopulation)
+        # get the mean months between aids and death (unit: months)
+        offset = self.lm["offset_parameter_for_months_from_aids_to_death"].predict(
+            subpopulation
         )
-        # - get the shape parameter (unit: years)
-        shape = (
-            self.lm["shape_parameter_for_infection_to_death"].predict(
-                self.sim.population.props.loc[person_id]
-            )
-        )
-        # get the mean months between aids and death
-        offset = (
-            self.lm["offset_parameter_for_months_from_aids_to_death"].predict(
-                self.sim.population.props.loc[person_id]
-            )
-        )
-
         return scale, shape, offset
 
     def get_time_from_aids_to_death(self):
