@@ -1670,10 +1670,7 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
 
         # -------- 5) schedule screening for asymptomatic and symptomatic people --------
         # sample from all new active cases (active_idx) and determine whether they will seek a test
-        # year = now.year if now.year < 2050 else 2050
-        year = now.year if now.year < 2020 else 2019
-        if now.year == 2010:
-            year = 2011
+        year = min(2019, max(2011, now.year))
 
         active_testing_rates = p["rate_testing_active_tb"]
 
@@ -1832,7 +1829,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         # if none of the above conditions are present, no further action
         persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
         if not any(x in self.module.symptom_list for x in persons_symptoms):
-            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+            return self.make_appt_footprint({})
 
         # ------------------------- testing ------------------------- #
         # if screening indicates presumptive tb
