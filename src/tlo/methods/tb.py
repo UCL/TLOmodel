@@ -542,7 +542,7 @@ class Tb(Module):
         self.lm["active_tb"] = LinearModel.multiplicative(
             *(predictors + conditional_predictors))
 
-        # risk of replase <2 years following treatment
+        # risk of relapse <2 years following treatment
         self.lm["risk_relapse_2yrs"] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p["monthly_prob_relapse_tx_complete"],
