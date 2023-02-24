@@ -808,32 +808,22 @@ class Tb(Module):
 
         # 4) -------- Define the treatment options --------
         # adult treatment - primary
-        # self.item_codes_for_consumables_required['tb_tx_adult'] = \
-        #     hs.get_item_codes_from_package_name("First line treatment for new TB cases for adults")
         self.item_codes_for_consumables_required['tb_tx_adult'] = \
             hs.get_item_code_from_item_name("Cat. I & III Patient Kit A")
 
         # child treatment - primary
-        # self.item_codes_for_consumables_required['tb_tx_child'] = \
-        #     hs.get_item_codes_from_package_name("First line treatment for new TB cases for children")
         self.item_codes_for_consumables_required['tb_tx_child'] = \
             hs.get_item_code_from_item_name("Cat. I & III Patient Kit B")
 
         # child treatment - primary, shorter regimen
-        # self.item_codes_for_consumables_required['tb_tx_child_shorter'] = \
-        #     hs.get_item_codes_from_package_name("First line treatment for new TB cases for children shorter regimen")
         self.item_codes_for_consumables_required['tb_tx_child_shorter'] = \
             hs.get_item_code_from_item_name("Cat. I & III Patient Kit B")
 
         # adult treatment - secondary
-        # self.item_codes_for_consumables_required['tb_retx_adult'] = \
-        #     hs.get_item_codes_from_package_name("First line treatment for retreatment TB cases for adults")
         self.item_codes_for_consumables_required['tb_retx_adult'] = \
             hs.get_item_code_from_item_name("Cat. II Patient Kit A1")
 
         # child treatment - secondary
-        # self.item_codes_for_consumables_required['tb_retx_child'] = \
-        #     hs.get_item_codes_from_package_name("First line treatment for retreatment TB cases for children")
         self.item_codes_for_consumables_required['tb_retx_child'] = \
             hs.get_item_code_from_item_name("Cat. II Patient Kit A2")
 
