@@ -705,7 +705,7 @@ class Hiv(Module):
         # all those on ART need to have event scheduled for continuation/cessation of treatment
         # this window is 1-90 days (3-monthly prescribing)
         for person in art_idx:
-            days = self.rng.randint(low=1, high=90, size=1, dtype=np.int64)[0]
+            days = self.rng.randint(low=1, high=90, dtype=np.int64)
             self.sim.schedule_event(
                 Hiv_DecisionToContinueTreatment(person_id=person, module=self),
                 self.sim.date + pd.to_timedelta(days),
