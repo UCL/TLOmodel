@@ -1667,10 +1667,7 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
 
         # -------- 5) schedule screening for asymptomatic and symptomatic people --------
         # sample from all new active cases (active_idx) and determine whether they will seek a test
-        # year = now.year if now.year < 2050 else 2050
-        year = now.year if now.year < 2020 else 2019
-        if now.year == 2010:
-            year = 2011
+        year = min(2019, max(2011, now.year))
 
         active_testing_rates = p["rate_testing_active_tb"]
 
