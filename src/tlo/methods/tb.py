@@ -1829,7 +1829,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         # if none of the above conditions are present, no further action
         persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
         if not any(x in self.module.symptom_list for x in persons_symptoms):
-            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+            return self.make_appt_footprint({})
 
         # ------------------------- testing ------------------------- #
         # if screening indicates presumptive tb
