@@ -537,10 +537,10 @@ class Tb(Module):
         ]
         conditional_predictors = [
             Predictor("nc_diabetes").when(True, p['rr_tb_diabetes1']),
-        ]
+        ] if "cardio_metabolic_disorders" in self.sim.modules else []
 
         self.lm["active_tb"] = LinearModel.multiplicative(
-            *(predictors + (conditional_predictors if "cardio_metabolic_disorders" in self.sim.modules else None)))
+            *(predictors + conditional_predictors))
 
         # risk of replase <2 years following treatment
         self.lm["risk_relapse_2yrs"] = LinearModel(
@@ -1460,12 +1460,12 @@ class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
         prop_untreated_mdr = self.module.calculate_untreated_proportion(population, strain="mdr")
 
         scaled_incidence_ds = incidence_year * \
-            p["scaling_factor_WHO"] * \
-            prop_untreated_ds
+                              p["scaling_factor_WHO"] * \
+                              prop_untreated_ds
         scaled_incidence_mdr = incidence_year * \
-            p["prop_mdr2010"] * \
-            p["scaling_factor_WHO"] * \
-            prop_untreated_mdr
+                               p["prop_mdr2010"] * \
+                               p["scaling_factor_WHO"] * \
+                               prop_untreated_mdr
 
         # transmission ds-tb
         self.module.assign_active_tb(population, strain="ds", incidence=scaled_incidence_ds)
@@ -2206,7 +2206,7 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             & (person["age_years"] <= 16) \
             & ~(person["tb_smear"]) \
             & ~person["tb_ever_treated"] \
-                & ~person["tb_diagnosed_mdr"]:
+            & ~person["tb_diagnosed_mdr"]:
             # shorter treatment for child with minimal tb
             treatment_regimen = "tb_tx_child_shorter"
 
@@ -2263,7 +2263,7 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
 
         # if previously treated:
         if ((person["tb_treatment_regimen"] == "tb_retx_adult") or
-                (person["tb_treatment_regimen"] == "tb_retx_child")):
+            (person["tb_treatment_regimen"] == "tb_retx_child")):
 
             # if strain is ds and person previously treated:
             sputum_fup = follow_up_times["ds_retreatment_sputum"].dropna()
