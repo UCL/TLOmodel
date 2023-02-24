@@ -1409,6 +1409,9 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
     * scenario 3 optimistic with program constraints and additional measures to reduce incidence
     * scenario 4 optimistic and additional measures to reduce incidence
 
+    * letters a-i represent supplementary analyses where individual interventions
+    are systematically removed
+
     It only occurs once at param: scenario_start_date,
     called by initialise_simulation
 
