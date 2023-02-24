@@ -1,7 +1,7 @@
 {
   "scenario_script_path": "src/scripts/hiv/projections_jan2023/calibration_script.py",
   "scenario_seed": 0,
-  "runs_per_draw": 1,
+  "runs_per_draw": 3,
   "draws": [
     {
       "draw_number": 0,
@@ -14,8 +14,356 @@
           "scaling_factor_WHO": 1.843554454421913
         }
       }
+    },
+    {
+      "draw_number": 1,
+      "draw_seed": 398764591,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1110174455187396
+        },
+        "Tb": {
+          "scaling_factor_WHO": 1.545382423668301
+        }
+      }
+    },
+    {
+      "draw_number": 2,
+      "draw_seed": 924231285,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1125476200345813
+        },
+        "Tb": {
+          "scaling_factor_WHO": 2.481074536122381
+        }
+      }
+    },
+    {
+      "draw_number": 3,
+      "draw_seed": 1478610112,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1205385013275763
+        },
+        "Tb": {
+          "scaling_factor_WHO": 1.638661861105671
+        }
+      }
+    },
+    {
+      "draw_number": 4,
+      "draw_seed": 441365315,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1454433758512425
+        },
+        "Tb": {
+          "scaling_factor_WHO": 1.981800617730404
+        }
+      }
+    },
+    {
+      "draw_number": 5,
+      "draw_seed": 1537364731,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1154839982750922
+        },
+        "Tb": {
+          "scaling_factor_WHO": 2.032328577841639
+        }
+      }
+    },
+    {
+      "draw_number": 6,
+      "draw_seed": 192771779,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1437851632047928
+        },
+        "Tb": {
+          "scaling_factor_WHO": 1.603029372127741
+        }
+      }
+    },
+    {
+      "draw_number": 7,
+      "draw_seed": 1491434855,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1353620785200272
+        },
+        "Tb": {
+          "scaling_factor_WHO": 1.930618780124794
+        }
+      }
+    },
+    {
+      "draw_number": 8,
+      "draw_seed": 1819583497,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1245571141613386
+        },
+        "Tb": {
+          "scaling_factor_WHO": 1.791260821639936
+        }
+      }
+    },
+    {
+      "draw_number": 9,
+      "draw_seed": 530702035,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.139894323028669
+        },
+        "Tb": {
+          "scaling_factor_WHO": 2.270404167592282
+        }
+      }
+    },
+    {
+      "draw_number": 10,
+      "draw_seed": 626610453,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1292681528946978
+        },
+        "Tb": {
+          "scaling_factor_WHO": 1.802851954815316
+        }
+      }
+    },
+    {
+      "draw_number": 11,
+      "draw_seed": 1650906866,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.130761192154499
+        },
+        "Tb": {
+          "scaling_factor_WHO": 1.6733131184565
+        }
+      }
+    },
+    {
+      "draw_number": 12,
+      "draw_seed": 1879422756,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1264632599727794
+        },
+        "Tb": {
+          "scaling_factor_WHO": 2.220422279620978
+        }
+      }
+    },
+    {
+      "draw_number": 13,
+      "draw_seed": 1277901399,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1279183251091422
+        },
+        "Tb": {
+          "scaling_factor_WHO": 2.300762262011474
+        }
+      }
+    },
+    {
+      "draw_number": 14,
+      "draw_seed": 1682652230,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1168569640393376
+        },
+        "Tb": {
+          "scaling_factor_WHO": 2.46538335042675
+        }
+      }
+    },
+    {
+      "draw_number": 15,
+      "draw_seed": 243580376,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1001871150580713
+        },
+        "Tb": {
+          "scaling_factor_WHO": 2.361683964953577
+        }
+      }
+    },
+    {
+      "draw_number": 16,
+      "draw_seed": 1991416408,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1339476708595318
+        },
+        "Tb": {
+          "scaling_factor_WHO": 2.24854689143017
+        }
+      }
+    },
+    {
+      "draw_number": 17,
+      "draw_seed": 1171049868,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1084372635954784
+        },
+        "Tb": {
+          "scaling_factor_WHO": 2.392803822631557
+        }
+      }
+    },
+    {
+      "draw_number": 18,
+      "draw_seed": 1646868794,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1219244991942767
+        },
+        "Tb": {
+          "scaling_factor_WHO": 1.951467126647859
+        }
+      }
+    },
+    {
+      "draw_number": 19,
+      "draw_seed": 2051556033,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1417390482282065
+        },
+        "Tb": {
+          "scaling_factor_WHO": 2.036531331009576
+        }
+      }
+    },
+    {
+      "draw_number": 20,
+      "draw_seed": 1252949478,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1058177861117988
+        },
+        "Tb": {
+          "scaling_factor_WHO": 2.147093490449445
+        }
+      }
+    },
+    {
+      "draw_number": 21,
+      "draw_seed": 1340754471,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1411347679087765
+        },
+        "Tb": {
+          "scaling_factor_WHO": 1.739471024372465
+        }
+      }
+    },
+    {
+      "draw_number": 22,
+      "draw_seed": 124102743,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1376416378647316
+        },
+        "Tb": {
+          "scaling_factor_WHO": 1.507636969417683
+        }
+      }
+    },
+    {
+      "draw_number": 23,
+      "draw_seed": 2061486254,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1071499198379333
+        },
+        "Tb": {
+          "scaling_factor_WHO": 2.169977342966037
+        }
+      }
+    },
+    {
+      "draw_number": 24,
+      "draw_seed": 292249176,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1146045452053442
+        },
+        "Tb": {
+          "scaling_factor_WHO": 1.58375338499946
+        }
+      }
+    },
+    {
+      "draw_number": 25,
+      "draw_seed": 1686997841,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1481001991477631
+        },
+        "Tb": {
+          "scaling_factor_WHO": 2.071672429811799
+        }
+      }
+    },
+    {
+      "draw_number": 26,
+      "draw_seed": 1827923621,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1317889113795838
+        },
+        "Tb": {
+          "scaling_factor_WHO": 2.4019681155559
+        }
+      }
+    },
+    {
+      "draw_number": 27,
+      "draw_seed": 1443447321,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1038416404025174
+        },
+        "Tb": {
+          "scaling_factor_WHO": 1.869168780971968
+        }
+      }
+    },
+    {
+      "draw_number": 28,
+      "draw_seed": 305097549,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1193776901086404
+        },
+        "Tb": {
+          "scaling_factor_WHO": 1.702850618381829
+        }
+      }
+    },
+    {
+      "draw_number": 29,
+      "draw_seed": 1449105480,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1498697678540039
+        },
+        "Tb": {
+          "scaling_factor_WHO": 2.132567582256653
+        }
+      }
     }
   ],
-  "commit": "7aad74cd5c0ae7bd61bc70fd34a1c18f841ec4d6",
-  "github": "https://github.com/UCL/TLOmodel/tree/7aad74cd5c0ae7bd61bc70fd34a1c18f841ec4d6"
+  "commit": "b6e3d5ee5e5741a296beb500ee8827aa0ca8bbbb",
+  "github": "https://github.com/UCL/TLOmodel/tree/b6e3d5ee5e5741a296beb500ee8827aa0ca8bbbb"
 }
