@@ -57,7 +57,7 @@ ylims_l = [1.08e7, 0.88, 3.6e6, 1.37e6, 0.019]
 # table_use_costs_bool = False
 table_use_costs_bool = True
 # TODO: if there is no debug (ie lookup the key) logging - set the table_use_costs_bool = False and display a Warning
-# If the above is True (otherwise all the table inputs below doesn't mother),
+# If the above is True (otherwise all the table inputs below doesn't matter),
 # years to summarise in the table of use and costs (totals for time periods between each 2 consecutive years;
 # first year included, last year excluded)
 TimePeriods_starts = [2023, 2031, 2041, 2051]
@@ -71,12 +71,11 @@ contraceptives_order = ['pill', 'IUD', 'injections', 'implant', 'male_condom',
 calc_intervention_costs_bool = True
 # %% Round the number of women using contraception? No => None, Yes => set to nearest what to round them
 # (e.g. to nearest thousands => 1e3).
-# rounding_use_to = 1e3
 rounding_use_to = 1e3
 # %% Round the costs? No => None, Yes => set to nearest what to round them.
 rounding_costs_to = 1e6
 #
-# %%%% Parameters only for test runs
+# %%%% Parameters only for test runs (for final runs set them as True-True-False-True)
 # # Do you want to do both analysis? If not (set one of the below to False). The analysis won't be done and the outputs
 # from the other analysis (set to True below) will be used instead.
 do_no_interv_analysis = True
@@ -248,6 +247,8 @@ if table_use_costs_bool:
             use_df_formatted[col_name] = use_df_rounded[col_name].map('{:,.0f}'.format)
         return percentage_use_df.round(1).astype(str) + '%' + " (" + use_df_formatted.astype(str) + ")"
 
+
+    # %% Join & Round percentages and total values of use:
     use_without_perc_val_df = percentage_use_without_df.round(1).astype(str) + '%' + " (" +\
         round_format(use_without_df, rounding_use_to) .astype(str) + ")"
     use_with_perc_val_df = percentage_use_with_df.round(1).astype(str) + '%' + " (" +\
@@ -295,9 +296,6 @@ if table_use_costs_bool:
         ppfp_interv_costs_with_tp_l = interv_costs_with_df['ppfp_intervention_cost'].tolist()
         bar_chart_costs.plot_costs(
             [datestamp_without_log, datestamp_with_log], suffix, list(interv_costs_with_df.index),
-            # TODO: (1) verify it's not longer than simulated without interv (2) allow to table less years than
-            #  simulated with/without interv, eg both simulated till 2099, but allow plot only to 2050 (as max year for
-            #  table)
             cons_costs_without_tp_l, cons_costs_with_tp_l, pop_interv_costs_with_tp_l, ppfp_interv_costs_with_tp_l
         )
 
