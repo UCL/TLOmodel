@@ -12,7 +12,7 @@ from tlo.methods import demography, enhanced_lifestyle, healthsystem, simplified
 # %% Preparation
 
 scenario_filename = 'stunting_analysis_scenario.py'
-outputspath = Path('./outputs/sejjtec@ucl.ac.uk')
+outputspath = Path('./outputs/tbh03@ic.ac.uk')
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
