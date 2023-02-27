@@ -120,6 +120,11 @@ class Stunting(Module):
         'effectiveness_of_food_supplementation_in_stunting_reduction': Parameter(
             Types.REAL,
             'Probability of stunting being reduced by one standard deviation (category) by supplementary feeding.'),
+
+        # The probability of a (severe) stunting person being checked and correctly diagnosed
+        'prob_stunting_diagnosed_at_generic_appt': Parameter(
+            Types.REAL,
+            'Probability of a stunted or severely stunted person being checked and correctly diagnosed'),
     }
 
     PROPERTIES = {
@@ -274,15 +279,17 @@ class Stunting(Module):
         df = self.sim.population.props
         person = df.loc[person_id]
         is_stunted = person.un_HAZ_category in ('HAZ<-3', '-3<=HAZ<-2')
+        p_stunting_diagnosed = self.parameters['prob_stunting_diagnosed_at_generic_appt']
 
         if not is_stunted:
             return
 
-        # Schedule the HSI for provision of treatment
-        self.sim.modules['HealthSystem'].schedule_hsi_event(
-            hsi_event=HSI_Stunting_ComplementaryFeeding(module=self, person_id=person_id),
-            priority=2,  # <-- lower priority that for wasting and most other HSI
-            topen=self.sim.date)
+        # Schedule the HSI for provision of treatment based on the probability of stunting diagnosis
+        if p_stunting_diagnosed > self.rng.random_sample():
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=HSI_Stunting_ComplementaryFeeding(module=self, person_id=person_id),
+                priority=2,  # <-- lower priority that for wasting and most other HSI
+                topen=self.sim.date)
 
     def do_treatment(self, person_id, prob_success):
         """Represent the treatment with supplementary feeding. If treatment is successful, effect the recovery
