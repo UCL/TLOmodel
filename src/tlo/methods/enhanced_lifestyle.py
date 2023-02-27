@@ -66,7 +66,7 @@ class Lifestyle(Module):
         'init_or_low_ex_rural': Parameter(Types.REAL, 'odds ratio low exercise rural'),
         'init_or_low_ex_f': Parameter(Types.REAL, 'odds ratio low exercise female'),
         'init_p_tob_age1519_m_wealth1': Parameter(
-            Types.REAL, 'initital proportion of 15-19 year old men using ' 'tobacco, wealth level 1 '
+            Types.REAL, 'initital proportion of 15-19 year old men using tobacco, wealth level 1 '
         ),
         'init_or_tob_f': Parameter(Types.REAL, 'odds ratio tobacco use females'),
         'init_or_tob_age2039_m': Parameter(Types.REAL, 'odds ratio tobacco use age2039 in men'),
@@ -82,7 +82,7 @@ class Lifestyle(Module):
         'init_dist_mar_stat_age5060': Parameter(Types.LIST, 'proportions never, current, div_wid age 50-60 baseline'),
         'init_dist_mar_stat_agege60': Parameter(Types.LIST, 'proportions never, current, div_wid age 60+ baseline'),
         'init_age2030_w5_some_ed': Parameter(
-            Types.REAL, 'proportions of low wealth 20-30 year olds with some ' 'education at baseline'
+            Types.REAL, 'proportions of low wealth 20-30 year olds with some education at baseline'
         ),
         'init_or_some_ed_age0513': Parameter(Types.REAL, 'odds ratio of some education at baseline age 5-13'),
         'init_or_some_ed_age1320': Parameter(Types.REAL, 'odds ratio of some education at baseline age 13-20'),
@@ -91,11 +91,11 @@ class Lifestyle(Module):
         'init_or_some_ed_age4050': Parameter(Types.REAL, 'odds ratio of some education at baseline age 40-50'),
         'init_or_some_ed_age5060': Parameter(Types.REAL, 'odds ratio of some education at baseline age 50-60'),
         'init_or_some_ed_per_higher_wealth': Parameter(
-            Types.REAL, 'odds ratio of some education at baseline ' 'per higher wealth level'
+            Types.REAL, 'odds ratio of some education at baseline per higher wealth level'
         ),
         'init_prop_age2030_w5_some_ed_sec': Parameter(
             Types.REAL,
-            'proportion of low wealth aged 20-30 with some education who ' 'have secondary education at baseline',
+            'proportion of low wealth aged 20-30 with some education who have secondary education at baseline',
         ),
         'init_or_some_ed_sec_age1320': Parameter(Types.REAL, 'odds ratio of secondary education age 13-20'),
         'init_or_some_ed_sec_age3040': Parameter(Types.REAL, 'odds ratio of secondary education age 30-40'),
@@ -103,15 +103,15 @@ class Lifestyle(Module):
         'init_or_some_ed_sec_age5060': Parameter(Types.REAL, 'odds ratio of secondary education age 50-60'),
         'init_or_some_ed_sec_agege60': Parameter(Types.REAL, 'odds ratio of secondary education age 60+'),
         'init_or_some_ed_sec_per_higher_wealth': Parameter(
-            Types.REAL, 'odds ratio of secondary education ' 'per higher wealth level'
+            Types.REAL, 'odds ratio of secondary education per higher wealth level'
         ),
         'init_p_unimproved_sanitation_urban': Parameter(
-            Types.REAL, 'initial probability of unimproved_sanitation ' 'given urban'
+            Types.REAL, 'initial probability of unimproved_sanitation given urban'
         ),
         # note that init_p_unimproved_sanitation is also used as the one-off probability of unimproved_sanitation '
         #                                                     'true to false upon move from rural to urban'
         'init_or_unimproved_sanitation_rural': Parameter(
-            Types.REAL, 'initial odds ratio of unimproved_sanitation if ' 'rural'
+            Types.REAL, 'initial odds ratio of unimproved_sanitation if rural'
         ),
         'init_p_no_clean_drinking_water_urban': Parameter(
             Types.REAL, 'initial probability of no_clean_drinking_water given urban'
@@ -119,7 +119,7 @@ class Lifestyle(Module):
         # note that init_p_no_clean_drinking_water is also used as the one-off probability of no_clean_drinking_water '
         #                                                     'true to false upon move from rural to urban'
         'init_or_no_clean_drinking_water_rural': Parameter(
-            Types.REAL, 'initial odds ratio of no clean drinking_water ' 'if rural'
+            Types.REAL, 'initial odds ratio of no clean drinking_water if rural'
         ),
         'init_p_wood_burn_stove_urban': Parameter(Types.REAL, 'initial probability of wood_burn_stove given urban'),
         # note that init_p_wood_burn_stove is also used as the one-off probability of wood_burn_stove '
@@ -129,7 +129,7 @@ class Lifestyle(Module):
             Types.REAL, 'initial probability of no_access_handwashing given wealth 1'
         ),
         'init_or_no_access_handwashing_per_lower_wealth': Parameter(
-            Types.REAL, 'initial odds ratio of no_' 'access_handwashing per lower wealth ' 'level'
+            Types.REAL, 'initial odds ratio of no_access_handwashing per lower wealth level'
         ),
         'init_prop_primary_edu': Parameter(Types.REAL, 'proportion of starting primary education at baseline age 5-12'),
         'init_rp_some_ed_age0513': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 5-13'),
@@ -168,10 +168,10 @@ class Lifestyle(Module):
         'rr_higher_bmi_agege50': Parameter(Types.REAL, 'rate ratio for increase in bmi category for age ge 50'),
         'rr_higher_bmi_tob': Parameter(Types.REAL, 'rate ratio for increase in bmi category for tobacco users'),
         'rr_higher_bmi_per_higher_wealth': Parameter(
-            Types.REAL, 'rate ratio for increase in bmi category per higher ' 'wealth level'
+            Types.REAL, 'rate ratio for increase in bmi category per higher wealth level'
         ),
         'rr_higher_bmi_high_sugar': Parameter(
-            Types.REAL, 'rate ratio for increase in bmi category for high sugar ' 'intake'
+            Types.REAL, 'rate ratio for increase in bmi category for high sugar intake'
         ),
         'r_lower_bmi': Parameter(
             Types.REAL, 'probability per 3 months of decrease in bmi category in non tobacco users'
@@ -179,25 +179,25 @@ class Lifestyle(Module):
         'rr_lower_bmi_tob': Parameter(Types.REAL, 'rate ratio for lower bmi category for tobacco users'),
         'rr_lower_bmi_pop_advice_weight': Parameter(
             Types.REAL,
-            'probability per 3 months of decrease in bmi category ' 'given population advice/campaign on weight',
+            'probability per 3 months of decrease in bmi category given population advice/campaign on weight',
         ),
         'r_high_salt_urban': Parameter(Types.REAL, 'probability per 3 months of high salt intake if urban'),
         'rr_high_salt_rural': Parameter(Types.REAL, 'rate ratio for high salt if rural'),
         'r_not_high_salt': Parameter(Types.REAL, 'probability per 3 months of not high salt intake'),
         'rr_not_high_salt_pop_advice_salt': Parameter(
-            Types.REAL, 'probability per 3 months of not high salt given' 'population advice/campaign on salt'
+            Types.REAL, 'probability per 3 months of not high salt givenpopulation advice/campaign on salt'
         ),
         'r_high_sugar': Parameter(Types.REAL, 'probability per 3 months of high sugar intake'),
         'r_not_high_sugar': Parameter(Types.REAL, 'probability per 3 months of not high sugar intake'),
         'rr_not_high_sugar_pop_advice_sugar': Parameter(
-            Types.REAL, 'probability per 3 months of not high sugar given' 'population advice/campaign on sugar'
+            Types.REAL, 'probability per 3 months of not high sugar givenpopulation advice/campaign on sugar'
         ),
         'r_low_ex': Parameter(Types.REAL, 'probability per 3 months of change from not low exercise to low exercise'),
         'r_not_low_ex': Parameter(
             Types.REAL, 'probability per 3 months of change from low exercise to not low exercie'
         ),
         'rr_not_low_ex_pop_advice_exercise': Parameter(
-            Types.REAL, 'probability per 3 months of not low exercise' 'population advice/campaign on exercise'
+            Types.REAL, 'probability per 3 months of not low exercisepopulation advice/campaign on exercise'
         ),
         'rr_low_ex_f': Parameter(Types.REAL, 'risk ratio for becoming low exercise if female rather than male'),
         'rr_low_ex_urban': Parameter(Types.REAL, 'risk ratio for becoming low exercise if urban rather than rural'),
@@ -207,57 +207,57 @@ class Lifestyle(Module):
             'tobacco if male age 15-19 wealth level 1',
         ),
         'r_not_tob': Parameter(
-            Types.REAL, 'probability per 3 months of change from tobacco using to ' 'not tobacco using'
+            Types.REAL, 'probability per 3 months of change from tobacco using to not tobacco using'
         ),
         'rr_tob_f': Parameter(Types.REAL, 'rate ratio tobacco if female'),
         'rr_tob_age2039': Parameter(Types.REAL, 'risk ratio for tobacco using if age 20-39 compared with 15-19'),
         'rr_tob_agege40': Parameter(Types.REAL, 'risk ratio for tobacco using if age >= 40 compared with 15-19'),
         'rr_tob_wealth': Parameter(
-            Types.REAL, 'risk ratio for tobacco using per 1 higher wealth level ' '(higher wealth level = lower wealth)'
+            Types.REAL, 'risk ratio for tobacco using per 1 higher wealth level (higher wealth level = lower wealth)'
         ),
         'rr_not_tob_pop_advice_tobacco': Parameter(
-            Types.REAL, 'probability per 3 months of quitting tobacco given' 'population advice/campaign on tobacco'
+            Types.REAL, 'probability per 3 months of quitting tobacco givenpopulation advice/campaign on tobacco'
         ),
         'r_ex_alc': Parameter(
-            Types.REAL, 'probability per 3 months of change from not excess alcohol to ' 'excess alcohol'
+            Types.REAL, 'probability per 3 months of change from not excess alcohol to excess alcohol'
         ),
         'r_not_ex_alc': Parameter(
-            Types.REAL, 'probability per 3 months of change from excess alcohol to ' 'not excess alcohol'
+            Types.REAL, 'probability per 3 months of change from excess alcohol to not excess alcohol'
         ),
         'rr_ex_alc_f': Parameter(Types.REAL, 'risk ratio for becoming excess alcohol if female rather than male'),
         'rr_not_ex_alc_pop_advice_alcohol': Parameter(
-            Types.REAL, 'probability per 3 months of not excess alcohol given' 'population advice/campaign on alcohol'
+            Types.REAL, 'probability per 3 months of not excess alcohol givenpopulation advice/campaign on alcohol'
         ),
         'r_mar': Parameter(Types.REAL, 'probability per 3 months of marriage when age 15-30'),
         'r_div_wid': Parameter(
-            Types.REAL, 'probability per 3 months of becoming divorced or widowed, ' 'amongst those married'
+            Types.REAL, 'probability per 3 months of becoming divorced or widowed, amongst those married'
         ),
         'r_stop_ed': Parameter(Types.REAL, 'probabilities per 3 months of stopping education if wealth level 5'),
         'rr_stop_ed_lower_wealth': Parameter(
-            Types.REAL, 'relative rate of stopping education per ' '1 lower wealth quintile'
+            Types.REAL, 'relative rate of stopping education per 1 lower wealth quintile'
         ),
         'p_ed_primary': Parameter(Types.REAL, 'probability at age 5 that start primary education if wealth level 5'),
         'rp_ed_primary_higher_wealth': Parameter(
-            Types.REAL, 'relative probability of starting school per 1 ' 'higher wealth level'
+            Types.REAL, 'relative probability of starting school per 1 higher wealth level'
         ),
         'p_ed_secondary': Parameter(
             Types.REAL,
-            'probability at age 13 that start secondary education at 13 ' 'if in primary education and wealth level 5',
+            'probability at age 13 that start secondary education at 13 if in primary education and wealth level 5',
         ),
         'rp_ed_secondary_higher_wealth': Parameter(
-            Types.REAL, 'relative probability of starting secondary ' 'school per 1 higher wealth level'
+            Types.REAL, 'relative probability of starting secondary school per 1 higher wealth level'
         ),
         'r_improved_sanitation': Parameter(
-            Types.REAL, 'probability per 3 months of change from ' 'unimproved_sanitation true to false'
+            Types.REAL, 'probability per 3 months of change from unimproved_sanitation true to false'
         ),
         'r_clean_drinking_water': Parameter(
-            Types.REAL, 'probability per 3 months of change from ' 'drinking_water true to false'
+            Types.REAL, 'probability per 3 months of change from drinking_water true to false'
         ),
         'r_non_wood_burn_stove': Parameter(
-            Types.REAL, 'probability per 3 months of change from ' 'wood_burn_stove true to false'
+            Types.REAL, 'probability per 3 months of change from wood_burn_stove true to false'
         ),
         'r_access_handwashing': Parameter(
-            Types.REAL, 'probability per 3 months of change from ' 'no_access_handwashing true to false'
+            Types.REAL, 'probability per 3 months of change from no_access_handwashing true to false'
         ),
         'start_date_campaign_exercise_increase': Parameter(
             Types.DATE, 'Date of campaign start for increased exercise'
@@ -295,28 +295,28 @@ class Lifestyle(Module):
                                'bmi is np.nan until age 15', categories=[1, 2, 3, 4, 5], ordered=True
         ),
         'li_exposed_to_campaign_weight_reduction': Property(
-            Types.BOOL, 'currently exposed to population campaign for ' 'weight reduction if BMI >= 25'
+            Types.BOOL, 'currently exposed to population campaign for weight reduction if BMI >= 25'
         ),
         'li_low_ex': Property(Types.BOOL, 'currently low exercise'),
         'li_exposed_to_campaign_exercise_increase': Property(
-            Types.BOOL, 'currently exposed to population campaign for ' 'increase exercise if low ex'
+            Types.BOOL, 'currently exposed to population campaign for increase exercise if low ex'
         ),
         'li_high_salt': Property(Types.BOOL, 'currently high salt intake'),
         'li_exposed_to_campaign_salt_reduction': Property(
-            Types.BOOL, 'currently exposed to population campaign for ' 'salt reduction if high salt'
+            Types.BOOL, 'currently exposed to population campaign for salt reduction if high salt'
         ),
         'li_high_sugar': Property(Types.BOOL, 'currently high sugar intake'),
         'li_exposed_to_campaign_sugar_reduction': Property(
-            Types.BOOL, 'currently exposed to population campaign for ' 'sugar reduction if high sugar'
+            Types.BOOL, 'currently exposed to population campaign for sugar reduction if high sugar'
         ),
         'li_tob': Property(Types.BOOL, 'current using tobacco'),
         'li_date_not_tob': Property(Types.DATE, 'date last transitioned from tob to not tob'),
         'li_exposed_to_campaign_quit_smoking': Property(
-            Types.BOOL, 'currently exposed to population campaign to' 'quit smoking if tob'
+            Types.BOOL, 'currently exposed to population campaign toquit smoking if tob'
         ),
         'li_ex_alc': Property(Types.BOOL, 'current excess alcohol'),
         'li_exposed_to_campaign_alcohol_reduction': Property(
-            Types.BOOL, 'currently exposed to population campaign for ' 'alcohol reduction if ex alc'
+            Types.BOOL, 'currently exposed to population campaign for alcohol reduction if ex alc'
         ),
         'li_mar_stat': Property(
             Types.CATEGORICAL, 'marital status {1:never, 2:current, 3:past (widowed or divorced)}', categories=[1, 2, 3]
@@ -325,10 +325,10 @@ class Lifestyle(Module):
         'li_ed_lev': Property(Types.CATEGORICAL, 'education level achieved as of now', categories=[1, 2, 3],
                               ordered=True),
         'li_unimproved_sanitation': Property(
-            Types.BOOL, 'uninproved sanitation - anything other than own or ' 'shared latrine'
+            Types.BOOL, 'uninproved sanitation - anything other than own or shared latrine'
         ),
         'li_no_access_handwashing': Property(
-            Types.BOOL, 'no_access_handwashing - no water, no soap, no other ' 'cleaning agent - as in DHS'
+            Types.BOOL, 'no_access_handwashing - no water, no soap, no other cleaning agent - as in DHS'
         ),
         'li_no_clean_drinking_water': Property(Types.BOOL, 'no drinking water from an improved source'),
         'li_wood_burn_stove': Property(Types.BOOL, 'wood (straw / crop)-burning stove'),
