@@ -416,17 +416,16 @@ def test_record_of_appt_of_tb_start_treatment_hsi(tmpdir, seed):
             hsi_run.did_run
             & (hsi_run['Person_ID'] == person_id)
             & (hsi_run['TREATMENT_ID'] == 'Tb_Treatment'), 'Number_By_Appt_Type_Code'
-        ].to_list(), hsi_run
+        ].to_list()
 
     # 1) If consumables available, the HSI will only be run once and the appt footprint should be TBNew:
-    assert [{'TBNew': 1}] == get_appt_footprints(_consumables_availability='all')[0]
-    # 2) If consumables not available, there should be 5 footprints where the first is TBNew
+    assert [{'TBNew': 1}] == get_appt_footprints(_consumables_availability='all')
+    # 2) If consumables not available, there should be multiple footprints where the first is TBNew
     # and the rest is PharmDispensing
-    # appt_list = get_appt_footprints(_consumables_availability='none')[0]
-    # hsi_run = get_appt_footprints(_consumables_availability='none')[1]
-    # assert len(appt_list) == 5
-    # assert appt_list[0] == [{'TBNew': 1}]
-    # assert len(appt_list) - 1 == len([_x for _i, _x in enumerate(appt_list) if _x == {'PharmDispensing': 1}])
+    appt_list = get_appt_footprints(_consumables_availability='none')
+    assert len(appt_list) > 1
+    assert appt_list[0] == {'TBNew': 1}
+    assert len(appt_list) - 1 == len([_x for _i, _x in enumerate(appt_list) if _x == {'PharmDispensing': 1}])
 
 
 def test_treatment_failure(seed):
