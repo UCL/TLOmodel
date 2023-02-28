@@ -404,7 +404,7 @@ def test_record_of_appt_of_tb_start_treatment_hsi(tmpdir, seed):
         )
         sim.modules['HealthSystem'].schedule_hsi_event(hsi_event=hsi_event, topen=sim.start_date, priority=0.0)
 
-        # let the simulation run 2 months so that the HSI could be rescheduled
+        # let the simulation run 2 months so that the HSI could be rescheduled (by 5 times at most)
         sim.simulate(end_date=sim.start_date + pd.DateOffset(months=2))
 
         # find the appt footprint list
@@ -413,15 +413,16 @@ def test_record_of_appt_of_tb_start_treatment_hsi(tmpdir, seed):
             hsi_run.did_run
             & (hsi_run['Person_ID'] == person_id)
             & (hsi_run['TREATMENT_ID'] == 'Tb_Treatment'), 'Number_By_Appt_Type_Code'
-        ].to_list()
+        ].to_list(), hsi_run
 
     # 1) If consumables available, the HSI will only be run once and the appt footprint should be TBNew:
-    assert [{'TBNew': 1}] == get_appt_footprints(_consumables_availability='all')
+    assert [{'TBNew': 1}] == get_appt_footprints(_consumables_availability='all')[0]
     # 2) If consumables not available, there should be multiple footprints where the first is TBNew
     # and the rest is PharmDispensing
-    # appt_list = get_appt_footprints(_consumables_availability='none')
-    # assert len(appt_list) > 1
-    # assert len(appt_list) <= 5  # the maximum reschedule number is 5.
+    # appt_list = get_appt_footprints(_consumables_availability='none')[0]
+    # hsi_run = get_appt_footprints(_consumables_availability='none')[1]
+    # assert len(appt_list) == 5 # the maximum reschedule number is 5, requiring a period of 4 weeks (NB. the first run
+    # date is the sim.start_date)
     # assert appt_list[0] == [{'TBNew': 1}]
     # assert len(appt_list) - 1 == len([_x for _i, _x in enumerate(appt_list) if _x == {'PharmDispensing': 1}])
 
