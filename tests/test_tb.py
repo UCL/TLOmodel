@@ -362,8 +362,9 @@ def test_treatment_schedule(seed):
 def test_record_of_appt_of_tb_start_treatment_hsi(tmpdir, seed):
     """
     This is to test the appointment footprint recorded with the trigger of HSI_Tb_StartTreatment:
-    if consumables are available, the HSI is scheduled only once and the appt should be TBNew;
-    if consumables are not available, the HSI is scheduled repeatedly and the appt should be PharmDispensing.
+    if consumables are available, the HSI is scheduled only once and the footprint should be TBNew;
+    if consumables are not available, the HSI is scheduled repeatedly where the first footprint is TBNew
+    and the rest should be PharmDispensing.
     """
     def get_appt_footprints(_consumables_availability):
         """
@@ -404,7 +405,9 @@ def test_record_of_appt_of_tb_start_treatment_hsi(tmpdir, seed):
         )
         sim.modules['HealthSystem'].schedule_hsi_event(hsi_event=hsi_event, topen=sim.start_date, priority=0.0)
 
-        # let the simulation run 2 months so that the HSI could be rescheduled (by 5 times at most)
+        # let the simulation run 2 months so that the HSI could be rescheduled.
+        # the maximum reschedule number is 5, requiring a period of 4 weeks (NB. the first run
+        # date is the sim.start_date)
         sim.simulate(end_date=sim.start_date + pd.DateOffset(months=2))
 
         # find the appt footprint list
@@ -417,12 +420,11 @@ def test_record_of_appt_of_tb_start_treatment_hsi(tmpdir, seed):
 
     # 1) If consumables available, the HSI will only be run once and the appt footprint should be TBNew:
     assert [{'TBNew': 1}] == get_appt_footprints(_consumables_availability='all')[0]
-    # 2) If consumables not available, there should be multiple footprints where the first is TBNew
+    # 2) If consumables not available, there should be 5 footprints where the first is TBNew
     # and the rest is PharmDispensing
     # appt_list = get_appt_footprints(_consumables_availability='none')[0]
     # hsi_run = get_appt_footprints(_consumables_availability='none')[1]
-    # assert len(appt_list) == 5 # the maximum reschedule number is 5, requiring a period of 4 weeks (NB. the first run
-    # date is the sim.start_date)
+    # assert len(appt_list) == 5
     # assert appt_list[0] == [{'TBNew': 1}]
     # assert len(appt_list) - 1 == len([_x for _i, _x in enumerate(appt_list) if _x == {'PharmDispensing': 1}])
 
