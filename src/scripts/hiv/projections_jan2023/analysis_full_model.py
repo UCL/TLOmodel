@@ -23,8 +23,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2014, 1, 1)
-popsize = 1000
+end_date = Date(2018, 1, 1)
+popsize = 5000
 scenario = 0
 
 # set up the log config
