@@ -214,8 +214,44 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 fig.show()
                 plt.close(fig)
 
-        # %% Plots of age-breakdown of outcomes patten for each cause:
+        # Simple pie-charts of just TLO estimates
+        normalize_series = lambda ser: ser / ser.sum()
 
+        def shift_row_to_top(df, index_to_shift):
+            idx = [i for i in df.index if i != index_to_shift]
+            return df.loc[[index_to_shift] + idx]
+
+        fig, ax = plt.subplots(figsize=(10, 10))
+        slices = normalize_series(
+            outcome_by_age_pt['Model'].sum().loc['mean'].sort_values(ascending=True)
+        )
+        slices = shift_row_to_top(slices, 'Other')
+        wedges, texts, autotexts = ax.pie(slices.values,
+               labels=slices.index,
+               colors=map(get_color_cause_of_death_or_daly_label, slices.index),
+               startangle=90,
+               autopct='%1.1f%%',
+               )
+
+        threshold = 3.0
+        for label, pct_label in zip(texts, autotexts):
+            pct_value = pct_label.get_text().rstrip('%')
+            if float(pct_value) < threshold:
+                label.set_text('')
+                pct_label.set_text('')
+
+        ax.set_title(f'TLO Model: {what}: {period}', fontsize=18)
+        ax.legend(
+                  title="Causes",
+                  bbox_to_anchor=(0.9, -0.05),
+                  ncol=2,
+        )
+        fig.tight_layout()
+        fig.savefig(make_graph_file_name(f"{what}_{period}_PieChart_Model"))
+        fig.show()
+        plt.close(fig)
+
+        # %% Plots of age-breakdown of outcomes patten for each cause:
         for cause in all_causes:
             try:
                 outcomes_this_cause = pd.concat(
@@ -370,8 +406,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # make_std_graphs(what='Deaths', period='2010-2014')
     # make_std_graphs(what='DALYs', period='2010-2014')
 
-    make_std_graphs(what='Deaths', period='2015-2019')
     make_std_graphs(what='DALYs', period='2015-2019')
+    make_std_graphs(what='Deaths', period='2015-2019')
+
 
 
 if __name__ == "__main__":
