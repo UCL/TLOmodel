@@ -914,7 +914,7 @@ def test_effect_of_vaccine(seed):
     # Get the method that determines dehydration
     get_dehydration = sim.modules['Diarrhoea'].models.get_dehydration
 
-    # increase probability of dehydration to ensure at least one draw per condition
+    # increase probability to ensure at least one case of severe dehydration
     sim.modules['Diarrhoea'].parameters['prob_dehydration_by_rotavirus'] = 0.3
     sim.modules['Diarrhoea'].parameters['prob_dehydration_by_shigella'] = 0.4
 
