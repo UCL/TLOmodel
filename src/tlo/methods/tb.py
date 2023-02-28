@@ -2232,7 +2232,7 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         else:
             if self.number_of_occurrences <= 5:
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
+                    hsi_event=self,
                     topen=self.sim.date + DateOffset(weeks=1),
                     tclose=None,
                     priority=0,
