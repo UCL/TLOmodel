@@ -351,10 +351,6 @@ class Deviance(Module):
                                deviance_function(
                                    data_dict["who_tb_deaths_per_100k"].values[11],
                                    model_dict["TB_mortality_per_100k"][11],
-                               ) +
-                               deviance_function(
-                                   data_dict["who_tb_deaths_per_100k"].values[12],
-                                   model_dict["TB_mortality_per_100k"][12],
                                )
                            ) / 12
 

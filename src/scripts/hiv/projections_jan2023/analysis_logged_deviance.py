@@ -34,8 +34,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
-popsize = 10000
+end_date = Date(2012, 1, 1)
+popsize = 100
 
 scenario = 0
 

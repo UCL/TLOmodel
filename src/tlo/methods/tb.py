@@ -464,156 +464,85 @@ class Tb(Module):
         """
         p = self.parameters
 
-        # if diabetes in NCD module, use as risk factor
-        if "cardio_metabolic_disorders" in self.sim.modules:
+        # risk of active tb
+        predictors = [
+            Predictor("age_years").when("<=15", p["rr_tb_child"]),
+            # -------------- LIFESTYLE -------------- #
+            Predictor().when(
+                'va_bcg_all_doses &'
+                '(hv_inf == False) &'
+                '(age_years <10)',
+                p["rr_tb_bcg"]  # child with bcg
+            ),
+            Predictor("li_bmi").when(">=4", p["rr_tb_obese"]),
+            Predictor("li_ex_alc").when(True, p["rr_tb_alcohol"]),
+            Predictor("li_tob").when(True, p["rr_tb_smoking"]),
+            # -------------- IPT -------------- #
+            Predictor().when(
+                '~hv_inf &'
+                'tb_on_ipt & '
+                'age_years <= 15',
+                p["rr_ipt_child"]),  # hiv- child on ipt
+            Predictor().when(
+                '~hv_inf &'
+                'tb_on_ipt & '
+                'age_years > 15',
+                p["rr_ipt_adult"]),  # hiv- adult on ipt
+            # -------------- PLHIV -------------- #
+            Predictor("hv_inf").when(True, p["rr_tb_hiv"]),
+            Predictor("sy_aids_symptoms").when(">0", p["rr_tb_aids"]),
+            # on ART, no IPT
+            Predictor().when(
+                'hv_inf & '
+                '(hv_art == "on_VL_suppressed") &'
+                '~tb_on_ipt & '
+                'age_years <= 15',
+                p["rr_tb_art_child"]),  # hiv+ child on ART
+            Predictor().when(
+                'hv_inf & '
+                '(hv_art == "on_VL_suppressed") &'
+                '~tb_on_ipt & '
+                'age_years > 15',
+                p["rr_tb_art_adult"]),  # hiv+ adult on ART
+            # on ART, on IPT
+            Predictor().when(
+                'tb_on_ipt & '
+                'hv_inf & '
+                'age_years <= 15 &'
+                '(hv_art == "on_VL_suppressed")',
+                (p["rr_tb_art_child"] * p["rr_ipt_art_child"]),  # hiv+ child on ART+IPT
+            ),
+            Predictor().when(
+                'tb_on_ipt & '
+                'hv_inf & '
+                'age_years > 15 &'
+                '(hv_art == "on_VL_suppressed")',
+                (p["rr_tb_art_adult"] * p["rr_ipt_art_adult"]),  # hiv+ adult on ART+IPT
+            ),
+            # not on ART, on IPT
+            Predictor().when(
+                'tb_on_ipt & '
+                'hv_inf & '
+                'age_years <= 15 &'
+                '(hv_art != "on_VL_suppressed")',
+                p["rr_ipt_child_hiv"],  # hiv+ child IPT only
+            ),
+            Predictor().when(
+                'tb_on_ipt & '
+                'hv_inf & '
+                'age_years > 15 &'
+                '(hv_art != "on_VL_suppressed")',
+                p["rr_ipt_adult_hiv"],  # hiv+ adult IPT only
+            ),
+        ]
+        conditional_predictors = [
+            Predictor("nc_diabetes").when(True, p['rr_tb_diabetes1']),
+        ] if "cardio_metabolic_disorders" in self.sim.modules else []
 
-            self.lm["active_tb"] = LinearModel(
-                LinearModelType.MULTIPLICATIVE,
-                1,
-                Predictor("age_years").when("<=15", p["rr_tb_child"]),
-                # -------------- LIFESTYLE -------------- #
-                Predictor().when(
-                    'va_bcg_all_doses &'
-                    '(hv_inf == False) &'
-                    '(age_years <10)',
-                    p["rr_tb_bcg"]  # child with bcg
-                ),
-                Predictor("li_bmi").when(">=4", p["rr_tb_obese"]),
-                Predictor("nc_diabetes").when(True, p['rr_tb_diabetes1']),
-                Predictor("li_ex_alc").when(True, p["rr_tb_alcohol"]),
-                Predictor("li_tob").when(True, p["rr_tb_smoking"]),
-                # -------------- IPT -------------- #
-                Predictor().when(
-                    '~hv_inf &'
-                    'tb_on_ipt & '
-                    'age_years <= 15',
-                    p["rr_ipt_child"]),  # hiv- child on ipt
-                Predictor().when(
-                    '~hv_inf &'
-                    'tb_on_ipt & '
-                    'age_years > 15',
-                    p["rr_ipt_adult"]),  # hiv- adult on ipt
-                # -------------- PLHIV -------------- #
-                Predictor("hv_inf").when(True, p["rr_tb_hiv"]),
-                Predictor("sy_aids_symptoms").when(">0", p["rr_tb_aids"]),
-                # on ART, no IPT
-                Predictor().when(
-                    'hv_inf & '
-                    '(hv_art == "on_VL_suppressed") &'
-                    '~tb_on_ipt & '
-                    'age_years <= 15',
-                    p["rr_tb_art_child"]),  # hiv+ child on ART
-                Predictor().when(
-                    'hv_inf & '
-                    '(hv_art == "on_VL_suppressed") &'
-                    '~tb_on_ipt & '
-                    'age_years > 15',
-                    p["rr_tb_art_adult"]),  # hiv+ adult on ART
-                # on ART, on IPT
-                Predictor().when(
-                    'tb_on_ipt & '
-                    'hv_inf & '
-                    'age_years <= 15 &'
-                    '(hv_art == "on_VL_suppressed")',
-                    (p["rr_tb_art_child"] * p["rr_ipt_art_child"]),  # hiv+ child on ART+IPT
-                ),
-                Predictor().when(
-                    'tb_on_ipt & '
-                    'hv_inf & '
-                    'age_years > 15 &'
-                    '(hv_art == "on_VL_suppressed")',
-                    (p["rr_tb_art_adult"] * p["rr_ipt_art_adult"]),  # hiv+ adult on ART+IPT
-                ),
-                # not on ART, on IPT
-                Predictor().when(
-                    'tb_on_ipt & '
-                    'hv_inf & '
-                    'age_years <= 15 &'
-                    '(hv_art != "on_VL_suppressed")',
-                    p["rr_ipt_child_hiv"],  # hiv+ child IPT only
-                ),
-                Predictor().when(
-                    'tb_on_ipt & '
-                    'hv_inf & '
-                    'age_years > 15 &'
-                    '(hv_art != "on_VL_suppressed")',
-                    p["rr_ipt_adult_hiv"],  # hiv+ adult IPT only
-                ),
-            )
-        else:
-            self.lm["active_tb"] = LinearModel(
-                LinearModelType.MULTIPLICATIVE,
-                1,
-                Predictor("age_years").when("<=15", p["rr_tb_child"]),
-                # -------------- LIFESTYLE -------------- #
-                Predictor().when(
-                    'va_bcg_all_doses &'
-                    '(hv_inf == False) &'
-                    '(age_years <10)',
-                    p["rr_tb_bcg"]  # child with bcg
-                ),
-                Predictor("li_bmi").when(">=4", p["rr_tb_obese"]),
-                Predictor("li_ex_alc").when(True, p["rr_tb_alcohol"]),
-                Predictor("li_tob").when(True, p["rr_tb_smoking"]),
-                # -------------- IPT -------------- #
-                Predictor().when(
-                    '~hv_inf &'
-                    'tb_on_ipt & '
-                    'age_years <= 15',
-                    p["rr_ipt_child"]),  # hiv- child on ipt
-                Predictor().when(
-                    '~hv_inf &'
-                    'tb_on_ipt & '
-                    'age_years > 15',
-                    p["rr_ipt_adult"]),  # hiv- adult on ipt
-                # -------------- PLHIV -------------- #
-                Predictor("hv_inf").when(True, p["rr_tb_hiv"]),
-                Predictor("sy_aids_symptoms").when(">0", p["rr_tb_aids"]),
-                # on ART, no IPT
-                Predictor().when(
-                    'hv_inf & '
-                    '(hv_art == "on_VL_suppressed") &'
-                    '~tb_on_ipt & '
-                    'age_years <= 15',
-                    p["rr_tb_art_child"]),  # hiv+ child on ART
-                Predictor().when(
-                    'hv_inf & '
-                    '(hv_art == "on_VL_suppressed") &'
-                    '~tb_on_ipt & '
-                    'age_years > 15',
-                    p["rr_tb_art_adult"]),  # hiv+ adult on ART
-                # on ART, on IPT
-                Predictor().when(
-                    'tb_on_ipt & '
-                    'hv_inf & '
-                    'age_years <= 15 &'
-                    '(hv_art == "on_VL_suppressed")',
-                    (p["rr_tb_art_child"] * p["rr_ipt_art_child"]),  # hiv+ child on ART+IPT
-                ),
-                Predictor().when(
-                    'tb_on_ipt & '
-                    'hv_inf & '
-                    'age_years > 15 &'
-                    '(hv_art == "on_VL_suppressed")',
-                    (p["rr_tb_art_adult"] * p["rr_ipt_art_adult"]),  # hiv+ adult on ART+IPT
-                ),
-                # not on ART, on IPT
-                Predictor().when(
-                    'tb_on_ipt & '
-                    'hv_inf & '
-                    'age_years <= 15 &'
-                    '(hv_art != "on_VL_suppressed")',
-                    p["rr_ipt_child_hiv"],  # hiv+ child IPT only
-                ),
-                Predictor().when(
-                    'tb_on_ipt & '
-                    'hv_inf & '
-                    'age_years > 15 &'
-                    '(hv_art != "on_VL_suppressed")',
-                    p["rr_ipt_adult_hiv"],  # hiv+ adult IPT only
-                ),
-            )
+        self.lm["active_tb"] = LinearModel.multiplicative(
+            *(predictors + conditional_predictors))
 
+        # risk of relapse <2 years following treatment
         self.lm["risk_relapse_2yrs"] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p["monthly_prob_relapse_tx_complete"],
@@ -808,32 +737,22 @@ class Tb(Module):
 
         # 4) -------- Define the treatment options --------
         # adult treatment - primary
-        # self.item_codes_for_consumables_required['tb_tx_adult'] = \
-        #     hs.get_item_codes_from_package_name("First line treatment for new TB cases for adults")
         self.item_codes_for_consumables_required['tb_tx_adult'] = \
             hs.get_item_code_from_item_name("Cat. I & III Patient Kit A")
 
         # child treatment - primary
-        # self.item_codes_for_consumables_required['tb_tx_child'] = \
-        #     hs.get_item_codes_from_package_name("First line treatment for new TB cases for children")
         self.item_codes_for_consumables_required['tb_tx_child'] = \
             hs.get_item_code_from_item_name("Cat. I & III Patient Kit B")
 
         # child treatment - primary, shorter regimen
-        # self.item_codes_for_consumables_required['tb_tx_child_shorter'] = \
-        #     hs.get_item_codes_from_package_name("First line treatment for new TB cases for children shorter regimen")
         self.item_codes_for_consumables_required['tb_tx_child_shorter'] = \
             hs.get_item_code_from_item_name("Cat. I & III Patient Kit B")
 
         # adult treatment - secondary
-        # self.item_codes_for_consumables_required['tb_retx_adult'] = \
-        #     hs.get_item_codes_from_package_name("First line treatment for retreatment TB cases for adults")
         self.item_codes_for_consumables_required['tb_retx_adult'] = \
             hs.get_item_code_from_item_name("Cat. II Patient Kit A1")
 
         # child treatment - secondary
-        # self.item_codes_for_consumables_required['tb_retx_child'] = \
-        #     hs.get_item_codes_from_package_name("First line treatment for retreatment TB cases for children")
         self.item_codes_for_consumables_required['tb_retx_child'] = \
             hs.get_item_code_from_item_name("Cat. II Patient Kit A2")
 
@@ -1409,6 +1328,9 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
     * scenario 3 optimistic with program constraints and additional measures to reduce incidence
     * scenario 4 optimistic and additional measures to reduce incidence
 
+    * letters a-i represent supplementary analyses where individual interventions
+    are systematically removed
+
     It only occurs once at param: scenario_start_date,
     called by initialise_simulation
 
@@ -1538,8 +1460,7 @@ class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
         prop_untreated_mdr = self.module.calculate_untreated_proportion(population, strain="mdr")
 
         scaled_incidence_ds = incidence_year * \
-            p["scaling_factor_WHO"] * \
-            prop_untreated_ds
+            p["scaling_factor_WHO"] * prop_untreated_ds
         scaled_incidence_mdr = incidence_year * \
             p["prop_mdr2010"] * \
             p["scaling_factor_WHO"] * \
@@ -1667,10 +1588,7 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
 
         # -------- 5) schedule screening for asymptomatic and symptomatic people --------
         # sample from all new active cases (active_idx) and determine whether they will seek a test
-        # year = now.year if now.year < 2050 else 2050
-        year = now.year if now.year < 2020 else 2019
-        if now.year == 2010:
-            year = 2011
+        year = min(2019, max(2011, now.year))
 
         active_testing_rates = p["rate_testing_active_tb"]
 
@@ -1829,7 +1747,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         # if none of the above conditions are present, no further action
         persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
         if not any(x in self.module.symptom_list for x in persons_symptoms):
-            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+            return self.make_appt_footprint({})
 
         # ------------------------- testing ------------------------- #
         # if screening indicates presumptive tb
@@ -2240,7 +2158,7 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         else:
             if self.number_of_occurrences <= 5:
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
+                    hsi_event=self,
                     topen=self.sim.date + DateOffset(weeks=1),
                     tclose=None,
                     priority=0,
@@ -2293,13 +2211,13 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                 treatment_regimen = "tb_retx_child"
 
         # -------- SHINE Trial shorter paediatric regimen -------- #
+        # shorter treatment for child with minimal tb
         if (self.module.parameters["scenario"] == 5) \
             & (self.sim.date >= self.module.parameters["scenario_start_date"]) \
             & (person["age_years"] <= 16) \
             & ~(person["tb_smear"]) \
             & ~person["tb_ever_treated"] \
                 & ~person["tb_diagnosed_mdr"]:
-            # shorter treatment for child with minimal tb
             treatment_regimen = "tb_tx_child_shorter"
 
         return treatment_regimen

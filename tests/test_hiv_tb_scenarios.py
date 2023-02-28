@@ -93,7 +93,7 @@ def test_scenario_ipt_expansion(seed):
 
     # stop PLHIV getting IPT for purpose of tests
     sim.modules['Tb'].parameters['ipt_coverage'].coverage_plhiv = 0
-    # set coverage of IPT for TB contacts to 1.0
+    # set coverage of IPT for TB contacts to 100%
     sim.modules['Tb'].parameters['ipt_coverage'].coverage_paediatric = 100
 
     # Make the population
