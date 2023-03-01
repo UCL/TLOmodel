@@ -730,7 +730,7 @@ def get_color_coarse_appt(coarse_appt_type: str) -> str:
 
 SHORT_TREATMENT_ID_TO_COLOR_MAP = MappingProxyType({
 
-    '*': 'black',  # todo <--- choose a different colour
+    '*': 'black',
 
     'FirstAttendance*': 'darkgrey',
     'Inpatient*': 'silver',
@@ -808,7 +808,7 @@ CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP = MappingProxyType({
     'Malaria': 'lightsteelblue',
     'Measles': 'cornflowerblue',
     'TB (non-AIDS)': 'mediumslateblue',
-    'Schistosomiasis': 'black',  # todo <---- choose different colour
+    'Schistosomiasis': 'skyblue',
 
     'Heart Disease': 'sienna',
     'Kidney Disease': 'chocolate',
@@ -826,7 +826,7 @@ CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP = MappingProxyType({
 
     'Transport Injuries': 'lightsalmon',
 
-    'Lower Back Pain': 'black',  # todo <---- choose different colour
+    'Lower Back Pain': 'slategray',
 
     'Other': 'dimgrey',
 })
