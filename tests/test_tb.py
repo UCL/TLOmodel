@@ -151,7 +151,7 @@ def test_natural_history(seed):
 
     # todo change active testing rate
     # set very high incidence rates for poll
-    sim.modules['Tb'].parameters['beta'] = 50
+    sim.modules['Tb'].parameters['scaling_factor_WHO'] = 50
     sim.modules["Tb"].parameters["rate_testing_active_tb"]["treatment_coverage"] = 100
     sim.modules['Tb'].parameters['prop_smear_positive'] = 1.0
 
@@ -751,7 +751,7 @@ def test_active_tb_linear_model(seed):
     tb_module = sim.modules['Tb']
 
     # set parameters
-    tb_module.parameters['beta'] = 5
+    tb_module.parameters['scaling_factor_WHO'] = 5
 
     # Make the population
     sim.make_initial_population(n=popsize)
