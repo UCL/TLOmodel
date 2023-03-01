@@ -66,7 +66,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig, ax = plot_legend(
         labels=list(CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.keys()),
         colors=list(CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.values()),
-        title="Cause-of-Death Labels",
+        title="Cause-of-Death or -Disability Labels",
     )
     fig.show()
     plt.close(fig)
