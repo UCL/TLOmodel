@@ -322,9 +322,9 @@ green_cross = mlines.Line2D(
 )
 orange_ci = mlines.Line2D([], [], color="C1", marker=".", markersize=15, label="DHS")
 plt.legend(handles=[red_line, blue_line, green_cross, orange_ci])
-plt.savefig(
-    outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
-)
+# plt.savefig(
+#     outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
+# )
 plt.show()
 
 
