@@ -2240,7 +2240,7 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
         assert isinstance(module, Hiv)
 
         self.TREATMENT_ID = "Hiv_Prevention_Infant"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Under5OPD": 1, "VCTNegative": 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Peds": 1, "VCTNegative": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.referred_from = referred_from
         self.repeat_visits = repeat_visits
