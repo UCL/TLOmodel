@@ -40,7 +40,7 @@ class TestScenario(BaseScenario):
             seed=0,
             start_date=Date(2010, 1, 1),
             end_date=Date(2046, 1, 1),
-            initial_population_size=50000,
+            initial_population_size=100000,
             number_of_draws=1,
             runs_per_draw=5,
         )
