@@ -2213,25 +2213,33 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
 
         # if person not circumcised, perform the procedure
         if not person["li_is_circ"]:
-            # Check/log use of consumables, and do circumcision if materials available
-            # NB. If materials not available, assume the procedure is not carried out for this person following
-            # this particular referral.
+            # Check/log use of consumables, if materials available, do circumcision and schedule follow-up appts
+            # If materials not available, repeat the HSI, i.e., first appt.
             if self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['circ']):
                 # Update circumcision state
                 df.at[person_id, "li_is_circ"] = True
 
-        # Schedule follow-up appts
-        # - if this is the first appointment, follow-up 3 days from procedure;
-        # - if this is the second appointment, follow-up 4 days from second appt;
-        # - if this is the third appointment, do nothing.
-        if self.number_of_occurrences < 3:
-            days_to_fup = 3 if self.number_of_occurrences == 1 else 4
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                self,
-                topen=self.sim.date + DateOffset(days=days_to_fup),
-                tclose=None,
-                priority=0,
-            )
+                # Schedule follow-up appts
+                # - if this is the first appointment, follow-up 3 days from procedure;
+                # - if this is the second appointment, follow-up 4 days from second appt;
+                # - if this is the third appointment, do nothing.
+                if self.number_of_occurrences < 3:
+                    days_to_fup = 3 if self.number_of_occurrences == 1 else 4
+                    self.sim.modules["HealthSystem"].schedule_hsi_event(
+                        self,
+                        topen=self.sim.date + DateOffset(days=days_to_fup),
+                        tclose=None,
+                        priority=0,
+                    )
+            else:
+                # repeat the first appt
+                if self.number_of_occurrences <= 1:
+                    self.sim.modules["HealthSystem"].schedule_hsi_event(
+                        self,
+                        topen=self.sim.date + DateOffset(weeks=1),
+                        tclose=None,
+                        priority=0,
+                    )
 
 
 class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
