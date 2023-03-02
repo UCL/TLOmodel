@@ -2220,20 +2220,23 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
                 df.at[person_id, "li_is_circ"] = True
 
                 # Schedule follow-up appts
-                # - if this is the first appointment, follow-up 3 days from procedure;
-                # - if this is the second appointment, follow-up 4 days from second appt;
-                # - if this is the third appointment, do nothing.
-                if self.number_of_occurrences < 3:
-                    days_to_fup = 3 if self.number_of_occurrences == 1 else 4
-                    self.sim.modules["HealthSystem"].schedule_hsi_event(
-                        self,
-                        topen=self.sim.date + DateOffset(days=days_to_fup),
-                        tclose=None,
-                        priority=0,
-                    )
+                # schedule first follow-up appt, 3 days from procedure;
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    self,
+                    topen=self.sim.date + DateOffset(days=3),
+                    tclose=None,
+                    priority=0,
+                )
+                # schedule second follow-up appt, 7 days from procedure;
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    self,
+                    topen=self.sim.date + DateOffset(days=7),
+                    tclose=None,
+                    priority=0,
+                )
             else:
-                # repeat the first appt
-                if self.number_of_occurrences <= 1:
+                # schedule repeating appt when consumables not available
+                if self.number_of_occurrences <= 3:
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         self,
                         topen=self.sim.date + DateOffset(weeks=1),
