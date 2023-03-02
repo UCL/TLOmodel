@@ -44,7 +44,7 @@ class TestScenario(BaseScenario):
         }
 
     def modules(self):
-        return fullmodel(
+        return *fullmodel(
             resourcefilepath=self.resources,
             use_simplified_births=False,
             module_kwargs={
