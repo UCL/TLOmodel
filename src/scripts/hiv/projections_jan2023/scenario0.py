@@ -3,7 +3,7 @@ This file defines a batch run through which the hiv and tb modules are run acros
 check the batch configuration gets generated without error:
 tlo scenario-run --draw-only src/scripts/hiv/PaperProjectionsNov2022/scenario_0.py
 Run on the batch system using:
-tlo batch-submit src/scripts/hiv/PaperProjectionsNov2022/scenario_0.py
+tlo batch-submit src/scripts/hiv/projections_jan2023/scenario_0.py
 Display information about a job:
 tlo batch-job tlo_q1_demo-123 --tasks
 Download result files for a completed job:
