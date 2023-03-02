@@ -2608,25 +2608,22 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
     @property
     def EXPECTED_APPT_FOOTPRINT(self):
         """Returns the appointment footprint for this person according to their current status:
-         * `NewAdult` for an adult, newly starting (or re-starting) treatment
-         * `EstNonCom` for an adult, already on treatment
+         * `NewAdult` for an adult, newly starting treatment
+         * `EstNonCom` for an adult, re-starting treatment or already on treatment
          (NB. This is an appointment type that assumes that the patient does not have complications.)
          * `Peds` for a child - whether newly starting or already on treatment
         """
         person_id = self.target
 
-        if self.counter_for_drugs_not_available == 0:
-            if self.sim.population.props.at[person_id, 'age_years'] < 15:
-                return self.make_appt_footprint({"Peds": 1})  # Child
+        if self.sim.population.props.at[person_id, 'age_years'] < 15:
+            return self.make_appt_footprint({"Peds": 1})  # Child
 
-            if (self.sim.population.props.at[person_id, 'hv_art'] == "not") & (
-                pd.isna(self.sim.population.props.at[person_id, 'hv_date_treated'])
-            ):
-                return self.make_appt_footprint({"NewAdult": 1})  # Adult newly starting treatment
-            else:
-                return self.make_appt_footprint({"EstNonCom": 1})  # Adult already on treatment
+        if (self.sim.population.props.at[person_id, 'hv_art'] == "not") & (
+            pd.isna(self.sim.population.props.at[person_id, 'hv_date_treated'])
+        ):
+            return self.make_appt_footprint({"NewAdult": 1})  # Adult newly starting treatment
         else:
-            return self.make_appt_footprint({'PharmDispensing': 1})
+            return self.make_appt_footprint({"EstNonCom": 1})  # Adult already on treatment
 
 
 # ---------------------------------------------------------------------------
