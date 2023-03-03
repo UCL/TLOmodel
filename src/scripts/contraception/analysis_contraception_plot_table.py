@@ -1,19 +1,22 @@
 import math
 import time
+from pathlib import Path
 
 import bar_chart_costs
 import fnc_analyse_contraception as a_co
+import numpy as np
 import pandas as pd
 
 time_start = time.time()
-# running time: both analysis all figs & tab for 250K pop till 2050 ~ 34 mins
-################################################################################
-# suffix if you want to (if not just set to '') for the output figure(s) and/or table
-# TODO: estimate from scaling_factor (and if not same for both sims, add them to IDs instead to suffix) & return last
-#  year of sims (the same for that) // separate them as pop_size_simulated & last_year_simulated
+# running time - both analysis all figs & tab for 250K pop till 2050:
+# running 1st time (ie run_analysis = True) ~ 34 mins
+# running 2nd time (ie run_analysis = False) ~ 1.5 min
+########################################################################################################################
+# TODO: estimate the pop_size_simulated from scaling_factor (and if not same for both sims, add them to IDs instead to
+#  suffix) & return last year of sims (the same for that) // separate them as pop_size_simulated & last_year_simulated
 # pop_size_simulated = "2K"
 pop_size_simulated = "250K_till2050"
-branch_name = 'co_2023-02_inclPR807'
+branch_name = 'co_final'
 # which results to use
 # - Without interv
 # datestamp_without_log = '2023-01-20T185253'
@@ -53,6 +56,11 @@ set_ylims_bool = True
 ylims_l = [1.08e7, 0.88, 3.6e6, 1.37e6, 0.019]
 #
 # %%%% table
+# %% Run analysis? If the dataframes from the analysis are not prepared yet, then run the analysis.
+# Otherwise the saved dataframes will be used to create table and costs fig.
+# TODO: Later also the other figs can be prepared outside the analysis script
+# run_analysis = False
+run_analysis = True
 # %% Table the Use and Costs (By Method) Over time?
 # table_use_costs_bool = False
 table_use_costs_bool = True
@@ -87,18 +95,21 @@ print_bool = False
 # %% Plot Consumables & Intervention Costs Over Time from the Table?
 # plot_costs = False
 plot_costs = True
-################################################################################
+########################################################################################################################
+# Actually run analysis for the table, only if you require the table. ;)
+run_analysis = run_analysis and table_use_costs_bool
+
 # suffix for the output figure(s) and/or table
 if set_ylims_bool:
     branch_name = branch_name + '_yaxis-lims-united'
-suffix = '_' + branch_name + '_' + 'useTo_' + str(rounding_use_to) + '_costsTo_' + str(rounding_costs_to) +\
+suffix = '_' + branch_name + '_' + 'useTo_' + str(rounding_use_to) + '_costsTo_' + str(rounding_costs_to) + \
          '_' + pop_size_simulated
 ###
-if table_use_costs_bool:
-    assert do_no_interv_analysis | do_interv_analysis,\
-        "If you request to create a table of use & costs, at least one analysis needs to be done, ie " +\
-        "'do_no_interv_analysis' or 'do_interv_analysis' needs to be True.\n Otherwise, do not request the analysis," +\
-        " ie set 'table_use_costs_bool' to False."
+if run_analysis and table_use_costs_bool:
+    assert do_no_interv_analysis | do_interv_analysis, \
+        "If you request to create a table of use & costs, at least one analysis needs to be done, ie " + \
+        "'do_no_interv_analysis' or 'do_interv_analysis' needs to be True.\n" + \
+        "Otherwise, do not request the analysis, ie set 'table_use_costs_bool' to False."
 
 if not ('ylims_l' in locals() or 'ylims_l' in globals()):
     ylims_l = []
@@ -115,9 +126,20 @@ def fullprint(in_to_print):
         print(in_to_print)
 
 
+dataframe_folder = 'outputs/dataframes'
+# create folder to save dataframes if it doesn't exist yet.
+dataframe_path = Path(dataframe_folder)
+dataframe_path.mkdir(parents=True, exist_ok=True)
+
+
+def save_csv(in_to_save, in_file_name, in_datestamp_log):
+    in_to_save.to_csv(Path(dataframe_folder + '/' + in_file_name + '_' + in_datestamp_log + '.csv'))
+    return 0
+
+
 # Use and Consumables Costs of Contraception methods Over time
 def do_analysis(ID, logFile, in_calc_intervention_costs_bool):
-    use_df, percentage_use_df, costs_df, interv_costs_df, scaling_factor_out =\
+    use_df, percentage_use_df, costs_df, interv_costs_df, scaling_factor_out = \
         a_co.analyse_contraception(
             ID, logFile, suffix,
             # %% Plot Contraception Use Over time?
@@ -131,7 +153,7 @@ def do_analysis(ID, logFile, in_calc_intervention_costs_bool):
             set_ylims_bool, ylims_l,
             # %% Calculate Use and Consumables Costs of Contraception methods within
             # some time periods?
-            table_use_costs_bool, TimePeriods_starts,
+            run_analysis, TimePeriods_starts,
             # List of modern methods in order in which they should appear in table
             contraceptives_order,
             # %% Calculate Contraception Pop and PPFP Intervention Costs over time?
@@ -141,14 +163,46 @@ def do_analysis(ID, logFile, in_calc_intervention_costs_bool):
     return use_df, percentage_use_df, costs_df, interv_costs_df, scaling_factor_out
 
 
+def load_analysis_out(in_analysis_type, in_datestamp_log):
+    use_with_df_loaded = \
+        pd.read_csv(Path(dataframe_folder + '/use_' + in_analysis_type + '_df_' + in_datestamp_log + '.csv'),
+                    index_col=[0])
+    percentage_use_with_df_loaded = \
+        pd.read_csv(Path(dataframe_folder + '/percentage_use_' + in_analysis_type + '_df_' + in_datestamp_log + '.csv'),
+                    index_col=[0])
+    costs_with_df_loaded = \
+        pd.read_csv(Path(dataframe_folder + '/costs_' + in_analysis_type + '_df_' + in_datestamp_log + '.csv'),
+                    index_col=[0, 1])
+    interv_costs_with_df_loaded = \
+        pd.read_csv(Path(dataframe_folder + '/interv_costs_' + in_analysis_type + '_df_' + in_datestamp_log + '.csv'),
+                    index_col=[0])
+    scaling_factor_with_loaded = \
+        pd.read_csv(Path(dataframe_folder + '/scaling_factor_' + in_analysis_type + '_' + in_datestamp_log + '.npy'))
+    return use_with_df_loaded, percentage_use_with_df_loaded, costs_with_df_loaded, interv_costs_with_df_loaded,\
+        scaling_factor_with_loaded
+
+
 if do_no_interv_analysis:
     # WITHOUT interventions:
     print()
     print("analysis without interventions in progress")
     print('--------------------')
     ID_without = datestamp_without_log + "_without"
-    use_without_df, percentage_use_without_df, costs_without_df, interv_costs_without_df, scaling_factor_without =\
+    use_without_df, percentage_use_without_df, costs_without_df, interv_costs_without_df, scaling_factor_without = \
         do_analysis(ID_without, logFile_without, False)  # no calc of intervention costs for sim without interv
+    if not run_analysis:
+        use_without_df, percentage_use_without_df, costs_without_df, interv_costs_without_df, scaling_factor_without =\
+            load_analysis_out('without', datestamp_without_log)
+    else:
+        # save dataframes
+        for (to_save, file_name) in \
+            ((use_without_df, "use_without_df"), (percentage_use_without_df, "percentage_use_without_df"),
+             (costs_without_df, "costs_without_df"), (interv_costs_without_df, "interv_costs_without_df")):
+            save_csv(to_save, file_name, datestamp_without_log)
+        # save scaling factor (numpy float64)
+        np.save(Path(dataframe_folder + '/scaling_factor_without_' + datestamp_without_log + '.npy'),
+                scaling_factor_without)
+        print("Dataframes and scaling factor saved.\n")
 
     if do_interv_analysis:
         # WITH interventions:
@@ -156,15 +210,29 @@ if do_no_interv_analysis:
         print("analysis with interventions in progress")
         print('--------------------')
         ID_with = datestamp_with_log + "_with"
-        use_with_df, percentage_use_with_df, costs_with_df, interv_costs_with_df, scaling_factor_with =\
+        use_with_df, percentage_use_with_df, costs_with_df, interv_costs_with_df, scaling_factor_with = \
             do_analysis(ID_with, logFile_with, calc_intervention_costs_bool)
+        if not run_analysis:
+            # load dataframes & scaling factor
+            use_with_df, percentage_use_with_df, costs_with_df, interv_costs_with_df, scaling_factor_with = \
+                load_analysis_out('with', datestamp_with_log)
+        else:
+            # save dataframes
+            for (to_save, file_name) in \
+                ((use_with_df, "use_witht_df"), (percentage_use_with_df, "percentage_use_with_df"),
+                 (costs_with_df, "costs_with_df"), (interv_costs_with_df, "interv_costs_with_df")):
+                save_csv(to_save, file_name, datestamp_with_log)
+            # save scaling factor (numpy float64)
+            np.save(Path(dataframe_folder + '/scaling_factor_with_' + datestamp_with_log + '.npy'),
+                    scaling_factor_with)
+            print("Dataframes and scaling factor saved.\n")
     else:
         # use as WITH interventions outputs from the sim WITHOUT interventions
+        ID_with = ID_without + "-again"
         use_with_df = use_without_df
         percentage_use_with_df = percentage_use_without_df
         costs_with_df = costs_without_df
         interv_costs_with_df = interv_costs_without_df
-        ID_with = ID_without + "-again"
         scaling_factor_with = scaling_factor_without
 
 else:
@@ -175,12 +243,27 @@ else:
     ID_with = datestamp_with_log + "_with"
     use_with_df, percentage_use_with_df, costs_with_df, interv_costs_with_df, scaling_factor_with = \
         do_analysis(ID_with, logFile_with, calc_intervention_costs_bool)
+    if not run_analysis:
+        # load dataframes & scaling factor
+        use_with_df, percentage_use_with_df, costs_with_df, interv_costs_with_df, scaling_factor_with = \
+            load_analysis_out('with', datestamp_with_log)
+    else:
+        # save dataframes
+        for (to_save, file_name) in \
+            ((use_with_df, "use_witht_df"), (percentage_use_with_df, "percentage_use_with_df"),
+             (costs_with_df, "costs_with_df"), (interv_costs_with_df, "interv_costs_with_df")):
+            save_csv(to_save, file_name, datestamp_with_log)
+        # save scaling factor (numpy float64)
+        np.save(Path(dataframe_folder + '/scaling_factor_with_' + datestamp_with_log + '.npy'),
+                scaling_factor_with)
+        print("Dataframes and scaling factor saved.\n")
+
     # use as WITHOUT interventions outputs from the sim WITH interventions
+    ID_without = ID_with + "-again"
     use_without_df = use_with_df
     percentage_use_without_df = percentage_use_with_df
     costs_without_df = costs_with_df
     interv_costs_without_df = interv_costs_with_df
-    ID_without = ID_with + "-again"
     scaling_factor_without = scaling_factor_with
 
 # prints
@@ -247,12 +330,11 @@ if table_use_costs_bool:
             use_df_formatted[col_name] = use_df_rounded[col_name].map('{:,.0f}'.format)
         return percentage_use_df.round(1).astype(str) + '%' + " (" + use_df_formatted.astype(str) + ")"
 
-
     # %% Join & Round percentages and total values of use:
-    use_without_perc_val_df = percentage_use_without_df.round(1).astype(str) + '%' + " (" +\
-        round_format(use_without_df, rounding_use_to) .astype(str) + ")"
-    use_with_perc_val_df = percentage_use_with_df.round(1).astype(str) + '%' + " (" +\
-        round_format(use_with_df, rounding_use_to) .astype(str) + ")"
+    use_without_perc_val_df = percentage_use_without_df.round(1).astype(str) + '%' + " (" + \
+        round_format(use_without_df, rounding_use_to).astype(str) + ")"
+    use_with_perc_val_df = percentage_use_with_df.round(1).astype(str) + '%' + " (" + \
+        round_format(use_with_df, rounding_use_to).astype(str) + ")"
 
     # %% Round the costs:
     if rounding_costs_to:
@@ -398,7 +480,7 @@ if table_use_costs_bool:
         print("TABLE")
         fullprint(use_costs_table_df)
 
-    output_table_file = r"outputs/output_table_" + use_output + "-use_costs" + "__" + ID_without + "_" + ID_with +\
+    output_table_file = r"outputs/output_table_" + use_output + "-use_costs" + "__" + ID_without + "_" + ID_with + \
                         suffix + ".xlsx"
     writer = pd.ExcelWriter(output_table_file)
     # Mean use rounded to two decimals for the table
