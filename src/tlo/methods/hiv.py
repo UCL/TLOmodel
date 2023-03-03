@@ -285,6 +285,10 @@ class Hiv(Module):
             Types.REAL,
             "relative likelihood of having HIV test for people with HIV",
         ),
+        "hiv_testing_rate_adjustment": Parameter(
+            Types.REAL,
+            "adjustment to current testing rates to account for multiple routes into HIV testing",
+        ),
         "treatment_initiation_adjustment": Parameter(
             Types.REAL,
             "adjustment to current ART coverage levels to account for defaulters",
@@ -1590,7 +1594,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
             testing_rate_adults = test_rates.loc[
                 test_rates.year == current_year, "annual_testing_rate_adults"
-            ].values[0] * 0.75
+            ].values[0] * p["hiv_testing_rate_adjustment"]
 
             # adult testing trends also informed by demographic characteristics
             # relative probability of testing - this may skew testing rates higher or lower than moh reports
