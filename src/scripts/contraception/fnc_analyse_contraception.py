@@ -126,7 +126,7 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
             ax.plot(np.asarray(plot_months), women1549_total * scaling_factor)
             ax.plot(np.asarray(plot_months), women_not_using * scaling_factor)
             ax.plot(np.asarray(plot_months), women_using * scaling_factor, color=(51/255, 160/255, 44/255))
-            plt.axvline(x=interv_implem_date, ls='--', color='gray', label='interventions start')
+            plt.axvline(x=Date(2023, 1, 1), ls='--', color='gray', label='interventions start')
             if in_set_ylims_bool:
                 ax.set_ylim([0, in_ylims_l[0]])
             plt.title("Contraception Use")
