@@ -1353,63 +1353,76 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         if scenario > 0:
             # HIV
             # reduce risk of HIV - applies to whole adult population
-            self.sim.modules["Hiv"].parameters["beta"] = self.sim.modules["Hiv"].parameters["beta"] * scaled_params[
-                "hiv_beta"]
+            self.sim.modules["Hiv"].parameters["beta"] = self.sim.modules["Hiv"].parameters["beta"] * scaled_params.loc[
+                scaled_params.parameter == "hiv_beta", "value"].values[0]
 
             # increase PrEP coverage for FSW after HIV test
-            self.sim.modules["Hiv"].parameters["prob_prep_for_fsw_after_hiv_test"] = scaled_params[
-                "prob_prep_for_fsw_after_hiv_test"]
+            self.sim.modules["Hiv"].parameters["prob_prep_for_fsw_after_hiv_test"] = scaled_params.loc[
+                scaled_params.parameter == "prob_prep_for_fsw_after_hiv_test", "value"].values[0]
 
             # prep poll for AGYW - target to the highest risk
             # increase retention to 75% for FSW and AGYW
-            self.sim.modules["Hiv"].parameters["prob_prep_for_agyw"] = scaled_params["prob_prep_for_agyw"]
-            self.sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_3_months"] = scaled_params[
-                "probability_of_being_retained_on_prep_every_3_months"]
+            self.sim.modules["Hiv"].parameters["prob_prep_for_agyw"] = scaled_params.loc[
+                scaled_params.parameter == "prob_prep_for_agyw", "value"].values[0]
+            self.sim.modules["Hiv"].parameters[
+                "probability_of_being_retained_on_prep_every_3_months"] = scaled_params.loc[
+                scaled_params.parameter == "probability_of_being_retained_on_prep_every_3_months", "value"].values[0]
 
             # increase probability of VMMC after hiv test
-            self.sim.modules["Hiv"].parameters["prob_circ_after_hiv_test"] = scaled_params["prob_circ_after_hiv_test"]
+            self.sim.modules["Hiv"].parameters["prob_circ_after_hiv_test"] = scaled_params.loc[
+                scaled_params.parameter == "prob_circ_after_hiv_test", "value"].values[0]
 
             # increase testing/diagnosis rates, default 2020 0.03/0.25 -> 93% dx
-            self.sim.modules["Hiv"].parameters["hiv_testing_rates"]["annual_testing_rate_children"] = scaled_params[
-                "annual_testing_rate_children"]
-            self.sim.modules["Hiv"].parameters["hiv_testing_rates"]["annual_testing_rate_adults"] = scaled_params[
-                "annual_testing_rate_adults"]
+            self.sim.modules["Hiv"].parameters["hiv_testing_rates"]["annual_testing_rate_children"] = scaled_params.loc[
+                scaled_params.parameter == "annual_testing_rate_children", "value"].values[0]
+            self.sim.modules["Hiv"].parameters["hiv_testing_rates"]["annual_testing_rate_adults"] = scaled_params.loc[
+                scaled_params.parameter == "annual_testing_rate_adults", "value"].values[0]
 
             # ANC testing - value for mothers and infants testing
-            self.sim.modules["Hiv"].parameters["prob_hiv_test_at_anc_or_delivery"] = scaled_params[
-                "prob_hiv_test_at_anc_or_delivery"]
-            self.sim.modules["Hiv"].parameters["prob_hiv_test_for_newborn_infant"] = scaled_params[
-                "prob_hiv_test_for_newborn_infant"]
+            self.sim.modules["Hiv"].parameters["prob_hiv_test_at_anc_or_delivery"] = scaled_params.loc[
+                scaled_params.parameter == "prob_hiv_test_at_anc_or_delivery", "value"].values[0]
+            self.sim.modules["Hiv"].parameters["prob_hiv_test_for_newborn_infant"] = scaled_params.loc[
+                scaled_params.parameter == "prob_hiv_test_for_newborn_infant", "value"].values[0]
 
             # prob ART start if dx, this is already 95% at 2020
-            # self.sim.modules["Hiv"].parameters["prob_start_art_after_hiv_test"] = scaled_params[
-            #   "prob_start_art_after_hiv_test"]
+            # self.sim.modules["Hiv"].parameters["prob_start_art_after_hiv_test"] = scaled_params.loc[
+            #                 scaled_params.parameter ==
+            #   "prob_start_art_after_hiv_test", "value"].values[0]
 
             # viral suppression rates
             # adults already at 95% by 2020
             # change all column values
-            self.sim.modules["Hiv"].parameters["prob_start_art_or_vs"]["virally_suppressed_on_art"] = scaled_params[
-                "virally_suppressed_on_art"]
+            self.sim.modules["Hiv"].parameters["prob_start_art_or_vs"]["virally_suppressed_on_art"] = scaled_params.loc[
+                scaled_params.parameter == "virally_suppressed_on_art", "value"].values[0]
 
             # TB
             # use NTP treatment rates
-            self.sim.modules["Tb"].parameters["rate_testing_active_tb"]["treatment_coverage"] = scaled_params[
-                "tb_treatment_coverage"]
+            self.sim.modules["Tb"].parameters["rate_testing_active_tb"]["treatment_coverage"] = scaled_params.loc[
+                scaled_params.parameter == "tb_treatment_coverage", "value"].values[0]
 
             # increase tb treatment success rates
-            self.sim.modules["Tb"].parameters["prob_tx_success_ds"] = scaled_params["tb_prob_tx_success_ds"]
-            self.sim.modules["Tb"].parameters["prob_tx_success_mdr"] = scaled_params["tb_prob_tx_success_mdr"]
-            self.sim.modules["Tb"].parameters["prob_tx_success_0_4"] = scaled_params["tb_prob_tx_success_0_4"]
-            self.sim.modules["Tb"].parameters["prob_tx_success_5_14"] = scaled_params["tb_prob_tx_success_5_14"]
-            self.sim.modules["Tb"].parameters["prob_tx_success_shorter"] = scaled_params["tb_prob_tx_success_shorter"]
+            self.sim.modules["Tb"].parameters["prob_tx_success_ds"] = scaled_params.loc[
+                scaled_params.parameter == "tb_prob_tx_success_ds", "value"].values[0]
+            self.sim.modules["Tb"].parameters["prob_tx_success_mdr"] = scaled_params.loc[
+                scaled_params.parameter == "tb_prob_tx_success_mdr", "value"].values[0]
+            self.sim.modules["Tb"].parameters["prob_tx_success_0_4"] = scaled_params.loc[
+                scaled_params.parameter == "tb_prob_tx_success_0_4", "value"].values[0]
+            self.sim.modules["Tb"].parameters["prob_tx_success_5_14"] = scaled_params.loc[
+                scaled_params.parameter == "tb_prob_tx_success_5_14", "value"].values[0]
+            self.sim.modules["Tb"].parameters["prob_tx_success_shorter"] = scaled_params.loc[
+                scaled_params.parameter == "tb_prob_tx_success_shorter", "value"].values[0]
 
             # change first-line testing for TB to xpert
-            p["first_line_test"] = scaled_params["first_line_test"]
-            p["second_line_test"] = scaled_params["second_line_test"]
+            p["first_line_test"] = scaled_params.loc[
+                scaled_params.parameter == "first_line_test", "value"].values[0]
+            p["second_line_test"] = scaled_params.loc[
+                scaled_params.parameter == "second_line_test", "value"].values[0]
 
             # increase coverage of IPT
-            p["ipt_coverage"]["coverage_plhiv"] = scaled_params["ipt_coverage_plhiv"]
-            p["ipt_coverage"]["coverage_paediatric"] = scaled_params["ipt_coverage_paediatric"]
+            p["ipt_coverage"]["coverage_plhiv"] = scaled_params.loc[
+                scaled_params.parameter == "ipt_coverage_plhiv", "value"].values[0]
+            p["ipt_coverage"]["coverage_paediatric"] = scaled_params.loc[
+                scaled_params.parameter == "ipt_coverage_paediatric", "value"].values[0]
 
         # remove consumables constraints, all cons available
         if scenario == 2:
