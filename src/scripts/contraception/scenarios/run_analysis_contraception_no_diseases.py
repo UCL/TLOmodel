@@ -26,7 +26,7 @@ NB. For analysis_all_calibration this is enough only if analysis_hsi_description
 needs to be changed accordingly to run properly.
 
 
-CONTRACEPTION PAPER (Tim C at al. 2023):
+CONTRACEPTION PAPER (Tim C et al. 2023):
 ---------------------------------------
 - we decided on 1 draw & 1 run/per draw with 250K initial_population_size
 - use_interventions=False/True according to what we need
