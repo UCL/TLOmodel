@@ -377,7 +377,7 @@ class Tb(Module):
             Types.REAL,
             "probability of referral to TB screening HSI if presenting with TB-related symptoms"
         ),
-        # ------------------ sacle-up parameters for scenario analysis ------------------ #
+        # ------------------ scale-up parameters for scenario analysis ------------------ #
         "scaleup_parameters": Parameter(
             Types.DATA_FRAME,
             "list of parameters and values changed in scenario analysis",
