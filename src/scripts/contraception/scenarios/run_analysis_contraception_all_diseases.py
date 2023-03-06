@@ -1,6 +1,7 @@
 """
 This file defines a batch run of the full model to get sims results to be used by the analysis_contraception_plot_table.
 * Consumables Availability: All
+* Use Interventions: to be set as True or False
 
 Run on the remote batch system using:
 ```tlo batch-submit src/scripts/contraception/scenarios/run_analysis_contraception_all_diseases.py```
@@ -15,13 +16,14 @@ from tlo.scenario import BaseScenario
 
 class RunAnalysisCo(BaseScenario):
     def __init__(self):
-        super().__init__()
-        self.seed = 0
-        self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2050, 12, 31)
-        self.pop_size = 1_000  # <- recommended population size for the runs
-        self.number_of_draws = 1  # <- one scenario
-        self.runs_per_draw = 1  # <- repeated this many times
+        super().__init__(
+            seed=0,
+            start_date=Date(2010, 1, 1),
+            end_date=Date(2050, 12, 31),
+            initial_population_size=1_000,
+            number_of_draws=1,  # <- one scenario
+            runs_per_draw=1,  # <- repeated this many times
+        )
 
     def log_configuration(self):
         return {
