@@ -695,15 +695,14 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
                 # numbers of women using them (there is only one item for condoms), these are calculated from rescaled
                 # numbers of women, hence no need to rescale the costs
                 costs = 0
-                if (i[1] == "male_condom") | (i[1] == "other_modern"):
+                if i[1] == "male_condom":
                     unit_cost = float(in_df_resource_items_pkgs['Unit_Cost'].loc[
                                           in_df_resource_items_pkgs['Intervention_Pkg']
                                           == get_intervention_pkg_name(i[1])])
-                    # costs = unit_cost * nmb of years within the time period (tp_len) * 2 *
-                    # Expected_Units_Per_Case as approximation of number of condom used per 6 months *
-                    # mean nmb of women using
+                    # costs = unit_cost * nmb of years within the time period (tp_len) * 12 months within a year *
+                    # Expected_Units_Per_Case we assume they get every month in a pharmacy * mean nmb of women using
                     costs = unit_cost * \
-                        int(in_df_mean_use['tp_len'].loc[in_df_mean_use.index == i[0]]) * 2 * \
+                        int(in_df_mean_use['tp_len'].loc[in_df_mean_use.index == i[0]]) * 12 * \
                         float(in_df_resource_items_pkgs['Expected_Units_Per_Case'].loc[
                                   in_df_resource_items_pkgs['Intervention_Pkg'] == get_intervention_pkg_name(i[1])
                               ]) * float(in_df_mean_use[i[1]].loc[in_df_mean_use.index == i[0]])
