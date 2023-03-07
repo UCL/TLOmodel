@@ -2213,25 +2213,36 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
 
         # if person not circumcised, perform the procedure
         if not person["li_is_circ"]:
-            # Check/log use of consumables, and do circumcision if materials available
-            # NB. If materials not available, assume the procedure is not carried out for this person following
-            # this particular referral.
+            # Check/log use of consumables, if materials available, do circumcision and schedule follow-up appts
+            # If materials not available, repeat the HSI, i.e., first appt.
             if self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['circ']):
                 # Update circumcision state
                 df.at[person_id, "li_is_circ"] = True
 
-        # Schedule follow-up appts
-        # - if this is the first appointment, follow-up 3 days from procedure;
-        # - if this is the second appointment, follow-up 4 days from second appt;
-        # - if this is the third appointment, do nothing.
-        if self.number_of_occurrences < 3:
-            days_to_fup = 3 if self.number_of_occurrences == 1 else 4
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                self,
-                topen=self.sim.date + DateOffset(days=days_to_fup),
-                tclose=None,
-                priority=0,
-            )
+                # Schedule follow-up appts
+                # schedule first follow-up appt, 3 days from procedure;
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    HSI_Hiv_Circ(person_id=person_id, module=self.module),
+                    topen=self.sim.date + DateOffset(days=3),
+                    tclose=None,
+                    priority=0,
+                )
+                # schedule second follow-up appt, 7 days from procedure;
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    HSI_Hiv_Circ(person_id=person_id, module=self.module),
+                    topen=self.sim.date + DateOffset(days=7),
+                    tclose=None,
+                    priority=0,
+                )
+            else:
+                # schedule repeating appt when consumables not available
+                if self.number_of_occurrences <= 3:
+                    self.sim.modules["HealthSystem"].schedule_hsi_event(
+                        self,
+                        topen=self.sim.date + DateOffset(weeks=1),
+                        tclose=None,
+                        priority=0,
+                    )
 
 
 class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
@@ -2240,7 +2251,7 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
         assert isinstance(module, Hiv)
 
         self.TREATMENT_ID = "Hiv_Prevention_Infant"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Under5OPD": 1, "VCTNegative": 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Peds": 1, "VCTNegative": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.referred_from = referred_from
         self.repeat_visits = repeat_visits
@@ -2313,7 +2324,7 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
         assert isinstance(module, Hiv)
 
         self.TREATMENT_ID = "Hiv_Prevention_Prep"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1, "VCTNegative": 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"PharmDispensing": 1, "VCTNegative": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
 
     def apply(self, person_id, squeeze_factor):
@@ -2608,25 +2619,22 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
     @property
     def EXPECTED_APPT_FOOTPRINT(self):
         """Returns the appointment footprint for this person according to their current status:
-         * `NewAdult` for an adult, newly starting (or re-starting) treatment
-         * `EstNonCom` for an adult, already on treatment
+         * `NewAdult` for an adult, newly starting treatment
+         * `EstNonCom` for an adult, re-starting treatment or already on treatment
          (NB. This is an appointment type that assumes that the patient does not have complications.)
          * `Peds` for a child - whether newly starting or already on treatment
         """
         person_id = self.target
 
-        if self.counter_for_drugs_not_available == 0:
-            if self.sim.population.props.at[person_id, 'age_years'] < 15:
-                return self.make_appt_footprint({"Peds": 1})  # Child
+        if self.sim.population.props.at[person_id, 'age_years'] < 15:
+            return self.make_appt_footprint({"Peds": 1})  # Child
 
-            if (self.sim.population.props.at[person_id, 'hv_art'] == "not") & (
-                pd.isna(self.sim.population.props.at[person_id, 'hv_date_treated'])
-            ):
-                return self.make_appt_footprint({"NewAdult": 1})  # Adult newly starting treatment
-            else:
-                return self.make_appt_footprint({"EstNonCom": 1})  # Adult already on treatment
+        if (self.sim.population.props.at[person_id, 'hv_art'] == "not") & (
+            pd.isna(self.sim.population.props.at[person_id, 'hv_date_treated'])
+        ):
+            return self.make_appt_footprint({"NewAdult": 1})  # Adult newly starting treatment
         else:
-            return self.make_appt_footprint({'PharmDispensing': 1})
+            return self.make_appt_footprint({"EstNonCom": 1})  # Adult already on treatment
 
 
 # ---------------------------------------------------------------------------
