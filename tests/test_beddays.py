@@ -385,7 +385,7 @@ def test_bed_days_property_is_inpatient(tmpdir, seed):
 
 def test_bed_days_released_on_death(tmpdir, seed):
     """Check that bed-days scheduled to be occupied are released upon the death of the person"""
-    _bed_type = bed_types[0]
+    _bed_type = bed_types[2]
     days_simulation_duration = 20
 
     class DummyModule(Module):
@@ -461,7 +461,7 @@ def test_bed_days_released_on_death(tmpdir, seed):
     })
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, beds_availability='all'),
         DummyModule()
     )
     sim.make_initial_population(n=100)
