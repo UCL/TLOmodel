@@ -741,7 +741,7 @@ class CareOfWomenDuringPregnancy(Module):
             # If the intervention will be delivered the dx_manager runs, returning True if the consumables are
             # available and the test detects protein in the urine
             if avail and self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-                    dx_tests_to_run='urine_dipstick_protein', hsi_event=hsi_event):
+                         dx_tests_to_run='urine_dipstick_protein', hsi_event=hsi_event):
 
                 # We use a temporary variable to store if proteinuria is detected
                 proteinuria_diagnosed = True
@@ -770,7 +770,7 @@ class CareOfWomenDuringPregnancy(Module):
         if hypertension_diagnosed or proteinuria_diagnosed:
             if (((df.at[person_id, 'ps_htn_disorders'] == 'severe_pre_eclamp') and mni[person_id]['new_onset_spe']) or
                 (df.at[person_id, 'ps_htn_disorders'] == 'eclampsia') or
-                    not df.at[person_id, 'ac_gest_htn_on_treatment']):
+               not df.at[person_id, 'ac_gest_htn_on_treatment']):
 
                 df.at[person_id, 'ac_to_be_admitted'] = True
 
@@ -1014,7 +1014,7 @@ class CareOfWomenDuringPregnancy(Module):
                 optional='blood_test_equipment')
 
             test = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-                dx_tests_to_run='blood_test_syphilis', hsi_event=hsi_event)
+                         dx_tests_to_run='blood_test_syphilis', hsi_event=hsi_event)
 
             # If the testing occurs and detects syphilis she will get treatment (if consumables are available)
             if avail and test:
@@ -1091,7 +1091,7 @@ class CareOfWomenDuringPregnancy(Module):
                 # If the test accurately detects a woman has gestational diabetes the consumables are recorded and
                 # she is referred for treatment
                 if avail and self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-                        dx_tests_to_run='blood_test_glucose', hsi_event=hsi_event):
+                             dx_tests_to_run='blood_test_glucose', hsi_event=hsi_event):
 
                     logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'gdm_screen'})
                     mni[person_id]['anc_ints'].append('gdm_screen')
@@ -1146,7 +1146,7 @@ class CareOfWomenDuringPregnancy(Module):
             (date_difference > pd.to_timedelta(7, unit='D')) or
             (df.at[individual_id, 'ac_total_anc_visits_current_pregnancy'] > 0) or
             (df.at[individual_id, 'ps_gestational_age_in_weeks'] < 7)
-        ):
+             ):
             return False
 
         # If the woman is an inpatient when ANC1 is scheduled, she will try and return at the next appropriate
@@ -1245,7 +1245,7 @@ class CareOfWomenDuringPregnancy(Module):
         hsi_event.get_consumables(item_codes=self.item_codes_preg_consumables['blood_test_equipment'])
 
         test_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-            dx_tests_to_run='full_blood_count_hb', hsi_event=hsi_event)
+                dx_tests_to_run='full_blood_count_hb', hsi_event=hsi_event)
 
         if test_result and (df.at[person_id, 'ps_anaemia_in_pregnancy'] == 'none'):
             return 'non_severe'
@@ -2132,7 +2132,7 @@ class HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour(HSI_Event, Ind
 
         # If the woman is no longer alive, pregnant is in labour or is an inpatient already then the event doesnt run
         if not df.at[person_id, 'is_alive'] or not df.at[person_id, 'is_pregnant'] or \
-                df.at[person_id, 'la_currently_in_labour'] or df.at[person_id, 'hs_is_inpatient']:
+           df.at[person_id, 'la_currently_in_labour'] or df.at[person_id, 'hs_is_inpatient']:
             return
 
         # We set this admission property to show shes being admitted for induction of labour and hand her over to the
@@ -2333,7 +2333,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
             # to determine mode of delivery here
             if mother.ps_htn_disorders == 'eclampsia':
                 df.at[person_id, 'ac_admitted_for_immediate_delivery'] = self.module.rng.choice(
-                    delivery_mode, p=params['prob_delivery_modes_ec'])
+                    delivery_mode,  p=params['prob_delivery_modes_ec'])
 
             elif mother.ps_htn_disorders == 'severe_pre_eclamp':
                 df.at[person_id, 'ac_admitted_for_immediate_delivery'] = self.module.rng.choice(
