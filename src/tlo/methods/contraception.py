@@ -117,12 +117,15 @@ class Contraception(Module):
                                             )
     }
 
-    def __init__(self, name=None, resourcefilepath=None, use_healthsystem=True):
+    def __init__(self, name=None, resourcefilepath=None, use_healthsystem=True, run_update_contraceptive=True):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
         self.use_healthsystem = use_healthsystem  # if True: initiation and switches to contraception require an HSI;
         # if False: initiation and switching do not occur through an HSI
+
+        self.run_update_contraceptive = run_update_contraceptive  # If 'False' prevents any logic occurring for
+        #                                                           updating/changing/maintaining contraceptive methods.
 
         self.states_that_may_require_HSI_to_switch_to = {'male_condom', 'injections', 'other_modern', 'IUD', 'pill',
                                                          'female_sterilization', 'implant'}
@@ -213,7 +216,7 @@ class Contraception(Module):
         sim.schedule_event(ContraceptionLoggingEvent(self), sim.date)
 
         # Schedule first occurrences of Contraception Poll to occur at the beginning of the simulation
-        sim.schedule_event(ContraceptionPoll(self), sim.date)
+        sim.schedule_event(ContraceptionPoll(self, run_update_contraceptive=self.run_update_contraceptive), sim.date)
 
         # Retrieve the consumables codes for the consumables used
         if self.use_healthsystem:
@@ -495,37 +498,16 @@ class Contraception(Module):
         """Get the item_code for each contraceptive"""
 
         get_items_from_pkg = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
-        get_items_from_name = self.sim.modules['HealthSystem'].get_item_code_from_item_name
 
         _cons_codes = dict()
         _cons_codes['pill'] = get_items_from_pkg('Pill')
         _cons_codes['male_condom'] = get_items_from_pkg('Male condom')
         _cons_codes['other_modern'] = get_items_from_pkg('Female Condom')  # NB. The consumable female condom is used
         # for the contraceptive state of "other_modern method"
-
-        _cons_codes['IUD'] = [get_items_from_name('IUD, Copper T-380A')]
-        _cons_codes['injections'] = [get_items_from_name(item) for item in
-                                     ['Depot-Medroxyprogesterone Acetate 150 mg - 3 monthly',
-                                      'Povidone iodine, solution, 10 %, 5 ml per injection',
-                                      'Syringe, Autodisable SoloShot IX ']]
-
-        _cons_codes['implant'] = [get_items_from_name(item) for item in
-                                  ['Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml',
-                                   'Povidone iodine, solution, 10 %, 5 ml per injection',
-                                   'Jadelle (implant), box of 2_CMST',
-                                   'Implanon (Etonogestrel 68 mg)',
-                                   'Suture pack']]
-
-        _cons_codes['female_sterilization'] = [get_items_from_name(item) for item in
-                                               ['Atropine sulphate, injection, 1 mg in 1 ml ampoule',
-                                                'Diazepam, injection, 5 mg/ml, in 2 ml ampoule',
-                                                'Lidocaine, injection, 1 % in 20 ml vial',
-                                                'Lidocaine, spray, 10%, 500 ml bottle',
-                                                'Tape, adhesive, 2.5 cm wide, zinc oxide, 5 m roll',
-                                                'Paracetamol, tablet, 500 mg',
-                                                'Povidone iodine, solution, 10 %, 5 ml per injection',
-                                                'Suture pack',
-                                                'Gauze, absorbent 90cm x 40m_each_CMST']]
+        _cons_codes['IUD'] = get_items_from_pkg('IUD')
+        _cons_codes['injections'] = get_items_from_pkg('Injectable')
+        _cons_codes['implant'] = get_items_from_pkg('Implant')
+        _cons_codes['female_sterilization'] = get_items_from_pkg('Female sterilization')
 
         assert set(_cons_codes.keys()) == set(self.states_that_may_require_HSI_to_switch_to)
         return _cons_codes
@@ -958,13 +940,28 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         self._number_of_times_run = 0
 
         self.TREATMENT_ID = "Contraception_Routine"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'FamPlan': 1})
         self.ACCEPTED_FACILITY_LEVEL = _facility_level
+
+    @property
+    def EXPECTED_APPT_FOOTPRINT(self):
+        """Return the expected appt footprint based on contraception method and whether the HSI has been rescheduled."""
+        person_id = self.target
+        current_method = self.sim.population.props.loc[person_id].co_contraception
+        if self._number_of_times_run > 0:  # if it is to re-schedule due to unavailable consumables
+            return self.make_appt_footprint({})
+        # if to switch to a method
+        elif self.new_contraceptive in ['female_sterilization']:
+            return self.make_appt_footprint({'MinorSurg': 1})
+        elif self.new_contraceptive != current_method:
+            return self.make_appt_footprint({'FamPlan': 1})
+        # if to maintain on a method
+        elif self.new_contraceptive in ['injections', 'IUD', 'implant']:
+            return self.make_appt_footprint({'FamPlan': 1})
+        elif self.new_contraceptive in ['other_modern', 'pill']:
+            return self.make_appt_footprint({'PharmDispensing': 1})
 
     def apply(self, person_id, squeeze_factor):
         """If the relevant consumable is available, do change in contraception and log it"""
-
-        self._number_of_times_run += 1
 
         person = self.sim.population.props.loc[person_id]
         current_method = person.co_contraception
@@ -993,6 +990,9 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
             self._number_of_times_run < self.module.parameters['max_number_of_runs_of_hsi_if_consumable_not_available']
         ):
             self.reschedule()
+
+    def post_apply_hook(self):
+        self._number_of_times_run += 1
 
     def reschedule(self):
         """Schedule for this same HSI_Event to occur tomorrow."""
