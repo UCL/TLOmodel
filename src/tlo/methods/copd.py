@@ -256,7 +256,7 @@ class CopdModels:
         prob = self.__Prob_SevereExacerbation__.predict(df, self.rng)
         return prob.index[self.rng.random_sample(len(df)) < prob.values].to_list()
 
-    def will_die_Given_severe_exacerbation(self) -> bool:
+    def will_die_given_severe_exacerbation(self) -> bool:
         """Return bool indicating if a person will die due to a severe exacerbation."""
         prob = 0.5
         return prob < self.rng.random_sample()
@@ -340,7 +340,7 @@ class Copd_ExacerbationEvent(Event, IndividualScopeEventMixin):
 
         if self.severe:
             # Work out if the person will die of this exacerbation (if not treated). If they die, they die the next day.
-            if self.module.models.will_die_Given_severe_exacerbation():
+            if self.module.models.will_die_given_severe_exacerbation():
                 self.sim.schedule_event(Copd_Death(self.module, person_id), self.sim.date + pd.DateOffset(days=1))
 
 
