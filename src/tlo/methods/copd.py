@@ -24,7 +24,8 @@ class Copd(Module):
     """ The module responsible for infecting individuals with Chronic Obstructive Pulmonary Diseases (COPD). It defines
      and initialises parameters and properties associated with COPD plus functions and events related to COPD."""
 
-    INIT_DEPENDENCIES = set()
+    INIT_DEPENDENCIES = {'SymptomManager', }
+    ADDITIONAL_DEPENDENCIES = set()
 
     METADATA = {
         Metadata.DISEASE_MODULE,
@@ -38,13 +39,13 @@ class Copd(Module):
     }
 
     CAUSES_OF_DEATH = {
-        #        Chronic Obstructive Pulmonary Diseases
+        # Chronic Obstructive Pulmonary Diseases
         'COPD':  Cause(gbd_causes=sorted(gbd_causes_of_copd_represented_in_this_module),
                        label='COPD')
     }
 
     CAUSES_OF_DISABILITY = {
-        #        Chronic Obstructive Pulmonary Diseases
+        # Chronic Obstructive Pulmonary Diseases
         'COPD': Cause(gbd_causes=sorted(gbd_causes_of_copd_represented_in_this_module),
                       label='COPD')
     }
