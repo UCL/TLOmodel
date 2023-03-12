@@ -301,12 +301,12 @@ class Copd_PollEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[idx_will_progress_to_next_category, 'ch_lungfunction'])
 
         # Schedule Moderate Exacerbation
-        for id in self.module.models.will_get_moderate_exacerbation(df):
+        for id in self.module.models.will_get_moderate_exacerbation(df.loc[df.is_alive]):
             self.sim.schedule_event(Copd_ExacerbationEvent(self.module, id, severe=False),
                                     gen_random_date_in_next_three_months())
 
         # Schedule Severe Exacerbation (persons can have a moderate and severe exacerbation in the same 3-month period)
-        for id in self.module.models.will_get_severe_exacerbation(df):
+        for id in self.module.models.will_get_severe_exacerbation(df.loc[df.is_alive]):
             self.sim.schedule_event(Copd_ExacerbationEvent(self.module, id, severe=True),
                                     gen_random_date_in_next_three_months())
 
@@ -376,7 +376,6 @@ class HSI_Copd_Treatment_OnSevereExcaberbation(HSI_Event, IndividualScopeEventMi
 
     def apply(self, person_id, squeeze_factor):
         """What to do when someone presents for care with an exacerbation.
-         * Give an inhaler if they do not already have one (it is assumed that once they have one, they always have one)
          * Provide treatment: whatever is available at this facility at this time (no referral).
         """
         # todo: Consider whether person should be referred to higher level.
