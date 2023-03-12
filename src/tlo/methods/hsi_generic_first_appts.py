@@ -318,6 +318,10 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
             # are either over 50 or younger than 50 but are selected to get tested.
             sim.modules['CardioMetabolicDisorders'].determine_if_will_be_investigated(person_id=person_id)
 
+        if 'Copd' in sim.modules:
+            if ('breathless_moderate' in symptoms) or ('breathless_severe' in symptoms):
+                sim.modules['Copd'].do_when_present_with_breathless(person_id=person_id, hsi_event=hsi_event)
+
 
 def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
     """The actions are taken during the non-emergency generic HSI, HSI_GenericEmergencyFirstApptAtFacilityLevel1."""
@@ -446,3 +450,7 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
     if 'Alri' in sim.modules:
         if (age <= 5) and (('cough' in symptoms) or ('difficult_breathing' in symptoms)):
             sim.modules['Alri'].on_presentation(person_id=person_id, hsi_event=hsi_event)
+
+    if 'Copd' in sim.modules:
+        if ('breathless_moderate' in symptoms) or ('breathless_severe' in symptoms):
+            sim.modules['Copd'].do_when_present_with_breathless(person_id=person_id, hsi_event=hsi_event)
