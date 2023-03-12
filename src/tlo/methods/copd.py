@@ -301,7 +301,7 @@ class Copd_PollEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[idx_will_progress_to_next_category, 'co_lungfunction'])
 
         # Schedule Moderate Exacerbation
-        for id in self.module.models.will_get_moderate_exacerbation(df):
+        for id in self.module.models.will_get_moderate_exacerbation(df.loc[df.is_alive]):
             self.sim.schedule_event(Copd_ExacerbationEvent(self.module, id, severe=False),
                                     gen_random_date_in_next_three_months())
 
