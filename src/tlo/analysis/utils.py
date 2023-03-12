@@ -1054,15 +1054,12 @@ def plot_clustered_stacked(dfall, ax, color_for_column_map=None, legends=True, H
         ax.add_artist(l1)
 
 
-def get_mappers_in_fullmodel():
+def get_mappers_in_fullmodel(resourcefilepath: Path, outputpath: Path):
     """Returns the cause-of-death, cause-of-disability and cause-of-DALYS mappers that are created in a run of the
     fullmodel."""
-    root = get_root_path()
-    tmpdir = root / 'outputs'
-    resourcefilepath = root / 'resources'
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=0, log_config={'filename': 'test_log', 'directory': tmpdir})
+    sim = Simulation(start_date=start_date, seed=0, log_config={'filename': 'test_log', 'directory': outputpath})
 
     from tlo.methods.fullmodel import fullmodel
     sim.register(*fullmodel(resourcefilepath=resourcefilepath))

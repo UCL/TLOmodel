@@ -637,9 +637,9 @@ def test_mapper_for_dalys_created(tmpdir, seed):
     assert daly_mapper_from_gbd_causes['Congenital birth defects'] == 'Chosen_Label_For_CBD'
 
 
-def test_get_mappers_in_fullmodel():
+def test_get_mappers_in_fullmodel(tmpdir):
     """Check that `get_mappers_in_fullmodel` works as expected; and, in particular that things that cause death but not
     disability are captured correctly as a cause of DALYS (i.e., 'Congenital birth defects'). """
 
-    mappers = get_mappers_in_fullmodel()
+    mappers = get_mappers_in_fullmodel(resourcefilepath=resourcefilepath, outputpath=tmpdir)
     assert mappers['daly_mapper_from_gbd_cause_to_common_label']['Congenital birth defects'] != 'Other'
