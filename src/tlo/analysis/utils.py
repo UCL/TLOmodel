@@ -758,6 +758,7 @@ SHORT_TREATMENT_ID_TO_COLOR_MAP = MappingProxyType({
 
     'Depression*': 'indianred',
     'Epilepsy*': 'red',
+    'Copd*': 'lightcoral',
 
     'Rti*': 'lightsalmon',
 })
@@ -819,6 +820,7 @@ CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP = MappingProxyType({
 
     'Depression / Self-harm': 'goldenrod',
     'Epilepsy': 'gold',
+    'COPD': 'khaki',
 
     'Transport Injuries': 'lightsalmon',
 

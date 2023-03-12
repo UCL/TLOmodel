@@ -38,15 +38,15 @@ class Copd(Module):
     }
 
     CAUSES_OF_DEATH = {
-        'ChronicObstructivePulmonaryDiseases':
-            Cause(gbd_causes=sorted(gbd_causes_of_copd_represented_in_this_module),
-                  label='COPD')
+        #        Chronic Obstructive Pulmonary Diseases
+        'COPD':  Cause(gbd_causes=sorted(gbd_causes_of_copd_represented_in_this_module),
+                       label='COPD')
     }
 
     CAUSES_OF_DISABILITY = {
-        'ChronicObstructivePulmonaryDiseases':
-            Cause(gbd_causes=sorted(gbd_causes_of_copd_represented_in_this_module),
-                  label='COPD')
+        #        Chronic Obstructive Pulmonary Diseases
+        'COPD': Cause(gbd_causes=sorted(gbd_causes_of_copd_represented_in_this_module),
+                      label='COPD')
     }
 
     PARAMETERS = {
@@ -168,6 +168,7 @@ class Copd(Module):
 
 class CopdModels:
     """Helper class containing the models needed for the Copd module."""
+
     def __init__(self, params, rng):
         self.params = params
         self.rng = rng
@@ -180,32 +181,32 @@ class CopdModels:
 
         # The probability (in a 3-month period) of having a Moderate Exacerbation
         self.__Prob_ModerateExacerbation__ = LinearModel.multiplicative(
-                Predictor(
-                    'co_lungfunction',
-                    conditions_are_exhaustive=True,
-                    conditions_are_mutually_exclusive=True
-                ) .when(0, 0.0)
-                  .when(1, 0.0)
-                  .when(2, 0.0)
-                  .when(3, 0.01)
-                  .when(4, 0.05)
-                  .when(5, 0.10)
-                  .when(6, 0.20)
+            Predictor(
+                'co_lungfunction',
+                conditions_are_exhaustive=True,
+                conditions_are_mutually_exclusive=True
+            ).when(0, 0.0)
+            .when(1, 0.0)
+            .when(2, 0.0)
+            .when(3, 0.01)
+            .when(4, 0.05)
+            .when(5, 0.10)
+            .when(6, 0.20)
         )
 
         # The probability (in a 3-month period) of having a Moderate Exacerbation
         self.__Prob_SevereExacerbation__ = LinearModel.multiplicative(
-                Predictor(
-                    'co_lungfunction',
-                    conditions_are_exhaustive=True,
-                    conditions_are_mutually_exclusive=True
-                ) .when(0, 0.0)
-                  .when(1, 0.0)
-                  .when(2, 0.0)
-                  .when(3, 0.001)
-                  .when(4, 0.005)
-                  .when(5, 0.010)
-                  .when(6, 0.020)
+            Predictor(
+                'co_lungfunction',
+                conditions_are_exhaustive=True,
+                conditions_are_mutually_exclusive=True
+            ).when(0, 0.0)
+            .when(1, 0.0)
+            .when(2, 0.0)
+            .when(3, 0.001)
+            .when(4, 0.005)
+            .when(5, 0.010)
+            .when(6, 0.020)
         )
 
     def init_lung_function(self, df: pd.DataFrame) -> pd.Series:
@@ -346,18 +347,18 @@ class Copd_Death(Event, IndividualScopeEventMixin):
     """This event will cause the person to die to 'COPD' if the person's property `co_will_die_this_episode` is True.
     It is scheduled when a Severe Exacerbation is lethal, but can be cancelled if a subsequent treatment is successful.
     """
+
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
     def apply(self, person_id):
-
         person = self.sim.population.props.loc[person_id, ['is_alive', 'co_will_die_this_episode']]
 
         # Check if they should still die and, if so, cause the death
         if person.is_alive and person.co_will_die_this_episode:
             self.sim.modules['Demography'].do_death(
                 individual_id=person_id,
-                cause='ChronicObstructivePulmonaryDiseases',
+                cause='COPD',
                 originating_module=self.module,
             )
 
