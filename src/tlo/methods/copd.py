@@ -376,7 +376,6 @@ class HSI_Copd_Treatment_OnSevereExcaberbation(HSI_Event, IndividualScopeEventMi
 
     def apply(self, person_id, squeeze_factor):
         """What to do when someone presents for care with an exacerbation.
-         * Give an inhaler if they do not already have one (it is assumed that once they have one, they always have one)
          * Provide treatment: whatever is available at this facility at this time (no referral).
         """
         # todo: Consider whether person should be referred to higher level.
