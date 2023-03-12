@@ -17,7 +17,7 @@ from tlo.util import random_date
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-co_lungfunction_cats = list(range(7))
+ch_lungfunction_cats = list(range(7))
 
 
 class Copd(Module):
@@ -55,15 +55,15 @@ class Copd(Module):
     }
 
     PROPERTIES = {
-        'co_lungfunction': Property(
+        'ch_lungfunction': Property(
             Types.CATEGORICAL, 'Lung function of the person.'
                                'NaN for those under 15; on a 7-point scale for others, from 0 (Perfect) to 6 (End-Stage'
-                               ' COPD).', categories=co_lungfunction_cats, ordered=True,
+                               ' COPD).', categories=ch_lungfunction_cats, ordered=True,
         ),
-        'co_will_die_this_episode': Property(
+        'ch_will_die_this_episode': Property(
             Types.BOOL, 'Whether this person will die during a current severe exacerbation'
         ),
-        'co_has_inhaler': Property(
+        'ch_has_inhaler': Property(
             Types.BOOL, 'Whether the person is currently using an inhaler'
         ),
     }
@@ -88,9 +88,9 @@ class Copd(Module):
     def initialise_population(self, population):
         """ Set initial values of properties values for all individuals"""
         df = population.props
-        df.loc[df.is_alive, 'co_lungfunction'] = self.models.init_lung_function(df.loc[df.is_alive])
-        df.loc[df.is_alive, 'co_will_die_this_episode'] = False
-        df.loc[df.is_alive, 'co_has_inhaler'] = False
+        df.loc[df.is_alive, 'ch_lungfunction'] = self.models.init_lung_function(df.loc[df.is_alive])
+        df.loc[df.is_alive, 'ch_will_die_this_episode'] = False
+        df.loc[df.is_alive, 'ch_has_inhaler'] = False
 
     def initialise_simulation(self, sim):
         """ Get ready for simulation start:
@@ -103,16 +103,16 @@ class Copd(Module):
     def on_birth(self, mother_id, child_id):
         """ Initialise COPD properties for a newborn individual."""
         props = {
-            'co_lungfunction': self.models.at_birth_lungfunction(child_id),
-            'co_will_die_this_episode': False,
-            'co_has_inhaler': False
+            'ch_lungfunction': self.models.at_birth_lungfunction(child_id),
+            'ch_will_die_this_episode': False,
+            'ch_has_inhaler': False
         }
         self.sim.population.props.loc[child_id, props.keys()] = props.values()
 
     def report_daly_values(self):
-        """Return disability weight for alive persons, based on the current status of co_lungfunction."""
+        """Return disability weight for alive persons, based on the current status of ch_lungfunction."""
         df = self.sim.population.props
-        return df.loc[df.is_alive, 'co_lungfunction'].map(self.models.disability_weight_given_lungfunction)
+        return df.loc[df.is_alive, 'ch_lungfunction'].map(self.models.disability_weight_given_lungfunction)
 
     def define_symptoms(self):
         """Define and register Symptoms"""
@@ -134,7 +134,7 @@ class Copd(Module):
     def do_logging(self):
         """Log current states."""
         df = self.sim.population.props
-        counts = df.loc[df.is_alive].groupby(by=['sex', 'age_range', 'co_lungfunction']).size()
+        counts = df.loc[df.is_alive].groupby(by=['sex', 'age_range', 'ch_lungfunction']).size()
         proportions = counts.unstack().apply(lambda row: row / row.sum(), axis=1).stack()
         logger.info(
             key='copd_prevalence',
@@ -145,10 +145,10 @@ class Copd(Module):
     def give_inhaler(self, person_id: int, hsi_event: HSI_Event):
         """Give inhaler if person does not already have one"""
         df = self.sim.population.props
-        has_inhaler = df.at[person_id, 'co_has_inhaler']
+        has_inhaler = df.at[person_id, 'ch_has_inhaler']
         if not has_inhaler:
             if hsi_event.get_consumables(self.item_codes['inhaler']):
-                df.at[person_id, 'co_has_inhaler'] = True
+                df.at[person_id, 'ch_has_inhaler'] = True
 
     def do_when_present_with_breathless(self, person_id: int, hsi_event: HSI_Event):
         """What to do when a person presents at the generic first appt HSI with a symptom of `breathless_severe` or
@@ -174,7 +174,7 @@ class CopdModels:
         self.params = params
         self.rng = rng
 
-        # The chance (in a 3-month period) of progressing to the next (greater) category of co_lungfunction
+        # The chance (in a 3-month period) of progressing to the next (greater) category of ch_lungfunction
         self.Prob_Progress_LungFunction = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             0.02,
@@ -183,7 +183,7 @@ class CopdModels:
         # The probability (in a 3-month period) of having a Moderate Exacerbation
         self.__Prob_ModerateExacerbation__ = LinearModel.multiplicative(
             Predictor(
-                'co_lungfunction',
+                'ch_lungfunction',
                 conditions_are_exhaustive=True,
                 conditions_are_mutually_exclusive=True
             ).when(0, 0.0)
@@ -198,7 +198,7 @@ class CopdModels:
         # The probability (in a 3-month period) of having a Moderate Exacerbation
         self.__Prob_SevereExacerbation__ = LinearModel.multiplicative(
             Predictor(
-                'co_lungfunction',
+                'ch_lungfunction',
                 conditions_are_exhaustive=True,
                 conditions_are_mutually_exclusive=True
             ).when(0, 0.0)
@@ -211,14 +211,14 @@ class CopdModels:
         )
 
     def init_lung_function(self, df: pd.DataFrame) -> pd.Series:
-        """Returns the values for co_lungfunction for an initial population described in `df`."""
+        """Returns the values for ch_lungfunction for an initial population described in `df`."""
         # todo Persons are assigned a random category - this should be updated
-        cats = co_lungfunction_cats
+        cats = ch_lungfunction_cats
         probs = np.ones(len(cats)) / len(cats)
         return pd.Series(index=df.index, data=self.rng.choice(cats, p=probs, size=len(df)))
 
     def at_birth_lungfunction(self, person_id: int) -> int:
-        """Returns value for co_lungfunction for the person at birth."""
+        """Returns value for ch_lungfunction for the person at birth."""
         return 0  # todo This might need to be associated with birth weight.
 
     def prob_livesaved_given_treatment(self, oxygen: bool, amino_phylline: bool):
@@ -270,7 +270,7 @@ class Copd_PollEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         """
-         * Progress persons to higher categories of co_lungfunction
+         * Progress persons to higher categories of ch_lungfunction
          * Schedules Exacerbation (Moderate / Severe) events.
          * Log current states.
         """
@@ -281,11 +281,11 @@ class Copd_PollEvent(RegularEvent, PopulationScopeEventMixin):
 
         df = population.props
 
-        # Progres the co_lungfunction property (alive, aged 15+, and not in the highest category already)
+        # Progres the ch_lungfunction property (alive, aged 15+, and not in the highest category already)
         eligible_to_progress_category = (
             df.is_alive
             & (df.age_years >= 15)
-            & (df['co_lungfunction'] != co_lungfunction_cats[-1])
+            & (df['ch_lungfunction'] != ch_lungfunction_cats[-1])
         )
 
         def increment_category(ser):
@@ -297,8 +297,8 @@ class Copd_PollEvent(RegularEvent, PopulationScopeEventMixin):
         will_progress_to_next_category = self.module.models.Prob_Progress_LungFunction.predict(
             df.loc[eligible_to_progress_category], self.module.rng)
         idx_will_progress_to_next_category = will_progress_to_next_category[will_progress_to_next_category].index
-        df.loc[idx_will_progress_to_next_category, 'co_lungfunction'] = increment_category(
-            df.loc[idx_will_progress_to_next_category, 'co_lungfunction'])
+        df.loc[idx_will_progress_to_next_category, 'ch_lungfunction'] = increment_category(
+            df.loc[idx_will_progress_to_next_category, 'ch_lungfunction'])
 
         # Schedule Moderate Exacerbation
         for id in self.module.models.will_get_moderate_exacerbation(df):
@@ -345,7 +345,7 @@ class Copd_ExacerbationEvent(Event, IndividualScopeEventMixin):
 
 
 class Copd_Death(Event, IndividualScopeEventMixin):
-    """This event will cause the person to die to 'COPD' if the person's property `co_will_die_this_episode` is True.
+    """This event will cause the person to die to 'COPD' if the person's property `ch_will_die_this_episode` is True.
     It is scheduled when a Severe Exacerbation is lethal, but can be cancelled if a subsequent treatment is successful.
     """
 
@@ -353,10 +353,10 @@ class Copd_Death(Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
 
     def apply(self, person_id):
-        person = self.sim.population.props.loc[person_id, ['is_alive', 'co_will_die_this_episode']]
+        person = self.sim.population.props.loc[person_id, ['is_alive', 'ch_will_die_this_episode']]
 
         # Check if they should still die and, if so, cause the death
-        if person.is_alive and person.co_will_die_this_episode:
+        if person.is_alive and person.ch_will_die_this_episode:
             self.sim.modules['Demography'].do_death(
                 individual_id=person_id,
                 cause='COPD',
@@ -389,4 +389,4 @@ class HSI_Copd_Treatment_OnSevereExcaberbation(HSI_Event, IndividualScopeEventMi
             amino_phylline=self.get_consumables(self.module.item_codes['amino_phylline'])
         )
         if self.module.rng.random_sample() < prob_treatment_success:
-            df.at[person_id, 'co_will_die_this_episode'] = False
+            df.at[person_id, 'ch_will_die_this_episode'] = False

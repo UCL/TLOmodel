@@ -1,7 +1,7 @@
 """Test file for the COPD module."""
 
 # todo Emmanuel - let's add some more tests here! For example...
-#  1) If everyone starts at co_lungfunction=0 and then is high progression rate --> everyone ends up in category 6
+#  1) If everyone starts at ch_lungfunction=0 and then is high progression rate --> everyone ends up in category 6
 #  2) Zero risk of exacerbations --> No exacerbations scheduled; High risk --> Many exacerbations scheduled
 #  3) Exacerbation (moderate) --> leads to moderate symptoms --> leads to non-emergency care seeking --> gets inhaler
 #  4) Exacerbation (severe) --> leads to severe symptoms --> leads to emergency care seeking --> gets treatment
