@@ -306,7 +306,7 @@ class Copd_PollEvent(RegularEvent, PopulationScopeEventMixin):
                                     gen_random_date_in_next_three_months())
 
         # Schedule Severe Exacerbation (persons can have a moderate and severe exacerbation in the same 3-month period)
-        for id in self.module.models.will_get_severe_exacerbation(df):
+        for id in self.module.models.will_get_severe_exacerbation(df.loc[df.is_alive]):
             self.sim.schedule_event(Copd_ExacerbationEvent(self.module, id, severe=True),
                                     gen_random_date_in_next_three_months())
 
