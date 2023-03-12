@@ -7,7 +7,7 @@ import pytest
 from pytest import approx
 
 from tlo import Date, Module, Simulation, logging
-from tlo.analysis.utils import parse_log_file
+from tlo.analysis.utils import get_mappers_in_fullmodel, parse_log_file
 from tlo.events import Event, IndividualScopeEventMixin
 from tlo.methods import (
     Metadata,
@@ -22,7 +22,7 @@ from tlo.methods import (
 from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.diarrhoea import increase_risk_of_death, make_treatment_perfect
-from tlo.methods.fullmodel import fullmodel, get_mappers_in_fullmodel
+from tlo.methods.fullmodel import fullmodel
 from tlo.methods.healthburden import Get_Current_DALYS
 
 try:

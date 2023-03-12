@@ -1,10 +1,7 @@
 from pathlib import Path
 from typing import Dict, List, Optional
 
-import pandas as pd
-
-from tlo import Date, Module, Simulation
-from tlo.analysis.utils import get_root_path, parse_log_file
+from tlo import Module
 from tlo.methods import (
     alri,
     bladder_cancer,
@@ -131,33 +128,3 @@ def fullmodel(
         )
         for module_class in module_classes
     ]
-
-
-def get_mappers_in_fullmodel():
-    """Returns the cause-of-death, cause-of-disability and cause-of-DALYS mappers that are created in a run of the
-    fullmodel."""
-    root = get_root_path()
-    tmpdir = root / 'outputs'
-    resourcefilepath = root / 'resources'
-
-    start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=0, log_config={'filename': 'test_log', 'directory': tmpdir})
-    sim.register(*fullmodel(resourcefilepath=resourcefilepath))
-    sim.make_initial_population(n=10_000)
-    sim.simulate(end_date=start_date)
-    demog_log = parse_log_file(sim.log_filepath)['tlo.methods.demography']
-    hb_log = parse_log_file(sim.log_filepath)['tlo.methods.healthburden']
-
-    keys = [
-        (demog_log, 'mapper_from_tlo_cause_to_common_label'),
-        (demog_log, 'mapper_from_gbd_cause_to_common_label'),
-        (hb_log, 'disability_mapper_from_tlo_cause_to_common_label'),
-        (hb_log, 'disability_mapper_from_gbd_cause_to_common_label'),
-        (hb_log, 'daly_mapper_from_gbd_cause_to_common_label'),
-        (hb_log, 'daly_mapper_from_tlo_cause_to_common_label'),
-    ]
-
-    def extract_mapper(key_tuple):
-        return pd.Series(key_tuple[0].get(key_tuple[1]).drop(columns={'date'}).loc[0]).to_dict()
-
-    return {k[1]: extract_mapper(k) for k in keys}

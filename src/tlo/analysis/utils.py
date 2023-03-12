@@ -18,7 +18,7 @@ import numpy as np
 import pandas as pd
 import squarify
 
-from tlo import Date, logging, util
+from tlo import Date, Simulation, logging, util
 from tlo.logging.reader import LogData
 from tlo.util import create_age_range_lookup
 
@@ -1052,3 +1052,36 @@ def plot_clustered_stacked(dfall, ax, color_for_column_map=None, legends=True, H
         l1 = ax.legend(_handles[:n_col], _labels[:n_col], loc=[1.01, 0.5])
         _ = plt.legend(n, dfall.keys(), loc=[1.01, 0.1])
         ax.add_artist(l1)
+
+
+def get_mappers_in_fullmodel():
+    """Returns the cause-of-death, cause-of-disability and cause-of-DALYS mappers that are created in a run of the
+    fullmodel."""
+    root = get_root_path()
+    tmpdir = root / 'outputs'
+    resourcefilepath = root / 'resources'
+
+    start_date = Date(2010, 1, 1)
+    sim = Simulation(start_date=start_date, seed=0, log_config={'filename': 'test_log', 'directory': tmpdir})
+
+    from tlo.methods.fullmodel import fullmodel
+    sim.register(*fullmodel(resourcefilepath=resourcefilepath))
+
+    sim.make_initial_population(n=10_000)
+    sim.simulate(end_date=start_date)
+    demog_log = parse_log_file(sim.log_filepath)['tlo.methods.demography']
+    hb_log = parse_log_file(sim.log_filepath)['tlo.methods.healthburden']
+
+    keys = [
+        (demog_log, 'mapper_from_tlo_cause_to_common_label'),
+        (demog_log, 'mapper_from_gbd_cause_to_common_label'),
+        (hb_log, 'disability_mapper_from_tlo_cause_to_common_label'),
+        (hb_log, 'disability_mapper_from_gbd_cause_to_common_label'),
+        (hb_log, 'daly_mapper_from_gbd_cause_to_common_label'),
+        (hb_log, 'daly_mapper_from_tlo_cause_to_common_label'),
+    ]
+
+    def extract_mapper(key_tuple):
+        return pd.Series(key_tuple[0].get(key_tuple[1]).drop(columns={'date'}).loc[0]).to_dict()
+
+    return {k[1]: extract_mapper(k) for k in keys}
