@@ -65,7 +65,7 @@ class Tb(Module):
     }
 
     CAUSES_OF_DISABILITY = {
-        "TB": Cause(gbd_causes="Tuberculosis", label="non_AIDS_TB"),
+        "TB": Cause(gbd_causes="Tuberculosis", label="TB (non-AIDS)"),
     }
 
     # Declaration of the specific symptoms that this module will use
@@ -1508,14 +1508,44 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
 
         # remove consumables constraints, all cons available
         if scenario == 2:
-            # list only things that change: constraints on consumables
-            new_parameters = {
-                'cons_availability': 'all',
-            }
-            self.sim.schedule_event(
-                HealthSystemChangeParameters(
-                    self.sim.modules['HealthSystem'], parameters=new_parameters),
-                self.sim.date)
+            # tb consumables
+            tmp = list(self.module.item_codes_for_consumables_required.values())
+            # select dict items
+            tb_cons = [None] * len(tmp)
+            for cons in range(len(tmp)):
+                if isinstance(tmp[cons], dict):
+                    # extract item code
+                    item_code = list(tmp[cons].keys())[0]
+                    tb_cons[cons] = item_code
+                else:
+                    tb_cons[cons] = tmp[cons]
+
+            # hiv consumables
+            tmp2 = list(self.sim.modules["Hiv"].item_codes_for_consumables_required.values())
+            # select dict items
+            hiv_cons = [None] * len(tmp2)
+            for cons in range(len(tmp2)):
+                if isinstance(tmp2[cons], dict):
+                    # extract item code
+                    item_code = list(tmp2[cons].keys())[0]
+                    hiv_cons[cons] = item_code
+                else:
+                    hiv_cons[cons] = tmp2[cons]
+
+            # join consumables lists
+            all_cons = [*tb_cons, *hiv_cons]
+
+            for item_code in all_cons:
+                self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                        {item_code: 1.0})
+
+            # new_parameters = {
+            #     'cons_availability': 'all',
+            # }
+            # self.sim.schedule_event(
+            #     HealthSystemChangeParameters(
+            #         self.sim.modules['HealthSystem'], parameters=new_parameters),
+            #     self.sim.date)
 
 
 class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):

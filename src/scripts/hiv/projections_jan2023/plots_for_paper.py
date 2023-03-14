@@ -10,6 +10,7 @@ import os
 
 import matplotlib.lines as mlines
 import matplotlib.patches as mpatches
+from matplotlib.lines import Line2D
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -260,11 +261,21 @@ tx2_norm.loc["Hiv_Prevention_Prep_median"] = tx2_norm.loc["Hiv_Prevention_Prep_m
     "Hiv_Prevention_Prep_median", 13]
 
 # rename treatment IDs
-appt_types = ["TB test", "HIV test", "TB X-ray", "HIV tx", "VMMC",
+appt_types = ["TB test", "HIV test", "HIV tx", "VMMC", "HIV \n infant prophylaxis", "TB X-ray",
               "TB tx", "TB follow-up", "TB IPT", "PrEP"]
 tx0_norm.index = appt_types
 tx1_norm.index = appt_types
 tx2_norm.index = appt_types
+
+# insert zeros for IPT and PrEP pre-introduction (actual values are slightly above 0)
+tx0_norm.loc['TB IPT'][0:4] = 0
+tx1_norm.loc['TB IPT'][0:4] = 0
+tx2_norm.loc['TB IPT'][0:4] = 0
+
+tx0_norm.loc['PrEP'][0:8] = 0
+tx1_norm.loc['PrEP'][0:8] = 0
+tx2_norm.loc['PrEP'][0:8] = 0
+
 
 years = list((range(2010, 2036, 1)))
 
@@ -276,10 +287,7 @@ tx2_norm.columns = years
 # %%:  ---------------------------------- PLOTS ------------------------------------
 
 plt.style.use('ggplot')
-cmap = sns.cm.mako
-
-berry = lacroix.colorList('CranRaspberry')
-berry_sns = sns.color_palette(berry)  # creates a seaborn palette.
+cmap = sns.cm.mako_r
 
 width = 0.15
 years_num = pd.Series(years)
@@ -289,12 +297,12 @@ tx1_norm.columns = years_num
 tx2_norm.columns = years_num
 
 # Make plot
-fig, axs = plt.subplots(ncols=4, nrows=2,
+fig, axs = plt.subplots(ncols=3, nrows=1,
                         # sharex=True,
                         # sharey=True,
                         constrained_layout=True,
-                        figsize=(12, 6),
-                        gridspec_kw=dict(width_ratios=[4,4,4,0.2]))
+                        figsize=(14, 5),
+                        gridspec_kw=dict(width_ratios=[4,4,4]))
 sns.heatmap(tx0_norm,
                  xticklabels=5,
                  yticklabels=1,
@@ -302,9 +310,9 @@ sns.heatmap(tx0_norm,
                  linewidth=0.5,
                  cmap=cmap,
             cbar=False,
-            ax=axs[0,0]
+            ax=axs[0]
             )
-axs[0,0].set_title("Baseline", size=10)
+axs[0].set_title("Baseline", size=10)
 
 sns.heatmap(tx1_norm,
                  xticklabels=5,
@@ -313,9 +321,9 @@ sns.heatmap(tx1_norm,
                  linewidth=0.5,
                  cmap=cmap,
             cbar=False,
-            ax=axs[0,1]
+            ax=axs[1]
             )
-axs[0,1].set_title("Scale-up", size=10)
+axs[1].set_title("Scale-up", size=10)
 
 sns.heatmap(tx2_norm,
                  xticklabels=5,
@@ -323,22 +331,10 @@ sns.heatmap(tx2_norm,
                  vmax=3,
                  linewidth=0.5,
                  cmap=cmap,
-            cbar=False,
-            ax=axs[0,2]
+            cbar=True,
+            ax=axs[2]
             )
-axs[0,2].set_title("Constrained scale-up", size=10)
-
-cb = fig.colorbar(axs[0, 0].collections[0],
-                  cax=axs[0, 3],
-                  # ticks=[0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0],
-                  drawedges=False)
-cb.set_ticks([0.05, 0.5, 1.0, 1.5, 2.0, 2.5, 2.95])
-cb.set_ticklabels([0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0])
-cb.ax.tick_params(labelsize=9)
-cb.outline.set_edgecolor('white')
-
-# axs[1,2].axis("off")
-# axs[1,3].axis("off")
+axs[2].set_title("Scale-up no constraints", size=10)
 
 plt.tick_params(axis="both", which="major", labelsize=9)
 fig.savefig(outputspath / "HS_use.png")
@@ -348,18 +344,25 @@ plt.show()
 
 
 # frac HCW time
+
+berry = lacroix.colorList('CranRaspberry')
+baseline_colour = berry[5]
+sc1_colour = berry[3]
+sc2_colour = berry[2]
+
+
 fig, ax = plt.subplots()
 
-ax.bar(years_num[13:26], hcw1["median"].loc[13:25], width, color=berry[4])
-ax.bar(years_num[13:26] + width, hcw2["median"].loc[13:25], width, color=berry[3])
+ax.bar(years_num[13:26], hcw1["median"].loc[13:25], width, color=sc1_colour)
+ax.bar(years_num[13:26] + width, hcw2["median"].loc[13:25], width, color=sc2_colour)
 
 ax.set_ylabel("% difference", rotation=90, labelpad=15)
-ax.set_ylim([-35, 5])
+ax.set_ylim([-10, 10])
 
 ax.yaxis.set_label_position("left")
-ax.legend(["Scale-up", "Constrained scale-up"], frameon=False)
+ax.legend(["Scale-up", "Scale-up \n no constraints"], frameon=False)
+plt.tight_layout()
 fig.savefig(outputspath / "Frac_HWC_time.png")
-
 plt.show()
 
 
@@ -586,6 +589,93 @@ tb_deaths1 = summarise_tb_deaths(results1, py1)
 tb_deaths2 = summarise_tb_deaths(results2, py2)
 
 
+# %%:  ---------------------------------- PLOTS ---------------------------------- #
+
+fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=2, ncols=2,
+                                             sharex=True,
+                                             constrained_layout=True,
+                                             figsize=(9, 8))
+fig.suptitle('')
+
+# HIV incidence
+ax1.plot(inc0.index, inc0["median"] * 100000, "-", color=baseline_colour)
+ax1.fill_between(inc0.index, inc0["lower"] * 100000, inc0["upper"] * 100000, color=baseline_colour, alpha=0.2)
+
+ax1.plot(inc1.index, inc1["median"] * 100000, "-", color=sc1_colour)
+ax1.fill_between(inc1.index, inc1["lower"] * 100000, inc1["upper"] * 100000, color=sc1_colour, alpha=0.2)
+
+ax1.plot(inc2.index, inc2["median"] * 100000, "-", color=sc2_colour)
+ax1.fill_between(inc2.index, inc2["lower"] * 100000, inc2["upper"] * 100000, color=sc2_colour, alpha=0.2)
+
+ax1.set_ylim([0, 700])
+
+ax1.set(title='HIV',
+        ylabel='Incidence per 100,000 py')
+
+# TB incidence
+ax2.plot(tb_inc0.index, tb_inc0["median"] * 100000, "-", color=baseline_colour)
+ax2.fill_between(tb_inc0.index, tb_inc0["lower"] * 100000, tb_inc0["upper"] * 100000, color=baseline_colour, alpha=0.2)
+
+ax2.plot(tb_inc1.index, tb_inc1["median"] * 100000, "-", color=sc1_colour)
+ax2.fill_between(tb_inc1.index, tb_inc1["lower"] * 100000, tb_inc1["upper"] * 100000, color=sc1_colour, alpha=0.2)
+
+ax2.plot(tb_inc2.index, tb_inc2["median"] * 100000, "-", color=sc2_colour)
+ax2.fill_between(tb_inc2.index, tb_inc2["lower"] * 100000, tb_inc2["upper"] * 100000, color=sc2_colour, alpha=0.2)
+
+ax2.set_ylim([0, 700])
+
+ax2.set(title='TB',
+        ylabel='')
+
+# HIV deaths
+ax3.plot(py0.index, aids_deaths0["median_aids_deaths_rate_100kpy"], "-", color=baseline_colour)
+ax3.fill_between(py0.index, aids_deaths0["lower_aids_deaths_rate_100kpy"],
+                 aids_deaths0["upper_aids_deaths_rate_100kpy"], color=baseline_colour, alpha=0.2)
+
+ax3.plot(py0.index, aids_deaths1["median_aids_deaths_rate_100kpy"], "-", color=sc1_colour)
+ax3.fill_between(py0.index, aids_deaths1["lower_aids_deaths_rate_100kpy"],
+                 aids_deaths1["upper_aids_deaths_rate_100kpy"], color=sc1_colour, alpha=0.2)
+
+ax3.plot(py0.index, aids_deaths2["median_aids_deaths_rate_100kpy"], "-", color=sc2_colour)
+ax3.fill_between(py0.index, aids_deaths2["lower_aids_deaths_rate_100kpy"],
+                 aids_deaths2["upper_aids_deaths_rate_100kpy"], color=sc2_colour, alpha=0.2)
+
+ax3.set_ylim([0, 300])
+
+ax3.set(title='',
+        ylabel='Mortality per 100,000 py')
+
+# TB deaths
+ax4.plot(py0.index, tb_deaths0["median_tb_deaths_rate_100kpy"], "-", color=baseline_colour)
+ax4.fill_between(py0.index, tb_deaths0["lower_tb_deaths_rate_100kpy"],
+                 tb_deaths0["upper_tb_deaths_rate_100kpy"], color=baseline_colour, alpha=0.2)
+
+ax4.plot(py0.index, tb_deaths1["median_tb_deaths_rate_100kpy"], "-", color=sc1_colour)
+ax4.fill_between(py0.index, tb_deaths1["lower_tb_deaths_rate_100kpy"],
+                 tb_deaths1["upper_tb_deaths_rate_100kpy"], color=sc1_colour, alpha=0.2)
+
+ax4.plot(py0.index, tb_deaths2["median_tb_deaths_rate_100kpy"], "-", color=sc2_colour)
+ax4.fill_between(py0.index, tb_deaths2["lower_tb_deaths_rate_100kpy"],
+                 tb_deaths2["upper_tb_deaths_rate_100kpy"], color=sc2_colour, alpha=0.2)
+
+ax4.set(title='',
+        ylabel='')
+ax4.set_ylim([0, 100])
+
+plt.tick_params(axis="both", which="major", labelsize=10)
+
+# handles for legend
+l_baseline = mlines.Line2D([], [], color=baseline_colour, label="Baseline")
+l_sc1 = mlines.Line2D([], [], color=sc1_colour, label="Scale-up")
+l_sc2 = mlines.Line2D([], [], color=sc2_colour, label="Scale-up \n no constraints")
+
+plt.legend(handles=[l_baseline, l_sc1, l_sc2])
+
+fig.savefig(outputspath / "Epi_outputs.png")
+
+plt.show()
+
+# %% EPI OUTPUTS - start at 2022
 
 # %%:  ---------------------------------- PLOTS ---------------------------------- #
 
@@ -596,65 +686,65 @@ fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=2, ncols=2,
 fig.suptitle('')
 
 # HIV incidence
-ax1.plot(inc0.index, inc0["median"] * 100000, "-", color=berry[5])
-ax1.fill_between(inc0.index, inc0["lower"] * 100000, inc0["upper"] * 100000, color=berry[5], alpha=0.2)
+ax1.plot(inc0.index[11:], inc0["median"][11:] * 100000, "-", color=baseline_colour)
+ax1.fill_between(inc0.index[11:], inc0["lower"][11:] * 100000, inc0["upper"][11:] * 100000, color=baseline_colour, alpha=0.2)
 
-ax1.plot(inc1.index, inc1["median"] * 100000, "-", color=berry[4])
-ax1.fill_between(inc1.index, inc1["lower"] * 100000, inc1["upper"] * 100000, color=berry[4], alpha=0.2)
+ax1.plot(inc1.index[11:], inc1["median"][11:] * 100000, "-", color=sc1_colour)
+ax1.fill_between(inc1.index[11:], inc1["lower"][11:] * 100000, inc1["upper"][11:] * 100000, color=sc1_colour, alpha=0.2)
 
-ax1.plot(inc2.index, inc2["median"] * 100000, "-", color=berry[3])
-ax1.fill_between(inc2.index, inc2["lower"] * 100000, inc2["upper"] * 100000, color=berry[3], alpha=0.2)
+ax1.plot(inc2.index[11:], inc2["median"][11:] * 100000, "-", color=sc2_colour)
+ax1.fill_between(inc2.index[11:], inc2["lower"][11:] * 100000, inc2["upper"][11:] * 100000, color=sc2_colour, alpha=0.2)
 
-ax1.set_ylim([0, 700])
+ax1.set_ylim([0, 250])
 
 ax1.set(title='HIV',
         ylabel='Incidence per 100,000 py')
 
 # TB incidence
-ax2.plot(tb_inc0.index, tb_inc0["median"] * 100000, "-", color=berry[5])
-ax2.fill_between(tb_inc0.index, tb_inc0["lower"] * 100000, tb_inc0["upper"] * 100000, color=berry[5], alpha=0.2)
+ax2.plot(tb_inc0.index[11:], tb_inc0["median"][11:] * 100000, "-", color=baseline_colour)
+ax2.fill_between(tb_inc0.index[11:], tb_inc0["lower"][11:] * 100000, tb_inc0["upper"][11:] * 100000, color=baseline_colour, alpha=0.2)
 
-ax2.plot(tb_inc1.index, tb_inc1["median"] * 100000, "-", color=berry[4])
-ax2.fill_between(tb_inc1.index, tb_inc1["lower"] * 100000, tb_inc1["upper"] * 100000, color=berry[4], alpha=0.2)
+ax2.plot(tb_inc1.index[11:], tb_inc1["median"][11:] * 100000, "-", color=sc1_colour)
+ax2.fill_between(tb_inc1.index[11:], tb_inc1["lower"][11:] * 100000, tb_inc1["upper"][11:] * 100000, color=sc1_colour, alpha=0.2)
 
-ax2.plot(tb_inc2.index, tb_inc2["median"] * 100000, "-", color=berry[3])
-ax2.fill_between(tb_inc2.index, tb_inc2["lower"] * 100000, tb_inc2["upper"] * 100000, color=berry[3], alpha=0.2)
+ax2.plot(tb_inc2.index[11:], tb_inc2["median"][11:] * 100000, "-", color=sc2_colour)
+ax2.fill_between(tb_inc2.index[11:], tb_inc2["lower"][11:] * 100000, tb_inc2["upper"][11:] * 100000, color=sc2_colour, alpha=0.2)
 
-ax2.set_ylim([0, 700])
+ax2.set_ylim([0, 250])
 
 ax2.set(title='TB',
         ylabel='')
 
 # HIV deaths
-ax3.plot(py0.index, aids_deaths0["median_aids_deaths_rate_100kpy"], "-", color=berry[5])
-ax3.fill_between(py0.index, aids_deaths0["lower_aids_deaths_rate_100kpy"],
-                 aids_deaths0["upper_aids_deaths_rate_100kpy"], color=berry[5], alpha=0.2)
+ax3.plot(py0.index[12:], aids_deaths0["median_aids_deaths_rate_100kpy"][12:], "-", color=baseline_colour)
+ax3.fill_between(py0.index[12:], aids_deaths0["lower_aids_deaths_rate_100kpy"][12:],
+                 aids_deaths0["upper_aids_deaths_rate_100kpy"][12:], color=baseline_colour, alpha=0.2)
 
-ax3.plot(py0.index, aids_deaths1["median_aids_deaths_rate_100kpy"], "-", color=berry[4])
-ax3.fill_between(py0.index, aids_deaths1["lower_aids_deaths_rate_100kpy"],
-                 aids_deaths1["upper_aids_deaths_rate_100kpy"], color=berry[4], alpha=0.2)
+ax3.plot(py0.index[12:], aids_deaths1["median_aids_deaths_rate_100kpy"][12:], "-", color=sc1_colour)
+ax3.fill_between(py0.index[12:], aids_deaths1["lower_aids_deaths_rate_100kpy"][12:],
+                 aids_deaths1["upper_aids_deaths_rate_100kpy"][12:], color=sc1_colour, alpha=0.2)
 
-ax3.plot(py0.index, aids_deaths2["median_aids_deaths_rate_100kpy"], "-", color=berry[3])
-ax3.fill_between(py0.index, aids_deaths2["lower_aids_deaths_rate_100kpy"],
-                 aids_deaths2["upper_aids_deaths_rate_100kpy"], color=berry[3], alpha=0.2)
+ax3.plot(py0.index[12:], aids_deaths2["median_aids_deaths_rate_100kpy"][12:], "-", color=sc2_colour)
+ax3.fill_between(py0.index[12:], aids_deaths2["lower_aids_deaths_rate_100kpy"][12:],
+                 aids_deaths2["upper_aids_deaths_rate_100kpy"][12:], color=sc2_colour, alpha=0.2)
 
-ax3.set_ylim([0, 300])
+ax3.set_ylim([0, 100])
 
 ax3.set(title='',
         ylabel='Mortality per 100,000 py')
 
 # TB deaths
-ax4.plot(py0.index, tb_deaths0["median_tb_deaths_rate_100kpy"], "-", color=berry[5])
-ax4.fill_between(py0.index, tb_deaths0["lower_tb_deaths_rate_100kpy"],
-                 tb_deaths0["upper_tb_deaths_rate_100kpy"], color=berry[5], alpha=0.2)
+ax4.plot(py0.index[12:], tb_deaths0["median_tb_deaths_rate_100kpy"][12:], "-", color=baseline_colour)
+ax4.fill_between(py0.index[12:], tb_deaths0["lower_tb_deaths_rate_100kpy"][12:],
+                 tb_deaths0["upper_tb_deaths_rate_100kpy"][12:], color=baseline_colour, alpha=0.2)
 
-ax4.plot(py0.index, tb_deaths1["median_tb_deaths_rate_100kpy"], "-", color=berry[4])
-ax4.fill_between(py0.index, tb_deaths1["lower_tb_deaths_rate_100kpy"],
-                 tb_deaths1["upper_tb_deaths_rate_100kpy"], color=berry[4], alpha=0.2)
+ax4.plot(py0.index[12:], tb_deaths1["median_tb_deaths_rate_100kpy"][12:], "-", color=sc1_colour)
+ax4.fill_between(py0.index[12:], tb_deaths1["lower_tb_deaths_rate_100kpy"][12:],
+                 tb_deaths1["upper_tb_deaths_rate_100kpy"][12:], color=sc1_colour, alpha=0.2)
 
-ax4.plot(py0.index, tb_deaths2["median_tb_deaths_rate_100kpy"], "-", color=berry[3])
-ax4.fill_between(py0.index, tb_deaths2["lower_tb_deaths_rate_100kpy"],
-                 tb_deaths2["upper_tb_deaths_rate_100kpy"], color=berry[3], alpha=0.2)
+ax4.plot(py0.index[12:], tb_deaths2["median_tb_deaths_rate_100kpy"][12:], "-", color=sc2_colour)
+ax4.fill_between(py0.index[12:], tb_deaths2["lower_tb_deaths_rate_100kpy"][12:],
+                 tb_deaths2["upper_tb_deaths_rate_100kpy"][12:], color=sc2_colour, alpha=0.2)
 
 ax4.set(title='',
         ylabel='')
@@ -662,12 +752,16 @@ ax4.set_ylim([0, 100])
 
 plt.tick_params(axis="both", which="major", labelsize=10)
 
-plt.legend(labels=["Baseline", "Scale-up", "Constrained scale-up", "Constrained optimistic", "Optimistic"])
+# handles for legend
+l_baseline = mlines.Line2D([], [], color=baseline_colour, label="Baseline")
+l_sc1 = mlines.Line2D([], [], color=sc1_colour, label="Scale-up")
+l_sc2 = mlines.Line2D([], [], color=sc2_colour, label="Scale-up \n no constraints")
 
-fig.savefig(outputspath / "Epi_outputs.png")
+plt.legend(handles=[l_baseline, l_sc1, l_sc2])
+
+fig.savefig(outputspath / "Epi_outputs_focussed.png")
 
 plt.show()
-
 
 
 # %%:  ---------------------------------- DALYS ---------------------------------- #
@@ -691,6 +785,9 @@ def return_daly_summary(results_folder):
         do_scaling=True
     )
     dalys.columns = dalys.columns.get_level_values(0)
+    # combine two labels for non-AIDS TB (this now fixed in latest code)
+    dalys.loc['TB (non-AIDS)'] = dalys.loc['TB (non-AIDS)'] + dalys.loc['non_AIDS_TB']
+    dalys.drop(['non_AIDS_TB'], inplace=True)
     out = pd.DataFrame()
     out['median'] = dalys.median(axis=1).round(decimals=-3).astype(int)
     out['lower'] = dalys.quantile(q=0.025, axis=1).round(decimals=-3).astype(int)
@@ -785,40 +882,34 @@ daly_averted_table['scenario2_upp'] = [int(round(x,-3)) for x in sc2_sc0_upper]
 
 
 daly_averted_table.to_csv(outputspath / "daly_averted_summary.csv")
-#
-# aids_dalys = [sc1_sc0_median['AIDS'],
-#               sc2_sc0_median['AIDS'],
-#               sc3_sc0_median['AIDS'],
-#               sc4_sc0_median['AIDS']]
-# tb_dalys = [sc1_sc0_median['non_AIDS_TB'],
-#               sc2_sc0_median['non_AIDS_TB'],
-#               sc3_sc0_median['non_AIDS_TB'],
-#               sc4_sc0_median['non_AIDS_TB']]
-# total_dalys = [sc1_sc0_median['Column_Total'],
-#               sc2_sc0_median['Column_Total'],
-#               sc3_sc0_median['Column_Total'],
-#               sc4_sc0_median['Column_Total']]
+
+aids_dalys_diff = [sc1_sc0_median['AIDS'],
+              sc2_sc0_median['AIDS']]
+tb_dalys_diff = [sc1_sc0_median['TB (non-AIDS)'],
+              sc2_sc0_median['TB (non-AIDS)']]
+total_dalys_diff = [sc1_sc0_median['Column_Total'],
+              sc2_sc0_median['Column_Total']]
 
 
 aids_dalys = [dalys0.loc['AIDS', 'median'],
               dalys1.loc['AIDS', 'median'],
               dalys2.loc['AIDS', 'median']]
-tb_dalys = [dalys0.loc['non_AIDS_TB', 'median'],
-              dalys1.loc['non_AIDS_TB', 'median'],
-              dalys2.loc['non_AIDS_TB', 'median']]
+tb_dalys = [dalys0.loc['TB (non-AIDS)', 'median'],
+              dalys1.loc['TB (non-AIDS)', 'median'],
+              dalys2.loc['TB (non-AIDS)', 'median']]
 total_dalys = [dalys0.loc['Column_Total', 'median'],
               dalys1.loc['Column_Total', 'median'],
               dalys2.loc['Column_Total', 'median']]
 
-labels = ['Baseline', 'Scale-up', 'Constrained \n scale-up']
+labels = ['Baseline', 'Scale-up', 'Scale-up \n no constraints']
 x = np.arange(len(labels))  # the label locations
 width = 0.2  # the width of the bars
 
-
+# plots of total DALYs
 fig, ax = plt.subplots()
-rects1 = ax.bar(x - width, aids_dalys, width, label='AIDS')
-rects2 = ax.bar(x, tb_dalys, width, label='TB')
-rects3 = ax.bar(x + width, total_dalys, width, label='Total')
+rects1 = ax.bar(x - width, aids_dalys, width, label='AIDS', color=baseline_colour)
+rects2 = ax.bar(x, tb_dalys, width, label='TB', color=sc1_colour)
+rects3 = ax.bar(x + width, total_dalys, width, label='Total', color=sc2_colour)
 
 # Add some text for labels, title and custom x-axis tick labels, etc.
 ax.set_ylabel('DALYs')
@@ -832,6 +923,30 @@ fig.savefig(outputspath / "DALYS.png")
 
 plt.show()
 
+
+
+# plots of diff in DALYs from baseline
+labels = ['Scale-up', 'Scale-up \n no constraints']
+x = np.arange(len(labels))  # the label locations
+width = 0.2  # the width of the bars
+
+
+fig, ax = plt.subplots()
+rects1 = ax.bar(x - width, aids_dalys_diff, width, label='AIDS', color=baseline_colour)
+rects2 = ax.bar(x, tb_dalys_diff, width, label='TB', color=sc1_colour)
+rects3 = ax.bar(x + width, total_dalys_diff, width, label='Total', color=sc2_colour)
+
+# Add some text for labels, title and custom x-axis tick labels, etc.
+ax.set_ylabel('DALYs')
+ax.set_title('')
+ax.set_xticks(x)
+ax.set_xticklabels(labels)
+ax.legend()
+
+fig.tight_layout()
+fig.savefig(outputspath / "DALYS_averted.png")
+
+plt.show()
 
 # -----------------------------------------------------------------------------------------
 # %% TB treatment cascade

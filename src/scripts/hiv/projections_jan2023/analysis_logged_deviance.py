@@ -35,10 +35,10 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2023, 1, 1)
+end_date = Date(2012, 1, 1)
 popsize = 500
 
-scenario = 1
+scenario = 2
 
 # set up the log config
 log_config = {
@@ -89,7 +89,7 @@ sim.register(
 
 # set the scenario
 sim.modules["Tb"].parameters["scenario"] = scenario
-sim.modules["Tb"].parameters["scenario_start_date"] = Date(2010, 3, 1)
+sim.modules["Tb"].parameters["scenario_start_date"] = Date(2010, 2, 1)
 
 # sim.modules["Tb"].parameters["rr_tb_hiv"] = 5  # default 13
 # rr relapse if HIV+ 4.7

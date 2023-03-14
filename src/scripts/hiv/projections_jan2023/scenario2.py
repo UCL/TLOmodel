@@ -30,7 +30,7 @@ class TestScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            "filename": "scenario0",
+            "filename": "scenario2",
             "directory": "./outputs",
             "custom_levels": {
                 "*": logging.WARNING,
