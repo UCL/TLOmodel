@@ -642,4 +642,3 @@ class HSI_Epilepsy_Follow_Up(HSI_Event, IndividualScopeEventMixin):
                 tclose=None,
                 priority=0
             )
-
