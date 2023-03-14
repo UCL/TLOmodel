@@ -7,6 +7,7 @@
 import datetime
 import heapq as hp
 import itertools
+import warnings
 from collections import Counter, defaultdict
 from collections.abc import Iterable
 from itertools import repeat
@@ -434,6 +435,10 @@ class HealthSystem(Module):
             "'none', then let no beds be  ever be available; if 'all', then all beds are always available. NB. This "
             "parameter is over-ridden if an argument is provided to the module initialiser."),
 
+       #Priority policy
+        'PriorityRank': Parameter(
+            Types.DATA_FRAME, "Data on the priority ranking of each of the Treatment_IDs to be adopted by the queueing system, where the lower the number the higher the priority"),
+
         # Service Availability
         'Service_Availability': Parameter(
             Types.LIST, 'List of services to be available. NB. This parameter is over-ridden if an argument is provided'
@@ -624,6 +629,15 @@ class HealthSystem(Module):
         # Data on the number of beds available of each type by facility_id
         self.parameters['BedCapacity'] = pd.read_csv(
             path_to_resourcefiles_for_healthsystem / 'infrastructure_and_equipment' / 'ResourceFile_Bed_Capacity.csv')
+
+        # Data on the priority of each Treatment_ID that should be adopted in the queueing system  
+        self.parameters['PriorityRank'] = pd.read_csv(
+            path_to_resourcefiles_for_healthsystem / 'ResourceFile_PriorityRanking.csv')
+
+        # Check that no duplicates are included in priority input file
+        # There might be a more suitable place to put this check
+        assert not self.parameters['PriorityRank']['Treatment'].duplicated().any() # True
+
 
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
@@ -954,7 +968,8 @@ class HealthSystem(Module):
         assert topen >= self.sim.date
 
         # Check that priority is in valid range
-        assert priority in (0, 1, 2)
+        print("Priority is", priority)
+        assert priority in (0, 1, 2), print(priority)
 
         # Check that topen is strictly before tclose
         assert topen < tclose
@@ -993,6 +1008,21 @@ class HealthSystem(Module):
             # Add the event to the queue:
             self._add_hsi_event_queue_item_to_hsi_event_queue(
                 priority=priority, topen=topen, tclose=tclose, hsi_event=hsi_event)
+
+    def get_priority_ranking(self,TREATMENT_ID: str) -> int:
+        """Check the ranking in priority of the Treatment_ID this HSI_Event is associated to """
+        df = self.parameters['PriorityRank']
+
+        if ((df['Treatment'] == TREATMENT_ID).any()):
+            _priority_ranking = df[df['Treatment'] == TREATMENT_ID]["Priority"].item()
+        else: #Unless ID not found is "DummyHSIEvent", issue a warning and assign priority=0 by default 
+            _priority_ranking = 0
+            if(TREATMENT_ID!='DummyHSIEvent'):
+                warnings.warn(UserWarning(f"Couldn't find priority ranking for TREATMENT_ID /n"
+                                      f"{TREATMENT_ID}"))
+        print("I got", TREATMENT_ID, _priority_ranking)
+      
+        return _priority_ranking
 
     def _add_hsi_event_queue_item_to_hsi_event_queue(self, priority, topen, tclose, hsi_event) -> None:
         """Add an event to the HSI_EVENT_QUEUE."""

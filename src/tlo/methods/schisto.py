@@ -37,9 +37,9 @@ class Schisto(Module):
     N.B. Formal fitting has only been undertaken for: ('Blantyre', 'Chiradzulu', 'Mulanje', 'Nsanje', 'Nkhotakota',
     'Phalombe')."""
 
-    INIT_DEPENDENCIES = {'Demography', 'SymptomManager'}
+    INIT_DEPENDENCIES = {'Demography', 'SymptomManager', 'HealthSystem'}
 
-    OPTIONAL_INIT_DEPENDENCIES = {'HealthSystem', 'HealthBurden'}
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
 
     METADATA = {
         Metadata.DISEASE_MODULE,
@@ -80,6 +80,16 @@ class Schisto(Module):
         'MDA_coverage_prognosed': Parameter(Types.DATA_FRAME,
                                             'Probability of getting PZQ in the MDA for PSAC, SAC and Adults in future '
                                             'rounds, with the frequency given in months'),
+        'priority_Schisto_MDA':
+            Parameter(Types.INT,
+                     'Priority associated with Schisto_MDA'
+                     ),
+        'priority_Schisto_Treatment':
+            Parameter(Types.INT,
+                     'Priority associated with Schisto_Treatment'
+                     ),
+
+
     }
 
     def __init__(self, name=None, resourcefilepath=None, mda_execute=True):
@@ -115,7 +125,6 @@ class Schisto(Module):
 
     def read_parameters(self, data_folder):
         """Read parameters and register symptoms."""
-
         # Load parameters
         workbook = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Schisto.xlsx', sheet_name=None)
         self.parameters = self._load_parameters_from_workbook(workbook)
@@ -125,6 +134,10 @@ class Schisto(Module):
         # Register symptoms
         symptoms_df = workbook['Symptoms']
         self._register_symptoms(symptoms_df.set_index('Symptom')['HSB_mapped_symptom'].to_dict())
+
+        #Get priority ranking from policy
+        self.parameters['priority_Schisto_MDA'] = self.sim.modules['HealthSystem'].get_priority_ranking('Schisto_MDA')
+        self.parameters['priority_Schisto_Treatment'] = self.sim.modules['HealthSystem'].get_priority_ranking('Schisto_Treatment')
 
     def pre_initialise_population(self):
         """Do things before generating the population (but after read_parameters and any parameter updating)."""
@@ -221,7 +234,7 @@ class Schisto(Module):
                     person_id=person_id),
                 topen=self.sim.date,
                 tclose=None,
-                priority=0
+                priority=self.parameters['priority_Schisto_Treatment']
             )
 
     def do_effect_of_treatment(self, person_id: Union[int, Sequence[int]]) -> None:
@@ -856,7 +869,7 @@ class SchistoMDAEvent(Event, PopulationScopeEventMixin):
                 ),
                 topen=self.sim.date,
                 tclose=self.sim.date + pd.DateOffset(months=1),
-                priority=2
+                priority=self.module.parameters['priority_Schisto_MDA']
                 # A long time-window of operation and a low priority is used for this MDA Appointment, to represent
                 # that the MDA would not take a priority over other appointments.
             )
@@ -925,7 +938,7 @@ class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin)
                         person_id=person_id),
                     topen=self.sim.date,
                     tclose=None,
-                    priority=0
+                    priority=self.module.parameters['priority_Schisto_Treatment']
                 )
 
         else:
@@ -939,7 +952,7 @@ class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin)
                     self,
                     topen=next_occurence,
                     tclose=None,
-                    priority=0
+                    priority=self.module.parameters['priority_Schisto_Treatment']
                 )
 
 

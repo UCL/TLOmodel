@@ -375,16 +375,31 @@ class Tb(Module):
         "prob_tb_referral_in_generic_hsi": Parameter(
             Types.REAL,
             "probability of referral to TB screening HSI if presenting with TB-related symptoms"
-        )
+        ),
+        'priority_Tb_Prevention_Ipt':
+            Parameter(Types.INT,
+                     'Priority associated with Tb_Prevention_Ipt'
+                     ),
+        'priority_Tb_Test_Screening':
+            Parameter(Types.INT,
+                     'Priority associated with Tb_Test_Screening'
+                     ),
+        'priority_Tb_Test_Xray':
+            Parameter(Types.INT,
+                     'Priority associated with Tb_Test_Xray'
+                     ),
+        'priority_Tb_Treatment':
+            Parameter(Types.INT,
+                     'Priority associated with Tb_Treatment'
+                     ),
     }
-
+    
     def read_parameters(self, data_folder):
         """
         * 1) Reads the ResourceFiles
         * 2) Declares the DALY weights
         * 3) Declares the Symptoms
         """
-
         # 1) Read the ResourceFiles
         workbook = pd.read_excel(
             os.path.join(self.resourcefilepath, "ResourceFile_TB.xlsx"), sheet_name=None
@@ -451,6 +466,13 @@ class Tb(Module):
                 odds_ratio_health_seeking_in_children=5.0,
             )
         )
+
+        #Get priority ranking from policy
+        self.parameters['priority_Tb_Prevention_Ipt'] = self.sim.modules['HealthSystem'].get_priority_ranking('Tb_Prevention_Ipt')
+        self.parameters['priority_Tb_Test_Screening'] = self.sim.modules['HealthSystem'].get_priority_ranking('Tb_Test_Screening')
+        self.parameters['priority_Tb_Test_Xray'] = self.sim.modules['HealthSystem'].get_priority_ranking('Tb_Test_Xray')
+        self.parameters['priority_Tb_Treatment'] = self.sim.modules['HealthSystem'].get_priority_ranking('Tb_Treatment')
+
 
     def pre_initialise_population(self):
         """
@@ -637,7 +659,7 @@ class Tb(Module):
                 HSI_Tb_ScreeningAndRefer(person_id=person, module=self),
                 topen=self.sim.date,
                 tclose=None,
-                priority=0,
+                priority=self.parameters['priority_Tb_Test_Screening'],
             )
 
     def select_tb_test(self, person_id):
@@ -904,7 +926,7 @@ class Tb(Module):
             event = HSI_Tb_Start_or_Continue_Ipt(self, person_id=child_id)
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 event,
-                priority=1,
+                priority=self.parameters['priority_Tb_Prevention_Ipt'],
                 topen=now,
                 tclose=now + DateOffset(days=28),
             )
@@ -1021,7 +1043,7 @@ class Tb(Module):
             # Schedule the TB treatment event:
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Tb_Start_or_Continue_Ipt(self, person_id=person_id),
-                priority=1,
+                priority=self.parameters['priority_Tb_Prevention_Ipt'],
                 topen=self.sim.date,
                 tclose=None,
             )
@@ -1215,7 +1237,7 @@ class Tb(Module):
                     HSI_Tb_ScreeningAndRefer(person_id=person, module=self),
                     topen=self.sim.date,
                     tclose=None,
-                    priority=0,
+                    priority=self.parameters['priority_Tb_Test_Screening'],
                 )
 
         # remove any treatment failure indices from the treatment end indices
@@ -1694,7 +1716,8 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
             hsi_event=hiv.HSI_Hiv_TestAndRefer(
                 person_id=person_id, module=self.sim.modules["Hiv"], referred_from='Tb'
             ),
-            priority=1,
+            #Should Hiv tests for people with Tb have a higher priority than general Hiv testing?
+            priority=self.sim.modules['Hiv'].parameters['priority_Hiv_Test'],
             topen=self.sim.date,
             tclose=None,
         )
@@ -1711,7 +1734,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                 HSI_Tb_Xray_level1b(person_id=person_id, module=self.module),
                 topen=now,
                 tclose=None,
-                priority=0,
+                priority=self.module.parameters['priority_Tb_Test_Xray'],
             )
             test_result = False  # to avoid calling a clinical diagnosis
 
@@ -1800,7 +1823,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                 HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
                 topen=now,
                 tclose=None,
-                priority=0,
+                priority=self.module.parameters['priority_Tb_Treatment'],
             )
 
             # ------------------------- give IPT to contacts ------------------------- #
@@ -1841,7 +1864,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                         )
                         self.sim.modules["HealthSystem"].schedule_hsi_event(
                             ipt_event,
-                            priority=1,
+                            priority=self.module.parameters['priority_Tb_Prevention_Ipt'],
                             topen=now,
                             tclose=None,
                         )
@@ -1911,7 +1934,7 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
                     HSI_Tb_Xray_level2(person_id=person_id, module=self.module),
                     topen=self.sim.date + pd.DateOffset(weeks=1),
                     tclose=None,
-                    priority=0,
+                    priority=self.module.parameters['priority_Tb_Test_Xray'],
                 )
 
         # if test returns positive result, refer for appropriate treatment
@@ -1923,7 +1946,7 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
                 HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
                 topen=self.sim.date,
                 tclose=None,
-                priority=0,
+                priority=self.module.parameters['priority_Tb_Treatment'],
             )
 
         # Return the footprint. If it should be suppressed, return a blank footprint.
@@ -1990,7 +2013,7 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
                 HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
                 topen=self.sim.date,
                 tclose=None,
-                priority=0,
+                priority=self.module.parameters['priority_Tb_Treatment'],
             )
 
         # Return the footprint. If it should be suppressed, return a blank footprint.
@@ -2058,7 +2081,7 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                 HSI_Tb_FollowUp(person_id=person_id, module=self.module),
                 topen=follow_up_date,
                 tclose=None,
-                priority=0,
+                priority=self.module.parameters['priority_Tb_Treatment'],
             )
 
         # if treatment not available, return for treatment start in 1 week
@@ -2067,7 +2090,7 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                 HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
                 topen=self.sim.date + DateOffset(weeks=1),
                 tclose=None,
-                priority=0,
+                priority=self.module.parameters['priority_Tb_Treatment'],
             )
 
     def select_treatment(self, person_id):
@@ -2235,7 +2258,7 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
                 HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
                 topen=self.sim.date,
                 tclose=None,
-                priority=0,
+                priority=self.module.parameters['priority_Tb_Treatment'],
             )
 
         # for all ds cases and known mdr cases:
@@ -2252,7 +2275,7 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
                 HSI_Tb_FollowUp(person_id=person_id, module=self.module),
                 topen=follow_up_date,
                 tclose=None,
-                priority=0,
+                priority=self.module.parameters['priority_Tb_Treatment'],
             )
 
         return ACTUAL_APPT_FOOTPRINT
@@ -2304,7 +2327,7 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
                 HSI_Tb_ScreeningAndRefer(person_id=person_id, module=self.module),
                 topen=self.sim.date,
                 tclose=self.sim.date + pd.DateOffset(days=14),
-                priority=0,
+                priority=self.module.parameters['priority_Tb_Test_Screening'],
             )
 
         else:
@@ -2329,7 +2352,7 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
                         self,
                         topen=self.sim.date + pd.DateOffset(days=1),
                         tclose=self.sim.date + pd.DateOffset(days=14),
-                        priority=0,
+                        priority=self.module.parameters['priority_Tb_Prevention_Ipt'],
                     )
 
 
@@ -2366,7 +2389,7 @@ class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):
                 HSI_Tb_Start_or_Continue_Ipt(person_id=person_id, module=m),
                 topen=self.sim.date,
                 tclose=self.sim.date + pd.DateOffset(days=14),
-                priority=0,
+                priority=self.module.parameters['priority_Prevention_Ipt'],
             )
 
 

@@ -93,6 +93,10 @@ class Epilepsy(Module):
         'daly_wt_epilepsy_seizure_free': Parameter(
             Types.REAL, 'disability weight for less severe epilepsy' 'controlled phase - code 862'
         ),
+        'priority_Epilepsy_Treatment':
+            Parameter(Types.INT,
+                     'Priority associated with Epilepsy_Treatment'
+                     ),
     }
 
     """
@@ -150,6 +154,9 @@ class Epilepsy(Module):
         # Register Symptom that this module will use
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom("seizures", emergency_in_children=True, emergency_in_adults=True))
+
+        self.parameters['priority_Epilepsy_Treatment'] = self.sim.modules['HealthSystem'].get_priority_ranking('Epilepsy_Treatment')
+
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -599,7 +606,7 @@ class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
                 ),
                 topen=self.sim.date + DateOffset(months=3),
                 tclose=None,
-                priority=0
+                priority=self.module.parameters['priority_Epilepsy_Treatment']
             )
 
         else:
@@ -607,7 +614,7 @@ class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
             self.module.sim.modules['HealthSystem'].schedule_hsi_event(hsi_event=self,
                                                                        topen=self.sim.date + pd.DateOffset(months=1),
                                                                        tclose=None,
-                                                                       priority=0)
+                                                                       priority=self.module.parameters['priority_Epilepsy_Treatment'])
 
 
 class HSI_Epilepsy_Follow_Up(HSI_Event, IndividualScopeEventMixin):
@@ -631,5 +638,5 @@ class HSI_Epilepsy_Follow_Up(HSI_Event, IndividualScopeEventMixin):
             hsi_event=self,
             topen=self.sim.date + DateOffset(months=3),
             tclose=None,
-            priority=0
+            priority=self.module.parameters['priority_Epilepsy_Treatment']
         )

@@ -442,6 +442,14 @@ class Diarrhoea(Module):
         'rr_severe_dehydration_due_to_rotavirus_with_R1_over1yo':
             Parameter(Types.REAL,
                       'relative risk of severe dehydration with rotavirus vaccine, for those aged 1 year and older.'),
+        'priority_Diarrhoea_Treatment_Outpatient':
+            Parameter(Types.INT,
+                     'Priority associated with Diarrhoea_Treatment_Outpatient'
+                     ),
+        'priority_Diarrhoea_Treatment_Inpatient':
+            Parameter(Types.INT,
+                     'Priority associated with Diarrhoea_Treatment_Inpatient'
+                     ),
     }
 
     PROPERTIES = {
@@ -524,6 +532,11 @@ class Diarrhoea(Module):
             assert isinstance(p[param_name],
                               param_type.python_type), f'Parameter "{param_name}" is not read in correctly from the ' \
                                                        f'resourcefile.'
+
+        #Get priority ranking from policy
+        self.parameters['priority_Diarrhoea_Treatment_Inpatient'] = self.sim.modules['HealthSystem'].get_priority_ranking('Diarrhoea_Treatment_Inpatient')
+        self.parameters['priority_Diarrhoea_Treatment_Outpatient'] = self.sim.modules['HealthSystem'].get_priority_ranking('Diarrhoea_Treatment_Outpatient')
+
 
     def initialise_population(self, population):
         """
@@ -672,7 +685,7 @@ class Diarrhoea(Module):
                 HSI_Diarrhoea_Treatment_Inpatient(
                     person_id=person_id,
                     module=self),
-                priority=0,
+                priority=self.parameters['priority_Diarrhoea_Treatment_Inpatient'],
                 topen=self.sim.date,
                 tclose=None)
 
@@ -682,7 +695,7 @@ class Diarrhoea(Module):
                 HSI_Diarrhoea_Treatment_Outpatient(
                     person_id=person_id,
                     module=self),
-                priority=0,
+                priority=self.parameters['priority_Diarrhoea_Treatment_Outpatient'],
                 topen=self.sim.date,
                 tclose=None)
 

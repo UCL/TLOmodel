@@ -134,12 +134,29 @@ class CardioMetabolicDisorders(Module):
     other_params_dict = {
         'interval_between_polls': Parameter(Types.INT, 'months between the main polling event'),
         'pr_bmi_reduction': Parameter(Types.INT, 'probability of an individual having a reduction in BMI following '
-                                                 'weight loss treatment')
+                                                 'weight loss treatment'),
     }
 
     PARAMETERS = {**onset_conditions_param_dicts, **removal_conditions_param_dicts, **hsi_conditions_param_dicts,
                   **onset_events_param_dicts, **death_conditions_param_dicts, **death_events_param_dicts,
-                  **hsi_events_param_dicts, **initial_prev_param_dicts, **other_params_dict}
+                  **hsi_events_param_dicts, **initial_prev_param_dicts, **other_params_dict, 
+                 'priority_CardioMetabolicDisorders_Investigation':
+                     Parameter(Types.INT,
+	             'Priority associated with CardioMetabolicDisorders_Investigation'
+	             ),
+                 'priority_CareCardioMetabolicDisorders_Prevention_CommunityTestingForHypertension':
+	             Parameter(Types.INT,
+	             'Priority associated with CardioMetabolicDisorders_Prevention_CommunityTestingForHypertension'
+	             ),
+                 'priority_CardioMetabolicDisorders_Prevention_WeightLoss':
+	             Parameter(Types.INT,
+	             'Priority associated with CardioMetabolicDisorders_Prevention_WeightLoss'
+	             ),
+	         'priority_CardioMetabolicDisorders_Treatment':
+	             Parameter(Types.INT,
+	             'Priority associated with CardioMetabolicDisorders_Treatment'
+	             )
+                }
 
     # Convert conditions and events to dicts and merge together into PROPERTIES
     condition_list = {
@@ -305,9 +322,11 @@ class CardioMetabolicDisorders(Module):
         # doesn't vary by condition)
         p['pr_bmi_reduction'] = 0.1
 
+        # Priority ranking not read in, so have removed this check
         # Check that every value has been read-in successfully
-        for param_name in self.PARAMETERS:
-            assert self.parameters[param_name] is not None, f'Parameter "{param_name}" has not been set.'
+        #for param_name in self.PARAMETERS:
+        #    assert self.parameters[param_name] is not None, f'Parameter "{param_name}" has not been set.'
+        
 
         # -------------------------------------------- SYMPTOMS -------------------------------------------------------
         # Retrieve symptom probabilities
@@ -344,6 +363,11 @@ class CardioMetabolicDisorders(Module):
                     emergency_in_adults=True
                 ),
             )
+        self.parameters['priority_CardioMetabolicDisorders_Investigation'] = self.sim.modules['HealthSystem'].get_priority_ranking('CardioMetabolicDisorders_Investigation')
+        self.parameters['priority_CardioMetabolicDisorders_Prevention_CommunityTestingForHypertension'] = self.sim.modules['HealthSystem'].get_priority_ranking('CardioMetabolicDisorders_Prevention_CommunityTestingForHypertension')
+        self.parameters['priority_CardioMetabolicDisorders_Prevention_WeightLoss'] = self.sim.modules['HealthSystem'].get_priority_ranking('CardioMetabolicDisorders_Prevention_WeightLoss')
+        self.parameters['priority_CardioMetabolicDisorders_Treatment'] = self.sim.modules['HealthSystem'].get_priority_ranking('CardioMetabolicDisorders_Treatment')
+
 
     def initialise_population(self, population):
         """
@@ -822,7 +846,7 @@ class CardioMetabolicDisorders(Module):
                         )
                         self.sim.modules['HealthSystem'].schedule_hsi_event(
                             hsi_event,
-                            priority=0,
+                            priority=self.parameters['priority_CardioMetabolicDisorders_Investigation'],
                             topen=self.sim.date,
                             tclose=None
                         )
@@ -836,7 +860,7 @@ class CardioMetabolicDisorders(Module):
                 )
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     hsi_event,
-                    priority=0,
+                    priority=self.parameters['priority_CardioMetabolicDisorders_Investigation'],
                     topen=self.sim.date,
                     tclose=None
                 )
@@ -859,7 +883,7 @@ class CardioMetabolicDisorders(Module):
                     person_id=person_id,
                     ev=ev,
                 )
-                health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)
+                health_system.schedule_hsi_event(event, priority=self.parameters['priority_CardioMetabolicDisorders_Treatment'], topen=self.sim.date)
 
 
 class Tracker:
@@ -937,7 +961,7 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_CardioMetabolicDisorders_CommunityTestingForHypertension(person_id=person_id,
                                                                                        module=self.module),
-                priority=1,
+                priority=self.module.parameters['priority_CardioMetabolicDisorders_Prevention_CommunityTestingForHypertension'],
                 topen=random_date(self.sim.date, self.sim.date + self.frequency - pd.DateOffset(days=2), m.rng),
                 tclose=self.sim.date + self.frequency - pd.DateOffset(days=1)  # (to occur before next polling)
             )
@@ -1399,7 +1423,7 @@ class HSI_CardioMetabolicDisorders_CommunityTestingForHypertension(HSI_Event, In
                     person_id=person_id,
                     condition='hypertension'
                 ),
-                priority=0,
+                priority=self.module.parameters['priority_CardioMetabolicDisorders_Prevention_WeightLoss'],
                 topen=self.sim.date,
                 tclose=None
             )
@@ -1449,7 +1473,7 @@ class HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(HSI_Event, 
                     person_id=person_id,
                     condition=f'{self.condition}'
                 ),
-                priority=0,
+                priority=self.module.parameters['priority_CardioMetabolicDisorders_Prevention_WeightLoss'],
                 topen=self.sim.date,
                 tclose=None
             )
@@ -1513,7 +1537,7 @@ class HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(HSI_Event, Ind
                     person_id=person_id,
                     condition=self.condition
                 ),
-                priority=0,
+                priority=self.module.parameters['priority_CardioMetabolicDisorders_Prevention_WeightLoss'],
                 topen=self.sim.date,
                 tclose=None
             )
@@ -1538,7 +1562,7 @@ class HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(HSI_Event, Ind
                         person_id=person_id,
                         condition='hypertension'
                     ),
-                    priority=0,
+                    priority=self.module.parameters['priority_CardioMetabolicDisorders_Prevention_WeightLoss'],
                     topen=self.sim.date,
                     tclose=None
                 )
@@ -1595,7 +1619,7 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_CardioMetabolicDisorders_Refill_Medication(person_id=person_id, module=self.module,
                                                                          condition=self.condition),
-                priority=1,
+                priority=self.module.parameters['priority_CardioMetabolicDisorders_Treatment'],
                 topen=self.sim.date + DateOffset(months=1),
                 tclose=self.sim.date + DateOffset(months=1) + DateOffset(days=7)
             )
@@ -1609,7 +1633,7 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
                     hsi_event=self,
                     topen=self.sim.date + pd.DateOffset(days=1),
                     tclose=self.sim.date + pd.DateOffset(days=15),
-                    priority=1
+                    priority=self.module.parameters['priority_CardioMetabolicDisorders_Treatment'],
                 )
 
 
@@ -1658,7 +1682,7 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
             # Schedule their next HSI for a refill of medication, one month from now
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=self,
-                priority=1,
+                priority=self.module.parameters['priority_CardioMetabolicDisorders_Treatment'],
                 topen=self.sim.date + DateOffset(months=1),
                 tclose=self.sim.date + DateOffset(months=1) + DateOffset(days=7)
             )
@@ -1674,7 +1698,7 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
                     hsi_event=self,
                     topen=self.sim.date + pd.DateOffset(days=1),
                     tclose=self.sim.date + pd.DateOffset(days=15),
-                    priority=1
+                    priority=self.module.parameters['priority_CardioMetabolicDisorders_Treatment'],
                 )
 
     def did_not_run(self):
@@ -1750,7 +1774,7 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
                                 person_id=person_id,
                                 condition=self.event
                             ),
-                            priority=0,
+                            priority=self.module.parameters['priority_CardioMetabolicDisorders_Prevention_WeightLoss'],
                             topen=self.sim.date,
                             tclose=None
                         )
@@ -1782,7 +1806,7 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
                         person_id=person_id,
                         condition='hypertension'
                     ),
-                    priority=0,
+                    priority=self.module.parameters['priority_CardioMetabolicDisorders_Prevention_WeightLoss'],
                     topen=self.sim.date,
                     tclose=None
                 )

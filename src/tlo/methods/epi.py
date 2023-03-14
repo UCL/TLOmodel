@@ -25,7 +25,39 @@ class Epi(Module):
     PARAMETERS = {
         "baseline_coverage": Parameter(Types.DATA_FRAME, "baseline vaccination coverage (all vaccines)"),
         "vaccine_schedule": Parameter(Types.SERIES, "vaccination schedule applicable from 2018 onwards"),
-        "district_vaccine_coverage": Parameter(Types.DATA_FRAME, "coverage of each vaccine type by year and district")
+        "district_vaccine_coverage": Parameter(Types.DATA_FRAME, "coverage of each vaccine type by year and district"),
+        'priority_Epi_Adolescent_Hpv':
+            Parameter(Types.INT,
+                     'Priority associated with Epi_Adolescent_Hpv'
+                     ),
+        'priority_Epi_Childhood_Bcg':
+            Parameter(Types.INT,
+                     'Priority associated with Epi_Childhood_Bcg'
+                     ),
+        'priority_Epi_Childhood_DtpHibHep':
+            Parameter(Types.INT,
+                     'Priority associated with Epi_Childhood_DtpHibHep'
+                     ),
+        'priority_Epi_Childhood_MeaslesRubella':
+            Parameter(Types.INT,
+                     'Priority associated with Epi_Childhood_MeaslesRubella'
+                     ),
+        'priority_Epi_Childhood_Opv':
+            Parameter(Types.INT,
+                     'Priority associated with Epi_Childhood_Opv'
+                     ),
+        'priority_Epi_Childhood_Pneumo':
+            Parameter(Types.INT,
+                     'Priority associated with Epi_Childhood_Pneumo'
+                     ),
+        'priority_Epi_Childhood_Rota':
+            Parameter(Types.INT,
+                     'Priority associated with Epi_Childhood_Rota'
+                     ),
+        'priority_Epi_Pregnancy_Td':
+            Parameter(Types.INT,
+                     'Priority associated with Epi_Pregnancy_Td'
+                     ),
     }
 
     PROPERTIES = {
@@ -67,6 +99,17 @@ class Epi(Module):
 
     def read_parameters(self, data_folder):
         p = self.parameters
+
+        #Get priority ranking from policy
+        self.parameters['priority_Epi_Adolescent_Hpv'] = self.sim.modules['HealthSystem'].get_priority_ranking('Epi_Adolescent_Hpv')
+        self.parameters['priority_Epi_Childhood_Bcg'] = self.sim.modules['HealthSystem'].get_priority_ranking('Epi_Childhood_Bcg')
+        self.parameters['priority_Epi_Childhood_DtpHibHep'] = self.sim.modules['HealthSystem'].get_priority_ranking('Epi_Childhood_DtpHibHep')
+        self.parameters['priority_Epi_Childhood_MeaslesRubella'] = self.sim.modules['HealthSystem'].get_priority_ranking('Epi_Childhood_MeaslesRubella')
+        self.parameters['priority_Epi_Childhood_Opv'] = self.sim.modules['HealthSystem'].get_priority_ranking('Epi_Childhood_Opv')
+        self.parameters['priority_Epi_Childhood_Pneumo'] = self.sim.modules['HealthSystem'].get_priority_ranking('Epi_Childhood_Pneumo')
+        self.parameters['priority_Epi_Childhood_Rota'] = self.sim.modules['HealthSystem'].get_priority_ranking('Epi_Childhood_Rota')
+        self.parameters['priority_Epi_Pregnancy_Td'] = self.sim.modules['HealthSystem'].get_priority_ranking('Epi_Pregnancy_Td')
+        
         workbook = pd.read_excel(
             Path(self.resourcefilepath) / 'ResourceFile_EPI_WHO_estimates.xlsx', sheet_name=None
         )
@@ -316,24 +359,24 @@ class Epi(Module):
             # each entry is (hsi event class, [days to administration key 1, days to administration key 2, ...]
             post_2018_vax_schedule = [
                 # schedule bcg - now dependent on health system capacity / stocks
-                (HSI_BcgVaccine, ['bcg']),
+                (HSI_BcgVaccine, ['bcg'], self.parameters['priority_Epi_Childhood_Bcg']), 
                 # OPV doses 2-4 are given during the week 6, 10, 14 penta, pneumo, rota appts
-                (HSI_opv, ['opv1', 'opv2', 'opv3', 'opvIpv4']),
-                (HSI_PneumoVaccine, ['pneumo1', 'pneumo2', 'pneumo3']),
-                (HSI_RotaVaccine, ['rota1', 'rota2']),
-                (HSI_DtpHibHepVaccine, ['dtpHibHep1', 'dtpHibHep2', 'dtpHibHep3']),
-                (HSI_MeaslesRubellaVaccine, ['MR1', 'MR2'])
+                (HSI_opv, ['opv1', 'opv2', 'opv3', 'opvIpv4'], self.parameters['priority_Epi_Childhood_Opv']),
+                (HSI_PneumoVaccine, ['pneumo1', 'pneumo2', 'pneumo3'], self.parameters['priority_Epi_Childhood_Pneumo']),
+                (HSI_RotaVaccine, ['rota1', 'rota2'], self.parameters['priority_Epi_Childhood_Rota']),
+                (HSI_DtpHibHepVaccine, ['dtpHibHep1', 'dtpHibHep2', 'dtpHibHep3'], self.parameters['priority_Epi_Childhood_DtpHibHep']),
+                (HSI_MeaslesRubellaVaccine, ['MR1', 'MR2'], self.parameters['priority_Epi_Childhood_MeaslesRubella'])
             ]
 
             for each_vax in post_2018_vax_schedule:
-                vax_hsi_event, admin_schedule = each_vax
+                vax_hsi_event, admin_schedule, _priority = each_vax
                 for admin_key in admin_schedule:
                     vax_event_instance = vax_hsi_event(self, person_id=child_id)
                     scheduled_date = vax_date[admin_key]
                     # Request the health system to have this vaccination appointment
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
                         vax_event_instance,
-                        priority=1,
+                        priority=_priority,
                         topen=self.sim.date + DateOffset(days=scheduled_date),
                         tclose=None
                     )
@@ -494,7 +537,7 @@ class HpvScheduleEvent(RegularEvent, PopulationScopeEventMixin):
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 event,
-                priority=2,
+                priority=self.module.parameters['priority_Epi_Adolescent_Hpv'],
                 topen=vax_date,
                 tclose=vax_date + DateOffset(weeks=2),
             )
@@ -502,7 +545,7 @@ class HpvScheduleEvent(RegularEvent, PopulationScopeEventMixin):
             # second dose
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 event,
-                priority=2,
+                priority=self.module.parameters['priority_Epi_Adolescent_Hpv'],
                 topen=vax_date + DateOffset(weeks=4),
                 tclose=vax_date + DateOffset(weeks=6),
             )

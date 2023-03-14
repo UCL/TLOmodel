@@ -734,6 +734,11 @@ class Alri(Module):
                       'availability; "Yes" forces them to be available; "No" forces them to not be available',
                       categories=['Yes', 'No', 'Default']
                       ),
+
+        'priority_Alri_Pneumonia_Treatment':
+            Parameter(Types.INT,
+                     'Priority associated with Alri_Pneumonia_Treatment'
+                     ),
     }
 
     PROPERTIES = {
@@ -825,6 +830,11 @@ class Alri(Module):
         self.check_params_read_in_ok()
 
         self.define_symptoms()
+       
+        #Overwrite with Health System's priority policy 
+        self.parameters['priority_Alri_Pneumonia_Treatment'] = self.sim.modules['HealthSystem'].get_priority_ranking('Alri_Pneumonia_Treatment')
+
+        
 
     def check_params_read_in_ok(self):
         """Check that every value has been read-in successfully"""
@@ -893,6 +903,7 @@ class Alri(Module):
         """
         p = self.parameters
 
+        
         # Schedule the main polling event (to first occur immediately)
         sim.schedule_event(AlriPollingEvent(self), sim.date)
 
@@ -1345,7 +1356,8 @@ class Alri(Module):
                                          facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL),
             topen=self.sim.date,
             tclose=self.sim.date + pd.DateOffset(days=1),
-            priority=1
+            #This priority was set to be lower (priority=1) than other HSI_Alri_Treatments in the module - should we allow for different ranking for the same treatment_ID?
+            priority=self.parameters['priority_Alri_Pneumonia_Treatment']
         )
 
     def record_sought_care_for_alri(self):
@@ -2319,8 +2331,8 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
             for i, _x in enumerate(seq):
                 if _x == x:
                     return seq[i + 1]
-
         _next_level_up = _next_in_sequence(self._facility_levels, self.ACCEPTED_FACILITY_LEVEL)
+        
 
         if _next_level_up is not None:
             self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -2332,7 +2344,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                 ),
                 topen=self.sim.date,
                 tclose=self.sim.date + pd.DateOffset(days=1),
-                priority=0)
+                priority=self.module.parameters['priority_Alri_Pneumonia_Treatment'])
 
     def _refer_to_become_inpatient(self):
         """Schedule a copy of this event to occur today at this level as an in-patient appointment, at the higher level
@@ -2348,7 +2360,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
             ),
             topen=self.sim.date,
             tclose=self.sim.date + pd.DateOffset(days=1),
-            priority=0)
+            priority=self.module.parameters['priority_Alri_Pneumonia_Treatment'])
 
     def _schedule_follow_up_following_treatment_failure(self):
         """Schedule a copy of this event to occur in 5 days time as a 'follow-up' appointment at this level
@@ -2363,7 +2375,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
             ),
             topen=self.sim.date + pd.DateOffset(days=5),
             tclose=None,
-            priority=0)
+            priority=self.module.parameters['priority_Alri_Pneumonia_Treatment'])
 
     @property
     def _is_as_in_patient(self):

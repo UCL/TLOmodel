@@ -131,6 +131,30 @@ class Malaria(Module):
         "itn": Parameter(
             Types.REAL, "projected future itn coverage"
         ),
+        'priority_Malaria_Prevention_Iptp':
+            Parameter(Types.INT,
+                     'Priority associated with Malaria_Prevention_Iptp'
+                     ),
+        'priority_Malaria_Test':
+            Parameter(Types.INT,
+                     'Priority associated with Malaria_Test'
+                     ),
+        'priority_Malaria_Treatment_Complicated_Adult':
+            Parameter(Types.INT,
+                     'Priority associated with Malaria_Treatment_Complicated_Adult'
+                     ),
+        'priority_Malaria_Treatment_Complicated_Child':
+            Parameter(Types.INT,
+                     'Priority associated with Malaria_Treatment_Complicated_Child'
+                     ),
+        'priority_Malaria_Treatment_NotComplicated_Adult':
+            Parameter(Types.INT,
+                     'Priority associated with Malaria_Treatment_NotComplicated_Adult'
+                     ),
+        'priority_Malaria_Treatment_NotComplicated_Child':
+            Parameter(Types.INT,
+                     'Priority associated with Malaria_Treatment_NotComplicated_Child'
+                     ),
     }
 
     PROPERTIES = {
@@ -169,6 +193,7 @@ class Malaria(Module):
         self.load_parameters_from_dataframe(workbook["parameters"])
 
         p = self.parameters
+
 
         # baseline characteristics
         p["mal_inc"] = workbook["incidence"]
@@ -248,6 +273,14 @@ class Malaria(Module):
             Symptom("renal_failure", emergency_in_children=True, emergency_in_adults=True),
             Symptom("shock", emergency_in_children=True, emergency_in_adults=True)
         )
+        
+        #Overwrite with Health System's priority policy 
+        self.parameters['priority_Malaria_Prevention_Iptp'] = self.sim.modules['HealthSystem'].get_priority_ranking('Malaria_Prevention_Iptp')
+        self.parameters['priority_Malaria_Test'] = self.sim.modules['HealthSystem'].get_priority_ranking('Malaria_Test')
+        self.parameters['priority_Malaria_Treatment_Complicated_Child'] = self.sim.modules['HealthSystem'].get_priority_ranking('Malaria_Treatment_Complicated_Child')
+        self.parameters['priority_Malaria_Treatment_NotComplicated_Child'] = self.sim.modules['HealthSystem'].get_priority_ranking('Malaria_Treatment_NotComplicated_Child')
+        self.parameters['priority_Malaria_Treatment_Complicated_Adult'] = self.sim.modules['HealthSystem'].get_priority_ranking('Malaria_Treatment_Complicated_Adult')
+        self.parameters['priority_Malaria_Treatment_NotComplicated_Adult'] = self.sim.modules['HealthSystem'].get_priority_ranking('Malaria_Treatment_NotComplicated_Adult')
 
     def initialise_population(self, population):
         df = population.props
@@ -685,7 +718,7 @@ class MalariaScheduleTesting(RegularEvent, PopulationScopeEventMixin):
                          data=f'MalariaScheduleTesting: scheduling HSI_Malaria_rdt for person {person_index}')
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Malaria_rdt(self.module, person_id=person_index),
-                priority=1,
+                priority=self.module.parameters['priority_Malaria_Test'],
                 topen=now, tclose=None
             )
 
@@ -710,7 +743,7 @@ class MalariaIPTp(RegularEvent, PopulationScopeEventMixin):
 
             event = HSI_MalariaIPTp(self.module, person_id=person_index)
             self.sim.modules["HealthSystem"].schedule_hsi_event(
-                event, priority=1, topen=now, tclose=None
+                event, priority=self.module.parameters['priority_Malaria_Prevention_Iptp'], topen=now, tclose=None
             )
 
 
@@ -828,7 +861,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
                             self.sim.modules["Malaria"], person_id=person_id
                         )
                         self.sim.modules["HealthSystem"].schedule_hsi_event(
-                            treat, priority=1, topen=self.sim.date, tclose=None
+                            treat, priority=self.module.parameters['priority_Malaria_Treatment_Complicated_Child'], topen=self.sim.date, tclose=None
                         )
 
                     else:
@@ -841,7 +874,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
                             self.module, person_id=person_id
                         )
                         self.sim.modules["HealthSystem"].schedule_hsi_event(
-                            treat, priority=1, topen=self.sim.date, tclose=None
+                            treat, priority=self.module.parameters['priority_Malaria_Treatment_Complicated_Adult'], topen=self.sim.date, tclose=None
                         )
 
                 # ----------------------------------- TREATMENT CLINICAL DISEASE -----------------------------------
@@ -864,7 +897,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
 
                         treat = HSI_Malaria_non_complicated_treatment_age0_5(self.module, person_id=person_id)
                         self.sim.modules["HealthSystem"].schedule_hsi_event(
-                            treat, priority=1, topen=self.sim.date, tclose=None
+                            treat, priority=self.module.parameters['priority_Malaria_Treatment_NotComplicated_Child'], topen=self.sim.date, tclose=None
                         )
 
                     # diagnosis / treatment for children 5-15
@@ -875,7 +908,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
 
                         treat = HSI_Malaria_non_complicated_treatment_age5_15(self.module, person_id=person_id)
                         self.sim.modules["HealthSystem"].schedule_hsi_event(
-                            treat, priority=1, topen=self.sim.date, tclose=None
+                            treat, priority=self.module.parameters['priority_Malaria_Treatment_NotComplicated_Child'], topen=self.sim.date, tclose=None
                         )
 
                     # diagnosis / treatment for adults
@@ -886,7 +919,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
 
                         treat = HSI_Malaria_non_complicated_treatment_adult(self.module, person_id=person_id)
                         self.sim.modules["HealthSystem"].schedule_hsi_event(
-                            treat, priority=1, topen=self.sim.date, tclose=None
+                            treat, priority=self.module.parameters['priority_Malaria_Treatment_NotComplicated_Adult'], topen=self.sim.date, tclose=None
                         )
 
     def did_not_run(self):

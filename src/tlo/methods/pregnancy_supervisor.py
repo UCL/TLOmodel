@@ -893,7 +893,7 @@ class PregnancySupervisor(Module):
             first_anc_appt = HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(
                 self.sim.modules['CareOfWomenDuringPregnancy'], person_id=individual_id, visit_number=1)
 
-        self.sim.modules['HealthSystem'].schedule_hsi_event(first_anc_appt, priority=0,
+        self.sim.modules['HealthSystem'].schedule_hsi_event(first_anc_appt, priority=self.sim.modules['CareOfWomenDuringPregnancy'].parameters['priority_AntenatalCare_Outpatient'],
                                                             topen=first_anc_date,
                                                             tclose=first_anc_date + DateOffset(days=1))
 
@@ -1495,7 +1495,7 @@ class PregnancySupervisor(Module):
             induction = HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour(
                 self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person)
 
-            self.sim.modules['HealthSystem'].schedule_hsi_event(induction, priority=0,
+            self.sim.modules['HealthSystem'].schedule_hsi_event(induction, priority=self.sim.modules['CareOfWomenDuringPregnancy'].parameters['priority_AntenatalCare_Inpatient'],
                                                                 topen=self.sim.date,
                                                                 tclose=self.sim.date + DateOffset(days=1))
 
@@ -1540,7 +1540,7 @@ class PregnancySupervisor(Module):
                                                                   person_id=individual_id)
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-                                                                priority=0,
+                                                                priority=0, # Scheduling emergency appointment, priority = 0 by definition
                                                                 topen=self.sim.date,
                                                                 tclose=self.sim.date + DateOffset(days=1))
             return True
@@ -1849,7 +1849,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
                 acute_pregnancy_hsi = HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(
                     self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person)
 
-                self.sim.modules['HealthSystem'].schedule_hsi_event(acute_pregnancy_hsi, priority=0,
+                self.sim.modules['HealthSystem'].schedule_hsi_event(acute_pregnancy_hsi, priority=self.sim.modules['CareOfWomenDuringPregnancy'].parameters['priority_AntenatalCare_Inpatient'],
                                                                     topen=self.sim.date,
                                                                     tclose=self.sim.date + DateOffset(days=1))
             else:

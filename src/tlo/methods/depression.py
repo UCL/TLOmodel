@@ -183,7 +183,15 @@ class Depression(Module):
 
         'anti_depressant_medication_item_code': Parameter(Types.INT,
                                                           'The item code used for one month of anti-depressant '
-                                                          'treatment')
+                                                          'treatment'),
+        'priority_Depression_TalkingTherapy':
+            Parameter(Types.INT,
+                     'Priority associated with Depression_TalkingTherapy'
+                     ),
+        'priority_Depression_Treatment':
+            Parameter(Types.INT,
+                     'Priority associated with Depression_Treatment'
+                     ),
     }
 
     # Properties of individuals 'owned' by this module
@@ -331,6 +339,11 @@ class Depression(Module):
             ),
         )
 
+        #Get priority ranking from policy
+        self.parameters['priority_Depression_TalkingTherapy'] = self.sim.modules['HealthSystem'].get_priority_ranking('Depression_TalkingTherapy')
+        self.parameters['priority_Depression_Treatment'] = self.sim.modules['HealthSystem'].get_priority_ranking('Depression_Treatment')
+
+
     def apply_linear_model(self, lm, df):
         """
         Helper function will apply the linear model (lm) on the dataframe (df) to get a probability of some event
@@ -443,7 +456,7 @@ class Depression(Module):
                 date_of_next_appt_scheduled = self.sim.date + DateOffset(days=self.rng.randint(0, 30))
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     hsi_event=HSI_Depression_Refill_Antidepressant(person_id=person_id, module=self),
-                    priority=1,
+                    priority=self.parameters['priority_Depression_Treatment'],
                     topen=date_of_next_appt_scheduled,
                     tclose=date_of_next_appt_scheduled + DateOffset(days=7)
                 )
@@ -525,14 +538,14 @@ class Depression(Module):
             # Provide talking therapy (This can occur even if the person has already had talking therapy before)
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_Depression_TalkingTherapy(module=self, person_id=person_id),
-                priority=0,
+                priority=self.parameters['priority_Depression_TalkingTherapy'],
                 topen=self.sim.date
             )
 
             # Initiate person on anti-depressants (at the same facility level as the HSI event that is calling)
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_Depression_Start_Antidepressant(module=self, person_id=person_id),
-                priority=0,
+                priority=self.parameters['priority_Depression_Treatment'],
                 topen=self.sim.date
             )
 
@@ -769,7 +782,7 @@ class HSI_Depression_TalkingTherapy(HSI_Event, IndividualScopeEventMixin):
                 hsi_event=self,
                 topen=self.sim.date + pd.DateOffset(months=6),
                 tclose=None,
-                priority=1
+                priority=self.module.parameters['priority_Depression_TalkingTherapy']
             )
 
 
@@ -806,7 +819,7 @@ class HSI_Depression_Start_Antidepressant(HSI_Event, IndividualScopeEventMixin):
             # Schedule their next HSI for a refill of medication in one month
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_Depression_Refill_Antidepressant(person_id=person_id, module=self.module),
-                priority=1,
+                priority=self.module.parameters['priority_Depression_Treatment'],
                 topen=self.sim.date + DateOffset(months=1),
                 tclose=self.sim.date + DateOffset(months=1) + DateOffset(days=7)
             )
@@ -844,7 +857,7 @@ class HSI_Depression_Refill_Antidepressant(HSI_Event, IndividualScopeEventMixin)
             # Schedule their next HSI for a refill of medication, one month from now
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_Depression_Refill_Antidepressant(person_id=person_id, module=self.module),
-                priority=1,
+                priority=self.module.parameters['priority_Depression_Treatment'],
                 topen=self.sim.date + DateOffset(months=1),
                 tclose=self.sim.date + DateOffset(months=1) + DateOffset(days=7)
             )

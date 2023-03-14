@@ -281,14 +281,14 @@ def test_if_health_system_cannot_run(seed):
             'CardioMetabolicDisorders'], condition='diabetes'),
         topen=sim.date,
         tclose=sim.date + pd.DateOffset(days=1),
-        priority=0
+        priority=sim.modules['CardioMetabolicDisorders'].parameters['priority_CardioMetabolicDisorders_Prevention_WeightLoss']
     )
     sim.modules['HealthSystem'].schedule_hsi_event(
         HSI_CardioMetabolicDisorders_Refill_Medication(person_id=1, module=sim.modules['CardioMetabolicDisorders'],
                                                        condition='diabetes'),
         topen=sim.date,
         tclose=sim.date + pd.DateOffset(days=1),
-        priority=0
+        priority=sim.modules['CardioMetabolicDisorders'].parameters['priority_CardioMetabolicDisorders_Treatment']
     )
 
     # Run the HealthSystemScheduler for the days (the HSI should not be run and the never_run function should be called)

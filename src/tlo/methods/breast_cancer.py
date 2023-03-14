@@ -141,6 +141,18 @@ class BreastCancer(Module):
         "sensitivity_of_biopsy_for_stage4_breast_cancer": Parameter(
             Types.REAL, "sensitivity of biopsy_for diagnosis of stage 4 breast cancer"
         ),
+        'priority_BreastCancer_Investigation':
+            Parameter(Types.INT,
+                     'Priority associated with BreastCancer_Investigation'
+                     ),
+        'priority_BreastCancer_PalliativeCare':
+            Parameter(Types.INT,
+                     'Priority associated with BreastCancer_PalliativeCare'
+                     ),
+        'priority_BreastCancer_Treatment':
+            Parameter(Types.INT,
+                     'Priority associated with BreastCancer_Treatment'
+                     )
     }
 
     PROPERTIES = {
@@ -197,6 +209,13 @@ class BreastCancer(Module):
             Symptom(name='breast_lump_discernible',
                     odds_ratio_health_seeking_in_adults=4.00)
         )
+
+        #Overwrite with Health System's priority policy 
+        self.parameters['priority_BreastCancer_Investigation'] = self.sim.modules['HealthSystem'].get_priority_ranking('BreastCancer_Investigation')
+        self.parameters['priority_BreastCancer_PalliativeCare'] = self.sim.modules['HealthSystem'].get_priority_ranking('BreastCancer_PalliativeCare')
+        self.parameters['priority_BreastCancer_Treatment'] = self.sim.modules['HealthSystem'].get_priority_ranking('BreastCancer_Treatment')
+
+
 
     def initialise_population(self, population):
         """Set property values for the initial population."""
@@ -492,7 +511,7 @@ class BreastCancer(Module):
         for person_id in on_palliative_care_at_initiation:
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_BreastCancer_PalliativeCare(module=self, person_id=person_id),
-                priority=0,
+                priority=self.parameters['priority_BreastCancer_PalliativeCare'],
                 topen=self.sim.date + DateOffset(months=1),
                 tclose=self.sim.date + DateOffset(months=1) + DateOffset(weeks=1)
             )
@@ -687,7 +706,7 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
                         module=self.module,
                         person_id=person_id
                     ),
-                    priority=0,
+                    priority=self.module.parameters['priority_BreastCancer_Treatment'],
                     topen=self.sim.date,
                     tclose=None
                 )
@@ -699,7 +718,7 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
                         module=self.module,
                         person_id=person_id
                     ),
-                    priority=0,
+                    priority=self.module.parameters['priority_BreastCancer_PalliativeCare'],
                     topen=self.sim.date,
                     tclose=None
                 )
@@ -745,7 +764,7 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                 ),
                 topen=self.sim.date,
                 tclose=None,
-                priority=0
+                priority=self.module.parameters['priority_BreastCancer_PalliativeCare'],
             )
             return self.make_appt_footprint({})
 
@@ -767,7 +786,7 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             ),
             topen=self.sim.date + DateOffset(months=12),
             tclose=None,
-            priority=0
+            priority=self.module.parameters['priority_BreastCancer_Treatment'],
         )
 
 
@@ -807,7 +826,7 @@ class HSI_BreastCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
                 ),
                 topen=self.sim.date,
                 tclose=None,
-                priority=0
+                priority=self.module.parameters['priority_BreastCancer_PalliativeCare'],
             )
 
         else:
@@ -819,7 +838,7 @@ class HSI_BreastCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
                 ),
                 topen=self.sim.date + DateOffset(months=3),
                 tclose=None,
-                priority=0
+                priority=self.module.parameters['priority_BreastCancer_Treatment'],
             )
 
 
@@ -866,7 +885,7 @@ class HSI_BreastCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
             ),
             topen=self.sim.date + DateOffset(months=3),
             tclose=None,
-            priority=0
+            priority=self.module.parameters['priority_BreastCancer_PalliativeCare'],
         )
 
 

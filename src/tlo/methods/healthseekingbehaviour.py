@@ -289,7 +289,7 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                 health_system.schedule_batch_of_individual_hsi_events(
                     hsi_event_class=emergency_hsi_event_class,
                     person_ids=subgroup[is_emergency_care_seeking].index,
-                    priority=0,
+                    priority=0,# Emergency care should be highest priority by definition
                     topen=self.sim.date,
                     tclose=None,
                     module=module
@@ -324,7 +324,7 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                 health_system.schedule_batch_of_individual_hsi_events(
                     hsi_event_class=routine_hsi_event_class,
                     person_ids=possibly_care_seeking_subgroup.index,
-                    priority=0,
+                    priority=0, # Care should be highest priority to satisfy "force" logic
                     topen=self.sim.date,
                     tclose=None,
                     module=module
@@ -359,7 +359,7 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                     health_system.schedule_batch_of_individual_hsi_events(
                         hsi_event_class=routine_hsi_event_class,
                         person_ids=care_seeking_ids,
-                        priority=0,
+                        priority=0, # What priority should be assigned to this?
                         topen=map(Date, care_seeking_dates),
                         tclose=None,
                         module=module

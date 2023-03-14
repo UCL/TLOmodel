@@ -281,7 +281,18 @@ class NewbornOutcomes(Module):
                         'type 3 delay i.e. delay in receiving appropriate care'),
         'treatment_effect_modifier_one_delay': Parameter(
             Types.LIST, 'factor by which treatment effectiveness is reduced in the presences of one delays'),
-
+        'priority_DeliveryCare_Neonatal':
+            Parameter(Types.INT,
+                     'Priority associated with DeliveryCare_Neonatal'
+                     ),
+        'priority_PostnatalCare_Neonatal':
+            Parameter(Types.INT,
+                     'Priority associated with PostnatalCare_Neonatal'
+                     ),
+        'priority_PostnatalCare_Neonatal_Inpatient':
+            Parameter(Types.INT,
+                     'Priority associated with PostnatalCare_Neonatal_Inpatient'
+                     ), 
     }
 
     PROPERTIES = {
@@ -369,6 +380,10 @@ class NewbornOutcomes(Module):
                 'moderate_motor_sepsis': self.sim.modules['HealthBurden'].get_daly_weight(438),
                 'severe_motor_sepsis': self.sim.modules['HealthBurden'].get_daly_weight(435),
                 'mild_motor_cognitive_sepsis': self.sim.modules['HealthBurden'].get_daly_weight(441)}
+        
+        self.parameters['priority_DeliveryCare_Neonatal'] = self.sim.modules['HealthSystem'].get_priority_ranking('DeliveryCare_Neonatal')
+        self.parameters['priority_PostnatalCare_Neonatal'] = self.sim.modules['HealthSystem'].get_priority_ranking('PostnatalCare_Neonatal')
+        self.parameters['priority_PostnatalCare_Neonatal_Inpatient'] = self.sim.modules['HealthSystem'].get_priority_ranking('PostnatalCare_Neonatal_Inpatient')
 
     def initialise_population(self, population):
         df = population.props
@@ -958,7 +973,7 @@ class NewbornOutcomes(Module):
                             HSI_Hiv_TestAndRefer(person_id=child_id, module=self.sim.modules['Hiv']),
                             topen=self.sim.date + pd.DateOffset(days=days),
                             tclose=None,
-                            priority=0
+                            priority=0 #What priority should be assigned to this event?
                         )
 
     def assessment_and_initiation_of_neonatal_resus(self, hsi_event):
@@ -1087,7 +1102,7 @@ class NewbornOutcomes(Module):
             early_event = HSI_NewbornOutcomes_ReceivesPostnatalCheck(module=self, person_id=child_id)
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                early_event, priority=0,
+                early_event, priority=self.parameters['priority_PostnatalCare_Neonatal'],
                 topen=self.sim.date,
                 tclose=self.sim.date + pd.DateOffset(days=1))
 
@@ -1285,7 +1300,7 @@ class NewbornOutcomes(Module):
 
                 event = HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth(
                     self, person_id=child_id, facility_level_of_this_hsi=f_level)
-                self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=0,
+                self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=self.parameters['priority_DeliveryCare_Neonatal'],
                                                                     topen=self.sim.date,
                                                                     tclose=self.sim.date + DateOffset(days=1))
 
@@ -1530,7 +1545,7 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
 
             event = HSI_NewbornOutcomes_NeonatalWardInpatientCare(
                     self.module, person_id=person_id)
-            self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=0, topen=self.sim.date, tclose=None)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=self.module.parameters['priority_PostnatalCare_Neonatal_Inpatient'], topen=self.sim.date, tclose=None)
 
     def never_ran(self):
         self.module.run_if_care_of_the_receives_postnatal_check_cant_run(self)

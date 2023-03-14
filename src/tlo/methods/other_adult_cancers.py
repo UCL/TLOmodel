@@ -164,7 +164,19 @@ class OtherAdultCancer(Module):
         "sensitivity_of_diagnostic_device_for_other_adult_cancer_with_other_adult_ca_metastatic": Parameter(
             Types.REAL, "sensitivity of diagnostic_device_for diagnosis of other_adult cancer for those with "
                         "other_adult_ca metastatic"
-        )
+        ),
+        'priority_OtherAdultCancer_Investigation':
+            Parameter(Types.INT,
+                     'Priority associated with OtherAdultCancer_Investigation'
+                     ),
+        'priority_OtherAdultCancer_PalliativeCare':
+            Parameter(Types.INT,
+                     'Priority associated with OtherAdultCancer_PalliativeCare'
+                     ),
+        'priority_OtherAdultCancer_Treatment':
+            Parameter(Types.INT,
+                     'Priority associated with OtherAdultCancer_Treatment'
+                     ),
     }
 
     PROPERTIES = {
@@ -215,6 +227,11 @@ class OtherAdultCancer(Module):
                     odds_ratio_health_seeking_in_adults=4.00,
                     no_healthcareseeking_in_children=True)
         )
+
+        #Get priority ranking from policy
+        self.parameters['priority_OtherAdultCancer_Investigation'] = self.sim.modules['HealthSystem'].get_priority_ranking('OtherAdultCancer_Investigation')
+        self.parameters['priority_OtherAdultCancer_PalliativeCare'] = self.sim.modules['HealthSystem'].get_priority_ranking('OtherAdultCancer_PalliativeCare')
+        self.parameters['priority_OtherAdultCancer_Treatment'] = self.sim.modules['HealthSystem'].get_priority_ranking('OtherAdultCancer_Treatment')
 
     def initialise_population(self, population):
         """Set property values for the initial population."""
@@ -486,7 +503,7 @@ class OtherAdultCancer(Module):
         for person_id in on_palliative_care_at_initiation:
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_OtherAdultCancer_PalliativeCare(module=self, person_id=person_id),
-                priority=0,
+                priority=self.parameters['priority_OtherAdultCancer_PalliativeCare'],
                 topen=self.sim.date + DateOffset(months=1),
                 tclose=self.sim.date + DateOffset(months=1) + DateOffset(weeks=1)
             )
@@ -672,7 +689,7 @@ class HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom(
                         module=self.module,
                         person_id=person_id
                     ),
-                    priority=0,
+                    priority=self.module.parameters['priority_OtherAdultCancer_Treatment'],
                     topen=self.sim.date,
                     tclose=None
                 )
@@ -684,7 +701,7 @@ class HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom(
                         module=self.module,
                         person_id=person_id
                     ),
-                    priority=0,
+                    priority=self.module.parameters['priority_OtherAdultCancer_PalliativeCare'],
                     topen=self.sim.date,
                     tclose=None
                 )
@@ -723,7 +740,7 @@ class HSI_OtherAdultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                 ),
                 topen=self.sim.date,
                 tclose=None,
-                priority=0
+                priority=self.module.parameters['priority_OtherAdultCancer_PalliativeCare'],
             )
             return self.make_appt_footprint({})
         # Check that the person has cancer, not in metastatic, has been diagnosed and is not on treatment
@@ -743,7 +760,7 @@ class HSI_OtherAdultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             ),
             topen=self.sim.date + DateOffset(months=3),
             tclose=None,
-            priority=0
+            priority=self.module.parameters['priority_OtherAdultCancer_Treatment'],
         )
 
     def did_not_run(self):
@@ -786,7 +803,7 @@ class HSI_OtherAdultCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMix
                 ),
                 topen=self.sim.date,
                 tclose=None,
-                priority=0
+                priority=self.module.parameters['priority_OtherAdultCancer_PalliativeCare'],
             )
 
         else:
@@ -798,7 +815,7 @@ class HSI_OtherAdultCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMix
                 ),
                 topen=self.sim.date + DateOffset(months=3),
                 tclose=None,
-                priority=0
+                priority=self.module.parameters['priority_OtherAdultCancer_Treatment'],
             )
 
     def did_not_run(self):
@@ -847,7 +864,7 @@ class HSI_OtherAdultCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
             ),
             topen=self.sim.date + DateOffset(months=1),
             tclose=None,
-            priority=0
+            priority=self.module.parameters['priority_OtherAdultCancer_PalliativeCare'],
         )
 
     def did_not_run(self):

@@ -125,6 +125,13 @@ class Stunting(Module):
         'prob_stunting_diagnosed_at_generic_appt': Parameter(
             Types.REAL,
             'Probability of a stunted or severely stunted person being checked and correctly diagnosed'),
+
+        'priority_Undernutrition_Feeding':
+            Parameter(Types.INT,
+                     'Priority associated with Undernutrition_Feeding'
+                     ),
+
+
     }
 
     PROPERTIES = {
@@ -147,6 +154,10 @@ class Stunting(Module):
             pd.read_excel(
                 Path(self.resourcefilepath) / 'ResourceFile_Stunting.xlsx', sheet_name='Parameter_values')
         )
+
+        #Get priority ranking from policy
+        self.parameters['priority_Undernutrition_Feeding'] = self.sim.modules['HealthSystem'].get_priority_ranking('Undernutrition_Feeding')
+
 
     def initialise_population(self, population):
         """Set initial prevalence of stunting according to distributions provided in parameters"""
@@ -288,7 +299,7 @@ class Stunting(Module):
         if p_stunting_diagnosed > self.rng.random_sample():
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_Stunting_ComplementaryFeeding(module=self, person_id=person_id),
-                priority=2,  # <-- lower priority that for wasting and most other HSI
+                priority=self.parameters['priority_Undernutrition_Feeding'],  # <-- lower priority that for wasting and most other HSI
                 topen=self.sim.date)
 
     def do_treatment(self, person_id, prob_success):
@@ -543,7 +554,7 @@ class HSI_Stunting_ComplementaryFeeding(HSI_Event, IndividualScopeEventMixin):
             # Schedule a further instance of this HSI for monitoring and resupply of consumables.
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=self,
-                priority=2,  # <-- lower priority that for wasting and most other HSI
+                priority=self.module.parameters['priority_Undernutrition_Feeding'],  # <-- lower priority that for wasting and most other HSI
                 topen=self.sim.date + pd.DateOffset(months=6)
             )
 

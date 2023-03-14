@@ -172,6 +172,18 @@ class OesophagealCancer(Module):
         "sensitivity_of_endoscopy_for_oes_cancer_with_dysphagia": Parameter(
             Types.REAL, "sensitivity of endoscopy_for diagnosis of oesophageal cancer for those with dysphagia"
         ),
+        'priority_OesophagealCancer_Investigation':
+            Parameter(Types.INT,
+                     'Priority associated with OesophagealCancer_Investigation'
+                     ),
+        'priority_OesophagealCancer_PalliativeCare':
+            Parameter(Types.INT,
+                     'Priority associated with OesophagealCancer_PalliativeCare'
+                     ),
+        'priority_OesophagealCancer_Treatment':
+            Parameter(Types.INT,
+                     'Priority associated with OesophagealCancer_Treatment'
+                     ),
     }
 
     PROPERTIES = {
@@ -205,6 +217,7 @@ class OesophagealCancer(Module):
     }
 
     def read_parameters(self, data_folder):
+
         """Setup parameters used by the module, register it with healthsystem and register symptoms"""
         # Update parameters from the resourcefile
         self.load_parameters_from_dataframe(
@@ -217,6 +230,12 @@ class OesophagealCancer(Module):
             Symptom(name='dysphagia',
                     odds_ratio_health_seeking_in_adults=4.00)
         )
+
+        #Get priority ranking from policy
+        self.parameters['priority_OesophagealCancer_Investigation'] = self.sim.modules['HealthSystem'].get_priority_ranking('OesophagealCancer_Investigation')
+        self.parameters['priority_OesophagealCancer_PalliativeCare'] = self.sim.modules['HealthSystem'].get_priority_ranking('OesophagealCancer_PalliativeCare')
+        self.parameters['priority_OesophagealCancer_Treatment'] = self.sim.modules['HealthSystem'].get_priority_ranking('OesophagealCancer_Treatment')
+
 
     def initialise_population(self, population):
         """Set property values for the initial population."""
@@ -502,7 +521,7 @@ class OesophagealCancer(Module):
         for person_id in on_palliative_care_at_initiation:
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_OesophagealCancer_PalliativeCare(module=self, person_id=person_id),
-                priority=0,
+                priority=self.parameters['priority_OesophagealCancer_PalliativeCare'],
                 topen=self.sim.date + DateOffset(months=1),
                 tclose=self.sim.date + DateOffset(months=1) + DateOffset(weeks=1)
             )
@@ -680,7 +699,7 @@ class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, Individ
                         module=self.module,
                         person_id=person_id
                     ),
-                    priority=0,
+                    priority=self.module.parameters['priority_OesophagealCancer_Treatment'],
                     topen=self.sim.date,
                     tclose=None
                 )
@@ -692,7 +711,7 @@ class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, Individ
                         module=self.module,
                         person_id=person_id
                     ),
-                    priority=0,
+                    priority=self.module.parameters['priority_OesophagealCancer_PalliativeCare'],
                     topen=self.sim.date,
                     tclose=None
                 )
@@ -732,7 +751,7 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
                 ),
                 topen=self.sim.date,
                 tclose=None,
-                priority=0
+                priority=self.module.parameters['priority_OesophagealCancer_PalliativeCare'],
             )
             return self.make_appt_footprint({})
         # Check that the person has cancer, not in stage4, has been diagnosed and is not on treatment
@@ -752,7 +771,7 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
             ),
             topen=self.sim.date + DateOffset(years=12),
             tclose=None,
-            priority=0
+            priority=self.module.parameters['priority_OesophagealCancer_Treatment'],
         )
 
 
@@ -792,7 +811,7 @@ class HSI_OesophagealCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMi
                 ),
                 topen=self.sim.date,
                 tclose=None,
-                priority=0
+                priority=self.module.parameters['priority_OesophagealCancer_PalliativeCare'],
             )
 
         else:
@@ -804,7 +823,7 @@ class HSI_OesophagealCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMi
                 ),
                 topen=self.sim.date + DateOffset(years=1),
                 tclose=None,
-                priority=0
+                priority=self.module.parameters['priority_OesophagealCancer_Treatment']
             )
 
 
@@ -849,7 +868,7 @@ class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin)
             ),
             topen=self.sim.date + DateOffset(months=1),
             tclose=None,
-            priority=0
+            priority=self.module.parameters['priority_OesophagealCancer_PalliativeCare']
         )
 
 

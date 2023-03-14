@@ -88,7 +88,11 @@ class Contraception(Module):
 
         'max_days_delay_between_decision_to_change_method_and_hsi_scheduled': Parameter(
             Types.INT, "The maximum delay (in days) between the decision for a contraceptive to change and the `topen`"
-                       "date of the HSI that is scheduled to effect the change (when using the healthsystem),")
+                       "date of the HSI that is scheduled to effect the change (when using the healthsystem),"),
+        'priority_Contraception_Routine':
+            Parameter(Types.INT,
+                     'Priority associated with Contraception_Routine'
+                     ),
     }
 
     all_contraception_states = {
@@ -164,6 +168,10 @@ class Contraception(Module):
         # Import the Age-specific fertility rate data from WPP
         self.parameters['age_specific_fertility_rates'] = \
             pd.read_csv(Path(self.resourcefilepath) / 'demography' / 'ResourceFile_ASFR_WPP.csv')
+
+        #Get priority ranking from policy
+        self.parameters['priority_Contraception_Routine'] = self.sim.modules['HealthSystem'].get_priority_ranking('Contraception_Routine')
+
 
     def pre_initialise_population(self):
         """Process parameters before initialising population and simulation"""
@@ -556,7 +564,7 @@ class Contraception(Module):
                                      'max_days_delay_between_decision_to_change_method_and_hsi_scheduled'] + 1),
                         self.rng2),
                     tclose=None,
-                    priority=1
+                    priority=self.parameters['priority_Contraception_Routine']
                 )
             else:
                 # Otherwise, implement the change immediately:
@@ -978,7 +986,7 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         self.module.sim.modules['HealthSystem'].schedule_hsi_event(hsi_event=self,
                                                                    topen=self.sim.date + pd.DateOffset(days=1),
                                                                    tclose=None,
-                                                                   priority=1)
+                                                                   priority=self.module.parameters['priority_Contraception_Routine'])
 
     def never_ran(self):
         """If this HSI never ran, the person defaults to "not_using" a contraceptive."""

@@ -956,13 +956,13 @@ def test_hsi_art_stopped_if_healthsystem_cannot_run_hsi_and_no_restart(seed):
         HSI_Hiv_StartOrContinueTreatment(person_id=0, module=sim.modules['Hiv']),
         topen=sim.date,
         tclose=sim.date + pd.DateOffset(days=1),
-        priority=0
+        priority=sim.modules['Hiv'].parameters['priority_Hiv_Treatment']
     )
     sim.modules['HealthSystem'].schedule_hsi_event(
         HSI_Hiv_StartOrContinueTreatment(person_id=1, module=sim.modules['Hiv']),
         topen=sim.date,
         tclose=sim.date + pd.DateOffset(days=1),
-        priority=0
+        priority=sim.modules['Hiv'].parameters['priority_Hiv_Treatment']
     )
 
     # Run the HealthSystemScheduler for the days (the HSI should not be run and the never_run function should be called)
@@ -1052,13 +1052,13 @@ def test_hsi_art_stopped_if_healthsystem_cannot_run_hsi_but_will_restart(seed):
         HSI_Hiv_StartOrContinueTreatment(person_id=0, module=sim.modules['Hiv']),
         topen=sim.date,
         tclose=sim.date + pd.DateOffset(days=1),
-        priority=0
+        priority=sim.modules['Hiv'].parameters['priority_Hiv_Treatment']
     )
     sim.modules['HealthSystem'].schedule_hsi_event(
         HSI_Hiv_StartOrContinueTreatment(person_id=1, module=sim.modules['Hiv']),
         topen=sim.date,
         tclose=sim.date + pd.DateOffset(days=1),
-        priority=0
+        priority=sim.modules['Hiv'].parameters['priority_Hiv_Treatment']
     )
 
     # Run the HealthSystemScheduler for the days (the HSI should not be run and the never_run function should be called)

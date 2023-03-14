@@ -36,12 +36,12 @@ class RTI(Module):
         self.item_codes_for_consumables_required = dict()
 
     INIT_DEPENDENCIES = {"SymptomManager",
-                         "HealthBurden"}
+                         "HealthBurden",
+                         "HealthSystem"}
 
     ADDITIONAL_DEPENDENCIES = {
         'Demography',
         'Lifestyle',
-        'HealthSystem',
     }
 
     INJURY_INDICES = range(1, 9)
@@ -1008,7 +1008,51 @@ class RTI(Module):
             Types.INT,
             "A cut-off score above which an injuries will be considered severe enough to cause mortality in those who"
             "have not sought care."
-        )
+        ),
+        'priority_Rti_AcutePainManagement':
+            Parameter(Types.INT,
+                     'Priority associated with Rti_AcutePainManagement'
+                     ),
+        'priority_Rti_BurnManagement': 
+            Parameter(Types.INT, 
+                     'Priority associated with Rti_BurnManagement' 
+                     ), 
+        'priority_Rti_FractureCast': 
+            Parameter(Types.INT, 
+                     'Priority associated withRti_FractureCast ' 
+                     ), 
+        'priority_Rti_Imaging': 
+            Parameter(Types.INT, 
+                     'Priority associated with Rti_Imaging' 
+                     ), 
+        'priority_Rti_MajorSurgeries': 
+            Parameter(Types.INT, 
+                     'Priority associated with Rti_MajorSurgeries' 
+                     ), 
+        'priority_Rti_MedicalIntervention': 
+            Parameter(Types.INT, 
+                     'Priority associated with Rti_MedicalIntervention' 
+                     ), 
+        'priority_Rti_MinorSurgeries': 
+            Parameter(Types.INT, 
+                     'Priority associated with Rti_MinorSurgeries' 
+                     ), 
+        'priority_Rti_OpenFractureTreatment': 
+            Parameter(Types.INT, 
+                     'Priority associated with Rti_OpenFractureTreatment' 
+                     ), 
+        'priority_Rti_TetanusVaccine': 
+            Parameter(Types.INT, 
+                     'Priority associated with Rti_TetanusVaccine' 
+                     ), 
+        'priority_Rti_ShockTreatment': 
+            Parameter(Types.INT, 
+                     'Priority associated withRti_ShockTreatment ' 
+                     ), 
+        'priority_Rti_Suture': 
+            Parameter(Types.INT, 
+                     'Priority associated with Rti_Suture' 
+                     ), 
 
     }
 
@@ -1098,6 +1142,8 @@ class RTI(Module):
     def read_parameters(self, data_folder):
         """ Reads the parameters used in the RTI module"""
         p = self.parameters
+
+
 
         dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_RTI.xlsx', sheet_name='parameter_values')
         self.load_parameters_from_dataframe(dfd)
@@ -1432,6 +1478,20 @@ class RTI(Module):
         # ensure that these injuries are the permanent injuries
         assert non_zero_total_daly_change.to_list() == permanent_injuries
 
+        #Get priority ranking from policy
+        self.parameters['priority_Rti_BurnManagement'] = self.sim.modules['HealthSystem'].get_priority_ranking('Rti_BurnManagement')
+        self.parameters['priority_Rti_FractureCast'] = self.sim.modules['HealthSystem'].get_priority_ranking('Rti_FractureCast')
+        self.parameters['priority_Rti_Imaging'] = self.sim.modules['HealthSystem'].get_priority_ranking('Rti_Imaging')
+        self.parameters['priority_Rti_MajorSurgeries'] = self.sim.modules['HealthSystem'].get_priority_ranking('Rti_MajorSurgeries')
+        self.parameters['priority_Rti_MedicalIntervention'] = self.sim.modules['HealthSystem'].get_priority_ranking('Rti_MedicalIntervention')
+        self.parameters['priority_Rti_MinorSurgeries'] = self.sim.modules['HealthSystem'].get_priority_ranking('Rti_MinorSurgeries')
+        self.parameters['priority_Rti_OpenFractureTreatment'] = self.sim.modules['HealthSystem'].get_priority_ranking('Rti_OpenFractureTreatment')
+        self.parameters['priority_Rti_ShockTreatment'] = self.sim.modules['HealthSystem'].get_priority_ranking('Rti_ShockTreatment')
+        self.parameters['priority_Rti_Suture'] = self.sim.modules['HealthSystem'].get_priority_ranking('Rti_Suture')
+        self.parameters['priority_Rti_TetanusVaccine'] = self.sim.modules['HealthSystem'].get_priority_ranking('Rti_TetanusVaccine')
+        self.parameters['priority_Rti_AcutePainManagement'] = self.sim.modules['HealthSystem'].get_priority_ranking('Rti_AcutePainManagement')
+
+
     def rti_injury_diagnosis(self, person_id, the_appt_footprint):
         """
         A function used to alter the appointment footprint of the generic first appointments, based on the needs of
@@ -1551,7 +1611,7 @@ class RTI(Module):
         if counts > 0:
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_RTI_Medical_Intervention(module=self, person_id=person_id),
-                priority=0,
+                priority=self.parameters['priority_Rti_MedicalIntervention'],
                 topen=self.sim.date
             )
 
@@ -1622,7 +1682,7 @@ class RTI(Module):
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     hsi_event=HSI_RTI_Major_Surgeries(module=self,
                                                       person_id=person_id),
-                    priority=0,
+                    priority=self.parameters['priority_Rti_MajorSurgeries'],
                     topen=self.sim.date + DateOffset(days=count),
                     tclose=self.sim.date + DateOffset(days=15))
             else:
@@ -1686,7 +1746,7 @@ class RTI(Module):
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     hsi_event=HSI_RTI_Minor_Surgeries(module=self,
                                                       person_id=person_id),
-                    priority=0,
+                    priority=self.parameters['priority_Rti_MinorSurgeries'],
                     topen=self.sim.date + DateOffset(days=count),
                     tclose=self.sim.date + DateOffset(days=15))
             else:
@@ -1724,7 +1784,7 @@ class RTI(Module):
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_RTI_Acute_Pain_Management(module=self,
                                                         person_id=person_id),
-                priority=0,
+                priority=self.parameters['priority_Rti_AcutePainManagement'],
                 topen=self.sim.date + DateOffset(days=1),
                 tclose=self.sim.date + DateOffset(days=15))
 
@@ -1754,7 +1814,7 @@ class RTI(Module):
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_RTI_Suture(module=self,
                                          person_id=person_id),
-                priority=0,
+                priority=self.parameters['priority_Rti_Suture'],
                 topen=self.sim.date + DateOffset(days=1),
                 tclose=self.sim.date + DateOffset(days=15)
             )
@@ -1772,7 +1832,7 @@ class RTI(Module):
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_RTI_Shock_Treatment(module=self,
                                                   person_id=person_id),
-                priority=0,
+                priority=self.parameters['priority_Rti_ShockTreatment'],
                 topen=self.sim.date + DateOffset(days=1),
                 tclose=self.sim.date + DateOffset(days=15)
             )
@@ -1787,7 +1847,7 @@ class RTI(Module):
         if df.at[person_id, 'is_alive']:
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_RTI_Imaging_Event(module=self, person_id=person_id),
-                priority=0,
+                priority=self.parameters['priority_Rti_Imaging'],
                 topen=self.sim.date + DateOffset(days=1),
                 tclose=self.sim.date + DateOffset(days=15)
             )
@@ -1819,7 +1879,7 @@ class RTI(Module):
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_RTI_Burn_Management(module=self,
                                                   person_id=person_id),
-                priority=0,
+                priority=self.parameters['priority_Rti_BurnManagement'],
                 topen=self.sim.date + DateOffset(days=1),
                 tclose=self.sim.date + DateOffset(days=15)
             )
@@ -1856,7 +1916,7 @@ class RTI(Module):
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     hsi_event=HSI_RTI_Fracture_Cast(module=self,
                                                     person_id=person_id),
-                    priority=0,
+                    priority=self.parameters['priority_Rti_FractureCast'],
                     topen=self.sim.date + DateOffset(days=1),
                     tclose=self.sim.date + DateOffset(days=15)
                 )
@@ -1894,7 +1954,7 @@ class RTI(Module):
                 # schedule the treatments, say the treatments occur a day apart for now
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     hsi_event=HSI_RTI_Open_Fracture_Treatment(module=self, person_id=person_id),
-                    priority=0,
+                    priority=self.parameters['priority_Rti_OpenFractureTreatment'],
                     topen=self.sim.date + DateOffset(days=0 + i),
                     tclose=self.sim.date + DateOffset(days=15 + i)
                 )
@@ -1928,18 +1988,19 @@ class RTI(Module):
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_RTI_Tetanus_Vaccine(module=self,
                                                   person_id=person_id),
-                priority=0,
+                priority=self.parameters['priority_Rti_TetanusVaccine'],
                 topen=self.sim.date + DateOffset(days=1),
                 tclose=self.sim.date + DateOffset(days=15)
             )
 
-    def schedule_hsi_event_for_tomorrow(self, hsi_event: HSI_Event = None):
+    def schedule_hsi_event_for_tomorrow(self, hsi_event: HSI_Event = None,_priority=0):
         """
         A function to reschedule requested events for the following day if they have failed to run
         :return:
         """
+        print("The priority i will use is", _priority, hsi_event.TREATMENT_ID)
         self.sim.modules['HealthSystem'].schedule_hsi_event(hsi_event, topen=self.sim.date + DateOffset(days=1),
-                                                            tclose=self.sim.date + DateOffset(days=15), priority=0)
+                                                            tclose=self.sim.date + DateOffset(days=15), priority=_priority)
 
     def rti_find_injury_column(self, person_id, codes):
         """
@@ -3761,7 +3822,7 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
                          data=f"Hypovolemic shock treatment available for person {person_id}")
             df.at[person_id, 'rt_in_shock'] = False
         else:
-            self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
+            self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self, _priority=self.module.parameters['priority_Rti_ShockTreatment'])
             return self.make_appt_footprint({})
 
     def did_not_run(self):
@@ -3910,7 +3971,7 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
             df.loc[person_id, 'rt_injuries_to_cast'].clear()
             df.loc[person_id, 'rt_date_death_no_med'] = pd.NaT
         else:
-            self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
+            self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self, _priority=self.module.parameters['priority_Rti_FractureCast'])
             if pd.isnull(df.loc[person_id, 'rt_date_death_no_med']):
                 df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
             logger.debug(key='rti_general_message',
@@ -4020,7 +4081,7 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
             if code[0] in df.loc[person_id, 'rt_injuries_for_open_fracture_treatment']:
                 df.loc[person_id, 'rt_injuries_for_open_fracture_treatment'].remove(code[0])
         else:
-            self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
+            self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self, _priority=self.module.parameters['priority_Rti_OpenFractureTreatment'])
             if pd.isnull(df.loc[person_id, 'rt_date_death_no_med']):
                 df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
             logger.debug(key='rti_general_message',
@@ -4111,7 +4172,7 @@ class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
                     assert df.loc[person_id, date_to_remove_daly_column] > self.sim.date
                 df.loc[person_id, 'rt_date_death_no_med'] = pd.NaT
             else:
-                self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
+                self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self, _priority=self.module.parameters['priority_Rti_Suture'])
                 if pd.isnull(df.loc[person_id, 'rt_date_death_no_med']):
                     df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
                 logger.debug(key='rti_general_message',
@@ -4234,7 +4295,7 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
                 )
                 df.loc[person_id, 'rt_date_death_no_med'] = pd.NaT
             else:
-                self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
+                self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self, _priority=self.module.parameters['priority_Rti_BurnManagement'])
                 if pd.isnull(df.loc[person_id, 'rt_date_death_no_med']):
                     df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
                 logger.debug(key='rti_general_message',
@@ -4292,7 +4353,7 @@ class HSI_RTI_Tetanus_Vaccine(HSI_Event, IndividualScopeEventMixin):
                 logger.debug(key='rti_general_message',
                              data=f"Tetanus vaccine requested for person {person_id} and given")
             else:
-                self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
+                self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self, _priority=self.module.parameters['priority_Rti_TetanusVaccine'])
                 logger.debug(key='rti_general_message',
                              data=f"Tetanus vaccine requested for person {person_id}, not given")
                 return self.make_appt_footprint({})
@@ -4433,7 +4494,7 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
                             data=dict_to_output,
                             description='Pain medicine successfully provided to the person')
             else:
-                self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
+                self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self, _priority=self.module.parameters['priority_Rti_AcutePainManagement'])
                 logger.debug(key='rti_general_message',
                              data=f"This facility has no pain management available for their mild pain, person "
                                   f"{person_id}.")
@@ -4464,7 +4525,8 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
                             data=dict_to_output,
                             description='Pain medicine successfully provided to the person')
             else:
-                self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
+                #Only have priority associated with Acute pain management, what should we use for moderate pain?
+                self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self, _priority=self.module.parameters['priority_Rti_AcutePainManagement'])
                 logger.debug(key='rti_general_message',
                              data=f"This facility has no pain management available for moderate pain for person "
                                   f"{person_id}.")
@@ -4496,7 +4558,7 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
                             data=dict_to_output,
                             description='Pain medicine successfully provided to the person')
             else:
-                self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
+                self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self, _priority=self.module.parameters['priority_Rti_AcutePainManagement'])
                 logger.debug(key='rti_general_message',
                              data=f"This facility has no pain management available for severe pain for person "
                                   f"{person_id}.")
@@ -4900,7 +4962,7 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
                 ['Treated injury code not removed', self.treated_code]
             df.loc[person_id, 'rt_date_death_no_med'] = pd.NaT
         else:
-            self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
+            self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self,_priority=self.module.parameters['priority_Rti_MajorSurgeries'])
             if pd.isnull(df.loc[person_id, 'rt_date_death_no_med']):
                 df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
             return self.make_appt_footprint({})
@@ -5085,7 +5147,7 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
                 ['Injury treated not removed', treated_code]
             df.loc[person_id, 'rt_date_death_no_med'] = pd.NaT
         else:
-            self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
+            self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self, _priority=self.module.parameters['priority_Rti_MinorSurgeries'])
             if pd.isnull(df.loc[person_id, 'rt_date_death_no_med']):
                 df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
             logger.debug(key='rti_general_message',

@@ -566,6 +566,22 @@ class Labour(Module):
         'pnc_availability_probability': Parameter(
             Types.REAL, 'Target probability of quality/consumables when analysis is being conducted - only applied if '
                         'alternative_pnc_coverage is true'),
+        'priority_DeliveryCare_Basic':
+            Parameter(Types.INT,
+                     'Priority associated with DeliveryCare_Basic'
+                     ),
+        'priority_DeliveryCare_Comprehensive':
+            Parameter(Types.INT,
+                     'Priority associated with DeliveryCare_Comprehensive'
+                     ),
+        'priority_PostnatalCare_Maternal':
+            Parameter(Types.INT,
+                     'Priority associated with PostnatalCare_Maternal'
+                     ),
+        'priority_PostnatalCare_Maternal_Inpatient':
+            Parameter(Types.INT,
+                     'Priority associated with PostnatalCare_Maternal_Inpatient'
+                     ),
     }
 
     PROPERTIES = {
@@ -618,6 +634,14 @@ class Labour(Module):
                                                                           'Attendance.xlsx',
                                             sheet_name='parameter_values')
         self.load_parameters_from_dataframe(parameter_dataframe)
+
+        #Get priority ranking from policy
+        self.parameters['priority_DeliveryCare_Basic'] = self.sim.modules['HealthSystem'].get_priority_ranking('DeliveryCare_Basic')
+        self.parameters['priority_DeliveryCare_Comprehensive'] = self.sim.modules['HealthSystem'].get_priority_ranking('DeliveryCare_Comprehensive')
+        self.parameters['priority_PostnatalCare_Maternal'] = self.sim.modules['HealthSystem'].get_priority_ranking('PostnatalCare_Maternal')
+        self.parameters['priority_PostnatalCare_Maternal_Inpatient'] = self.sim.modules['HealthSystem'].get_priority_ranking('PostnatalCare_Maternal_Inpatient')
+
+
 
     def initialise_population(self, population):
         df = population.props
@@ -2232,14 +2256,15 @@ class Labour(Module):
         person_id = int(hsi_event.target)
         params = self.current_parameters
 
-        # HIV testing occurs within the HIV module for women who havent already been diagnosed
+                # HIV testing occurs within the HIV module for women who havent already been diagnosed
         if 'Hiv' in self.sim.modules.keys():
             if not df.at[person_id, 'hv_diagnosed']:
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     HSI_Hiv_TestAndRefer(person_id=person_id, module=self.sim.modules['Hiv']),
                     topen=self.sim.date,
                     tclose=None,
-                    priority=0)
+                    priority=0) # What priority do we want to associate with this event?
+
 
         # ------------------------------- Postnatal iron and folic acid ---------------------------------------------
         cons = {_i: params['number_ifa_tablets_required_postnatally'] for _i in
@@ -2492,7 +2517,7 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
             elif mni[individual_id]['delivery_setting'] == 'health_centre':
                 health_centre_delivery = HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(
                     self.module, person_id=individual_id, facility_level_of_this_hsi='1a')
-                self.sim.modules['HealthSystem'].schedule_hsi_event(health_centre_delivery, priority=0,
+                self.sim.modules['HealthSystem'].schedule_hsi_event(health_centre_delivery, priority=self.module.parameters['priority_DeliveryCare_Basic'],
                                                                     topen=self.sim.date,
                                                                     tclose=self.sim.date + DateOffset(days=1))
 
@@ -2500,7 +2525,7 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                 facility_level = self.module.rng.choice(['1a', '1b'])
                 hospital_delivery = HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(
                     self.module, person_id=individual_id, facility_level_of_this_hsi=facility_level)
-                self.sim.modules['HealthSystem'].schedule_hsi_event(hospital_delivery, priority=0,
+                self.sim.modules['HealthSystem'].schedule_hsi_event(hospital_delivery, priority=self.module.parameters['priority_DeliveryCare_Basic'],
                                                                     topen=self.sim.date,
                                                                     tclose=self.sim.date + DateOffset(days=1))
 
@@ -2593,8 +2618,9 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
                         module=self.module,
                         person_id=individual_id)
 
+                    #Need to relate this to emergency appointment
                     self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-                                                                        priority=0,
+                                                                        priority=0, # Emergency has priority = 0 by definition
                                                                         topen=self.sim.date,
                                                                         tclose=self.sim.date + DateOffset(days=1))
                 else:
@@ -2808,7 +2834,7 @@ class BirthAndPostnatalOutcomesEvent(Event, IndividualScopeEventMixin):
 
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
                         early_event,
-                        priority=0,
+                        priority=self.module.parameters['priority_PostnatalCare_Maternal'],
                         topen=self.sim.date,
                         tclose=self.sim.date + DateOffset(days=1))
 
@@ -2969,7 +2995,7 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
             surgical_management = HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(
                 self.module, person_id=person_id, timing='intrapartum')
             self.sim.modules['HealthSystem'].schedule_hsi_event(surgical_management,
-                                                                priority=0,
+                                                                priority=self.module.parameters['priority_DeliveryCare_Comprehensive'],
                                                                 topen=self.sim.date,
                                                                 tclose=self.sim.date + DateOffset(days=1))
 
@@ -3076,7 +3102,7 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
             surgical_management = HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(
                 self.module, person_id=person_id, timing='postpartum')
             self.sim.modules['HealthSystem'].schedule_hsi_event(surgical_management,
-                                                                priority=0,
+                                                                priority=self.module.parameters['priority_DeliveryCare_Comprehensive'],
                                                                 topen=self.sim.date,
                                                                 tclose=self.sim.date + DateOffset(days=1))
 
@@ -3091,7 +3117,7 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
             postnatal_inpatient = HSI_Labour_PostnatalWardInpatientCare(
                 self.module, person_id=person_id)
             self.sim.modules['HealthSystem'].schedule_hsi_event(postnatal_inpatient,
-                                                                priority=0,
+                                                                priority=self.module.parameters['priority_PostnatalCare_Maternal_Inpatient'],
                                                                 topen=self.sim.date,
                                                                 tclose=self.sim.date + DateOffset(days=1))
 
@@ -3227,7 +3253,7 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
             postnatal_inpatient = HSI_Labour_PostnatalWardInpatientCare(
                 self.module, person_id=person_id)
             self.sim.modules['HealthSystem'].schedule_hsi_event(postnatal_inpatient,
-                                                                priority=0,
+                                                                priority=self.module.parameters['priority_PostnatalCare_Maternal_Inpatient'],
                                                                 topen=self.sim.date,
                                                                 tclose=self.sim.date + DateOffset(days=1))
 

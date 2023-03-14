@@ -351,6 +351,22 @@ class Hiv(Module):
             Types.REAL,
             "probability of death if aids and tb, person on treatment for tb",
         ),
+        'priority_Hiv_Prevention_Circumcision':
+            Parameter(Types.INT,
+                     'Priority associated with Hiv_Prevention_Circumcision'
+                     ),
+        'priority_Hiv_Prevention_Prep':
+            Parameter(Types.INT,
+                     'Priority associated with Hiv_Prevention_Prep'
+                     ),
+        'priority_Hiv_Test':
+            Parameter(Types.INT,
+                     'Priority associated with Hiv_Test'
+                     ),
+        'priority_Hiv_Treatment':
+            Parameter(Types.INT,
+                     'Priority associated with Hiv_Treatment'
+                     ),
     }
 
     def read_parameters(self, data_folder):
@@ -411,6 +427,12 @@ class Hiv(Module):
                 odds_ratio_health_seeking_in_children=10.0,
             )  # High chance of seeking care when aids_symptoms onset
         )
+
+        #Get priority ranking from policy
+        self.parameters['priority_Hiv_Prevention_Circumcision'] = self.sim.modules['HealthSystem'].get_priority_ranking('Hiv_Prevention_Circumcision')
+        self.parameters['priority_Hiv_Prevention_Prep'] = self.sim.modules['HealthSystem'].get_priority_ranking('Hiv_Prevention_Prep')
+        self.parameters['priority_Hiv_Test'] = self.sim.modules['HealthSystem'].get_priority_ranking('Hiv_Test')
+        self.parameters['priority_Hiv_Treatment'] = self.sim.modules['HealthSystem'].get_priority_ranking('Hiv_Treatment')
 
     def pre_initialise_population(self):
         """
@@ -865,7 +887,7 @@ class Hiv(Module):
             date_test = self.sim.date + pd.DateOffset(days=self.rng.randint(0, 60))
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 hsi_event=HSI_Hiv_TestAndRefer(person_id=person_id, module=self),
-                priority=1,
+                priority=self.parameters['priority_Hiv_Test'],
                 topen=date_test,
                 tclose=self.sim.date + pd.DateOffset(days=365),
             )
@@ -1027,7 +1049,7 @@ class Hiv(Module):
                         person_id=abs(mother_id),  # Pass mother's id, whether from true or direct birth
                         module=self,
                         referred_from='ANC_routine'),
-                    priority=1,
+                    priority=self.parameters['priority_Hiv_Test'],
                     topen=self.sim.date,
                     tclose=None,
                 )
@@ -1042,7 +1064,7 @@ class Hiv(Module):
                         person_id=child_id,
                         module=self,
                         referred_from='Infant_testing'),
-                    priority=1,
+                    priority=self.parameters['priority_Hiv_Test'],
                     topen=self.sim.date + pd.DateOffset(weeks=6),
                     tclose=None,
                 )
@@ -1223,7 +1245,7 @@ class Hiv(Module):
                 HSI_Hiv_StartOrContinueTreatment(person_id=person_id, module=self),
                 topen=self.sim.date,
                 tclose=None,
-                priority=0,
+                priority=self.parameters['priority_Hiv_Treatment'],
             )
 
         else:
@@ -1232,7 +1254,7 @@ class Hiv(Module):
                 HSI_Hiv_TestAndRefer(person_id=person_id, module=self),
                 topen=self.sim.date + pd.DateOffset(months=6),
                 tclose=None,
-                priority=0,
+                priority=self.parameters['priority_Hiv_Test'],
             )
 
     def prob_art_start_after_test(self, year):
@@ -1303,7 +1325,7 @@ class Hiv(Module):
             HSI_Hiv_TestAndRefer(person_id=person_id, module=self),
             topen=self.sim.date + pd.DateOffset(months=1),
             tclose=None,
-            priority=0,
+            priority=self.parameters['priority_Hiv_Test'],
         )
 
     def per_capita_testing_rate(self):
@@ -1537,7 +1559,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 )
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_TestAndRefer(person_id=person_id, module=self.module, referred_from='HIV_poll'),
-                    priority=1,
+                    priority=self.module.parameters['priority_Hiv_Test'],
                     topen=date_test,
                     tclose=self.sim.date + pd.DateOffset(
                         months=self.frequency.months
@@ -1580,7 +1602,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_StartOrContinueOnPrep(person_id=person,
                                                             module=self.module),
-                    priority=1,
+                    priority=self.module.parameters['priority_Hiv_Prevention_Prep'],
                     topen=self.sim.date,
                     tclose=self.sim.date + pd.DateOffset(
                         months=self.frequency.months
@@ -1879,7 +1901,7 @@ class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
                 HSI_Hiv_StartOrContinueOnPrep(person_id=person_id, module=m),
                 topen=self.sim.date,
                 tclose=self.sim.date + pd.DateOffset(days=7),
-                priority=0,
+                priority=self.module.parameters['priority_Hiv_Prevention_Prep'],
             )
 
         else:
@@ -1917,7 +1939,7 @@ class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
                 HSI_Hiv_StartOrContinueTreatment(person_id=person_id, module=m),
                 topen=self.sim.date,
                 tclose=self.sim.date + pd.DateOffset(days=14),
-                priority=0,
+                priority=self.module.parameters['priority_Hiv_Treatment'],
             )
 
         else:
@@ -2020,7 +2042,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                             ),
                             topen=self.sim.date,
                             tclose=None,
-                            priority=0,
+                            priority=self.sim.modules['Tb'].parameters['priority_Tb_Test_Screening'],
                         )
 
             else:
@@ -2046,7 +2068,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                                 HSI_Hiv_Circ(person_id=person_id, module=self.module),
                                 topen=self.sim.date,
                                 tclose=None,
-                                priority=0,
+                                priority=self.module.parameters['priority_Hiv_Prevention_Circumcision'],
                             )
 
                     # If person is a woman and FSW, and not currently on PrEP then consider referring to PrEP
@@ -2065,7 +2087,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                                 ),
                                 topen=self.sim.date,
                                 tclose=None,
-                                priority=0,
+                                priority=self.module.parameters['priority_Hiv_Prevention_Prep'],
                             )
         else:
             # Test was not possible, so do nothing:
@@ -2117,7 +2139,7 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
                 self,
                 topen=self.sim.date + DateOffset(days=days_to_fup),
                 tclose=None,
-                priority=0,
+                priority=self.module.parameters['priority_Hiv_Prevention_Circumcision'],
             )
 
 
@@ -2255,7 +2277,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 ),
                 topen=self.sim.date + pd.DateOffset(days=1),
                 tclose=self.sim.date + pd.DateOffset(days=15),
-                priority=0,
+                priority=self.module.parameters['priority_Hiv_Treatment'],
             )
 
         # also screen for tb
@@ -2266,7 +2288,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 ),
                 topen=self.sim.date,
                 tclose=None,
-                priority=0,
+                priority=self.sim.modules['Tb'].parameters['priority_Tb_Test_Screening'],
             )
 
     def do_at_initiation(self, person_id):
@@ -2377,7 +2399,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 ),
                 topen=self.sim.date + pd.DateOffset(days=14),
                 tclose=self.sim.date + pd.DateOffset(days=21),
-                priority=1,
+                priority=self.module.parameters['priority_Hiv_Treatment'],
             )
 
     def _make_appt_footprint_according_age_and_patient_status(self, person_id):

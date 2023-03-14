@@ -151,6 +151,26 @@ class CareOfWomenDuringPregnancy(Module):
         'squeeze_threshold_for_delay_three_an': Parameter(
             Types.LIST, 'squeeze factor value over which an individual within a antenatal HSI is said to experience '
                         'type 3 delay i.e. delay in receiving appropriate care'),
+        'priority_AntenatalCare_FollowUp':
+            Parameter(Types.INT,
+                     'Priority associated with AntenatalCare_FollowUp'
+                     ),
+        'priority_AntenatalCare_Inpatient':
+            Parameter(Types.INT,
+                     'Priority associated with AntenatalCare_Inpatient'
+                     ),
+        'priority_AntenatalCare_Outpatient':
+            Parameter(Types.INT,
+                     'Priority associated with AntenatalCare_Outpatient'
+                     ),
+        'priority_AntenatalCare_PostAbortion':
+            Parameter(Types.INT,
+                     'Priority associated with AntenatalCare_PostAbortion'
+                     ),
+        'priority_AntenatalCare_PostEctopicPregnancy':
+            Parameter(Types.INT,
+                     'Priority associated with AntenatalCare_PostEctopicPregnancy'
+                     ),
     }
 
     PROPERTIES = {
@@ -190,6 +210,13 @@ class CareOfWomenDuringPregnancy(Module):
         parameter_dataframe = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_AntenatalCare.xlsx',
                                             sheet_name='parameter_values')
         self.load_parameters_from_dataframe(parameter_dataframe)
+
+        #Get priority ranking from policy
+        self.parameters['priority_AntenatalCare_FollowUp'] = self.sim.modules['HealthSystem'].get_priority_ranking('AntenatalCare_FollowUp')
+        self.parameters['priority_AntenatalCare_Inpatient'] = self.sim.modules['HealthSystem'].get_priority_ranking('AntenatalCare_Inpatient')
+        self.parameters['priority_AntenatalCare_Outpatient'] = self.sim.modules['HealthSystem'].get_priority_ranking('AntenatalCare_Outpatient')
+        self.parameters['priority_AntenatalCare_PostAbortion'] = self.sim.modules['HealthSystem'].get_priority_ranking('AntenatalCare_PostAbortion')
+        self.parameters['priority_AntenatalCare_PostEctopicPregnancy'] = self.sim.modules['HealthSystem'].get_priority_ranking('AntenatalCare_PostEctopicPregnancy')
 
     def initialise_population(self, population):
         df = population.props
@@ -616,7 +643,7 @@ class CareOfWomenDuringPregnancy(Module):
             # And use this value as the number of weeks until she is required to return for her next ANC
             visit_date = self.sim.date + DateOffset(weeks=weeks_due_next_visit)
             self.sim.modules['HealthSystem'].schedule_hsi_event(visit,
-                                                                priority=0,
+                                                                priority=self.parameters['priority_AntenatalCare_Outpatient'],
                                                                 topen=visit_date,
                                                                 tclose=visit_date + DateOffset(days=7))
 
@@ -652,7 +679,8 @@ class CareOfWomenDuringPregnancy(Module):
         inpatient = HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
             self.sim.modules['CareOfWomenDuringPregnancy'], person_id=individual_id)
 
-        self.sim.modules['HealthSystem'].schedule_hsi_event(inpatient, priority=0,
+        self.sim.modules['HealthSystem'].schedule_hsi_event(inpatient, 
+                                                            priority=self.sim.modules['CareOfWomenDuringPregnancy'].parameters['priority_AntenatalCare_Inpatient'],
                                                             topen=self.sim.date,
                                                             tclose=self.sim.date + DateOffset(days=1))
 
@@ -858,8 +886,8 @@ class CareOfWomenDuringPregnancy(Module):
         if 'Tb' in self.sim.modules.keys():
             tb_screen = HSI_Tb_ScreeningAndRefer(
                     module=self.sim.modules['Tb'], person_id=hsi_event.target)
-
-            self.sim.modules['HealthSystem'].schedule_hsi_event(tb_screen, priority=0,
+            #Assume that the priority for Tb screening is same for pregnant women as general population
+            self.sim.modules['HealthSystem'].schedule_hsi_event(tb_screen, priority=self.sim.modules['Tb'].parameters['priority_Tb_Test_Screening'],
                                                                 topen=self.sim.date,
                                                                 tclose=self.sim.date + DateOffset(days=1))
 
@@ -872,7 +900,7 @@ class CareOfWomenDuringPregnancy(Module):
         """
         person_id = hsi_event.target
         df = self.sim.population.props
-
+       
         if 'Epi' in self.sim.modules:
 
             # Define the HSI in which the vaccine is delivered
@@ -891,12 +919,12 @@ class CareOfWomenDuringPregnancy(Module):
 
                 if self.rng.random_sample() < tt2_coverage.values:
 
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(vaccine_hsi, priority=0,
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(vaccine_hsi, priority=self.sim.modules['Epi'].parameters['priority_Epi_Pregnancy_Td'],
                                                                         topen=self.sim.date)
             else:
                 # After 2018 all women are scheduled the HSI and consumable availability will determine intervention
                 # delivery
-                self.sim.modules['HealthSystem'].schedule_hsi_event(vaccine_hsi, priority=0,
+                self.sim.modules['HealthSystem'].schedule_hsi_event(vaccine_hsi, priority=self.sim.modules['Epi'].parameters['priority_Epi_Pregnancy_Td'],
                                                                     topen=self.sim.date)
 
     def calcium_supplementation(self, hsi_event):
@@ -1028,7 +1056,6 @@ class CareOfWomenDuringPregnancy(Module):
                     # We assume that treatment is 100% effective at curing infection
                     df.at[person_id, 'ps_syphilis'] = False
                     logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'syphilis_treat'})
-
     def hiv_testing(self, hsi_event):
         """
         This function contains the scheduling for HIV testing and is provided to women during ANC.
@@ -1052,7 +1079,7 @@ class CareOfWomenDuringPregnancy(Module):
                    HSI_Hiv_TestAndRefer(person_id=person_id, module=self.sim.modules['Hiv']),
                    topen=self.sim.date,
                    tclose=None,
-                   priority=0)
+                   priority=0) #What priority do we want to associate with Hiv testing of pregnant women?
 
             logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'hiv_screen'})
 
@@ -1068,7 +1095,7 @@ class CareOfWomenDuringPregnancy(Module):
         if 'Malaria' in self.sim.modules:
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_MalariaIPTp(person_id=person_id,
-                                module=self.sim.modules['Malaria']), topen=self.sim.date, tclose=None, priority=0)
+                                module=self.sim.modules['Malaria']), topen=self.sim.date, tclose=None, priority=0) #What priority do we want to associate with Malaria treatment of pregnant women?
 
     def gdm_screening(self, hsi_event):
         """This function contains intervention of gestational diabetes screening during ANC. Screening is only conducted
@@ -1167,7 +1194,7 @@ class CareOfWomenDuringPregnancy(Module):
             weeks_due_next_visit = int(gest_age_next_contact - df.at[individual_id, 'ps_gestational_age_in_weeks'])
             visit_date = self.sim.date + DateOffset(weeks=weeks_due_next_visit)
 
-            self.sim.modules['HealthSystem'].schedule_hsi_event(visit, priority=0,
+            self.sim.modules['HealthSystem'].schedule_hsi_event(visit, priority=self.parameters['priority_AntenatalCare_Outpatient'],
                                                                 topen=visit_date,
                                                                 tclose=visit_date + DateOffset(days=7))
             df.at[individual_id, 'ps_date_of_anc1'] = visit_date
@@ -1176,7 +1203,7 @@ class CareOfWomenDuringPregnancy(Module):
         # Finally, if the squeeze factor is too high the event wont run and she will return tomorrow
         if squeeze_factor > params['squeeze_factor_threshold_anc']:
 
-            self.sim.modules['HealthSystem'].schedule_hsi_event(visit, priority=0,
+            self.sim.modules['HealthSystem'].schedule_hsi_event(visit, priority=self.parameters['priority_AntenatalCare_Outpatient'],
                                                                 topen=self.sim.date + DateOffset(days=1),
                                                                 tclose=self.sim.date + DateOffset(days=2))
             return False
@@ -1224,7 +1251,7 @@ class CareOfWomenDuringPregnancy(Module):
 
         # If the squeeze factor is too high she will return tomorrow
         if squeeze_factor > params['squeeze_factor_threshold_anc']:
-            self.sim.modules['HealthSystem'].schedule_hsi_event(this_contact, priority=0,
+            self.sim.modules['HealthSystem'].schedule_hsi_event(this_contact, priority=self.parameters['priority_AntenatalCare_Outpatient'],
                                                                 topen=self.sim.date + DateOffset(days=1),
                                                                 tclose=self.sim.date + DateOffset(days=2))
             return False
@@ -2060,7 +2087,7 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
         if df.at[person_id, 'hs_is_inpatient'] and (df.at[person_id, 'ps_gestational_age_in_weeks'] < 37):
             weeks_due_next_visit = int(recommended_gestation_next_anc - df.at[person_id, 'ps_gestational_age_in_weeks'])
             visit_date = self.sim.date + DateOffset(weeks=weeks_due_next_visit)
-            self.sim.modules['HealthSystem'].schedule_hsi_event(self, priority=0,
+            self.sim.modules['HealthSystem'].schedule_hsi_event(self, priority=self.module.parameters['priority_AntenatalCare_Outpatient'],
                                                                 topen=visit_date,
                                                                 tclose=visit_date + DateOffset(days=7))
 
@@ -2071,7 +2098,7 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
 
         # Finally, if the squeeze factor is too high the event wont run and she will return tomorrow
         elif squeeze_factor > params['squeeze_factor_threshold_anc']:
-            self.sim.modules['HealthSystem'].schedule_hsi_event(self, priority=0,
+            self.sim.modules['HealthSystem'].schedule_hsi_event(self, priority=self.module.parameters['priority_AntenatalCare_Outpatient'],
                                                                 topen=self.sim.date + DateOffset(days=1),
                                                                 tclose=self.sim.date + DateOffset(days=2))
             return
@@ -2177,7 +2204,7 @@ class HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(HSI_Event, Indi
             admission = HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
                 self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
 
-            self.sim.modules['HealthSystem'].schedule_hsi_event(admission, priority=0,
+            self.sim.modules['HealthSystem'].schedule_hsi_event(admission, priority=self.module.parameters['priority_AntenatalCare_Inpatient'],
                                                                 topen=self.sim.date,
                                                                 tclose=self.sim.date + DateOffset(days=1))
 
@@ -2272,7 +2299,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                     outpatient_checkup = HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia(
                         self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
 
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(outpatient_checkup, priority=0,
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(outpatient_checkup, priority=self.module.parameters['priority_AntenatalCare_FollowUp'],
                                                                         topen=follow_up_date,
                                                                         tclose=follow_up_date + DateOffset(days=7))
 
@@ -2294,7 +2321,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
 
             outpatient_checkup = HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes(
                 self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
-            self.sim.modules['HealthSystem'].schedule_hsi_event(outpatient_checkup, priority=0,
+            self.sim.modules['HealthSystem'].schedule_hsi_event(outpatient_checkup, self.module.parameters['priority_AntenatalCare_FollowUp'],
                                                                 topen=check_up_date,
                                                                 tclose=check_up_date + DateOffset(days=3))
 
@@ -2490,8 +2517,8 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia(HSI_
 
                 admission = HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
                     self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
-
-                self.sim.modules['HealthSystem'].schedule_hsi_event(admission, priority=0,
+                #Should the priority here be associated with FollowUp or Inpatient?
+                self.sim.modules['HealthSystem'].schedule_hsi_event(admission, priority=self.module.parameters['priority_AntenatalCare_Inpatient'],
                                                                     topen=self.sim.date,
                                                                     tclose=self.sim.date + DateOffset(days=1))
 
@@ -2545,7 +2572,8 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalD
                 outpatient_checkup = \
                     HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes(
                         self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
-                self.sim.modules['HealthSystem'].schedule_hsi_event(outpatient_checkup, priority=0,
+                #Should this use priority associated with follow-up or outpatient?
+                self.sim.modules['HealthSystem'].schedule_hsi_event(outpatient_checkup, priority=self.module.parameters['priority_AntenatalCare_Outpatient'],
                                                                     topen=check_up_date,
                                                                     tclose=check_up_date + DateOffset(days=3))
 

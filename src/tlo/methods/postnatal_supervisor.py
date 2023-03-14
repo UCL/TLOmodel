@@ -206,7 +206,13 @@ class PostnatalSupervisor(Module):
             Types.LIST, 'Treatment effect of chlorhexidine cord care on early onset neonatal sepsis risk'),
         'treatment_effect_anti_htns_progression_pn': Parameter(
             Types.LIST, 'Treatment effect of oral anti hypertensives on progression from mild/mod to severe gestational'
-                        'hypertension')
+                        'hypertension'),
+        'priority_PostnatalCare_TreatmentForObstetricFistula':
+            Parameter(Types.INT,
+                     'Priority associated withPostnatalCare_TreatmentForObstetricFistula '
+                     ),
+
+
     }
 
     PROPERTIES = {
@@ -241,6 +247,9 @@ class PostnatalSupervisor(Module):
         parameter_dataframe = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_PostnatalSupervisor.xlsx',
                                             sheet_name='parameter_values')
         self.load_parameters_from_dataframe(parameter_dataframe)
+
+        #Get priority ranking from policy
+        self.parameters['priority_PostnatalCare_TreatmentForObstetricFistula'] = self.sim.modules['HealthSystem'].get_priority_ranking('PostnatalCare_TreatmentForObstetricFistula')
 
     def initialise_population(self, population):
         df = population.props
@@ -380,7 +389,7 @@ class PostnatalSupervisor(Module):
                     repair_date = self.sim.date + DateOffset(days=(self.rng.randint(7, 42)))
 
                     self.sim.modules['HealthSystem'].schedule_hsi_event(repair_hsi,
-                                                                        priority=0,
+                                                                        priority=self.parameters['priority_PostnatalCare_TreatmentForObstetricFistula'],
                                                                         topen=repair_date,
                                                                         tclose=repair_date + DateOffset(days=7))
 
@@ -707,7 +716,7 @@ class PostnatalSupervisor(Module):
                 self.sim.modules['Labour'], person_id=person)
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(postnatal_check,
-                                                                priority=0,
+                                                                priority=self.sim.modules['Labour'].parameters['priority_PostnatalCare_Maternal'],
                                                                 topen=self.sim.date,
                                                                 tclose=self.sim.date + DateOffset(days=1))
 
@@ -803,7 +812,7 @@ class PostnatalSupervisor(Module):
                 self.sim.modules['NewbornOutcomes'], person_id=person)
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(postnatal_check,
-                                                                priority=0,
+                                                                priority=self.sim.modules['NewbornOutcomes'].parameters['priority_PostnatalCare_Neonatal'],
                                                                 topen=self.sim.date,
                                                                 tclose=self.sim.date + DateOffset(days=1))
 
@@ -1189,7 +1198,7 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
                 pregnancy_helper_functions.check_if_delayed_careseeking(self.module, individual_id)
 
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    pnc_one_maternal, priority=0, topen=self.sim.date, tclose=self.sim.date + pd.DateOffset(days=1))
+                    pnc_one_maternal, priority=self.sim.modules['Labour'].parameters['priority_PostnatalCare_Maternal'], topen=self.sim.date, tclose=self.sim.date + pd.DateOffset(days=1))
 
             # If she will not receive treatment for her complications we apply risk of death now
             else:
@@ -1200,7 +1209,7 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
             if mni[individual_id]['will_receive_pnc'] == 'late':
                 appt_date = self.sim.date + pd.DateOffset(self.module.rng.randint(0, 35))
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    pnc_one_maternal, priority=0, topen=appt_date, tclose=appt_date + pd.DateOffset(days=1))
+                    pnc_one_maternal, priority=self.sim.modules['Labour'].parameters['priority_PostnatalCare_Maternal'], topen=appt_date, tclose=appt_date + pd.DateOffset(days=1))
 
 
 class PostnatalWeekOneNeonatalEvent(Event, IndividualScopeEventMixin):
@@ -1248,7 +1257,7 @@ class PostnatalWeekOneNeonatalEvent(Event, IndividualScopeEventMixin):
                                                                               'emergency_neonate'])):
 
                 self.sim.modules['HealthSystem'].schedule_hsi_event(pnc_one_neonatal,
-                                                                    priority=0,
+                                                                    priority=self.sim.modules['NewbornOutcomes'].parameters['priority_PostnatalCare_Neonatal'],
                                                                     topen=self.sim.date,
                                                                     tclose=self.sim.date + pd.DateOffset(days=1))
             else:
@@ -1263,7 +1272,7 @@ class PostnatalWeekOneNeonatalEvent(Event, IndividualScopeEventMixin):
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 pnc_one_neonatal,
-                priority=0,
+                priority=self.sim.modules['NewbornOutcomes'].parameters['priority_PostnatalCare_Neonatal'],
                 topen=self.sim.date + pd.DateOffset(self.module.rng.randint(0, days_till_day_7)),
                 tclose=None)
 

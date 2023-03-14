@@ -664,7 +664,7 @@ def test_all_appt_types_can_run(seed):
             hsi,
             topen=sim.date,
             tclose=sim.date + pd.DateOffset(days=1),
-            priority=1
+            priority=1 #Keep this hardcoded for test
         )
 
         healthsystemscheduler.apply(sim.population)
@@ -710,7 +710,7 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
             sim.modules['HealthSystem'].schedule_hsi_event(HSI_Dummy(self, person_id=0),
                                                            topen=self.sim.date,
                                                            tclose=None,
-                                                           priority=0)
+                                                           priority=0) #Keep priority 0 for dummy
 
     # Create a dummy HSI event:
     class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
@@ -729,7 +729,8 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
             sim.modules['HealthSystem'].schedule_hsi_event(self,
                                                            topen=self.sim.date + pd.DateOffset(days=3),
                                                            tclose=None,
-                                                           priority=0)
+                                                           priority=0) #Keep priority 0 for dummy
+
 
     # Set up simulation:
     sim = Simulation(start_date=start_date, seed=seed, log_config={
@@ -861,7 +862,7 @@ def test_summary_logger_generated_in_year_long_simulation(seed, tmpdir):
                 sim.modules['HealthSystem'].schedule_hsi_event(HSI_Dummy(self, person_id=0),
                                                                topen=self.sim.date,
                                                                tclose=None,
-                                                               priority=0)
+                                                               priority=0) #Keep priority 0 for dummy
 
         # Create a dummy HSI event:
         class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
@@ -880,7 +881,7 @@ def test_summary_logger_generated_in_year_long_simulation(seed, tmpdir):
                 sim.modules['HealthSystem'].schedule_hsi_event(self,
                                                                topen=self.sim.date + pd.DateOffset(days=3),
                                                                tclose=None,
-                                                               priority=0)
+                                                               priority=0) #Keep priority 0 for dummy
 
         # Set up simulation:
         sim = Simulation(start_date=start_date, seed=seed, log_config={
@@ -961,7 +962,7 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
             sim.modules['HealthSystem'].schedule_hsi_event(self,
                                                            topen=self.sim.date + pd.DateOffset(days=1),
                                                            tclose=None,
-                                                           priority=0)
+                                                           priority=0) #Keep priority 0 for dummy
 
     class DummyModule(Module):
         METADATA = {Metadata.DISEASE_MODULE}
@@ -977,7 +978,7 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
             sim.schedule_event(CheckHealthSystemParameters(self), sim.date)
             sim.schedule_event(HealthSystemChangeParameters(hs, parameters=new_parameters),
                                sim.date + pd.DateOffset(days=2))
-            sim.modules['HealthSystem'].schedule_hsi_event(HSI_Dummy(self, 0), topen=sim.date, tclose=None, priority=0)
+            sim.modules['HealthSystem'].schedule_hsi_event(HSI_Dummy(self, 0), topen=sim.date, tclose=None, priority=0) #Keep priority 0 for dummy
 
     sim = Simulation(start_date=start_date, seed=seed, log_config={
         'filename': 'tmpfile',
@@ -1158,7 +1159,7 @@ def test_hsi_run_on_same_day_if_scheduled_for_same_day(seed, tmpdir):
                 DummyHSI_To_Run_On_Same_Day(module=self.module, person_id=person_id, source='HSI'),
                 topen=self.sim.date,
                 tclose=None,
-                priority=0)
+                priority=0) #Keep priority 0 for dummy
 
     class Event_To_Run_On_First_Day_Of_Simulation(Event, IndividualScopeEventMixin):
         def __init__(self, module, person_id):
@@ -1169,7 +1170,7 @@ def test_hsi_run_on_same_day_if_scheduled_for_same_day(seed, tmpdir):
                 DummyHSI_To_Run_On_Same_Day(module=self.module, person_id=person_id, source='Event'),
                 topen=self.sim.date,
                 tclose=None,
-                priority=0)
+                priority=0) #Keep priority 0 for dummy
 
     class DummyModule(Module):
         """Schedules an HSI to occur on the first day of the simulation from initialise_simulation, and an event that
@@ -1187,14 +1188,14 @@ def test_hsi_run_on_same_day_if_scheduled_for_same_day(seed, tmpdir):
                 DummyHSI_To_Run_On_Same_Day(self, person_id=0, source='initialise_simulation'),
                 topen=self.sim.date,
                 tclose=None,
-                priority=0)
+                priority=0) #Keep priority 0 for dummy
 
             # Schedule an HSI that will schedule a further HSI to run on the same day
             sim.modules['HealthSystem'].schedule_hsi_event(
                 DummyHSI_To_Run_On_First_Day_Of_Simulation(module=self, person_id=0),
                 topen=self.sim.date,
                 tclose=None,
-                priority=0)
+                priority=0) #Keep priority 0 for dummy
 
             # Schedule an event that will schedule an HSI to run on the same day
             sim.schedule_event(Event_To_Run_On_First_Day_Of_Simulation(self, person_id=0), sim.date)

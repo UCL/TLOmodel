@@ -64,7 +64,12 @@ class Measles(Module):
         "symptom_prob": Parameter(
             Types.DATA_FRAME, "Probability of each symptom with measles infection"),
         "case_fatality_rate": Parameter(
-            Types.DICT, "Probability that case of measles will result in death if not treated")
+            Types.DICT, "Probability that case of measles will result in death if not treated"),
+        'priority_Measles_Treatment':
+            Parameter(Types.INT,
+                     'Priority associated with Measles_Treatment'
+                     ),
+
     }
 
     PROPERTIES = {
@@ -95,6 +100,10 @@ class Measles(Module):
     def read_parameters(self, data_folder):
         """Read parameter values from file
         """
+
+        #Get priority ranking from policy
+        self.parameters['priority_Measles_Treatment'] = self.sim.modules['HealthSystem'].get_priority_ranking('Measles_Treatment')
+
 
         workbook = pd.read_excel(
             os.path.join(self.resourcefilepath, "ResourceFile_Measles.xlsx"),

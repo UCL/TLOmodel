@@ -115,7 +115,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                 HSI_Measles_Treatment(
                     person_id=person_id,
                     module=hsi_event.sim.modules['Measles']),
-                priority=0,
+                priority=sim.modules['Measles'].parameters['priority_Measles_Treatment'],
                 topen=hsi_event.sim.date,
                 tclose=None)
 
@@ -131,7 +131,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                 do_not_refer_if_neg=True),
             topen=hsi_event.sim.date,
             tclose=None,
-            priority=0)
+            priority=sim.modules['Hiv'].parameters['priority_Hiv_Test'])
 
     if 'injury' in symptoms:
         if 'RTI' in sim.modules:
@@ -162,7 +162,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                         HSI_Malaria_complicated_treatment_child(
                             person_id=person_id,
                             module=sim.modules["Malaria"]),
-                        priority=1,
+                        priority=sim.modules['Malaria'].parameters['priority_Malaria_Treatment_Complicated_Child'],
                         topen=sim.date,
                         tclose=None)
 
@@ -171,7 +171,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                         HSI_Malaria_non_complicated_treatment_age0_5(
                             person_id=person_id,
                             module=sim.modules["Malaria"]),
-                        priority=1,
+                        priority=sim.modules['Malaria'].parameters['priority_Malaria_Treatment_NotComplicated_Child'],
                         topen=sim.date,
                         tclose=None)
 
@@ -191,7 +191,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                     HSI_Malaria_complicated_treatment_child(
                         person_id=person_id,
                         module=sim.modules["Malaria"]),
-                    priority=1,
+                    priority=sim.modules["Malaria"].parameters['priority_Malaria_Treatment_Complicated_Child'],
                     topen=sim.date,
                     tclose=None)
 
@@ -200,7 +200,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                     HSI_Malaria_non_complicated_treatment_age5_15(
                         person_id=person_id,
                         module=sim.modules["Malaria"]),
-                    priority=1,
+                    priority=sim.modules["Malaria"].parameters['priority_Malaria_Treatment_NotComplicated_Child'],
                     topen=sim.date,
                     tclose=None)
 
@@ -213,7 +213,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                     HSI_OesophagealCancer_Investigation_Following_Dysphagia(
                         person_id=person_id,
                         module=sim.modules['OesophagealCancer']),
-                    priority=0,
+                    priority=sim.modules['OesophagealCancer'].parameters['priority_OesophagealCancer_Investigation'],
                     topen=sim.date,
                     tclose=None
                 )
@@ -225,7 +225,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                     HSI_BladderCancer_Investigation_Following_Blood_Urine(
                         person_id=person_id,
                         module=sim.modules['BladderCancer']),
-                    priority=0,
+                    priority=sim.modules['BladderCancer'].parameters['priority_BladderCancer_Investigation'],
                     topen=sim.date,
                     tclose=None
                 )
@@ -236,7 +236,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                     HSI_BladderCancer_Investigation_Following_pelvic_pain(
                         person_id=person_id,
                         module=sim.modules['BladderCancer']),
-                    priority=0,
+                    priority=sim.modules['BladderCancer'].parameters['priority_BladderCancer_Investigation'],
                     topen=sim.date,
                     tclose=None)
 
@@ -247,7 +247,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                     HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms(
                         person_id=person_id,
                         module=sim.modules['ProstateCancer']),
-                    priority=0,
+                    priority=sim.modules['ProstateCancer'].parameters['priority_ProstateCancer_Investigation'],
                     topen=sim.date,
                     tclose=None)
 
@@ -256,7 +256,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                     HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(
                         person_id=person_id,
                         module=sim.modules['ProstateCancer']),
-                    priority=0,
+                    priority=sim.modules['ProstateCancer'].parameters['priority_ProstateCancer_Investigation'],
                     topen=sim.date,
                     tclose=None)
 
@@ -267,7 +267,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                         person_id=person_id,
                         module=sim.modules['OtherAdultCancer']
                     ),
-                    priority=0,
+                    priority=sim.modules['OtherAdultCancer'].parameters['priority_OtherAdultCancer_Investigation'],
                     topen=sim.date,
                     tclose=None)
 
@@ -279,7 +279,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                         person_id=person_id,
                         module=sim.modules['BreastCancer'],
                     ),
-                    priority=0,
+                    priority=sim.modules['BreastCancer'].parameters['priority_BreastCancer_Investigation'],
                     topen=sim.date,
                     tclose=None)
 
@@ -300,7 +300,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                         HSI_Malaria_complicated_treatment_adult(
                             person_id=person_id,
                             module=sim.modules["Malaria"]),
-                        priority=1,
+                        priority=sim.modules["Malaria"].parameters['priority_Malaria_Treatment_Complicated_Adult'],
                         topen=sim.date,
                         tclose=None)
 
@@ -309,7 +309,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                         HSI_Malaria_non_complicated_treatment_adult(
                             person_id=person_id,
                             module=sim.modules["Malaria"]),
-                        priority=1,
+                        priority=sim.modules["Malaria"].parameters['priority_Malaria_Treatment_NotComplicated_Adult'],
                         topen=sim.date,
                         tclose=None)
 
@@ -337,14 +337,14 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
         if df.at[person_id, 'ps_ectopic_pregnancy'] != 'none':
             event = HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(
                 module=sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
-            schedule_hsi(event, priority=0, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1))
+            schedule_hsi(event, priority=sim.modules['CareOfWomenDuringPregnancy'].parameters['priority_AntenatalCare_PostEctopicPregnancy'], topen=sim.date, tclose=sim.date + pd.DateOffset(days=1))
 
         # -----  COMPLICATIONS OF ABORTION  -----
         abortion_complications = sim.modules['PregnancySupervisor'].abortion_complications
         if abortion_complications.has_any([person_id], 'sepsis', 'injury', 'haemorrhage', first=True):
             event = HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(
                 module=sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
-            schedule_hsi(event, priority=0, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1))
+            schedule_hsi(event, priority=sim.modules['CareOfWomenDuringPregnancy'].parameters['priority_AntenatalCare_PostAbortion'], topen=sim.date, tclose=sim.date + pd.DateOffset(days=1))
 
     if 'Labour' in sim.modules:
         mni = sim.modules['PregnancySupervisor'].mother_and_newborn_info
@@ -360,7 +360,7 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
                 event = HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(
                     module=sim.modules['Labour'], person_id=person_id,
                     facility_level_of_this_hsi=rng.choice(['1a', '1b']))
-                schedule_hsi(event, priority=0, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1))
+                schedule_hsi(event, priority=sim.modules['Labour'].parameters['priority_DeliveryCare_Basic'], topen=sim.date, tclose=sim.date + pd.DateOffset(days=1))
 
     if "Depression" in sim.modules:
         if 'Injuries_From_Self_Harm' in symptoms:
@@ -372,7 +372,7 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
             HSI_Hiv_TestAndRefer(person_id=person_id, module=sim.modules['Hiv']),
             topen=sim.date,
             tclose=None,
-            priority=0
+            priority=sim.modules['Hiv'].parameters['priority_Hiv_Test']
         )
 
     if "Malaria" in sim.modules:
@@ -400,15 +400,16 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
                         hsi_event=HSI_Malaria_complicated_treatment_child(
                             sim.modules["Malaria"], person_id=person_id
                         ),
-                        priority=0,
+                        priority=sim.modules["Malaria"].parameters['priority_Malaria_Treatment_Complicated_Child'],
                         topen=sim.date,
                     )
+                #In malaria.py, priorised person 5-15 as child, but here looks like would be classified as adult?
                 else:
                     schedule_hsi(
                         hsi_event=HSI_Malaria_complicated_treatment_adult(
                             sim.modules["Malaria"], person_id=person_id
                         ),
-                        priority=0,
+                        priority=sim.modules["Malaria"].parameters['priority_Malaria_Treatment_Complicated_Adult'],
                         topen=sim.date,
                     )
 
@@ -420,7 +421,7 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
         if 'seizures' in symptoms:
             schedule_hsi(HSI_Epilepsy_Start_Anti_Epileptic(person_id=person_id,
                                                            module=sim.modules['Epilepsy']),
-                         priority=0,
+                         priority= sim.modules['Epilepsy'].parameters['priority_Epilepsy_Treatment'],
                          topen=sim.date,
                          tclose=None)
 

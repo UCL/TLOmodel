@@ -161,7 +161,19 @@ class BladderCancer(Module):
         ),
         "sensitivity_of_cytoscopy_for_bladder_cancer_pelvic_pain": Parameter(
             Types.REAL, "sensitivity of cytoscopy_for diagnosis of bladder cancer given pelvic pain"
-        )
+        ),
+        'priority_BladderCancer_Investigation':
+            Parameter(Types.INT,
+                     'Priority associated with BladderCancer_Investigation'
+                     ),
+        'priority_BladderCancer_PalliativeCare':
+            Parameter(Types.INT,
+                     'Priority associated with BladderCancer_PalliativeCare'
+                     ),
+        'priority_BladderCancer_Treatment':
+            Parameter(Types.INT,
+                     'Priority associated with BladderCancer_Treatment'
+                     )
     }
 
     PROPERTIES = {
@@ -215,6 +227,11 @@ class BladderCancer(Module):
                     odds_ratio_health_seeking_in_adults=4.00,
                     no_healthcareseeking_in_children=True)
         )
+
+        #Overwrite with Health System's priority policy 
+        self.parameters['priority_BladderCancer_Investigation'] = self.sim.modules['HealthSystem'].get_priority_ranking('BladderCancer_Investigation')
+        self.parameters['priority_BladderCancer_PalliativeCare'] = self.sim.modules['HealthSystem'].get_priority_ranking('BladderCancer_PalliativeCare')
+        self.parameters['priority_BladderCancer_Treatment'] = self.sim.modules['HealthSystem'].get_priority_ranking('BladderCancer_Treatment')
 
     def initialise_population(self, population):
         """Set property values for the initial population."""
@@ -510,7 +527,7 @@ class BladderCancer(Module):
         for person_id in on_palliative_care_at_initiation:
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_BladderCancer_PalliativeCare(module=self, person_id=person_id),
-                priority=0,
+                priority=self.parameters['priority_BladderCancer_PalliativeCare'],
                 topen=self.sim.date + DateOffset(months=1),
                 tclose=self.sim.date + DateOffset(months=1) + DateOffset(weeks=1)
             )
@@ -694,7 +711,7 @@ class HSI_BladderCancer_Investigation_Following_Blood_Urine(HSI_Event, Individua
                         module=self.module,
                         person_id=person_id
                     ),
-                    priority=0,
+                    priority=self.module.parameters['priority_BladderCancer_Treatment'],
                     topen=self.sim.date,
                     tclose=None
                 )
@@ -706,7 +723,7 @@ class HSI_BladderCancer_Investigation_Following_Blood_Urine(HSI_Event, Individua
                         module=self.module,
                         person_id=person_id
                     ),
-                    priority=0,
+                    priority=self.module.parameters['priority_BladderCancer_PalliativeCare'],
                     topen=self.sim.date,
                     tclose=None
                 )
@@ -757,7 +774,7 @@ class HSI_BladderCancer_Investigation_Following_pelvic_pain(HSI_Event, Individua
                         module=self.module,
                         person_id=person_id
                     ),
-                    priority=0,
+                    priority=self.module.parameters['priority_BladderCancer_Treatment'],
                     topen=self.sim.date,
                     tclose=None
                 )
@@ -769,7 +786,7 @@ class HSI_BladderCancer_Investigation_Following_pelvic_pain(HSI_Event, Individua
                         module=self.module,
                         person_id=person_id
                     ),
-                    priority=0,
+                    priority=self.module.parameters['priority_BladderCancer_PalliativeCare'],
                     topen=self.sim.date,
                     tclose=None
                 )
@@ -808,7 +825,7 @@ class HSI_BladderCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                 ),
                 topen=self.sim.date,
                 tclose=None,
-                priority=0
+                priority=self.module.parameters['priority_BladderCancer_PalliativeCare']
             )
             return self.make_appt_footprint({})
 
@@ -829,7 +846,8 @@ class HSI_BladderCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             ),
             topen=self.sim.date + DateOffset(years=12),
             tclose=None,
-            priority=0
+            #This is post-treatment and not treatment, but adopting the same priority
+            priority=self.module.parameters['priority_BladderCancer_Treatment']
         )
 
 
@@ -869,7 +887,7 @@ class HSI_BladderCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin)
                 ),
                 topen=self.sim.date,
                 tclose=None,
-                priority=0
+                priority=self.module.parameters['priority_BladderCancer_PalliativeCare']
             )
 
         else:
@@ -881,7 +899,7 @@ class HSI_BladderCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin)
                 ),
                 topen=self.sim.date + DateOffset(years=1),
                 tclose=None,
-                priority=0
+                priority=self.module.parameters['priority_BladderCancer_Treatment']
             )
 
 
@@ -926,7 +944,7 @@ class HSI_BladderCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
             ),
             topen=self.sim.date + DateOffset(months=1),
             tclose=None,
-            priority=0
+            priority=self.module.parameters['priority_BladderCancer_PalliativeCare']
         )
 
 

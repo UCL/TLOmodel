@@ -192,7 +192,7 @@ def test_natural_history(seed):
         tb.HSI_Tb_ScreeningAndRefer(person_id=tb_case, module=sim.modules['Tb']),
         topen=sim.date,
         tclose=None,
-        priority=0
+        priority=sim.modules['Tb'].parameters['priority_Tb_Test_Screening']
     )
 
     # Check person_id has a ScreeningAndRefer event scheduled
@@ -446,7 +446,7 @@ def test_children_referrals(seed):
         tb.HSI_Tb_ScreeningAndRefer(person_id=person_id, module=sim.modules['Tb']),
         topen=sim.date,
         tclose=None,
-        priority=0
+        priority=sim.modules['Tb'].parameters['priority_Tb_Test_Screening']
     )
 
     hsi_event = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id, module=sim.modules['Tb'])
@@ -464,7 +464,7 @@ def test_children_referrals(seed):
         tb.HSI_Tb_Xray_level1b(person_id=person_id, module=sim.modules['Tb']),
         topen=sim.date,
         tclose=None,
-        priority=0
+        priority=sim.modules['Tb'].parameters['priority_Tb_Test_Xray']
     )
 
     hsi_event = tb.HSI_Tb_Xray_level1b(person_id=person_id, module=sim.modules['Tb'])

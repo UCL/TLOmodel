@@ -115,7 +115,7 @@ def test_all_injuries_run(seed):
     for person_id in sim.population.props.index:
         sim.modules['HealthSystem'].schedule_hsi_event(
             hsi_event=HSI_GenericEmergencyFirstApptAtFacilityLevel1(module=sim.modules['RTI'], person_id=person_id),
-            priority=0,
+            priority=0, # keep priority=0 for emergency
             topen=sim.date
         )
     # run simulation
@@ -184,7 +184,7 @@ def test_all_injuries_run_no_healthsystem(seed):
     for person_id in sim.population.props.index:
         sim.modules['HealthSystem'].schedule_hsi_event(
             hsi_event=HSI_GenericEmergencyFirstApptAtFacilityLevel1(module=sim.modules['RTI'], person_id=person_id),
-            priority=0,
+            priority=0, #Keep priority=0 for emergency
             topen=sim.date
         )
     # run simulation

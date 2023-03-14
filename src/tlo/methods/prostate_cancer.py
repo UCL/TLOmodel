@@ -144,6 +144,18 @@ class ProstateCancer(Module):
         "sensitivity_of_biopsy_for_prostate_ca": Parameter(
             Types.REAL, "sensitivity of biopsy for prostate cancer"
         ),
+        'priority_ProstateCancer_Investigation':
+            Parameter(Types.INT,
+                     'Priority associated with ProstateCancer_Investigation'
+                     ),
+        'priority_ProstateCancer_PalliativeCare':
+            Parameter(Types.INT,
+                     'Priority associated with ProstateCancer_PalliativeCare'
+                     ),
+        'priority_ProstateCancer_Treatment':
+            Parameter(Types.INT,
+                     'Priority associated with ProstateCancer_Treatment'
+                     ),
     }
 
     PROPERTIES = {
@@ -190,6 +202,11 @@ class ProstateCancer(Module):
     def read_parameters(self, data_folder):
         """Setup parameters used by the module, now including disability weights"""
 
+        #Get priority ranking from policy
+        self.parameters['priority_ProstateCancer_Investigation'] = self.sim.modules['HealthSystem'].get_priority_ranking('ProstateCancer_Investigation')
+        self.parameters['priority_ProstateCancer_PalliativeCare'] = self.sim.modules['HealthSystem'].get_priority_ranking('ProstateCancer_PalliativeCare')
+        self.parameters['priority_ProstateCancer_Treatment'] = self.sim.modules['HealthSystem'].get_priority_ranking('ProstateCancer_Treatment')
+        
         # Update parameters from the resourcefile
         self.load_parameters_from_dataframe(
             pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_Prostate_Cancer.xlsx",
@@ -509,7 +526,7 @@ class ProstateCancer(Module):
         for person_id in on_palliative_care_at_initiation:
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_ProstateCancer_PalliativeCare(module=self, person_id=person_id),
-                priority=0,
+                priority=self.parameters['priority_ProstateCancer_PalliativeCare'],
                 topen=self.sim.date + DateOffset(months=1),
                 tclose=self.sim.date + DateOffset(months=1) + DateOffset(weeks=1)
             )
@@ -702,7 +719,7 @@ class HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms(HSI_Event, Ind
                     module=self.module,
                     person_id=person_id
                 ),
-                priority=0,
+                priority=self.module.parameters['priority_ProstateCancer_Investigation'],
                 topen=self.sim.date,
                 tclose=None
             )
@@ -747,7 +764,7 @@ class HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(HSI_Event, Individu
                         module=self.module,
                         person_id=person_id
                     ),
-                    priority=0,
+                    priority=self.module.parameters['priority_ProstateCancer_Investigation'],
                     topen=self.sim.date,
                     tclose=None
             )
@@ -798,7 +815,7 @@ class HSI_ProstateCancer_Investigation_Following_psa_positive(HSI_Event, Individ
                         module=self.module,
                         person_id=person_id
                     ),
-                    priority=0,
+                    priority=self.module.parameters['priority_ProstateCancer_Treatment'],
                     topen=self.sim.date,
                     tclose=None
                 )
@@ -809,7 +826,7 @@ class HSI_ProstateCancer_Investigation_Following_psa_positive(HSI_Event, Individ
                         module=self.module,
                         person_id=person_id
                     ),
-                    priority=0,
+                    priority=self.module.parameters['priority_ProstateCancer_PalliativeCare'],
                     topen=self.sim.date,
                     tclose=None
                 )
@@ -848,7 +865,7 @@ class HSI_ProstateCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                 ),
                 topen=self.sim.date,
                 tclose=None,
-                priority=0
+                priority=self.module.parameters['priority_ProstateCancer_PalliativeCare'],
             )
             return self.make_appt_footprint({})
 
@@ -870,7 +887,7 @@ class HSI_ProstateCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             ),
             topen=self.sim.date + DateOffset(months=12),
             tclose=None,
-            priority=0
+            priority=self.module.parameters['priority_ProstateCancer_Treatment'],
         )
 
 
@@ -910,7 +927,7 @@ class HSI_ProstateCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin
                 ),
                 topen=self.sim.date,
                 tclose=None,
-                priority=0
+                priority=self.module.parameters['priority_ProstateCancer_PalliativeCare']
             )
 
         else:
@@ -922,7 +939,7 @@ class HSI_ProstateCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin
                 ),
                 topen=self.sim.date + DateOffset(years=1),
                 tclose=None,
-                priority=0
+                priority=self.module.parameters['priority_ProstateCancer_Treatment']
             )
 
 
@@ -967,7 +984,7 @@ class HSI_ProstateCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
             ),
             topen=self.sim.date + DateOffset(months=1),
             tclose=None,
-            priority=0
+            priority=self.module.parameters['priority_ProstateCancer_PalliativeCare']
         )
 
 
