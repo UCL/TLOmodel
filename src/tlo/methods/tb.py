@@ -1508,7 +1508,9 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
 
         # remove consumables constraints, all cons available
         if scenario == 2:
+
             # tb consumables
+            # some cons are listed as dicts, some as integer values
             tmp = list(self.module.item_codes_for_consumables_required.values())
             # select dict items
             tb_cons = [None] * len(tmp)
