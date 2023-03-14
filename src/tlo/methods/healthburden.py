@@ -229,8 +229,16 @@ class HealthBurden(Module):
                             'are ascribed to the age of the death and the year of the death.'
             )
 
-        # 4) Log total DALYS (Stacked by Age and Time), broken down by wealth
-        # todo ...
+        # 4) Log total DALYS (Stacked by Age and Time), broken down by wealth only
+        for _, row in dalys_stacked_by_age_and_time.groupby(level=[2, 3]).sum().reset_index().iterrows():
+            logger.info(
+                key='dalys_by_wealth_stacked_by_age_and_time',
+                data=row.to_dict(),
+                description='DALYS, by the labels are that are declared for each cause_of_death and cause_of_disability'
+                            ', broken down by year and wealth category.'
+                            'Stacking by age and time: i.e., all the year of life lost '
+                            'are ascribed to the age of the death and the year of the death.'
+            )
 
     def compute_dalys(self):
         """Compute total DALYS (by label), by age, sex and year. Do this by summing the YLD and LYL with respect to the
