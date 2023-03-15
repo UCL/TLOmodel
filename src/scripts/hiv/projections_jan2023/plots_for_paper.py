@@ -966,7 +966,6 @@ sf = extract_results(
 
 
 # tb proportion diagnosed
-# todo note this will include false positives and cases from previous year
 def tb_proportion_diagnosed(results_folder):
 
     tb_case = extract_results(
@@ -1085,113 +1084,87 @@ tb_tx_full2 = tb_tx_coverage_full(results2)
 scale = sf[0][0].values[0]
 
 
-# # Make plot
-# fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=2, ncols=2,
-#                                              sharex=True,
-#                                              constrained_layout=True,
-#                                              figsize=(9, 8))
-# fig.suptitle('')
-#
-# # TB tests
-# ax1.plot(tb_dx0.index, tx_id0["Tb_Test_Screening_median"][1:26] * sf[0][0].values[0], "-", color=berry[5])
-# ax1.fill_between(tb_dx0.index, tx_id0["Tb_Test_Screening_lower"][1:26] * sf[0][0].values[0],
-#                  tx_id0["Tb_Test_Screening_upper"][1:26] * sf[0][0].values[0], color=berry[5], alpha=0.2)
-#
-# ax1.plot(tb_dx0.index, tx_id1["Tb_Test_Screening_median"][1:26] * sf[0][0].values[0], "-", color=berry[4])
-# ax1.fill_between(tb_dx0.index, tx_id1["Tb_Test_Screening_lower"][1:26] * sf[0][0].values[0],
-#                  tx_id1["Tb_Test_Screening_upper"][1:26] * sf[0][0].values[0], color=berry[4], alpha=0.2)
-#
-# ax1.plot(tb_dx0.index, tx_id2["Tb_Test_Screening_median"][1:26] * sf[0][0].values[0], "-", color=berry[3])
-# ax1.fill_between(tb_dx0.index, tx_id2["Tb_Test_Screening_lower"][1:26] * sf[0][0].values[0],
-#                  tx_id2["Tb_Test_Screening_upper"][1:26] * sf[0][0].values[0], color=berry[3], alpha=0.2)
-#
-# ax1.plot(tb_dx0.index, tx_id3["Tb_Test_Screening_median"][1:26] * sf[0][0].values[0], "-", color=berry[2])
-# ax1.fill_between(tb_dx0.index, tx_id3["Tb_Test_Screening_lower"][1:26] * sf[0][0].values[0],
-#                  tx_id3["Tb_Test_Screening_upper"][1:26] * sf[0][0].values[0], color=berry[2], alpha=0.2)
-#
-# ax1.plot(tb_dx0.index, tx_id4["Tb_Test_Screening_median"][1:26] * sf[0][0].values[0], "-", color=berry[1])
-# ax1.fill_between(tb_dx0.index, tx_id4["Tb_Test_Screening_lower"][1:26] * sf[0][0].values[0],
-#                  tx_id4["Tb_Test_Screening_upper"][1:26] * sf[0][0].values[0], color=berry[1], alpha=0.2)
+# Make plot
+fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=2, ncols=2,
+                                             sharex=True,
+                                             constrained_layout=True,
+                                             figsize=(9, 8))
+fig.suptitle('')
+
+# TB tests
+ax1.plot(tb_dx0.index, tx_id0["Tb_Test_Screening_median"][1:26] * sf[0][0].values[0], "-", color=baseline_colour)
+ax1.fill_between(tb_dx0.index, tx_id0["Tb_Test_Screening_lower"][1:26] * sf[0][0].values[0],
+                 tx_id0["Tb_Test_Screening_upper"][1:26] * sf[0][0].values[0], color=baseline_colour, alpha=0.2)
+
+ax1.plot(tb_dx0.index, tx_id1["Tb_Test_Screening_median"][1:26] * sf[0][0].values[0], "-", color=sc1_colour)
+ax1.fill_between(tb_dx0.index, tx_id1["Tb_Test_Screening_lower"][1:26] * sf[0][0].values[0],
+                 tx_id1["Tb_Test_Screening_upper"][1:26] * sf[0][0].values[0], color=sc1_colour, alpha=0.2)
+
+ax1.plot(tb_dx0.index, tx_id2["Tb_Test_Screening_median"][1:26] * sf[0][0].values[0], "-", color=sc2_colour)
+ax1.fill_between(tb_dx0.index, tx_id2["Tb_Test_Screening_lower"][1:26] * sf[0][0].values[0],
+                 tx_id2["Tb_Test_Screening_upper"][1:26] * sf[0][0].values[0], color=sc2_colour, alpha=0.2)
 # ax1.set_ylim([5000000, 10000000])
-#
-# ax1.set(title='',
-#        ylabel='No. test appts')
-#
-# ax1.legend(labels=["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4"])
-#
-# # TB start treatment
-# ax2.plot(tb_dx0.index, tx_id0["Tb_Treatment_median"][1:26] * sf[0][0].values[0], "-", color=berry[5])
-# ax2.fill_between(tb_dx0.index, tx_id0["Tb_Treatment_lower"][1:26] * sf[0][0].values[0],
-#                  tx_id0["Tb_Treatment_upper"][1:26] * sf[0][0].values[0], color=berry[5], alpha=0.2)
-#
-# ax2.plot(tb_dx0.index, tx_id1["Tb_Treatment_median"][1:26] * sf[0][0].values[0], "-", color=berry[4])
-# ax2.fill_between(tb_dx0.index, tx_id1["Tb_Treatment_lower"][1:26] * sf[0][0].values[0],
-#                  tx_id1["Tb_Treatment_upper"][1:26] * sf[0][0].values[0], color=berry[4], alpha=0.2)
-#
-# ax2.plot(tb_dx0.index, tx_id2["Tb_Treatment_median"][1:26] * sf[0][0].values[0], "-", color=berry[3])
-# ax2.fill_between(tb_dx0.index, tx_id2["Tb_Treatment_lower"][1:26] * sf[0][0].values[0],
-#                  tx_id2["Tb_Treatment_upper"][1:26] * sf[0][0].values[0], color=berry[3], alpha=0.2)
-#
-# ax2.plot(tb_dx0.index, tx_id3["Tb_Treatment_median"][1:26] * sf[0][0].values[0], "-", color=berry[2])
-# ax2.fill_between(tb_dx0.index, tx_id3["Tb_Treatment_lower"][1:26] * sf[0][0].values[0],
-#                  tx_id3["Tb_Treatment_upper"][1:26] * sf[0][0].values[0], color=berry[2], alpha=0.2)
-#
-# ax2.plot(tb_dx0.index, tx_id4["Tb_Treatment_median"][1:26] * sf[0][0].values[0], "-", color=berry[1])
-# ax2.fill_between(tb_dx0.index, tx_id4["Tb_Treatment_lower"][1:26] * sf[0][0].values[0],
-#                  tx_id4["Tb_Treatment_upper"][1:26] * sf[0][0].values[0], color=berry[1], alpha=0.2)
-#
+
+ax1.set(title='',
+       ylabel='No. test appts')
+
+ax1.legend(labels=["Baseline", "Scale-up", "Scale-up \nno constraints"])
+
+# TB start treatment
+ax2.plot(tb_dx0.index, tx_id0["Tb_Treatment_median"][1:26] * sf[0][0].values[0], "-", color=baseline_colour)
+ax2.fill_between(tb_dx0.index, tx_id0["Tb_Treatment_lower"][1:26] * sf[0][0].values[0],
+                 tx_id0["Tb_Treatment_upper"][1:26] * sf[0][0].values[0], color=baseline_colour, alpha=0.2)
+
+ax2.plot(tb_dx0.index, tx_id1["Tb_Treatment_median"][1:26] * sf[0][0].values[0], "-", color=sc1_colour)
+ax2.fill_between(tb_dx0.index, tx_id1["Tb_Treatment_lower"][1:26] * sf[0][0].values[0],
+                 tx_id1["Tb_Treatment_upper"][1:26] * sf[0][0].values[0], color=sc1_colour, alpha=0.2)
+
+ax2.plot(tb_dx0.index, tx_id2["Tb_Treatment_median"][1:26] * sf[0][0].values[0], "-", color=sc2_colour)
+ax2.fill_between(tb_dx0.index, tx_id2["Tb_Treatment_lower"][1:26] * sf[0][0].values[0],
+                 tx_id2["Tb_Treatment_upper"][1:26] * sf[0][0].values[0], color=sc2_colour, alpha=0.2)
+
 # ax2.set_ylim([10000, 60000])
-#
-# ax2.set(title='',
-#        ylabel='No. treatment appts')
-# ax2.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
-#
-# # TB proportion diagnosed
-# ax3.plot(tb_dx0.index, tb_dx0["median"], "-", color=berry[5])
-# ax3.fill_between(tb_dx0.index, tb_dx0["lower"], tb_dx0["upper"], color=berry[5], alpha=0.2)
-#
-# ax3.plot(tb_dx1.index, tb_dx1["median"], "-", color=berry[4])
-# ax3.fill_between(tb_dx1.index, tb_dx1["lower"], tb_dx1["upper"], color=berry[4], alpha=0.2)
-#
-# ax3.plot(tb_dx2.index, tb_dx2["median"], "-", color=berry[3])
-# ax3.fill_between(tb_dx2.index, tb_dx2["lower"], tb_dx2["upper"], color=berry[3], alpha=0.2)
-#
-# ax3.plot(tb_dx3.index, tb_dx3["median"], "-", color=berry[2])
-# ax3.fill_between(tb_dx3.index, tb_dx3["lower"], tb_dx3["upper"], color=berry[2], alpha=0.2)
-#
-# ax3.plot(tb_dx4.index, tb_dx4["median"], "-", color=berry[1])
-# ax3.fill_between(tb_dx4.index, tb_dx4["lower"], tb_dx4["upper"], color=berry[1], alpha=0.2)
-#
-# ax3.set_ylim([0, 1.1])
-# ax3.set(title='',
-#        ylabel='Proportion diagnosed')
-#
-#
-# # TB treatment coverage
-# ax4.plot(tb_tx0.index, tb_tx0["median"], "-", color=berry[5])
-# ax4.fill_between(tb_tx0.index, tb_tx0["lower"], tb_tx0["upper"], color=berry[5], alpha=0.2)
-#
-# ax4.plot(tb_tx1.index, tb_tx1["median"], "-", color=berry[4])
-# ax4.fill_between(tb_tx1.index, tb_tx1["lower"], tb_tx1["upper"], color=berry[4], alpha=0.2)
-#
-# ax4.plot(tb_tx2.index, tb_tx2["median"], "-", color=berry[3])
-# ax4.fill_between(tb_tx2.index, tb_tx2["lower"], tb_tx2["upper"], color=berry[3], alpha=0.2)
-#
-# ax4.plot(tb_tx3.index, tb_tx3["median"], "-", color=berry[2])
-# ax4.fill_between(tb_tx3.index, tb_tx3["lower"], tb_tx3["upper"], color=berry[2], alpha=0.2)
-#
-# ax4.plot(tb_tx4.index, tb_tx4["median"], "-", color=berry[1])
-# ax4.fill_between(tb_tx4.index, tb_tx4["lower"], tb_tx4["upper"], color=berry[1], alpha=0.2)
-#
-# ax4.set_ylim([0, 1.1])
-#
-# ax4.set(title='',
-#        ylabel='Proportion treated')
-#
-# plt.tick_params(axis="both", which="major", labelsize=10)
-# fig.savefig(outputspath / "TBtreatment_cascade_4panel.png")
-#
-# plt.show()
+
+ax2.set(title='',
+       ylabel='No. treatment appts')
+ax2.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+
+# TB proportion diagnosed
+ax3.plot(tb_dx0.index, tb_dx0["median"], "-", color=baseline_colour)
+ax3.fill_between(tb_dx0.index, tb_dx0["lower"], tb_dx0["upper"], color=baseline_colour, alpha=0.2)
+
+ax3.plot(tb_dx1.index, tb_dx1["median"], "-", color=sc1_colour)
+ax3.fill_between(tb_dx1.index, tb_dx1["lower"], tb_dx1["upper"], color=sc1_colour, alpha=0.2)
+
+ax3.plot(tb_dx2.index, tb_dx2["median"], "-", color=sc2_colour)
+ax3.fill_between(tb_dx2.index, tb_dx2["lower"], tb_dx2["upper"], color=sc2_colour, alpha=0.2)
+
+ax3.set_ylim([0, 1.1])
+ax3.set(title='',
+       ylabel='Proportion diagnosed')
+
+
+# TB treatment coverage
+ax4.plot(tb_tx0.index, tb_tx0["median"], "-", color=baseline_colour)
+ax4.fill_between(tb_tx0.index, tb_tx0["lower"], tb_tx0["upper"], color=baseline_colour, alpha=0.2)
+
+ax4.plot(tb_tx1.index, tb_tx1["median"], "-", color=sc1_colour)
+ax4.fill_between(tb_tx1.index, tb_tx1["lower"], tb_tx1["upper"], color=sc1_colour, alpha=0.2)
+
+ax4.plot(tb_tx2.index, tb_tx2["median"], "-", color=sc2_colour)
+ax4.fill_between(tb_tx2.index, tb_tx2["lower"], tb_tx2["upper"], color=sc2_colour, alpha=0.2)
+
+ax4.set_ylim([0, 1.1])
+
+ax4.set(title='',
+       ylabel='Proportion treated')
+
+plt.tick_params(axis="both", which="major", labelsize=10)
+fig.savefig(outputspath / "TBtreatment_cascade_4panel.png")
+
+plt.show()
+
+
 
 # Make 3-panel plot
 fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3,
@@ -1200,53 +1173,53 @@ fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3,
 fig.suptitle('')
 
 # TB tests
-ax1.plot(tb_dx0.index, tx_id0["Tb_Test_Screening_median"][1:26] * sf[0][0].values[0], "-", color=berry[5])
+ax1.plot(tb_dx0.index, tx_id0["Tb_Test_Screening_median"][1:26] * sf[0][0].values[0], "-", color=baseline_colour)
 ax1.fill_between(tb_dx0.index, tx_id0["Tb_Test_Screening_lower"][1:26] * sf[0][0].values[0],
-                 tx_id0["Tb_Test_Screening_upper"][1:26] * sf[0][0].values[0], color=berry[5], alpha=0.2)
+                 tx_id0["Tb_Test_Screening_upper"][1:26] * sf[0][0].values[0], color=baseline_colour, alpha=0.2)
 
-ax1.plot(tb_dx0.index, tx_id1["Tb_Test_Screening_median"][1:26] * sf[0][0].values[0], "-", color=berry[4])
+ax1.plot(tb_dx0.index, tx_id1["Tb_Test_Screening_median"][1:26] * sf[0][0].values[0], "-", color=sc1_colour)
 ax1.fill_between(tb_dx0.index, tx_id1["Tb_Test_Screening_lower"][1:26] * sf[0][0].values[0],
-                 tx_id1["Tb_Test_Screening_upper"][1:26] * sf[0][0].values[0], color=berry[4], alpha=0.2)
+                 tx_id1["Tb_Test_Screening_upper"][1:26] * sf[0][0].values[0], color=sc1_colour, alpha=0.2)
 
-ax1.plot(tb_dx0.index, tx_id2["Tb_Test_Screening_median"][1:26] * sf[0][0].values[0], "-", color=berry[3])
+ax1.plot(tb_dx0.index, tx_id2["Tb_Test_Screening_median"][1:26] * sf[0][0].values[0], "-", color=sc2_colour)
 ax1.fill_between(tb_dx0.index, tx_id2["Tb_Test_Screening_lower"][1:26] * sf[0][0].values[0],
-                 tx_id2["Tb_Test_Screening_upper"][1:26] * sf[0][0].values[0], color=berry[3], alpha=0.2)
+                 tx_id2["Tb_Test_Screening_upper"][1:26] * sf[0][0].values[0], color=sc2_colour, alpha=0.2)
 
-ax1.set_ylim([5000000, 10000000])
+# ax1.set_ylim([5000000, 10000000])
 
 ax1.set(title='',
        ylabel='No. test appts')
 
-ax1.legend(labels=["Baseline", "Scale-up", "Constrained scale-up", "Constrained optimistic", "Optimistic"])
+ax1.legend(labels=["Baseline", "Scale-up", "Scale-up \nno constraints"])
 
 # TB start treatment
-ax2.plot(tb_dx0.index, tx_id0["Tb_Treatment_median"][1:26] * sf[0][0].values[0], "-", color=berry[5])
+ax2.plot(tb_dx0.index, tx_id0["Tb_Treatment_median"][1:26] * sf[0][0].values[0], "-", color=baseline_colour)
 ax2.fill_between(tb_dx0.index, tx_id0["Tb_Treatment_lower"][1:26] * sf[0][0].values[0],
-                 tx_id0["Tb_Treatment_upper"][1:26] * sf[0][0].values[0], color=berry[5], alpha=0.2)
+                 tx_id0["Tb_Treatment_upper"][1:26] * sf[0][0].values[0], color=baseline_colour, alpha=0.2)
 
-ax2.plot(tb_dx0.index, tx_id1["Tb_Treatment_median"][1:26] * sf[0][0].values[0], "-", color=berry[4])
+ax2.plot(tb_dx0.index, tx_id1["Tb_Treatment_median"][1:26] * sf[0][0].values[0], "-", color=sc1_colour)
 ax2.fill_between(tb_dx0.index, tx_id1["Tb_Treatment_lower"][1:26] * sf[0][0].values[0],
-                 tx_id1["Tb_Treatment_upper"][1:26] * sf[0][0].values[0], color=berry[4], alpha=0.2)
+                 tx_id1["Tb_Treatment_upper"][1:26] * sf[0][0].values[0], color=sc1_colour, alpha=0.2)
 
-ax2.plot(tb_dx0.index, tx_id2["Tb_Treatment_median"][1:26] * sf[0][0].values[0], "-", color=berry[3])
+ax2.plot(tb_dx0.index, tx_id2["Tb_Treatment_median"][1:26] * sf[0][0].values[0], "-", color=sc2_colour)
 ax2.fill_between(tb_dx0.index, tx_id2["Tb_Treatment_lower"][1:26] * sf[0][0].values[0],
-                 tx_id2["Tb_Treatment_upper"][1:26] * sf[0][0].values[0], color=berry[3], alpha=0.2)
+                 tx_id2["Tb_Treatment_upper"][1:26] * sf[0][0].values[0], color=sc2_colour, alpha=0.2)
 
-ax2.set_ylim([10000, 60000])
+# ax2.set_ylim([10000, 60000])
 
 ax2.set(title='',
        ylabel='No. treatment appts')
 ax2.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
 
 # TB treatment coverage
-ax3.plot(tb_tx0.index, tb_tx0["median"], "-", color=berry[5])
-ax3.fill_between(tb_tx0.index, tb_tx0["lower"], tb_tx0["upper"], color=berry[5], alpha=0.2)
+ax3.plot(tb_tx0.index, tb_tx0["median"], "-", color=baseline_colour)
+ax3.fill_between(tb_tx0.index, tb_tx0["lower"], tb_tx0["upper"], color=baseline_colour, alpha=0.2)
 
-ax3.plot(tb_tx1.index, tb_tx1["median"], "-", color=berry[4])
-ax3.fill_between(tb_tx1.index, tb_tx1["lower"], tb_tx1["upper"], color=berry[4], alpha=0.2)
+ax3.plot(tb_tx1.index, tb_tx1["median"], "-", color=sc1_colour)
+ax3.fill_between(tb_tx1.index, tb_tx1["lower"], tb_tx1["upper"], color=sc1_colour, alpha=0.2)
 
-ax3.plot(tb_tx2.index, tb_tx2["median"], "-", color=berry[3])
-ax3.fill_between(tb_tx2.index, tb_tx2["lower"], tb_tx2["upper"], color=berry[3], alpha=0.2)
+ax3.plot(tb_tx2.index, tb_tx2["median"], "-", color=sc2_colour)
+ax3.fill_between(tb_tx2.index, tb_tx2["lower"], tb_tx2["upper"], color=sc2_colour, alpha=0.2)
 
 ax3.set_ylim([0, 1.1])
 
@@ -1324,40 +1297,40 @@ fig, ((ax1, ax2)) = plt.subplots(nrows=1, ncols=2,
 fig.suptitle('')
 
 # HIV start treatment
-ax1.plot(hiv_dx0.index, tx_id0["Hiv_Treatment_median"][1:26] * sf[0][0].values[0], "-", color=berry[5])
+ax1.plot(hiv_dx0.index, tx_id0["Hiv_Treatment_median"][1:26] * sf[0][0].values[0], "-", color=baseline_colour)
 ax1.fill_between(hiv_dx0.index, tx_id0["Hiv_Treatment_lower"][1:26] * sf[0][0].values[0],
-                 tx_id0["Hiv_Treatment_upper"][1:26] * sf[0][0].values[0], color=berry[5], alpha=0.2)
+                 tx_id0["Hiv_Treatment_upper"][1:26] * sf[0][0].values[0], color=baseline_colour, alpha=0.2)
 
-ax1.plot(hiv_dx0.index, tx_id1["Hiv_Treatment_median"][1:26] * sf[0][0].values[0], "-", color=berry[4])
+ax1.plot(hiv_dx0.index, tx_id1["Hiv_Treatment_median"][1:26] * sf[0][0].values[0], "-", color=sc1_colour)
 ax1.fill_between(hiv_dx0.index, tx_id1["Hiv_Treatment_lower"][1:26] * sf[0][0].values[0],
-                 tx_id1["Hiv_Treatment_upper"][1:26] * sf[0][0].values[0], color=berry[4], alpha=0.2)
+                 tx_id1["Hiv_Treatment_upper"][1:26] * sf[0][0].values[0], color=sc1_colour, alpha=0.2)
 
-ax1.plot(hiv_dx0.index, tx_id2["Hiv_Treatment_median"][1:26] * sf[0][0].values[0], "-", color=berry[3])
+ax1.plot(hiv_dx0.index, tx_id2["Hiv_Treatment_median"][1:26] * sf[0][0].values[0], "-", color=sc2_colour)
 ax1.fill_between(hiv_dx0.index, tx_id2["Hiv_Treatment_lower"][1:26] * sf[0][0].values[0],
-                 tx_id2["Hiv_Treatment_upper"][1:26] * sf[0][0].values[0], color=berry[3], alpha=0.2)
+                 tx_id2["Hiv_Treatment_upper"][1:26] * sf[0][0].values[0], color=sc2_colour, alpha=0.2)
 
 # ax1.set_ylim([10000, 60000])
 
 ax1.set(title='',
        ylabel='No. treatment appts')
 ax1.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
-ax1.set_ylim(0, 2000000)
+# ax1.set_ylim(0, 2000000)
 
 # TB treatment coverage
-ax2.plot(hiv_tx0.index, hiv_tx0["median"], "-", color=berry[5])
-ax2.fill_between(hiv_tx0.index, hiv_tx0["lower"], hiv_tx0["upper"], color=berry[5], alpha=0.2)
+ax2.plot(hiv_tx0.index, hiv_tx0["median"], "-", color=baseline_colour)
+ax2.fill_between(hiv_tx0.index, hiv_tx0["lower"], hiv_tx0["upper"], color=baseline_colour, alpha=0.2)
 
-ax2.plot(hiv_tx1.index, hiv_tx1["median"], "-", color=berry[4])
-ax2.fill_between(hiv_tx1.index, hiv_tx1["lower"], hiv_tx1["upper"], color=berry[4], alpha=0.2)
+ax2.plot(hiv_tx1.index, hiv_tx1["median"], "-", color=sc1_colour)
+ax2.fill_between(hiv_tx1.index, hiv_tx1["lower"], hiv_tx1["upper"], color=sc1_colour, alpha=0.2)
 
-ax2.plot(hiv_tx2.index, hiv_tx2["median"], "-", color=berry[3])
-ax2.fill_between(hiv_tx2.index, hiv_tx2["lower"], hiv_tx2["upper"], color=berry[3], alpha=0.2)
+ax2.plot(hiv_tx2.index, hiv_tx2["median"], "-", color=sc2_colour)
+ax2.fill_between(hiv_tx2.index, hiv_tx2["lower"], hiv_tx2["upper"], color=sc2_colour, alpha=0.2)
 
 ax2.set_ylim([0, 1.1])
 
 ax2.set(title='',
        ylabel='Proportion treated')
-ax2.legend(labels=["Baseline", "Scale-up", "Constrained scale-up", "Constrained optimistic", "Optimistic"])
+ax2.legend(labels=["Baseline", "Scale-up", "Scale-up \nno constraints"])
 
 plt.tick_params(axis="both", which="major", labelsize=10)
 fig.savefig(outputspath / "Hivtreatment_cascade_2panel.png")
@@ -1379,17 +1352,17 @@ fig, ((ax1, ax2)) = plt.subplots(nrows=1, ncols=2,
 fig.suptitle('')
 
 # HIV start treatment
-ax1.plot(hiv_dx0.index, tx_id0["Hiv_Test_median"][1:26] * sf[0][0].values[0], "-", color=berry[5])
+ax1.plot(hiv_dx0.index, tx_id0["Hiv_Test_median"][1:26] * sf[0][0].values[0], "-", color=baseline_colour)
 ax1.fill_between(hiv_dx0.index, tx_id0["Hiv_Test_lower"][1:26] * sf[0][0].values[0],
-                 tx_id0["Hiv_Test_upper"][1:26] * sf[0][0].values[0], color=berry[5], alpha=0.2)
+                 tx_id0["Hiv_Test_upper"][1:26] * sf[0][0].values[0], color=baseline_colour, alpha=0.2)
 
-ax1.plot(hiv_dx0.index, tx_id1["Hiv_Test_median"][1:26] * sf[0][0].values[0], "-", color=berry[4])
+ax1.plot(hiv_dx0.index, tx_id1["Hiv_Test_median"][1:26] * sf[0][0].values[0], "-", color=sc1_colour)
 ax1.fill_between(hiv_dx0.index, tx_id1["Hiv_Test_lower"][1:26] * sf[0][0].values[0],
-                 tx_id1["Hiv_Test_upper"][1:26] * sf[0][0].values[0], color=berry[4], alpha=0.2)
+                 tx_id1["Hiv_Test_upper"][1:26] * sf[0][0].values[0], color=sc1_colour, alpha=0.2)
 
-ax1.plot(hiv_dx0.index, tx_id2["Hiv_Test_median"][1:26] * sf[0][0].values[0], "-", color=berry[3])
+ax1.plot(hiv_dx0.index, tx_id2["Hiv_Test_median"][1:26] * sf[0][0].values[0], "-", color=sc2_colour)
 ax1.fill_between(hiv_dx0.index, tx_id2["Hiv_Test_lower"][1:26] * sf[0][0].values[0],
-                 tx_id2["Hiv_Test_upper"][1:26] * sf[0][0].values[0], color=berry[3], alpha=0.2)
+                 tx_id2["Hiv_Test_upper"][1:26] * sf[0][0].values[0], color=sc2_colour, alpha=0.2)
 
 # ax1.set_ylim([10000, 60000])
 
@@ -1399,142 +1372,26 @@ ax1.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
 # ax1.set_ylim(0, 2000000)
 
 # TB diagnosis
-ax2.plot(hiv_dx0.index, hiv_dx0["median"], "-", color=berry[5])
-ax2.fill_between(hiv_dx0.index, hiv_dx0["lower"], hiv_dx0["upper"], color=berry[5], alpha=0.2)
+ax2.plot(hiv_dx0.index, hiv_dx0["median"], "-", color=baseline_colour)
+ax2.fill_between(hiv_dx0.index, hiv_dx0["lower"], hiv_dx0["upper"], color=baseline_colour, alpha=0.2)
 
-ax2.plot(hiv_dx1.index, hiv_dx1["median"], "-", color=berry[4])
-ax2.fill_between(hiv_dx1.index, hiv_dx1["lower"], hiv_dx1["upper"], color=berry[4], alpha=0.2)
+ax2.plot(hiv_dx1.index, hiv_dx1["median"], "-", color=sc1_colour)
+ax2.fill_between(hiv_dx1.index, hiv_dx1["lower"], hiv_dx1["upper"], color=sc1_colour, alpha=0.2)
 
-ax2.plot(hiv_dx2.index, hiv_dx2["median"], "-", color=berry[3])
-ax2.fill_between(hiv_dx2.index, hiv_dx2["lower"], hiv_dx2["upper"], color=berry[3], alpha=0.2)
+ax2.plot(hiv_dx2.index, hiv_dx2["median"], "-", color=sc2_colour)
+ax2.fill_between(hiv_dx2.index, hiv_dx2["lower"], hiv_dx2["upper"], color=sc2_colour, alpha=0.2)
 
 ax2.set_ylim([0, 1.1])
 
 ax2.set(title='',
        ylabel='Proportion diagnosed')
-ax2.legend(labels=["Baseline", "Scale-up", "Constrained scale-up", "Constrained optimistic", "Optimistic"])
+ax2.legend(labels=["Baseline", "Scale-up", "Scale-up \nno constraints"])
 
 plt.tick_params(axis="both", which="major", labelsize=10)
 fig.savefig(outputspath / "Hivdiagnosis_cascade_2panel.png")
 
 plt.show()
 
-
-# # ---------------------------- 3d-plots ------------------------------------
-#
-# # TB test appts and TB proportion diagnosed
-#
-# x0 = tx_id0["Tb_Test_Screening_median"].values[1:26]
-# x1 = tx_id1["Tb_Test_Screening_median"].values[1:26]
-# x2 = tx_id2["Tb_Test_Screening_median"].values[1:26]
-# x3 = tx_id3["Tb_Test_Screening_median"].values[1:26]
-# x4 = tx_id4["Tb_Test_Screening_median"].values[1:26]
-#
-# y = years_num.values[1:26]
-#
-# z0 = tb_dx0["median"].values
-# z1 = tb_dx1["median"].values
-# z2 = tb_dx2["median"].values
-# z3 = tb_dx3["median"].values
-# z4 = tb_dx4["median"].values
-#
-#
-# plt.style.use('ggplot')
-#
-#
-# fig = plt.figure()
-# fig.tight_layout()
-# ax = plt.axes(projection='3d')
-#
-# ax.plot(y, x0, z0, color=berry[5], label="Scenario 0");
-# for i in range(len(tb_dx_full0.columns)):
-#     ax.plot(y, tb_test_counts0.iloc[1:26, i], tb_dx_full0.iloc[:, i], color=berry[5], alpha=0.1);
-#
-# ax.plot(y, x1, z1, color=berry[4], label="Scenario 1");
-# for i in range(len(tb_dx_full0.columns)):
-#     ax.plot(y, tb_test_counts1.iloc[1:26, i], tb_dx_full1.iloc[:, i], color=berry[4], alpha=0.1);
-#
-# ax.plot(y, x2, z2, color=berry[3], label="Scenario 2");
-# for i in range(len(tb_dx_full0.columns)):
-#     ax.plot(y, tb_test_counts2.iloc[1:26, i], tb_dx_full2.iloc[:, i], color=berry[3], alpha=0.1);
-#
-# ax.plot(y, x3, z3, color=berry[2], label="Scenario 3");
-# for i in range(len(tb_dx_full0.columns)):
-#     ax.plot(y, tb_test_counts3.iloc[1:26, i], tb_dx_full3.iloc[:, i], color=berry[2], alpha=0.1);
-#
-# ax.plot(y, x4, z4, color=berry[1], label="Scenario 4");
-# for i in range(len(tb_dx_full0.columns)):
-#     ax.plot(y, tb_test_counts4.iloc[1:26, i], tb_dx_full4.iloc[:, i], color=berry[1], alpha=0.1);
-#
-# ax.set(facecolor='w')
-#
-# xLabel = ax.set_xlabel('\nYear', linespacing=1.5)
-# yLabel = ax.set_ylabel('\nNo. treatment appts', linespacing=2.1)
-# zLabel = ax.set_zlabel('\nProportion treated', linespacing=1.4)
-#
-# plt.legend(bbox_to_anchor=(-0.4,0.4), loc="center left", facecolor="white")
-#
-# # fig.savefig(outputspath / "Tb_diagnosed.png")
-#
-# plt.show()
-
-# #--------------------------------------------
-# # TB treatment appts and TB proportion treated
-#
-# x0 = tx_id0["Tb_Treatment_median"].values[1:26]
-# x1 = tx_id1["Tb_Treatment_median"].values[1:26]
-# x2 = tx_id2["Tb_Treatment_median"].values[1:26]
-# x3 = tx_id3["Tb_Treatment_median"].values[1:26]
-# x4 = tx_id4["Tb_Treatment_median"].values[1:26]
-#
-# y = years_num.values[1:26]
-#
-# z0 = tb_tx0["median"].values
-# z1 = tb_tx1["median"].values
-# z2 = tb_tx2["median"].values
-# z3 = tb_tx3["median"].values
-# z4 = tb_tx4["median"].values
-#
-#
-# fig = plt.figure()
-# fig.tight_layout()
-# ax = plt.axes(projection='3d')
-#
-# ax.plot(y, x0, z0, color=berry[5], label="Scenario 0");
-# for i in range(len(tb_tx_full0.columns)):
-#     ax.plot(y, tb_tx_counts0.iloc[1:26, i], tb_tx_full0.iloc[:, i], color=berry[5], alpha=0.1);
-#
-# ax.plot(y, x1, z1, color=berry[4], label="Scenario 1");
-# for i in range(len(tb_tx_full1.columns)):
-#     ax.plot(y, tb_tx_counts1.iloc[1:26, i], tb_tx_full1.iloc[:, i], color=berry[4], alpha=0.1);
-#
-# ax.plot(y, x2, z2, color=berry[3], label="Scenario 2");
-# for i in range(len(tb_tx_full2.columns)):
-#     ax.plot(y, tb_tx_counts2.iloc[1:26, i], tb_tx_full2.iloc[:, i], color=berry[3], alpha=0.1);
-#
-# ax.plot(y, x3, z3, color=berry[2], label="Scenario 3");
-# for i in range(len(tb_tx_full3.columns)):
-#     ax.plot(y, tb_tx_counts3.iloc[1:26, i], tb_tx_full3.iloc[:, i], color=berry[2], alpha=0.1);
-#
-# ax.plot(y, x4, z4, color=berry[1], label="Scenario 4");
-# for i in range(len(tb_tx_full4.columns)):
-#     ax.plot(y, tb_tx_counts4.iloc[1:26, i], tb_tx_full4.iloc[:, i], color=berry[1], alpha=0.1);
-#
-# ax.set(facecolor='w')
-#
-# xLabel = ax.set_xlabel('\nYear', linespacing=1.5)
-# yLabel = ax.set_ylabel('\nNo. treatment appts', linespacing=2.1)
-# zLabel = ax.set_zlabel('\nProportion treated', linespacing=1.4)
-#
-# ax.set_zlim3d(0.3, 0.8)
-# ax.set_ylim3d(150, 400)
-#
-# plt.legend(bbox_to_anchor=(-0.4,0.4), loc="center left", facecolor="white")
-#
-# fig.savefig(outputspath / "Tb_treated.png")
-#
-# plt.show()
-#
 
 # %%:  ---------------------------------- Treatment delays -------------------------------------
 
@@ -1752,7 +1609,7 @@ delay2_histchild = delay2_histchild.loc[
 
 counts, bins, bars = plt.hist(delay0_hist.value_weeks, bins=range(0,11))
 
-colours = [berry[5], berry[4], berry[3], berry[2], berry[1]]
+colours = [baseline_colour, sc1_colour, sc2_colour]
 bins = range(1, 12)
 labels = ["", "1", "2", "3", "4", "5", "6", "7", "8", "9", "≥ 10"]
 
@@ -1806,7 +1663,7 @@ ax2.set_ylim([0, 1.0])
 
 plt.tick_params(axis="both", which="major", labelsize=10)
 
-plt.legend(labels=["Baseline", "Scale-up", "Constrained scale-up"])
+plt.legend(labels=["Baseline", "Scale-up", "Scale-up \nno constraints"])
 fig.savefig(outputspath / "Tb_treatment_delay.png")
 
 plt.show()
@@ -1893,9 +1750,17 @@ false_pos_child2 = tb_false_pos_children(results2)
 plt.style.use('ggplot')
 fig, ax = plt.subplots()
 
-ax.plot(years_num[13:26], false_pos0["median"][12:25], "-", color=berry[5])
-ax.plot(years_num[13:26], false_pos1["median"][12:25], "-", color=berry[4])
-ax.plot(years_num[13:26], false_pos2["median"][12:25], "-", color=berry[3])
+ax.plot(years_num[13:26], false_pos0["median"][12:25], "-", color=baseline_colour)
+ax.fill_between(years_num[13:26], false_pos0["lower"][12:25], false_pos0["upper"][12:25],
+                color=baseline_colour, alpha=0.2)
+
+ax.plot(years_num[13:26], false_pos1["median"][12:25], "-", color=sc1_colour)
+ax.fill_between(years_num[13:26], false_pos1["lower"][12:25], false_pos1["upper"][12:25],
+                color=sc1_colour, alpha=0.2)
+
+ax.plot(years_num[13:26], false_pos2["median"][12:25], "-", color=sc2_colour)
+ax.fill_between(years_num[13:26], false_pos2["lower"][12:25], false_pos2["upper"][12:25],
+                color=sc2_colour, alpha=0.2)
 
 ax.patch.set_edgecolor('grey')
 ax.patch.set_linewidth('1')
@@ -1903,12 +1768,70 @@ ax.patch.set_linewidth('1')
 plt.ylabel("Proportion false positives")
 
 plt.xlabel("Year")
-plt.ylim((0, 0.15))
+plt.ylim((0, 0.5))
 plt.title("")
-plt.legend(labels=["Baseline", "Scale-up", "Constrained scale-up", "Constrained optimistic", "Optimistic"])
+plt.legend(labels=["Baseline", "Scale-up", "Scale-up \nno constraints"])
 fig.savefig(outputspath / "Tb_false_positives.png")
 plt.show()
 
+
+
+## plot false positives for all years
+plt.style.use('ggplot')
+fig, ax = plt.subplots()
+
+ax.plot(years_num[1:26], false_pos0["median"], "-", color=baseline_colour)
+ax.fill_between(years_num[1:26], false_pos0["lower"], false_pos0["upper"],
+                color=baseline_colour, alpha=0.2)
+
+ax.plot(years_num[1:26], false_pos1["median"], "-", color=sc1_colour)
+ax.fill_between(years_num[1:26], false_pos1["lower"], false_pos1["upper"],
+                color=sc1_colour, alpha=0.2)
+
+ax.plot(years_num[1:26], false_pos2["median"], "-", color=sc2_colour)
+ax.fill_between(years_num[1:26], false_pos2["lower"], false_pos2["upper"],
+                color=sc2_colour, alpha=0.2)
+
+ax.patch.set_edgecolor('grey')
+ax.patch.set_linewidth('1')
+
+plt.ylabel("Proportion false positives")
+
+plt.xlabel("Year")
+plt.ylim((0, 0.5))
+plt.title("")
+plt.legend(labels=["Baseline", "Scale-up", "Scale-up \nno constraints"])
+fig.savefig(outputspath / "Tb_false_positives_all_years.png")
+plt.show()
+
+
+## plot false positives for all years - CHILDREN
+plt.style.use('ggplot')
+fig, ax = plt.subplots()
+
+ax.plot(years_num[1:26], false_pos_child0["median"], "-", color=baseline_colour)
+ax.fill_between(years_num[1:26], false_pos_child0["lower"], false_pos_child0["upper"],
+                color=baseline_colour, alpha=0.2)
+
+ax.plot(years_num[1:26], false_pos_child1["median"], "-", color=sc1_colour)
+ax.fill_between(years_num[1:26], false_pos_child1["lower"], false_pos_child1["upper"],
+                color=sc1_colour, alpha=0.2)
+
+ax.plot(years_num[1:26], false_pos_child2["median"], "-", color=sc2_colour)
+ax.fill_between(years_num[1:26], false_pos_child2["lower"], false_pos_child2["upper"],
+                color=sc2_colour, alpha=0.2)
+
+ax.patch.set_edgecolor('grey')
+ax.patch.set_linewidth('1')
+
+plt.ylabel("Proportion false positives")
+
+plt.xlabel("Year")
+# plt.ylim((0, 0.5))
+plt.title("")
+plt.legend(labels=["Baseline", "Scale-up", "Scale-up \nno constraints"])
+fig.savefig(outputspath / "Tb_false_positives_all_years_children.png")
+plt.show()
 
 
 # %%:  ---------------------------------- PrEP IMPACT ---------------------------------- #
@@ -1922,7 +1845,7 @@ def hiv_agyw_inc(results_folder):
         key="infections_by_2age_groups_and_sex",
         column="n_new_infections_female_1524",
         index="date",
-        do_scaling=False
+        do_scaling=True
     )
 
     inc.columns = inc.columns.get_level_values(0)
@@ -1935,10 +1858,42 @@ def hiv_agyw_inc(results_folder):
 
 
 agyw_inc0 = hiv_agyw_inc(results0)
+agyw_inc1 = hiv_agyw_inc(results1)
+agyw_inc2 = hiv_agyw_inc(results2)
 
 
-baseline_num_infections = agyw_inc0["median"][12:25]
+baseline_num_infections = agyw_inc0["median"][11:26]
 # multiply by scaling factor to get numbers of expected infections
+
+
+## plot HIV incidence in AGYW
+plt.style.use('ggplot')
+fig, ax = plt.subplots()
+
+ax.plot(years_num[12:26], agyw_inc0["median"][11:26], "-", color=baseline_colour)
+ax.fill_between(years_num[12:26], agyw_inc0["lower"][11:26], agyw_inc0["upper"][11:26],
+                color=baseline_colour, alpha=0.2)
+
+ax.plot(years_num[12:26], agyw_inc1["median"][11:26], "-", color=sc1_colour)
+ax.fill_between(years_num[12:26], agyw_inc1["lower"][11:26], agyw_inc1["upper"][11:26],
+                color=sc1_colour, alpha=0.2)
+
+ax.plot(years_num[12:26], agyw_inc2["median"][11:26], "-", color=sc2_colour)
+ax.fill_between(years_num[12:26], agyw_inc2["lower"][11:26], agyw_inc2["upper"][11:26],
+                color=sc2_colour, alpha=0.2)
+
+ax.patch.set_edgecolor('grey')
+ax.patch.set_linewidth('1')
+
+plt.ylabel("Number new HIV infections")
+
+plt.xlabel("Year")
+plt.ylim((0, 7500))
+plt.title("")
+plt.legend(labels=["Baseline", "Scale-up", "Scale-up \nno constraints"])
+fig.savefig(outputspath / "Incidence_HIV_AGYW.png")
+plt.show()
+
 
 
 # %%: get consumables availability
@@ -1970,6 +1925,7 @@ def get_item_code_from_item_name(lookup_df: pd.DataFrame, item: str) -> int:
     """Helper function to provide the item_code (an int) when provided with the name of the item"""
     return int(pd.unique(lookup_df.loc[lookup_df["Items"] == item, "Item_Code"])[0])
 
+## TB consumables
 
 item_codes_dict = dict()
 
@@ -2011,8 +1967,67 @@ df_heatmap = selected_cons_availability.pivot_table(
     aggfunc=np.mean)
 
 ax = sns.heatmap(df_heatmap, annot=True)
-# plt.tight_layout()
+plt.tight_layout()
+
 plt.xlabel('Facility level')
 plt.ylabel('')
 plt.savefig(outputspath / "cons_availability.png", bbox_inches='tight')
+plt.show()
+
+
+## HIV consumables
+
+item_codes_dict = dict()
+
+# diagnostics
+item_codes_dict["HIV test"] = get_item_code_from_item_name(items_list, "Test, HIV EIA Elisa")
+item_codes_dict["Viral load"] = get_item_codes_from_package_name(items_list, "Viral Load")
+item_codes_dict["VMMC"] = get_item_code_from_item_name(items_list, "male circumcision kit, consumables (10 procedures)_1_IDA")
+
+# treatment
+item_codes_dict["Adult PrEP"] = get_item_code_from_item_name(items_list, "Tenofovir (TDF)/Emtricitabine (FTC), tablet, 300/200 mg")
+item_codes_dict["Infant PrEP"] = get_item_code_from_item_name(items_list, "Nevirapine, oral solution, 10 mg/ml")
+item_codes_dict['First-line ART regimen: adult'] = get_item_code_from_item_name(items_list, "First-line ART regimen: adult")
+item_codes_dict['First-line ART regimen: adult: cotrimoxazole'] = get_item_code_from_item_name(items_list, "Cotrimoxizole, 960mg pppy")
+
+# ART for older children aged ("ART_age_cutoff_younger_child" < age <= "ART_age_cutoff_older_child"):
+item_codes_dict['First line ART regimen: older child'] = get_item_code_from_item_name(items_list, "First line ART regimen: older child")
+item_codes_dict['First line ART regimen: older child: cotrimoxazole'] = get_item_code_from_item_name(items_list, "Sulfamethoxazole + trimethropin, tablet 400 mg + 80 mg")
+
+# ART for younger children aged (age < "ART_age_cutoff_younger_child"):
+item_codes_dict['First line ART regimen: young child'] = get_item_code_from_item_name(items_list, "First line ART regimen: young child")
+item_codes_dict['First line ART regimen: young child: cotrimoxazole'] = get_item_code_from_item_name(items_list, "Sulfamethoxazole + trimethropin, oral suspension, 240 mg, 100 ml")
+
+# select item codes from item_codes_dict
+selected_cons_availability = average_cons_availability[average_cons_availability["item_code"].isin(item_codes_dict.values())]
+# remove level 0
+selected_cons_availability = selected_cons_availability.loc[selected_cons_availability.Facility_Level != "0"]
+# remove level 4
+selected_cons_availability = selected_cons_availability.loc[selected_cons_availability.Facility_Level != "4"]
+
+# replace item code with item name
+selected_cons_availability.loc[selected_cons_availability.item_code == 196, "item_code"] = "HIV test"
+selected_cons_availability.loc[selected_cons_availability.item_code == 190, "item_code"] = "Viral load"
+selected_cons_availability.loc[selected_cons_availability.item_code == 197, "item_code"] = "VMMC"
+selected_cons_availability.loc[selected_cons_availability.item_code == 1191, "item_code"] = "Adult PrEP"
+selected_cons_availability.loc[selected_cons_availability.item_code == 198, "item_code"] = "Infant PrEP"
+selected_cons_availability.loc[selected_cons_availability.item_code == 2671, "item_code"] = "Adult ART"
+selected_cons_availability.loc[selected_cons_availability.item_code == 204, "item_code"] = "Adult cotrimoxazole"
+selected_cons_availability.loc[selected_cons_availability.item_code == 2672, "item_code"] = "Child ART"
+selected_cons_availability.loc[selected_cons_availability.item_code == 162, "item_code"] = "Child cotrimoxazole"
+selected_cons_availability.loc[selected_cons_availability.item_code == 2673, "item_code"] = "Infant ART"
+selected_cons_availability.loc[selected_cons_availability.item_code == 202, "item_code"] = "Infant cotrimoxazole"
+
+df_heatmap = selected_cons_availability.pivot_table(
+    values='available_prop',
+    index='item_code',
+    columns='Facility_Level',
+    aggfunc=np.mean)
+
+ax = sns.heatmap(df_heatmap, annot=True)
+plt.tight_layout()
+
+plt.xlabel('Facility level')
+plt.ylabel('')
+plt.savefig(outputspath / "cons_availability_HIV.png", bbox_inches='tight')
 plt.show()
