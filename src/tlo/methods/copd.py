@@ -126,7 +126,8 @@ class Copd(Module):
         """Look-up the item-codes for the consumables needed in the HSI Events for this module."""
         # todo: Need to look-up these item-codes.
         self.item_codes = {
-            'inhaler': 0,
+            'broncho_dilater_inhaler': 293,
+            'steroid_inhaler', 294
             'oxygen': 301,
             'amino_phylline': 292,
        'amoxycillin': 125,
