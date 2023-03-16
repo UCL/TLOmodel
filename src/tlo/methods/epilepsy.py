@@ -633,5 +633,4 @@ class HSI_Epilepsy_Follow_Up(HSI_Event, IndividualScopeEventMixin):
                 topen=self.sim.date + DateOffset(months=3 if df.at[person_id, 'ep_seiz_stat'] == '3' else 12),
                 tclose=None,
                 priority=0
-       )
-
+        )
