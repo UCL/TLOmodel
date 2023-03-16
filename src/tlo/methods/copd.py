@@ -129,6 +129,7 @@ class Copd(Module):
             'inhaler': 0,
             'oxygen': 0,
             'amino_phylline': 0
+       'amoxycillin': 125,
         }
 
     def do_logging(self):
