@@ -128,7 +128,7 @@ class Copd(Module):
         self.item_codes = {
             'inhaler': 0,
             'oxygen': 0,
-            'amino_phylline': 0
+            'amino_phylline': 292,
        'amoxycillin': 125,
         }
 
