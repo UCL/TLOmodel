@@ -347,6 +347,7 @@ class Copd_ExacerbationEvent(Event, IndividualScopeEventMixin):
         if self.severe:
             # Work out if the person will die of this exacerbation (if not treated). If they die, they die the next day.
             if self.module.models.will_die_given_severe_exacerbation():
+                self.sim.population.props.at[person_id, "ch_will_die_this_episode"] = True
                 self.sim.schedule_event(Copd_Death(self.module, person_id), self.sim.date + pd.DateOffset(days=1))
 
 
