@@ -149,7 +149,7 @@ class Copd(Module):
         df = self.sim.population.props
         has_inhaler = df.at[person_id, 'ch_has_inhaler']
         if not has_inhaler:
-            if hsi_event.get_consumables(self.item_codes['inhaler']):
+            if hsi_event.get_consumables(self.item_codes['broncho_dilaterinhaler'], optional=self.item_codes['steriod_inhaler']):
                 df.at[person_id, 'ch_has_inhaler'] = True
 
     def do_when_present_with_breathless(self, person_id: int, hsi_event: HSI_Event):
