@@ -39,7 +39,7 @@ import pandas as pd
 from tlo import Date, logging
 from tlo.methods import (
     demography,
-    deviance_measure,
+    hiv_tb_calibration,
     enhanced_lifestyle,
     epi,
     healthburden,

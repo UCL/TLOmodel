@@ -2255,10 +2255,7 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
         person = df.loc[person_id]
 
         # Do not run if the child is not alive or is diagnosed with hiv
-        if (
-            (not person["is_alive"])
-            or (person["hv_diagnosed"])
-        ):
+        if not person["is_alive"] or person["hv_diagnosed"]:
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         # if breastfeeding has ceased or child >18 months, no further prophylaxis required
@@ -2360,7 +2357,7 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
             # If PrEP is not available, the person will default and not be on PrEP
             df.at[person_id, "hv_is_on_prep"] = False
 
-    def never_ran(self, *args, **kwargs):
+    def never_ran(self):
         """This is called if this HSI was never run.
         Default the person to being off PrEP"""
         self.sim.population.props.at[self.target, "hv_is_on_prep"] = False
