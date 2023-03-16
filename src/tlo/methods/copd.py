@@ -127,7 +127,7 @@ class Copd(Module):
         # todo: Need to look-up these item-codes.
         self.item_codes = {
             'inhaler': 0,
-            'oxygen': 0,
+            'oxygen': 301,
             'amino_phylline': 292,
        'amoxycillin': 125,
         }
