@@ -628,17 +628,10 @@ class HSI_Epilepsy_Follow_Up(HSI_Event, IndividualScopeEventMixin):
 
         # Schedule a reoccurrence of this follow-up in 3 months if ep_seiz_stat == '3',
         # else, schedule this reoccurrence of it in 1 year (i.e., if ep_seiz_stat == '2')
-        if df.at[person_id, 'ep_seiz_stat'] == '3':
-            hs.schedule_hsi_event(
+        hs.schedule_hsi_event(
                 hsi_event=self,
-                topen=self.sim.date + DateOffset(months=3),
+                topen=self.sim.date + DateOffset(months=3 if df.at[person_id, 'ep_seiz_stat'] == '3' else 12),
                 tclose=None,
                 priority=0
-            )
-        else:
-            hs.schedule_hsi_event(
-                hsi_event=self,
-                topen=self.sim.date + DateOffset(years=1),
-                tclose=None,
-                priority=0
-            )
+       )
+
