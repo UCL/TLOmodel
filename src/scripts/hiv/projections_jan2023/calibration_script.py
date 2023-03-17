@@ -105,7 +105,7 @@ class TestScenario(BaseScenario):
             epi.Epi(resourcefilepath=self.resources),
             hiv.Hiv(resourcefilepath=self.resources),
             tb.Tb(resourcefilepath=self.resources),
-            deviance_measure.Deviance(resourcefilepath=self.resources),
+            hiv_tb_calibration.Deviance(resourcefilepath=self.resources),
         ]
 
     def draw_parameters(self, draw_number, rng):
