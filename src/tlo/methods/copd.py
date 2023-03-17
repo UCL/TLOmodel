@@ -245,7 +245,7 @@ class CopdModels:
         }
 
     def will_progres_to_next_cat_of_lungfunction(self, df: pd.DataFrame) -> List:
-        """Returns the indicies (corresponding to the poerson_id) that will progress to the next category up of
+        """Returns the indices (corresponding to the person_id) that will progress to the next category up of
          `ch_lungfunction`, based on the probability of progression in a 3-month period."""
         will_progress_to_next_category = self.__Prob_Progress_LungFunction__.predict(df, self.rng)
         return will_progress_to_next_category[will_progress_to_next_category].index.to_list()

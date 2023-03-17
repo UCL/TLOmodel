@@ -28,6 +28,9 @@ from tlo.methods import (
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
+start_date = Date(2010, 1, 1)
+end_date = start_date + pd.DateOffset(months=3)
+
 
 def check_dtypes(simulation):
     # check types of columns
@@ -39,8 +42,6 @@ def check_dtypes(simulation):
 def test_basic_run(tmpdir, seed):
     """Run the simulation with the Copd module and read the log from the Copd module."""
 
-    start_date = Date(2010, 1, 1)
-    end_date = start_date + pd.DateOffset(months=3)
     popsize = 1000
     sim = Simulation(
         start_date=start_date,
@@ -74,3 +75,40 @@ def test_basic_run(tmpdir, seed):
 
     print(unflatten(log_prev_copd['date'].values[0]))
     print(unflatten(log_prev_copd['date'].values[-1]))
+
+
+def get_simulation(pop_size):
+    sim = Simulation(
+        start_date=start_date
+    )
+
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 copd.Copd(resourcefilepath=resourcefilepath),
+                 )
+    sim.make_initial_population(n=pop_size)
+    sim.simulate(end_date=end_date)
+    check_dtypes(sim)
+    return sim
+
+
+def test_ch_lungfunction():
+    """ test everyone ends up in lung function category 6 if there is high progression rate """
+    sim = get_simulation(10)
+    df = sim.population.props
+
+    # set everyone to start at lung function category 0
+    df.loc[df.index, 'ch_lungfunction'] = 0
+
+    # confirm they are all at category zero
+    assert (df['ch_lungfunction'] == 0).all(), 'not all are category 0'
+
+def test_exacerbations():
+    """ test copd exacerbations. """
+    sim = get_simulation(10)
+    df = sim.population.props
