@@ -39,13 +39,13 @@ import pandas as pd
 from tlo import Date, logging
 from tlo.methods import (
     demography,
-    hiv_tb_calibration,
     enhanced_lifestyle,
     epi,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
     hiv,
+    hiv_tb_calibration,
     simplified_births,
     symptommanager,
     tb,
