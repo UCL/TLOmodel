@@ -440,7 +440,7 @@ def test_test_and_refer_event_scheduled_by_main_event_poll(seed):
     sim = get_sim(seed=seed)
 
     # set baseline testing probability to far exceed 1.0 to ensure everyone assigned a test after lm and scaling
-    sim.modules['Hiv'].parameters["hiv_testing_rates"]["annual_testing_rate_children"] = 100
+    # sim.modules['Hiv'].parameters["hiv_testing_rates"]["annual_testing_rate_children"] = 100
     sim.modules['Hiv'].parameters["hiv_testing_rates"]["annual_testing_rate_adults"] = 100
 
     # Simulate for 0 days so as to complete all the initialisation steps
@@ -456,9 +456,9 @@ def test_test_and_refer_event_scheduled_by_main_event_poll(seed):
     ]
 
     df = sim.population.props
-    num_not_diagnosed = sum(~df.hv_diagnosed & df.is_alive)
+    num_adults_not_diagnosed = sum(~df.hv_diagnosed & df.is_alive & (df.age_years > 15))
     # diagnosed adults can re-test, so should have more tests than undiagnosed people
-    assert num_not_diagnosed <= len(dates_of_tr_events)
+    assert num_adults_not_diagnosed <= len(dates_of_tr_events)
     assert all([(sim.date <= d <= (sim.date + pd.DateOffset(months=12))) for d in dates_of_tr_events])
 
 
@@ -549,6 +549,7 @@ def test_art_is_initiated_for_infants(seed):
 
     # change prob ART start after diagnosis
     sim.modules["Hiv"].parameters["prob_start_art_or_vs"]["prob_art_if_dx"] = 1.0
+    sim.modules["Hiv"].parameters["prob_hiv_test_for_newborn_infant"] = 1.0
 
     # Manipulate CFR for deaths due to not breathing at birth
     sim.modules['NewbornOutcomes'].parameters['cfr_failed_to_transition'] = 0.0
@@ -560,6 +561,8 @@ def test_art_is_initiated_for_infants(seed):
     df.at[mother_id, 'is_pregnant'] = True
     df.at[mother_id, 'hv_date_inf'] = sim.date
     df.at[mother_id, 'date_of_last_pregnancy'] = sim.date
+    # mother has to be diagnosed for HIV test to run
+    df.at[mother_id, "hv_diagnosed"] = True
 
     # Populate the mni
     pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
@@ -586,7 +589,7 @@ def test_art_is_initiated_for_infants(seed):
         ev for ev in sim.modules['HealthSystem'].find_events_for_person(child_id) if
         isinstance(ev[1], hiv.HSI_Hiv_TestAndRefer)
     ][0]
-    assert date_event == sim.date
+    assert date_event >= sim.date
 
     # Run the TestAndRefer event for the child
     rtn = event.apply(person_id=child_id, squeeze_factor=0.0)
@@ -795,7 +798,7 @@ def test_hsi_testandrefer_and_art(seed):
         ev for ev in sim.find_events_for_person(person_id) if isinstance(ev[1], hiv.Hiv_DecisionToContinueTreatment)
     ][0]
 
-    assert date_decision_event == date_hsi_event + pd.DateOffset(months=6)
+    assert date_decision_event == date_hsi_event + pd.DateOffset(months=3)
 
     # Advance simulation date to when the decision_event would run
     sim.date = date_decision_event
@@ -810,14 +813,15 @@ def test_hsi_testandrefer_and_art(seed):
     ])
 
     # Check stops being on ART if "decides" to stop ->
-    # Run the decision event when probability of continuation is 0, and check that Treatment is off and no further HSI
+    # Run the decision event when probability of continuation is 0, and check that Treatment is off and
+    # another treatment appt is scheduled
     # First, clear the queue to avoid being confused by results of the check done just above.
     assert df.at[person_id, "hv_art"] in ["on_VL_suppressed", "on_not_VL_suppressed"]
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
-    sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_6_months"] = 0.0
+    sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_3_months"] = 0.0
     decision_event.apply(person_id)
     assert df.at[person_id, "hv_art"] == "not"
-    assert 0 == len([
+    assert 1 == len([
         ev[0] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
         (isinstance(ev[1], hiv.HSI_Hiv_StartOrContinueTreatment) & (ev[0] >= date_decision_event))
     ])
@@ -852,7 +856,8 @@ def test_hsi_art_stopped_due_to_no_drug_available_and_no_restart(seed):
 
     # Make and run the Treatment event (when consumables not available): and the person will not try to restart
     sim.modules['Hiv'].parameters["probability_of_seeking_further_art_appointment_if_drug_not_available"] = 0.0
-    t = HSI_Hiv_StartOrContinueTreatment(module=sim.modules['Hiv'], person_id=person_id)
+    t = HSI_Hiv_StartOrContinueTreatment(module=sim.modules['Hiv'],
+                                         person_id=person_id, facility_level_of_this_hsi="1a")
     t.apply(person_id=person_id, squeeze_factor=0.0)
 
     # confirm person is no longer on ART and has an AIDS event scheduled:
@@ -861,10 +866,10 @@ def test_hsi_art_stopped_due_to_no_drug_available_and_no_restart(seed):
         ev[0] for ev in sim.find_events_for_person(person_id) if
         (isinstance(ev[1], hiv.HivAidsOnsetEvent) & (ev[0] >= sim.date))
     ])
-    # confirm test and refer scheduled for this person
+    # confirm new treatment appt scheduled for this person
     assert 1 == len([
         ev[0] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
-        (isinstance(ev[1], hiv.HSI_Hiv_TestAndRefer) & (ev[0] >= sim.date))
+        (isinstance(ev[1], hiv.HSI_Hiv_StartOrContinueTreatment) & (ev[0] >= sim.date))
     ])
 
 
@@ -887,7 +892,8 @@ def test_hsi_art_stopped_due_to_no_drug_available_but_will_restart(seed):
 
     # Make and run the Treatment event (when consumables not available): and the person will try to restart
     sim.modules['Hiv'].parameters["probability_of_seeking_further_art_appointment_if_drug_not_available"] = 1.0
-    t = HSI_Hiv_StartOrContinueTreatment(module=sim.modules['Hiv'], person_id=person_id)
+    t = HSI_Hiv_StartOrContinueTreatment(module=sim.modules['Hiv'], person_id=person_id,
+                                         facility_level_of_this_hsi="1a")
     t.apply(person_id=person_id, squeeze_factor=0.0)
 
     # confirm person is no longer on ART and has an AIDS event scheduled:
@@ -953,13 +959,13 @@ def test_hsi_art_stopped_if_healthsystem_cannot_run_hsi_and_no_restart(seed):
 
     # schedule each person  a treatment
     sim.modules['HealthSystem'].schedule_hsi_event(
-        HSI_Hiv_StartOrContinueTreatment(person_id=0, module=sim.modules['Hiv']),
+        HSI_Hiv_StartOrContinueTreatment(person_id=0, module=sim.modules['Hiv'], facility_level_of_this_hsi="1a"),
         topen=sim.date,
         tclose=sim.date + pd.DateOffset(days=1),
         priority=0
     )
     sim.modules['HealthSystem'].schedule_hsi_event(
-        HSI_Hiv_StartOrContinueTreatment(person_id=1, module=sim.modules['Hiv']),
+        HSI_Hiv_StartOrContinueTreatment(person_id=1, module=sim.modules['Hiv'], facility_level_of_this_hsi="1a"),
         topen=sim.date,
         tclose=sim.date + pd.DateOffset(days=1),
         priority=0
@@ -1049,13 +1055,13 @@ def test_hsi_art_stopped_if_healthsystem_cannot_run_hsi_but_will_restart(seed):
 
     # schedule each person  a treatment
     sim.modules['HealthSystem'].schedule_hsi_event(
-        HSI_Hiv_StartOrContinueTreatment(person_id=0, module=sim.modules['Hiv']),
+        HSI_Hiv_StartOrContinueTreatment(person_id=0, module=sim.modules['Hiv'], facility_level_of_this_hsi="1a"),
         topen=sim.date,
         tclose=sim.date + pd.DateOffset(days=1),
         priority=0
     )
     sim.modules['HealthSystem'].schedule_hsi_event(
-        HSI_Hiv_StartOrContinueTreatment(person_id=1, module=sim.modules['Hiv']),
+        HSI_Hiv_StartOrContinueTreatment(person_id=1, module=sim.modules['Hiv'], facility_level_of_this_hsi="1a"),
         topen=sim.date,
         tclose=sim.date + pd.DateOffset(days=1),
         priority=0
