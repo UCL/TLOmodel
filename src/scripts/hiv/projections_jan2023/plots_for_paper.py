@@ -1106,7 +1106,7 @@ ax1.fill_between(tb_dx0.index, tx_id2["Tb_Test_Screening_lower"][1:26] * sf[0][0
 # ax1.set_ylim([5000000, 10000000])
 
 ax1.set(title='',
-       ylabel='No. test appts')
+       ylabel='No. screening appts')
 
 ax1.legend(labels=["Baseline", "Constrained scale-up", "Unconstrained scale-up"])
 
