@@ -7,6 +7,7 @@
 import datetime
 import heapq as hp
 import itertools
+import warnings
 from collections import Counter, defaultdict
 from collections.abc import Iterable
 from itertools import repeat
@@ -439,7 +440,13 @@ class HealthSystem(Module):
         # Service Availability
         'Service_Availability': Parameter(
             Types.LIST, 'List of services to be available. NB. This parameter is over-ridden if an argument is provided'
-                        ' to the module initialiser.')
+                        ' to the module initialiser.'),
+       
+        # Priority policy
+        'PriorityRank': Parameter(
+            Types.DATA_FRAME, "Data on the priority ranking of each of the Treatment_IDs to be adopted by "
+                              " the queueing system, where the lower the number the higher the priority"),
+
     }
 
     PROPERTIES = {
@@ -457,6 +464,7 @@ class HealthSystem(Module):
         cons_availability: Optional[str] = None,
         beds_availability: Optional[str] = None,
         ignore_priority: bool = False,
+        adopt_priority_policy: bool = False,
         capabilities_coefficient: Optional[float] = None,
         use_funded_or_actual_staffing: Optional[str] = 'funded_plus',
         disable: bool = False,
@@ -508,6 +516,11 @@ class HealthSystem(Module):
         assert not (disable and disable_and_reject_all), (
             'Cannot have both disable and disable_and_reject_all selected'
         )
+        
+        assert not (ignore_priority and adopt_priority_policy), (
+            'Cannot adopt a priority policy if the priority will be then ignored'
+        )
+
         self.disable = disable
         self.disable_and_reject_all = disable_and_reject_all
 
@@ -516,6 +529,8 @@ class HealthSystem(Module):
         self.mode_appt_constraints = mode_appt_constraints
 
         self.ignore_priority = ignore_priority
+        
+        self.adopt_priority_policy = adopt_priority_policy
 
         # Store the argument provided for service_availability
         self.arg_service_availabily = service_availability
@@ -626,6 +641,14 @@ class HealthSystem(Module):
         # Data on the number of beds available of each type by facility_id
         self.parameters['BedCapacity'] = pd.read_csv(
             path_to_resourcefiles_for_healthsystem / 'infrastructure_and_equipment' / 'ResourceFile_Bed_Capacity.csv')
+
+        # Data on the priority of each Treatment_ID that should be adopted in the queueing system  
+        self.parameters['PriorityRank'] = pd.read_csv(
+            path_to_resourcefiles_for_healthsystem / 'ResourceFile_PriorityRanking.csv')
+
+        # Check that no duplicates are included in priority input file
+        # There might be a more suitable place to put this check
+        assert not self.parameters['PriorityRank']['Treatment'].duplicated().any() # True
 
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
@@ -965,6 +988,11 @@ class HealthSystem(Module):
         if self.ignore_priority:
             priority = 0
 
+        #if self.adopt_priority_policy:
+        # Look-up priority ranking of this treatment_ID
+        print("Imma look up treat._ID = ", hsi_event.TREATMENT_ID)
+        priority = self.get_priority_ranking(hsi_event=hsi_event)
+        
         # Check if healthsystem is disabled/disable_and_reject_all and, if so, schedule a wrapped event:
         if self.disable and (not self.disable_and_reject_all):
             # If healthsystem is disabled (meaning that HSI can still run), schedule for the `run` method on `topen`.
@@ -1005,6 +1033,21 @@ class HealthSystem(Module):
             priority, topen, self.hsi_event_queue_counter, tclose, hsi_event)
         # Add to queue:
         hp.heappush(self.HSI_EVENT_QUEUE, _new_item)
+    
+    # This is where the "policy" is enacted 
+    def get_priority_ranking(self, hsi_event) -> int:
+        """Check the ranking in priority of the Treatment_ID this HSI_Event is associated to """
+        df = self.parameters['PriorityRank']
+
+        if ((df['Treatment'] == hsi_event.TREATMENT_ID).any()):
+            _priority_ranking = df[df['Treatment'] == hsi_event.TREATMENT_ID]["Priority"].item()
+        else: #Unless ID not found is "DummyHSIEvent", issue a warning and assign priority=0 by default 
+            _priority_ranking = 0
+            if(hsi_event.TREATMENT_ID!='DummyHSIEvent'):
+                warnings.warn(UserWarning(f"Couldn't find priority ranking for TREATMENT_ID /n"
+                                      f"{hsi_event.TREATMENT_ID}"))
+
+        return _priority_ranking
 
     def check_hsi_event_is_valid(self, hsi_event):
         """Check the integrity of an HSI_Event."""
