@@ -323,7 +323,7 @@ sns.heatmap(tx1_norm,
             cbar=False,
             ax=axs[1]
             )
-axs[1].set_title("Scale-up", size=10)
+axs[1].set_title("Constrained scale-up", size=10)
 
 sns.heatmap(tx2_norm,
                  xticklabels=5,
@@ -334,7 +334,7 @@ sns.heatmap(tx2_norm,
             cbar=True,
             ax=axs[2]
             )
-axs[2].set_title("Scale-up no constraints", size=10)
+axs[2].set_title("Constrained scale-up no constraints", size=10)
 
 plt.tick_params(axis="both", which="major", labelsize=9)
 fig.savefig(outputspath / "HS_use.png")
@@ -360,7 +360,7 @@ ax.set_ylabel("% difference", rotation=90, labelpad=15)
 ax.set_ylim([-10, 10])
 
 ax.yaxis.set_label_position("left")
-ax.legend(["Scale-up", "Scale-up \n no constraints"], frameon=False)
+ax.legend(["Constrained scale-up", "Constrained scale-up \n no constraints"], frameon=False)
 plt.tight_layout()
 fig.savefig(outputspath / "Frac_HWC_time.png")
 plt.show()
@@ -666,8 +666,8 @@ plt.tick_params(axis="both", which="major", labelsize=10)
 
 # handles for legend
 l_baseline = mlines.Line2D([], [], color=baseline_colour, label="Baseline")
-l_sc1 = mlines.Line2D([], [], color=sc1_colour, label="Scale-up")
-l_sc2 = mlines.Line2D([], [], color=sc2_colour, label="Scale-up \n no constraints")
+l_sc1 = mlines.Line2D([], [], color=sc1_colour, label="Constrained scale-up")
+l_sc2 = mlines.Line2D([], [], color=sc2_colour, label="Constrained scale-up \n no constraints")
 
 plt.legend(handles=[l_baseline, l_sc1, l_sc2])
 
@@ -754,8 +754,8 @@ plt.tick_params(axis="both", which="major", labelsize=10)
 
 # handles for legend
 l_baseline = mlines.Line2D([], [], color=baseline_colour, label="Baseline")
-l_sc1 = mlines.Line2D([], [], color=sc1_colour, label="Scale-up")
-l_sc2 = mlines.Line2D([], [], color=sc2_colour, label="Scale-up \n no constraints")
+l_sc1 = mlines.Line2D([], [], color=sc1_colour, label="Constrained scale-up")
+l_sc2 = mlines.Line2D([], [], color=sc2_colour, label="Constrained scale-up \n no constraints")
 
 plt.legend(handles=[l_baseline, l_sc1, l_sc2])
 
@@ -901,7 +901,7 @@ total_dalys = [dalys0.loc['Column_Total', 'median'],
               dalys1.loc['Column_Total', 'median'],
               dalys2.loc['Column_Total', 'median']]
 
-labels = ['Baseline', 'Scale-up', 'Scale-up \n no constraints']
+labels = ['Baseline', 'Constrained scale-up', 'Constrained scale-up \n no constraints']
 x = np.arange(len(labels))  # the label locations
 width = 0.2  # the width of the bars
 
@@ -926,7 +926,7 @@ plt.show()
 
 
 # plots of diff in DALYs from baseline
-labels = ['Scale-up', 'Scale-up \n no constraints']
+labels = ['Constrained scale-up', 'Constrained scale-up \n no constraints']
 x = np.arange(len(labels))  # the label locations
 width = 0.2  # the width of the bars
 
@@ -1108,7 +1108,7 @@ ax1.fill_between(tb_dx0.index, tx_id2["Tb_Test_Screening_lower"][1:26] * sf[0][0
 ax1.set(title='',
        ylabel='No. test appts')
 
-ax1.legend(labels=["Baseline", "Scale-up", "Scale-up \nno constraints"])
+ax1.legend(labels=["Baseline", "Constrained scale-up", "Unconstrained scale-up"])
 
 # TB start treatment
 ax2.plot(tb_dx0.index, tx_id0["Tb_Treatment_median"][1:26] * sf[0][0].values[0], "-", color=baseline_colour)
@@ -1190,7 +1190,7 @@ ax1.fill_between(tb_dx0.index, tx_id2["Tb_Test_Screening_lower"][1:26] * sf[0][0
 ax1.set(title='',
        ylabel='No. test appts')
 
-ax1.legend(labels=["Baseline", "Scale-up", "Scale-up \nno constraints"])
+ax1.legend(labels=["Baseline", "Constrained scale-up", "Unconstrained scale-up"])
 
 # TB start treatment
 ax2.plot(tb_dx0.index, tx_id0["Tb_Treatment_median"][1:26] * sf[0][0].values[0], "-", color=baseline_colour)
@@ -1330,7 +1330,7 @@ ax2.set_ylim([0, 1.1])
 
 ax2.set(title='',
        ylabel='Proportion treated')
-ax2.legend(labels=["Baseline", "Scale-up", "Scale-up \nno constraints"])
+ax2.legend(labels=["Baseline", "Constrained scale-up", "Unconstrained scale-up"])
 
 plt.tick_params(axis="both", which="major", labelsize=10)
 fig.savefig(outputspath / "Hivtreatment_cascade_2panel.png")
@@ -1385,7 +1385,7 @@ ax2.set_ylim([0, 1.1])
 
 ax2.set(title='',
        ylabel='Proportion diagnosed')
-ax2.legend(labels=["Baseline", "Scale-up", "Scale-up \nno constraints"])
+ax2.legend(labels=["Baseline", "Constrained scale-up", "Unconstrained scale-up"])
 
 plt.tick_params(axis="both", which="major", labelsize=10)
 fig.savefig(outputspath / "Hivdiagnosis_cascade_2panel.png")
@@ -1663,7 +1663,7 @@ ax2.set_ylim([0, 1.0])
 
 plt.tick_params(axis="both", which="major", labelsize=10)
 
-plt.legend(labels=["Baseline", "Scale-up", "Scale-up \nno constraints"])
+plt.legend(labels=["Baseline", "Constrained scale-up", "Unconstrained scale-up"])
 fig.savefig(outputspath / "Tb_treatment_delay.png")
 
 plt.show()
@@ -1770,7 +1770,7 @@ plt.ylabel("Proportion false positives")
 plt.xlabel("Year")
 plt.ylim((0, 0.5))
 plt.title("")
-plt.legend(labels=["Baseline", "Scale-up", "Scale-up \nno constraints"])
+plt.legend(labels=["Baseline", "Constrained scale-up", "Unconstrained scale-up"])
 fig.savefig(outputspath / "Tb_false_positives.png")
 plt.show()
 
@@ -1800,7 +1800,7 @@ plt.ylabel("Proportion false positives")
 plt.xlabel("Year")
 plt.ylim((0, 0.5))
 plt.title("")
-plt.legend(labels=["Baseline", "Scale-up", "Scale-up \nno constraints"])
+plt.legend(labels=["Baseline", "Constrained scale-up", "Unconstrained scale-up"])
 fig.savefig(outputspath / "Tb_false_positives_all_years.png")
 plt.show()
 
@@ -1829,7 +1829,7 @@ plt.ylabel("Proportion false positives")
 plt.xlabel("Year")
 # plt.ylim((0, 0.5))
 plt.title("")
-plt.legend(labels=["Baseline", "Scale-up", "Scale-up \nno constraints"])
+plt.legend(labels=["Baseline", "Constrained scale-up", "Unconstrained scale-up"])
 fig.savefig(outputspath / "Tb_false_positives_all_years_children.png")
 plt.show()
 
@@ -1890,7 +1890,7 @@ plt.ylabel("Number new HIV infections")
 plt.xlabel("Year")
 plt.ylim((0, 7500))
 plt.title("")
-plt.legend(labels=["Baseline", "Scale-up", "Scale-up \nno constraints"])
+plt.legend(labels=["Baseline", "Constrained scale-up", "Unconstrained scale-up"])
 fig.savefig(outputspath / "Incidence_HIV_AGYW.png")
 plt.show()
 
