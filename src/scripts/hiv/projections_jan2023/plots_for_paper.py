@@ -289,7 +289,7 @@ tx2_norm.columns = years
 plt.style.use('ggplot')
 cmap = sns.cm.mako_r
 
-width = 0.15
+width = 0.1
 years_num = pd.Series(years)
 
 tx0_norm.columns = years_num
@@ -1453,7 +1453,7 @@ tb_tx_delay_adult_sc2 = pd.DataFrame(tb_tx_delay_adult_sc2_dict.items())
 # values will be variable length lists of delays
 years = list((range(2010, 2035, 1)))
 
-
+# todo this should be for years post-2022
 def summarise_tx_delay(treatment_delay_df):
     """
     extract all treatment delays from all draws/runs
