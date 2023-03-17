@@ -368,9 +368,8 @@ def test_occurrence_of_HSI_for_maintaining_on_and_switching_to_methods(tmpdir, s
         sorted(sim.modules['Contraception'].states_that_may_require_HSI_to_maintain_on)
     co_method = 'pill'
     assert co_method in states_that_may_require_HSI_to_maintain_on
-    meth_spec_days_between_appt =\
-        sim.modules['Contraception'].parameters\
-            ['days_between_appts_for_maintenance'][states_that_may_require_HSI_to_maintain_on.index(co_method)]
+    meth_spec_days_between_appt = sim.modules['Contraception'].\
+        parameters['days_between_appts_for_maintenance'][states_that_may_require_HSI_to_maintain_on.index(co_method)]
     original_props = {
         'sex': 'F',
         'age_years': 30,
