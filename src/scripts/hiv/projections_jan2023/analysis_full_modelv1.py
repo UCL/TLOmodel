@@ -25,12 +25,14 @@ resourcefilepath = Path("./resources")
 start_date = Date(2010, 1, 1)
 end_date = Date(2011, 1, 1)
 popsize = 10000
-scenario = 0
+number_of_draws= 3,
+runs_per_draw=3,
+#scenario = 0
 
 # set up the log config
 # add deviance measure logger if needed
 log_config = {
-    "filename": "tb_transmission_runs",
+    "filename": "impact_of_TB_diag_platforms",
     "directory": outputpath,
     "custom_levels": {
         "*": logging.WARNING,
@@ -45,7 +47,8 @@ log_config = {
 # Register the appropriate modules
 # need to call epi before tb to get bcg vax
 # seed = random.randint(0, 50000)
-seed = 32  # set seed for reproducibility
+seed = 1821  # set seed for reproducibility
+
 
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
 sim.register(*fullmodel(
@@ -56,7 +59,8 @@ sim.register(*fullmodel(
         "HealthSystem": {"disable": False,
                          "service_availability": ["*"],
                          "mode_appt_constraints": 0,  # no constraints, no squeeze factor
-                         "cons_availability": "default",
+                         #"cons_availability": "default",
+                         "cons_availability": ['default', 'none', 'all'],
                          "beds_availability": "all",
                          "ignore_priority": False,
                          "use_funded_or_actual_staffing": "funded_plus",
@@ -64,11 +68,18 @@ sim.register(*fullmodel(
     },
 ))
 
+## use this " tlo scenario-run src/scripts/hiv/projections_jan2023/analysis_full_modelv1.py"  to run the file
 # set the scenario
-
-sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.1
-
-
+def draw_parameters(self, draw_number, rng):
+    return {
+        'HealthSystem': {'cons_availability': ['default', 'all', 'none'][draw_number]},
+        'Tb': {
+            'xpert': ['default', 'all', 'none'][draw_number],
+            'chest_xray': ['default',  'all', 'none'][draw_number],
+            'sputum': ['default', 'all', 'none'][draw_number],
+            'probability_community_chest_xray': [0.1][draw_number],
+        }
+    }
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
@@ -83,3 +94,5 @@ with open(outputpath / "default_run.pickle", "wb") as f:
 
 with open(outputpath / "default_run.pickle", "rb") as f:
     output = pickle.load(f)
+
+
