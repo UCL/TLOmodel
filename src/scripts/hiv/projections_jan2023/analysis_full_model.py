@@ -11,7 +11,7 @@ from pathlib import Path
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods.fullmodel import fullmodel
-
+from tlo.scenario import BaseScenario
 # Where will outputs go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
