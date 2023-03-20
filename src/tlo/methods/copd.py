@@ -126,9 +126,11 @@ class Copd(Module):
         """Look-up the item-codes for the consumables needed in the HSI Events for this module."""
         # todo: Need to look-up these item-codes.
         self.item_codes = {
-            'inhaler': 0,
-            'oxygen': 0,
-            'amino_phylline': 0
+            'broncho_dilater_inhaler': 293,
+            'steroid_inhaler', 294
+            'oxygen': 301,
+            'amino_phylline': 292,
+       'amoxycillin': 125,
         }
 
     def do_logging(self):
@@ -147,7 +149,7 @@ class Copd(Module):
         df = self.sim.population.props
         has_inhaler = df.at[person_id, 'ch_has_inhaler']
         if not has_inhaler:
-            if hsi_event.get_consumables(self.item_codes['inhaler']):
+            if hsi_event.get_consumables(self.item_codes['broncho_dilaterinhaler'], optional=self.item_codes['steriod_inhaler']):
                 df.at[person_id, 'ch_has_inhaler'] = True
 
     def do_when_present_with_breathless(self, person_id: int, hsi_event: HSI_Event):
@@ -347,6 +349,7 @@ class Copd_ExacerbationEvent(Event, IndividualScopeEventMixin):
         if self.severe:
             # Work out if the person will die of this exacerbation (if not treated). If they die, they die the next day.
             if self.module.models.will_die_given_severe_exacerbation():
+                self.sim.population.props.at[person_id, "ch_will_die_this_episode"] = True
                 self.sim.schedule_event(Copd_Death(self.module, person_id), self.sim.date + pd.DateOffset(days=1))
 
 
