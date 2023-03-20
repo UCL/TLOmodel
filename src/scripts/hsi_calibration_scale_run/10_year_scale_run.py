@@ -4,10 +4,10 @@ of a large population for 10 years with all disease modules and full use of HSIs
 It's used for tb/hiv hsi calibrations.
 
 Run on the batch system using:
-```tlo batch-submit src/scripts/hsi_calibration_scale_run/tb_hiv_scale_run.py```
+```tlo batch-submit src/scripts/hsi_calibration_scale_run/10_year_scale_run.py```
 
 or locally using:
-    ```tlo scenario-run src/scripts/hsi_calibration_scale_run/tb_hiv_scale_run.py```
+    ```tlo scenario-run src/scripts/hsi_calibration_scale_run/10_year_scale_run.py```
 
 """
 import pandas as pd
