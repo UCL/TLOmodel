@@ -2112,6 +2112,7 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         now = self.sim.date
         person = df.loc[person_id]
+        self.number_of_occurrences += 1  # The current appointment is included in the count.
 
         if not person["is_alive"]:
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()

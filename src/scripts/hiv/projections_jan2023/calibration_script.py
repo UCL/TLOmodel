@@ -39,13 +39,13 @@ import pandas as pd
 from tlo import Date, logging
 from tlo.methods import (
     demography,
-    deviance_measure,
     enhanced_lifestyle,
     epi,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
     hiv,
+    hiv_tb_calibration,
     simplified_births,
     symptommanager,
     tb,
@@ -105,7 +105,7 @@ class TestScenario(BaseScenario):
             epi.Epi(resourcefilepath=self.resources),
             hiv.Hiv(resourcefilepath=self.resources),
             tb.Tb(resourcefilepath=self.resources),
-            deviance_measure.Deviance(resourcefilepath=self.resources),
+            hiv_tb_calibration.Deviance(resourcefilepath=self.resources),
         ]
 
     def draw_parameters(self, draw_number, rng):
