@@ -1,0 +1,36 @@
+    ""
+Run the HIV/TB modules with intervention coverage specified at national level
+save outputs for plotting (file: output_plots_tb.py)
+ """
+
+import datetime
+import pickle
+# import random
+from pathlib import Path
+
+from tlo import Date, Simulation, logging
+from tlo.analysis.utils import parse_log_file
+from tlo.methods.fullmodel import fullmodel
+from tlo.scenario import BaseScenario
+# Where will outputs go
+outputpath = Path("./outputs")  # folder for convenience of storing outputs
+
+    def apply(self, population):
+
+        p = self.module.parameters
+        scenario = p["scenario"]
+
+        logger.debug(
+            key="message", data=f"ScenarioSetupEvent: scenario {scenario}"
+        )
+
+        # baseline scenario 0: no change to parameters/functions
+        if scenario == 0:
+            return
+             if p["scenario_SI"] != "d":
+                # increase tb treatment success rates
+                self.sim.modules["Tb"].parameters["prob_tx_success_ds"] = 0.9
+                self.sim.modules["Tb"].parameters["prob_tx_success_mdr"] = 0.9
+                self.sim.modules["Tb"].parameters["prob_tx_success_0_4"] = 0.9
+                self.sim.modules["Tb"].parameters["prob_tx_success_5_14"] = 0.9
+                self.sim.modules["Tb"].parameters["prob_tx_success_shorter"] = 0.9

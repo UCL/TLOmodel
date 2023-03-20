@@ -22,7 +22,7 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2011, 1, 1)
+end_date = Date(2010, 3, 1)
 popsize = 10000
 number_of_draws = 3
 runs_per_draw = 3
@@ -73,7 +73,7 @@ def draw_parameters(self, draw_number, rng):
         'HealthSystem': {'cons_availability': ['default', 'all', 'none'][draw_number]},
         'Tb': {
             'xpert': ['default', 'all', 'none'][draw_number],
-            'chest_xray': ['default', 'all', 'none'][draw_number],
+            'xray': ['default', 'all', 'none'][draw_number],
             'sputum': ['default', 'all', 'none'][draw_number],
             'probability_community_chest_xray': [0.1][draw_number],
         }

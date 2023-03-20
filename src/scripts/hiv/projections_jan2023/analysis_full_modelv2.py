@@ -13,7 +13,9 @@ from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
 # # Where will outputs go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
-
+start_date = Date(2010, 1, 1)
+end_date = Date(2010, 3, 1)
+popsize = 10000
 class ImpactOfTbConsumablesAvailability(BaseScenario):
 
     def __init__(self):
@@ -22,8 +24,8 @@ class ImpactOfTbConsumablesAvailability(BaseScenario):
             start_date=Date(2010, 1, 1),
             end_date=Date(2010, 2, 1),
             initial_population_size=10_000,
-            number_of_draws=2,
-            runs_per_draw=2,
+            number_of_draws=4,
+            runs_per_draw=4,
         )
 # set up the log config
 # add deviance measure logger if needed
@@ -66,10 +68,10 @@ def draw_parameters(self, draw_number, rng):
         'HealthSystem': {'cons_availability': ['default', 'all', 'none'][draw_number]},
         'Tb': {
             'xpert': ['default', 'all', 'none'][draw_number],
-            'chest_xray': ['default', 'all', 'none'][draw_number],
+            'xray': ['default', 'all', 'none'][draw_number],
             'sputum': ['default', 'all', 'none'][draw_number],
-            'probability_community_chest_xray': [0.1][draw_number],
-        }
+            'outreach': ['default', 'all', 'none'][draw_number],
+                    }
     }
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)

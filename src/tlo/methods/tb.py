@@ -1466,6 +1466,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             if p["scenario_SI"] != "a":
                 # increase testing/diagnosis rates, default 2020 0.03/0.25 -> 93% dx
                 self.sim.modules["Hiv"].parameters["hiv_testing_rates"]["annual_testing_rate_children"] = 0.1
+
                 self.sim.modules["Hiv"].parameters["hiv_testing_rates"]["annual_testing_rate_adults"] = 0.3
 
                 # ANC testing - value for mothers and infants testing
