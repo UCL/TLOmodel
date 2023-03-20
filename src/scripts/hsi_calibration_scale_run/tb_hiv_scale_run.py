@@ -1,13 +1,13 @@
 """
 This temparary file (a copy of src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py) defines a batch run
-of a large population for 10 year with all disease modules and full use of HSIs.
+of a large population for 10 years with all disease modules and full use of HSIs.
 It's used for tb/hiv hsi calibrations.
 
 Run on the batch system using:
-```tlo batch-submit src/scripts/calibration_analyses/scenarios/tb_hiv_scale_run.py.py```
+```tlo batch-submit src/scripts/hsi_calibration_scale_run/tb_hiv_scale_run.py```
 
 or locally using:
-    ```tlo scenario-run src/scripts/calibration_analyses/scenarios/tb_hiv_scale_run.py.py```
+    ```tlo scenario-run src/scripts/hsi_calibration_scale_run/tb_hiv_scale_run.py```
 
 """
 import pandas as pd
