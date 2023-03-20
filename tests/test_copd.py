@@ -29,7 +29,7 @@ from tlo.methods import (
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
 start_date = Date(2010, 1, 1)
-end_date = start_date + pd.DateOffset(months=3)
+end_date = start_date + pd.DateOffset(months=1)
 
 
 def check_dtypes(simulation):
@@ -78,6 +78,9 @@ def test_basic_run(tmpdir, seed):
 
 
 def get_simulation(pop_size):
+    """ Return a simulation object
+
+    :param pop_size: total number of individuals at the start of simulation """
     sim = Simulation(
         start_date=start_date
     )
@@ -107,6 +110,17 @@ def test_ch_lungfunction():
 
     # confirm they are all at category zero
     assert (df['ch_lungfunction'] == 0).all(), 'not all are category 0'
+
+    copd_module = sim.modules['Copd']
+    # set probability of progressing to a higher category to 1. This will ensure everyone progresses
+    # to a higher category
+    copd_module.parameters['prob_progress_to_next_cat'] = 1.0
+
+    #   call a function to make individuals progress to the next category
+    # data = copd.CopdModels(sim.modules['Copd'].parameters, sim.rng).will_progres_to_next_cat_of_lungfunction(df)
+    sim.schedule_event(copd.Copd_PollEvent(copd_module), sim.date + pd.DateOffset(days=1))
+    print(f'the data is {df["ch_lungfunction"]}')
+
 
 def test_exacerbations():
     """ test copd exacerbations. """

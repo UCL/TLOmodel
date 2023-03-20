@@ -4,7 +4,7 @@ from typing import Dict, List
 import numpy as np
 import pandas as pd
 
-from tlo import Module, Property, Types, logging
+from tlo import Module, Property, Types, logging, Parameter
 from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
@@ -40,8 +40,8 @@ class Copd(Module):
 
     CAUSES_OF_DEATH = {
         # Chronic Obstructive Pulmonary Diseases
-        'COPD':  Cause(gbd_causes=sorted(gbd_causes_of_copd_represented_in_this_module),
-                       label='COPD')
+        'COPD': Cause(gbd_causes=sorted(gbd_causes_of_copd_represented_in_this_module),
+                      label='COPD')
     }
 
     CAUSES_OF_DISABILITY = {
@@ -51,7 +51,10 @@ class Copd(Module):
     }
 
     PARAMETERS = {
-
+        'prob_progress_to_next_cat': Parameter(
+            Types.REAL, 'probability of changing from a lower lung function to a '
+                        'higher lung function'
+        ),
     }
 
     PROPERTIES = {
@@ -127,10 +130,10 @@ class Copd(Module):
         # todo: Need to look-up these item-codes.
         self.item_codes = {
             'broncho_dilater_inhaler': 293,
-            'steroid_inhaler', 294
+            'steroid_inhaler': 294,
             'oxygen': 301,
             'amino_phylline': 292,
-       'amoxycillin': 125,
+            'amoxycillin': 125,
         }
 
     def do_logging(self):
@@ -149,7 +152,8 @@ class Copd(Module):
         df = self.sim.population.props
         has_inhaler = df.at[person_id, 'ch_has_inhaler']
         if not has_inhaler:
-            if hsi_event.get_consumables(self.item_codes['broncho_dilaterinhaler'], optional=self.item_codes['steriod_inhaler']):
+            if hsi_event.get_consumables(self.item_codes['broncho_dilaterinhaler'],
+                                         optional=self.item_codes['steriod_inhaler']):
                 df.at[person_id, 'ch_has_inhaler'] = True
 
     def do_when_present_with_breathless(self, person_id: int, hsi_event: HSI_Event):
@@ -175,12 +179,13 @@ class CopdModels:
     def __init__(self, params, rng):
         self.params = params
         self.rng = rng
-
+        print(f'the parameters are {self.params}')
         # The chance (in a 3-month period) of progressing to the next (greater) category of ch_lungfunction
         self.__Prob_Progress_LungFunction__ = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            0.02,
+            self.params['prob_progress_to_next_cat']
         )
+
 
         # The probability (in a 3-month period) of having a Moderate Exacerbation
         self.__Prob_ModerateExacerbation__ = LinearModel.multiplicative(
