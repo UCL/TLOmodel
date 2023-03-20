@@ -1316,7 +1316,7 @@ ax1.set(title='',
 ax1.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
 # ax1.set_ylim(0, 2000000)
 
-# TB treatment coverage
+# HIV treatment coverage
 ax2.plot(hiv_tx0.index, hiv_tx0["median"], "-", color=baseline_colour)
 ax2.fill_between(hiv_tx0.index, hiv_tx0["lower"], hiv_tx0["upper"], color=baseline_colour, alpha=0.2)
 
@@ -1351,7 +1351,7 @@ fig, ((ax1, ax2)) = plt.subplots(nrows=1, ncols=2,
                                              figsize=(9, 4))
 fig.suptitle('')
 
-# HIV start treatment
+# HIV testing appts
 ax1.plot(hiv_dx0.index, tx_id0["Hiv_Test_median"][1:26] * sf[0][0].values[0], "-", color=baseline_colour)
 ax1.fill_between(hiv_dx0.index, tx_id0["Hiv_Test_lower"][1:26] * sf[0][0].values[0],
                  tx_id0["Hiv_Test_upper"][1:26] * sf[0][0].values[0], color=baseline_colour, alpha=0.2)

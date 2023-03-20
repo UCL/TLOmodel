@@ -1,39 +1,23 @@
 """This file uses the results of the scenario runs to generate plots
 
 *1 Epi outputs (incidence and mortality)
-*2 Care cascades (HIV and TB)
-*3 Treatment delays (HIV and TB)
-*4 DALYS averted
 
 """
 
 import datetime
 from pathlib import Path
-import os
 
+import lacroix
 import matplotlib.lines as mlines
-import matplotlib.patches as mpatches
-from matplotlib.lines import Line2D
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from matplotlib.gridspec import GridSpec
-import seaborn as sns
-import lacroix
-import math
-from scipy import interpolate
 import statsmodels.api as sm
 
 from tlo.analysis.utils import (
-    compare_number_of_deaths,
-    extract_params,
     extract_results,
-    get_scenario_info,
     get_scenario_outputs,
-    load_pickled_dataframes,
-    summarize,
 )
-from tlo import Date
 
 resourcefilepath = Path("./resources")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
@@ -174,7 +158,7 @@ tb_inc1 = tb_inc(results1)
 tb_inc2 = tb_inc(results2)
 
 
-# %%:  ---------------------------------- HIV deaths ---------------------------------- #
+# ---------------------------------- HIV deaths ---------------------------------- #
 
 # AIDS deaths
 
@@ -224,7 +208,7 @@ aids_deaths1 = summarise_aids_deaths(results1, py1)
 aids_deaths2 = summarise_aids_deaths(results2, py2)
 
 
-# %%:  ---------------------------------- TB deaths ---------------------------------- #
+# ---------------------------------- TB deaths ---------------------------------- #
 
 
 # deaths due to TB (not including TB-HIV)
@@ -273,18 +257,24 @@ tb_deaths2 = summarise_tb_deaths(results2, py2)
 
 
 #  create smoothed lines
+num_interp = 12
 def create_smoothed_lines(data_x, data_y):
 
-    # xnew = np.linspace(data_x.min(), data_x.max(), interpolation_points)
-    # bspline = interpolate.make_interp_spline(data_x, data_y, k=3)
+    # xnew = np.linspace(data_x.min(), data_x.max(), num_interp)
+    # bspline = interpolate.make_interp_spline(data_x, data_y, k=2, bc_type="not-a-knot")
     # smoothed_data = bspline(xnew)
+    xvals = np.linspace(start=data_x.min(), stop=data_x.max(), num=num_interp)
+    smoothed_data = sm.nonparametric.lowess(endog=data_y, exog=data_x, frac=0.45, xvals=xvals, it=0)
 
-    smoothed_data = sm.nonparametric.lowess(data_y, data_x, frac=0.7)
+    # retain original starting value (2022)
+    data_y = data_y.reset_index(drop=True)
+    smoothed_data[0] = data_y[0]
 
     return smoothed_data
 
 
 data_x = inc0.index[11:].year  # 2022 onwards
+xvals = np.linspace(start=data_x.min(), stop=data_x.max(), num=num_interp)
 
 # hiv incidence
 s_hiv_inc0 = create_smoothed_lines(data_x, (inc0["median"][11:] * 100000))
@@ -314,6 +304,7 @@ s_tb_inc2_u = create_smoothed_lines(data_x, (tb_inc2["upper"][11:] * 100000))
 
 # aids deaths
 data_x2 = py0.index[12:].year
+xvals2 = np.linspace(start=data_x2.min(), stop=data_x2.max(), num=num_interp)
 
 s_aids = create_smoothed_lines(data_x2, aids_deaths0["median_aids_deaths_rate_100kpy"][12:])
 s_aids_l = create_smoothed_lines(data_x2, aids_deaths0["lower_aids_deaths_rate_100kpy"][12:])
@@ -341,9 +332,7 @@ s_tb_death2_l = create_smoothed_lines(data_x2, tb_deaths2["lower_tb_deaths_rate_
 s_tb_death2_u = create_smoothed_lines(data_x2, tb_deaths2["upper_tb_deaths_rate_100kpy"][12:])
 
 
-
-
-# %%:  ---------------------------------- PLOTS ---------------------------------- #
+# ---------------------------------- PLOTS ---------------------------------- #
 
 fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=2, ncols=2,
                                              sharex=True,
@@ -354,15 +343,15 @@ fig.suptitle('')
 # HIV incidence
 line1, = ax1.plot(data_x, inc0["median"][11:] * 100000)  # create empty plot to set axes
 
-ax1.plot(data_x, s_hiv_inc0[:, 1], "-", color=baseline_colour)
-ax1.fill_between(data_x, s_hiv_inc0_l[:, 1], s_hiv_inc0_u[:, 1], color=baseline_colour,
+ax1.plot(xvals, s_hiv_inc0, "-", color=baseline_colour)
+ax1.fill_between(xvals, s_hiv_inc0_l, s_hiv_inc0_u, color=baseline_colour,
                  alpha=0.2)
 
-ax1.plot(data_x, s_hiv_inc1[:, 1], "-", color=sc1_colour)
-ax1.fill_between(data_x, s_hiv_inc1_l[:, 1], s_hiv_inc1_u[:, 1], color=sc1_colour, alpha=0.2)
+ax1.plot(xvals, s_hiv_inc1, "-", color=sc1_colour)
+ax1.fill_between(xvals, s_hiv_inc1_l, s_hiv_inc1_u, color=sc1_colour, alpha=0.2)
 
-ax1.plot(data_x, s_hiv_inc2[:, 1], "-", color=sc2_colour)
-ax1.fill_between(data_x, s_hiv_inc2_l[:, 1], s_hiv_inc2_u[:, 1], color=sc2_colour, alpha=0.2)
+ax1.plot(xvals, s_hiv_inc2, "-", color=sc2_colour)
+ax1.fill_between(xvals, s_hiv_inc2_l, s_hiv_inc2_u, color=sc2_colour, alpha=0.2)
 
 ax1.set_ylim([0, 250])
 line1.remove()
@@ -370,16 +359,16 @@ ax1.set(title='HIV',
         ylabel='Incidence per 100,000 py')
 
 # TB incidence
-ax2.plot(data_x, s_tb_inc0[:, 1], "-", color=baseline_colour)
-ax2.fill_between(data_x, s_tb_inc0_l[:, 1], s_tb_inc0_u[:, 1],
+ax2.plot(xvals, s_tb_inc0, "-", color=baseline_colour)
+ax2.fill_between(xvals, s_tb_inc0_l, s_tb_inc0_u,
                  color=baseline_colour, alpha=0.2)
 
-ax2.plot(data_x, s_tb_inc1[:, 1], "-", color=sc1_colour)
-ax2.fill_between(data_x, s_tb_inc1_l[:, 1], s_tb_inc1_u[:, 1], color=sc1_colour,
+ax2.plot(xvals, s_tb_inc1, "-", color=sc1_colour)
+ax2.fill_between(xvals, s_tb_inc1_l, s_tb_inc1_u, color=sc1_colour,
                  alpha=0.2)
 
-ax2.plot(data_x, s_tb_inc2[:, 1], "-", color=sc2_colour)
-ax2.fill_between(data_x, s_tb_inc2_l[:, 1], s_tb_inc2_u[:, 1], color=sc2_colour,
+ax2.plot(xvals, s_tb_inc2, "-", color=sc2_colour)
+ax2.fill_between(xvals, s_tb_inc2_l, s_tb_inc2_u, color=sc2_colour,
                  alpha=0.2)
 
 ax2.set_ylim([0, 250])
@@ -388,17 +377,17 @@ ax2.set(title='TB',
         ylabel='')
 
 # HIV deaths
-ax3.plot(data_x2, s_aids[:, 1], "-", color=baseline_colour)
-ax3.fill_between(data_x2, s_aids_l[:, 1],
-                 s_aids_u[:, 1], color=baseline_colour, alpha=0.2)
+ax3.plot(xvals2, s_aids, "-", color=baseline_colour)
+ax3.fill_between(xvals2, s_aids_l,
+                 s_aids_u, color=baseline_colour, alpha=0.2)
 
-ax3.plot(data_x2, s_aids1[:, 1], "-", color=sc1_colour)
-ax3.fill_between(data_x2, s_aids1_l[:, 1],
-                 s_aids1_u[:, 1], color=sc1_colour, alpha=0.2)
+ax3.plot(xvals2, s_aids1, "-", color=sc1_colour)
+ax3.fill_between(xvals2, s_aids1_l,
+                 s_aids1_u, color=sc1_colour, alpha=0.2)
 
-ax3.plot(data_x2, s_aids2[:, 1], "-", color=sc2_colour)
-ax3.fill_between(data_x2, s_aids2_l[:, 1],
-                 s_aids2_u[:, 1], color=sc2_colour, alpha=0.2)
+ax3.plot(xvals2, s_aids2, "-", color=sc2_colour)
+ax3.fill_between(xvals2, s_aids2_l,
+                 s_aids2_u, color=sc2_colour, alpha=0.2)
 
 ax3.set_ylim([0, 100])
 
@@ -406,23 +395,23 @@ ax3.set(title='',
         ylabel='Mortality per 100,000 py')
 
 # TB deaths
-ax4.plot(data_x2, s_tb_death[:, 1], "-", color=baseline_colour)
-ax4.fill_between(data_x2, s_tb_death_l[:, 1],
-                 s_tb_death_u[:, 1], color=baseline_colour, alpha=0.2)
+ax4.plot(xvals2, s_tb_death, "-", color=baseline_colour)
+ax4.fill_between(xvals2, s_tb_death_l,
+                 s_tb_death_u, color=baseline_colour, alpha=0.2)
 
-ax4.plot(data_x2, s_tb_death1[:, 1], "-", color=sc1_colour)
-ax4.fill_between(data_x2, s_tb_death1_l[:, 1],
-                 s_tb_death1_u[:, 1], color=sc1_colour, alpha=0.2)
+ax4.plot(xvals2, s_tb_death1, "-", color=sc1_colour)
+ax4.fill_between(xvals2, s_tb_death1_l,
+                 s_tb_death1_u, color=sc1_colour, alpha=0.2)
 
-ax4.plot(data_x2, s_tb_death2[:, 1], "-", color=sc2_colour)
-ax4.fill_between(data_x2, s_tb_death2_l[:, 1],
-                 s_tb_death2_u[:, 1], color=sc2_colour, alpha=0.2)
+ax4.plot(xvals2, s_tb_death2, "-", color=sc2_colour)
+ax4.fill_between(xvals2, s_tb_death2_l,
+                 s_tb_death2_u, color=sc2_colour, alpha=0.2)
 
 ax4.set(title='',
         ylabel='')
 ax4.set_ylim([0, 100])
 
-# plt.tick_params(axis="both", which="major", labelsize=10)
+plt.tick_params(axis="both", which="major", labelsize=10)
 
 # handles for legend
 l_baseline = mlines.Line2D([], [], color=baseline_colour, label="Baseline")
@@ -431,6 +420,7 @@ l_sc2 = mlines.Line2D([], [], color=sc2_colour, label="Unconstrained scale-up")
 
 plt.legend(handles=[l_baseline, l_sc1, l_sc2])
 
-# fig.savefig(outputspath / "Epi_outputs_focussed.png")
+fig.savefig(outputspath / "Epi_outputs_focussed.png")
 
 plt.show()
+

@@ -3050,6 +3050,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         )
 
         # ------------------------------------ TREATMENT DELAYS ------------------------------------
+        # todo this should record only the first initiation (not defaulters returning)
         # for every person initiated on treatment, record time from onset to treatment
         # each year a series of intervals in days (treatment date - onset date) are recorded
         # convert to list
