@@ -68,8 +68,9 @@ class HSIEventQueueItem(NamedTuple):
     by the order of the items in the tuple, i.e. first by `priority`, then `topen` and
     so on.
     """
+    # topen and priority inverted, should make sorting of queue faster
+    topen: Date 
     priority: int
-    topen: Date
     queue_counter: int
     tclose: Date
     # Define HSI_Event type as string to avoid NameError exception as HSI_Event defined
@@ -998,9 +999,9 @@ class HealthSystem(Module):
         if self.ignore_priority:
             priority = 0
 
-        # if self.adopt_priority_policy:
+        if self.adopt_priority_policy:
         # Look-up priority ranking of this treatment_ID in the policy adopted
-        priority = self.enforce_priority_policy(hsi_event=hsi_event)
+            priority = self.enforce_priority_policy(hsi_event=hsi_event)
 
         # Check if healthsystem is disabled/disable_and_reject_all and, if so, schedule a wrapped event:
         if self.disable and (not self.disable_and_reject_all):
@@ -1039,7 +1040,8 @@ class HealthSystem(Module):
         # queue (NB. the sorting is done ascending and by the order of the items in the tuple).
         self.hsi_event_queue_counter += 1
         _new_item: HSIEventQueueItem = HSIEventQueueItem(
-            priority, topen, self.hsi_event_queue_counter, tclose, hsi_event)
+            topen, priority, self.hsi_event_queue_counter, tclose, hsi_event)
+        print("I will add this event", _new_item)
         # Add to queue:
         hp.heappush(self.HSI_EVENT_QUEUE, _new_item)
 
@@ -1056,8 +1058,7 @@ class HealthSystem(Module):
             _priority_ranking = entry['Priority'].item()
 
             # If considering fast-track routes, check whether person qualifies
-            # if self.include_fasttrack_routes is True:
-            if True is True:
+            if self.include_fasttrack_routes is True:
                 # Check whether fast-tracking routes are available for this treatment, and if person qualifies.
                 # All fast-tracking routes lead to priority=0; if qualify for one don't bother checking remaining.
                 exception = False
@@ -1500,8 +1501,9 @@ class HealthSystem(Module):
         list_of_events = list()
 
         for ev_tuple in self.HSI_EVENT_QUEUE:
-            date = ev_tuple[1]  # this is the 'topen' value
+            date = ev_tuple[0]  # this is the 'topen' value
             event = ev_tuple[4]
+            print("This is what I found ", date, event)
             if isinstance(event.target, (int, np.integer)):
                 if event.target == person_id:
                     list_of_events.append((date, event))
@@ -1781,9 +1783,9 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
         # Traverse the queue and split events into the three lists (due-individual, due-population, not_due)
         while len(self.module.HSI_EVENT_QUEUE) > 0:
-
+            
             next_event_tuple = hp.heappop(self.module.HSI_EVENT_QUEUE)
-            # Read the tuple and assemble into a dict 'next_event'
+            # Read the tuple and remove from heapq, and assemble into a dict 'next_event'
 
             event = next_event_tuple.hsi_event
 
@@ -1795,18 +1797,15 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 isinstance(event.target, tlo.population.Population)
                 or event.target in alive_persons
             ):
-                # if individual level event and the person who is the target is no longer alive, do nothing more
+                # if individual level event and the person who is the target is no longer alive, do nothing more,
+                # i.e. remove from heapq
                 pass
 
             elif self.sim.date < next_event_tuple.topen:
-                # The event is not yet due (before topen)
+                # The event is not yet due (before topen). Break, but first make sure this next_event_tuple is saved
                 hp.heappush(_list_of_events_not_due_today, next_event_tuple)
-
-                if next_event_tuple.priority == 2:
-                    # Check the priority
-                    # If the next event is not due and has low priority, then stop looking through the heapq
-                    # as all other events will also not be due.
-                    break
+                break 
+                # Because topen is now first category, can break at this point. Will only add current one to heapq
 
             else:
                 # The event is now due to run today and the person is confirmed to be still alive
