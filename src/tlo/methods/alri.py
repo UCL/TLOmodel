@@ -842,8 +842,8 @@ class Alri(Module):
             if symptom_name not in self.sim.modules['SymptomManager'].generic_symptoms:
                 if symptom_name == 'danger_signs':
                     self.sim.modules['SymptomManager'].register_symptom(
-                        Symptom(name=symptom_name,
-                                emergency_in_children=True))
+                        Symptom.emergency(name=symptom_name, which='children')
+                    )
                 elif symptom_name == 'chest_indrawing':
                     self.sim.modules['SymptomManager'].register_symptom(
                         Symptom(name=symptom_name,
