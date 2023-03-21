@@ -363,7 +363,7 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                     # (The +1 is because `randint` takes the upper bound to be excluded.)
                 )
             else:
-                care_seeking_dates = np.array([self.sim.date] * len(will_seek_non_emergency_care))
+                care_seeking_dates = np.full(len(will_seek_non_emergency_care), self.sim.date)
 
             health_system.schedule_batch_of_individual_hsi_events(
                 hsi_event_class=routine_hsi_event_class,

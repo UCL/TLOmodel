@@ -8,7 +8,6 @@ from tlo.methods import Metadata, pregnancy_helper_functions
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.epi import HSI_TdVaccine
 from tlo.methods.healthsystem import HSI_Event
-from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.methods.labour import LabourOnsetEvent
 from tlo.methods.malaria import HSI_MalariaIPTp
 from tlo.methods.tb import HSI_Tb_ScreeningAndRefer
@@ -855,9 +854,9 @@ class CareOfWomenDuringPregnancy(Module):
         """
 
         # Currently we schedule women to the TB screening HSI in the TB module
-        if 'Tb' in self.sim.modules.keys():
+        if 'Tb' in self.sim.modules:
             tb_screen = HSI_Tb_ScreeningAndRefer(
-                    module=self.sim.modules['Tb'], person_id=hsi_event.target)
+                module=self.sim.modules['Tb'], person_id=hsi_event.target)
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(tb_screen, priority=0,
                                                                 topen=self.sim.date,
@@ -1034,7 +1033,6 @@ class CareOfWomenDuringPregnancy(Module):
         This function contains the scheduling for HIV testing and is provided to women during ANC.
         :param hsi_event: HSI event in which the function has been called
         """
-        df = self.sim.population.props
         person_id = hsi_event.target
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
@@ -1043,16 +1041,12 @@ class CareOfWomenDuringPregnancy(Module):
             return
 
         if 'Hiv' in self.sim.modules:
+            # The decision of whether the woman gets a test is determined by the Hiv module
+            test_scheduled = self.sim.modules['Hiv'].decide_whether_hiv_test_for_mother(
+                person_id, referred_from="care_of_women_during_pregnancy")
 
-            # Women who are already diagnosed will not be tested again, testing is managed in the HIV module
-            if not df.at[person_id, 'hv_diagnosed']:
+            if test_scheduled:
                 mni[person_id]['anc_ints'].append('hiv')
-
-                self.sim.modules['HealthSystem'].schedule_hsi_event(
-                   HSI_Hiv_TestAndRefer(person_id=person_id, module=self.sim.modules['Hiv']),
-                   topen=self.sim.date,
-                   tclose=None,
-                   priority=0)
 
             logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'hiv_screen'})
 
