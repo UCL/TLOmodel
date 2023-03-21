@@ -424,6 +424,13 @@ tb_prop_treat2_u = create_smoothed_lines(data_x, tb_tx2["upper"][11:25])
 
 
 # ---------------------------------- Plots ---------------------------------- #
+plt.style.use('ggplot')
+
+font = {'family': 'sans-serif',
+        'color':  'black',
+        'weight': 'bold',
+        'size': 11,
+        }
 
 # Make 6-panel plot
 fig, ((ax1, ax2, ax3), (ax4, ax5, ax6)) = plt.subplots(nrows=2, ncols=3,
@@ -528,6 +535,25 @@ ax6.set(title='',
        ylabel='Proportion treated')
 
 plt.tick_params(axis="both", which="major", labelsize=10)
+
+ax1.text(-0.15, 1.05, 'A)', horizontalalignment='center',
+    verticalalignment='center', transform=ax1.transAxes, fontdict=font)
+
+ax2.text(-0.1, 1.05, 'B)', horizontalalignment='center',
+    verticalalignment='center', transform=ax2.transAxes, fontdict=font)
+
+ax3.text(-0.15, 1.05, 'C)', horizontalalignment='center',
+    verticalalignment='center', transform=ax3.transAxes, fontdict=font)
+
+ax4.text(-0.1, 1.05, 'D)', horizontalalignment='center',
+    verticalalignment='center', transform=ax4.transAxes, fontdict=font)
+
+ax5.text(-0.15, 1.05, 'E)', horizontalalignment='center',
+    verticalalignment='center', transform=ax5.transAxes, fontdict=font)
+
+ax6.text(-0.1, 1.05, 'F)', horizontalalignment='center',
+    verticalalignment='center', transform=ax6.transAxes, fontdict=font)
+
 fig.savefig(outputspath / "Treatment_cascade_6panel.png")
 
 plt.show()

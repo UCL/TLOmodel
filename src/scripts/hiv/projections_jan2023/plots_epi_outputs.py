@@ -333,6 +333,13 @@ s_tb_death2_u = create_smoothed_lines(data_x2, tb_deaths2["upper_tb_deaths_rate_
 
 
 # ---------------------------------- PLOTS ---------------------------------- #
+plt.style.use('ggplot')
+
+font = {'family': 'sans-serif',
+        'color':  'black',
+        'weight': 'bold',
+        'size': 11,
+        }
 
 fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=2, ncols=2,
                                              sharex=True,
@@ -412,6 +419,19 @@ ax4.set(title='',
 ax4.set_ylim([0, 100])
 
 plt.tick_params(axis="both", which="major", labelsize=10)
+
+ax1.text(-0.15, 1.05, 'A)', horizontalalignment='center',
+    verticalalignment='center', transform=ax1.transAxes, fontdict=font)
+
+ax2.text(-0.1, 1.05, 'B)', horizontalalignment='center',
+    verticalalignment='center', transform=ax2.transAxes, fontdict=font)
+
+ax3.text(-0.15, 1.05, 'C)', horizontalalignment='center',
+    verticalalignment='center', transform=ax3.transAxes, fontdict=font)
+
+ax4.text(-0.1, 1.05, 'D)', horizontalalignment='center',
+    verticalalignment='center', transform=ax4.transAxes, fontdict=font)
+
 
 # handles for legend
 l_baseline = mlines.Line2D([], [], color=baseline_colour, label="Baseline")

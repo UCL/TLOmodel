@@ -14,7 +14,6 @@ import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 
-
 from tlo.analysis.utils import (
     compare_number_of_deaths,
     extract_params,
@@ -75,7 +74,6 @@ def summarise_frac_hcws(results_folder):
 hcw1 = summarise_frac_hcws(results1)
 hcw2 = summarise_frac_hcws(results2)
 
-
 # %%:  ---------------------------------- DALYS ---------------------------------- #
 TARGET_PERIOD = (Date(2023, 1, 1), Date(2036, 1, 1))
 
@@ -108,10 +106,29 @@ def return_daly_summary(results_folder):
     return out
 
 
+def return_daly_summary2(results_folder):
+    dalys = extract_results(
+        results_folder,
+        module='tlo.methods.healthburden',
+        key='dalys_stacked',
+        custom_generate_series=num_dalys_by_cause,
+        do_scaling=True
+    )
+    dalys.columns = dalys.columns.get_level_values(0)
+    # combine two labels for non-AIDS TB (this now fixed in latest code)
+    # dalys.loc['TB (non-AIDS)'] = dalys.loc['TB (non-AIDS)'] + dalys.loc['non_AIDS_TB']
+    # dalys.drop(['non_AIDS_TB'], inplace=True)
+    out = pd.DataFrame()
+    out['median'] = dalys.median(axis=1).round(decimals=-3).astype(int)
+    out['lower'] = dalys.quantile(q=0.025, axis=1).round(decimals=-3).astype(int)
+    out['upper'] = dalys.quantile(q=0.975, axis=1).round(decimals=-3).astype(int)
+
+    return out
+
+
 dalys0 = return_daly_summary(results0)
 dalys1 = return_daly_summary(results1)
-dalys2 = return_daly_summary(results2)
-
+dalys2 = return_daly_summary2(results2)
 
 dalys0.loc['Column_Total'] = dalys0.sum(numeric_only=True, axis=0)
 dalys1.loc['Column_Total'] = dalys1.sum(numeric_only=True, axis=0)
@@ -131,7 +148,6 @@ daly_table['scenario2'] = dalys2['median'].astype(str) + \
 
 daly_table.to_csv(outputspath / "daly_summary.csv")
 
-
 # extract dalys averted by each scenario relative to scenario 0
 # comparison should be run-by-run
 full_dalys0 = extract_results(
@@ -141,6 +157,8 @@ full_dalys0 = extract_results(
     custom_generate_series=num_dalys_by_cause,
     do_scaling=True
 )
+full_dalys0.loc['TB (non-AIDS)'] = full_dalys0.loc['TB (non-AIDS)'] + full_dalys0.loc['non_AIDS_TB']
+full_dalys0.drop(['non_AIDS_TB'], inplace=True)
 full_dalys0.loc['Column_Total'] = full_dalys0.sum(numeric_only=True, axis=0)
 
 full_dalys1 = extract_results(
@@ -150,6 +168,8 @@ full_dalys1 = extract_results(
     custom_generate_series=num_dalys_by_cause,
     do_scaling=True
 )
+full_dalys1.loc['TB (non-AIDS)'] = full_dalys1.loc['TB (non-AIDS)'] + full_dalys1.loc['non_AIDS_TB']
+full_dalys1.drop(['non_AIDS_TB'], inplace=True)
 full_dalys1.loc['Column_Total'] = full_dalys1.sum(numeric_only=True, axis=0)
 
 full_dalys2 = extract_results(
@@ -167,7 +187,6 @@ full_dalys1.to_excel(writer, sheet_name='sc1')
 full_dalys2.to_excel(writer, sheet_name='sc2')
 writer.save()
 
-
 # DALYs averted: baseline - scenario
 # positive value will be DALYs averted due to interventions
 # negative value will be higher DALYs reported, therefore increased health burden
@@ -181,95 +200,79 @@ sc2_sc0_median = sc2_sc0.median(axis=1)
 sc2_sc0_lower = sc2_sc0.quantile(q=0.025, axis=1)
 sc2_sc0_upper = sc2_sc0.quantile(q=0.975, axis=1)
 
-
 # create full table for export
 daly_averted_table = pd.DataFrame()
 daly_averted_table['cause'] = sc1_sc0_median.index
-daly_averted_table['scenario1_med'] = [int(round(x,-3)) for x in sc1_sc0_median]
-daly_averted_table['scenario1_low'] = [int(round(x,-3)) for x in sc1_sc0_lower]
-daly_averted_table['scenario1_upp'] = [int(round(x,-3)) for x in sc1_sc0_upper]
-daly_averted_table['scenario2_med'] = [int(round(x,-3)) for x in sc2_sc0_median]
-daly_averted_table['scenario2_low'] = [int(round(x,-3)) for x in sc2_sc0_lower]
-daly_averted_table['scenario2_upp'] = [int(round(x,-3)) for x in sc2_sc0_upper]
-
+daly_averted_table['scenario1_med'] = [int(round(x, -3)) for x in sc1_sc0_median]
+daly_averted_table['scenario1_low'] = [int(round(x, -3)) for x in sc1_sc0_lower]
+daly_averted_table['scenario1_upp'] = [int(round(x, -3)) for x in sc1_sc0_upper]
+daly_averted_table['scenario2_med'] = [int(round(x, -3)) for x in sc2_sc0_median]
+daly_averted_table['scenario2_low'] = [int(round(x, -3)) for x in sc2_sc0_lower]
+daly_averted_table['scenario2_upp'] = [int(round(x, -3)) for x in sc2_sc0_upper]
 
 daly_averted_table.to_csv(outputspath / "daly_averted_summary.csv")
 
 aids_dalys_diff = [sc1_sc0_median['AIDS'],
-              sc2_sc0_median['AIDS']]
+                   sc2_sc0_median['AIDS']]
 tb_dalys_diff = [sc1_sc0_median['TB (non-AIDS)'],
-              sc2_sc0_median['TB (non-AIDS)']]
+                 sc2_sc0_median['TB (non-AIDS)']]
 total_dalys_diff = [sc1_sc0_median['Column_Total'],
-              sc2_sc0_median['Column_Total']]
-
-
-aids_dalys = [dalys0.loc['AIDS', 'median'],
-              dalys1.loc['AIDS', 'median'],
-              dalys2.loc['AIDS', 'median']]
-tb_dalys = [dalys0.loc['TB (non-AIDS)', 'median'],
-              dalys1.loc['TB (non-AIDS)', 'median'],
-              dalys2.loc['TB (non-AIDS)', 'median']]
-total_dalys = [dalys0.loc['Column_Total', 'median'],
-              dalys1.loc['Column_Total', 'median'],
-              dalys2.loc['Column_Total', 'median']]
-
-labels = ['Baseline', 'Constrained scale-up', 'Unconstrained scale-up']
-x = np.arange(len(labels))  # the label locations
-width = 0.2  # the width of the bars
+                    sc2_sc0_median['Column_Total']]
 
 # -------------------------- plots ---------------------------- #
 plt.style.use('ggplot')
 
-
-def get_axis_limits(ax, scale=.9):
-    return ax.get_xlim()[1]*scale, ax.get_ylim()[1]*scale
-
-
 years = list((range(2010, 2036, 1)))
 years_num = pd.Series(years)
 
-
-
 fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2,
                                figsize=(14, 6))
-                               # constrained_layout=True)
+# constrained_layout=True)
 fig.suptitle('')
 
 # HCW time
+labels = ['Baseline', 'Constrained scale-up', 'Unconstrained scale-up']
+x = np.arange(len(labels))  # the label locations
+width = 0.2  # the width of the bars
+
 ax1.bar(years_num[13:26], hcw1["median"].loc[13:25], width, color=sc1_colour)
 ax1.bar(years_num[13:26] + width, hcw2["median"].loc[13:25], width, color=sc2_colour)
 
 ax1.set_ylabel("% difference HCW time", rotation=90, labelpad=15)
-ax1.set_ylim([-10, 10])
+ax1.set_ylim([-0.5, 1.5])
 
 ax1.yaxis.set_label_position("left")
+ax1.legend(["Constrained scale-up", "Unconstrained scale-up"], frameon=False)
 
 # DALYs
-rects1 = ax2.bar(x - width, aids_dalys, width, label='AIDS', color=baseline_colour)
-rects2 = ax2.bar(x, tb_dalys, width, label='TB', color=sc1_colour)
-rects3 = ax2.bar(x + width, total_dalys, width, label='Total', color=sc2_colour)
+labels = ['Unconstrained scale-up', 'Constrained scale-up']
+x = np.arange(len(labels))  # the label locations
+width = 0.2  # the width of the bars
+
+rects1 = ax2.bar(x - width, aids_dalys_diff, width, label='AIDS', color=baseline_colour)
+rects2 = ax2.bar(x, tb_dalys_diff, width, label='TB', color=sc1_colour)
+rects3 = ax2.bar(x + width, total_dalys_diff, width, label='Total', color=sc2_colour)
 
 # Add some text for labels, title and custom x-axis tick labels, etc.
 ax2.set_ylabel('DALYs')
 ax2.set_title('')
 ax2.set_xticks(x)
 ax2.set_xticklabels(labels)
-ax2.legend(["Baseline", "Constrained scale-up", "Unconstrained scale-up"], frameon=False)
+ax2.legend(["AIDS", "TB", "Total"], frameon=False)
 
 font = {'family': 'sans-serif',
-        'color':  'black',
+        'color': 'black',
         'weight': 'bold',
         'size': 11,
         }
 
 ax1.text(-0.15, 1.05, 'A)', horizontalalignment='center',
-    verticalalignment='center', transform=ax1.transAxes, fontdict=font)
+         verticalalignment='center', transform=ax1.transAxes, fontdict=font)
 
 ax2.text(-0.1, 1.05, 'B)', horizontalalignment='center',
-    verticalalignment='center', transform=ax2.transAxes, fontdict=font)
-
+         verticalalignment='center', transform=ax2.transAxes, fontdict=font)
 
 fig.tight_layout()
-# fig.savefig(outputspath / "DALYS.png")
+fig.savefig(outputspath / "HCW_DALYS.png")
 
 plt.show()

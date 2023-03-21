@@ -259,6 +259,7 @@ delay2_hist = delay2_hist.loc[
     (delay2_hist['value_weeks'] >= 1) & (delay2_hist['value'] <= 1095)]
 
 # -------------------------------- plots -------------------------------- #
+plt.style.use('ggplot')
 
 colours = [baseline_colour, sc1_colour, sc2_colour]
 # bins_hiv = [0, 2, 4, 6, 8, 10, 12, 14, 16]
@@ -286,7 +287,7 @@ ax.set_xticklabels(labels)
 ax.patch.set_edgecolor('grey')
 ax.patch.set_linewidth('1')
 
-ax.set(title='TB',
+ax.set(title='',
         ylabel='Density',
         xLabel="Treatment delay, weeks")
 ax.set_ylim([0, 1.0])
