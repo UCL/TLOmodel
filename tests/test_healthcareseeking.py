@@ -71,8 +71,9 @@ def get_events_run_and_scheduled_for_person(_sim, person_ids: Iterable) -> List:
         get_hsi_events_that_ran(_sim, person_ids)  # <-- events already run
         +
         [
-            e[4].__class__.__name__ for e in _sim.modules['HealthSystem'].HSI_EVENT_QUEUE
-            if e[4].target in person_ids  # <-- events scheduled
+            type(queue_item.hsi_event).__name__
+            for queue_item in _sim.modules['HealthSystem'].HSI_EVENT_QUEUE
+            if queue_item.hsi_event.target in person_ids  # <-- events scheduled
         ]
     )
 
