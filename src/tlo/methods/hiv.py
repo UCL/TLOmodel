@@ -325,9 +325,9 @@ class Hiv(Module):
             Types.REAL,
             "Probability that a male will be circumcised, if HIV-negative, following testing",
         ),
-        "rel_prob_circ_for_child": Parameter(
+        "prob_circ_for_child": Parameter(
             Types.REAL,
-            "Relative probability that a male aging <15 yrs will be circumcised, compared to a male aging 15+ yrs",
+            "Probability that a male aging <15 yrs will be circumcised",
         ),
         "probability_of_being_retained_on_prep_every_3_months": Parameter(
             Types.REAL,
@@ -522,7 +522,7 @@ class Hiv(Module):
         self.lm["lm_circ_child"] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             # the probability that a male aging <15 yrs to be circumcised
-            p["prob_circ_after_hiv_test"] * p["rel_prob_circ_for_child"],
+            p["prob_circ_for_child"],
             Predictor("sex").when("M", 1.0).otherwise(0.0),
             Predictor("age_years").when("<15", 1.0).otherwise(0.0),
         )
