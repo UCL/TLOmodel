@@ -1,4 +1,4 @@
-# """
+"""
 # Remaining to do:
 # - streamline input arguments
 # - let the level of the appointment be in the log
@@ -71,6 +71,7 @@ class HSIEventQueueItem(NamedTuple):
     # topen and priority inverted, should make sorting of queue faster
     topen: Date 
     priority: int
+    rand_queue_counter: int
     queue_counter: int
     tclose: Date
     # Define HSI_Event type as string to avoid NameError exception as HSI_Event defined
@@ -465,6 +466,7 @@ class HealthSystem(Module):
         cons_availability: Optional[str] = None,
         beds_availability: Optional[str] = None,
         ignore_priority: bool = False,
+        lowest_priority_considered: int = 2,
         adopt_priority_policy: bool = False,
         include_fasttrack_routes: bool = False,
         capabilities_coefficient: Optional[float] = None,
@@ -490,6 +492,7 @@ class HealthSystem(Module):
         let no beds be ever be available; if 'all', then all beds are always available.
         :param ignore_priority: If ``True`` do not use the priority information in HSI
             event to schedule
+        :param lowest_priority_considered: If priority lower (i.e. priority value greater than) this, do not schedule event 
         :param adopt_priority_policy: If 'True' then use priority specified in the PriorityRank ResourceFile
         :param include_fasttrack_routes: If 'True' then include fast-tracking options for vulnerable categories
             specified in the PriorityRank ResourceFile
@@ -538,6 +541,8 @@ class HealthSystem(Module):
         self.mode_appt_constraints = mode_appt_constraints
 
         self.ignore_priority = ignore_priority
+        
+        self.lowest_priority_considered = lowest_priority_considered
 
         self.adopt_priority_policy = adopt_priority_policy
 
@@ -999,6 +1004,10 @@ class HealthSystem(Module):
         if self.ignore_priority:
             priority = 0
 
+        # If priority of HSI_Event lower than the one considered, ignore event in scheduling 
+        if priority > self.lowest_priority_considered:
+            return
+
         if self.adopt_priority_policy:
         # Look-up priority ranking of this treatment_ID in the policy adopted
             priority = self.enforce_priority_policy(hsi_event=hsi_event)
@@ -1038,10 +1047,20 @@ class HealthSystem(Module):
         """Add an event to the HSI_EVENT_QUEUE."""
         # Create HSIEventQueue Item, including a counter for the number of HSI_Events, to assist with sorting in the
         # queue (NB. the sorting is done ascending and by the order of the items in the tuple).
-        self.hsi_event_queue_counter += 1
+        
+        self.hsi_event_queue_counter += 1 # 
+       
+        # NewbornOutcomes requires ordered queue. This if statement however doesn't seem to do the trick - so overwriting it below for safety
+        # Still trying to work out solution.  
+        if(hsi_event.module=='NewbornOutcomes'):
+            rand_queue = self.hsi_event_queue_counter
+        else:
+            rand_queue = self.rng.randint(0,1000000)  # Might be best to switch to different rand function, placeholder
+
+        rand_queue = self.hsi_event_queue_counter
         _new_item: HSIEventQueueItem = HSIEventQueueItem(
-            topen, priority, self.hsi_event_queue_counter, tclose, hsi_event)
-        print("I will add this event", _new_item)
+            topen, priority, rand_queue, self.hsi_event_queue_counter, tclose, hsi_event)
+
         # Add to queue:
         hp.heappush(self.HSI_EVENT_QUEUE, _new_item)
 
@@ -1502,7 +1521,7 @@ class HealthSystem(Module):
 
         for ev_tuple in self.HSI_EVENT_QUEUE:
             date = ev_tuple[0]  # this is the 'topen' value
-            event = ev_tuple[4]
+            event = ev_tuple[5] # moved by one for tie-breaker
             print("This is what I found ", date, event)
             if isinstance(event.target, (int, np.integer)):
                 if event.target == person_id:
@@ -1802,10 +1821,10 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 pass
 
             elif self.sim.date < next_event_tuple.topen:
+                # Because topen is now first category, can break at this point. Will only add current one to heapq
                 # The event is not yet due (before topen). Break, but first make sure this next_event_tuple is saved
                 hp.heappush(_list_of_events_not_due_today, next_event_tuple)
                 break 
-                # Because topen is now first category, can break at this point. Will only add current one to heapq
 
             else:
                 # The event is now due to run today and the person is confirmed to be still alive

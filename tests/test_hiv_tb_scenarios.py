@@ -224,7 +224,7 @@ def test_scenario_ipt_expansion(seed):
 
     for ev_tuple in sim.modules['HealthSystem'].HSI_EVENT_QUEUE:
         date = ev_tuple[1]  # this is the 'topen' value
-        event = ev_tuple[4]
+        event = ev_tuple[5]
         if isinstance(event, tb.HSI_Tb_Start_or_Continue_Ipt):
             list_of_events.append((date, event, event.target))
 
