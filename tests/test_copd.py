@@ -11,6 +11,7 @@
 import os
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from tlo import Date, Simulation
@@ -101,28 +102,84 @@ def get_simulation(pop_size):
 
 
 def test_ch_lungfunction():
-    """ test everyone ends up in lung function category 6 if there is high progression rate """
+    """ test everyone ends up in lung function category 6 if high progression rate is set """
     sim = get_simulation(10)
     df = sim.population.props
 
-    # set everyone to start at lung function category 0
-    df.loc[df.index, 'ch_lungfunction'] = 0
-
-    # confirm they are all at category zero
-    assert (df['ch_lungfunction'] == 0).all(), 'not all are category 0'
-
     copd_module = sim.modules['Copd']
-    # set probability of progressing to a higher category to 1. This will ensure everyone progresses
-    # to a higher category
+
+    # make all individuals qualify for progressing to the next lung function
+    df.loc[df.index, 'is_alive'] = True
+    df.loc[df.index, 'ch_lungfunction'] = 0
+    df.loc[df.index, 'age_years'] = np.random.choice(range(20, 50), len(df))
+
+    # check they're all eligible to progress to the next lung function
+    assert all(copd.eligible_to_progress_to_next_lung_function(df)), 'some are still not eligible to progress to ' \
+                                                                     'next lung function'
+
+    # set probability of progressing to next lung function to 1. This will ensure everyone progresses
+    # to the next lung function
     copd_module.parameters['prob_progress_to_next_cat'] = 1.0
 
-    #   call a function to make individuals progress to the next category
-    # data = copd.CopdModels(sim.modules['Copd'].parameters, sim.rng).will_progres_to_next_cat_of_lungfunction(df)
-    sim.schedule_event(copd.Copd_PollEvent(copd_module), sim.date + pd.DateOffset(days=1))
-    print(f'the data is {df["ch_lungfunction"]}')
+    # Run a function to progress to next lung function six times and ensure all individuals have progressed to a higher
+    # lung function(6)
+    for _range in range(6):
+        copd.CopdPollEvent(module=copd_module).progress_to_next_lung_function(df)
+    # all individuals should progress to the highest lung function which in this case is 6
+    assert all(df['ch_lungfunction'] == 6)
 
 
 def test_exacerbations():
-    """ test copd exacerbations. """
-    sim = get_simulation(10)
+    """ test copd exacerbations. Zero risk of exacerbation should lead to no exacerbation event scheduled and higher
+    risk of exacerbation should lead to many exacerbation events scheduled"""
+    sim = get_simulation(1)  # get simulation object
+    copd_module = sim.modules['Copd']  # get copd module
+
+    # 1)--------------- NO RISK OF EXACERBATION
+    # reset individual properties to zero risk exacerbations.
+    # reset age to <15 and lung function to 0
     df = sim.population.props
+    df.loc[df.index, 'age_years'] = 10
+    df.loc[df.index, 'ch_lungfunction'] = 0
+
+    # clear the event queue
+    sim.event_queue.queue = []
+
+    # schedule copd poll event
+    _event = copd.CopdPollEvent(copd_module)
+    _event.apply(sim.population)
+
+    # confirm no event on an individual has been scheduled
+    _individual_events = sim.find_events_for_person(df.index[0])
+    assert 0 == len(_individual_events), f'one or more events was scheduled for this ' \
+                                         f'person {_individual_events}'
+
+    # 2)----------  HIGH RISK EXACERBATION
+    # reset individual properties to higher risk exacerbations.
+    # reset age to >15 and lung function to 6
+    df = sim.population.props
+    df.loc[df.index, 'age_years'] = 20
+    df.loc[df.index, 'ch_lungfunction'] = 6
+
+    # set severe and moderate exacerbation probability to maximum(1). This ensures all exacerbation events are schedules
+    # on all eligible individuals
+    copd_module.parameters['prob_mod_exacerb_lung_func_6'] = 1.0
+    copd_module.parameters['prob_sev_exacerb_lung_func_6'] = 1.0
+
+    # clear the event queue
+    sim.event_queue.queue = []
+
+    # schedule copd poll event
+    _event = copd.CopdPollEvent(copd_module)
+    _event.apply(sim.population)
+
+    # confirm more than one event has been scheduled
+    _individual_events = sim.find_events_for_person(df.index[0])
+    assert 1 < len(_individual_events), f'not all events have been scheduled {_individual_events}'
+
+
+def test_moderate_exacerbation():
+    """ test moderate exacerbation leads to;
+          i) moderate symptoms
+         ii) non-emergency care seeking
+        iii) getting inhaler """
