@@ -1680,11 +1680,16 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 )
 
         # ----------------------------------- SPONTANEOUS VMMC FOR <15 YRS -----------------------------------
-        def vmmc_for_child(person_id):
+        def vmmc_for_child():
             """schedule the HSI_Hiv_Circ for <15 yrs males according to his age, circumcision status
             and the probability of being circumcised"""
-            person = df.loc[person_id]
-            if (person["sex"] == "M") & (person["age_years"] == "<15") & (~person["li_is_circ"]):
+            # find the males who are aging <15 yrs and not circumcised
+            target_child_idx = df.loc[df.is_alive
+                                      & (df.sex == "M")
+                                      & (df.age_years < 15)
+                                      & (~df.li_is_circ)].index
+            # schedule the HSI based on the probability
+            for person_id in target_child_idx:
                 x = self.module.lm["lm_circ_child"].predict(
                     df.loc[[person_id]], self.module.rng
                 )
@@ -1714,8 +1719,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         prep_for_agyw()
 
         # VMMC for <15 yrs in the population
-        for each_person in df.index:
-            vmmc_for_child(each_person)
+        vmmc_for_child()
 
 
 # ---------------------------------------------------------------------------
