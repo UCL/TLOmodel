@@ -643,40 +643,75 @@ def test_hsi_testandrefer_and_circ(seed):
 
 
 def test_child_circ(seed):
-    """Test that the route of VMMC for <15 yrs male works as intended"""
-    sim = get_sim(seed=seed)
-    sim = start_sim_and_clear_event_queues(sim)
+    """Test that the route of VMMC for <15 yrs male works as intended,
+    given a value (1.0 or 0.0) for the probability of circumcision."""
+    def find_event_scheduled(cons_availability='all', prob=1.0):
+        start_date = Date(2010, 1, 1)
+        popsize = 1000
+        sim = Simulation(start_date=start_date, seed=seed)
 
-    # Make the chance of being circumcised 100%
-    sim.modules['Hiv'].lm['lm_circ_child'] = LinearModel.multiplicative()
-    df = sim.population.props
+        # Register the appropriate modules, using simplified birth
+        sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                     simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                     healthsystem.HealthSystem(resourcefilepath=resourcefilepath, cons_availability=cons_availability),
+                     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                     epi.Epi(resourcefilepath=resourcefilepath),
+                     hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True),
+                     tb.Tb(resourcefilepath=resourcefilepath),
+                     )
 
-    # Get target person: a 10 year-olds male not circumcised
-    person_id = 0
-    df.at[person_id, "sex"] = "M"
-    df.at[person_id, "li_is_circ"] = False
-    df.at[person_id, "age_years"] = 10
+        # Re-set the probability of being circumcised
+        sim.modules['Hiv'].parameters["prob_circ_for_child"] = prob
 
-    # Run HivRegularPollingEvent on the population
-    pollevent = hiv.HivRegularPollingEvent(module=sim.modules["Hiv"])
-    pollevent.apply(sim.population)
+        # Make the population
+        sim.make_initial_population(n=popsize)
 
-    # Check that there is an VMMC event scheduled
-    date_event, event = [
-        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
-        isinstance(ev[1], hiv.HSI_Hiv_Circ)
-    ][0]
-    assert event.EXPECTED_APPT_FOOTPRINT == {'MaleCirc': 1}
+        sim = start_sim_and_clear_event_queues(sim)
 
-    # Find that the person is not yet circumcised
-    assert ~df.at[person_id, "li_is_circ"]
+        df = sim.population.props
 
-    # Run HSI_Hiv_Circ on this person
-    circevent = hiv.HSI_Hiv_Circ(module=sim.modules['Hiv'], person_id=person_id)
-    circevent.apply(person_id=person_id, squeeze_factor=0.0)
+        # Set properties for the target person: a 10 year-olds male not circumcised
+        target_person = 0
+        df.at[target_person, "sex"] = "M"
+        df.at[target_person, "li_is_circ"] = False
+        df.at[target_person, "age_years"] = 10
 
-    # Check that the person is now circumcised
-    assert df.at[person_id, "li_is_circ"]
+        # Run HivRegularPollingEvent on the population
+        pollevent = hiv.HivRegularPollingEvent(module=sim.modules["Hiv"])
+        pollevent.apply(sim.population)
+
+        # Find the VMMC event scheduled for this person
+        event = [
+            ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(target_person) if
+            isinstance(ev[1], hiv.HSI_Hiv_Circ)
+        ]
+
+        # Store the li_is_circ before applying HSI_Hiv_Circ
+        circ_status_0 = df.at[target_person, "li_is_circ"].copy()
+
+        # Apply HSI_Hiv_Circ and store the updated li_is_circ
+        if len(event) > 0:
+            event[0].apply(person_id=target_person, squeeze_factor=0.0)
+            circ_status_1 = df.at[target_person, "li_is_circ"].copy()
+        else:
+            circ_status_1 = circ_status_0.copy()
+
+        return event, circ_status_0, circ_status_1
+
+    # check that if prob = 0.0, there should be no HSI_HIV_Circ scheduled and circ status is not upated
+    test_0 = find_event_scheduled(prob=0.0)
+    assert len(test_0[0]) == 0
+    assert ~test_0[1]
+    assert ~test_0[2]
+
+    # check that if prob = 1.0, there should be one HSI_HIV_Circ scheduled by the Poll event;
+    # and by applying HSI_Hiv_Circ, the li_is_circ status should be updated (i.e., the circumcision is provided)
+    test_1 = find_event_scheduled(prob=1.0)
+    assert len(test_1[0]) == 1
+    assert ~test_1[1]
+    assert test_1[2]
 
 
 def test_hsi_testandrefer_and_behavchg(seed):
