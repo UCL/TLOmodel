@@ -352,7 +352,6 @@ class CopdPollEvent(RegularEvent, PopulationScopeEventMixin):
             return random_date(self.sim.date, self.sim.date + pd.DateOffset(months=3), self.module.rng)
 
         df = population.props
-        print(f'the sim is {df.age_years}')
         # call a function to make individuals progress to a next higher lung function
         self.progress_to_next_lung_function(df)
         # Schedule Moderate Exacerbation
