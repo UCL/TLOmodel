@@ -668,6 +668,9 @@ def test_child_circ(seed):
     ][0]
     assert event.EXPECTED_APPT_FOOTPRINT == {'MaleCirc': 1}
 
+    # Find that the person is not yet circumcised
+    assert ~df.at[person_id, "li_is_circ"]
+
     # Run HSI_Hiv_Circ on this person
     circevent = hiv.HSI_Hiv_Circ(module=sim.modules['Hiv'], person_id=person_id)
     circevent.apply(person_id=person_id, squeeze_factor=0.0)
