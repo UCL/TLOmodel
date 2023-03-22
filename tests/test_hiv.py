@@ -642,6 +642,40 @@ def test_hsi_testandrefer_and_circ(seed):
     assert df.at[person_id, "hv_number_tests"] > 0
 
 
+def test_child_circ(seed):
+    """Test that the route of VMMC for <15 yrs male works as intended"""
+    sim = get_sim(seed=seed)
+    sim = start_sim_and_clear_event_queues(sim)
+
+    # Make the chance of being circumcised 100%
+    sim.modules['Hiv'].lm['lm_circ_child'] = LinearModel.multiplicative()
+    df = sim.population.props
+
+    # Get target person: a 10 year-olds male not circumcised
+    person_id = 0
+    df.at[person_id, "sex"] = "M"
+    df.at[person_id, "li_is_circ"] = False
+    df.at[person_id, "age_years"] = 10
+
+    # Run HivRegularPollingEvent on the population
+    pollevent = hiv.HivRegularPollingEvent(module=sim.modules["Hiv"])
+    pollevent.apply(sim.population)
+
+    # Check that there is an VMMC event scheduled
+    date_event, event = [
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+        isinstance(ev[1], hiv.HSI_Hiv_Circ)
+    ][0]
+    assert event.EXPECTED_APPT_FOOTPRINT == {'MaleCirc': 1}
+
+    # Run HSI_Hiv_Circ on this person
+    circevent = hiv.HSI_Hiv_Circ(module=sim.modules['Hiv'], person_id=person_id)
+    circevent.apply(person_id=person_id, squeeze_factor=0.0)
+
+    # Check that the person is now circumcised
+    assert df.at[person_id, "li_is_circ"]
+
+
 def test_hsi_testandrefer_and_behavchg(seed):
     """Test that the HSI for testing and behaviour change works as intended"""
     sim = get_sim(seed=seed)
