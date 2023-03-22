@@ -212,7 +212,6 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
     bar_chart_from_dict(preg_dict, 'Pregnancies', 'Total Pregnancies by Scenario', primary_oc_path, 'agg_preg')
     bar_chart_from_dict(births_dict, 'Births', 'Total Births by Scenario', primary_oc_path, 'agg_births')
 
-
     # ------------------------------------ PRIMARY OUTCOMES... -------------------------------------------------------
     def extract_death_and_stillbirth_data_frames_and_summ_outcomes(folder, birth_df):
         # MATERNAL
@@ -674,7 +673,8 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
         plt.savefig(f'{primary_oc_path}/{data}.png')
         plt.show()
 
-    keys = ['mmr_df', 'nmr_df', 'sbr_df', 'an_sbr_df', 'ip_sbr_df', 'mat_deaths_total_df', 'neo_deaths_total_df']
+    keys = ['mmr_df', 'nmr_df', 'sbr_df', 'an_sbr_df', 'ip_sbr_df', 'mat_deaths_total_df', 'neo_deaths_total_df',
+            'stillbirths_total_df']
     save_outputs(death_data, keys, 'diff_in_mortality_outcomes', primary_oc_path)
 
     def extract_dalys(folder):
@@ -1270,6 +1270,21 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
         results.update({'sep_rate_per_year': return_95_CI_across_runs(sep_rate_df,sim_years)})
         results.update({'sep_rate_avg': get_avg_result(sep_rate_df)})
 
+        an_sep_rate_df = get_rate_df(an_sep, births_df, 1000)
+        results.update({'an_sep_rate_df': an_sep_rate_df})
+        results.update({'an_sep_rate_per_year': return_95_CI_across_runs(an_sep_rate_df, sim_years)})
+        results.update({'an_sep_rate_avg': get_avg_result(an_sep_rate_df)})
+
+        la_sep_rate_df = get_rate_df(la_sep, births_df, 1000)
+        results.update({'la_sep_rate_df': la_sep_rate_df})
+        results.update({'la_sep_rate_per_year': return_95_CI_across_runs(la_sep_rate_df, sim_years)})
+        results.update({'la_sep_rate_avg': get_avg_result(la_sep_rate_df)})
+
+        pn_sep_rate_df = get_rate_df((pn_la_sep + pn_sep), births_df, 1000)
+        results.update({'pn_sep_rate_df': pn_sep_rate_df})
+        results.update({'pn_sep_rate_per_year': return_95_CI_across_runs(pn_sep_rate_df, sim_years)})
+        results.update({'pn_sep_rate_avg': get_avg_result(pn_sep_rate_df)})
+
         l_pph = comps_df['postnatal_supervisor'].loc[(slice(None), 'primary_postpartum_haemorrhage'),
         slice(None)].droplevel(1)
         p_pph = comps_df['postnatal_supervisor'].loc[(slice(None), 'secondary_postpartum_haemorrhage'),
@@ -1278,6 +1293,16 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
         results.update({'pph_rate_df': pph_rate_df})
         results.update({'pph_rate_per_year': return_95_CI_across_runs(pph_rate_df, sim_years)})
         results.update({'pph_rate_avg': get_avg_result(pph_rate_df)})
+
+        p_pph_rate_df = get_rate_df(l_pph, births_df, 1000)
+        results.update({'p_pph_rate_df': p_pph_rate_df})
+        results.update({'p_pph_rate_per_year': return_95_CI_across_runs(p_pph_rate_df, sim_years)})
+        results.update({'p_pph_rate_avg': get_avg_result(p_pph_rate_df)})
+
+        s_pph_rate_df = get_rate_df(p_pph, births_df, 1000)
+        results.update({'s_pph_rate_df': s_pph_rate_df})
+        results.update({'s_pph_rate_per_year': return_95_CI_across_runs(s_pph_rate_df, sim_years)})
+        results.update({'s_pph_rate_avg': get_avg_result(s_pph_rate_df)})
 
         anaemia_results = extract_results(
             folder,
@@ -1320,6 +1345,12 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
         results.update({'sga_rate_per_year': return_95_CI_across_runs(sga_df, sim_years)})
         results.update({'sga_rate_avg': get_avg_result(sga_df)})
 
+        lbw = neo_comps_df['newborn_outcomes'].loc[(slice(None), 'low_birth_weight'), slice(None)].droplevel(1)
+        lbw_df = get_rate_df(lbw, births_df, 100)
+        results.update({'lbw_rate_df': lbw_df})
+        results.update({'lbw_rate_per_year': return_95_CI_across_runs(lbw_df, sim_years)})
+        results.update({'lbw_rate_avg': get_avg_result(lbw_df)})
+
         resp_distress = neo_comps_df['newborn_outcomes'].loc[(slice(None), 'not_breathing_at_birth'),
         slice(None)].droplevel(1)
         rd_df = get_rate_df(resp_distress, births_df, 1000)
@@ -1357,35 +1388,10 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
         results_folders[k], comps_dfs[k], neo_comps_dfs[k], preg_dict[k]['preg_data_frame'],
         births_dict[k]['births_data_frame'], comp_pregs_dict[k]['comp_preg_data_frame']) for k in results_folders}
 
-    rate_keys = ['eu_rate_per_year',
-                                                 'sa_rate_per_year',
-                                                 'ia_rate_per_year',
-                                                 'syph_rate_per_year',
-                                                 'gdm_rate_per_year',
-                                                 'prom_rate_per_year',
-                                                 'praevia_rate_per_year',
-                                                 'abruption_rate_per_year',
-                                                 'potl_rate_per_year',
-                                                 'ol_rate_per_year',
-                                                 'ur_rate_per_year',
-                                                 'gh_rate_per_year',
-                                                 'mpe_rate_per_year',
-                                                 'sgh_rate_per_year',
-                                                 'spe_rate_per_year',
-                                                 'ec_rate_per_year',
-                                                 'aph_rate_per_year',
-                                                 'ptl_rate_per_year',
-                                                 'sep_rate_per_year',
-                                                 'pph_rate_per_year',
-                                                 'an_ps_prev_per_year',
-                                                 'an_pn_prev_per_year',
-                                                 'macro_rate_per_year',
-                                                 'sga_rate_per_year',
-                                                 'rd_rate_per_year',
-                                                 'rds_rate_per_year',
-                                                 'neo_sep_rate_per_year',
-                                                 'enc_rate_per_year',
-                                                 ]
+    rate_keys = list()
+    for k in comp_inc_folders[scenario_titles[0]].keys():
+        if 'per_year' in k:
+            rate_keys.append(k)
 
     for dict_key, axis, title, save_name in \
         zip(rate_keys,
@@ -1409,8 +1415,15 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
              'Rate per 100 Births',
              'Rate per 1000 Births',
              'Rate per 1000 Births',
+             'Rate per 1000 Births',
+             'Rate per 1000 Births',
+             'Rate per 1000 Births',
+             'Rate per 1000 Births',
+             'Rate per 1000 Births',
+             'Rate per 1000 Births',
              'Prevalence at birth',
              'Prevalence following birth',
+             'Rate per 100 Births',
              'Rate per 100 Births',
              'Rate per 100 Births',
              'Rate per 1000 Births',
@@ -1437,11 +1450,17 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
              'Mean Rate of Antepartum Haemorrhage per Year by Scenario',
              'Mean Rate of Preterm Labour per Year by Scenario',
              'Mean Rate of Maternal Sepsis per Year by Scenario',
+             'Mean Rate of Antenatal Maternal Sepsis per Year by Scenario',
+             'Mean Rate of Intrapartum Maternal Sepsis per Year by Scenario',
+             'Mean Rate of Postpartum Maternal Sepsis per Year by Scenario',
              'Mean Rate of Postpartum Haemorrhage per Year by Scenario',
+             'Mean Rate of Primary Postpartum Haemorrhage per Year by Scenario',
+             'Mean Rate of Secondary Postpartum Haemorrhage per Year by Scenario'
              'Mean Prevalence of Anaemia at birth per Year by Scenario',
              'Mean Prevalence of Anaemia following birth per Year by Scenario',
              'Mean Rate of Macrosomia per Year by Scenario',
              'Mean Rate of Small for Gestational Age per Year by Scenario',
+             'Mean Rate of Low Birth Rate per Year by Scenario',
              'Mean Rate of  Newborn Respiratory Depression per Year by Scenario',
              'Mean Rate of Preterm Respiratory Distress Syndrome per Year by '
              'Scenario',
@@ -1451,34 +1470,10 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
         analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
             scen_colours, sim_years, comp_inc_folders, dict_key, axis, title, comp_incidence_path, save_name)
 
-    avg_keys = ['eu_rate_avg',
-                     'sa_rate_avg',
-                     'ia_rate_avg',
-                     'syph_rate_avg',
-                     'gdm_rate_avg',
-                     'prom_rate_avg',
-                     'praevia_rate_avg',
-                     'abruption_rate_avg',
-                     'potl_rate_avg',
-                     'ol_rate_avg',
-                     'ur_rate_avg',
-                     'gh_rate_avg',
-                     'mpe_rate_avg',
-                     'sgh_rate_avg',
-                     'spe_rate_avg',
-                     'ec_rate_avg',
-                     'aph_rate_avg',
-                     'ptl_rate_avg',
-                     'sep_rate_avg',
-                     'pph_rate_avg',
-                     'an_ps_prev_avg',
-                     'an_pn_prev_avg',
-                     'macro_rate_avg',
-                     'sga_rate_avg',
-                     'rd_rate_avg',
-                     'rds_rate_avg',
-                     'neo_sep_rate_avg',
-                     'enc_rate_avg']
+    avg_keys = list()
+    for k in comp_inc_folders[scenario_titles[0]].keys():
+        if 'avg' in k:
+            avg_keys.append(k)
 
     for dict_key, axis, title, save_name in \
         zip(avg_keys,
@@ -1543,34 +1538,10 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
             avg_keys):
         plot_agg_graph(comp_inc_folders, dict_key, axis, title, save_name, comp_incidence_path)
 
-    rate_df_keys = ['eu_rate_df',
-                         'sa_rate_df',
-                         'ia_rate_df',
-                         'syph_rate_df',
-                         'gdm_rate_df',
-                         'prom_rate_df',
-                         'praevia_rate_df',
-                         'abruption_rate_df',
-                         'potl_rate_df',
-                         'ol_rate_df',
-                         'ur_rate_df',
-                         'gh_rate_df',
-                         'mpe_rate_df',
-                         'sgh_rate_df',
-                         'spe_rate_df',
-                         'ec_rate_df',
-                         'aph_rate_df',
-                         'ptl_rate_df',
-                         'sep_rate_df',
-                         'pph_rate_df',
-                         'an_ps_prev_df',
-                         'an_pn_prev_df',
-                         'macro_rate_df',
-                         'sga_rate_df',
-                         'rd_rate_df',
-                         'rds_rate_df',
-                         'neo_sep_rate_df',
-                         'enc_rate_df']
+    rate_df_keys = list()
+    for k in comp_inc_folders[scenario_titles[0]].keys():
+        if 'df' in k:
+            rate_df_keys.append(k)
 
     save_outputs(comp_inc_folders, rate_df_keys, 'diff_in_incidence_outcomes', comp_incidence_path)
 
@@ -1836,13 +1807,14 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
             do_scaling=True
         )
 
-        cs_rate = return_95_CI_across_runs(cs_delivery, sim_years)
-        cs_int = cs_delivery.loc[intervention_years[0]:intervention_years[-1]]
+        cs_rate_df = (cs_delivery/births) * 100
+        cs_rate_per_year = return_95_CI_across_runs(cs_rate_df, sim_years)
+        cs_int = cs_rate_df.loc[intervention_years[0]:intervention_years[-1]]
         cs_avg_rate = get_mean_from_columns(cs_int, 'avg')
         avg_cs = get_mean_95_CI_from_list(cs_avg_rate)
 
-        results.update({'cs_rate_df': (cs_delivery/births) * 100,
-                        'cs_rate_per_year': cs_rate,
+        results.update({'cs_rate_df': cs_rate_df,
+                        'cs_rate_per_year': cs_rate_per_year,
                         'avg_cs_rate_int': avg_cs})
 
         # AVD RATE
@@ -1857,12 +1829,13 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
                     'mother'].count()),
             do_scaling=True )
 
-        avd_rate = return_95_CI_across_runs(cs_delivery, sim_years)
-        avd_int = avd_delivery.loc[intervention_years[0]:intervention_years[-1]]
+        avd_rate_df = (avd_delivery / births) * 100
+        avd_rate = return_95_CI_across_runs(avd_rate_df, sim_years)
+        avd_int = avd_rate_df.loc[intervention_years[0]:intervention_years[-1]]
         avd_avg_rate = get_mean_from_columns(avd_int, 'avg')
         avg_avd = get_mean_95_CI_from_list(avd_avg_rate)
 
-        results.update({'avd_rate_df': (avd_delivery / births) * 100,
+        results.update({'avd_rate_df': avd_rate_df,
                         'avd_rate_per_year': avd_rate,
                         'avg_avd_rate_int': avg_avd})
 
@@ -1877,6 +1850,26 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
             so_keys.append(k)
 
     save_outputs(sec_outcomes_df, so_keys, 'diff_in_secondary_outcomes', secondary_oc_path)
+
+    analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+        scen_colours, sim_years, sec_outcomes_df, 'avd_rate_per_year',
+        '% Total Births',
+        'Proportion of total births which occur via Assisted Vaginal Delivery',
+        secondary_oc_path, 'avd_trend')
+
+    plot_agg_graph(sec_outcomes_df, 'avg_avd_rate_int', '% Total Births',
+                   'Average proportion of total births occuring via Assisted Vaginal Delivery',
+                   'avg_avd_rate', secondary_oc_path)
+
+    analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
+        scen_colours, sim_years, sec_outcomes_df, 'cs_rate_per_year',
+        '% Total Births',
+        'Proportion of total births which occur via Caesarean Section',
+        secondary_oc_path, 'cs_trend')
+
+    plot_agg_graph(sec_outcomes_df, 'avg_cs_rate_int', '% Total Births',
+                   'Average proportion of total births occurring via  Caesarean Section',
+                   'avg_cs_rate', secondary_oc_path)
 
     analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
         scen_colours, sim_years, sec_outcomes_df, 'anc_contacts_trend',
