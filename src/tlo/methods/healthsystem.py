@@ -1004,9 +1004,9 @@ class HealthSystem(Module):
         if self.ignore_priority:
             priority = 0
 
-        #if self.adopt_priority_policy:
-        # Look-up priority ranking of this treatment_ID in the policy adopted
-        priority = self.enforce_priority_policy(hsi_event=hsi_event)
+        if self.adopt_priority_policy:
+            # Look-up priority ranking of this treatment_ID in the policy adopted
+            priority = self.enforce_priority_policy(hsi_event=hsi_event)
 
         # If priority of HSI_Event lower than the lowest one considered, ignore event in scheduling
         if priority > self.lowest_priority_considered:
@@ -1076,8 +1076,7 @@ class HealthSystem(Module):
                 _priority_ranking = entry['Priority'].item()
 
                 # If considering fast-track routes, check whether person qualifies
-                #if self.include_fasttrack_routes is True:
-                if True is True:
+                if self.include_fasttrack_routes is True:
                     # Check whether fast-tracking routes are available for this treatment. If person qualifies for one
                     # don't bother checking remaining, as they all lead to priority=1.
                     FT_eligible = False
