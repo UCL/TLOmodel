@@ -517,8 +517,7 @@ class Hiv(Module):
 
         # Linear model for circumcision for male and aging <15 yrs who spontaneously presents for VMMC
         # This is to increase the VMMC cases/visits for <15 yrs males, which should account for about
-        # 40% of total VMMC cases according to UNAIDS & WHO/DHIS2 data.
-        # i.e., VMMC cases of <15 yrs vs 15+ yrs should be 40%:60%=2:3
+        # 40% of total VMMC cases according to UNAIDS & WHO/DHIS2 2015-2019 data.
         self.lm["lm_circ_child"] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             # the probability that a male aging <15 yrs to be circumcised
