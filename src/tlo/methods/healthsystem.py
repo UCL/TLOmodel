@@ -466,7 +466,7 @@ class HealthSystem(Module):
         cons_availability: Optional[str] = None,
         beds_availability: Optional[str] = None,
         ignore_priority: bool = False,
-        lowest_priority_considered: int = 2,
+        lowest_priority_considered: int = 4,
         adopt_priority_policy: bool = False,
         include_fasttrack_routes: bool = False,
         capabilities_coefficient: Optional[float] = None,
@@ -1004,13 +1004,14 @@ class HealthSystem(Module):
         if self.ignore_priority:
             priority = 0
 
-        # If priority of HSI_Event lower than the one considered, ignore event in scheduling
-        if priority > self.lowest_priority_considered:
-            return
+        #if self.adopt_priority_policy:
+        # Look-up priority ranking of this treatment_ID in the policy adopted
+        priority = self.enforce_priority_policy(hsi_event=hsi_event)
 
-        if self.adopt_priority_policy:
-            # Look-up priority ranking of this treatment_ID in the policy adopted
-            priority = self.enforce_priority_policy(hsi_event=hsi_event)
+        # If priority of HSI_Event lower than the lowest one considered, ignore event in scheduling
+        if priority > self.lowest_priority_considered:
+            hsi_event.never_ran()
+            return
 
         # Check if healthsystem is disabled/disable_and_reject_all and, if so, schedule a wrapped event:
         if self.disable and (not self.disable_and_reject_all):
@@ -1050,15 +1051,7 @@ class HealthSystem(Module):
 
         self.hsi_event_queue_counter += 1
 
-        # NewbornOutcomes requires ordered queue. This if statement however doesn't seem to do the trick
-        # Overwriting it below for safety
-        # Still trying to work out solution.
-        if (hsi_event.module == 'NewbornOutcomes'):
-            rand_queue = self.hsi_event_queue_counter
-        else:
-            rand_queue = self.rng.randint(0,1000000)  # Might be best to switch to different rand function, placeholder
-
-        rand_queue = self.hsi_event_queue_counter
+        rand_queue = self.rng.randint(0, 1000000)  # hsi_event_queue_counter
         _new_item: HSIEventQueueItem = HSIEventQueueItem(
             topen, priority, rand_queue, self.hsi_event_queue_counter, tclose, hsi_event)
 
@@ -1068,38 +1061,66 @@ class HealthSystem(Module):
     # This is where the priority policy is enacted
     def enforce_priority_policy(self, hsi_event) -> int:
         """Check the priority of the Treatment_ID based on policy under consideration """
-        PR = self.parameters['PriorityRank']
-        pdf = self.sim.population.props
 
-        if (PR['Treatment'] == hsi_event.TREATMENT_ID).any():
-            entry = PR.loc[PR['Treatment'] == hsi_event.TREATMENT_ID]
-
-            # Check default priority assigned to this treatment
-            _priority_ranking = entry['Priority'].item()
-
-            # If considering fast-track routes, check whether person qualifies
-            if self.include_fasttrack_routes is True:
-                # Check whether fast-tracking routes are available for this treatment, and if person qualifies.
-                # All fast-tracking routes lead to priority=0; if qualify for one don't bother checking remaining.
-                exception = False
-
-                if 'Contraception' in self.sim.modules and entry['Fasttrack_if_pregnant'].item() == 1:
-                    if (pdf.at[hsi_event.target, 'is_pregnant'] is True):
-                        _priority_ranking = 0
-                        exception = True
-                if exception is False and ('Tb' in self.sim.modules) and entry['Fasttrack_if_tbdiagnosed'].item() == 1:
-                    if (pdf.at[hsi_event.target, 'tb_diagnosed'] is True):
-                        _priority_ranking = 0
-                        exception = True
-                if exception is False and 'Hiv' in self.sim.modules and entry['Fasttrack_if_Hivdiagnosed'].item() == 1:
-                    if (pdf.at[hsi_event.target, 'hv_diagnosed'] is True):
-                        _priority_ranking = 0
-                        exception = True
-
-        else:  # If treatment is not ranked in the policy, issue a warning and assign priority=0 by default
+        if (hsi_event.TREATMENT_ID == 'HSI_GenericEmergencyFirstApptAtFacilityLevel1'):
             _priority_ranking = 0
-            warnings.warn(UserWarning(f"Couldn't find priority ranking for TREATMENT_ID /n"
-                                      f"{hsi_event.TREATMENT_ID}"))
+        else:
+
+            PR = self.parameters['PriorityRank']
+            pdf = self.sim.population.props
+
+            if (PR['Treatment'] == hsi_event.TREATMENT_ID).any():
+                entry = PR.loc[PR['Treatment'] == hsi_event.TREATMENT_ID]
+
+                # Check default priority assigned to this treatment
+                _priority_ranking = entry['Priority'].item()
+
+                # If considering fast-track routes, check whether person qualifies
+                #if self.include_fasttrack_routes is True:
+                if True is True:
+                    # Check whether fast-tracking routes are available for this treatment. If person qualifies for one
+                    # don't bother checking remaining, as they all lead to priority=1.
+                    FT_eligible = False
+
+                    if entry['FT_if_5orUnder'].item() == 1:
+                        if pdf.at[hsi_event.target, 'age_exact_years'] <= 5:
+                            _priority_ranking = 1
+                            FT_eligible = True
+                    if (FT_eligible is False and 'Contraception' in self.sim.modules and
+                       entry['FT_if_pregnant'].item() == 1):
+                        if pdf.at[hsi_event.target, 'is_pregnant'] is True:
+                            _priority_ranking = 1
+                            FT_eligible = True
+                    if FT_eligible is False and 'Tb' in self.sim.modules and entry['FT_if_tbdiagnosed'].item() == 1:
+                        if pdf.at[hsi_event.target, 'tb_diagnosed'] is True:
+                            _priority_ranking = 1
+                            FT_eligible = True
+                    if FT_eligible is False and 'Hiv' in self.sim.modules and entry['FT_if_Hivdiagnosed'].item() == 1:
+                        if pdf.at[hsi_event.target, 'hv_diagnosed'] is True:
+                            _priority_ranking = 1
+                            FT_eligible = True
+                    if (FT_eligible is False and 'CardioMetabolicDisorders' in self.sim.modules and
+                       entry['FT_if_CMDdiagnosed'].item() == 1):
+                        for condition in self.sim.modules['CardioMetabolicDisorders'].conditions:
+                            if pdf.at[hsi_event.target, f'nc_{condition}_ever_diagnosed'] is True:
+                                _priority_ranking = 1
+                                FT_eligible = True
+                                break
+                        for event in self.sim.modules['CardioMetabolicDisorders'].events:
+                            if pdf.at[hsi_event.target, f'nc_{event}_ever_diagnosed'] is True:
+                                _priority_ranking = 1
+                                FT_eligible = True
+                                break
+                    if (FT_eligible is False and 'OesophagealCancer' in self.sim.modules and
+                       entry['FT_if_cancerdiagnosed'].item() == 1):
+                        if pd.isnull(pdf.at[hsi_event.target, 'oc_date_diagnosis']) is False:
+                            _priority_ranking = 1
+                            FT_eligible = True
+
+            else:  # If treatment is not ranked in the policy, issue a warning and assign priority=2 by default
+                _priority_ranking = 2
+                warnings.warn(UserWarning(f"Couldn't find priority ranking for TREATMENT_ID /n"
+                                          f"{hsi_event.TREATMENT_ID}"))
 
         return _priority_ranking
 
@@ -1523,7 +1544,6 @@ class HealthSystem(Module):
         for ev_tuple in self.HSI_EVENT_QUEUE:
             date = ev_tuple[0]  # this is the 'topen' value
             event = ev_tuple[5]  # moved by one for tie-breaker
-            print("This is what I found ", date, event)
             if isinstance(event.target, (int, np.integer)):
                 if event.target == person_id:
                     list_of_events.append((date, event))
@@ -1837,6 +1857,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     _list_of_population_hsi_event_tuples_due_today.append(next_event_tuple)
                 else:
                     _list_of_individual_hsi_event_tuples_due_today.append(next_event_tuple)
+
+        assert len(_list_of_events_not_due_today) <= 1
 
         # add events from the _list_of_events_not_due_today back into the queue
         while len(_list_of_events_not_due_today) > 0:

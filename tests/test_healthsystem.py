@@ -1,3 +1,4 @@
+import heapq as hp
 import os
 from pathlib import Path
 from typing import Set
@@ -1224,10 +1225,171 @@ def test_hsi_run_on_same_day_if_scheduled_for_same_day(seed, tmpdir):
     assert 4 == len(log)  # 3 HSI events should have occurred
     assert (log['date'] == sim.start_date).all()
 
-    # Order no longer applied 
-    #assert log['TREATMENT_ID'].to_list() == [
-    #    'DummyHSI_To_Run_On_Same_Day_initialise_simulation',
-    #    'DummyHSI_To_Run_On_First_Day_Of_Simulation',
-    #    'DummyHSI_To_Run_On_Same_Day_Event',
-    #    'DummyHSI_To_Run_On_Same_Day_HSI',
-    #]
+
+def test_hsi_event_queue_expansion_and_querying(seed, tmpdir):
+    """The correct number of events scheduled for today should be returned when querying the HSI_EVENT_QUEUE,
+    and the ordering in the queue should follow the correct logic."""
+
+    class DummyHSI(HSI_Event, IndividualScopeEventMixin):
+        """HSI event that schedules another HSI_Event for the same day"""
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = self.__class__.__name__
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+            self.ACCEPTED_FACILITY_LEVEL = '1a'
+
+        def apply(self, person_id, squeeze_factor):
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                DummyHSI(module=self.module, person_id=person_id, source='HSI'),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0)
+
+    class DummyModule(Module):
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            pass
+
+    log_config = {
+        "filename": "log",
+        "directory": tmpdir,
+        "custom_levels": {"tlo.methods.healthsystem": logging.DEBUG},
+    }
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, log_config=log_config)
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(
+                     resourcefilepath=resourcefilepath,
+                     disable=False,
+                     cons_availability='all',
+                 ),
+                 DummyModule(),
+                 check_all_dependencies=False,
+                 )
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=sim.start_date + pd.DateOffset(days=5))
+    sim.event_queue.queue = []  # clear the queue
+
+    Ntoday = 10
+    Nlater = 90
+
+    for i in range(Nlater):
+        sim.modules['HealthSystem'].schedule_hsi_event(
+            DummyHSI(module=sim.modules['DummyModule'], person_id=0),
+            topen=sim.date + pd.DateOffset(days=sim.modules['DummyModule'].rng.randint(1, 30)),
+            tclose=None,
+            priority=sim.modules['DummyModule'].rng.randint(0, 3))
+
+    for i in range(Ntoday):
+        sim.modules['HealthSystem'].schedule_hsi_event(
+            DummyHSI(module=sim.modules['DummyModule'], person_id=0),
+            topen=sim.date,
+            tclose=None,
+            priority=sim.modules['DummyModule'].rng.randint(0, 3))
+
+    (list_of_individual_hsi_event_tuples_due_today,
+        list_of_population_hsi_event_tuples_due_today
+     ) = sim.modules['HealthSystem'].healthsystemscheduler._get_events_due_today()
+
+    # Check that HealthSystemScheduler is recovering the correct number of events for today
+    assert len(list_of_individual_hsi_event_tuples_due_today) == Ntoday
+
+    # Check that the remaining events obey ordering rules
+    event_prev = hp.heappop(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
+
+    while (len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE) > 0):
+        next_event_tuple = hp.heappop(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
+        assert event_prev.topen <= next_event_tuple.topen, 'Not respecting topen'
+        if (event_prev.topen == next_event_tuple.topen):
+            assert event_prev.priority <= next_event_tuple.priority, 'Not respecting priority'
+            if (event_prev.priority == next_event_tuple.priority):
+                assert event_prev.rand_queue_counter < next_event_tuple.rand_queue_counter, 'Not respecting rand'
+                assert event_prev.rand_queue_counter != next_event_tuple.rand_queue_counter, 'Extremely unlikely'
+        event_prev = next_event_tuple
+
+
+def test_policy_and_lowest_priority_enforced(seed, tmpdir):
+    """The correct number of events scheduled for today should be returned when querying the HSI_EVENT_QUEUE,
+    and the ordering of events in the queue should follow the correct logic."""
+
+    class DummyHSI(HSI_Event, IndividualScopeEventMixin):
+        """HSI event that schedules another HSI_Event for the same day"""
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = 'HSI_Dummy'
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+            self.ACCEPTED_FACILITY_LEVEL = '1a'
+
+        def apply(self, person_id, squeeze_factor):
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                     DummyHSI(module=self.module, person_id=person_id, source='HSI'),
+                     topen=self.sim.date,
+                     tclose=None,
+                     priority=0)
+
+    class DummyModule(Module):
+        """Schedules an HSI to occur on the first day of the simulation from initialise_simulation, and an event that
+         will schedule the event for the same day."""
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            pass
+
+    log_config = {
+        "filename": "log",
+        "directory": tmpdir,
+        "custom_levels": {"tlo.methods.healthsystem": logging.DEBUG},
+    }
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, log_config=log_config)
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(
+                     resourcefilepath=resourcefilepath,
+                     disable=False,
+                     adopt_priority_policy=True,
+                     lowest_priority_considered=2,
+                     cons_availability='all',
+                 ),
+                 DummyModule(),
+                 check_all_dependencies=False,
+                 )
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=sim.start_date + pd.DateOffset(days=5))
+    sim.event_queue.queue = []  # clear the queue
+
+    # Overwrite name/priority of first PriorityRank element
+    PR = sim.modules['HealthSystem'].parameters['PriorityRank']
+    PR.at[0, 'Treatment'] = 'HSI_Dummy'
+    PR.at[0, 'Priority'] = 0
+
+    # Schedule an 'HSI_Dummy' event with priority different from policy one
+    sim.modules['HealthSystem'].schedule_hsi_event(
+        DummyHSI(module=sim.modules['DummyModule'], person_id=0),
+        topen=sim.date + pd.DateOffset(days=sim.modules['DummyModule'].rng.randint(1, 30)),
+        tclose=None,
+        priority=1)  # Give a priority different than the one assumed by the policy for this Treatment_ID
+
+    assert len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE) == 1
+    event_prev = hp.heappop(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
+    assert event_prev.priority == 0  # Check that the event priority is the policy one
+
+    # Repeat but now assinging priority below threshold through policy, to check that the event is not scheduled
+    PR.at[0, 'Priority'] = 4
+
+    # Schedule an 'HSI_Dummy' event with priority different from policy one
+    sim.modules['HealthSystem'].schedule_hsi_event(
+                DummyHSI(module=sim.modules['DummyModule'], person_id=0),
+                topen=sim.date + pd.DateOffset(days=sim.modules['DummyModule'].rng.randint(1, 30)),
+                tclose=None,
+                priority=1)  # Give a priority different than the one assumed by the policy for this Treatment_ID
+
+    # Check that event wasn't scheduled due to priority being below threshold
+    assert len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE) == 0
