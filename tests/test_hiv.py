@@ -663,7 +663,7 @@ def test_child_circ(seed):
                      )
 
         # Re-set the probability of being circumcised
-        sim.modules['Hiv'].parameters["prob_circ_for_child"] = prob
+        sim.modules['Hiv'].parameters["prob_circ_for_child_before_2020"] = prob
 
         # Make the population
         sim.make_initial_population(n=popsize)

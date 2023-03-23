@@ -325,10 +325,17 @@ class Hiv(Module):
             Types.REAL,
             "Probability that a male will be circumcised, if HIV-negative, following testing",
         ),
-        "prob_circ_for_child": Parameter(
+        "prob_circ_for_child_before_2020": Parameter(
             Types.REAL,
-            "Probability that a male aging <15 yrs will be circumcised",
+            "Probability that a male aging <15 yrs will be circumcised before year 2020",
         ),
+        "prob_circ_for_child_from_2020": Parameter(
+            Types.REAL,
+            "Probability that a male aging <15 yrs will be circumcised from year 2020, "
+            "which is different from before 2020 as children vmmc policy/fund/cases has changed, "
+            "according to PEPFAR 2020 Country Operational Plan and DHIS2 data",
+        ),
+
         "probability_of_being_retained_on_prep_every_3_months": Parameter(
             Types.REAL,
             "Probability that someone who has initiated on prep will attend an appointment and be on prep "
@@ -518,10 +525,18 @@ class Hiv(Module):
         # Linear model for circumcision for male and aging <15 yrs who spontaneously presents for VMMC
         # This is to increase the VMMC cases/visits for <15 yrs males, which should account for about
         # 40% of total VMMC cases according to UNAIDS & WHO/DHIS2 2015-2019 data.
-        self.lm["lm_circ_child"] = LinearModel(
+        self.lm["lm_circ_child_before_2020"] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             # the probability that a male aging <15 yrs to be circumcised
-            p["prob_circ_for_child"],
+            p["prob_circ_for_child_before_2020"],
+            Predictor("sex").when("M", 1.0).otherwise(0.0),
+            Predictor("age_years").when("<15", 1.0).otherwise(0.0),
+        )
+        # The one for 2020 and on
+        self.lm["lm_circ_child_from_2020"] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            # the probability that a male aging <15 yrs to be circumcised
+            p["prob_circ_for_child_from_2020"],
             Predictor("sex").when("M", 1.0).otherwise(0.0),
             Predictor("age_years").when("<15", 1.0).otherwise(0.0),
         )
@@ -1689,9 +1704,14 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                                       & (~df.li_is_circ)].index
             # schedule the HSI based on the probability
             for person_id in target_child_idx:
-                x = self.module.lm["lm_circ_child"].predict(
-                    df.loc[[person_id]], self.module.rng
-                )
+                if self.sim.date.year < 2020:
+                    x = self.module.lm["lm_circ_child_before_2020"].predict(
+                        df.loc[[person_id]], self.module.rng
+                    )
+                else:
+                    x = self.module.lm["lm_circ_child_from_2020"].predict(
+                        df.loc[[person_id]], self.module.rng
+                    )
                 if x:
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         HSI_Hiv_Circ(person_id=person_id, module=self.module),
