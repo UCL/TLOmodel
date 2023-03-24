@@ -524,18 +524,12 @@ class Hiv(Module):
         # Linear model for circumcision for male and aging <15 yrs who spontaneously presents for VMMC
         # This is to increase the VMMC cases/visits for <15 yrs males, which should account for about
         # 40% of total VMMC cases according to UNAIDS & WHO/DHIS2 2015-2019 data.
-        self.lm["lm_circ_child_before_2020"] = LinearModel(
+        # From 2020 and on, <15 yrs vmmc cases should decline a lot according to DHIS2 2020-2022 data and
+        # PEPFAR 2020 Country Operational Plan.
+        self.lm["lm_circ_child"] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             # the probability that a male aging <15 yrs to be circumcised
-            p["prob_circ_for_child_before_2020"],
-            Predictor("sex").when("M", 1.0).otherwise(0.0),
-            Predictor("age_years").when("<15", 1.0).otherwise(0.0),
-        )
-        # The one for 2020 and on
-        self.lm["lm_circ_child_from_2020"] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            # the probability that a male aging <15 yrs to be circumcised
-            p["prob_circ_for_child_from_2020"],
+            p["prob_circ_for_child_before_2020"] if self.sim.date.year < 2020 else p["prob_circ_for_child_from_2020"],
             Predictor("sex").when("M", 1.0).otherwise(0.0),
             Predictor("age_years").when("<15", 1.0).otherwise(0.0),
         )
@@ -1703,14 +1697,9 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                                       & (~df.li_is_circ)].index
             # schedule the HSI based on the probability
             for person_id in target_child_idx:
-                if self.sim.date.year < 2020:
-                    x = self.module.lm["lm_circ_child_before_2020"].predict(
-                        df.loc[[person_id]], self.module.rng
-                    )
-                else:
-                    x = self.module.lm["lm_circ_child_from_2020"].predict(
-                        df.loc[[person_id]], self.module.rng
-                    )
+                x = self.module.lm["lm_circ_child"].predict(
+                    df.loc[[person_id]], self.module.rng
+                )
                 if x:
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         HSI_Hiv_Circ(person_id=person_id, module=self.module),
