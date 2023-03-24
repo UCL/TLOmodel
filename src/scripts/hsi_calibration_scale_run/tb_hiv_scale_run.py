@@ -39,6 +39,7 @@ class LongRun(BaseScenario):
                 'tlo.methods.healthsystem': logging.INFO,
                 'tlo.methods.healthsystem.summary': logging.INFO,
                 "tlo.methods.contraception": logging.INFO,
+                "tlo.methods.hiv": logging.INFO,
             }
         }
 
