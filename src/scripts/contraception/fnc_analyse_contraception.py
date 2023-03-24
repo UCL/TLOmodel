@@ -695,29 +695,16 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
                 # numbers of women using them (there is only one item for condoms), these are calculated from rescaled
                 # numbers of women, hence no need to rescale the costs
                 costs = 0
-                if i[1] == "male_condom":
+                # calculate costs from the logs and rescale to the pop. size of Malawi
+                item_avail_dict = in_df_cons_avail_by_time_and_method.loc[
+                    i, 'Item_Available_summation'
+                ]
+                for time_method_key in list(item_avail_dict.keys()):
                     unit_cost = float(in_df_resource_items_pkgs['Unit_Cost'].loc[
-                                          in_df_resource_items_pkgs['Intervention_Pkg']
-                                          == get_intervention_pkg_name(i[1])])
-                    # costs = unit_cost * nmb of years within the time period (tp_len) * 12 months within a year *
-                    # Expected_Units_Per_Case we assume they get every month in a pharmacy * mean nmb of women using
-                    costs = unit_cost * \
-                        int(in_df_mean_use['tp_len'].loc[in_df_mean_use.index == i[0]]) * 12 * \
-                        float(in_df_resource_items_pkgs['Expected_Units_Per_Case'].loc[
-                                  in_df_resource_items_pkgs['Intervention_Pkg'] == get_intervention_pkg_name(i[1])
-                              ]) * float(in_df_mean_use[i[1]].loc[in_df_mean_use.index == i[0]])
-
-                # otherwise calculate from the logs and rescale to the pop. size of Malawi
-                else:
-                    item_avail_dict = in_df_cons_avail_by_time_and_method.loc[
-                        i, 'Item_Available_summation'
-                    ]
-                    for time_method_key in list(item_avail_dict.keys()):
-                        unit_cost = float(in_df_resource_items_pkgs['Unit_Cost'].loc[
-                                (in_df_resource_items_pkgs['Intervention_Pkg'] == get_intervention_pkg_name(i[1]))
-                                & (in_df_resource_items_pkgs['Item_Code'] == time_method_key)])
-                        costs = costs + (unit_cost * item_avail_dict[time_method_key])
-                    costs = costs * scaling_factor
+                            (in_df_resource_items_pkgs['Intervention_Pkg'] == get_intervention_pkg_name(i[1]))
+                            & (in_df_resource_items_pkgs['Item_Code'] == time_method_key)])
+                    costs = costs + (unit_cost * item_avail_dict[time_method_key])
+                costs = costs * scaling_factor
                 l_costs.append(costs)
             return l_costs
 
