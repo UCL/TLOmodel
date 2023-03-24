@@ -335,7 +335,6 @@ class Hiv(Module):
             "which is different from before 2020 as children vmmc policy/fund/cases has changed, "
             "according to PEPFAR 2020 Country Operational Plan and DHIS2 data",
         ),
-
         "probability_of_being_retained_on_prep_every_3_months": Parameter(
             Types.REAL,
             "Probability that someone who has initiated on prep will attend an appointment and be on prep "
