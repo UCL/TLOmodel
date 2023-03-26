@@ -583,23 +583,24 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
             """
         # TODO: soft code this (use resource_items_pkgs_df)
         #  (note: similar thing done in co_test in analyses combined branch)
-            if in_d == dict({1: 8}):
+        # TODO: remove zeros from logging
+            if in_d == dict({1: 3.75, 2019: 1}):
                 return 'pill'
-            if in_d == dict({2: 120}):
+            if in_d == dict({2: 30}):
                 return 'male_condom'
-            if in_d == dict({25: 120}):
-                return 'other_modern'
-            if in_d == dict({7: 1}):
-                return 'IUD'
-            # TODO: remove zeros from logging
-            if in_d == dict({3: 1, 5: 1, 6: 0}):
+            if in_d == dict({3: 1, 1933: 1, 98: 1}):
                 return 'injections'
-            if in_d == dict({8: 2, 5: 2, 9: 2, 10: 0.1, 247: 2, 12: 0.5}):
+            if in_d == dict({1933: 1, 7: 1}):
+                return 'IUD'
+            if in_d == dict({1933: 3, 8: 1, 5: 1, 9: 1, 10: 1, 11: 1, 12: 1}):
                 return 'implant'
             if in_d == dict(
-                {14: 1, 15: 1, 16: 1, 17: 0.02, 9: 3, 101: 0.0006, 247: 1, 21: 1, 23: 8, 5: 2}
+                {8: 1, 2019: 1, 307: 0.5, 15: 1, 1960: 2, 75: 10, 2676: 1, 2677: 1, 21: 0.25, 112: 3, 23: 2, 5: 2,
+                 49: 0.2}
             ):
                 return 'female_sterilization'
+            if in_d == dict({25: 30}):
+                return 'other_modern'
             else:
                 raise ValueError(
                     "There is an unrecognised request: " + str(in_d) + "."
