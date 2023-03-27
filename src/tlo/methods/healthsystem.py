@@ -68,7 +68,6 @@ class HSIEventQueueItem(NamedTuple):
     by the order of the items in the tuple, i.e. first by `priority`, then `topen` and
     so on.
     """
-    # topen and priority inverted, should make sorting of queue faster
     topen: Date
     priority: int
     rand_queue_counter: int
