@@ -1062,7 +1062,7 @@ class HealthSystem(Module):
         """Check the priority of the Treatment_ID based on policy under consideration """
 
         if (hsi_event.TREATMENT_ID == 'HSI_GenericEmergencyFirstApptAtFacilityLevel1'):
-            _priority_ranking = 0
+            return 0
         else:
 
             PR = self.parameters['PriorityRank']
