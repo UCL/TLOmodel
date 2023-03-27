@@ -492,7 +492,7 @@ class HealthSystem(Module):
         :param ignore_priority: If ``True`` do not use the priority information in HSI
             event to schedule
         :param lowest_priority_considered: If priority lower (i.e. priority value greater than) this, do not schedule
-        :param adopt_priority_policy: If 'True' then use priority specified in the PriorityRank ResourceFile
+        :param adopt_priority_policy: If 'True' then use priority specified in the PriorityRank ResourceFile instead of that provided as argument when scheduling via `schedule_hsi_event`.
         :param include_fasttrack_routes: If 'True' then include fast-tracking options for vulnerable categories
             specified in the PriorityRank ResourceFile
         :param capabilities_coefficient: Multiplier for the capabilities of health
