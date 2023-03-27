@@ -1076,7 +1076,7 @@ class HealthSystem(Module):
                 _priority_ranking = entry['Priority'].item()
 
                 # If considering fast-track routes, check whether person qualifies
-                if self.include_fasttrack_routes is True:
+                if self.include_fasttrack_routes:
                     # Check whether fast-tracking routes are available for this treatment. If person qualifies for one
                     # don't bother checking remaining, as they all lead to priority=1.
                     FT_eligible = False
