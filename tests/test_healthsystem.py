@@ -1370,7 +1370,7 @@ def test_policy_and_lowest_priority_enforced(seed, tmpdir):
     PR.at[0, 'Treatment'] = 'HSI_Dummy'
     PR.at[0, 'Priority'] = 0
 
-    # Schedule an 'HSI_Dummy' event with priority different from policy one
+    # Schedule an 'HSI_Dummy' event with priority different to that with which it is scheduled
     sim.modules['HealthSystem'].schedule_hsi_event(
         DummyHSI(module=sim.modules['DummyModule'], person_id=0),
         topen=sim.date + pd.DateOffset(days=sim.modules['DummyModule'].rng.randint(1, 30)),
