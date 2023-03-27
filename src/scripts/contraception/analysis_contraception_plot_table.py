@@ -219,7 +219,7 @@ if do_no_interv_analysis:
         else:
             # save dataframes
             for (to_save, file_name) in \
-                ((use_with_df, "use_witht_df"), (percentage_use_with_df, "percentage_use_with_df"),
+                ((use_with_df, "use_with_df"), (percentage_use_with_df, "percentage_use_with_df"),
                  (costs_with_df, "costs_with_df"), (interv_costs_with_df, "interv_costs_with_df")):
                 save_csv(to_save, file_name, datestamp_with_log)
             # save scaling factor (numpy float64)
