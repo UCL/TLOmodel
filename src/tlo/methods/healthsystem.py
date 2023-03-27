@@ -491,7 +491,7 @@ class HealthSystem(Module):
         let no beds be ever be available; if 'all', then all beds are always available.
         :param ignore_priority: If ``True`` do not use the priority information in HSI
             event to schedule
-        :param lowest_priority_considered: If priority lower (i.e. priority value greater than) this, do not schedule
+        :param lowest_priority_considered: If priority lower (i.e. priority value greater than) this, do not schedule (and instead call `never_ran` at the time of `topen`).
         :param adopt_priority_policy: If 'True' then use priority specified in the PriorityRank ResourceFile instead of that provided as argument when scheduling via `schedule_hsi_event`.
         :param include_fasttrack_routes: If 'True' then include fast-tracking options for vulnerable categories; otherwise ignore indicators for fast-tracking.
             specified in the PriorityRank ResourceFile
