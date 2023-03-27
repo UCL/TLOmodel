@@ -305,7 +305,7 @@ class Malaria(Module):
             # get the monthly incidence probabilities for these individuals
             monthly_prob = curr_inc.loc[district_age_lookup, _col]
             # update the index so it"s the same as the original population dataframe for these individuals
-            monthly_prob = monthly_prob.set_axis(df.index[_where], inplace=False)
+            monthly_prob = monthly_prob.set_axis(df.index[_where], copy=True)
             # select individuals for infection
             random_draw = rng.random_sample(_where.sum()) < monthly_prob
             selected = _where & random_draw
