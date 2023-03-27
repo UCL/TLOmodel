@@ -1240,7 +1240,7 @@ def test_hsi_event_queue_expansion_and_querying(seed, tmpdir):
 
         def apply(self, person_id, squeeze_factor):
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                DummyHSI(module=self.module, person_id=person_id, source='HSI'),
+                DummyHSI(module=self.module, person_id=person_id,),
                 topen=self.sim.date,
                 tclose=None,
                 priority=0)
