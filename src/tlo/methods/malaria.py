@@ -125,9 +125,6 @@ class Malaria(Module):
         "irs_rates_lower": Parameter(
             Types.REAL, "indoor residual spraying low coverage"
         ),
-        "testing_adj": Parameter(
-            Types.REAL, "adjusted testing rates to match rdt/tx levels"
-        ),
         "itn": Parameter(
             Types.REAL, "projected future itn coverage"
         ),
@@ -404,8 +401,6 @@ class Malaria(Module):
 
         sim.schedule_event(MalariaPollingEventDistrict(self), sim.date + DateOffset(months=1))
 
-        sim.schedule_event(MalariaScheduleTesting(self), sim.date + DateOffset(days=1))
-
         if 'CareOfWomenDuringPregnancy' not in self.sim.modules:
             sim.schedule_event(MalariaIPTp(self), sim.date + DateOffset(days=30.5))
 
@@ -660,36 +655,6 @@ class MalariaPollingEventDistrict(RegularEvent, PopulationScopeEventMixin):
         self.module.malaria_poll2(population)
 
 
-class MalariaScheduleTesting(RegularEvent, PopulationScopeEventMixin):
-    """ additional malaria testing happening outside the symptom-driven generic HSI event
-    to increase tx coverage up to reported levels
-    """
-
-    def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))
-
-    def apply(self, population):
-        df = population.props
-        now = self.sim.date
-        p = self.module.parameters
-
-        # select people to go for testing (and subsequent tx)
-        # random sample 0.4 to match clinical case tx coverage
-        # this sample will include asymptomatic infections too to account for
-        # unnecessary treatments  and uninfected people
-        alive = df.is_alive
-        test = df.index[alive][self.module.rng.random_sample(size=alive.sum()) < p["testing_adj"]]
-
-        for person_index in test:
-            logger.debug(key='message',
-                         data=f'MalariaScheduleTesting: scheduling HSI_Malaria_rdt for person {person_index}')
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                HSI_Malaria_rdt(self.module, person_id=person_index),
-                priority=1,
-                topen=now, tclose=None
-            )
-
-
 class MalariaIPTp(RegularEvent, PopulationScopeEventMixin):
     """ malaria prophylaxis for pregnant women
     """
@@ -766,133 +731,6 @@ class MalariaDeathEvent(Event, IndividualScopeEventMixin):
 # ---------------------------------------------------------------------------------
 # Health System Interaction Events
 # ---------------------------------------------------------------------------------
-
-
-class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
-    """
-    this is a point-of-care malaria rapid diagnostic test, with results within 2 minutes
-    """
-
-    def __init__(self, module, person_id):
-
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, Malaria)
-
-        self.TREATMENT_ID = "Malaria_Test"
-        df = self.sim.population.props
-        person_age_years = df.at[self.target, 'age_years']
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
-            "Under5OPD" if person_age_years < 5 else "Over5OPD": 1}
-        )
-        self.ACCEPTED_FACILITY_LEVEL = '1a'
-
-    def apply(self, person_id, squeeze_factor):
-
-        df = self.sim.population.props
-        params = self.module.parameters
-        hs = self.sim.modules["HealthSystem"]
-
-        # Ignore this event if the person is no longer alive:
-        if not df.at[person_id, 'is_alive']:
-            return hs.get_blank_appt_footprint()
-
-        district = df.at[person_id, "district_num_of_residence"]
-        logger.debug(key='message',
-                     data=f'HSI_Malaria_rdt: rdt test for person {person_id} '
-                          f'in district num {district}')
-
-        # call the DxTest RDT to diagnose malaria
-        dx_result = hs.dx_manager.run_dx_test(
-            dx_tests_to_run='malaria_rdt',
-            hsi_event=self
-        )
-
-        if dx_result:
-
-            # check if currently on treatment
-            if not df.at[person_id, "ma_tx"]:
-
-                # ----------------------------------- SEVERE MALARIA -----------------------------------
-
-                # if severe malaria, treat for complicated malaria
-                if df.at[person_id, "ma_inf_type"] == "severe":
-
-                    # paediatric severe malaria case
-                    if df.at[person_id, "age_years"] < 15:
-
-                        logger.debug(key='message',
-                                     data=f'HSI_Malaria_rdt: scheduling HSI_Malaria_tx_compl_child {person_id}'
-                                          f'on date {self.sim.date}')
-
-                        treat = HSI_Malaria_complicated_treatment_child(
-                            self.sim.modules["Malaria"], person_id=person_id
-                        )
-                        self.sim.modules["HealthSystem"].schedule_hsi_event(
-                            treat, priority=1, topen=self.sim.date, tclose=None
-                        )
-
-                    else:
-                        # adult severe malaria case
-                        logger.debug(key='message',
-                                     data='HSI_Malaria_rdt: scheduling HSI_Malaria_tx_compl_adult for person '
-                                          f'{person_id} on date {self.sim.date}')
-
-                        treat = HSI_Malaria_complicated_treatment_adult(
-                            self.module, person_id=person_id
-                        )
-                        self.sim.modules["HealthSystem"].schedule_hsi_event(
-                            treat, priority=1, topen=self.sim.date, tclose=None
-                        )
-
-                # ----------------------------------- TREATMENT CLINICAL DISEASE -----------------------------------
-
-                # clinical malaria - not severe
-                elif df.at[person_id, "ma_inf_type"] == "clinical":
-
-                    # diagnosis of clinical disease dependent on RDT sensitivity
-                    diagnosed = self.sim.rng.choice(
-                        [True, False],
-                        size=1,
-                        p=[params["sensitivity_rdt"], (1 - params["sensitivity_rdt"])],
-                    )
-
-                    # diagnosis / treatment for children <5
-                    if diagnosed & (df.at[person_id, "age_years"] < 5):
-                        logger.debug(key='message',
-                                     data=f'HSI_Malaria_rdt scheduling HSI_Malaria_tx_0_5 for person {person_id}'
-                                          f'on date {self.sim.date}')
-
-                        treat = HSI_Malaria_non_complicated_treatment_age0_5(self.module, person_id=person_id)
-                        self.sim.modules["HealthSystem"].schedule_hsi_event(
-                            treat, priority=1, topen=self.sim.date, tclose=None
-                        )
-
-                    # diagnosis / treatment for children 5-15
-                    if diagnosed & (df.at[person_id, "age_years"] >= 5) & (df.at[person_id, "age_years"] < 15):
-                        logger.debug(key='message',
-                                     data=f'HSI_Malaria_rdt: scheduling HSI_Malaria_tx_5_15 for person {person_id}'
-                                          f'on date {self.sim.date}')
-
-                        treat = HSI_Malaria_non_complicated_treatment_age5_15(self.module, person_id=person_id)
-                        self.sim.modules["HealthSystem"].schedule_hsi_event(
-                            treat, priority=1, topen=self.sim.date, tclose=None
-                        )
-
-                    # diagnosis / treatment for adults
-                    if diagnosed & (df.at[person_id, "age_years"] >= 15):
-                        logger.debug(key='message',
-                                     data=f'HSI_Malaria_rdt: scheduling HSI_Malaria_tx_adult for person {person_id}'
-                                          f'on date {self.sim.date}')
-
-                        treat = HSI_Malaria_non_complicated_treatment_adult(self.module, person_id=person_id)
-                        self.sim.modules["HealthSystem"].schedule_hsi_event(
-                            treat, priority=1, topen=self.sim.date, tclose=None
-                        )
-
-    def did_not_run(self):
-        logger.debug(key='message',
-                     data='HSI_Malaria_rdt: did not run')
-        pass
 
 
 class HSI_Malaria_non_complicated_treatment_age0_5(HSI_Event, IndividualScopeEventMixin):
