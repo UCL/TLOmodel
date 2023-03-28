@@ -14,24 +14,24 @@ time_start = time.time()
 ########################################################################################################################
 # TODO: estimate the pop_size_simulated from scaling_factor (and if not same for both sims, add them to IDs instead to
 #  suffix) & return last year of sims (the same for that) // separate them as pop_size_simulated & last_year_simulated
-# pop_size_simulated = "2K"
-pop_size_simulated = "250K_till2050"
-branch_name = 'co_final'
+pop_size_simulated = "2K"
+# pop_size_simulated = "250K_till2050"
+branch_name = 'co_2023_02_inclPR807-CostsUpdate'
 # which results to use
 # - Without interv
+datestamp_without_log = '2023-03-25T113153'
+# 2K till 2099, with new days_betw_appts: '2023-03-25T113153' from 2023-03-25T112934Z
 # datestamp_without_log = '2023-01-20T185253'
 # 2K till 2099: '2023-01-20T185253' from 2023-01-20T185037Z
-# datestamp_without_log = '2023-01-20T123330'
-# 200K till 2099: '2023-01-20T123330' from 2023-01-20T123126Z
-datestamp_without_log = '2023-02-02T194158'
+# datestamp_without_log = '2023-02-02T194158'
 # 250K till 2050; enhanced_lifestyle, healthseekingbehaviour, symptommanager excluded:
 #     '2023-02-02T194158' from 2023-02-02T193933Z
 # # - With interv
+datestamp_with_log = '2023-03-25T115607'
+# 2K till 2099, with new days_betw_appts: '2023-03-25T115607' from 2023-03-25T115340Z
 # datestamp_with_log = '2023-01-20T185048'
 # 2K till 2050: '2023-01-20T185048' from 2023-01-20T184840Z
-# datestamp_with_log = '2023-01-20T184725'
-# 200K till 2050: '2023-01-20T184725' from 2023-01-20T184505Z
-datestamp_with_log = '2023-02-02T194458'
+# datestamp_with_log = '2023-02-02T194458'
 # 250K till 2050; enhanced_lifestyle, healthseekingbehaviour, symptommanager excluded:
 #     '2023-02-02T194458' from 2023-02-02T194247Z
 logFile_without = 'run_analysis_contraception_no_diseases__' + datestamp_without_log + '.log'
@@ -451,9 +451,9 @@ if table_use_costs_bool:
                                    index=pd.MultiIndex.from_product([
                                        in_df_use_without.index,
                                        ['Without interventions', 'With Pop and PPFP interventions'],
-                                       [str(use_output).capitalize() + ' % of women using (' +
-                                        rounding_name(rounding_use_to) + ' women)',
-                                        'Costs (' + rounding_name(rounding_costs_to) + ' MWK ~ '
+                                       [str(use_output).capitalize() + ' % of\n women using\n (' +
+                                        rounding_name(rounding_use_to) + ' users)',
+                                        'Costs\n (' + rounding_name(rounding_costs_to) + ' MWK ~\n '
                                         + rounding_name(rounding_costs_to / 1000) + 'USD)']
                                    ]))
         return df_combined.loc[:, :].transpose()
@@ -465,11 +465,11 @@ if table_use_costs_bool:
 
     # Change the names of totals
     use_costs_table_df = use_costs_table_df.rename(
-        index={'co_modern_total': 'modern contraceptives TOTAL',
+        index={'co_modern_total': 'modern contraceptives\n TOTAL',
                'pop_interv': 'Pop intervention',
                'ppfp_interv': 'PPFP intervention',
                'pop_ppfp_interv': 'Pop & PPFP intervention',
-               'co_modern_all_interv_total': 'modern contraceptives & interventions TOTAL'
+               'co_modern_all_interv_total': 'modern contraceptives\n & interventions TOTAL'
                }
     )
     # Remove the underscores from the names of contraception methods
