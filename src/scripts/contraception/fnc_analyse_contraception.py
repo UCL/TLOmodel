@@ -96,7 +96,21 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
     df_scale = log_df['tlo.methods.population']['scaling_factor'].set_index('date').copy()
     scaling_factor = df_scale.loc['2010-01-01', 'scaling_factor']
 
-    # %% Plot any? Contraception Use (By Method) and/or Pregnancies Over Time?
+    # define line styles
+    if not in_calc_intervention_costs_bool:  # used as approximation of sim withou interv
+        # => TODO: fix for an option of when we analyse sim with intervention without this calculation
+        line_style = '-'
+    else:
+        line_style = '--'
+    ls_start_interv = ':'
+
+    def rgb_perc(nmb_r, nmb_g, nmb_b):
+        return nmb_r/255, nmb_g/255, nmb_b/255
+        """
+        Converts 0-255 RGB colors to 0-1 RGB.
+        """
+
+    # %% Plot Contraception Use (By Method) Over Time?
     if in_plot_use_time_bool or in_plot_use_time_method_bool:
 
         # Load Model Results
@@ -123,10 +137,10 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
 
             # Plot total values
             fig, ax = plt.subplots()
-            ax.plot(np.asarray(plot_months), women1549_total * scaling_factor)
-            ax.plot(np.asarray(plot_months), women_not_using * scaling_factor)
-            ax.plot(np.asarray(plot_months), women_using * scaling_factor, color=(51/255, 160/255, 44/255))
-            plt.axvline(x=Date(2023, 1, 1), ls='--', color='gray', label='interventions start')
+            ax.plot(np.asarray(plot_months), women1549_total * scaling_factor, ls=line_style)
+            ax.plot(np.asarray(plot_months), women_not_using * scaling_factor, ls=line_style)
+            ax.plot(np.asarray(plot_months), women_using * scaling_factor, color=(rgb_perc(51, 160, 44)), ls=line_style)
+            plt.axvline(x=Date(2023, 1, 1), ls=ls_start_interv, color='gray', label='interventions start')
             if in_set_ylims_bool:
                 ax.set_ylim([0, in_ylims_l[0]])
             plt.title("Contraception Use")
@@ -144,8 +158,8 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
             # women_using_prop_gt_half = women_using_prop[women_using_prop.gt(0.5)].index[0]
             # print("Since when (incl) are more than 50% women using")
             # print(women_using_prop_gt_half)
-            ax.plot(np.asarray(plot_months), women_using / women1549_total, color=(51/255, 160/255, 44/255))
-            plt.axvline(x=Date(2023, 1, 1), ls='--', color='gray', label='interventions start')
+            ax.plot(np.asarray(plot_months), women_using / women1549_total, ls=line_style)
+            plt.axvline(x=Date(2023, 1, 1), ls=ls_start_interv, color='gray', label='interventions start')
             if in_set_ylims_bool:
                 ax.set_ylim([0, in_ylims_l[1]])
             plt.title("Proportion Females 15-49 Using Contraceptive Over Time")
@@ -172,31 +186,41 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
 
             # TODO: add comments with names of the colours
             # define colours for all contraception methods
-            colours_all_meths = [(166 / 255, 206 / 255, 227 / 255),
-                                 (227 / 255, 26 / 255, 28 / 255),
-                                 (51 / 255, 160 / 255, 44 / 255),
-                                 (253 / 255, 191 / 255, 111 / 255),
-                                 (31 / 255, 120 / 255, 180 / 255),
-                                 (255 / 255, 127 / 255, 0 / 255),
-                                 (178 / 255, 223 / 255, 138 / 255),
-                                 (251 / 255, 154 / 255, 153 / 255),
-                                 (202 / 255, 178 / 255, 214 / 255),
-                                 (106 / 255, 61 / 255, 154 / 255)]
+            colours_all_meths = [rgb_perc(166, 206, 227),
+                                 rgb_perc(227, 26, 28),
+                                 rgb_perc(51, 160, 44),
+                                 rgb_perc(253, 191, 111),
+                                 rgb_perc(31, 120, 180),
+                                 rgb_perc(255, 127, 0),
+                                 rgb_perc(178, 223, 138),
+                                 rgb_perc(251, 154, 153),
+                                 rgb_perc(202, 178, 214),
+                                 rgb_perc(106, 61, 154)]
             # TODO: Find better way to use own colour palette.
 
             # Plot absolut values
             fig, ax = plt.subplots()
-            ax.plot(np.asarray(plot_months), Model_pill * scaling_factor, color=colours_all_meths[0])
-            ax.plot(np.asarray(plot_months), Model_IUD * scaling_factor, color=colours_all_meths[1])
-            ax.plot(np.asarray(plot_months), Model_injections * scaling_factor, color=colours_all_meths[2])
-            ax.plot(np.asarray(plot_months), Model_implant * scaling_factor, color=colours_all_meths[3])
-            ax.plot(np.asarray(plot_months), Model_male_condom * scaling_factor, color=colours_all_meths[4])
-            ax.plot(np.asarray(plot_months), Model_female_sterilization * scaling_factor, color=colours_all_meths[5])
-            ax.plot(np.asarray(plot_months), Model_other_modern * scaling_factor, color=colours_all_meths[6])
-            ax.plot(np.asarray(plot_months), Model_periodic_abstinence * scaling_factor, color=colours_all_meths[7])
-            ax.plot(np.asarray(plot_months), Model_withdrawal * scaling_factor, color=colours_all_meths[8])
-            ax.plot(np.asarray(plot_months), Model_other_traditional * scaling_factor, color=colours_all_meths[9])
-            plt.axvline(x=Date(2023, 1, 1), ls='--', color='gray', label='interventions start')
+            ax.plot(np.asarray(plot_months), Model_pill * scaling_factor, color=colours_all_meths[0],
+                    ls=line_style)
+            ax.plot(np.asarray(plot_months), Model_IUD * scaling_factor, color=colours_all_meths[1],
+                    ls=line_style)
+            ax.plot(np.asarray(plot_months), Model_injections * scaling_factor, color=colours_all_meths[2],
+                    ls=line_style)
+            ax.plot(np.asarray(plot_months), Model_implant * scaling_factor, color=colours_all_meths[3],
+                    ls=line_style)
+            ax.plot(np.asarray(plot_months), Model_male_condom * scaling_factor, color=colours_all_meths[4],
+                    ls=line_style)
+            ax.plot(np.asarray(plot_months), Model_female_sterilization * scaling_factor, color=colours_all_meths[5],
+                    ls=line_style)
+            ax.plot(np.asarray(plot_months), Model_other_modern * scaling_factor, color=colours_all_meths[6],
+                    ls=line_style)
+            ax.plot(np.asarray(plot_months), Model_periodic_abstinence * scaling_factor, color=colours_all_meths[7],
+                    ls=line_style)
+            ax.plot(np.asarray(plot_months), Model_withdrawal * scaling_factor, color=colours_all_meths[8],
+                    ls=line_style)
+            ax.plot(np.asarray(plot_months), Model_other_traditional * scaling_factor, color=colours_all_meths[9],
+                    ls=line_style)
+            plt.axvline(x=Date(2023, 1, 1), ls=ls_start_interv, color='gray', label='interventions start')
             if in_set_ylims_bool:
                 ax.set_ylim([0, in_ylims_l[2]])
             contraceptives_order_all_meths = ['pill', 'IUD', 'injections', 'implant', 'male_condom',
@@ -234,6 +258,12 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
             elif in_log_file == 'run_analysis_contraception_no_diseases__2023-01-20T185048.log':
                 # with interv, 2K, till 2050
                 results_folder_name = 'run_analysis_contraception_no_diseases-2023-01-20T184840Z'
+            elif in_log_file == 'run_analysis_contraception_no_diseases__2023-03-25T113153.log':
+                # without interv, 2K, till 2099, new days + costs updated
+                results_folder_name = 'run_analysis_contraception_no_diseases-2023-03-25T112934Z'
+            elif in_log_file == 'run_analysis_contraception_no_diseases__2023-03-25T115607.log':
+                # with interv, 2K, till 2099, new days + costs updated
+                results_folder_name = 'run_analysis_contraception_no_diseases-2023-03-25T115340Z'
             else:
                 raise ValueError(
                     "Unknown results_folder_name for the log file " + str(in_log_file) +
@@ -259,7 +289,7 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
             contraceptives_order_notusing_all_meths = ["not_using"]
             contraceptives_order_notusing_all_meths.extend(contraceptives_order_all_meths)
             # define a colour for not using
-            colours_notusing_all_meths = [(255/255, 255/255, 153/255)]  # pale canary yellow green ~ ie light yellow
+            colours_notusing_all_meths = [rgb_perc(255, 255, 153)]  # pale canary yellow green ~ ie light yellow
             colours_notusing_all_meths.extend(colours_all_meths)
 
             # keep only data up to 2050
@@ -271,7 +301,7 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
             fig, ax = plt.subplots()
             # colours defined in the same order as methods, hence need to be reversed too
             mean_usage.plot.area(stacked=True, ax=ax, legend=False, color=list(reversed(colours_notusing_all_meths)))
-            plt.axvline(x=2023, ls='--', color='white')
+            plt.axvline(x=2023, ls=ls_start_interv, color='white')
             plt.title('Proportion Females 15-49 Using Contraception Methods', x=0.7)
             plt.xlabel('Year')
             plt.ylabel('Proportion')
@@ -305,8 +335,8 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
 
         # Plot total pregnancies per Year
         fig, ax = plt.subplots()
-        ax.plot(np.asarray(plot_years), pregnancy_by_years * scaling_factor)
-        plt.axvline(x=2023, ls='--', color='gray', label='interventions start')
+        ax.plot(np.asarray(plot_years), pregnancy_by_years * scaling_factor, ls=line_style)
+        plt.axvline(x=2023, ls=ls_start_interv, color='gray', label='interventions start')
         if in_set_ylims_bool:
             ax.set_ylim([0, in_ylims_l[3]])
         plt.title("Pregnancies per Year")
@@ -325,8 +355,8 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
 
         # Plot mean proportion of pregnancies in 15-49 women pop per Years
         fig, ax = plt.subplots()
-        ax.plot(np.asarray(plot_years), mean_preg_props_by_year)
-        plt.axvline(x=2023, ls='--', color='gray', label='interventions start')
+        ax.plot(np.asarray(plot_years), mean_preg_props_by_year, ls=line_style)
+        plt.axvline(x=2023, ls=ls_start_interv, color='gray', label='interventions start')
         if in_set_ylims_bool:
             ax.set_ylim([0, in_ylims_l[4]])
         plt.title("Mean Proportion of Pregnancies in Females 15-49 per Year")
