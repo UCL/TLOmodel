@@ -3,14 +3,40 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Where will output fig go - by default, wherever this script is run
-outputpath = Path("./outputs")  # folder for convenience of storing outputs
-# Width of the bars
-width = 0.3
-
 
 def plot_costs(in_id, in_suffix, in_x_labels, in_cons_costs_without, in_cons_costs_with,
                in_pop_interv_costs_with, in_ppfp_interv_costs_with, in_reduce_magnitude=1e3):
+    def rgb_perc(nmb_r, nmb_g, nmb_b):
+        return nmb_r / 255, nmb_g / 255, nmb_b / 255
+        """
+        Converts 0-255 RGB colors to 0-1 RGB.
+        """
+
+    # Where will output fig go - by default, wherever this script is run
+    outputpath = Path("./outputs")  # folder for convenience of storing outputs
+    # output file name
+    output_filename = str('Consumables and Interventions Costs ' + in_id[0] + "_" + in_id[1] + in_suffix + '.png')
+
+    # width of the bars
+    width = 0.3
+
+    # define colors
+    colors = {
+        'cons': rgb_perc(244, 165, 130),  # consumables
+        'pop': rgb_perc(146, 197, 222),  # pop intervention
+        'ppfp': rgb_perc(5, 113, 176)  # ppfp intervention
+    }
+
+    # define labels
+    labels = {
+        'cons': 'consumables Without/With interventions',  # consumables
+        'pop': 'Pop intervention implementation',  # pop intervention
+        'ppfp': 'PPFP intervention implementation',  # ppfp intervention
+        'y_axis': 'MWK (1e9) ~ USD (1e6)'  # y-axis
+    }
+
+    # define title
+    fig_title = 'Consumables & Interventions Costs'
 
     # Prepare data for the plots
     def reduce_magnitude(in_list, in_in_reduce_magnitude):
@@ -24,35 +50,43 @@ def plot_costs(in_id, in_suffix, in_x_labels, in_cons_costs_without, in_cons_cos
     ppfp_bottom = [x + y for x, y in zip(cons_costs_with, pop_interv_costs_with)]
 
     # %%% PLot all time periods + total
-    x_labels = in_x_labels.copy()
-    x_labels[-1] = "TOTAL (" + x_labels[-1] + ")"
-    x = np.arange(len(x_labels))  # the x_label locations
     fig, ax = plt.subplots()
-    # bar_without
-    ax.bar(x - width/2, cons_costs_without, width, label='consumables without intervention', color=(0.918, .255, 0.47))
-    if int(in_x_labels[0].split("-")[0]) < 2023:
-        with_label = 'consumables with intervention since 2023'
-    else:
-        with_label = 'consumables with intervention'
-    # bar_with
-    ax.bar(x + width/2, cons_costs_with, width, label=with_label, color=(0.698, 0.875, 0.541))
-    # bar_with_pop_interv
-    ax.bar(x + width/2, pop_interv_costs_with, width, bottom=cons_costs_with, label='Pop intervention',
-           color=(0.122, .471, 0.706))
-    # bar_with_ppfp_interv
-    ax.bar(x + width/2, ppfp_interv_costs_with, width, bottom=ppfp_bottom, label='PPFP intervention',
-           color=(0.651, .808, 0.89))
-
-    # title, custom x-axis tick labels, set y-axis label and add legend
-    ax.set_title('Consumables & Interventions Costs', fontweight="bold")
-    #
-    ax.set_xticks(x)
-    ax.set_xticklabels(x_labels, fontweight="bold")
-    #
-    ax.set_ylabel('MWK (1e9) ~ USD (1e6)', fontweight="bold")
-    #
-    ax.legend()
+    # custom x-axis tick labels
+    x_labels_tp = in_x_labels.copy()
+    x_labels_tp[-1] = "TOTAL (" + x_labels_tp[-1] + ")"
+    # x labels position: i = 1st bar, i+w/2 = year, i+w = 2nd bar
+    x_i = np.arange(len(x_labels_tp))  # the x_label locations
+    x = list()
+    for i in x_i:
+        x.extend([i - 0.7 * width, i, i + width * 0.65])
+    plt.xticks(x)
+    x_labels_all = list()
+    for x_label_y in x_labels_tp:
+        x_labels_all.extend(["Without"])
+        x_labels_all.extend([str("\n" + str(x_label_y))])
+        x_labels_all.extend(["With"])
+    ax.set_xticklabels(x_labels_all, ha='center')
+    # hide tick lines for x-axis
+    ax.tick_params(axis='x', which='both', length=0)
+    # title
+    ax.set_title(fig_title, fontweight="bold")
+    # set y-axis label
+    ax.set_ylabel(labels['y_axis'], fontweight="bold")
     # TODO: more values on y-axis
+
+    # bar_without
+    ax.bar(x_i - width * 0.6, cons_costs_without, width,
+           label=labels['cons'], color=colors['cons'])
+    # bar_with
+    ax.bar(x_i + width * 0.6, cons_costs_with, width, color=colors['cons'])
+    # bar_with_pop_interv
+    ax.bar(x_i + width * 0.6, pop_interv_costs_with, width, bottom=cons_costs_with,
+           label=labels['pop'], color=colors['pop'])
+    # bar_with_ppfp_interv
+    ax.bar(x_i + width * 0.6, ppfp_interv_costs_with, width, bottom=ppfp_bottom,
+           label=labels['ppfp'], color=colors['ppfp'])
+    # add legend
+    ax.legend()
 
     # the below needs at least 3.4 version of matplotlib package (we have 3.3.4)
     # ax.bar_label(bar_without, padding=3)
@@ -62,41 +96,40 @@ def plot_costs(in_id, in_suffix, in_x_labels, in_cons_costs_without, in_cons_cos
 
     plt.grid(axis='y')
 
-    plt.savefig(outputpath / ('Consumables and Interventions Costs ' + in_id[0] + "_" + in_id[1] +
-                              in_suffix + '.png'), format='png')
+    plt.savefig(outputpath / output_filename, format='png')
 
     # %%% PLot total only
-    x2_labels = ["2023-2050"]  # TODO: use in_x_labels[-1]
-    x2 = np.arange(len(x2_labels))  # the x_label locations
-    fig, ax = plt.subplots()
+    fig2, ax2 = plt.subplots()
+    # custom x-axis tick labels
+    x2_i = np.array(0)  # the x_label locations
+    x2 = [0 - width * 0.2, 0, 0 + width * 0.2]
+    plt.xticks(x2)
+    ax2.set_xticklabels(['Without', str('\n' + in_x_labels[-1]), 'With'], ha='center')
+    # hide tick lines for x-axis
+    ax2.tick_params(axis='x', which='both', length=0)
+    # title
+    ax2.set_title(str('TOTAL\n' + fig_title), fontweight="bold", x=0.45)
+    # y-axis label
+    ax2.set_ylabel(labels['y_axis'], fontweight="bold")
     # bar_without
-    ax.bar(x2 - width/6, cons_costs_without[-1], width/3, label='consumables without intervention',
-           color=(0.918, .255, 0.47))
+    ax2.bar(x2_i - width * 0.2, cons_costs_without[-1], width/3,
+            label=labels['cons'], color=colors['cons'])
     # bar_with
-    ax.bar(x2 + width/6, cons_costs_with[-1], width/3, label='consumables with intervention',
-           color=(0.698, 0.875, 0.541))
+    ax2.bar(x2_i + width * 0.2, cons_costs_with[-1], width/3,
+            color=colors['cons'])
     # bar_with_pop_interv
-    ax.bar(x2 + width/6, pop_interv_costs_with[-1], width/3, bottom=cons_costs_with[-1], label='Pop intervention',
-           color=(0.122, .471, 0.706))
+    ax2.bar(x2_i + width * 0.2, pop_interv_costs_with[-1], width/3, bottom=cons_costs_with[-1],
+            label=labels['pop'], color=colors['pop'])
     # bar_with_ppfp_interv
-    ax.bar(x2 + width/6, ppfp_interv_costs_with[-1], width/3, bottom=ppfp_bottom[-1], label='PPFP intervention',
-           color=(0.651, .808, 0.89))
+    ax2.bar(x2_i + width * 0.2, ppfp_interv_costs_with[-1], width/3, bottom=ppfp_bottom[-1],
+            label=labels['ppfp'], color=colors['ppfp'])
+    # add legend
+    ax2.legend(loc='upper left', bbox_to_anchor=(1, 0.9999))
 
-    # title, custom x-axis tick labels, set y-axis label and add legend
-    ax.set_title('TOTAL Consumables & Interventions Costs', fontweight="bold")
-    #
-    ax.set_xticks(x2)
-    ax.set_xticklabels(x2_labels, fontweight="bold")
-    #
-    ax.set_ylabel('MWK (1e9) ~ USD (1e6)', fontweight="bold")
-    #
-    ax.legend(loc='upper left', bbox_to_anchor=(1, 0.9999))
-
-    fig.tight_layout()
+    fig2.tight_layout()
 
     plt.grid(axis='y')
 
-    plt.savefig(outputpath / ('Total Consumables and Interventions Costs ' + in_id[0] + "_" + in_id[1] +
-                              in_suffix + '.png'), format='png')
+    plt.savefig(outputpath / (str('Total ' + output_filename)), format='png')
 
     print("Fig: Consumables and Interventions Costs Over time saved.")
