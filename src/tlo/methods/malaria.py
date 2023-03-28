@@ -238,6 +238,10 @@ class Malaria(Module):
 
         # ----------------------------------- DECLARE THE SYMPTOMS -------------------------------------------
         self.sim.modules['SymptomManager'].register_symptom(
+            Symptom(name="malaria_fever",
+                    odds_ratio_health_seeking_in_adults=3.0,  # arbitrary high odds ratio to check the tx coverage
+                    odds_ratio_health_seeking_in_children=6.0,  # and malaria PfPR 2-10 yrs
+                    ),
             Symptom("jaundice"),  # nb. will cause care seeking as much as a typical symptom
             Symptom("severe_anaemia"),  # nb. will cause care seeking as much as a typical symptom
             Symptom.emergency("acidosis"),
