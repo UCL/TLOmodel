@@ -89,12 +89,12 @@ def test_sims(sim):
         & (df.ma_inf_type == "clinical")
         & (sim.date >= df.ma_date_symptoms)
     ]:
-        assert "fever" in sim.modules["SymptomManager"].has_what(person)
-        assert "Malaria" in sim.modules["SymptomManager"].causes_of(person, "fever")
+        assert "malaria_fever" in sim.modules["SymptomManager"].has_what(person)
+        assert "Malaria" in sim.modules["SymptomManager"].causes_of(person, "malaria_fever")
 
     # if symptoms due to malaria, check malaria properties correctly set
     for person in df.index[df.is_alive]:
-        if "Malaria" in sim.modules["SymptomManager"].causes_of(person, "fever"):
+        if "Malaria" in sim.modules["SymptomManager"].causes_of(person, "malaria_fever"):
             assert not pd.isnull(df.at[person, "ma_date_infected"])
             assert not df.at[person, "ma_inf_type"] == "none"
 
@@ -239,7 +239,7 @@ def test_dx_algorithm_for_malaria_outcomes(sim):
     df.at[0, 'ma_date_symptoms'] = sim.date
     df.at[0, 'ma_inf_type'] = 'clinical'
 
-    symptom_list = {"fever", "headache", "vomiting", "stomachache"}
+    symptom_list = {"malaria_fever", "headache", "vomiting", "stomachache"}
 
     for symptom in symptom_list:
         # no symptom resolution
@@ -251,7 +251,7 @@ def test_dx_algorithm_for_malaria_outcomes(sim):
         )
 
     person_id = 0
-    assert "fever" in sim.modules["SymptomManager"].has_what(person_id)
+    assert "malaria_fever" in sim.modules["SymptomManager"].has_what(person_id)
 
     assert sim.modules['Malaria'].check_if_fever_is_caused_by_malaria(
         person_id=0,
@@ -272,7 +272,7 @@ def test_dx_algorithm_for_malaria_outcomes(sim):
     df.at[person_id, 'ma_date_symptoms'] = sim.date
     df.at[person_id, 'ma_inf_type'] = 'severe'
 
-    symptom_list = {"fever", "headache", "vomiting", "stomachache"}
+    symptom_list = {"malaria_fever", "headache", "vomiting", "stomachache"}
 
     for symptom in symptom_list:
         # no symptom resolution
@@ -283,7 +283,7 @@ def test_dx_algorithm_for_malaria_outcomes(sim):
             add_or_remove='+'
         )
 
-    assert "fever" in sim.modules["SymptomManager"].has_what(person_id)
+    assert "malaria_fever" in sim.modules["SymptomManager"].has_what(person_id)
 
     assert sim.modules['Malaria'].check_if_fever_is_caused_by_malaria(
         person_id=person_id,
