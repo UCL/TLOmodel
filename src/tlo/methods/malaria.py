@@ -529,7 +529,7 @@ class Malaria(Module):
 
         df.loc[clinical_index, "ma_date_symptoms"] = date_symptom_onset
 
-        symptom_list = {"fever", "headache", "vomiting", "stomachache"}
+        symptom_list = {"malaria_fever", "headache", "vomiting", "stomachache"}
 
         # this also schedules symptom resolution in 5 days
         self.sim.modules["SymptomManager"].change_symptom(
@@ -576,7 +576,7 @@ class Malaria(Module):
         df.loc[severe_index, "ma_date_symptoms"] = date_symptom_onset
 
         # general symptoms - applied to all
-        symptom_list = {"fever", "headache", "vomiting", "stomachache"}
+        symptom_list = {"malaria_fever", "headache", "vomiting", "stomachache"}
 
         self.sim.modules["SymptomManager"].change_symptom(
             person_id=list(severe_index),
