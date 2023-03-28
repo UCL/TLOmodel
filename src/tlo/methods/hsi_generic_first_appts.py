@@ -154,7 +154,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                 sim.modules['Alri'].on_presentation(person_id=person_id, hsi_event=hsi_event)
 
         if "Malaria" in sim.modules:
-            if 'fever' in symptoms:
+            if 'fever' or 'malaria_fever' in symptoms:
                 malaria_test_result = sim.modules['Malaria'].check_if_fever_is_caused_by_malaria(
                     person_id=person_id, hsi_event=hsi_event)
 
@@ -183,7 +183,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
 
     elif age < 15:
         # ----------------------------------- CHILD 5-14 -----------------------------------
-        if 'fever' in symptoms and "Malaria" in sim.modules:
+        if 'fever' or 'malaria_fever' in symptoms and "Malaria" in sim.modules:
             malaria_test_result = sim.modules['Malaria'].check_if_fever_is_caused_by_malaria(
                 person_id=person_id, hsi_event=hsi_event)
 
@@ -293,7 +293,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                 depr.do_when_suspected_depression(person_id=person_id, hsi_event=hsi_event)
 
         if "Malaria" in sim.modules:
-            if 'fever' in symptoms:
+            if 'fever' or 'malaria_fever' in symptoms:
                 malaria_test_result = sim.modules['Malaria'].check_if_fever_is_caused_by_malaria(
                     person_id=person_id, hsi_event=hsi_event)
 
