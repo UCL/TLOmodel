@@ -7,7 +7,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from tlo import Date, Simulation
+from tlo import Date, Simulation, logging
+from tlo.analysis.utils import parse_log_file
 from tlo.lm import LinearModel
 from tlo.methods import (
     care_of_women_during_pregnancy,
@@ -49,11 +50,21 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
-def get_sim(seed, use_simplified_birth=True, cons_availability='all'):
+def get_sim(tmpdir, seed, use_simplified_birth=True, cons_availability='all'):
     """get sim with the checks for configuration of properties running in the HIV module"""
     start_date = Date(2010, 1, 1)
     popsize = 1000
-    sim = Simulation(start_date=start_date, seed=seed)
+
+    log_config = {
+        "filename": "log",
+        "directory": tmpdir,
+        "custom_levels": {
+            "*": logging.INFO,
+            "tlo.methods.hiv": logging.INFO,
+        }
+    }
+
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
     # Register the appropriate modules
     if use_simplified_birth:
@@ -108,16 +119,20 @@ def start_sim_and_clear_event_queues(sim):
 
 
 @pytest.mark.slow
-def test_basic_run_with_default_parameters(seed):
+def test_basic_run_with_default_parameters(tmpdir, seed):
     """Run the HIV module with check and check dtypes consistency"""
     end_date = Date(2015, 12, 31)
 
-    sim = get_sim(seed=seed)
+    sim = get_sim(tmpdir=tmpdir, seed=seed)
     check_dtypes(sim)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
     # confirm configuration of properties at the end of the simulation:
     sim.modules['Hiv'].check_config_of_properties()
+
+    # log = parse_log_file(sim.log_filepath)['tlo.methods.hiv']
+    # assert 'hsi_circ' in log
+    # count up in a single year and check the proportion of less than 15 yrs
 
 
 def test_initialisation(seed):
@@ -700,7 +715,7 @@ def test_child_circ(seed):
 
         return event, circ_status_0, circ_status_1
 
-    # check that if prob = 0.0, there should be no HSI_HIV_Circ scheduled and circ status is not upated
+    # check that if prob = 0.0, there should be no HSI_HIV_Circ scheduled and circ status is not updated
     test_0 = find_event_scheduled(prob=0.0)
     assert len(test_0[0]) == 0
     assert ~test_0[1]
