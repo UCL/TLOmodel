@@ -40,7 +40,6 @@ class Population:
 
         # Create empty property arrays
         self.props = self._create_props(initial_size)
-        self.props.index.name = 'person'
 
         if append_size is None:
             # approximation based on runs to increase capacity of dataframe ~twice a year
@@ -63,7 +62,7 @@ class Population:
 
         :param size: the number of rows to create
         """
-        props = pd.DataFrame()
+        props = pd.DataFrame(index=pd.RangeIndex(stop=size, name="person"))
         for module in self.sim.modules.values():
             for prop_name, prop in module.PROPERTIES.items():
                 props[prop_name] = prop.create_series(prop_name, size)
