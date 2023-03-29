@@ -130,9 +130,15 @@ def test_basic_run_with_default_parameters(tmpdir, seed):
     # confirm configuration of properties at the end of the simulation:
     sim.modules['Hiv'].check_config_of_properties()
 
-    # log = parse_log_file(sim.log_filepath)['tlo.methods.hiv']
-    # assert 'hsi_circ' in log
-    # count up in a single year and check the proportion of less than 15 yrs
+    log = parse_log_file(sim.log_filepath)['tlo.methods.hiv']
+    assert 'hsi_circ' in log
+    # # count up in a single year and check the proportion of less than 15 yrs
+    # df = log['hsi_circ']
+    # df['year'] = df.date.dt.year
+    # circ_per_year = df.groupby('year')['15+yrs'].count()
+    # circ_per_year_adult = df.groupby('year')['15+yrs'].sum()
+    # circ_per_year_child = circ_per_year - circ_per_year_adult
+    # prop_child_circ = circ_per_year_child / circ_per_year
 
 
 def test_initialisation(seed):
