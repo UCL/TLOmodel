@@ -157,7 +157,7 @@ def test_bed_days_basics(tmpdir, seed):
     for bed_type in [f"bed_tracker_{bed}" for bed in hs.bed_days.bed_types]:
         # Check dates are as expected:
         dates_in_log = pd.to_datetime(log[bed_type]['date'])
-        date_range = pd.date_range(sim.start_date, sim.end_date, freq='D', closed='left')
+        date_range = pd.date_range(sim.start_date, sim.end_date, freq='D', inclusive='left')
         assert set(date_range) == set(dates_in_log)
 
         # Check columns (for each facility_ID) are as expected:
