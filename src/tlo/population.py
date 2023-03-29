@@ -2,6 +2,7 @@
 import math
 
 import pandas as pd
+import numpy as np
 
 from tlo import logging
 
@@ -51,8 +52,8 @@ class Population:
         logger.info(key="info", data=f"Dataframe capacity append size: {append_size}")
 
         # keep a copy of a new rows to quickly append as population grows
-        self.new_row = self.props[self.props.index == 0].copy()
-        self.new_rows = [self.new_row] * append_size
+        self.new_row = self.props.loc[[0]].copy()
+        self.new_rows = self.props.loc[[0] * append_size].copy()
 
         # use the person_id of the next person to be added to the dataframe to increase capacity
         self.next_person_id = initial_size
@@ -81,7 +82,7 @@ class Population:
         # the index of the next person
         if self.next_person_id > index_of_last_row:
             # we need to add some rows
-            self.props = self.props.append(self.new_rows, ignore_index=True, sort=False)
+            self.props = pd.concat((self.props, self.new_rows), ignore_index=True, sort=False)
             self.props.index.name = 'person'
             logger.info(key="info", data=f"Increased capacity of population dataframe to {len(self.props)}")
 
