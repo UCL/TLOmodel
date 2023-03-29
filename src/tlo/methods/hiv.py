@@ -3080,27 +3080,11 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         ) if len(df[df.is_alive & df.li_is_sexworker & (df.age_years >= 15)]) else 0
 
         # ------------------------------------ MALE CIRCUMCISION ------------------------------------
-        # NB. Among adult men 15+ yrs
+        # NB. Among adult men
         prop_men_circ = len(
             df[df.is_alive & (df.sex == "M") & (df.age_years >= 15) & df.li_is_circ]
         ) / len(df[df.is_alive & (df.sex == "M") & (df.age_years >= 15)]) if len(
             df[df.is_alive & (df.sex == "M") & (df.age_years >= 15)]) else 0
-        # Among young men 15+ yrs, the probability of circumcision;
-        # should be equal to parameters prob_circ_for_child_before/from_2020
-        prop_child_circ = len(
-            df[df.is_alive & (df.sex == "M") & (df.age_years < 15) & df.li_is_circ]
-        ) / len(df[df.is_alive & (df.sex == "M") & (df.age_years < 15)]) if len(
-            df[df.is_alive & (df.sex == "M") & (df.age_years < 15)]) else 0
-        # Fraction of men (+15 yrs) circ of all male circ
-        frac_men_circ_of_male_circ = len(
-            df[df.is_alive & (df.sex == "M") & (df.age_years >= 15) & df.li_is_circ]
-        ) / len(df[df.is_alive & (df.sex == "M") & df.li_is_circ]) if len(
-            df[df.is_alive & (df.sex == "M") & df.li_is_circ]) else 0
-        # Fraction of male circ over all male
-        frac_male_circ_of_male = len(
-            df[df.is_alive & (df.sex == "M") & df.li_is_circ]
-        ) / len(df[df.is_alive & (df.sex == "M")]) if len(
-            df[df.is_alive & (df.sex == "M")]) else 0
 
         logger.info(
             key="hiv_program_coverage",
@@ -3125,9 +3109,6 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 "prop_adults_exposed_to_behav_intv": prop_adults_exposed_to_behav_intv,
                 "prop_fsw_on_prep": prop_fsw_on_prep,
                 "prop_men_circ": prop_men_circ,
-                "prop_child_circ": prop_child_circ,
-                "frac_men_circ_of_male_circ": frac_men_circ_of_male_circ,
-                "frac_male_circ_of_male": frac_male_circ_of_male,
             },
         )
 
