@@ -15,11 +15,14 @@ from tlo.methods import (
     chronicsyndrome,
     demography,
     enhanced_lifestyle,
+    epi,
     healthseekingbehaviour,
     healthsystem,
+    hiv,
     mockitis,
     simplified_births,
     symptommanager,
+    tb,
 )
 from tlo.methods.consumables import Consumables, create_dummy_data_for_cons_availability
 from tlo.methods.fullmodel import fullmodel
@@ -1308,13 +1311,12 @@ def test_hsi_event_queue_expansion_and_querying(seed, tmpdir):
             assert event_prev.priority <= next_event_tuple.priority, 'Not respecting priority'
             if (event_prev.priority == next_event_tuple.priority):
                 assert event_prev.rand_queue_counter < next_event_tuple.rand_queue_counter, 'Not respecting rand'
-                assert event_prev.rand_queue_counter != next_event_tuple.rand_queue_counter, 'Extremely unlikely'
         event_prev = next_event_tuple
 
 
 def test_policy_and_lowest_priority_enforced(seed, tmpdir):
-    """The correct number of events scheduled for today should be returned when querying the HSI_EVENT_QUEUE,
-    and the ordering of events in the queue should follow the correct logic."""
+    """The priority set by the policy should overwrite the priority the event was scheduled with. If the priority
+     is below the lowest one considered, the event will not be scheduled (call never_ran at tclose)"""
 
     class DummyHSI(HSI_Event, IndividualScopeEventMixin):
         """HSI event that schedules another HSI_Event for the same day"""
@@ -1326,7 +1328,7 @@ def test_policy_and_lowest_priority_enforced(seed, tmpdir):
 
         def apply(self, person_id, squeeze_factor):
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                     DummyHSI(module=self.module, person_id=person_id, source='HSI'),
+                     DummyHSI(module=self.module, person_id=person_id),
                      topen=self.sim.date,
                      tclose=None,
                      priority=0)
@@ -1354,23 +1356,32 @@ def test_policy_and_lowest_priority_enforced(seed, tmpdir):
                  healthsystem.HealthSystem(
                      resourcefilepath=resourcefilepath,
                      disable=False,
+                     include_fasttrack_routes=True,
                      adopt_priority_policy=True,
-                     lowest_priority_considered=2,
+                     lowest_priority_considered=3,
                      cons_availability='all',
                  ),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 epi.Epi(resourcefilepath=resourcefilepath),
+                 hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False),
+                 tb.Tb(resourcefilepath=resourcefilepath),
                  DummyModule(),
                  check_all_dependencies=False,
                  )
     sim.make_initial_population(n=100)
     sim.simulate(end_date=sim.start_date + pd.DateOffset(days=5))
     sim.event_queue.queue = []  # clear the queue
+    sim.modules['HealthSystem'].HSI_EVENT_QUEUE = []  # clear the queue
 
-    # Overwrite name/priority of first PriorityRank element
-    PR = sim.modules['HealthSystem'].parameters['PriorityRank']
-    PR.at[0, 'Treatment'] = 'HSI_Dummy'
-    PR.at[0, 'Priority'] = 0
+    # Overwrite one of the Treatments with HSI_Dummy, and assign it a policy priority
+    dictio = sim.modules['HealthSystem'].PriorityRank_Dict
+    dictio['HSI_Dummy'] = dictio['Alri_Pneumonia_Treatment_Outpatient']
+    del dictio['Alri_Pneumonia_Treatment_Outpatient']
+    dictio['HSI_Dummy']['Priority'] = 0
 
-    # Schedule an 'HSI_Dummy' event with priority different to that with which it is scheduled
+    # Schedule an 'HSI_Dummy' event with priority different from policy one
     sim.modules['HealthSystem'].schedule_hsi_event(
         DummyHSI(module=sim.modules['DummyModule'], person_id=0),
         topen=sim.date + pd.DateOffset(days=sim.modules['DummyModule'].rng.randint(1, 30)),
@@ -1379,17 +1390,49 @@ def test_policy_and_lowest_priority_enforced(seed, tmpdir):
 
     assert len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE) == 1
     event_prev = hp.heappop(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
-    assert event_prev.priority == 0  # Check that the event priority is the policy one
+    assert event_prev.priority == 0  # Check that the event's priority is the policy one
 
-    # Repeat but now assinging priority below threshold through policy, to check that the event is not scheduled
-    PR.at[0, 'Priority'] = 4
+    # Make
+    # i) both policy priority and scheduled priority =2,
+    # ii) HSI_Dummy eligible for fast-tracking for tb_diagnosed individuals exclusively,
+    # iii) person for whom HSI will be scheduled tb-positive (hence fast-tracking eligible)
+    # and check that person is fast-tracked with priority=1
+    dictio['HSI_Dummy']['Priority'] = 2
+    dictio['HSI_Dummy']['FT_if_5orUnder'] = 0
+    dictio['HSI_Dummy']['FT_if_pregnant'] = 0
+    dictio['HSI_Dummy']['FT_if_Hivdiagnosed'] = 0
+    dictio['HSI_Dummy']['FT_if_tbdiagnosed'] = 1
+    sim.population.props.at[0, 'tb_diagnosed'] = True
+
+    # Schedule an 'HSI_Dummy' event with priority different to that with which it is scheduled
+    sim.modules['HealthSystem'].schedule_hsi_event(
+        DummyHSI(module=sim.modules['DummyModule'], person_id=0),
+        topen=sim.date + pd.DateOffset(days=sim.modules['DummyModule'].rng.randint(1, 30)),
+        tclose=None,
+        priority=2)  # Give a priority below fast tracking
+
+    assert len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE) == 1
+    event_prev = hp.heappop(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
+    assert event_prev.priority == 1  # Check that the event priority is the fast tracking one
+
+    # Repeat, but now assinging priority below threshold through policy, to check that the event is not scheduled.
+    # Person still tb positive, so ensure fast tracking is no longer available for this treatment to tb-diagnosed.
+    dictio['HSI_Dummy']['Priority'] = 7
+    dictio['HSI_Dummy']['FT_if_tbdiagnosed'] = 0
+    _tclose = sim.date + pd.DateOffset(days=35)
 
     # Schedule an 'HSI_Dummy' event with priority different from policy one
     sim.modules['HealthSystem'].schedule_hsi_event(
                 DummyHSI(module=sim.modules['DummyModule'], person_id=0),
                 topen=sim.date + pd.DateOffset(days=sim.modules['DummyModule'].rng.randint(1, 30)),
-                tclose=None,
+                tclose=_tclose,
                 priority=1)  # Give a priority different than the one assumed by the policy for this Treatment_ID
 
     # Check that event wasn't scheduled due to priority being below threshold
     assert len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE) == 0
+
+    # Check that event was scheduled to never run on tclose
+    assert len(sim.event_queue) == 1
+    ev = hp.heappop(sim.event_queue.queue)
+    assert not ev[3].run_hsi
+    assert ev[0] == _tclose

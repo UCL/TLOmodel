@@ -70,8 +70,8 @@ class HSIEventQueueItem(NamedTuple):
     """
     topen: Date
     priority: int
-    rand_queue_counter: int
-    queue_counter: int
+    rand_queue_counter: int  # Ensure order of events with same topen & priority is not model-dependent
+    queue_counter: int  # Include safety tie-breaker in unlikely event rand_queue_counter is equal
     tclose: Date
     # Define HSI_Event type as string to avoid NameError exception as HSI_Event defined
     # later in module (see https://stackoverflow.com/a/36286947/4798943)
@@ -461,6 +461,8 @@ class HealthSystem(Module):
         name: Optional[str] = None,
         resourcefilepath: Optional[Path] = None,
         service_availability: Optional[List[str]] = None,
+        ListFTAttributes: [List[str]] = None,
+        ListFTChannels: [List[str]] = None,
         mode_appt_constraints: int = 0,
         cons_availability: Optional[str] = None,
         beds_availability: Optional[str] = None,
@@ -474,11 +476,17 @@ class HealthSystem(Module):
         disable_and_reject_all: bool = False,
         compute_squeeze_factor_to_district_level: bool = True,
         hsi_event_count_log_period: Optional[str] = "month",
+        PriorityRank_Dict: dict = None,
     ):
         """
         :param name: Name to use for module, defaults to module class name if ``None``.
         :param resourcefilepath: Path to directory containing resource files.
         :param service_availability: A list of treatment IDs to allow.
+        :param ListFTAttributes: list of individual's attributes that will be relevant in
+            determining whether they should be eligible for fast tracking
+        :param ListFTChannels: list of fast tracking channels that will be potentially available to
+            individuals given the modules included in the simulation.
+            determining whether they should be eligible for fast tracking
         :param mode_appt_constraints: Integer code in ``{0, 1, 2}`` determining mode of
             constraints with regards to officer numbers and time - 0: no constraints,
             all HSI events run with no squeeze factor, 1: elastic constraints, all HSI
@@ -491,10 +499,12 @@ class HealthSystem(Module):
         let no beds be ever be available; if 'all', then all beds are always available.
         :param ignore_priority: If ``True`` do not use the priority information in HSI
             event to schedule
-        :param lowest_priority_considered: If priority lower (i.e. priority value greater than) this, do not schedule (and instead call `never_ran` at the time of `topen`).
-        :param adopt_priority_policy: If 'True' then use priority specified in the PriorityRank ResourceFile instead of that provided as argument when scheduling via `schedule_hsi_event`.
-        :param include_fasttrack_routes: If 'True' then include fast-tracking options for vulnerable categories; otherwise ignore indicators for fast-tracking.
-            specified in the PriorityRank ResourceFile
+        :param lowest_priority_considered: If priority lower (i.e. priority value greater than) this, do not schedule
+            (and instead call `never_ran` at the time of `tclose`).
+        :param adopt_priority_policy: If 'True' then use priority specified in the PriorityRank ResourceFile instead
+            of that provided as argument when scheduling via `schedule_hsi_event`.
+        :param include_fasttrack_routes: If 'True' then include fast-tracking options for vulnerable categories;
+            otherwise ignore indicators for fast-tracking. It is specified in the PriorityRank ResourceFile
         :param capabilities_coefficient: Multiplier for the capabilities of health
             officers, if ``None`` set to ratio of initial population to estimated 2010
             population.
@@ -513,6 +523,7 @@ class HealthSystem(Module):
             end of each day, end of each calendar month, end of each calendar year or
             the end of the simulation respectively, or ``None`` to not track the HSI
             event details and frequencies.
+        :param PriorityRank_Dict: contains priority and fast tracking channel eligibility given Treatment_ID
         """
 
         super().__init__(name)
@@ -526,10 +537,6 @@ class HealthSystem(Module):
 
         assert not (ignore_priority and adopt_priority_policy), (
             'Cannot adopt a priority policy if the priority will be then ignored'
-        )
-
-        assert not (~adopt_priority_policy and include_fasttrack_routes), (
-            'Fast-track routes can only be considered when adopting priority policy'
         )
 
         self.disable = disable
@@ -550,6 +557,15 @@ class HealthSystem(Module):
         # Store the argument provided for service_availability
         self.arg_service_availabily = service_availability
         self.service_availability = ['*']  # provided so that there is a default even before simulation is run
+
+        # Store the attributes of a person that will be relevant in determining who can qualify
+        # for fast tracking
+        self.arg_ListFTAttributes = ListFTAttributes
+        self.ListFTAttributes = []  # provided so that there is a default even before simulation is run
+
+        # Store the fast tracking channels that will be relevant for policy given the modules included
+        self.arg_ListFTChannels = ListFTChannels
+        self.ListFTChannels = []  # provided so that there is a default even before simulation is run
 
         # Check that the capabilities coefficient is correct
         if capabilities_coefficient is not None:
@@ -663,7 +679,7 @@ class HealthSystem(Module):
 
         # Check that no duplicates are included in priority input file
         # There might be a more suitable place to put this check
-        assert not self.parameters['PriorityRank']['Treatment'].duplicated().any()  # True
+        assert not self.parameters['PriorityRank']['Treatment'].duplicated().any()
 
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
@@ -720,6 +736,32 @@ class HealthSystem(Module):
         if not (self.disable or self.disable_and_reject_all):
             self.healthsystemscheduler = HealthSystemScheduler(self)
             sim.schedule_event(self.healthsystemscheduler, sim.date)
+
+        # Convert PriorityRank dataframe to dictionary
+        if self.adopt_priority_policy:
+            Dictio = self.parameters['PriorityRank']
+            Dictio.set_index("Treatment", drop=True, inplace=True)
+            self.PriorityRank_Dict = Dictio.to_dict(orient="index")
+
+        # The list of attributes that can be looked up to determine whether a person might be eligible
+        # for fast tracking is dependent on the modules included in the simulation. Store it at this
+        # point to avoid having to recheck which modules are saved every time an HSI_Event is scheduled.
+        # Each attribute is associated with one specific fast tracking channel; the list of channels that
+        # can be considered will therefore also depend on the modules included, so store this info at this stage
+        # also.
+        if self.include_fasttrack_routes:
+            self.ListFTAttributes.append('age_exact_years')
+            self.ListFTChannels.append('FT_if_5orUnder')
+            if 'Contraception' in self.sim.modules or 'SimplifiedBirths' in self.sim.modules:
+                self.ListFTAttributes.append('is_pregnant')
+                self.ListFTChannels.append('FT_if_pregnant')
+            if 'Hiv' in self.sim.modules:
+                self.ListFTAttributes.append('hv_diagnosed')
+                self.ListFTChannels.append('FT_if_Hivdiagnosed')
+            if 'Tb' in self.sim.modules:
+                self.ListFTAttributes.append('tb_diagnosed')
+                self.ListFTChannels.append('FT_if_tbdiagnosed')
+            assert len(self.ListFTChannels) == len(self.ListFTAttributes)
 
     def on_birth(self, mother_id, child_id):
         self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
@@ -965,6 +1007,10 @@ class HealthSystem(Module):
 
         return _beds_availability
 
+    def schedule_to_call_never_ran_on_date(self, hsi_event: 'HSI_Event', tdate: datetime.datetime):
+        """Function to schedule never_ran being called on a given date"""
+        self.sim.schedule_event(HSIEventWrapper(hsi_event=hsi_event, run_hsi=False), tdate)
+
     def schedule_hsi_event(
         self,
         hsi_event: 'HSI_Event',
@@ -1009,7 +1055,7 @@ class HealthSystem(Module):
 
         # If priority of HSI_Event lower than the lowest one considered, ignore event in scheduling
         if priority > self.lowest_priority_considered:
-            hsi_event.never_ran()
+            self.schedule_to_call_never_ran_on_date(hsi_event=hsi_event, tdate=tclose)  # Call this on tclose
             return
 
         # Check if healthsystem is disabled/disable_and_reject_all and, if so, schedule a wrapped event:
@@ -1020,7 +1066,7 @@ class HealthSystem(Module):
 
         if self.disable_and_reject_all:
             # If healthsystem is disabled the HSI will never run: schedule for the `never_ran` method on `tclose`.
-            self.sim.schedule_event(HSIEventWrapper(hsi_event=hsi_event, run_hsi=False), tclose)
+            self.schedule_to_call_never_ran_on_date(hsi_event=hsi_event, tdate=tclose)  # Call this on tclose
             return
 
         # Check that this is a legitimate health system interaction (HSI) event.
@@ -1061,66 +1107,38 @@ class HealthSystem(Module):
     def enforce_priority_policy(self, hsi_event) -> int:
         """Check the priority of the Treatment_ID based on policy under consideration """
 
-        if (hsi_event.TREATMENT_ID == 'HSI_GenericEmergencyFirstApptAtFacilityLevel1'):
+        if (hsi_event.TREATMENT_ID == 'FirstAttendance_Emergency'):
             return 0
         else:
 
-            PR = self.parameters['PriorityRank']
+            PR = self.PriorityRank_Dict
             pdf = self.sim.population.props
 
-            if (PR['Treatment'] == hsi_event.TREATMENT_ID).any():
-                entry = PR.loc[PR['Treatment'] == hsi_event.TREATMENT_ID]
+            if hsi_event.TREATMENT_ID in PR:
+                _priority_ranking = PR[hsi_event.TREATMENT_ID]['Priority']
 
-                # Check default priority assigned to this treatment
-                _priority_ranking = entry['Priority'].item()
-
-                # If considering fast-track routes, check whether person qualifies
                 if self.include_fasttrack_routes:
                     # Check whether fast-tracking routes are available for this treatment. If person qualifies for one
-                    # don't bother checking remaining, as they all lead to priority=1.
-                    FT_eligible = False
+                    # don't check remaining, as they all lead to priority=1.
 
-                    if entry['FT_if_5orUnder'].item() == 1:
-                        if pdf.at[hsi_event.target, 'age_exact_years'] <= 5:
-                            _priority_ranking = 1
-                            FT_eligible = True
-                    if (FT_eligible is False and 'Contraception' in self.sim.modules and
-                       entry['FT_if_pregnant'].item() == 1):
-                        if pdf.at[hsi_event.target, 'is_pregnant'] is True:
-                            _priority_ranking = 1
-                            FT_eligible = True
-                    if FT_eligible is False and 'Tb' in self.sim.modules and entry['FT_if_tbdiagnosed'].item() == 1:
-                        if pdf.at[hsi_event.target, 'tb_diagnosed'] is True:
-                            _priority_ranking = 1
-                            FT_eligible = True
-                    if FT_eligible is False and 'Hiv' in self.sim.modules and entry['FT_if_Hivdiagnosed'].item() == 1:
-                        if pdf.at[hsi_event.target, 'hv_diagnosed'] is True:
-                            _priority_ranking = 1
-                            FT_eligible = True
-                    if (FT_eligible is False and 'CardioMetabolicDisorders' in self.sim.modules and
-                       entry['FT_if_CMDdiagnosed'].item() == 1):
-                        for condition in self.sim.modules['CardioMetabolicDisorders'].conditions:
-                            if pdf.at[hsi_event.target, f'nc_{condition}_ever_diagnosed'] is True:
-                                _priority_ranking = 1
-                                FT_eligible = True
-                                break
-                        for event in self.sim.modules['CardioMetabolicDisorders'].events:
-                            if pdf.at[hsi_event.target, f'nc_{event}_ever_diagnosed'] is True:
-                                _priority_ranking = 1
-                                FT_eligible = True
-                                break
-                    if (FT_eligible is False and 'OesophagealCancer' in self.sim.modules and
-                       entry['FT_if_cancerdiagnosed'].item() == 1):
-                        if pd.isnull(pdf.at[hsi_event.target, 'oc_date_diagnosis']) is False:
-                            _priority_ranking = 1
-                            FT_eligible = True
+                    # Look up relevant attributes for HSI_Event's target
+                    target_attributes = pdf.loc[hsi_event.target, self.ListFTAttributes]
+
+                    # First item in Lists is age-related, therefore need to invoke different logic.
+                    if (PR[hsi_event.TREATMENT_ID][self.ListFTChannels[0]] == 1 and target_attributes[0] <= 5):
+                        return 1
+
+                    # All other attributes are boolean, can do this in for loop
+                    for i in range(1, len(self.ListFTChannels)):
+                        if (PR[hsi_event.TREATMENT_ID][self.ListFTChannels[i]] == 1 and target_attributes[i]):
+                            return 1
+
+                    return _priority_ranking
 
             else:  # If treatment is not ranked in the policy, issue a warning and assign priority=2 by default
-                _priority_ranking = 2
                 warnings.warn(UserWarning(f"Couldn't find priority ranking for TREATMENT_ID /n"
                                           f"{hsi_event.TREATMENT_ID}"))
-
-        return _priority_ranking
+                return 2
 
     def check_hsi_event_is_valid(self, hsi_event):
         """Check the integrity of an HSI_Event."""
@@ -1540,8 +1558,8 @@ class HealthSystem(Module):
         list_of_events = list()
 
         for ev_tuple in self.HSI_EVENT_QUEUE:
-            date = ev_tuple[0]  # this is the 'topen' value
-            event = ev_tuple[5]  #  tie-breaker
+            date = ev_tuple.topen  # this is the 'topen' value
+            event = ev_tuple.hsi_event
             if isinstance(event.target, (int, np.integer)):
                 if event.target == person_id:
                     list_of_events.append((date, event))
@@ -1840,8 +1858,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 pass
 
             elif self.sim.date < next_event_tuple.topen:
-                # Because topen is now first category, can break at this point. Will only add current one to heapq
-                # The event is not yet due (before topen). Break, but first make sure this next_event_tuple is saved
+                # The event is not yet due (before topen), and therefore neither will all subsequent ones.
+                # Break here, but first make sure the next_event_tuple is saved
                 hp.heappush(_list_of_events_not_due_today, next_event_tuple)
                 break
 
