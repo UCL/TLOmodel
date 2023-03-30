@@ -813,7 +813,9 @@ def test_contraception_coverage_with_use_healthsystem(tmpdir, seed):
 
         def find_average_availability(items: List, level: str):
             """Find the probability that all the items are available at the level."""
-            facilities = set([x.id for x in sim.modules['HealthSystem']._facilities_for_each_district[level].values()])
+            facilities = sorted(
+                set([x.id for x in sim.modules['HealthSystem']._facilities_for_each_district[level].values()])
+            )
 
             # Warn if some item codes are not recognised and hence average availability is calculated for the remaining
             # item(s)
