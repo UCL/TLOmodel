@@ -776,7 +776,7 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
     detailed_consumables = log["tlo.methods.healthsystem"]['Consumables']
 
     assert {'date', 'TREATMENT_ID', 'did_run', 'Squeeze_Factor', 'Number_By_Appt_Type_Code', 'Person_ID',
-            'Facility_Level', 'Facility_ID',
+            'Facility_Level', 'Facility_ID', 'Event_Name',
             } == set(detailed_hsi_event.columns)
     assert {'date', 'Frac_Time_Used_Overall', 'Frac_Time_Used_By_Facility_ID', 'Frac_Time_Used_By_OfficerType',
             } == set(detailed_capacity.columns)
@@ -1267,6 +1267,7 @@ def test_hsi_event_queue_expansion_and_querying(seed, tmpdir):
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(
                      resourcefilepath=resourcefilepath,
+                     randomise_queue=True,
                      disable=False,
                      cons_availability='all',
                  ),
@@ -1314,6 +1315,7 @@ def test_hsi_event_queue_expansion_and_querying(seed, tmpdir):
         event_prev = next_event_tuple
 
 
+@pytest.mark.slow
 def test_policy_and_lowest_priority_enforced(seed, tmpdir):
     """The priority set by the policy should overwrite the priority the event was scheduled with. If the priority
      is below the lowest one considered, the event will not be scheduled (call never_ran at tclose)"""
@@ -1358,6 +1360,7 @@ def test_policy_and_lowest_priority_enforced(seed, tmpdir):
                      disable=False,
                      include_fasttrack_routes=True,
                      adopt_priority_policy=True,
+                     randomise_queue=True,
                      lowest_priority_considered=3,
                      cons_availability='all',
                  ),
@@ -1374,7 +1377,6 @@ def test_policy_and_lowest_priority_enforced(seed, tmpdir):
     sim.simulate(end_date=sim.start_date + pd.DateOffset(days=5))
     sim.event_queue.queue = []  # clear the queue
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE = []  # clear the queue
-
     # Overwrite one of the Treatments with HSI_Dummy, and assign it a policy priority
     dictio = sim.modules['HealthSystem'].PriorityRank_Dict
     dictio['HSI_Dummy'] = dictio['Alri_Pneumonia_Treatment_Outpatient']

@@ -467,8 +467,9 @@ class HealthSystem(Module):
         cons_availability: Optional[str] = None,
         beds_availability: Optional[str] = None,
         ignore_priority: bool = False,
-        lowest_priority_considered: int = 4,
+        lowest_priority_considered: int = 10,
         adopt_priority_policy: bool = False,
+        randomise_queue: bool = False,
         include_fasttrack_routes: bool = False,
         capabilities_coefficient: Optional[float] = None,
         use_funded_or_actual_staffing: Optional[str] = 'funded_plus',
@@ -503,6 +504,8 @@ class HealthSystem(Module):
             (and instead call `never_ran` at the time of `tclose`).
         :param adopt_priority_policy: If 'True' then use priority specified in the PriorityRank ResourceFile instead
             of that provided as argument when scheduling via `schedule_hsi_event`.
+        :param randomise_queue ensure that the queue is not model-dependent, i.e. properly randomised for equal topen
+            and priority
         :param include_fasttrack_routes: If 'True' then include fast-tracking options for vulnerable categories;
             otherwise ignore indicators for fast-tracking. It is specified in the PriorityRank ResourceFile
         :param capabilities_coefficient: Multiplier for the capabilities of health
@@ -551,6 +554,8 @@ class HealthSystem(Module):
         self.lowest_priority_considered = lowest_priority_considered
 
         self.adopt_priority_policy = adopt_priority_policy
+
+        self.randomise_queue = randomise_queue
 
         self.include_fasttrack_routes = include_fasttrack_routes
 
@@ -699,6 +704,32 @@ class HealthSystem(Module):
                                        rng=self.rng,
                                        availability=self.get_cons_availability())
 
+        # Convert PriorityRank dataframe to dictionary
+        if self.adopt_priority_policy:
+            Dictio = self.parameters['PriorityRank']
+            Dictio.set_index("Treatment", drop=True, inplace=True)
+            self.PriorityRank_Dict = Dictio.to_dict(orient="index")
+
+        # The list of attributes that can be looked up to determine whether a person might be eligible
+        # for fast tracking is dependent on the modules included in the simulation. Store it at this
+        # point to avoid having to recheck which modules are saved every time an HSI_Event is scheduled.
+        # Each attribute is associated with one specific fast tracking channel; the list of channels that
+        # can be considered will therefore also depend on the modules included, so store this info at this stage
+        # also.
+        if self.include_fasttrack_routes:
+            self.ListFTAttributes.append('age_exact_years')
+            self.ListFTChannels.append('FT_if_5orUnder')
+            if 'Contraception' in self.sim.modules or 'SimplifiedBirths' in self.sim.modules:
+                self.ListFTAttributes.append('is_pregnant')
+                self.ListFTChannels.append('FT_if_pregnant')
+            if 'Hiv' in self.sim.modules:
+                self.ListFTAttributes.append('hv_diagnosed')
+                self.ListFTChannels.append('FT_if_Hivdiagnosed')
+            if 'Tb' in self.sim.modules:
+                self.ListFTAttributes.append('tb_diagnosed')
+                self.ListFTChannels.append('FT_if_tbdiagnosed')
+            assert len(self.ListFTChannels) == len(self.ListFTAttributes)
+
     def initialise_population(self, population):
         self.bed_days.initialise_population(population.props)
 
@@ -736,32 +767,6 @@ class HealthSystem(Module):
         if not (self.disable or self.disable_and_reject_all):
             self.healthsystemscheduler = HealthSystemScheduler(self)
             sim.schedule_event(self.healthsystemscheduler, sim.date)
-
-        # Convert PriorityRank dataframe to dictionary
-        if self.adopt_priority_policy:
-            Dictio = self.parameters['PriorityRank']
-            Dictio.set_index("Treatment", drop=True, inplace=True)
-            self.PriorityRank_Dict = Dictio.to_dict(orient="index")
-
-        # The list of attributes that can be looked up to determine whether a person might be eligible
-        # for fast tracking is dependent on the modules included in the simulation. Store it at this
-        # point to avoid having to recheck which modules are saved every time an HSI_Event is scheduled.
-        # Each attribute is associated with one specific fast tracking channel; the list of channels that
-        # can be considered will therefore also depend on the modules included, so store this info at this stage
-        # also.
-        if self.include_fasttrack_routes:
-            self.ListFTAttributes.append('age_exact_years')
-            self.ListFTChannels.append('FT_if_5orUnder')
-            if 'Contraception' in self.sim.modules or 'SimplifiedBirths' in self.sim.modules:
-                self.ListFTAttributes.append('is_pregnant')
-                self.ListFTChannels.append('FT_if_pregnant')
-            if 'Hiv' in self.sim.modules:
-                self.ListFTAttributes.append('hv_diagnosed')
-                self.ListFTChannels.append('FT_if_Hivdiagnosed')
-            if 'Tb' in self.sim.modules:
-                self.ListFTAttributes.append('tb_diagnosed')
-                self.ListFTChannels.append('FT_if_tbdiagnosed')
-            assert len(self.ListFTChannels) == len(self.ListFTAttributes)
 
     def on_birth(self, mother_id, child_id):
         self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
@@ -1096,7 +1101,11 @@ class HealthSystem(Module):
 
         self.hsi_event_queue_counter += 1
 
-        rand_queue = self.rng.randint(0, 1000000)  # hsi_event_queue_counter
+        if self.randomise_queue:
+            rand_queue = self.rng.randint(0, 1000000)
+        else:
+            rand_queue = self.hsi_event_queue_counter
+
         _new_item: HSIEventQueueItem = HSIEventQueueItem(
             topen, priority, rand_queue, self.hsi_event_queue_counter, tclose, hsi_event)
 
@@ -1472,6 +1481,7 @@ class HealthSystem(Module):
         logger.debug(
             key="HSI_Event",
             data={
+                'Event_Name': event_details.event_name,
                 'TREATMENT_ID': event_details.treatment_id,
                 'Number_By_Appt_Type_Code': dict(event_details.appt_footprint),
                 'Person_ID': person_id,
