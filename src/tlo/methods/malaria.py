@@ -125,8 +125,11 @@ class Malaria(Module):
         "irs_rates_lower": Parameter(
             Types.REAL, "indoor residual spraying low coverage"
         ),
-        "testing_adj": Parameter(
-            Types.REAL, "adjusted testing rates to match rdt/tx levels"
+        "testing_adj_malaria": Parameter(
+            Types.REAL, "adjusted testing rates, for those really have malaria, to match rdt/tx levels"
+        ),
+        "testing_adj_not_malaria": Parameter(
+            Types.REAL, "adjusted testing rates, for those not really have malaria, to match rdt/tx levels"
         ),
         "itn": Parameter(
             Types.REAL, "projected future itn coverage"
@@ -677,8 +680,15 @@ class MalariaScheduleTesting(RegularEvent, PopulationScopeEventMixin):
         # random sample 0.4 to match clinical case tx coverage
         # this sample will include asymptomatic infections too to account for
         # unnecessary treatments  and uninfected people
-        alive = df.is_alive
-        test = df.index[alive][self.module.rng.random_sample(size=alive.sum()) < p["testing_adj"]]
+        # update: to reduce the usage of OPD by Malaria_Test but keep tx coverage,
+        # we now try applying two sampling methods to select the people for testing, basing on two testing_adj_ values.
+        alive_malaria = df.is_alive & df.ma_is_infected
+        alive_not_malaria = df.is_alive & ~df.ma_is_infected
+        test = df.index[alive_malaria][
+                   self.module.rng.random_sample(size=alive_malaria.sum()) < p["testing_adj_malaria"]].union(
+            df.index[alive_not_malaria][
+                   self.module.rng.random_sample(size=alive_not_malaria.sum()) < p["testing_adj_not_malaria"]]
+        )
 
         for person_index in test:
             logger.debug(key='message',
