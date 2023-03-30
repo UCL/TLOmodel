@@ -941,7 +941,7 @@ class Alri(Module):
         df.loc[child_id, ['ri_primary_pathogen',
                           'ri_secondary_bacterial_pathogen',
                           'ri_disease_type']] = np.nan
-        df.at[child_id, [f"ri_complication_{complication}" for complication in self.complications]] = False
+        df.loc[child_id, [f"ri_complication_{complication}" for complication in self.complications]] = False
         df.at[child_id, 'ri_SpO2_level'] = ">=93%"
 
         # ---- Internal values ----
