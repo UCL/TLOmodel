@@ -141,7 +141,8 @@ def test_remove_malaria_test(seed):
     sim.make_initial_population(n=2000)
 
     # set testing adjustment to 0
-    sim.modules['Malaria'].parameters['testing_adj'] = 0
+    sim.modules['Malaria'].parameters['testing_adj_malaria'] = 0
+    sim.modules['Malaria'].parameters['testing_adj_not_malaria'] = 0
 
     # increase death rate due to severe malaria
     sim.modules['Malaria'].parameters['cfr'] = 1.0
@@ -180,7 +181,8 @@ def test_schedule_rdt_for_all(sim):
 
     # Run the simulation and flush the logger
     sim.make_initial_population(n=popsize)
-    sim.modules['Malaria'].parameters['testing_adj'] = 10
+    sim.modules['Malaria'].parameters['testing_adj_malaria'] = 10
+    sim.modules['Malaria'].parameters['testing_adj_not_malaria'] = 10
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
