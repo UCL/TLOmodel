@@ -1142,7 +1142,7 @@ class HealthSystem(Module):
                         if (PR[hsi_event.TREATMENT_ID][self.ListFTChannels[i]] == 1 and target_attributes[i]):
                             return 1
 
-                    return _priority_ranking
+                return _priority_ranking
 
             else:  # If treatment is not ranked in the policy, issue a warning and assign priority=2 by default
                 warnings.warn(UserWarning(f"Couldn't find priority ranking for TREATMENT_ID /n"
