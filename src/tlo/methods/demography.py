@@ -426,6 +426,11 @@ class Demography(Module):
                            data=person.to_dict(),
                            description='values of all properties at the time of death for deceased persons')
 
+        # - log the death in the Deviance module (if it is registered)
+        if 'Deviance' in self.sim.modules:
+            self.sim.modules['Deviance'].record_death(
+                year=self.sim.date.year, age_years=person['age_years'], sex=person['sex'], cause=cause)
+
         # Report the deaths to the healthburden module (if present) so that it tracks the live years lost
         if 'HealthBurden' in self.sim.modules.keys():
             # report the death so that a computation of lost life-years due to this cause to be recorded
