@@ -34,7 +34,7 @@ jobs:
       application-id: ${{ secrets.COMMENT_BOT_APP_ID }}
       application-private-key: ${{ secrets.COMMENT_BOT_APP_PRIVATE_KEY }}
       
-python311_pandas15_fast_tests:
+  python311_pandas15_fast_tests:
     uses: ./.github/workflows/run-on-comment.yml
     with:
       runs-on: self-hosted
@@ -48,7 +48,7 @@ python311_pandas15_fast_tests:
       application-id: ${{ secrets.COMMENT_BOT_APP_ID }}
       application-private-key: ${{ secrets.COMMENT_BOT_APP_PRIVATE_KEY }}
 
-python311_pandas15_all_tests:
+  python311_pandas15_all_tests:
     uses: ./.github/workflows/run-on-comment.yml
     with:
       runs-on: self-hosted
@@ -62,7 +62,7 @@ python311_pandas15_all_tests:
       application-id: ${{ secrets.COMMENT_BOT_APP_ID }}
       application-private-key: ${{ secrets.COMMENT_BOT_APP_PRIVATE_KEY }}
 
-python311_pandas20_fast_tests:
+  python311_pandas20_fast_tests:
     uses: ./.github/workflows/run-on-comment.yml
     with:
       runs-on: self-hosted
@@ -76,7 +76,7 @@ python311_pandas20_fast_tests:
       application-id: ${{ secrets.COMMENT_BOT_APP_ID }}
       application-private-key: ${{ secrets.COMMENT_BOT_APP_PRIVATE_KEY }}
 
-python311_pandas20_all_tests:
+  python311_pandas20_all_tests:
     uses: ./.github/workflows/run-on-comment.yml
     with:
       runs-on: self-hosted
