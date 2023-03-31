@@ -147,7 +147,7 @@ class TestWriteAndReadLog:
         log_output.col7_date = log_output.col7_date.astype('datetime64')
         # deal with index matching by resetting index
         log_output.reset_index(inplace=True, drop=True)
-        expected_output = log_input.append(log_input, ignore_index=True)
+        expected_output = pd.concat((log_input, log_input), ignore_index=True)
 
         assert expected_output.equals(log_output)
 

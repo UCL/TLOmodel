@@ -103,7 +103,10 @@ class TestLoadParametersFromDataframe:
 
         should raise an Exception"""
         resource = self.resource.copy()
-        resource = resource.append({"parameter_name": "new_value", "value": 1}, ignore_index=True)
+        resource = pd.concat(
+            (resource, pd.DataFrame({"parameter_name": ["new_value"], "value": [1]})),
+            ignore_index=True
+        )
         with pytest.raises(KeyError):
             self.module.load_parameters_from_dataframe(resource)
 
