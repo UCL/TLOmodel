@@ -2390,7 +2390,7 @@ class RTI(Module):
                        'Polytrauma': sum(i > 2 for i in injais) > 1,
                        'MAIS': max(injmais),
                        'Number_of_injuries': ninj}
-            inj_df = inj_df.append(new_row, ignore_index=True)
+            inj_df.loc[len(inj_df)] = new_row
             # If person has an ISS score less than 15 they have a mild injury, otherwise severe
             if new_row['ISS'] < 15:
                 severity_category.append('mild')
