@@ -18,7 +18,10 @@ def test_categorical():
     # assignment of valid category
     s[0] = 'M'
     # assignment of invalid category
-    with pytest.raises(TypeError, match="Categorical"):
+    with pytest.raises(
+        (ValueError, TypeError),
+        match="Cannot setitem on a Categorical with a new category"
+    ):
         s[0] = 'A'
 
     # test we can create ordered categories.
