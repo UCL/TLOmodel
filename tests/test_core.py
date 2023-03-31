@@ -18,6 +18,8 @@ def test_categorical():
     # assignment of valid category
     s[0] = 'M'
     # assignment of invalid category
+    # depending on Pandas version this may raise either a ValueError or TypeError so we
+    # allow both but also check exception message to minimize chance of false positives
     with pytest.raises(
         (ValueError, TypeError),
         match="Cannot setitem on a Categorical with a new category"
