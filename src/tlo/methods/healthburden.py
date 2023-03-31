@@ -333,7 +333,7 @@ class HealthBurden(Module):
                 end_date=(
                     date_of_birth + pd.DateOffset(years=self.parameters['Age_Limit_For_YLL']) - pd.DateOffset(days=1)),
                 date_of_birth=date_of_birth
-            ).sum(level=1)\
+            ).groupby(level=1).sum()\
              .assign(year=date_of_death.year)\
              .set_index(['year'], append=True)['person_years']\
              .pipe(_format_for_multi_index)
@@ -342,7 +342,7 @@ class HealthBurden(Module):
         # ascribed to the age of death and to the year of death. This is computed by collapsing the age-dimension of
         # `yll_stacked_by_time` onto the age(-range) of death.
         age_range_to_stack_to = age_range
-        yll_stacked_by_age_and_time = pd.DataFrame(yll_stacked_by_time.sum(level=[0, 2, 3]))\
+        yll_stacked_by_age_and_time = pd.DataFrame(yll_stacked_by_time.groupby(level=[0, 2, 3]).sum())\
                                         .assign(age_range=age_range_to_stack_to)\
                                         .set_index(['age_range'], append=True)['person_years']\
                                         .reorder_levels(['sex', 'age_range', 'li_wealth', 'year'])

@@ -339,9 +339,8 @@ class CardioMetabolicDisorders(Module):
         # Register symptoms from events and make them emergencies
         for event in self.events:
             self.sim.modules['SymptomManager'].register_symptom(
-                Symptom(
-                    name=f'{event}_damage',
-                    emergency_in_adults=True
+                Symptom.emergency(
+                    name=f'{event}_damage', which='adults'
                 ),
             )
 

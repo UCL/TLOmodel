@@ -1338,6 +1338,7 @@ class HealthSystem(Module):
         logger.debug(
             key="HSI_Event",
             data={
+                'Event_Name': event_details.event_name,
                 'TREATMENT_ID': event_details.treatment_id,
                 'Number_By_Appt_Type_Code': dict(event_details.appt_footprint),
                 'Person_ID': person_id,

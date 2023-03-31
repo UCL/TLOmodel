@@ -1199,13 +1199,8 @@ class RTI(Module):
         for probability in probabilities:
             assert 0 <= probability <= 1, "Probability is not a feasible value"
         # create a generic severe trauma symptom, which forces people into the health system
-        self.sim.modules['SymptomManager'].register_symptom(
-            Symptom(
-                name='severe_trauma',
-                emergency_in_adults=True,
-                emergency_in_children=True
-            )
-        )
+        self.sim.modules['SymptomManager'].register_symptom(Symptom.emergency('severe_trauma'))
+
         # create an injury lookup table to handle all assigning injuries/daly weights and daly weight changes. The table
         # is writted in the following format: [[1], 2, 3, 4]. [1] contains information used in assigning injuries e.g.
         # probability of injury occuring followed by information used in logging, specifically injury location, injury
@@ -1985,7 +1980,7 @@ class RTI(Module):
         columns_to_return = []
         codes_to_return = []
         # iterate over the codes in the list codes and also the injury columns
-        for col, val in person_injuries.iteritems():
+        for col, val in person_injuries.items():
             # Search a sub-dataframe that is non-empty if the code is present is in that column and empty if not
             if val in codes:
                 columns_to_return.append(col)
