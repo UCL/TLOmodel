@@ -609,7 +609,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # 1) Plot deaths over time (all ages)
 
     # Summarize model results (for all ages) and process into desired format:
-    deaths_model_by_period = summarize(results_deaths.sum(level=0), collapse_columns=True).reset_index()
+    deaths_model_by_period = summarize(results_deaths.groupby(level=0).sum(), collapse_columns=True).reset_index()
     deaths_model_by_period = deaths_model_by_period.melt(
         id_vars=['Period'], value_vars=['mean', 'lower', 'upper'], var_name='Variant', value_name='Count')
     deaths_model_by_period['Variant'] = 'Model_' + deaths_model_by_period['Variant']
