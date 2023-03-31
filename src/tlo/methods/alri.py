@@ -842,8 +842,8 @@ class Alri(Module):
             if symptom_name not in self.sim.modules['SymptomManager'].generic_symptoms:
                 if symptom_name == 'danger_signs':
                     self.sim.modules['SymptomManager'].register_symptom(
-                        Symptom(name=symptom_name,
-                                emergency_in_children=True))
+                        Symptom.emergency(name=symptom_name, which='children')
+                    )
                 elif symptom_name == 'chest_indrawing':
                     self.sim.modules['SymptomManager'].register_symptom(
                         Symptom(name=symptom_name,
@@ -941,7 +941,7 @@ class Alri(Module):
         df.loc[child_id, ['ri_primary_pathogen',
                           'ri_secondary_bacterial_pathogen',
                           'ri_disease_type']] = np.nan
-        df.at[child_id, [f"ri_complication_{complication}" for complication in self.complications]] = False
+        df.loc[child_id, [f"ri_complication_{complication}" for complication in self.complications]] = False
         df.at[child_id, 'ri_SpO2_level'] = ">=93%"
 
         # ---- Internal values ----
