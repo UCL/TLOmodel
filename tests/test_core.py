@@ -16,13 +16,9 @@ def test_categorical():
     # by default if ordered is not set categories will be unordered. test this is true
     assert not s.cat.ordered
     # assignment of valid category
-    try:
-        s[0] = 'M'
-    except ValueError:
-        pytest.fail('Unexpected ValueError')
-
+    s[0] = 'M'
     # assignment of invalid category
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError, match="Categorical"):
         s[0] = 'A'
 
     # test we can create ordered categories.
