@@ -12,7 +12,6 @@ import os
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file, unflatten_flattened_multi_index_in_logging
@@ -24,13 +23,15 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     simplified_births,
-    symptommanager,
+    symptommanager, Metadata,
 )
+from tlo.methods.copd import HSICopdTreatmentOnSevereExacerbation
+from tlo.methods.hsi_generic_first_appts import HSI_GenericFirstApptAtFacilityLevel0
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
 start_date = Date(2010, 1, 1)
-end_date = start_date + pd.DateOffset(months=1)
+end_date = Date(2010, 1, 2)
 
 
 def check_dtypes(simulation):
@@ -89,7 +90,7 @@ def get_simulation(pop_size):
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
@@ -183,3 +184,79 @@ def test_moderate_exacerbation():
           i) moderate symptoms
          ii) non-emergency care seeking
         iii) getting inhaler """
+
+    sim = get_simulation(1)  # get simulation object
+    copd_module = sim.modules['Copd']  # the copd module
+
+    # reset value to make an individual eligible for moderate exacerbations
+    df = sim.population.props
+    df.loc[df.index, 'is_alive'] = True
+    df.loc[df.index, 'age_years'] = 20
+    df.loc[df.index, 'ch_lungfunction'] = 6
+    df.loc[df.index, 'ch_has_inhaler'] = False
+
+    # get person id
+    person_id = df.index[0]
+
+    # schedule moderate exacerbations event setting severe to False. This will ensure the individual has
+    # moderate exacerbation
+    _copd_mod_exacerbation_event = copd.CopdExacerbationEvent(copd_module, person_id, severe=False).apply(person_id)
+
+    # moderate exacerbation should lead to moderate symptom(breathless moderate in this case). check this is true
+    assert 'breathless_moderate' in sim.modules['SymptomManager'].has_what(person_id, copd_module)
+
+    # check no individual has inhaler before care seeking event is scheduled
+    assert not df.loc[person_id, "ch_has_inhaler"]
+
+    # Clear the HealthSystem queue
+    sim.modules['HealthSystem'].reset_queue()
+
+    # Check non-emergency symptoms leads to non-emergency care seeking.
+    generic_hsi = HSI_GenericFirstApptAtFacilityLevel0(
+        module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
+    copd_module.do_when_present_with_breathless(person_id=person_id, hsi_event=generic_hsi)
+
+    # For moderate exacerbation, no HSI copd treatment on severe exacerbation event should be scheduled
+    _event = sim.modules['HealthSystem'].find_events_for_person(person_id)
+    assert 0 == len(_event), f'one or more event is scheduled'
+
+    # only inhaler should be given
+    assert df.loc[person_id, "ch_has_inhaler"]
+
+
+def test_severe_exacerbation():
+    """ test severe exacerbation leads to;
+          i) emergency symptoms
+         ii) emergency care seeking
+        iii) gets treatment """
+
+    sim = get_simulation(1)  # get simulation object
+    copd_module = sim.modules['Copd']  # the copd module
+
+    # reset value to make an individual eligible for moderate exacerbations
+    df = sim.population.props
+    df.loc[df.index, 'is_alive'] = True
+    df.loc[df.index, 'age_years'] = 20
+    df.loc[df.index, 'ch_lungfunction'] = 6
+    df.loc[df.index, 'ch_has_inhaler'] = False
+
+    # get person id
+    person_id = df.index[0]
+
+    # schedule exacerbations event setting severe to True. This will ensure the individual has severe exacerbation
+    _copd_sev_exacerbation_event = copd.CopdExacerbationEvent(copd_module, person_id, severe=True).apply(person_id)
+
+    # severe exacerbation should lead to severe symptom(breathless severe in this case). check this is true
+    assert 'breathless_severe' in sim.modules['SymptomManager'].has_what(person_id, copd_module)
+
+    # check emergency symptoms leads to emergency care seeking
+    generic_hsi = HSI_GenericFirstApptAtFacilityLevel0(
+        module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
+    copd_module.do_when_present_with_breathless(person_id=person_id, hsi_event=generic_hsi)
+
+    # HSI copd treatment on severe exacerbation event should be scheduled for this individual
+    _event = sim.modules['HealthSystem'].find_events_for_person(person_id)
+    assert isinstance(_event[0][1], HSICopdTreatmentOnSevereExacerbation)
+
+    # inhaler should be given as well
+    assert df.loc[person_id, "ch_has_inhaler"]
