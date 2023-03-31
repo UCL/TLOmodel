@@ -101,7 +101,7 @@ def log_path(tmpdir_factory, log_input, class_scoped_seed):
     # test categorical
     for item in log_input.col4_cat:
         logger.info(key='categorical',
-                    data={'cat': pd.Categorical(item, categories=['cat1', 'cat2'])})
+                    data={'cat': pd.Categorical([item], categories=['cat1', 'cat2'])})
 
     # end the simulation
     sim.simulate(end_date=sim.date)
