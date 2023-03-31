@@ -1980,7 +1980,7 @@ class RTI(Module):
         columns_to_return = []
         codes_to_return = []
         # iterate over the codes in the list codes and also the injury columns
-        for col, val in person_injuries.iteritems():
+        for col, val in person_injuries.items():
             # Search a sub-dataframe that is non-empty if the code is present is in that column and empty if not
             if val in codes:
                 columns_to_return.append(col)
