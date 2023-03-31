@@ -2,7 +2,6 @@
 import math
 
 import pandas as pd
-import numpy as np
 
 from tlo import logging
 
