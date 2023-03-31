@@ -377,7 +377,7 @@ def test_bed_days_property_is_inpatient(tmpdir, seed):
     beds_occupied = tracker.sum(axis=1)[0] - tracker.sum(axis=1)
 
     def assert_two_series_are_the_same_where_index_overlaps(a, b):
-        return pd.concat([tot_time_as_in_patient, beds_occupied], axis=1)\
+        return pd.concat([tot_time_as_in_patient, beds_occupied], axis=1) \
             .dropna().apply(lambda row: row[0] == row[1], axis=1).all()
 
     assert assert_two_series_are_the_same_where_index_overlaps(beds_occupied, tot_time_as_in_patient)
@@ -493,6 +493,93 @@ def test_bed_days_released_on_death(tmpdir, seed):
     assert beds_occupied.astype(int).equals(expected_beds_occupied.astype(int))
 
 
+def test_bed_type_is_the_one_requested(tmpdir, seed):
+    """Check that bed types occupied are the ones requested"""
+    _bed_type = bed_types[0]
+    days_simulation_duration = 20
+    seed = 100
+
+    class DummyModule(Module):
+        METADATA = {Metadata.USES_HEALTHSYSTEM}
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            # Schedule event that will query the status of the property 'is_inpatient' each day
+            self.sim.schedule_event(
+                QueryInPatientStatus(self),
+                self.sim.date
+            )
+            self.in_patient_status = pd.DataFrame(
+                index=pd.date_range(self.sim.start_date,
+                                    self.sim.start_date + pd.DateOffset(days=days_simulation_duration)
+                                    ),
+                columns=[0, 1],
+                data=False
+            )
+
+            # Schedule person_id=0 and person_id=1 to attend care on 3rd January for 10 days
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                HSI_Dummy(self, person_id=0),
+                topen=Date(2010, 1, 3),
+                tclose=None,
+                priority=0)
+
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                HSI_Dummy(self, person_id=1),
+                topen=Date(2010, 1, 3),
+                tclose=None,
+                priority=0)
+
+    class QueryInPatientStatus(RegularEvent, PopulationScopeEventMixin):
+        def __init__(self, module):
+            super().__init__(module, frequency=pd.DateOffset(days=1))
+
+        def apply(self, population):
+            self.module.in_patient_status.loc[self.sim.date] = \
+                population.props.loc[[0, 1], 'hs_is_inpatient'].values
+
+    # Create a dummy HSI with both-types of Bed Day specified
+    class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = 'Dummy'
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+            self.ACCEPTED_FACILITY_LEVEL = '2'
+            self.ALERT_OTHER_DISEASES = []
+            self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({_bed_type: 10})
+
+        def apply(self, person_id, squeeze_factor):
+            pass
+
+    # Create simulation with the health system and DummyModule
+    sim = Simulation(start_date=start_date, seed=seed, log_config={
+        'filename': 'temp',
+        'directory': tmpdir,
+        'custom_levels': {
+            "BedDays": logging.INFO,
+        }
+    })
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        DummyModule()
+    )
+    sim.make_initial_population(n=5)
+    sim.simulate(end_date=start_date + pd.DateOffset(days=days_simulation_duration))
+    check_dtypes(sim)
+
+    # Test that the bed-types requested are assigned
+    assert not pd.isnull(sim.population.props[f'hs_next_last_day_in_bed_{_bed_type}'][0] -
+                         sim.population.props[f'hs_next_first_day_in_bed_{_bed_type}'][0])
+    assert not pd.isnull(sim.population.props[f'hs_next_last_day_in_bed_{_bed_type}'][1] -
+                         sim.population.props[f'hs_next_first_day_in_bed_{_bed_type}'][1])
+
+
 def test_bed_days_basics_with_healthsystem_disabled(seed):
     """Check basic functionality of bed-days class when the health-system has been disabled"""
     _bed_type = bed_types[0]
@@ -598,9 +685,9 @@ def test_the_use_of_beds_from_multiple_facilities(seed):
 
     # Define the district and the facility_id to which the person will have beddays.
     person_info = [
-        ("Chitipa", 129),    # <-- in the Northern region, so use facility_id 129 (for which capacity is defined)
-        ("Kasungu", 130),    # <-- in the Central region, so use facility_id 130 (for which capacity is defined)
-        ("Machinga", 128)    # <-- in the Southern region, so use facility_id 128 (for which no capacity is defined)
+        ("Chitipa", 129),  # <-- in the Northern region, so use facility_id 129 (for which capacity is defined)
+        ("Kasungu", 130),  # <-- in the Central region, so use facility_id 130 (for which capacity is defined)
+        ("Machinga", 128)  # <-- in the Southern region, so use facility_id 128 (for which no capacity is defined)
     ]
 
     df = sim.population.props
@@ -783,7 +870,7 @@ def test_bed_days_allocation_to_HSI(seed):
 def test_bed_days_allocation_information_is_provided_to_HSI(seed):
     """Checks the HSI is "informed" of the bed days footprint provided to it"""
 
-    district_of_residence = 'Zomba'   # Where person_id=0 is resident: Zomba district is in in the Southern region
+    district_of_residence = 'Zomba'  # Where person_id=0 is resident: Zomba district is in in the Southern region
     facility_id = 128  # Facility that will provide the beds (Referral Hospital_Southern)
     days_of_simulation = 1
     footprint_requested = {'bed_A': 3, 'bed_B': 3}
