@@ -379,7 +379,7 @@ def test_math_of_incidence_calcs(seed):
 
     # Run polling event once per month for a year
     poll = stunting.StuntingPollingEvent(sim.modules['Stunting'])
-    for date in pd.date_range(Date(2010, 1, 1), sim.date + pd.DateOffset(years=1), freq='MS', closed='left'):
+    for date in pd.date_range(Date(2010, 1, 1), sim.date + pd.DateOffset(years=1), freq='MS', inclusive='left'):
         # Do incidence of stunting through the model's polling event
         sim.date = date
         poll.apply(sim.population)
