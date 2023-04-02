@@ -90,10 +90,6 @@ rounding_costs_to = 1e6
 # from the other analysis (set to True below) will be used instead.
 do_no_interv_analysis = True
 do_interv_analysis = True
-# Do you want prints to see costs, use, percentage use and table?
-# If False, no output is printed, but the output table is still saved in the 'outputs' folder.
-print_bool = False
-# print_bool = True
 # %% Plot Consumables & Intervention Costs Over Time from the Table?
 # plot_costs = False
 plot_costs = True
@@ -120,13 +116,6 @@ if not ('TimePeriods_starts' in locals() or 'TimePeriods_starts' in globals()):
     # TODO: test whether this works
 if not ('use_output' in locals() or 'use_output' in globals()):
     use_output = "mean"
-
-
-def fullprint(in_to_print):
-    with pd.option_context('display.max_rows', None, 'display.max_columns',
-                           None):
-        print(in_to_print)
-
 
 dataframe_folder = 'outputs/dataframes'
 # create folder to save dataframes if it doesn't exist yet.
@@ -268,36 +257,6 @@ else:
     interv_costs_without_df = interv_costs_with_df
     scaling_factor_without = scaling_factor_with
 
-# prints
-if print_bool:
-    if do_no_interv_analysis:
-        print("\n")
-        print("COSTS WITHOUT")
-        print(costs_without_df)
-        print()
-        print("\n")
-        print("INTERVENTION COSTS WITHOUT")
-        print(interv_costs_without_df)
-        print()
-    if do_interv_analysis:
-        print("\n")
-        print("COSTS WITH")
-        print(costs_with_df)
-        print("\n")
-        print("INTERVENTION COSTS WITH")
-        print(interv_costs_with_df)
-        print()
-    if do_no_interv_analysis:
-        print("\n")
-        print("MEAN USE WITHOUT")
-        fullprint(use_without_df)
-        print(list(use_without_df.columns))
-        #
-        print("\n")
-        print("MEAN PERCENTAGE USE WITHOUT")
-        fullprint(percentage_use_without_df)
-        print(list(percentage_use_without_df.columns))
-
 # %% Check both sims done with the same population size - if not Warning
 # TODO: if both analyses done, check whether both were simulated for the same pop_size (ie scaling factors
 #  scaling_factor_without and scaling_factor_with are equal)
@@ -347,28 +306,6 @@ if table_use_costs_bool:
             interv_costs_with_df = round(interv_costs_with_df, -int(round_index)) / rounding_costs_to
         if not do_no_interv_analysis:
             interv_costs_without_df = interv_costs_with_df
-
-        if print_bool:
-            if rounding_costs_to:
-                if do_no_interv_analysis:
-                    print("\n")
-                    print("COSTS WITHOUT rounded")
-                    print(costs_without_df)
-                if do_interv_analysis:
-                    print("\n")
-                    print("COSTS WITH rounded")
-                    print(costs_with_df)
-            if calc_intervention_costs_bool:
-                if do_no_interv_analysis:
-                    print("\n")
-                    print("INTERVENTION COSTS WITHOUT")
-                    print(interv_costs_without_df)
-                    print()
-                if do_interv_analysis:
-                    print("\n")
-                    print("INTERVENTION COSTS WITH rounded")
-                    print(interv_costs_with_df)
-                    print()
 
     # %% Plot Consumables & Intervention Costs Over Time from the Table:
     if plot_costs:
@@ -477,11 +414,6 @@ if table_use_costs_bool:
     )
     # Remove the underscores from the names of contraception methods
     use_costs_table_df.index = use_costs_table_df.index.map(lambda s: s.replace("_", " "))
-
-    if print_bool:
-        print("\n")
-        print("TABLE")
-        fullprint(use_costs_table_df)
 
     output_table_file = r"outputs/output_table_" + use_output + "-use_costs" + "__" + ID_without + "_" + ID_with + \
                         suffix + ".xlsx"
