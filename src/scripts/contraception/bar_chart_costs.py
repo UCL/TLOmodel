@@ -5,7 +5,8 @@ import numpy as np
 
 
 def plot_costs(in_id, in_suffix, in_x_labels, in_cons_costs_without, in_cons_costs_with,
-               in_pop_interv_costs_with, in_ppfp_interv_costs_with, in_reduce_magnitude=1e3):
+               in_pop_interv_costs_with, in_ppfp_interv_costs_with, in_mwk_to_usd_exchange_rate,
+               in_reduce_magnitude=1e3):
     def rgb_perc(nmb_r, nmb_g, nmb_b):
         return nmb_r / 255, nmb_g / 255, nmb_b / 255
         """
@@ -32,7 +33,8 @@ def plot_costs(in_id, in_suffix, in_x_labels, in_cons_costs_without, in_cons_cos
         'cons': 'consumables Without/With interventions',  # consumables
         'pop': 'Pop intervention implementation',  # pop intervention
         'ppfp': 'PPFP intervention implementation',  # ppfp intervention
-        'y_axis': 'MWK (1e9) ~ USD (1e6)'  # y-axis
+        'y_axis_mwk': 'billions (1e9) MWK',  # y-axis label for costs in MWK
+        'y_axis_usd': 'millions (1e6) USD'  # y-axis label costs in USD
     }
 
     # define title
@@ -49,7 +51,7 @@ def plot_costs(in_id, in_suffix, in_x_labels, in_cons_costs_without, in_cons_cos
     ppfp_interv_costs_with = reduce_magnitude(in_ppfp_interv_costs_with, in_reduce_magnitude)
     ppfp_bottom = [x + y for x, y in zip(cons_costs_with, pop_interv_costs_with)]
 
-    # %%% PLot all time periods + total
+    # %%% PLot all time periods + total ................................................................................
     fig, ax = plt.subplots()
     # custom x-axis tick labels
     x_labels_tp = in_x_labels.copy()
@@ -71,7 +73,7 @@ def plot_costs(in_id, in_suffix, in_x_labels, in_cons_costs_without, in_cons_cos
     # title
     ax.set_title(fig_title, fontweight="bold")
     # set y-axis label
-    ax.set_ylabel(labels['y_axis'], fontweight="bold")
+    ax.set_ylabel(labels['y_axis_mwk'], fontweight="bold")
     # TODO: more values on y-axis
 
     # bar_without
@@ -87,18 +89,26 @@ def plot_costs(in_id, in_suffix, in_x_labels, in_cons_costs_without, in_cons_cos
            label=labels['ppfp'], color=colors['ppfp'])
     # add legend
     ax.legend()
+    plt.grid(axis='y')
 
     # the below needs at least 3.4 version of matplotlib package (we have 3.3.4)
     # ax.bar_label(bar_without, padding=3)
     # ax.bar_label(bar_with, padding=3)
 
-    fig.tight_layout()
+    # add secondary y-axis labels
+    ax_us = ax.secondary_yaxis("right")
+    ax_us.set_ylabel(labels['y_axis_usd'], fontweight="bold")
+    y_labels_usd = list()
+    for y_label_mwk in ax.get_yticks():
+        y_labels_usd.extend([str(round(y_label_mwk * in_mwk_to_usd_exchange_rate * 1000))])
+    ax_us.set_yticks(ax.get_yticks())
+    ax_us.set_yticklabels(y_labels_usd)
 
-    plt.grid(axis='y')
+    fig.tight_layout()
 
     plt.savefig(outputpath / output_filename, format='png')
 
-    # %%% PLot total only
+    # %%% PLot total only ..............................................................................................
     fig2, ax2 = plt.subplots()
     # custom x-axis tick labels
     x2_i = np.array(0)  # the x_label locations
@@ -110,7 +120,7 @@ def plot_costs(in_id, in_suffix, in_x_labels, in_cons_costs_without, in_cons_cos
     # title
     ax2.set_title(str('TOTAL\n' + fig_title), fontweight="bold", x=0.45)
     # y-axis label
-    ax2.set_ylabel(labels['y_axis'], fontweight="bold")
+    ax2.set_ylabel(labels['y_axis_mwk'], fontweight="bold")
     # bar_without
     ax2.bar(x2_i - width * 0.2, cons_costs_without[-1], width/3,
             label=labels['cons'], color=colors['cons'])
@@ -124,11 +134,19 @@ def plot_costs(in_id, in_suffix, in_x_labels, in_cons_costs_without, in_cons_cos
     ax2.bar(x2_i + width * 0.2, ppfp_interv_costs_with[-1], width/3, bottom=ppfp_bottom[-1],
             label=labels['ppfp'], color=colors['ppfp'])
     # add legend
-    ax2.legend(loc='upper left', bbox_to_anchor=(1, 0.9999))
+    ax2.legend(loc='upper left', bbox_to_anchor=(0, -.12))
+    plt.grid(axis='y')
+
+    # add secondary y-axis labels
+    ax2_us = ax2.secondary_yaxis("right")
+    ax2_us.set_ylabel(labels['y_axis_usd'], fontweight="bold")
+    y2_labels_usd = list()
+    for y2_label_mwk in ax2.get_yticks():
+        y2_labels_usd.extend([str(round(y2_label_mwk * in_mwk_to_usd_exchange_rate * 1000))])
+    ax2_us.set_yticks(ax2.get_yticks())
+    ax2_us.set_yticklabels(y2_labels_usd)
 
     fig2.tight_layout()
-
-    plt.grid(axis='y')
 
     plt.savefig(outputpath / (str('Total ' + output_filename)), format='png')
 
