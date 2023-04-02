@@ -74,6 +74,8 @@ TimePeriods_starts = [2023, 2031, 2041, 2051]
 # Order of contraceptives for a fig and a table
 contraceptives_order = ['pill', 'IUD', 'injections', 'implant', 'male_condom',
                         'female_sterilization', 'other_modern']
+# MWK to USD exchange rate (1 MWK = mwk_to_usd_exchange_rate USD)
+mwk_to_usd_exchange_rate = 1/790
 # %% Calculate Contraception Pop and PPFP Intervention Costs over time?
 # calc_intervention_costs_bool = False
 calc_intervention_costs_bool = True
@@ -378,7 +380,8 @@ if table_use_costs_bool:
         ppfp_interv_costs_with_tp_l = interv_costs_with_df['ppfp_intervention_cost'].tolist()
         bar_chart_costs.plot_costs(
             [datestamp_without_log, datestamp_with_log], suffix, list(interv_costs_with_df.index),
-            cons_costs_without_tp_l, cons_costs_with_tp_l, pop_interv_costs_with_tp_l, ppfp_interv_costs_with_tp_l
+            cons_costs_without_tp_l, cons_costs_with_tp_l, pop_interv_costs_with_tp_l, ppfp_interv_costs_with_tp_l,
+            mwk_to_usd_exchange_rate  # & default in_reduce_magnitude=1e3
         )
 
     # TODO: move the creation of the table (bellow) to a separate .py file
