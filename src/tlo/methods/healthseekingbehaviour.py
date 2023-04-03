@@ -227,7 +227,7 @@ class HealthSeekingBehaviour(Module):
             # Predict for symptom-specific odd ratios
             for symptom, odds in care_seeking_odds_ratios.items():
                 result[df[f'sy_{symptom}'] > 0] *= odds
-            result = result / (1 + result)
+            result = (1 / (1 + 1 / result))
             # If a random number generator is supplied provide boolean outcomes, not probabilities
             if rng:
                 outcome = rng.random_sample(len(result)) < result
@@ -370,15 +370,6 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                 # behaviour).
                 will_seek_care = idx_where_true(self._has_any_symptoms(subgroup, symptoms_that_allow_healthcareseeking))
             else:
-                # If not forcing, run the linear model to predict which persons will seek care, from among those with
-                # symptoms that cause any degree of healthcare seeking.
-                # will_seek_care = idx_where_true(
-                #     hsb_model.predict(
-                #         subgroup.loc[self._has_any_symptoms(subgroup, symptoms_that_allow_healthcareseeking)],
-                #         module.rng,
-                #         squeeze_single_row_output=False
-                #     )
-                # )
                 # If not forcing, run the custom model to predict which persons will seek care, from among those
                 # with symptoms that cause any degree of healthcare seeking.
                 will_seek_care = idx_where_true(
