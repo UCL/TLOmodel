@@ -44,7 +44,13 @@ class LongRun(BaseScenario):
     def modules(self):
         return fullmodel(
             resourcefilepath=self.resources,
-            module_kwargs={"HealthSystem": {"use_funded_or_actual_staffing": "actual"}}
+            module_kwargs={
+                 "SymptomManager": {
+                     "spurious_symptoms": True
+                 },
+                 "HealthSystem": {
+                     "use_funded_or_actual_staffing": "actual",
+                 }
         )
 
     def draw_parameters(self, draw_number, rng):
