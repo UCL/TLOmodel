@@ -182,7 +182,7 @@ def test_arithmetic_of_disability_aggregation_calcs(seed):
 
         def report_daly_values(self):
             df = self.sim.population.props
-            disability = pd.DataFrame(index=df.loc[df.is_alive].index, columns={'A', 'B'}, data=0.0)
+            disability = pd.DataFrame(index=df.loc[df.is_alive].index, columns=['A', 'B'], data=0.0)
             disability.loc[self.persons_affected, 'A'] = self.daly_wt_A
             disability.loc[self.persons_affected, 'B'] = self.daly_wt_B
             return disability
