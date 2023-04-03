@@ -239,8 +239,7 @@ class HealthSeekingBehaviour(Module):
             'children',
             'adults'
         ):
-            self.custom_hsb_linear_models[subgroup] = LinearModel.custom(predict_function=predict_healthcareseeking,
-                                                                         parameters=p)
+            self.custom_hsb_linear_models[subgroup] = LinearModel.custom(predict_function=predict_healthcareseeking)
 
         # Model for the care-seeking (if it occurs) to be for an EMERGENCY Appointment:
         def custom_predict(self, df, rng=None, **externals) -> pd.Series:
