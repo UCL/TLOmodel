@@ -207,10 +207,11 @@ class HealthSeekingBehaviour(Module):
             )
 
         # use a custom function to represent the linear model for healthcare seeking
-        def predict_healthcareseeking(self, df, rng=None, **externals):
-            p = self.parameters
-            subgroup = externals['subgroup']
-            care_seeking_odds_ratios = externals['care_seeking_odds_ratios']
+        def predict_healthcareseeking(
+            self, df, rng=None, subgroup=None, care_seeking_odds_ratios=None
+        ):
+            if subgroup is None or care_seeking_odds_ratio is None:
+                raise ValueError("subgroup and care_seeking_odds_ratios must both be specified")
 
             result = pd.Series(data=p[f'baseline_odds_of_healthcareseeking_{subgroup}'], index=df.index)
             # Predict behaviour due to the 'average symptom'
