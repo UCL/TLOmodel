@@ -206,13 +206,14 @@ class HealthSeekingBehaviour(Module):
                 *(Predictor(f'sy_{symptom}').when('>0', odds) for symptom, odds in care_seeking_odds_ratios.items())
             )
 
+        # use a custom function to represent the linear model for healthcare seeking
         def predict_healthcareseeking(self, df, rng=None, **externals):
             p = self.parameters
             subgroup = externals['subgroup']
             care_seeking_odds_ratios = externals['care_seeking_odds_ratios']
-            squeeze_single_row_output = externals['squeeze_single_row_output']
 
             result = pd.Series(data=p[f'baseline_odds_of_healthcareseeking_{subgroup}'], index=df.index)
+            # Predict behaviour due to the 'average symptom'
             if subgroup == 'children':
                 result[df.age_years >= 5] *= p['odds_ratio_children_age_5to14']
             if subgroup == 'adults':
@@ -223,26 +224,21 @@ class HealthSeekingBehaviour(Module):
             result[df.region_of_residence == 'Central'] *= p[f'odds_ratio_{subgroup}_region_Central']
             result[df.region_of_residence == 'Southern'] *= p[f'odds_ratio_{subgroup}_region_Southern']
             result[(df.li_wealth == 4) | (df.li_wealth == 5)] *= p[f'odds_ratio_{subgroup}_wealth_higher']
+            # Predict for symptom-specific odd ratios
             for symptom, odds in care_seeking_odds_ratios.items():
                 result[df[f'sy_{symptom}'] > 0] *= odds
             result = result / (1 + result)
-            # If the user supplied a random number generator then they want outcomes,
-            # not probabilities
+            # If a random number generator is supplied provide boolean outcomes, not probabilities
             if rng:
                 outcome = rng.random_sample(len(result)) < result
-                # pop the boolean out of the series if we have a single row,
-                # otherwise return the series
-                if len(outcome) == 1 and squeeze_single_row_output:
-                    return outcome.iloc[0]
-                else:
-                    return outcome
+                return outcome
             else:
                 return result
 
         for subgroup in (
-                'children',
-                'adults'
-            ):
+            'children',
+            'adults'
+        ):
             self.custom_hsb_linear_models[subgroup] = LinearModel.custom(predict_function=predict_healthcareseeking,
                                                                          parameters=p)
 
@@ -336,7 +332,7 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
 
         idx_where_true = lambda series: set(series.loc[series].index)  # noqa: E731
 
-        # assert if the linear model and custom function give the same results
+        # assert if the linear model and custom model give the same results
         assert_lm_equals_cf = False
 
         # Separately schedule HSI events for child and adult subgroups
@@ -345,8 +341,9 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                 alive_newly_symptomatic_children,
                 alive_newly_symptomatic_adults
             ),
-            ('children',
-             'adults'
+            (
+                'children',
+                'adults'
              ),
             (
                 module.odds_ratio_health_seeking_in_children,
@@ -382,12 +379,13 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                 #         squeeze_single_row_output=False
                 #     )
                 # )
+                # If not forcing, run the custom model to predict which persons will seek care, from among those
+                # with symptoms that cause any degree of healthcare seeking.
                 will_seek_care = idx_where_true(
                     hsb_model_custom.predict(
                         subgroup.loc[self._has_any_symptoms(subgroup, symptoms_that_allow_healthcareseeking)],
                         module.rng,
-                        squeeze_single_row_output=False, subgroup=subgroup_name,
-                        care_seeking_odds_ratios=care_seeking_odds_ratios)
+                        subgroup=subgroup_name, care_seeking_odds_ratios=care_seeking_odds_ratios)
                 )
                 if assert_lm_equals_cf:
                     will_seek_care_lm = hsb_model.predict(
@@ -395,8 +393,7 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                         squeeze_single_row_output=False)
                     will_seek_care_cf = hsb_model_custom.predict(
                         subgroup.loc[self._has_any_symptoms(subgroup, symptoms_that_allow_healthcareseeking)],
-                        squeeze_single_row_output=False, subgroup=subgroup_name,
-                        care_seeking_odds_ratios=care_seeking_odds_ratios)
+                        subgroup=subgroup_name, care_seeking_odds_ratios=care_seeking_odds_ratios)
 
                     assert np.allclose(will_seek_care_lm, will_seek_care_cf)
 
