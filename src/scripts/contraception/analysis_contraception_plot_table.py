@@ -372,7 +372,8 @@ if table_use_costs_bool:
     # %% Join costs in MWK (and in USD):
     costs_mwk_usd_without_df = costs_without_df.astype(str) + " (" + costs_usd_without_df.astype(str) + ")"
     costs_mwk_usd_with_df = costs_with_df.astype(str) + " (" + costs_usd_with_df.astype(str) + ")"
-    interv_costs_mwk_usd_without_df = interv_costs_without_df.astype(str) + " (" + interv_costs_usd_without_df.astype(str) + ")"
+    interv_costs_mwk_usd_without_df =\
+        interv_costs_without_df.astype(str) + " (" + interv_costs_usd_without_df.astype(str) + ")"
     interv_costs_mwk_usd_with_df = interv_costs_with_df.astype(str) + " (" + interv_costs_usd_with_df.astype(str) + ")"
 
     # TODO: move the creation of the table (bellow) to a separate .py file
@@ -391,15 +392,12 @@ if table_use_costs_bool:
                 data.append(l_tp_use)
                 # consumable costs in MWK (in USD)
                 l_tp_costs = []
-                co_modern_total = "NA"
                 for meth in in_df_use.columns:
                     if meth in list(in_df_costs.loc[tp].index.get_level_values('Contraceptive_Method')):
                         # add costs for each meth & 'co_modern_total'
                         l_tp_costs.append(in_df_costs.loc[(tp, meth), 'Costs'])
                     else:
                         l_tp_costs.append('0 (0)')
-                    if meth == 'co_modern_total':
-                        co_modern_total = in_df_costs.loc[(tp, meth), 'Costs']
                 # intervention implementation costs & all costs in MWK (in USD)
                 if in_df_interv_costs.empty:
                     for i in range(3):
