@@ -1,7 +1,7 @@
 """
 This scenario runs the full model under a set of scenario in which each one TREATMENT_ID is excluded.
 
-This version of the scenario represents actual healthcare capacity/performance and normal healthcare seeking.
+This version of the scenario represents _actual_ healthcare capacity/performance and normal healthcare seeking.
 
 
 * No spurious symptoms
@@ -11,11 +11,13 @@ This version of the scenario represents actual healthcare capacity/performance a
 * Health care seeking as per defaults
 
 Run on the batch system using:
-```tlo batch-submit src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_effect_of_each_treatment_min.py
+```
+tlo batch-submit src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_effect_of_each_treatment_actual.py
 ```
 
 or locally using:
-```tlo scenario-run src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_effect_of_each_treatment_min.py
+```
+tlo scenario-run src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_effect_of_each_treatment_actual.py
 ```
 
 """

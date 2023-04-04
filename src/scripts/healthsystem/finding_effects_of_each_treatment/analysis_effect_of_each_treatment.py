@@ -52,7 +52,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     def get_parameter_names_from_scenario_file() -> Tuple[str]:
         """Get the tuple of names of the scenarios from `Scenario` class used to create the results."""
-        from scripts.healthsystem.finding_effects_of_each_treatment.scenario_effect_of_each_treatment_min import (
+        from scripts.healthsystem.finding_effects_of_each_treatment.scenario_effect_of_each_treatment_actual import (
             EffectOfEachTreatment,
         )
         e = EffectOfEachTreatment()
@@ -690,7 +690,7 @@ if __name__ == "__main__":
         type=Path,
         help=(
             "Directory containing results from running src/scripts/healthsystem/"
-            "finding_effects_of_each_treatment/scenario_effect_of_each_treatment_min.py "
+            "finding_effects_of_each_treatment/scenario_effect_of_each_treatment_actual.py "
             "script. If not specified (set to None) the last (sorting in alphabetical "
             "order) directory matching either of the glob patterns outputs/"
             "*effect_of_each_treatment* and outputs/*/*effect_of_each_treatment* will "
