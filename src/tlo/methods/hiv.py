@@ -1690,28 +1690,26 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         def vmmc_for_child():
             """schedule the HSI_Hiv_Circ for <15 yrs males according to his age, circumcision status
             and the probability of being circumcised"""
-            # find the males who are aging <15 yrs and not circumcised
-            target_child_idx = df.loc[df.is_alive
-                                      & (df.sex == "M")
-                                      & (df.age_years < 15)
-                                      & (~df.li_is_circ)].index
+            # work out who will be circumcised.
+            will_go_to_circ = self.module.lm["lm_circ_child"].predict(
+                df.loc[
+                    df.is_alive
+                    & (df.sex == "M")
+                    & (df.age_years < 15)
+                    & (~df.li_is_circ)
+                ],
+                self.module.rng,
+                year=self.sim.date.year,
+            )
+
             # schedule the HSI based on the probability
-            for person_id in target_child_idx:
-                if self.sim.date.year < 2020:
-                    x = self.module.lm["lm_circ_child_before_2020"].predict(
-                        df.loc[[person_id]], self.module.rng
-                    )
-                else:
-                    x = self.module.lm["lm_circ_child_from_2020"].predict(
-                        df.loc[[person_id]], self.module.rng
-                    )
-                if x:
-                    self.sim.modules["HealthSystem"].schedule_hsi_event(
-                        HSI_Hiv_Circ(person_id=person_id, module=self.module),
-                        topen=self.sim.date,
-                        tclose=None,
-                        priority=0,
-                    )
+            for person_id in will_go_to_circ.loc[will_go_to_circ].index:
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    HSI_Hiv_Circ(person_id=person_id, module=self.module),
+                    topen=self.sim.date,
+                    tclose=None,
+                    priority=0,
+                )
 
         # Horizontal transmission: Male --> Female
         horizontal_transmission(from_sex="M", to_sex="F")
