@@ -12,12 +12,12 @@ This version of the scenario represents _actual_ healthcare capacity/performance
 
 Run on the batch system using:
 ```
-tlo batch-submit src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_effect_of_each_treatment_actual.py
+tlo batch-submit src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_effect_of_each_treatment_defaults.py
 ```
 
 or locally using:
 ```
-tlo scenario-run src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_effect_of_each_treatment_actual.py
+tlo scenario-run src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_effect_of_each_treatment_defaults.py
 ```
 
 """
