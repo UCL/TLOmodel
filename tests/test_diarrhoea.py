@@ -305,9 +305,9 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
                      )
         # Edit rate of spurious symptoms to be limited to additional cases of diarrhoea:
         sp_symps = sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence']
-        for symp in sp_symps['generic_symptom_name']:
+        for symp in sp_symps['name']:
             sp_symps.loc[
-                sp_symps['generic_symptom_name'] == symp,
+                sp_symps['name'] == symp,
                 ['prob_spurious_occurrence_in_adults_per_day', 'prob_spurious_occurrence_in_children_per_day']
             ] = 5.0 / 1000 if symp == 'diarrhoea' else 0.0
 

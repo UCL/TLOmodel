@@ -1065,7 +1065,8 @@ def test_manipulation_of_service_availability(seed, tmpdir):
     """Check that the parameter `service_availability` can be used to allow/disallow certain `TREATMENT_ID`s.
     N.B. This is setting service_availability through a change in parameter, as would be done by BatchRunner."""
 
-    generic_first_appts = {'FirstAttendance_NonEmergency', 'FirstAttendance_Emergency'}
+    generic_first_appts = {'FirstAttendance_NonEmergency', 'FirstAttendance_Emergency',
+                           'FirstAttendance_SpuriousEmergencyCare'}
 
     def get_set_of_treatment_ids_that_run(service_availability) -> Set[str]:
         """Return set of TREATMENT_IDs that occur when running the simulation with the `service_availability`."""
