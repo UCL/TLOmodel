@@ -243,10 +243,10 @@ class Malaria(Module):
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom("jaundice"),  # nb. will cause care seeking as much as a typical symptom
             Symptom("severe_anaemia"),  # nb. will cause care seeking as much as a typical symptom
-            Symptom("acidosis", emergency_in_children=True, emergency_in_adults=True),
-            Symptom("coma_convulsions", emergency_in_children=True, emergency_in_adults=True),
-            Symptom("renal_failure", emergency_in_children=True, emergency_in_adults=True),
-            Symptom("shock", emergency_in_children=True, emergency_in_adults=True)
+            Symptom.emergency("acidosis"),
+            Symptom.emergency("coma_convulsions"),
+            Symptom.emergency("renal_failure"),
+            Symptom.emergency("shock")
         )
 
     def initialise_population(self, population):
@@ -485,7 +485,7 @@ class Malaria(Module):
         df.at[child_id, "ma_iptp"] = False
 
         # reset mother's IPTp status to False
-        if mother_id != -1:
+        if mother_id >= 0:  # exclude direct births
             df.at[mother_id, "ma_iptp"] = False
 
     def on_hsi_alert(self, person_id, treatment_id):

@@ -9,6 +9,7 @@ from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
+from tlo.util import random_date
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -72,19 +73,12 @@ class Measles(Module):
         "me_on_treatment": Property(Types.BOOL, "Currently on treatment for measles complications"),
     }
 
-    # Declaration of the specific symptoms that this module will use
-    SYMPTOMS = {
-        'rash',  # moderate symptoms, will trigger healthcare seeking in community/district facility
-        'encephalitis',
-        'otitis_media'
-    }
-
     def __init__(self, name=None, resourcefilepath=None):
 
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-        # Store the symptoms that this module will use:
+        # Declare the symptoms that this module will use:
         self.symptoms = {
             'rash',
             'fever',
@@ -94,6 +88,7 @@ class Measles(Module):
             'respiratory_symptoms',  # pneumonia
             'eye_complaint'
         }
+        self.symptom_probs = None  # (will store the probabilities of symptom onset by age)
 
         self.consumables = None  # (will store item_codes for consumables used in HSI)
 
@@ -135,13 +130,10 @@ class Measles(Module):
                     odds_ratio_health_seeking_in_adults=2.5)  # non-emergencies
         )
 
-        self.sim.modules['SymptomManager'].register_symptom(
-            Symptom(
-                name='encephalitis',
-                emergency_in_adults=True,
-                emergency_in_children=True
-            )
-        )
+        self.sim.modules['SymptomManager'].register_symptom(Symptom.emergency('encephalitis'))
+
+    def pre_initialise_population(self):
+        self.process_parameters()
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -183,12 +175,6 @@ class Measles(Module):
         df.at[child_id, "me_date_measles"] = pd.NaT
         df.at[child_id, "me_on_treatment"] = False
 
-    def on_hsi_alert(self, person_id, treatment_id):
-        """
-        This is called whenever there is an HSI event commissioned by one of the other disease modules.
-        """
-        pass
-
     def report_daly_values(self):
         # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
         # experienced by persons in the previous month. Only rows for alive-persons must be returned.
@@ -204,12 +190,25 @@ class Measles(Module):
 
         return health_values
 
+    def process_parameters(self):
+        """Process the parameters (following being read-in) prior to the simulation starting.
+        Make `self.symptom_probs` to be a dictionary keyed by age, with values of dictionaries keyed by symptoms and
+        the probability of symptom onset."""
+        probs = self.parameters["symptom_prob"].set_index(["age", "symptom"])["probability"]
+        self.symptom_probs = {level: probs.loc[(level, slice(None))].to_dict() for level in probs.index.levels[0]}
+
+        # Check that a sensible value for a probability of symptom onset is declared for each symptom and for each age
+        # up to and including age 30
+        for _age in range(30 + 1):
+            assert set(self.symptoms) == set(self.symptom_probs.get(_age).keys())
+            assert all([0.0 <= x <= 1.0 for x in self.symptom_probs.get(_age).values()])
+
 
 class MeaslesEvent(RegularEvent, PopulationScopeEventMixin):
-    """ MeaslesEvent runs every year and creates a number of new infections which are scattered across the year
-    seasonality is captured using a cosine function
-    vaccination lowers an individual's likelihood of getting the disease
-    assume one dose will be 85% protective and 2 doses will be 99% protective
+    """ MeaslesEvent runs every month and creates a number of new infections which are scattered across the month.
+    * Seasonality is captured by the risk of infection changing according to the month.
+    * Vaccination lowers an individual's likelihood of getting the infection (one dose will be 85% protective and two
+      doses will be 99% protective).
     """
 
     def __init__(self, module):
@@ -228,7 +227,6 @@ class MeaslesEvent(RegularEvent, PopulationScopeEventMixin):
         trans_prob = p["beta_baseline"] * (1 + p["beta_scale"] *
                                            math.cos((2 + math.pi * (month - p["phase_shift"])) / p["period"]))
 
-        # children under 6 months protected by maternal immunity
         # get individual levels of protection due to vaccine
         protected_by_vaccine = pd.Series(1, index=df.index)  # all fully susceptible
 
@@ -237,6 +235,7 @@ class MeaslesEvent(RegularEvent, PopulationScopeEventMixin):
             protected_by_vaccine.loc[(df.va_measles == 1)] *= (1 - p["vaccine_efficacy_1"])  # partially susceptible
             protected_by_vaccine.loc[(df.va_measles > 1)] *= (1 - p["vaccine_efficacy_2"])  # partially susceptible
 
+        # Find persons to be newly infected (no risk to children under 6 months as protected by maternal immunity)
         new_inf = df.index[~df.me_has_measles & (df.age_exact_years >= 0.5) &
                            (rng.random_sample(size=len(df)) < (trans_prob * protected_by_vaccine))]
 
@@ -249,7 +248,7 @@ class MeaslesEvent(RegularEvent, PopulationScopeEventMixin):
             for person_index in new_inf:
                 self.sim.schedule_event(
                     MeaslesOnsetEvent(self.module, person_index),
-                    self.sim.date + DateOffset(rng.random_integers(low=0, high=28, size=1))
+                    random_date(start=self.sim.date, end=self.sim.date + pd.DateOffset(months=1), rng=rng)
                 )
 
 
@@ -258,60 +257,30 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
 
     def apply(self, person_id):
+        """Onset a case of Measles"""
 
         df = self.sim.population.props  # shortcut to the dataframe
-        p = self.module.parameters
         rng = self.module.rng
 
         if not df.at[person_id, "is_alive"]:
             return
 
-        symptom_prob = p["symptom_prob"]
+        ref_age = df.at[person_id, "age_years"].clip(max=30)  # (For purpose of look-up age limit is 30 years)
+
+        # Determine if the person has "untreated HIV", which is defined as a person in any stage of HIV but not on
+        # successful treatment currently.
 
         logger.debug(key="MeaslesOnsetEvent",
                      data=f"MeaslesOnsetEvent: new infections scheduled for {person_id}")
 
         df.at[person_id, "me_has_measles"] = True
         df.at[person_id, "me_date_measles"] = self.sim.date
+        df.at[person_id, "me_on_treatment"] = False
 
-        # assign symptoms
-        symptom_list = sorted(self.module.symptoms)
+        symp_onset = self.assign_symptoms(ref_age)  # Assign symptoms for this person
+        prob_death = self.get_prob_death(ref_age)  # Look-up the probability of death for this person
 
-        ref_age = df.at[person_id, "age_years"]
-        # age limit for symptom data is 30 years
-        if ref_age > 30:
-            ref_age = 30
-
-        # read probabilities of symptoms by age
-        symptom_prob = symptom_prob.loc[symptom_prob.age == ref_age, ["symptom", "probability"]]
-        # map to a series of probabilities indexed by symptom key
-        symptom_prob = symptom_prob.set_index("symptom").probability
-
-        # symptom onset
-        symp_onset = self.sim.date + DateOffset(days=rng.randint(7, 21))
-
-        # everybody gets rash, fever and eye complaint, other symptoms assigned with age-specific probability
-
-        # random sample which symptoms a person will have
-        active_symptoms = [sym for sym in symptom_list if rng.uniform() < symptom_prob[sym]]
-        # schedule symptoms onset
-        self.sim.modules["SymptomManager"].change_symptom(
-            person_id=person_id,
-            symptom_string=active_symptoms,
-            add_or_remove="+",
-            disease_module=self.module,
-            date_of_onset=symp_onset,
-            duration_in_days=14,  # same duration for all symptoms
-        )
-
-        # schedule symptom resolution without treatment - this only occurs if death doesn't happen first
-        symp_resolve = symp_onset + DateOffset(days=rng.randint(7, 14))
-        self.sim.schedule_event(MeaslesSymptomResolveEvent(self.module, person_id), symp_resolve)
-
-        # todo separate probability for people with HIV
-
-        # probability of death
-        prob_death = p["case_fatality_rate"].get(ref_age)
+        # Schedule either the DeathEvent of the SymptomResolution event, depending on the expected outcome of this case
         if rng.random_sample() < prob_death:
             logger.debug(key="MeaslesOnsetEvent",
                          data=f"This is MeaslesOnsetEvent, scheduling measles death for {person_id}")
@@ -322,6 +291,42 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
             # schedule the death
             self.sim.schedule_event(
                 death_event, symp_onset + DateOffset(days=rng.randint(3, 7)))
+
+        else:
+            # schedule symptom resolution without treatment - this only occurs if death doesn't happen first
+            symp_resolve = symp_onset + DateOffset(days=rng.randint(7, 14))
+            self.sim.schedule_event(MeaslesSymptomResolveEvent(self.module, person_id), symp_resolve)
+
+    def assign_symptoms(self, _age):
+        """Assign symptoms for this case and returns the date on which symptom onset.
+        (Parameter values specify that everybody gets rash, fever and eye complain.)"""
+
+        rng = self.module.rng
+        person_id = self.target
+        symptom_probs_for_this_person = self.module.symptom_probs.get(_age)
+        date_of_symp_onset = self.sim.date + DateOffset(days=rng.randint(7, 21))
+
+        symptoms_to_onset = [
+            _symp for (_symp, _prob), _rand in zip(
+                symptom_probs_for_this_person.items(), rng.random_sample(len(symptom_probs_for_this_person))
+            ) if _rand < _prob
+        ]
+
+        # schedule symptoms onset
+        self.sim.modules["SymptomManager"].change_symptom(
+            person_id=person_id,
+            symptom_string=symptoms_to_onset,
+            add_or_remove="+",
+            disease_module=self.module,
+            date_of_onset=date_of_symp_onset,
+        )
+
+        return date_of_symp_onset
+
+    def get_prob_death(self, _age):
+        """Returns the probability of death for this person based on their age and whether they have untreated HIV."""
+        p = self.module.parameters
+        return p["case_fatality_rate"].get(_age)
 
 
 class MeaslesSymptomResolveEvent(Event, IndividualScopeEventMixin):
@@ -338,7 +343,7 @@ class MeaslesSymptomResolveEvent(Event, IndividualScopeEventMixin):
                      data=f"MeaslesSymptomResolveEvent: symptoms resolved for {person_id}")
 
         # check if person still alive, has measles (therefore has symptoms)
-        if df.at[person_id, "is_alive"] & df.at[person_id, "me_has_measles"]:
+        if df.at[person_id, "is_alive"] and df.at[person_id, "me_has_measles"]:
             # clear symptoms
             self.sim.modules["SymptomManager"].clear_symptoms(
                 person_id=person_id, disease_module=self.module)
@@ -370,9 +375,9 @@ class MeaslesDeathEvent(Event, IndividualScopeEventMixin):
         if df.at[person_id, "me_has_measles"]:
 
             if df.at[person_id, "me_on_treatment"]:
-                reduction_in_death_risk = self.module.rng.uniform(low=0.2, high=0.6, size=1)
+                reduction_in_death_risk = 0.4
 
-                if self.module.rng.rand() < reduction_in_death_risk:
+                if self.module.rng.random_sample() < reduction_in_death_risk:
                     logger.debug(key="MeaslesDeathEvent",
                                  data=f"MeaslesDeathEvent: scheduling death for treated {person_id} on {self.sim.date}")
 
@@ -434,8 +439,7 @@ class HSI_Measles_Treatment(HSI_Event, IndividualScopeEventMixin):
             # modify person property which is checked when scheduled death occurs (or shouldn't occur)
             df.at[person_id, "me_on_treatment"] = True
 
-            # schedule symptom resolution following treatment: assume perfect treatment
-            # also changes treatment status back to False
+            # schedule symptom resolution following treatment
             self.sim.schedule_event(MeaslesSymptomResolveEvent(self.module, person_id),
                                     self.sim.date + DateOffset(days=7))
 
@@ -456,7 +460,8 @@ class MeaslesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=self.repeat))
 
     def apply(self, population):
-        # get some summary statistics
+        """Log Summary Statistics Monthly"""
+
         df = population.props
         now = self.sim.date
 
@@ -489,6 +494,8 @@ class MeaslesLoggingFortnightEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(weeks=self.repeat))
 
     def apply(self, population):
+        """Log Summary Statistics Every Two Weeks"""
+
         df = population.props
 
         # ------------------------------------ SYMPTOMS ------------------------------------
@@ -528,7 +535,8 @@ class MeaslesLoggingAnnualEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(years=self.repeat))
 
     def apply(self, population):
-        # get some summary statistics
+        """Log Summary Statistics Annually"""
+
         df = population.props
         now = self.sim.date
 

@@ -4,7 +4,14 @@ from pathlib import Path
 import pytest
 
 from tlo import Date, Simulation
-from tlo.methods import demography, enhanced_lifestyle, epilepsy, healthburden, healthsystem
+from tlo.methods import (
+    demography,
+    enhanced_lifestyle,
+    epilepsy,
+    healthburden,
+    healthsystem,
+    symptommanager,
+)
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
@@ -23,6 +30,7 @@ def simulation(seed):
             resourcefilepath=resourcefilepath,
             mode_appt_constraints=0),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         epilepsy.Epilepsy(resourcefilepath=resourcefilepath)
     )
     return sim

@@ -281,7 +281,7 @@ class Module:
             elif parameter_definition.python_type == pd.Categorical:
                 categories = parameter_definition.categories
                 assert parameter_value in categories, f"{error_message}\nvalid values: {categories}"
-                parameter_value = pd.Categorical(parameter_value, categories=categories)
+                parameter_value = pd.Categorical([parameter_value], categories=categories)
             elif parameter_definition.type_.name == 'STRING':
                 parameter_value = parameter_value.strip()
             else:
