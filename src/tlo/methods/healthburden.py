@@ -434,7 +434,7 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
 
         # Get the population dataframe
         df = self.sim.population.props
-        idx_alive = set(df.loc[df.is_alive].index)
+        idx_alive = df.loc[df.is_alive].index
 
         # 1) Ask each disease module to log the DALYS for the previous month
         dalys_from_each_disease_module = list()
@@ -462,7 +462,7 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
 
                 # Perform checks on what has been returned
                 assert set(dalys_from_disease_module.columns) == set(declared_causes_of_disability_module)
-                assert set(dalys_from_disease_module.index) == idx_alive
+                assert set(dalys_from_disease_module.index) == set(idx_alive)
                 assert not pd.isnull(dalys_from_disease_module).any().any()
                 assert ((dalys_from_disease_module >= 0) & (dalys_from_disease_module <= 1)).all().all()
                 assert (dalys_from_disease_module.sum(axis=1) <= 1).all()

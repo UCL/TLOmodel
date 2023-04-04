@@ -970,9 +970,12 @@ class Alri(Module):
 
         # report the DALYs occurred
         total_daly_values = pd.Series(data=0.0, index=df.index[df.is_alive])
-        total_daly_values.loc[has_danger_signs] = self.daly_wts['daly_severe_ALRI']
         total_daly_values.loc[
-            has_fast_breathing_or_chest_indrawing_but_not_danger_signs] = self.daly_wts['daly_non_severe_ALRI']
+            sorted(has_danger_signs)
+        ] = self.daly_wts['daly_severe_ALRI']
+        total_daly_values.loc[
+            sorted(has_fast_breathing_or_chest_indrawing_but_not_danger_signs)
+        ] = self.daly_wts['daly_non_severe_ALRI']
 
         # Split out by pathogen that causes the Alri
         dummies_for_pathogen = pd.get_dummies(df.loc[total_daly_values.index, 'ri_primary_pathogen'], dtype='float')

@@ -221,7 +221,7 @@ class Stunting(Module):
 
             severely_stunted_idx = stunted.loc[
                 stunted & (self.rng.random_sample(len(stunted)) < p_stunting.prob_severe_given_stunting)].index
-            stunted_but_not_severe_idx = set(stunted[stunted].index) - set(severely_stunted_idx)
+            stunted_but_not_severe_idx = stunted[stunted].index.difference(severely_stunted_idx)
 
             df.loc[stunted_but_not_severe_idx, "un_HAZ_category"] = '-3<=HAZ<-2'
             df.loc[severely_stunted_idx, "un_HAZ_category"] = 'HAZ<-3'
