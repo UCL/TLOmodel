@@ -79,6 +79,7 @@ class ImpactOfHealthSystemAssumptions(BaseScenario):
                 'HealthSystem': {
                     'Service_Availability': []
                 },
+            },
 
             "Defaults": {
                 'HealthSystem': {
