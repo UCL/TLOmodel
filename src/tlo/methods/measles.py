@@ -376,8 +376,8 @@ class MeaslesDeathEvent(Event, IndividualScopeEventMixin):
 
             if df.at[person_id, "me_on_treatment"]:
                 reduction_in_death_risk = 0.4
-
-                if self.module.rng.random_sample() < reduction_in_death_risk:
+                p_death_with_treatment = 1. - reduction_in_death_risk  # Certain death (1) is reduced by specified amount
+                if self.module.rng.random_sample() < p_death_with_treatment:  # If below that probability, death goes ahead
                     logger.debug(key="MeaslesDeathEvent",
                                  data=f"MeaslesDeathEvent: scheduling death for treated {person_id} on {self.sim.date}")
 
