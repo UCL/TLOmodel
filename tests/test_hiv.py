@@ -701,17 +701,17 @@ def test_child_circ(seed):
         return event, circ_status_0, circ_status_1
 
     # check that if prob = 0.0, there should be no HSI_HIV_Circ scheduled and circ status is not upated
-    test_0 = find_event_scheduled(prob=0.0)
-    assert len(test_0[0]) == 0
-    assert ~test_0[1]
-    assert ~test_0[2]
+    event, circ_status_0, circ_status_1 = find_event_scheduled(prob=0.0)
+    assert len(event) == 0
+    assert not circ_status_0
+    assert not circ_status_1
 
     # check that if prob = 1.0, there should be one HSI_HIV_Circ scheduled by the Poll event;
     # and by applying HSI_Hiv_Circ, the li_is_circ status should be updated (i.e., the circumcision is provided)
-    test_1 = find_event_scheduled(prob=1.0)
-    assert len(test_1[0]) == 1
-    assert ~test_1[1]
-    assert test_1[2]
+    event, circ_status_0, circ_status_1 = find_event_scheduled(prob=1.0)
+    assert len(event) == 1
+    assert not circ_status_0
+    assert circ_status_1
 
 
 def test_hsi_testandrefer_and_behavchg(seed):
