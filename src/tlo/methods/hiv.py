@@ -530,7 +530,7 @@ class Hiv(Module):
             Predictor("year",
                       external=True,
                       conditions_are_mutually_exclusive=True,
-                      conditions_are_exhaustive=True).when("<2000", p["prob_circ_for_child_before_2020"])
+                      conditions_are_exhaustive=True).when("<2020", p["prob_circ_for_child_before_2020"])
                                                      .otherwise(p["prob_circ_for_child_from_2020"])
         )
 
