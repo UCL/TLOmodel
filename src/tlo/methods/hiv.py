@@ -2278,10 +2278,6 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
                 # Update circumcision state
                 df.at[person_id, "li_is_circ"] = True
 
-                logger.info(key="hsi_circ",
-                            data={'15+yrs': (person["age_years"] >= 15)}
-                            )
-
                 # Schedule follow-up appts
                 # schedule first follow-up appt, 3 days from procedure;
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
