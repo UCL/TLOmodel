@@ -439,7 +439,16 @@ class HealthSystem(Module):
         # Service Availability
         'Service_Availability': Parameter(
             Types.LIST, 'List of services to be available. NB. This parameter is over-ridden if an argument is provided'
-                        ' to the module initialiser.')
+                        ' to the module initialiser. '),
+
+        # Mode Appt Constraints
+        'mode_appt_constraints': Parameter(
+            Types.INT, 'Integer code in `{0, 1, 2}` determining mode of constraints with regards to officer numbers '
+                       'and time - 0: no constraints, all HSI events run with no squeeze factor, 1: elastic constraints,'
+                       ' all HSI events run with squeeze factor, 2: hard constraints, only HSI events with no squeeze '
+                       'factor run. N.B. This parameter is over-ridden if an argument is provided'
+                        ' to the module initialiser.',
+        )
     }
 
     PROPERTIES = {
@@ -453,7 +462,7 @@ class HealthSystem(Module):
         name: Optional[str] = None,
         resourcefilepath: Optional[Path] = None,
         service_availability: Optional[List[str]] = None,
-        mode_appt_constraints: int = 0,
+        mode_appt_constraints: Optional[int] = None,
         cons_availability: Optional[str] = None,
         beds_availability: Optional[str] = None,
         ignore_priority: bool = False,
@@ -511,9 +520,10 @@ class HealthSystem(Module):
         self.disable = disable
         self.disable_and_reject_all = disable_and_reject_all
 
-        assert mode_appt_constraints in {0, 1, 2}
-
-        self.mode_appt_constraints = mode_appt_constraints
+        self.mode_appt_constraints = None  # Will be the final determination of the `mode_appt_constraints'
+        if mode_appt_constraints is not None:
+            assert mode_appt_constraints in {0, 1, 2}
+        self.arg_mode_appt_constraints = mode_appt_constraints
 
         self.ignore_priority = ignore_priority
 
@@ -588,7 +598,7 @@ class HealthSystem(Module):
 
         path_to_resourcefiles_for_healthsystem = Path(self.resourcefilepath) / 'healthsystem'
 
-        # Read parmaters for overall performance of the HealthSystem
+        # Read parameters for overall performance of the HealthSystem
         self.load_parameters_from_dataframe(pd.read_csv(
             path_to_resourcefiles_for_healthsystem / 'ResourceFile_HealthSystem_parameters.csv'
         ))
@@ -629,6 +639,9 @@ class HealthSystem(Module):
 
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
+
+        # Determine mode_appt_constraints
+        self.mode_appt_constraints = self.get_mode_appt_constraints()
 
         # Determine service_availability
         self.service_availability = self.get_service_availability()
@@ -889,7 +902,7 @@ class HealthSystem(Module):
         return service_availability
 
     def get_cons_availability(self) -> str:
-        """Set consumables availability. (Should be equal to what is specified by the parameter, but overwrite with
+        """Returns consumables availability. (Should be equal to what is specified by the parameter, but overwrite with
         what was provided in argument if an argument was specified -- provided for backward compatibility/debugging.)"""
 
         if self.arg_cons_availability is None:
@@ -906,7 +919,7 @@ class HealthSystem(Module):
         return _cons_availability
 
     def get_beds_availability(self) -> str:
-        """Set beds availability. (Should be equal to what is specified by the parameter, but overwrite with
+        """Returns beds availability. (Should be equal to what is specified by the parameter, but overwrite with
         what was provided in argument if an argument was specified -- provided for backward compatibility/debugging.)"""
 
         if self.arg_beds_availability is None:
@@ -926,6 +939,13 @@ class HealthSystem(Module):
                     )
 
         return _beds_availability
+
+    def get_mode_appt_constraints(self) -> int:
+        """Returns mode_appt_constraints. (Should be equal to what is specified by the parameter, but overwrite with
+        what was provided in argument if an argument was specified -- provided for backward compatibility/debugging.)"""
+        return self.parameters['mode_appt_constraints'] \
+            if self.arg_mode_appt_constraints is None \
+            else self.arg_mode_appt_constraints
 
     def schedule_hsi_event(
         self,
