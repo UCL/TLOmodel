@@ -40,6 +40,9 @@ jobs:
       runs-on: self-hosted
       keyword: python3.11-pandas1.5-fast-tests
       commands: |
+        sudo add-apt-repository ppa:deadsnakes/ppa -y
+        sudo apt update
+        sudo apt install python3.11 -y
         tox -v -e py311-pandas15,report -- pytest --skip-slow --cov --cov-report=term-missing -vv tests
       description: Run of fast tests on Python v3.11 with Pandas v1.5
       timeout-minutes: 8640
@@ -54,6 +57,9 @@ jobs:
       runs-on: self-hosted
       keyword: python3.11-pandas1.5-all-tests
       commands: |
+        sudo add-apt-repository ppa:deadsnakes/ppa -y
+        sudo apt update
+        sudo apt install python3.11 -y
         tox -v -e py311-pandas15,report -- pytest --cov --cov-report=term-missing -vv tests
       description: Run of all tests on Python v3.11 with Pandas v1.5
       timeout-minutes: 8640
@@ -68,6 +74,9 @@ jobs:
       runs-on: self-hosted
       keyword: python3.11-pandas2.0-fast-tests
       commands: |
+        sudo add-apt-repository ppa:deadsnakes/ppa -y
+        sudo apt update
+        sudo apt install python3.11 -y
         tox -v -e py311-pandas20,report -- pytest --skip-slow --cov --cov-report=term-missing -vv tests
       description: Run of fast tests on Python v3.11 with Pandas v2.0
       timeout-minutes: 8640
@@ -82,6 +91,9 @@ jobs:
       runs-on: self-hosted
       keyword: python3.11-pandas2.0-all-tests
       commands: |
+        sudo add-apt-repository ppa:deadsnakes/ppa -y
+        sudo apt update
+        sudo apt install python3.11 -y
         tox -v -e py311-pandas20,report -- pytest --cov --cov-report=term-missing -vv tests
       description: Run of all tests on Python v3.11 with Pandas v2.0
       timeout-minutes: 8640
