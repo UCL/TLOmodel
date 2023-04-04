@@ -91,70 +91,6 @@ def get_sim(seed, use_simplified_birth=True, disable_HS=False, ignore_con_constr
     return sim
 
 
-def get_sim_for_appt_test_only(tmpdir, seed, use_simplified_birth=True, disable_HS=False,
-                               ignore_con_constraints=True, consumables_availability='all'):
-    """
-    get sim with the checks for configuration of properties running in the TB module
-    """
-
-    start_date = Date(2010, 1, 1)
-
-    # configurate the log
-    log_config = {
-        'filename': 'temp',
-        'directory': tmpdir,
-        'custom_levels': {
-            "*": logging.WARNING,
-            "tlo.methods.tb": logging.INFO,
-            "tlo.methods.demography": logging.INFO,
-            "tlo.methods.healthsystem": logging.DEBUG,
-        }
-    }
-
-    sim = Simulation(start_date=start_date, log_config=log_config, seed=seed)
-
-    # Register the appropriate modules
-    if use_simplified_birth:
-        sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                     simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                     healthsystem.HealthSystem(
-                         resourcefilepath=resourcefilepath,
-                         disable=disable_HS,
-                         cons_availability=consumables_availability,
-                         # mode for consumable constraints (if ignored, all consumables available)
-                     ),
-                     healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                     epi.Epi(resourcefilepath=resourcefilepath),
-                     hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False),
-                     tb.Tb(resourcefilepath=resourcefilepath),
-                     )
-    else:
-        sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                     pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                     care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                     labour.Labour(resourcefilepath=resourcefilepath),
-                     newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                     postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-                     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                     healthsystem.HealthSystem(
-                         resourcefilepath=resourcefilepath,
-                         disable=True,
-                         cons_availability=consumables_availability,
-                         # mode for consumable constraints (if ignored, all consumables available)
-                     ),
-                     healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                     epi.Epi(resourcefilepath=resourcefilepath),
-                     hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False),
-                     tb.Tb(resourcefilepath=resourcefilepath),
-                     )
-
-    return sim
-
 
 # simple checks
 def test_basic_run(seed):
@@ -366,6 +302,71 @@ def test_record_of_appt_of_tb_start_treatment_hsi(tmpdir, seed):
     if consumables are not available, the HSI is scheduled repeatedly where the first footprint is TBNew
     and the rest should be PharmDispensing.
     """
+
+    def get_sim_for_appt_test_only(tmpdir, seed, use_simplified_birth=True, disable_HS=False,
+                                   ignore_con_constraints=True, consumables_availability='all'):
+        """
+        get sim with the checks for configuration of properties running in the TB module
+        """
+
+        start_date = Date(2010, 1, 1)
+
+        # configurate the log
+        log_config = {
+            'filename': 'temp',
+            'directory': tmpdir,
+            'custom_levels': {
+                "*": logging.WARNING,
+                "tlo.methods.tb": logging.INFO,
+                "tlo.methods.demography": logging.INFO,
+                "tlo.methods.healthsystem": logging.DEBUG,
+            }
+        }
+
+        sim = Simulation(start_date=start_date, log_config=log_config, seed=seed)
+
+        # Register the appropriate modules
+        if use_simplified_birth:
+            sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                         healthsystem.HealthSystem(
+                             resourcefilepath=resourcefilepath,
+                             disable=disable_HS,
+                             cons_availability=consumables_availability,
+                             # mode for consumable constraints (if ignored, all consumables available)
+                         ),
+                         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                         epi.Epi(resourcefilepath=resourcefilepath),
+                         hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False),
+                         tb.Tb(resourcefilepath=resourcefilepath),
+                         )
+        else:
+            sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                         pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                         care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                         labour.Labour(resourcefilepath=resourcefilepath),
+                         newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                         postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+                         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                         healthsystem.HealthSystem(
+                             resourcefilepath=resourcefilepath,
+                             disable=True,
+                             cons_availability=consumables_availability,
+                             # mode for consumable constraints (if ignored, all consumables available)
+                         ),
+                         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                         epi.Epi(resourcefilepath=resourcefilepath),
+                         hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False),
+                         tb.Tb(resourcefilepath=resourcefilepath),
+                         )
+
+        return sim
+
     def get_appt_footprints(_consumables_availability):
         """
         Return a list of the APPT_FOOTPRINTS that are logged for one person
