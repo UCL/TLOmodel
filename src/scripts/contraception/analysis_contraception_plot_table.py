@@ -81,9 +81,12 @@ mwk_to_usd_exchange_rate = 1/790
 calc_intervention_costs_bool = True
 # %% Round the number of women using contraception? No => None, Yes => set to nearest what to round them
 # (e.g. to nearest thousands => 1e3).
+# TODO: test whether None in following 3 pars works
 rounding_use_to = 1e3
-# %% Round the costs? No => None, Yes => set to nearest what to round them.
-rounding_costs_to = 1e6
+# %% Round the costs in MWK? No => None, Yes => set to nearest what to round them.
+rounding_costs_mwk_to = 1e6
+# %% Round the costs in USD? No => None, Yes => set to nearest what to round them.
+rounding_costs_usd_to = rounding_costs_mwk_to / 1000
 #
 # %%%% Parameters only for test runs (for final runs set them as True-True-False-True)
 # # Do you want to do both analysis? If not (set one of the below to False). The analysis won't be done and the outputs
@@ -100,7 +103,7 @@ run_analysis = run_analysis and table_use_costs_bool
 # suffix for the output figure(s) and/or table
 if set_ylims_bool:
     branch_name = branch_name + '_yaxis-lims-united'
-suffix = '_' + branch_name + '_' + 'useTo_' + str(rounding_use_to) + '_costsTo_' + str(rounding_costs_to) + \
+suffix = '_' + branch_name + '_' + 'useTo_' + str(rounding_use_to) + '_MWKcostsTo_' + str(rounding_costs_mwk_to) + \
          '_' + pop_size_simulated
 ###
 if run_analysis and table_use_costs_bool:
@@ -265,61 +268,112 @@ else:
 # %% Table Use and Consumables Costs of Contraception methods Over time
 # with and without intervention:
 if table_use_costs_bool:
+
     if not ('use_output' in locals() or 'use_output' in globals()):
         use_output = "mean"
 
-    def round_format(in_df, in_rounding_to):
+    def round_df(in_df, in_rounding_to):
         if in_rounding_to:
             round_index = math.log10(in_rounding_to)  # TODO: fix the round_index warning
         else:
             round_index = math.log10(1)
-        df_rounded = (round(in_df, -int(round_index)) / in_rounding_to).astype(int)
+        return (round(in_df, -int(round_index)) / in_rounding_to).astype(int)
+
+    def format_df(in_df_rounded):
         df_formatted = pd.DataFrame()
-        for col_name in df_rounded.columns:
-            df_formatted[col_name] = df_rounded[col_name].map('{:,.0f}'.format)
+        for col_name in in_df_rounded.columns:
+            df_formatted[col_name] = in_df_rounded[col_name].map('{:,.0f}'.format)
         return df_formatted
 
-    def use_perc_val_df_round_format(use_df, percentage_use_df):
-        # %% Round the nmb of women using?
-        if rounding_use_to:
-            round_use_index = math.log10(rounding_use_to)
-        else:
-            round_use_index = math.log10(1)
-        use_df_rounded = (round(use_df, -int(round_use_index)) / rounding_use_to).astype(int)
-        use_df_formatted = pd.DataFrame()
-        for col_name in use_df_rounded.columns:
-            use_df_formatted[col_name] = use_df_rounded[col_name].map('{:,.0f}'.format)
-        return percentage_use_df.round(1).astype(str) + '%' + " (" + use_df_formatted.astype(str) + ")"
+    # TODO: it formats df even if not rounded
+    def round_format(in_df, in_rounding_to):
+        df_rounded = round_df(in_df, in_rounding_to)
+        return format_df(df_rounded)
 
-    # %% Join & Round percentages and total values of use:
+    # %% Join, Round & Format percentages and total values of use:
     use_without_perc_val_df = percentage_use_without_df.round(1).astype(str) + '%' + " (" + \
         round_format(use_without_df, rounding_use_to).astype(str) + ")"
     use_with_perc_val_df = percentage_use_with_df.round(1).astype(str) + '%' + " (" + \
         round_format(use_with_df, rounding_use_to).astype(str) + ")"
 
-    # %% Round the costs:
-    if rounding_costs_to:
-        round_index = math.log10(rounding_costs_to)
-        costs_without_df = round(costs_without_df, -int(round_index)) / rounding_costs_to
-        costs_with_df = round(costs_with_df, -int(round_index)) / rounding_costs_to
-        if do_interv_analysis:
-            interv_costs_with_df = round(interv_costs_with_df, -int(round_index)) / rounding_costs_to
-        if not do_no_interv_analysis:
-            interv_costs_without_df = interv_costs_with_df
+    # %% For each time period sum costs for all modern methods:
+    def add_total_cons_costs_tp(in_costs_df):
+        total_costs_without_tp = in_costs_df.groupby(level=0).sum()
+        total_costs_without_tp.index =\
+            pd.MultiIndex.from_tuples([(x, 'co_modern_total') for x in total_costs_without_tp.index])
+        out_costs_df =\
+            pd.concat([in_costs_df, total_costs_without_tp]).sort_index(level=[0, 1], sort_remaining=False)
+        tp_order = pd.unique(use_without_df.index.get_level_values(0))
+        # create a new dataframe with the new order of level 0 index
+        out_costs_df_reordered = pd.DataFrame(index=pd.MultiIndex.from_product(
+            [tp_order, out_costs_df.index.levels[1]]
+        ), columns=out_costs_df.columns)
+        # fill the new dataframe with the values from the original dataframe
+        out_costs_df_reordered.loc[out_costs_df.index, :] = out_costs_df.values
+        # drop rows with all NaN values
+        out_costs_df_reordered.dropna(how='all', inplace=True)
+        return out_costs_df_reordered
+
+    costs_without_df = add_total_cons_costs_tp(costs_without_df)
+    costs_with_df = add_total_cons_costs_tp(costs_with_df)
+
+    # %% Sum all modern contraceptives + both interventions implementation for results with interventions
+    interv_cons_total = []
+    for tp in interv_costs_with_df.index:
+        interv_cons_total.append(
+            interv_costs_with_df.loc[tp, 'interventions_total'] + costs_with_df.loc[(tp, 'co_modern_total'), 'Costs']
+        )
+    interv_costs_with_df['interv_cons_total'] = interv_cons_total
+
+    # %% Calculate costs in USD:
+    costs_usd_without_df = costs_without_df * mwk_to_usd_exchange_rate
+    costs_usd_with_df = costs_with_df * mwk_to_usd_exchange_rate
+    interv_costs_usd_without_df = interv_costs_without_df * mwk_to_usd_exchange_rate
+    interv_costs_usd_with_df = interv_costs_with_df * mwk_to_usd_exchange_rate
+
+    # %% Round the cons & interv costs:
+    if rounding_costs_mwk_to:
+        costs_without_df = round_df(costs_without_df, rounding_costs_mwk_to)
+        costs_with_df = round_df(costs_with_df, rounding_costs_mwk_to)
+        interv_costs_without_df = round_df(interv_costs_without_df, rounding_costs_mwk_to)
+        interv_costs_with_df = round_df(interv_costs_with_df, rounding_costs_mwk_to)
+    if rounding_costs_usd_to:
+        costs_usd_without_df = round_df(costs_usd_without_df, rounding_costs_usd_to)
+        costs_usd_with_df = round_df(costs_usd_with_df, rounding_costs_usd_to)
+        interv_costs_usd_without_df = round_df(interv_costs_usd_without_df, rounding_costs_usd_to)
+        interv_costs_usd_with_df = round_df(interv_costs_usd_with_df, rounding_costs_usd_to)
 
     # %% Plot Consumables & Intervention Costs Over Time from the Table:
     if plot_costs:
-        # group consumables costs by time periods
-        cons_costs_without_tp_l = costs_without_df.groupby(level=[0], sort=False).sum()['Costs'].tolist()
-        cons_costs_with_tp_l = costs_with_df.groupby(level=[0], sort=False).sum()['Costs'].tolist()
+        # all consumable costs by time periods
+        all_cons_costs_without_tp =\
+            costs_without_df.loc[(slice(None), 'co_modern_total'), 'Costs'].reset_index(level=1, drop=True).tolist()
+        all_cons_costs_with_tp =\
+            costs_with_df.loc[(slice(None), 'co_modern_total'), 'Costs'].reset_index(level=1, drop=True).tolist()
         # create lists with interv costs
         pop_interv_costs_with_tp_l = interv_costs_with_df['pop_intervention_cost'].tolist()
         ppfp_interv_costs_with_tp_l = interv_costs_with_df['ppfp_intervention_cost'].tolist()
         bar_chart_costs.plot_costs(
             [datestamp_without_log, datestamp_with_log], suffix, list(interv_costs_with_df.index),
-            cons_costs_without_tp_l, cons_costs_with_tp_l, pop_interv_costs_with_tp_l, ppfp_interv_costs_with_tp_l,
+            all_cons_costs_without_tp, all_cons_costs_with_tp, pop_interv_costs_with_tp_l, ppfp_interv_costs_with_tp_l,
             mwk_to_usd_exchange_rate  # & default in_reduce_magnitude=1e3
         )
+
+    # %% Format cons & interv costs:
+    costs_without_df = format_df(costs_without_df)
+    costs_with_df = format_df(costs_with_df)
+    interv_costs_without_df = format_df(interv_costs_without_df)
+    interv_costs_with_df = format_df(interv_costs_with_df)
+    costs_usd_without_df = format_df(costs_usd_without_df)
+    costs_usd_with_df = format_df(costs_usd_with_df)
+    interv_costs_usd_without_df = format_df(interv_costs_usd_without_df)
+    interv_costs_usd_with_df = format_df(interv_costs_usd_with_df)
+
+    # %% Join costs in MWK (and in USD):
+    costs_mwk_usd_without_df = costs_without_df.astype(str) + " (" + costs_usd_without_df.astype(str) + ")"
+    costs_mwk_usd_with_df = costs_with_df.astype(str) + " (" + costs_usd_with_df.astype(str) + ")"
+    interv_costs_mwk_usd_without_df = interv_costs_without_df.astype(str) + " (" + interv_costs_usd_without_df.astype(str) + ")"
+    interv_costs_mwk_usd_with_df = interv_costs_with_df.astype(str) + " (" + interv_costs_usd_with_df.astype(str) + ")"
 
     # TODO: move the creation of the table (bellow) to a separate .py file
     def combine_use_costs_with_without_interv(
@@ -335,28 +389,27 @@ if table_use_costs_bool:
                 for i in range(4):
                     l_tp_use.append('--')
                 data.append(l_tp_use)
-                # costs
+                # consumable costs in MWK (in USD)
                 l_tp_costs = []
                 co_modern_total = "NA"
                 for meth in in_df_use.columns:
                     if meth in list(in_df_costs.loc[tp].index.get_level_values('Contraceptive_Method')):
-                        l_tp_costs.append(round(float(in_df_costs.loc[(tp, meth), :]), 2))
+                        # add costs for each meth & 'co_modern_total'
+                        l_tp_costs.append(in_df_costs.loc[(tp, meth), 'Costs'])
                     else:
-                        if meth == 'co_modern_total':
-                            co_modern_total = sum(l_tp_costs)
-                            l_tp_costs.append(round(co_modern_total, 2))
-                        else:
-                            l_tp_costs.append(0)
+                        l_tp_costs.append('0 (0)')
+                    if meth == 'co_modern_total':
+                        co_modern_total = in_df_costs.loc[(tp, meth), 'Costs']
+                # intervention implementation costs & all costs in MWK (in USD)
                 if in_df_interv_costs.empty:
                     for i in range(3):
-                        l_tp_costs.append(0)
-                    l_tp_costs.append(co_modern_total)
+                        l_tp_costs.append('0 (0)')
+                    l_tp_costs.append(in_df_costs.loc[(tp, 'co_modern_total'), 'Costs'])
                 else:
-                    l_tp_costs.append(round(in_df_interv_costs.loc[tp, 'pop_intervention_cost'], 2))
-                    l_tp_costs.append(round(in_df_interv_costs.loc[tp, 'ppfp_intervention_cost'], 2))
-                    l_tp_costs.append(round(in_df_interv_costs.loc[tp, 'interventions_total'], 2))
-                    l_tp_costs.append(round(in_df_interv_costs.loc[tp, 'interventions_total'] +
-                                            co_modern_total, 2))
+                    l_tp_costs.append(in_df_interv_costs.loc[tp, 'pop_intervention_cost'])
+                    l_tp_costs.append(in_df_interv_costs.loc[tp, 'ppfp_intervention_cost'])
+                    l_tp_costs.append(in_df_interv_costs.loc[tp, 'interventions_total'])
+                    l_tp_costs.append(in_df_interv_costs.loc[tp, 'interv_cons_total'])
                 data.append(l_tp_costs)
         table_cols = list(in_df_use_without.columns)
         table_cols.append('pop_interv')
@@ -367,19 +420,19 @@ if table_use_costs_bool:
         def rounding_name(in_rounding_scale):
             if in_rounding_scale:
                 if in_rounding_scale == 1e9:
-                    return "billions "
+                    return "billions"
                 elif in_rounding_scale == 1e6:
-                    return "millions "
+                    return "millions"
                 elif in_rounding_scale == 1e5:
-                    return "hundreds of thousands "
+                    return "hundreds of thousands"
                 elif in_rounding_scale == 1e4:
-                    return "tens of thousands "
+                    return "tens of thousands"
                 elif in_rounding_scale == 1e3:
-                    return "thousands "
+                    return "thousands"
                 elif in_rounding_scale == 100:
-                    return "hundreds "
+                    return "hundreds"
                 elif in_rounding_scale == 10:
-                    return "tens "
+                    return "tens"
                 else:
                     return str(in_rounding_scale) + " "
             else:
@@ -393,23 +446,23 @@ if table_use_costs_bool:
                                        ['Without interventions', 'With Pop and PPFP interventions'],
                                        [str(use_output).capitalize() + ' % of\n women using\n (' +
                                         rounding_name(rounding_use_to) + ' users)',
-                                        'Costs\n (' + rounding_name(rounding_costs_to) + ' MWK ~\n '
-                                        + rounding_name(rounding_costs_to / 1000) + 'USD)']
+                                        'Costs in\n' + rounding_name(rounding_costs_mwk_to) + ' MWK\n'
+                                        + "(" + rounding_name(rounding_costs_mwk_to / 1000) + ' USD)']
                                    ]))
         return df_combined.loc[:, :].transpose()
 
     use_costs_table_df = combine_use_costs_with_without_interv(
-        use_without_df, use_without_perc_val_df, costs_without_df, interv_costs_without_df,
-        use_with_df, use_with_perc_val_df, costs_with_df, interv_costs_with_df
+        use_without_df, use_without_perc_val_df, costs_mwk_usd_without_df, interv_costs_mwk_usd_without_df,
+        use_with_df, use_with_perc_val_df, costs_mwk_usd_with_df, interv_costs_mwk_usd_with_df
     )
 
     # Change the names of totals
     use_costs_table_df = use_costs_table_df.rename(
         index={'co_modern_total': 'modern contraceptives\n TOTAL',
-               'pop_interv': 'Pop intervention',
-               'ppfp_interv': 'PPFP intervention',
-               'pop_ppfp_interv': 'Pop & PPFP intervention',
-               'co_modern_all_interv_total': 'modern contraceptives\n & interventions TOTAL'
+               'pop_interv': 'Pop implementation',
+               'ppfp_interv': 'PPFP implementation',
+               'pop_ppfp_interv': 'Pop & PPFP implementation',
+               'co_modern_all_interv_total': 'modern contraceptives &\n interventions implementation\n TOTAL'
                }
     )
     # Remove the underscores from the names of contraception methods
