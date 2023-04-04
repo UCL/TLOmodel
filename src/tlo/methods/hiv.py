@@ -524,20 +524,14 @@ class Hiv(Module):
         # Linear model for circumcision for male and aging <15 yrs who spontaneously presents for VMMC
         # This is to increase the VMMC cases/visits for <15 yrs males, which should account for about
         # 40% of total VMMC cases according to UNAIDS & WHO/DHIS2 2015-2019 data.
-        self.lm["lm_circ_child_before_2020"] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            # the probability that a male aging <15 yrs to be circumcised
-            p["prob_circ_for_child_before_2020"],
+        self.lm["lm_circ_child"] = LinearModel.multiplicative(
             Predictor("sex").when("M", 1.0).otherwise(0.0),
             Predictor("age_years").when("<15", 1.0).otherwise(0.0),
-        )
-        # The one for 2020 and on
-        self.lm["lm_circ_child_from_2020"] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            # the probability that a male aging <15 yrs to be circumcised
-            p["prob_circ_for_child_from_2020"],
-            Predictor("sex").when("M", 1.0).otherwise(0.0),
-            Predictor("age_years").when("<15", 1.0).otherwise(0.0),
+            Predictor("year",
+                      external=True,
+                      conditions_are_mutually_exclusive=True,
+                      conditions_are_exhaustive=True).when("<2000", p["prob_circ_for_child_before_2020"])
+                                                     .otherwise(p["prob_circ_for_child_from_2020"])
         )
 
     def initialise_population(self, population):
