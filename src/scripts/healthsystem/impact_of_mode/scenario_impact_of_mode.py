@@ -3,12 +3,12 @@ impact that is achieved under each (relative to there being no health system).
 
 Run on the batch system using:
 ```
-tlo batch-submit src/scripts/healthsystem/impact_of_healthsystem_under_diff_scenarios/scenario_impact_of_mode.py
+tlo batch-submit src/scripts/healthsystem/impact_of_mode/scenario_impact_of_mode.py
 ```
 
 or locally using:
 ```
-tlo scenario-run src/scripts/healthsystem/impact_of_healthsystem_under_diff_scenarios/scenario_impact_of_mode.py
+tlo scenario-run src/scripts/healthsystem/impact_of_mode/scenario_impact_of_mode.py
 ```
 
 """
