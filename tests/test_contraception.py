@@ -1,4 +1,5 @@
 import os
+import warnings
 from pathlib import Path
 from typing import Dict, List
 
@@ -9,6 +10,7 @@ import pytest
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import contraception, demography, enhanced_lifestyle, healthsystem, symptommanager
+from tlo.methods.contraception import HSI_Contraception_FamilyPlanningAppt
 from tlo.methods.hiv import DummyHivModule
 
 
@@ -27,7 +29,8 @@ def run_sim(tmpdir,
             no_initial_contraception_use=False,
             equalised_risk_of_preg=None,
             unlimited_runs_of_hsi=False,
-            max_days_delay_between_decision_to_change_method_and_hsi_scheduled=28
+            max_days_delay_between_decision_to_change_method_and_hsi_scheduled=28,
+            run_update_contraceptive=True,
             ):
     """Run basic checks on function of contraception module"""
 
@@ -61,7 +64,8 @@ def run_sim(tmpdir,
         'custom_levels': {
             "*": logging.WARNING,
             "tlo.methods.contraception": logging.INFO,
-            "tlo.methods.demography": logging.INFO
+            "tlo.methods.demography": logging.INFO,
+            "tlo.methods.healthsystem": logging.DEBUG,
         }
     }
 
@@ -79,7 +83,11 @@ def run_sim(tmpdir,
                                   ),
 
         # - modules for mechanistic representation of contraception -> pregnancy -> labour -> delivery etc.
-        contraception.Contraception(resourcefilepath=resourcefilepath, use_healthsystem=use_healthsystem),
+        contraception.Contraception(
+            resourcefilepath=resourcefilepath,
+            use_healthsystem=use_healthsystem,
+            run_update_contraceptive=run_update_contraceptive
+        ),
         contraception.SimplifiedPregnancyAndLabour(),
 
         # - Dummy HIV module (as contraception requires the property hv_inf): but set prevalence to be 0%
@@ -397,6 +405,89 @@ def test_occurrence_of_HSI_for_maintaining_on_and_switching_to_methods(tmpdir, s
     assert not len(sim.modules['HealthSystem'].find_events_for_person(person_id))
 
 
+def test_record_of_appt_footprint_for_switching_to_methods(tmpdir, seed):
+    """Check that the APPT_FOOTPRINTS recorded by the HealthSystem match the expectation: specifically, that the
+    appointment depends on the nature of the switch and whether it is a reoccurrence."""
+
+    def get_appt_footprints(switch_from, switch_to, consumables_available) -> List[str]:
+        """Return a list of the APPT_FOOTPRINTS that are logged for one person for a particular switch."""
+
+        person_id = 0
+        sim = run_sim(tmpdir,
+                      seed=seed,
+                      use_healthsystem=True,
+                      disable=False,
+                      consumables_available=consumables_available,
+                      no_changes_in_contraception=True,
+                      no_discontinuation=True,
+                      equalised_risk_of_preg=0.0,
+                      popsize=100,
+                      run=False,
+                      run_update_contraceptive=False,
+                      )
+
+        # Set the person's initial sex, age and contraceptive method
+        sim.population.props.at[person_id, 'sex'] = 'F'
+        sim.population.props.at[person_id, 'age_years'] = 25
+        sim.population.props.at[person_id, 'co_contraception'] = switch_from
+
+        # Schedule the initial HSI for the change
+        hsi_event = HSI_Contraception_FamilyPlanningAppt(
+            module=sim.modules['Contraception'],
+            person_id=person_id,
+            new_contraceptive=switch_to
+        )
+        sim.modules['HealthSystem'].schedule_hsi_event(hsi_event=hsi_event, topen=sim.start_date, priority=0)
+
+        sim.simulate(end_date=sim.start_date + pd.DateOffset(months=1))
+
+        hsi_run = parse_log_file(sim.log_filepath, level=logging.DEBUG)["tlo.methods.healthsystem"]["HSI_Event"]
+        return hsi_run.loc[
+            hsi_run.did_run
+            & (hsi_run['Person_ID'] == person_id)
+            & (hsi_run['TREATMENT_ID'] == 'Contraception_Routine'), 'Number_By_Appt_Type_Code'
+        ].to_list()
+
+    # 1) If consumables available, the HSI will only be run once:
+    #  - If switch to female_sterilization => 'MinorSurg'"
+    assert [{'MinorSurg': 1}] == get_appt_footprints(switch_from='not_using',
+                                                     switch_to='female_sterilization',
+                                                     consumables_available=True)
+    #  - If switching to anything new => 'FamilyPlanning'
+    assert [{'FamPlan': 1}] == get_appt_footprints(switch_from='not_using',
+                                                   switch_to='pill',
+                                                   consumables_available=True)
+    #  - If maintaining on implant => 'FamilyPlanning'
+    assert [{'FamPlan': 1}] == get_appt_footprints(switch_from='implant',
+                                                   switch_to='implant',
+                                                   consumables_available=True)
+    #  - If maintaining on pill  => 'PharmDispensing'
+    assert [{'PharmDispensing': 1}] == get_appt_footprints(switch_from='pill',
+                                                           switch_to='pill',
+                                                           consumables_available=True)
+
+    # 2) If consumables not available... there should be multiple footprints, but only the first is non-blank.
+    def is_list_longer_than_length_of_one_and_with_first_element_nonblank_and_subsequent_blank(x):
+        return (
+            (len(x) > 1)
+            & (x[0] != {})
+            & (0 == len([_x for _i, _x in enumerate(x) if (_i != 0) and (_x != {})]))
+        )
+
+    assert is_list_longer_than_length_of_one_and_with_first_element_nonblank_and_subsequent_blank(
+        get_appt_footprints(switch_from='not_using', switch_to='female_sterilization', consumables_available=False)
+    )
+    assert is_list_longer_than_length_of_one_and_with_first_element_nonblank_and_subsequent_blank(
+        get_appt_footprints(switch_from='not_using', switch_to='pill', consumables_available=False)
+    )
+    assert is_list_longer_than_length_of_one_and_with_first_element_nonblank_and_subsequent_blank(
+        get_appt_footprints(switch_from='implant', switch_to='implant', consumables_available=False)
+    )
+    assert is_list_longer_than_length_of_one_and_with_first_element_nonblank_and_subsequent_blank(
+        get_appt_footprints(switch_from='pill', switch_to='pill', consumables_available=False)
+    )
+
+
 @pytest.mark.slow
 def test_defaulting_off_method_if_no_healthsystem_or_consumable_at_individual_level(tmpdir, seed):
     """Check that if someone is on a method that requires an HSI and consumable for maintenance, but that HSI do not
@@ -712,7 +803,7 @@ def test_initial_distribution_of_contraception(tmpdir, seed):
 def test_contraception_coverage_with_use_healthsystem(tmpdir, seed):
     """Check that the same patterns (approximately) of usage of contraception is achieved when `use_healthsystem=True`
     as when `use_healthsystem=False` (despite the possibility of consumables not being always available when using the
-    healthsystem)."""
+    healthsystem, because this is overcome by there being repeated HSI if consumables not available)."""
 
     def report_availability_of_consumables():
         """Helper function to find the availability of consumables used in the Contraception module."""
@@ -723,6 +814,28 @@ def test_contraception_coverage_with_use_healthsystem(tmpdir, seed):
         def find_average_availability(items: List, level: str):
             """Find the probability that all the items are available at the level."""
             facilities = set([x.id for x in sim.modules['HealthSystem']._facilities_for_each_district[level].values()])
+
+            # Warn if some item codes are not recognised and hence average availability is calculated for the remaining
+            # item(s)
+            item_codes_recognised = set(cons.loc[(slice(None), facilities, slice(None))].index.levels[2])
+            items_being_requested_but_not_recognised = set(items) - set(item_codes_recognised)
+            if items_being_requested_but_not_recognised != set():
+                methods_with_unrecognised_items = []
+                for co_method, methods_items_dict in item_codes.items():
+                    for item in items_being_requested_but_not_recognised:
+                        if item in methods_items_dict:
+                            methods_with_unrecognised_items.append(co_method)
+                warnings.warn('\nWarning: item_code(s) ' + str(items_being_requested_but_not_recognised) +
+                              ' from method(s) ' + str(set(methods_with_unrecognised_items)) +
+                              ' not recognised at level ' + level + '.' +
+                              '\nAverage availability(ies) for purpose of the ' +
+                              'test_contraception_coverage_with_use_healthsystem calculated for remaining item(s).')
+
+            # If some items are not recognised, the average availability is calculated for the remaining item(s)
+            items = items - items_being_requested_but_not_recognised
+            # Check there are some items to calculate the average availability
+            assert items != set()
+
             return np.prod(
                 [cons.loc[(slice(None), facilities, _item)].mean() for _item in items]
             )

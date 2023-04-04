@@ -116,10 +116,7 @@ class ChronicSyndrome(Module):
                 name='inappropriate_jokes',
                 odds_ratio_health_seeking_in_adults=3.0
             ),
-            Symptom(
-                name='craving_sandwiches',
-                emergency_in_adults=True,
-            )
+            Symptom.emergency('craving_sandwiches', which='adults')
         )
 
     def initialise_population(self, population):

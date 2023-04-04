@@ -130,13 +130,7 @@ class Measles(Module):
                     odds_ratio_health_seeking_in_adults=2.5)  # non-emergencies
         )
 
-        self.sim.modules['SymptomManager'].register_symptom(
-            Symptom(
-                name='encephalitis',
-                emergency_in_adults=True,
-                emergency_in_children=True
-            )
-        )
+        self.sim.modules['SymptomManager'].register_symptom(Symptom.emergency('encephalitis'))
 
     def pre_initialise_population(self):
         self.process_parameters()
