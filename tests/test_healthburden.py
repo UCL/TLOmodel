@@ -513,9 +513,9 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
         death_date.year].sum()  # In year of death, 68 years of lost life.
     assert (yll_stacked_by_time.loc[death_date.year, yll_stacked_by_time.columns[
         yll_stacked_by_time.columns.isin(age_groups_where_yll_are_accrued)]] > 0).all()
-    assert 0.0 == yll_stacked_by_time[age_groups_where_yll_are_not_accrued].sum().sum()  # There should be no yll for
-    #                                                                                      ages above 70 because that
-    #                                                                                      is the definition
+    assert 0.0 == yll_stacked_by_time[
+        sorted(age_groups_where_yll_are_not_accrued)
+    ].sum().sum()  # There should be no yll for ages above 70 because that is the definition
 
     # -- YLL (Stacked by age and time)
     yll_stacked_by_age_and_time = log['yll_by_causes_of_death_stacked_by_age_and_time']

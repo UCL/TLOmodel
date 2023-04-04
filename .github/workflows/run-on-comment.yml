@@ -99,6 +99,7 @@ jobs:
     - name: Run test command(s)
       run: ${{ inputs.commands }}
     - name: Get comment-bot token
+      if: always() && steps.has_permissions.outputs.result == 'true'
       id: get_comment_bot_token
       uses: peter-murray/workflow-application-token-action@e8782d687a306fb13d733244d0f2a50e272d3752
       with:
