@@ -46,17 +46,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
         }
 
     def modules(self):
-        return fullmodel(
-             resourcefilepath=self.resources,
-             module_kwargs={
-                 "SymptomManager": {
-                     "spurious_symptoms": True
-                 },
-                 "HealthSystem": {
-                     "use_funded_or_actual_staffing": "actual",
-                 }
-             }
-         )
+        return fullmodel(resourcefilepath=self.resources)
 
     def draw_parameters(self, draw_number, rng):
         return list(self._scenarios.values())[draw_number]
@@ -88,18 +78,21 @@ class ImpactOfHealthSystemMode(BaseScenario):
             "Mode 0": {
                 'HealthSystem': {
                     'mode_appt_constraints': 0,
+                    "use_funded_or_actual_staffing": "actual",
                 },
             },
 
             "Mode 1": {
                 'HealthSystem': {
                     'mode_appt_constraints': 1,
+                    "use_funded_or_actual_staffing": "actual",
                 },
             },
 
             "Mode 2": {
                 'HealthSystem': {
                     'mode_appt_constraints': 2,
+                    "use_funded_or_actual_staffing": "actual",
                 },
             },
 
