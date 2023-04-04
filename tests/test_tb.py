@@ -91,7 +91,6 @@ def get_sim(seed, use_simplified_birth=True, disable_HS=False, ignore_con_constr
     return sim
 
 
-
 # simple checks
 def test_basic_run(seed):
     """ test basic run and properties assigned correctly
