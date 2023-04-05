@@ -1357,6 +1357,8 @@ class HealthSystem(Module):
                 self._hsi_event_counts_log_period[event_details_key] += 1
             self._summary_counter.record_hsi_event(
                 treatment_id=event_details.treatment_id,
+                hsi_event_name=event_details.event_name,
+                squeeze_factor=squeeze_factor,
                 appt_footprint=event_details.appt_footprint,
                 level=event_details.facility_level,
             )
@@ -1850,12 +1852,26 @@ class HealthSystemSummaryCounter:
         self._appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
         # <--Same as `self._appts` but also split by facility_level
         self._frac_time_used_overall = []  # Running record of the usage of the healthcare system
+        self._squeeze_factor_by_hsi_event_name = defaultdict(list)  # Running record the squeeze-factor applying to each
+        #                                                           treatment_id. Key is of the form:
+        #                                                           "<TREATMENT_ID>:<HSI_EVENT_NAME>"
 
-    def record_hsi_event(self, treatment_id: str, appt_footprint: Counter, level: str) -> None:
+    def record_hsi_event(self,
+                         treatment_id: str,
+                         hsi_event_name: str,
+                         squeeze_factor: float,
+                         appt_footprint: Counter,
+                         level: str
+                         ) -> None:
         """Add information about an `HSI_Event` to the running summaries."""
 
         # Count the treatment_id:
         self._treatment_ids[treatment_id] += 1
+
+        # Add the squeeze-factor to the list
+        self._squeeze_factor_by_hsi_event_name[
+            f"{treatment_id}:{hsi_event_name}"
+        ].append(squeeze_factor)
 
         # Count each type of appointment:
         for appt_type, number in appt_footprint:
@@ -1879,6 +1895,15 @@ class HealthSystemSummaryCounter:
                 "TREATMENT_ID": self._treatment_ids,
                 "Number_By_Appt_Type_Code": self._appts,
                 "Number_By_Appt_Type_Code_And_Level": self._appts_by_level,
+            },
+        )
+
+        logger_summary.info(
+            key="HSI_Event_Squeeze_Factor",
+            description="The average Squeeze_Factor that applied to each HSI_Event that has occurred in this calendar "
+                        "year.",
+            data={
+                k: sum(v)/len(v) for k, v in self._squeeze_factor_by_hsi_event_name.items()
             },
         )
 

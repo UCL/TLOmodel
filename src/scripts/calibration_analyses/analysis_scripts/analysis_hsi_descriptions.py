@@ -21,7 +21,7 @@ from tlo.analysis.utils import (
     plot_stacked_bar_chart,
     squarify_neat,
     summarize,
-    unflatten_flattened_multi_index_in_logging,
+    unflatten_flattened_multi_index_in_logging, load_pickled_dataframes,
 )
 
 PREFIX_ON_FILENAME = '3'
@@ -607,30 +607,40 @@ def figure6_cons_use(results_folder: Path, output_folder: Path, resourcefilepath
     plt.close(fig)
 
 
+def figure7_squeeze_factors(results_folder: Path, output_folder: Path, resourcefilepath: Path):
+    """ 'Figure 7': Squeeze Factors for the HSIs"""
+    make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_Fig7_{stub}.png"  # noqa: E731
+    # todo --- similar to figure1, use the new key to summarize squeeze factor by HSI and by TREATMENT_ID
+
+
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Description of the usage of healthcare system resources."""
 
-    figure1_distribution_of_hsi_event_by_treatment_id(
-        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
-    )
+    # figure1_distribution_of_hsi_event_by_treatment_id(
+    #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    # )
+    #
+    # figure2_appointments_used(
+    #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    # )
+    #
+    # figure3_fraction_of_time_of_hcw_used_by_treatment(
+    #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    # )
+    #
+    # figure4_hr_use_overall(
+    #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    # )
+    #
+    # figure5_bed_use(
+    #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    # )
+    #
+    # figure6_cons_use(
+    #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    # )
 
-    figure2_appointments_used(
-        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
-    )
-
-    figure3_fraction_of_time_of_hcw_used_by_treatment(
-        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
-    )
-
-    figure4_hr_use_overall(
-        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
-    )
-
-    figure5_bed_use(
-        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
-    )
-
-    figure6_cons_use(
+    figure7_squeeze_factors(
         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
     )
 

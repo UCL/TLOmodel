@@ -743,7 +743,10 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
 
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                  mode_appt_constraints=1,
+                                  capabilities_coefficient=1e-10,  # <--- to give non-trivial squeeze-factors
+                                  ),
         DummyModule(),
         sort_modules=False,
         check_all_dependencies=False
@@ -784,6 +787,7 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
 
     # Summary log:
     summary_hsi_event = log["tlo.methods.healthsystem.summary"]["HSI_Event"]
+    summary_hsi_event_sf = log["tlo.methods.healthsystem.summary"]["HSI_Event_Squeeze_Factor"]
     summary_capacity = log["tlo.methods.healthsystem.summary"]["Capacity"]
     summary_consumables = log["tlo.methods.healthsystem.summary"]["Consumables"]
     summary_beddays = log["tlo.methods.healthsystem.summary"]["BedDays"]
@@ -792,6 +796,13 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
     #  - Counts of TREATMENT_ID (total over entire period of log)
     assert summary_hsi_event['TREATMENT_ID'].apply(pd.Series).sum().to_dict() == \
            detailed_hsi_event.groupby('TREATMENT_ID').size().to_dict()
+    #  - Average of squeeze-factors for each TREATMENT_ID (todo *****by each year)
+    assert summary_hsi_event_sf.apply(pd.Series).groupby(by=summary_hsi_event_sf.date.dt.year).sum().unstack().to_dict() == \
+           detailed_hsi_event.assign(
+               treatment_id_hsi_name=lambda df: df['TREATMENT_ID'] + ':' + df['Event_Name'],
+               year=lambda df: df.date.dt.year,
+           ).groupby(by=['treatment_id_hsi_name', 'year'])['Squeeze_Factor'].mean().to_dict()
+
 
     #  - Appointments (total over entire period of the log)
     assert summary_hsi_event['Number_By_Appt_Type_Code'].apply(pd.Series).sum().to_dict() == \
