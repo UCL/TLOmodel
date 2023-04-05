@@ -26,7 +26,7 @@ jobs:
       runs-on: self-hosted
       keyword: multiple-seed-tests
       commands: |
-        tox -v -e py38,report -- pytest -n auto --seed 2671936806 3512589365 --cov --cov-report=term-missing -vv tests
+        tox -v -e py38,report -- pytest -n 4 --seed 2671936806 3512589365 --cov --cov-report=term-missing -vv tests
       description: Run of tests over multiple seeds
       timeout-minutes: 8640
       application-organization: UCL
@@ -40,7 +40,7 @@ jobs:
       runs-on: self-hosted
       keyword: python3.11-pandas1.5-fast-tests
       commands: |
-        tox -v -e py311-pandas15,report -- pytest -n auto --skip-slow --cov --cov-report=term-missing -vv tests
+        tox -v -e py311-pandas15,report -- pytest -n 4 --skip-slow --cov --cov-report=term-missing -vv tests
       description: Run of fast tests on Python v3.11 with Pandas v1.5
       timeout-minutes: 8640
       application-organization: UCL
@@ -54,7 +54,7 @@ jobs:
       runs-on: self-hosted
       keyword: python3.11-pandas1.5-all-tests
       commands: |
-        tox -v -e py311-pandas15,report -- pytest -n auto --cov --cov-report=term-missing -vv tests
+        tox -v -e py311-pandas15,report -- pytest -n 4 --cov --cov-report=term-missing -vv tests
       description: Run of all tests on Python v3.11 with Pandas v1.5
       timeout-minutes: 8640
       application-organization: UCL
@@ -68,7 +68,7 @@ jobs:
       runs-on: self-hosted
       keyword: python3.11-pandas2.0-fast-tests
       commands: |
-        tox -v -e py311-pandas20,report -- pytest -n auto --skip-slow --cov --cov-report=term-missing -vv tests
+        tox -v -e py311-pandas20,report -- pytest -n 4 --skip-slow --cov --cov-report=term-missing -vv tests
       description: Run of fast tests on Python v3.11 with Pandas v2.0
       timeout-minutes: 8640
       application-organization: UCL
@@ -82,7 +82,7 @@ jobs:
       runs-on: self-hosted
       keyword: python3.11-pandas2.0-all-tests
       commands: |
-        tox -v -e py311-pandas20,report -- pytest -n auto --cov --cov-report=term-missing -vv tests
+        tox -v -e py311-pandas20,report -- pytest -n 4 --cov --cov-report=term-missing -vv tests
       description: Run of all tests on Python v3.11 with Pandas v2.0
       timeout-minutes: 8640
       application-organization: UCL
