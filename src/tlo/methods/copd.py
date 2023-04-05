@@ -82,8 +82,10 @@ class Copd(Module):
         ),
         'prob_sev_exacerb_lung_func_6': Parameter(
             Types.REAL, 'probability of moderate exacerbation when lung function is 6 '
+        ),
+        'prob_will_die_sev_exacerbation': Parameter(
+            Types.REAL, 'probability that a person will die of severe exacerbation '
         )
-
     }
 
     PROPERTIES = {
@@ -312,8 +314,8 @@ class CopdModels:
 
     def will_die_given_severe_exacerbation(self) -> bool:
         """Return bool indicating if a person will die due to a severe exacerbation."""
-        prob = 0.5
-        return prob < self.rng.random_sample()
+        death_rate_prob = self.params['prob_will_die_sev_exacerbation']
+        return self.rng.random_sample() < death_rate_prob
 
 
 def increment_category(ser):
