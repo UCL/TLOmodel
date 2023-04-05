@@ -1980,7 +1980,7 @@ class RTI(Module):
         columns_to_return = []
         codes_to_return = []
         # iterate over the codes in the list codes and also the injury columns
-        for col, val in person_injuries.iteritems():
+        for col, val in person_injuries.items():
             # Search a sub-dataframe that is non-empty if the code is present is in that column and empty if not
             if val in codes:
                 columns_to_return.append(col)
@@ -2390,7 +2390,7 @@ class RTI(Module):
                        'Polytrauma': sum(i > 2 for i in injais) > 1,
                        'MAIS': max(injmais),
                        'Number_of_injuries': ninj}
-            inj_df = inj_df.append(new_row, ignore_index=True)
+            inj_df.loc[len(inj_df)] = new_row
             # If person has an ISS score less than 15 they have a mild injury, otherwise severe
             if new_row['ISS'] < 15:
                 severity_category.append('mild')
@@ -3169,7 +3169,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
 
         self.TREATMENT_ID = 'Rti_MedicalIntervention'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 8})
 
@@ -3715,7 +3715,7 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
         assert isinstance(module, RTI)
 
         self.TREATMENT_ID = 'Rti_ShockTreatment'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
 
     def apply(self, person_id, squeeze_factor):
@@ -3807,7 +3807,7 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
         assert isinstance(module, RTI)
 
         self.TREATMENT_ID = 'Rti_FractureCast'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
 
     def apply(self, person_id, squeeze_factor):
@@ -5388,9 +5388,6 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
         # Get the dataframe and isolate the important information
         df = population.props
         # dump dataframe each month if population size is large (used to find the minimum viable population size)
-        time_stamped_file_name = "df_at_" + str(self.sim.date.month) + "_" + str(self.sim.date.year)
-        if len(df.loc[df.is_alive]) > 750000:
-            df.to_csv(f"C:/Users/Robbie Manning Smith/Documents/Dataframe_dump/{time_stamped_file_name}.csv")
         thoseininjuries = df.loc[df.rt_road_traffic_inc]
         # ================================= Injury severity ===========================================================
         sev = thoseininjuries['rt_inj_severity']

@@ -182,7 +182,7 @@ def test_arithmetic_of_disability_aggregation_calcs(seed):
 
         def report_daly_values(self):
             df = self.sim.population.props
-            disability = pd.DataFrame(index=df.loc[df.is_alive].index, columns={'A', 'B'}, data=0.0)
+            disability = pd.DataFrame(index=df.loc[df.is_alive].index, columns=['A', 'B'], data=0.0)
             disability.loc[self.persons_affected, 'A'] = self.daly_wt_A
             disability.loc[self.persons_affected, 'B'] = self.daly_wt_B
             return disability
@@ -513,9 +513,9 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
         death_date.year].sum()  # In year of death, 68 years of lost life.
     assert (yll_stacked_by_time.loc[death_date.year, yll_stacked_by_time.columns[
         yll_stacked_by_time.columns.isin(age_groups_where_yll_are_accrued)]] > 0).all()
-    assert 0.0 == yll_stacked_by_time[age_groups_where_yll_are_not_accrued].sum().sum()  # There should be no yll for
-    #                                                                                      ages above 70 because that
-    #                                                                                      is the definition
+    assert 0.0 == yll_stacked_by_time[
+        sorted(age_groups_where_yll_are_not_accrued)
+    ].sum().sum()  # There should be no yll for ages above 70 because that is the definition
 
     # -- YLL (Stacked by age and time)
     yll_stacked_by_age_and_time = log['yll_by_causes_of_death_stacked_by_age_and_time']

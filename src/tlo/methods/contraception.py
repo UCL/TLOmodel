@@ -458,7 +458,7 @@ class Contraception(Module):
             # Create rates that are age-specific (using self.parameters['rr_fail_under25'])
             p_pregnancy_with_contraception_per_month = pd.DataFrame(
                 index=range(15, 50),
-                columns=self.all_contraception_states - {"not_using"}
+                columns=sorted(self.all_contraception_states - {"not_using"})
             )
             p_pregnancy_with_contraception_per_month.loc[15, :] = p_pregnancy_by_method_per_month
             p_pregnancy_with_contraception_per_month = p_pregnancy_with_contraception_per_month.ffill()

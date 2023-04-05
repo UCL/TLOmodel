@@ -70,7 +70,7 @@ def check_property_integrity(sim):
     # Check that all women identified as a mother by a newborn have been pregnant and delivered and were alive and >15yo
     # at the time of delivery/birth of that child.
     df = sim.population.props
-    mothers = set(df.loc[~df.date_of_birth.isna() & (df.mother_id >= 0)].mother_id)
+    mothers = df.loc[~df.date_of_birth.isna() & (df.mother_id >= 0)].mother_id.unique()
 
     if len(mothers) > 0:
         assert not df.loc[

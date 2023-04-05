@@ -293,7 +293,7 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         alive_newly_symptomatic_children = alive_newly_symptomatic_persons[are_under_15]
         alive_newly_symptomatic_adults = alive_newly_symptomatic_persons[~are_under_15]
 
-        idx_where_true = lambda series: set(series.loc[series].index)  # noqa: E731
+        idx_where_true = lambda series: series.loc[series].index  # noqa: E731
 
         # Separately schedule HSI events for child and adult subgroups
         for subgroup, symptoms_that_allow_healthcareseeking, hsb_model, emergency_appt_model in zip(
@@ -333,14 +333,14 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
 
                 # Force the addition to this set those who are already in-patient. (In-patients will always get the
                 # notional "FirstAppointment" for a new symptom.)
-                will_seek_care.update(idx_where_true(subgroup.hs_is_inpatient))
+                will_seek_care = will_seek_care.union(idx_where_true(subgroup.hs_is_inpatient))
 
             # Determine if the care sought will be emergency care (for those that seek care):
             will_seek_emergency_care = idx_where_true(
                 emergency_appt_model.predict(subgroup.loc[will_seek_care], module.rng, squeeze_single_row_output=False))
 
             # Determine who will seek non-emergency care (those that did not seek emergency care):
-            will_seek_non_emergency_care = will_seek_care - will_seek_emergency_care
+            will_seek_non_emergency_care = will_seek_care.difference(will_seek_emergency_care)
 
             # Schedule Emergency Care for same day
             health_system.schedule_batch_of_individual_hsi_events(
