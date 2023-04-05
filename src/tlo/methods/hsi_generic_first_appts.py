@@ -83,7 +83,8 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
 
         self.TREATMENT_ID = 'FirstAttendance_Emergency'
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
+            ('Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD'): 1})
 
     def apply(self, person_id, squeeze_factor):
 
@@ -93,6 +94,26 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
             return
 
         do_at_generic_first_appt_emergency(hsi_event=self, squeeze_factor=squeeze_factor)
+
+
+class HSI_EmergencyCare_SpuriousSymptom(HSI_Event, IndividualScopeEventMixin):
+    """This is an HSI event that provides Accident & Emergency Care for a person that has spurious emergency symptom."""
+
+    def __init__(self, module, person_id, accepted_facility_level='1a'):
+        super().__init__(module, person_id=person_id)
+        assert module is self.sim.modules['HealthSeekingBehaviour']
+
+        self.TREATMENT_ID = "FirstAttendance_SpuriousEmergencyCare"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
+        self.ACCEPTED_FACILITY_LEVEL = accepted_facility_level  # '1a' in default or '1b' as an alternative
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        if not df.at[person_id, 'is_alive']:
+            return self.make_appt_footprint({})
+        else:
+            sm = self.sim.modules['SymptomManager']
+            sm.change_symptom(person_id, "spurious_emergency_symptom", '-', sm)
 
 
 def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
@@ -444,6 +465,14 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
     if 'Alri' in sim.modules:
         if (age <= 5) and (('cough' in symptoms) or ('difficult_breathing' in symptoms)):
             sim.modules['Alri'].on_presentation(person_id=person_id, hsi_event=hsi_event)
+
+    # ----- spurious emergency symptom -----
+    if 'spurious_emergency_symptom' in symptoms:
+        event = HSI_EmergencyCare_SpuriousSymptom(
+            module=sim.modules['HealthSeekingBehaviour'],
+            person_id=person_id
+        )
+        schedule_hsi(event, priority=0, topen=sim.date)
 
     if 'Copd' in sim.modules:
         if ('breathless_moderate' in symptoms) or ('breathless_severe' in symptoms):

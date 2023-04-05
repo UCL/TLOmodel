@@ -712,7 +712,7 @@ class Hiv(Module):
             days = self.rng.randint(low=1, high=90, dtype=np.int64)
             self.sim.schedule_event(
                 Hiv_DecisionToContinueTreatment(person_id=person, module=self),
-                self.sim.date + pd.to_timedelta(days),
+                self.sim.date + pd.to_timedelta(days, unit="days"),
             )
 
     def initialise_baseline_tested(self, population):
