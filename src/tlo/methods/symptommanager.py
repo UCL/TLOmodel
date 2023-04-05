@@ -226,6 +226,7 @@ class SymptomManager(Module):
         """Read in the generic symptoms and register them"""
         self.parameters['generic_symptoms_spurious_occurrence'] = \
             pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_GenericSymptoms_and_HealthSeeking.csv')
+        self.load_parameters_from_dataframe(pd.read_csv(self.resourcefilepath / 'ResourceFile_SymptomManager.csv'))
 
     def register_symptom(self, *symptoms_to_register: Symptom):
         """
@@ -276,8 +277,8 @@ class SymptomManager(Module):
             SymptomManager.PROPERTIES[symptom_column_name] = Property(Types.INT, f'Presence of symptom {symptom_name}')
 
         # Determine if there should be spurious symptoms (over-write the parameter if an argument is provided)
-        self.spurious_symptpms = self.parameters['spurious_symptoms'] \
-            if self.arg_spurious_symptoms \
+        self.spurious_symptoms = self.parameters['spurious_symptoms'] \
+            if self.arg_spurious_symptoms is None \
             else self.arg_spurious_symptoms
 
     def initialise_population(self, population):
