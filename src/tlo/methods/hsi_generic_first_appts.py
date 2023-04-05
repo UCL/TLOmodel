@@ -376,7 +376,8 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
                    "renal_failure",
                    "shock",
                    "jaundice",
-                   "anaemia"}
+                   "anaemia",
+                   "malaria_fever"}
 
         # if person's symptoms are on severe malaria list then consider treatment for malaria
         any_symptoms_indicative_of_severe_malaria = len(sev_set.intersection(symptoms)) > 0
