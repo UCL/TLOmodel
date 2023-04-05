@@ -5388,9 +5388,6 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
         # Get the dataframe and isolate the important information
         df = population.props
         # dump dataframe each month if population size is large (used to find the minimum viable population size)
-        time_stamped_file_name = "df_at_" + str(self.sim.date.month) + "_" + str(self.sim.date.year)
-        if len(df.loc[df.is_alive]) > 750000:
-            df.to_csv(f"C:/Users/Robbie Manning Smith/Documents/Dataframe_dump/{time_stamped_file_name}.csv")
         thoseininjuries = df.loc[df.rt_road_traffic_inc]
         # ================================= Injury severity ===========================================================
         sev = thoseininjuries['rt_inj_severity']
