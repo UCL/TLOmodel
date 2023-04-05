@@ -459,9 +459,6 @@ class HealthSystem(Module):
                        ', all HSI events run with squeeze factor, 2: hard constraints, only HSI events with no squeeze '
                        'factor run. N.B. This parameter is over-ridden if an argument is provided'
                        ' to the module initialiser.',
-
-
-
         )
     }
 
