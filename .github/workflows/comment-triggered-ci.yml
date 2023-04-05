@@ -26,7 +26,7 @@ jobs:
       runs-on: self-hosted
       keyword: multiple-seed-tests
       commands: |
-        tox -v -e py38,report -- pytest --seed 2671936806 3512589365 --cov --cov-report=term-missing -vv tests
+        tox -v -e py38,report -- pytest -n auto --seed 2671936806 3512589365 --cov --cov-report=term-missing -vv tests
       description: Run of tests over multiple seeds
       timeout-minutes: 8640
       application-organization: UCL
@@ -43,7 +43,7 @@ jobs:
         sudo add-apt-repository ppa:deadsnakes/ppa -y
         sudo apt update
         sudo apt install python3.11 -y
-        tox -v -e py311-pandas15,report -- pytest --skip-slow --cov --cov-report=term-missing -vv tests
+        tox -v -e py311-pandas15,report -- pytest -n auto --skip-slow --cov --cov-report=term-missing -vv tests
       description: Run of fast tests on Python v3.11 with Pandas v1.5
       timeout-minutes: 8640
       application-organization: UCL
@@ -60,7 +60,7 @@ jobs:
         sudo add-apt-repository ppa:deadsnakes/ppa -y
         sudo apt update
         sudo apt install python3.11 -y
-        tox -v -e py311-pandas15,report -- pytest --cov --cov-report=term-missing -vv tests
+        tox -v -e py311-pandas15,report -- pytest -n auto --cov --cov-report=term-missing -vv tests
       description: Run of all tests on Python v3.11 with Pandas v1.5
       timeout-minutes: 8640
       application-organization: UCL
@@ -77,7 +77,7 @@ jobs:
         sudo add-apt-repository ppa:deadsnakes/ppa -y
         sudo apt update
         sudo apt install python3.11 -y
-        tox -v -e py311-pandas20,report -- pytest --skip-slow --cov --cov-report=term-missing -vv tests
+        tox -v -e py311-pandas20,report -- pytest -n auto --skip-slow --cov --cov-report=term-missing -vv tests
       description: Run of fast tests on Python v3.11 with Pandas v2.0
       timeout-minutes: 8640
       application-organization: UCL
@@ -94,7 +94,7 @@ jobs:
         sudo add-apt-repository ppa:deadsnakes/ppa -y
         sudo apt update
         sudo apt install python3.11 -y
-        tox -v -e py311-pandas20,report -- pytest --cov --cov-report=term-missing -vv tests
+        tox -v -e py311-pandas20,report -- pytest -n auto --cov --cov-report=term-missing -vv tests
       description: Run of all tests on Python v3.11 with Pandas v2.0
       timeout-minutes: 8640
       application-organization: UCL
