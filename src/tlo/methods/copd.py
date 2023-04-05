@@ -4,7 +4,7 @@ from typing import Dict, List
 import numpy as np
 import pandas as pd
 
-from tlo import Module, Property, Types, logging, Parameter
+from tlo import Module, Parameter, Property, Types, logging
 from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
@@ -152,7 +152,7 @@ class Copd(Module):
         """Define and register Symptoms"""
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom('breathless_moderate'),
-            Symptom('breathless_severe', emergency_in_adults=True, emergency_in_children=True),
+            Symptom('breathless_severe'),
             #   todo The line above can be updated to `Symptom.emergency('breathless_severe')` when new PRs are merged.
         )
 
