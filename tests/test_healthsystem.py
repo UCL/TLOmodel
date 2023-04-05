@@ -796,7 +796,7 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
     #  - Counts of TREATMENT_ID (total over entire period of log)
     assert summary_hsi_event['TREATMENT_ID'].apply(pd.Series).sum().to_dict() == \
            detailed_hsi_event.groupby('TREATMENT_ID').size().to_dict()
-    #  - Average of squeeze-factors for each TREATMENT_ID (todo *****by each year)
+    #  - Average of squeeze-factors for each TREATMENT_ID (by each year)
     assert summary_hsi_event_sf.apply(pd.Series).groupby(by=summary_hsi_event_sf.date.dt.year).sum().unstack().to_dict() == \
            detailed_hsi_event.assign(
                treatment_id_hsi_name=lambda df: df['TREATMENT_ID'] + ':' + df['Event_Name'],
