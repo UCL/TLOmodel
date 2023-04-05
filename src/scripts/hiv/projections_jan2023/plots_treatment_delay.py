@@ -291,6 +291,9 @@ ax.set(title='',
         ylabel='Density',
         xLabel="Treatment delay, weeks")
 ax.set_ylim([0, 1.0])
+ax.set(title='',
+       ylabel='Proportion treated')
+ax.legend(labels=["Baseline", "Constrained scale-up", "Unconstrained scale-up"])
 
 plt.tick_params(axis="both", which="major", labelsize=10)
 

@@ -222,6 +222,10 @@ total_dalys_diff = [sc1_sc0_median['Column_Total'],
 # -------------------------- plots ---------------------------- #
 plt.style.use('ggplot')
 
+aids_colour = "#8949ab"
+tb_colour = "#ed7e7a"
+total_colour = "#eede77"
+
 years = list((range(2010, 2036, 1)))
 years_num = pd.Series(years)
 
@@ -231,8 +235,8 @@ fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2,
 fig.suptitle('')
 
 # HCW time
-labels = ['Baseline', 'Constrained scale-up', 'Unconstrained scale-up']
-x = np.arange(len(labels))  # the label locations
+# labels = ['Baseline', 'Constrained scale-up', 'Unconstrained scale-up']
+# x = np.arange(len(labels))  # the label locations
 width = 0.2  # the width of the bars
 
 ax1.bar(years_num[13:26], hcw1["median"].loc[13:25], width, color=sc1_colour)
@@ -245,13 +249,13 @@ ax1.yaxis.set_label_position("left")
 ax1.legend(["Constrained scale-up", "Unconstrained scale-up"], frameon=False)
 
 # DALYs
-labels = ['Unconstrained scale-up', 'Constrained scale-up']
+labels = ['Constrained scale-up', 'Unconstrained scale-up']
 x = np.arange(len(labels))  # the label locations
 width = 0.2  # the width of the bars
 
-rects1 = ax2.bar(x - width, aids_dalys_diff, width, label='AIDS', color=baseline_colour)
-rects2 = ax2.bar(x, tb_dalys_diff, width, label='TB', color=sc1_colour)
-rects3 = ax2.bar(x + width, total_dalys_diff, width, label='Total', color=sc2_colour)
+rects1 = ax2.bar(x - width, aids_dalys_diff, width, label='AIDS', color=aids_colour)
+rects2 = ax2.bar(x, tb_dalys_diff, width, label='TB', color=tb_colour)
+rects3 = ax2.bar(x + width, total_dalys_diff, width, label='Total', color=total_colour)
 
 # Add some text for labels, title and custom x-axis tick labels, etc.
 ax2.set_ylabel('DALYs')
