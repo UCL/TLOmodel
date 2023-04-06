@@ -1,0 +1,44 @@
+tlo.methods.hiv_tb_calibration module
+=====================================
+
+.. automodule:: tlo.methods.hiv_tb_calibration
+
+
+.. autoclass:: Deviance
+
+     Bases: :class:`tlo.core.Module`
+
+
+
+     **Class attributes:**
+
+     INIT_DEPENDENCIES : {'Tb', 'Demography', 'Hiv'}
+
+     METADATA : {}
+
+     **Functions (defined or overridden in class Deviance):**
+
+     .. automethod:: __init__
+
+     .. automethod:: read_parameters
+
+     .. automethod:: initialise_population
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: on_birth
+
+     .. automethod:: read_data_files
+
+     .. automethod:: read_model_outputs
+
+     .. automethod:: weighted_mean
+
+     .. automethod:: record_death
+
+     .. automethod:: on_simulation_end
+
+
+
+
+

@@ -1,96 +1,45 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
-  
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
   <title>tlo.methods.demography &mdash; TLOmodel 0.1.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
-
-  
-  
+      <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-        <script src="../../../_static/jquery.js"></script>
-        <script src="../../../_static/underscore.js"></script>
-        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../../_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-
-    
+        <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
           
-            <a href="../../../index.html" class="icon icon-home"> TLOmodel
           
-
-          
+          <a href="../../../index.html" class="icon icon-home">
+            TLOmodel
           </a>
-
-          
-            
-            
               <div class="version">
                 0.1.0
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../index.html">Welcome</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../aims.html">Aims &amp; Objectives</a></li>
@@ -105,71 +54,31 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../index.html">TLOmodel</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
-          <li><a href="../../index.html">Module code</a> &raquo;</li>
-        
-          <li><a href="../methods.html">tlo.methods</a> &raquo;</li>
-        
-      <li>tlo.methods.demography</li>
-    
-    
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../methods.html">tlo.methods</a></li>
+      <li class="breadcrumb-item active">tlo.methods.demography</li>
       <li class="wy-breadcrumbs-aside">
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <h1>Source code for tlo.methods.demography</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">The core demography module and its associated events.</span>
@@ -192,7 +101,7 @@
     <span class="n">collect_causes_from_disease_modules</span><span class="p">,</span>
     <span class="n">create_mappers_from_causes_to_label</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">tlo.util</span> <span class="kn">import</span> <span class="n">create_age_range_lookup</span><span class="p">,</span> <span class="n">get_person_id_to_inherit_from</span>
+<span class="kn">from</span> <span class="nn">tlo.util</span> <span class="kn">import</span> <span class="n">DEFAULT_MOTHER_ID</span><span class="p">,</span> <span class="n">create_age_range_lookup</span><span class="p">,</span> <span class="n">get_person_id_to_inherit_from</span>
 
 <span class="c1"># Standard logger</span>
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
@@ -209,8 +118,14 @@
 <span class="n">MAX_AGE</span> <span class="o">=</span> <span class="mi">120</span>
 
 
+<span class="c1"># Fnc to swap the contents of row1 and row2 in dataframe df, leaving all other rows unaffected.</span>
+<span class="k">def</span> <span class="nf">swap_rows</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">row1</span><span class="p">,</span> <span class="n">row2</span><span class="p">):</span>
+    <span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">row1</span><span class="p">],</span> <span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">row2</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">row2</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">row1</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">df</span>
+
+
 <div class="viewcode-block" id="Demography"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.Demography">[docs]</a><span class="k">class</span> <span class="nc">Demography</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The core demography module.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -289,7 +204,7 @@
     <span class="p">}</span>
 
 <div class="viewcode-block" id="Demography.read_parameters"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.Demography.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Load the parameters from `ResourceFile_Demography_parameters.csv` and data from other `ResourceFiles`.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load the parameters from `ResourceFile_Demography_parameters.csv` and data from other `ResourceFiles`.&quot;&quot;&quot;</span>
 
         <span class="c1"># General parameters</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">load_parameters_from_dataframe</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
@@ -334,7 +249,7 @@
         <span class="p">)</span><span class="o">.</span><span class="n">set_index</span><span class="p">([</span><span class="s1">&#39;Sex&#39;</span><span class="p">,</span> <span class="s1">&#39;Age_Grp&#39;</span><span class="p">])</span></div>
 
 <div class="viewcode-block" id="Demography.pre_initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.Demography.pre_initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">pre_initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        1) Store all the cause of death represented in the imported GBD data</span>
 <span class="sd">        2) Process the declarations of causes of death made by the disease modules</span>
 <span class="sd">        3) Define categorical properties for &#39;cause_of_death&#39;, &#39;region_of_residence&#39; and &#39;district_of_residence&#39;</span>
@@ -366,7 +281,7 @@
         <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Demography.initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.Demography.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Set properties for this module and compute the initial population scaling factor&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set properties for this module and compute the initial population scaling factor&quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
 
         <span class="c1"># Compute the initial population scaling factor</span>
@@ -404,7 +319,7 @@
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;date_of_death&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;cause_of_death&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;sex&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">demog_char_to_assign</span><span class="p">[</span><span class="s1">&#39;Sex&#39;</span><span class="p">]</span>
-        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;mother_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;mother_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">DEFAULT_MOTHER_ID</span>  <span class="c1"># Motherless, and their characterists are not inherited</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;district_num_of_residence&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">demog_char_to_assign</span><span class="p">[</span><span class="s1">&#39;District_Num&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[:]</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;district_of_residence&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">demog_char_to_assign</span><span class="p">[</span><span class="s1">&#39;District&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[:]</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;region_of_residence&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">demog_char_to_assign</span><span class="p">[</span><span class="s1">&#39;Region&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[:]</span>
@@ -412,10 +327,20 @@
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;age_exact_years&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">demog_char_to_assign</span><span class="p">[</span><span class="s1">&#39;age_in_days&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">timedelta64</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;Y&#39;</span><span class="p">)</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;age_years&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;age_exact_years&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;int64&#39;</span><span class="p">)</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;age_range&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;age_years&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">AGE_RANGE_LOOKUP</span><span class="p">)</span>
-        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;age_days&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">demog_char_to_assign</span><span class="p">[</span><span class="s1">&#39;age_in_days&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">days</span></div>
+        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;age_days&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">demog_char_to_assign</span><span class="p">[</span><span class="s1">&#39;age_in_days&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">days</span>
+
+        <span class="c1"># Ensure first individual in df is a man, to safely exclude person_id=0 from selection of direct birth mothers.</span>
+        <span class="c1"># If no men are found in df, issue a warning and proceed with female individual at person_id = 0.</span>
+        <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">sex</span> <span class="o">==</span> <span class="s1">&#39;F&#39;</span><span class="p">:</span>
+            <span class="n">diff_id</span> <span class="o">=</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">sex</span><span class="o">.</span><span class="n">values</span> <span class="o">!=</span> <span class="s1">&#39;F&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">argmax</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">diff_id</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">swap_rows</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">diff_id</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;warning&quot;</span><span class="p">,</span>
+                               <span class="n">data</span><span class="o">=</span><span class="s2">&quot;No men found. Direct birth mothers search will exclude woman at person_id=0.&quot;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Demography.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.Demography.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        * Schedule the AgeUpdateEvent, the OtherDeathPoll and the DemographyLoggingEvent</span>
 <span class="sd">        * Output to the log the initial population scaling factor.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -443,7 +368,7 @@
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Year is after 2100: Demographic data do not extend that far.&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Demography.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.Demography.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Initialise our properties for a newborn individual.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialise our properties for a newborn individual.</span>
 <span class="sd">        This is called by the simulation whenever a new person is born.</span>
 <span class="sd">        :param mother_id: the mother for this child</span>
 <span class="sd">        :param child_id: the new child</span>
@@ -477,21 +402,21 @@
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="n">child</span><span class="o">.</span><span class="n">keys</span><span class="p">()]</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
 
         <span class="c1"># Log the birth:</span>
-        <span class="n">_mother_age_at_birth</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">mother_id</span><span class="p">,</span> <span class="s1">&#39;age_years&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">mother_id</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span> <span class="k">else</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="n">_mother_age_at_birth</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="nb">abs</span><span class="p">(</span><span class="n">mother_id</span><span class="p">),</span> <span class="s1">&#39;age_years&#39;</span><span class="p">]</span>  <span class="c1"># Log age of mother whether true or direct birth</span>
         <span class="n">_mother_age_at_pregnancy</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
             <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">mother_id</span><span class="p">,</span> <span class="s1">&#39;date_of_last_pregnancy&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">mother_id</span><span class="p">,</span> <span class="s1">&#39;date_of_birth&#39;</span><span class="p">])</span>
-            <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">timedelta64</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;Y&#39;</span><span class="p">))</span> <span class="k">if</span> <span class="n">mother_id</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span> <span class="k">else</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">timedelta64</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;Y&#39;</span><span class="p">))</span> <span class="k">if</span> <span class="n">mother_id</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="k">else</span> <span class="o">-</span><span class="mi">1</span>  <span class="c1"># No pregnancy for direct birth</span>
 
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
             <span class="n">key</span><span class="o">=</span><span class="s1">&#39;on_birth&#39;</span><span class="p">,</span>
-            <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;mother&#39;</span><span class="p">:</span> <span class="n">mother_id</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;mother&#39;</span><span class="p">:</span> <span class="n">mother_id</span><span class="p">,</span>  <span class="c1"># Keep track of whether true or direct birth by using mother_id</span>
                   <span class="s1">&#39;child&#39;</span><span class="p">:</span> <span class="n">child_id</span><span class="p">,</span>
                   <span class="s1">&#39;mother_age&#39;</span><span class="p">:</span> <span class="n">_mother_age_at_birth</span><span class="p">,</span>
                   <span class="s1">&#39;mother_age_at_pregnancy&#39;</span><span class="p">:</span> <span class="n">_mother_age_at_pregnancy</span><span class="p">}</span>
         <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Demography._edit_init_pop_to_prevent_persons_greater_than_max_age"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.Demography._edit_init_pop_to_prevent_persons_greater_than_max_age">[docs]</a>    <span class="k">def</span> <span class="nf">_edit_init_pop_to_prevent_persons_greater_than_max_age</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">max_age</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Return an edited version of the `pd.DataFrame` describing the probability of persons in the population being</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return an edited version of the `pd.DataFrame` describing the probability of persons in the population being</span>
 <span class="sd">        created with certain characteristics to reflect the constraint the persons aged greater than `max_age_initial`</span>
 <span class="sd">        should not be created.&quot;&quot;&quot;</span>
 
@@ -503,7 +428,7 @@
         <span class="k">return</span> <span class="n">_df</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Demography.process_causes_of_death"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.Demography.process_causes_of_death">[docs]</a>    <span class="k">def</span> <span class="nf">process_causes_of_death</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        1) Register all causes of deaths defined by Module</span>
 <span class="sd">        2) Define the &quot;Other&quot; causes of death (that is managed in this module by the OtherDeathPoll)</span>
 <span class="sd">        3) Output to the log mappers for causes of death (tlo_cause --&gt; label; gbd_cause --&gt; label).</span>
@@ -535,7 +460,7 @@
         <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Demography.do_death"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.Demography.do_death">[docs]</a>    <span class="k">def</span> <span class="nf">do_death</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individual_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">cause</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">originating_module</span><span class="p">:</span> <span class="n">Module</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Register and log the death of an individual from a specific cause.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Register and log the death of an individual from a specific cause.</span>
 <span class="sd">        * &#39;individual_id&#39; is the index in the population.props dataframe to the (one) person.</span>
 <span class="sd">        * &#39;cause&#39; is the &quot;tlo cause&quot; that is defined by the disease module.</span>
 <span class="sd">        * &#39;originating_module&#39; is the disease module that is causing the death.</span>
@@ -583,12 +508,20 @@
                            <span class="n">data</span><span class="o">=</span><span class="n">person</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
                            <span class="n">description</span><span class="o">=</span><span class="s1">&#39;values of all properties at the time of death for deceased persons&#39;</span><span class="p">)</span>
 
+        <span class="c1"># - log the death in the Deviance module (if it is registered)</span>
+        <span class="k">if</span> <span class="s1">&#39;Deviance&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Deviance&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">record_death</span><span class="p">(</span>
+                <span class="n">year</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> <span class="n">age_years</span><span class="o">=</span><span class="n">person</span><span class="p">[</span><span class="s1">&#39;age_years&#39;</span><span class="p">],</span> <span class="n">sex</span><span class="o">=</span><span class="n">person</span><span class="p">[</span><span class="s1">&#39;sex&#39;</span><span class="p">],</span> <span class="n">cause</span><span class="o">=</span><span class="n">cause</span><span class="p">)</span>
+
         <span class="c1"># Report the deaths to the healthburden module (if present) so that it tracks the live years lost</span>
         <span class="k">if</span> <span class="s1">&#39;HealthBurden&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="c1"># report the death so that a computation of lost life-years due to this cause to be recorded</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthBurden&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">report_live_years_lost</span><span class="p">(</span><span class="n">sex</span><span class="o">=</span><span class="n">person</span><span class="p">[</span><span class="s1">&#39;sex&#39;</span><span class="p">],</span>
+                                                                    <span class="n">wealth</span><span class="o">=</span><span class="n">person</span><span class="p">[</span><span class="s1">&#39;li_wealth&#39;</span><span class="p">],</span>
                                                                     <span class="n">date_of_birth</span><span class="o">=</span><span class="n">person</span><span class="p">[</span><span class="s1">&#39;date_of_birth&#39;</span><span class="p">],</span>
-                                                                    <span class="n">cause_of_death</span><span class="o">=</span><span class="n">cause</span><span class="p">)</span>
+                                                                    <span class="n">age_range</span><span class="o">=</span><span class="n">person</span><span class="p">[</span><span class="s1">&#39;age_range&#39;</span><span class="p">],</span>
+                                                                    <span class="n">cause_of_death</span><span class="o">=</span><span class="n">cause</span><span class="p">,</span>
+                                                                    <span class="p">)</span>
 
         <span class="c1"># Release any beds-days that would be used by this person:</span>
         <span class="k">if</span> <span class="s1">&#39;HealthSystem&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
@@ -596,7 +529,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">remove_beddays_footprint</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">individual_id</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Demography.get_gbd_causes_of_death_not_represented_in_disease_modules"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.Demography.get_gbd_causes_of_death_not_represented_in_disease_modules">[docs]</a>    <span class="k">def</span> <span class="nf">get_gbd_causes_of_death_not_represented_in_disease_modules</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">causes_of_death</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Find the causes of death in the GBD datasets that are not represented within the causes of death defined in the</span>
 <span class="sd">        modules registered in this simulation.</span>
 <span class="sd">        :return: set of gbd_causes of death that are not represented in disease modules</span>
@@ -608,14 +541,14 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">gbd_causes_of_death</span> <span class="o">-</span> <span class="n">all_gbd_causes_in_sim</span></div>
 
 <div class="viewcode-block" id="Demography.create_mappers_from_causes_of_death_to_label"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.Demography.create_mappers_from_causes_of_death_to_label">[docs]</a>    <span class="k">def</span> <span class="nf">create_mappers_from_causes_of_death_to_label</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Use a helper function to create mappers for causes of death to label.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Use a helper function to create mappers for causes of death to label.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">create_mappers_from_causes_to_label</span><span class="p">(</span>
             <span class="n">causes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">causes_of_death</span><span class="p">,</span>
             <span class="n">all_gbd_causes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">gbd_causes_of_death</span>
         <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Demography.calc_py_lived_in_last_year"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.Demography.calc_py_lived_in_last_year">[docs]</a>    <span class="k">def</span> <span class="nf">calc_py_lived_in_last_year</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">delta</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">years</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is a helper method to compute the person-years that were lived in the previous year by age.</span>
 <span class="sd">        It outputs a pd.DataFrame with the index being single year of age, 0 to 99.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -674,7 +607,7 @@
         <span class="k">return</span> <span class="n">py</span></div>
 
 <div class="viewcode-block" id="Demography.compute_initial_model_to_data_popsize_ratio"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.Demography.compute_initial_model_to_data_popsize_ratio">[docs]</a>    <span class="k">def</span> <span class="nf">compute_initial_model_to_data_popsize_ratio</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_population_size</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Compute ratio of initial model population size to estimated population size in 2010.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute ratio of initial model population size to estimated population size in 2010.</span>
 
 <span class="sd">        Uses the total of the per-region estimated populations in 2010 used to</span>
 <span class="sd">        initialise the simulation population as the baseline figure, with this value</span>
@@ -692,7 +625,7 @@
 
 
 <div class="viewcode-block" id="AgeUpdateEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.AgeUpdateEvent">[docs]</a><span class="k">class</span> <span class="nc">AgeUpdateEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This event updates the age_exact_years, age_years and age_range columns for the population based</span>
 <span class="sd">    on the current simulation date</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -712,7 +645,7 @@
 
 
 <div class="viewcode-block" id="OtherDeathPoll"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.OtherDeathPoll">[docs]</a><span class="k">class</span> <span class="nc">OtherDeathPoll</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This event causes deaths to persons from cause that are _not_ being modelled explicitly by a disease module.</span>
 <span class="sd">    It does this by computing the GBD death rates that are implied by all the causes of death other than those that are</span>
 <span class="sd">    represented in the disease module registered in this simulation.</span>
@@ -723,7 +656,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">mort_risk_per_poll</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_mort_risk_per_poll</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="OtherDeathPoll.get_mort_risk_per_poll"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.OtherDeathPoll.get_mort_risk_per_poll">[docs]</a>    <span class="k">def</span> <span class="nf">get_mort_risk_per_poll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Compute the death-rates to use (i.e., those from causes of death defined in `self.causes_to_represent`).</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the death-rates to use (i.e., those from causes of death defined in `self.causes_to_represent`).</span>
 <span class="sd">        This is based on using the WPP schedule for all-cause deaths and scaling by the proportion of deaths caused by</span>
 <span class="sd">        those caused defined in `self.causes_to_represent` (as per the latest available GBD data).</span>
 <span class="sd">        These mortality rates are used to compute a risk of death per person per occurrence of the polling event.</span>
@@ -753,7 +686,7 @@
         <span class="k">return</span> <span class="n">mort_risk</span><span class="p">[[</span><span class="s1">&#39;fallbackyear&#39;</span><span class="p">,</span> <span class="s1">&#39;sex&#39;</span><span class="p">,</span> <span class="s1">&#39;age_years&#39;</span><span class="p">,</span> <span class="s1">&#39;prob_of_dying_before_next_poll&#39;</span><span class="p">]]</span></div>
 
 <div class="viewcode-block" id="OtherDeathPoll.get_all_cause_mort_risk_per_poll"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.OtherDeathPoll.get_all_cause_mort_risk_per_poll">[docs]</a>    <span class="k">def</span> <span class="nf">get_all_cause_mort_risk_per_poll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Compute the all-cause risk of death per poll&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the all-cause risk of death per poll&quot;&quot;&quot;</span>
         <span class="c1"># Get time elapsed between each poll:</span>
         <span class="n">dur_in_years_between_polls</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">timedelta64</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">frequency</span><span class="o">.</span><span class="n">months</span><span class="p">,</span> <span class="s1">&#39;M&#39;</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">timedelta64</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;Y&#39;</span><span class="p">)</span>
 
@@ -763,7 +696,7 @@
         <span class="p">)</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;death_rate&#39;</span><span class="p">})</span></div>
 
 <div class="viewcode-block" id="OtherDeathPoll.get_proportion_of_deaths_to_represent_as_other_deaths"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.OtherDeathPoll.get_proportion_of_deaths_to_represent_as_other_deaths">[docs]</a>    <span class="k">def</span> <span class="nf">get_proportion_of_deaths_to_represent_as_other_deaths</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Compute the fraction of deaths that will be reprsented by the OtherDeathPoll&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the fraction of deaths that will be reprsented by the OtherDeathPoll&quot;&quot;&quot;</span>
         <span class="c1"># Get the breakdown of deaths by cause from GBD data:</span>
         <span class="n">gbd_deaths</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;gbd_causes_of_death_data&#39;</span><span class="p">]</span>
 
@@ -771,7 +704,7 @@
         <span class="k">return</span> <span class="n">gbd_deaths</span><span class="p">[</span><span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">causes_to_represent</span><span class="p">)]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="OtherDeathPoll.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.OtherDeathPoll.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Randomly select some persons to die of the &#39;Other&#39; tlo cause (the causes of death that are not represented</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Randomly select some persons to die of the &#39;Other&#39; tlo cause (the causes of death that are not represented</span>
 <span class="sd">        by the disease modules).&quot;&quot;&quot;</span>
         <span class="c1"># Get shortcut to main dataframe</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
@@ -810,7 +743,7 @@
 
 
 <div class="viewcode-block" id="InstantaneousDeath"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.InstantaneousDeath">[docs]</a><span class="k">class</span> <span class="nc">InstantaneousDeath</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Call the do_death function to cause the person to die.</span>
 
 <span class="sd">    Note that no checking is done here. (Checking is done within `do_death` which can also be called directly.)</span>
@@ -830,7 +763,7 @@
 
 <div class="viewcode-block" id="DemographyLoggingEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.DemographyLoggingEvent">[docs]</a><span class="k">class</span> <span class="nc">DemographyLoggingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
 <div class="viewcode-block" id="DemographyLoggingEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.DemographyLoggingEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Logging event running every year.</span>
 <span class="sd">        * Update internal storage of population size</span>
 <span class="sd">        * Output statistics to the log</span>
@@ -879,7 +812,6 @@
 </pre></div>
 
            </div>
-           
           </div>
           <footer>
 
@@ -887,40 +819,25 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">
-        Last updated on Dec 01, 2022.
-      </span>
-
-    </p>
+      <span class="lastupdated">Last updated on Apr 06, 2023.
+      </span></p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

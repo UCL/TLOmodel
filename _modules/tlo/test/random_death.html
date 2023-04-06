@@ -1,96 +1,45 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
-  
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
   <title>tlo.test.random_death &mdash; TLOmodel 0.1.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
-
-  
-  
+      <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-        <script src="../../../_static/jquery.js"></script>
-        <script src="../../../_static/underscore.js"></script>
-        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../../_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-
-    
+        <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
           
-            <a href="../../../index.html" class="icon icon-home"> TLOmodel
           
-
-          
+          <a href="../../../index.html" class="icon icon-home">
+            TLOmodel
           </a>
-
-          
-            
-            
               <div class="version">
                 0.1.0
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../index.html">Welcome</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../aims.html">Aims &amp; Objectives</a></li>
@@ -105,69 +54,30 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../index.html">TLOmodel</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
-          <li><a href="../../index.html">Module code</a> &raquo;</li>
-        
-      <li>tlo.test.random_death</li>
-    
-    
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">tlo.test.random_death</li>
       <li class="wy-breadcrumbs-aside">
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <h1>Source code for tlo.test.random_death</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">A simple test module for demonstration purposes.</span>
@@ -184,7 +94,7 @@
 
 
 <div class="viewcode-block" id="RandomDeath"><a class="viewcode-back" href="../../../reference/tlo.test.random_death.html#tlo.test.random_death.RandomDeath">[docs]</a><span class="k">class</span> <span class="nc">RandomDeath</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Randomly kill individuals with fixed probability.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Randomly kill individuals with fixed probability.</span>
 
 <span class="sd">    All disease modules need to be implemented as a class inheriting from Module.</span>
 <span class="sd">    They need to provide several methods which will be called by the simulation</span>
@@ -211,7 +121,7 @@
     <span class="p">}</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Constructor: create an instance of this module.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Constructor: create an instance of this module.</span>
 
 <span class="sd">        This method can usually be omitted, but may be a useful place to set up module-level state</span>
 <span class="sd">        that isn&#39;t appropriate to put elsewhere. Constructor arguments can be supplied when the</span>
@@ -227,7 +137,7 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 <div class="viewcode-block" id="RandomDeath.read_parameters"><a class="viewcode-back" href="../../../reference/tlo.test.random_death.html#tlo.test.random_death.RandomDeath.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Read parameter values from file, if required.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read parameter values from file, if required.</span>
 
 <span class="sd">        Here we do nothing.</span>
 
@@ -237,7 +147,7 @@
         <span class="k">pass</span></div>
 
 <div class="viewcode-block" id="RandomDeath.initialise_population"><a class="viewcode-back" href="../../../reference/tlo.test.random_death.html#tlo.test.random_death.RandomDeath.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Set our property values for the initial population.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set our property values for the initial population.</span>
 
 <span class="sd">        This method is called by the simulation when creating the initial population, and is</span>
 <span class="sd">        responsible for assigning initial values, for every individual, of those properties</span>
@@ -255,7 +165,7 @@
         <span class="c1"># (which means it will be full of &#39;not a time&#39; values)</span>
 
 <div class="viewcode-block" id="RandomDeath.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.test.random_death.html#tlo.test.random_death.RandomDeath.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Get ready for simulation start.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get ready for simulation start.</span>
 
 <span class="sd">        This method is called just before the main simulation loop begins, and after all</span>
 <span class="sd">        modules have read their parameters and the initial population has been created.</span>
@@ -267,7 +177,7 @@
         <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">death_poll</span><span class="p">,</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span></div>
 
 <div class="viewcode-block" id="RandomDeath.on_birth"><a class="viewcode-back" href="../../../reference/tlo.test.random_death.html#tlo.test.random_death.RandomDeath.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Initialise our properties for a newborn individual.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialise our properties for a newborn individual.</span>
 
 <span class="sd">        This is called by the simulation whenever a new person is born.</span>
 
@@ -279,7 +189,7 @@
 
 
 <div class="viewcode-block" id="RandomDeathEvent"><a class="viewcode-back" href="../../../reference/tlo.test.random_death.html#tlo.test.random_death.RandomDeathEvent">[docs]</a><span class="k">class</span> <span class="nc">RandomDeathEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;The regular event that actually kills people.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The regular event that actually kills people.</span>
 
 <span class="sd">    Regular events automatically reschedule themselves at a fixed frequency,</span>
 <span class="sd">    and thus implement discrete timestep type behaviour. The frequency is</span>
@@ -287,7 +197,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">death_probability</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Create a new random death event.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new random death event.</span>
 
 <span class="sd">        We need to pass the frequency at which we want to occur to the base class</span>
 <span class="sd">        constructor using super(). We also pass the module that created this event,</span>
@@ -300,7 +210,7 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
 
 <div class="viewcode-block" id="RandomDeathEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.test.random_death.html#tlo.test.random_death.RandomDeathEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Apply this event to the population.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply this event to the population.</span>
 
 <span class="sd">        For efficiency, we use pandas operations to scan the entire population</span>
 <span class="sd">        and kill individuals at random.</span>
@@ -322,7 +232,6 @@
 </pre></div>
 
            </div>
-           
           </div>
           <footer>
 
@@ -330,40 +239,25 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">
-        Last updated on Dec 01, 2022.
-      </span>
-
-    </p>
+      <span class="lastupdated">Last updated on Apr 06, 2023.
+      </span></p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

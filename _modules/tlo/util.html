@@ -1,96 +1,45 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
-  
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
   <title>tlo.util &mdash; TLOmodel 0.1.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/theme_overrides.css" type="text/css" />
-
-  
-  
+      <link rel="stylesheet" href="../../_static/theme_overrides.css" type="text/css" />
     <link rel="shortcut icon" href="../../_static/favicon.png"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
         <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-        <script src="../../_static/jquery.js"></script>
-        <script src="../../_static/underscore.js"></script>
-        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="../../_static/js/theme.js"></script>
-
-    
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
           
-            <a href="../../index.html" class="icon icon-home"> TLOmodel
           
-
-          
+          <a href="../../index.html" class="icon icon-home">
+            TLOmodel
           </a>
-
-          
-            
-            
               <div class="version">
                 0.1.0
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../index.html">Welcome</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../aims.html">Aims &amp; Objectives</a></li>
@@ -105,69 +54,30 @@
 <li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../index.html">TLOmodel</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
-          <li><a href="../index.html">Module code</a> &raquo;</li>
-        
-      <li>tlo.util</li>
-    
-    
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">tlo.util</li>
       <li class="wy-breadcrumbs-aside">
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <h1>Source code for tlo.util</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;This file contains helpful utility functions.&quot;&quot;&quot;</span>
 <span class="kn">import</span> <span class="nn">hashlib</span>
@@ -180,9 +90,12 @@
 
 <span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">Population</span>
 
+<span class="c1"># Default mother_id value, assigned to individuals initialised as adults at the start of the simulation.</span>
+<span class="n">DEFAULT_MOTHER_ID</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1e7</span>
+
 
 <div class="viewcode-block" id="create_age_range_lookup"><a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.create_age_range_lookup">[docs]</a><span class="k">def</span> <span class="nf">create_age_range_lookup</span><span class="p">(</span><span class="n">min_age</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">max_age</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">range_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]):</span>
-    <span class="sd">&quot;&quot;&quot;Create age-range categories and a dictionary that will map all whole years to age-range categories</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create age-range categories and a dictionary that will map all whole years to age-range categories</span>
 
 <span class="sd">    If the minimum age is not zero then a below minimum age category will be made,</span>
 <span class="sd">    then age ranges until maximum age will be made by the range size,</span>
@@ -197,7 +110,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">chunks</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Takes a list and divides it into parts of size n&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Takes a list and divides it into parts of size n&quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">),</span> <span class="n">n</span><span class="p">):</span>
             <span class="k">yield</span> <span class="n">items</span><span class="p">[</span><span class="n">index</span><span class="p">:</span><span class="n">index</span> <span class="o">+</span> <span class="n">n</span><span class="p">]</span>
 
@@ -230,7 +143,7 @@
 
 
 <div class="viewcode-block" id="transition_states"><a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.transition_states">[docs]</a><span class="k">def</span> <span class="nf">transition_states</span><span class="p">(</span><span class="n">initial_series</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">prob_matrix</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">rng</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Transition a series of states based on probability matrix</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Transition a series of states based on probability matrix</span>
 
 <span class="sd">    This should carry out all state transitions for a Series (i.e. column in DataFrame)</span>
 <span class="sd">    based on the probability of state-transition matrix.</span>
@@ -260,7 +173,7 @@
 
 
 <div class="viewcode-block" id="sample_outcome"><a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.sample_outcome">[docs]</a><span class="k">def</span> <span class="nf">sample_outcome</span><span class="p">(</span><span class="n">probs</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">rng</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; Helper function to randomly sample an outcome for each individual in a population from a set of probabilities</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Helper function to randomly sample an outcome for each individual in a population from a set of probabilities</span>
 <span class="sd">    that are specific to each individual.</span>
 <span class="sd">    :param probs: Each row of this dataframe represents the person and the columns are the possible outcomes. The</span>
 <span class="sd">    values are the probability of that outcome for that individual. For each individual, the probabilities of each</span>
@@ -287,10 +200,10 @@
 
 
 <div class="viewcode-block" id="BitsetHandler"><a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.BitsetHandler">[docs]</a><span class="k">class</span> <span class="nc">BitsetHandler</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Provides methods to operate on int column(s) in the population dataframe as a bitset&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Provides methods to operate on int column(s) in the population dataframe as a bitset&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">:</span> <span class="n">Population</span><span class="p">,</span> <span class="n">column</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">elements</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
-        <span class="sd">&quot;&quot;&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;&quot;&quot;</span>
 <span class="sd">        :param population: The TLO Population object (not the props dataframe).</span>
 <span class="sd">        :param column: The integer property column that will be used as a bitset. If</span>
 <span class="sd">            set to ``None`` then the optional `columns` argument to methods which act</span>
@@ -319,11 +232,11 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_population</span><span class="o">.</span><span class="n">props</span>
 
 <div class="viewcode-block" id="BitsetHandler.element_repr"><a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.BitsetHandler.element_repr">[docs]</a>    <span class="k">def</span> <span class="nf">element_repr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">elements</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Returns integer representation of the specified element(s)&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns integer representation of the specified element(s)&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_element_to_int_map</span><span class="p">[</span><span class="n">el</span><span class="p">]</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">elements</span><span class="p">))</span></div>
 
 <div class="viewcode-block" id="BitsetHandler.to_strings"><a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.BitsetHandler.to_strings">[docs]</a>    <span class="k">def</span> <span class="nf">to_strings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">integer</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-        <span class="sd">&quot;&quot;&quot;Given an integer value, returns the corresponding set of strings.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Given an integer value, returns the corresponding set of strings.</span>
 
 <span class="sd">        :param integer: The integer value for the bitset.</span>
 <span class="sd">        :return: Set of strings corresponding to integer value.</span>
@@ -342,7 +255,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_column</span> <span class="k">if</span> <span class="n">columns</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">columns</span>
 
 <div class="viewcode-block" id="BitsetHandler.set"><a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.BitsetHandler.set">[docs]</a>    <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="o">*</span><span class="n">elements</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">columns</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Set (i.e. set to True) the bits corersponding to the specified elements.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set (i.e. set to True) the bits corersponding to the specified elements.</span>
 
 <span class="sd">        The where argument is used verbatim as the first item in a `df.loc[x, y]` call.</span>
 <span class="sd">        It can be index  items, a boolean logical condition, or list of row indices e.g. &quot;[0]&quot;.</span>
@@ -358,7 +271,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">where</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_columns</span><span class="p">(</span><span class="n">columns</span><span class="p">)]</span> <span class="o">|=</span> <span class="bp">self</span><span class="o">.</span><span class="n">element_repr</span><span class="p">(</span><span class="o">*</span><span class="n">elements</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="BitsetHandler.unset"><a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.BitsetHandler.unset">[docs]</a>    <span class="k">def</span> <span class="nf">unset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="o">*</span><span class="n">elements</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">columns</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Unset (i.e. set to False) the bits corresponding the specified elements.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unset (i.e. set to False) the bits corresponding the specified elements.</span>
 
 <span class="sd">        The where argument is used verbatim as the first item in a `df.loc[x, y]` call.</span>
 <span class="sd">        It can be index items, a boolean logical condition, or list of row indices e.g. &quot;[0]&quot;.</span>
@@ -374,7 +287,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">where</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_columns</span><span class="p">(</span><span class="n">columns</span><span class="p">)]</span> <span class="o">&amp;=</span> <span class="o">~</span><span class="bp">self</span><span class="o">.</span><span class="n">element_repr</span><span class="p">(</span><span class="o">*</span><span class="n">elements</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="BitsetHandler.clear"><a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.BitsetHandler.clear">[docs]</a>    <span class="k">def</span> <span class="nf">clear</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="n">columns</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Clears all the bits for the specified rows.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Clears all the bits for the specified rows.</span>
 
 <span class="sd">        :param where: Condition to filter rows that will cleared.</span>
 <span class="sd">        :param columns: Optional argument specifying column(s) containing bitsets to</span>
@@ -390,10 +303,10 @@
         <span class="n">first</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">columns</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]:</span>
-        <span class="sd">&quot;&quot;&quot;Test whether bit(s) for a specified element are set.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test whether bit(s) for a specified element are set.</span>
 
 <span class="sd">        :param where: Condition to filter rows that will checked.</span>
-<span class="sd">        :param element: Element string to test if bit is set for.</span>
+<span class="sd">       :param element: Element string to test if bit is set for.</span>
 <span class="sd">        :param first: Boolean keyword argument specifying whether to return only the</span>
 <span class="sd">            first item / row in the computed column / dataframe.</span>
 <span class="sd">        :param columns: Optional argument specifying column(s) containing bitsets to</span>
@@ -412,7 +325,7 @@
         <span class="n">first</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">columns</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]:</span>
-        <span class="sd">&quot;&quot;&quot;Check whether individual(s) have all the elements given set to True.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check whether individual(s) have all the elements given set to True.</span>
 
 <span class="sd">        The where argument is used verbatim as the first item in a `df.loc[x, y]` call.</span>
 <span class="sd">        It can be index  items, a boolean logical condition, or list of row indices e.g. &quot;[0]&quot;</span>
@@ -439,7 +352,7 @@
         <span class="n">first</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">columns</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]:</span>
-        <span class="sd">&quot;&quot;&quot;Check whether individual(s) have any of the elements given set to True.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check whether individual(s) have any of the elements given set to True.</span>
 
 <span class="sd">        The where argument is used verbatim as the first item in a `df.loc[x, y]` call.</span>
 <span class="sd">        It can be index items, a boolean logical condition, or list of row indices e.g. &quot;[0]&quot;</span>
@@ -465,7 +378,7 @@
         <span class="n">first</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">columns</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
-        <span class="sd">&quot;&quot;&quot;Returns a series or dataframe with set of string elements where bit is True.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a series or dataframe with set of string elements where bit is True.</span>
 
 <span class="sd">        The where argument is used verbatim as the first item in a `df.loc[x, y]` call.</span>
 <span class="sd">        It can be index items, a boolean logical condition, or list of row indices e.g. &quot;[0]&quot;</span>
@@ -492,7 +405,7 @@
         <span class="n">where</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">columns</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]]:</span>
-        <span class="sd">&quot;&quot;&quot;Returns an exploded representation of the bitset(s).</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns an exploded representation of the bitset(s).</span>
 
 <span class="sd">        Each element bit becomes a column and each column is a bool indicating whether</span>
 <span class="sd">        the bit is set for the element.</span>
@@ -527,7 +440,7 @@
         <span class="n">first</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">columns</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]:</span>
-        <span class="sd">&quot;&quot;&quot;Returns Series of bool indicating whether the BitSet entry is not empty.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns Series of bool indicating whether the BitSet entry is not empty.</span>
 
 <span class="sd">        True is set is not empty, False otherwise.</span>
 
@@ -547,7 +460,7 @@
         <span class="n">first</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">columns</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]:</span>
-        <span class="sd">&quot;&quot;&quot;Returns Series of bool indicating whether the BitSet entry is empty.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns Series of bool indicating whether the BitSet entry is empty.</span>
 
 <span class="sd">        True if the set is empty, False otherwise.</span>
 
@@ -571,7 +484,7 @@
 
 <div class="viewcode-block" id="hash_dataframe"><a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.hash_dataframe">[docs]</a><span class="k">def</span> <span class="nf">hash_dataframe</span><span class="p">(</span><span class="n">dataframe</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">coerce_lists_to_tuples</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Coerce columns in a pd.DataFrame that are lists to tuples. This step is needed before hashing a pd.DataFrame</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Coerce columns in a pd.DataFrame that are lists to tuples. This step is needed before hashing a pd.DataFrame</span>
 <span class="sd">        as list are not hashable.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">df</span><span class="o">.</span><span class="n">applymap</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="n">x</span><span class="p">)</span>
 
@@ -579,26 +492,23 @@
 
 
 <div class="viewcode-block" id="get_person_id_to_inherit_from"><a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.get_person_id_to_inherit_from">[docs]</a><span class="k">def</span> <span class="nf">get_person_id_to_inherit_from</span><span class="p">(</span><span class="n">child_id</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">population_dataframe</span><span class="p">,</span> <span class="n">rng</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Get index of person to inherit properties from.</span>
-
-<span class="sd">    Should be specified mother_id unless this is equal to -1 (for example for</span>
-<span class="sd">    individuals generated at population initialisation with no mother set) in which</span>
-<span class="sd">    case an individual from currently alive persons, _excluding the person the index to</span>
-<span class="sd">    inherit from is being computed for_, is randomly chosen.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get index of person to inherit properties from.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">mother_id</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+
+    <span class="k">if</span> <span class="n">mother_id</span> <span class="o">==</span> <span class="n">DEFAULT_MOTHER_ID</span><span class="p">:</span>
         <span class="c1"># Get indices of alive persons and try to drop child_id from these indices if</span>
         <span class="c1"># present, ignoring any errors if child_id not currently in population dataframe</span>
         <span class="n">alive_persons_not_including_child</span> <span class="o">=</span> <span class="n">population_dataframe</span><span class="o">.</span><span class="n">index</span><span class="p">[</span>
             <span class="n">population_dataframe</span><span class="o">.</span><span class="n">is_alive</span>
         <span class="p">]</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">child_id</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">alive_persons_not_including_child</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="mi">0</span> <span class="o">&gt;</span> <span class="n">mother_id</span> <span class="o">&gt;</span> <span class="n">DEFAULT_MOTHER_ID</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">abs</span><span class="p">(</span><span class="n">mother_id</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">mother_id</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">mother_id</span></div>
 </pre></div>
 
            </div>
-           
           </div>
           <footer>
 
@@ -606,40 +516,25 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">
-        Last updated on Dec 01, 2022.
-      </span>
-
-    </p>
+      <span class="lastupdated">Last updated on Apr 06, 2023.
+      </span></p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

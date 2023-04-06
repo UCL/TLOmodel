@@ -1,96 +1,45 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
-  
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
   <title>tlo.methods.schisto &mdash; TLOmodel 0.1.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
-
-  
-  
+      <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-        <script src="../../../_static/jquery.js"></script>
-        <script src="../../../_static/underscore.js"></script>
-        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../../_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-
-    
+        <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
           
-            <a href="../../../index.html" class="icon icon-home"> TLOmodel
           
-
-          
+          <a href="../../../index.html" class="icon icon-home">
+            TLOmodel
           </a>
-
-          
-            
-            
               <div class="version">
                 0.1.0
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../index.html">Welcome</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../aims.html">Aims &amp; Objectives</a></li>
@@ -105,71 +54,31 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../index.html">TLOmodel</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
-          <li><a href="../../index.html">Module code</a> &raquo;</li>
-        
-          <li><a href="../methods.html">tlo.methods</a> &raquo;</li>
-        
-      <li>tlo.methods.schisto</li>
-    
-    
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../methods.html">tlo.methods</a></li>
+      <li class="breadcrumb-item active">tlo.methods.schisto</li>
       <li class="wy-breadcrumbs-aside">
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <h1>Source code for tlo.methods.schisto</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Union</span>
@@ -199,7 +108,7 @@
 
 
 <div class="viewcode-block" id="Schisto"><a class="viewcode-back" href="../../../reference/tlo.methods.schisto.html#tlo.methods.schisto.Schisto">[docs]</a><span class="k">class</span> <span class="nc">Schisto</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Schistosomiasis module.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Schistosomiasis module.</span>
 <span class="sd">    Two species of worm that cause Schistosomiasis are modelled independently. Worms are acquired by persons via the</span>
 <span class="sd">     environment. There is a delay between the acquisition of worms and the maturation to &#39;adults&#39; worms; and a long</span>
 <span class="sd">     period before the adult worms die. The number of worms in a person (whether a high-intensity infection or not)</span>
@@ -287,7 +196,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">age_group_mapper</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="Schisto.read_parameters"><a class="viewcode-back" href="../../../reference/tlo.methods.schisto.html#tlo.methods.schisto.Schisto.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Read parameters and register symptoms.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read parameters and register symptoms.&quot;&quot;&quot;</span>
 
         <span class="c1"># Load parameters</span>
         <span class="n">workbook</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_Schisto.xlsx&#39;</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
@@ -300,7 +209,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_register_symptoms</span><span class="p">(</span><span class="n">symptoms_df</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;Symptom&#39;</span><span class="p">)[</span><span class="s1">&#39;HSB_mapped_symptom&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span></div>
 
 <div class="viewcode-block" id="Schisto.pre_initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.schisto.html#tlo.methods.schisto.Schisto.pre_initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">pre_initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Do things before generating the population (but after read_parameters and any parameter updating).&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Do things before generating the population (but after read_parameters and any parameter updating).&quot;&quot;&quot;</span>
 
         <span class="c1"># Define districts that this module will operate in:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">districts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Demography&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">districts</span>  <span class="c1"># &lt;- all districts</span>
@@ -310,7 +219,7 @@
             <span class="n">_spec</span><span class="o">.</span><span class="n">update_parameters_from_schisto_module</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="Schisto.initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.schisto.html#tlo.methods.schisto.Schisto.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Set the property values for the initial population.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the property values for the initial population.&quot;&quot;&quot;</span>
 
         <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">module_prefix</span><span class="si">}</span><span class="s1">_last_PZQ_date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
@@ -319,7 +228,7 @@
             <span class="n">_spec</span><span class="o">.</span><span class="n">initialise_population</span><span class="p">(</span><span class="n">population</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Schisto.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.schisto.html#tlo.methods.schisto.Schisto.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Get ready for simulation start.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get ready for simulation start.&quot;&quot;&quot;</span>
 
         <span class="c1"># Initialise the simulation for each species</span>
         <span class="k">for</span> <span class="n">_spec</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">species</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
@@ -341,7 +250,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_schedule_mda_events</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="Schisto.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.schisto.html#tlo.methods.schisto.Schisto.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Initialise our properties for a newborn individual.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialise our properties for a newborn individual.</span>
 <span class="sd">        All children are born without an infection, even if the mother is infected.</span>
 
 <span class="sd">        :param mother_id: the ID for the mother for this child</span>
@@ -355,14 +264,14 @@
             <span class="n">_spec</span><span class="o">.</span><span class="n">on_birth</span><span class="p">(</span><span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Schisto.report_daly_values"><a class="viewcode-back" href="../../../reference/tlo.methods.schisto.html#tlo.methods.schisto.Schisto.report_daly_values">[docs]</a>    <span class="k">def</span> <span class="nf">report_daly_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Report the daly values, as the sum of the disability weight associated with each symptom caused by this</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Report the daly values, as the sum of the disability weight associated with each symptom caused by this</span>
 <span class="sd">        module.&quot;&quot;&quot;</span>
 
         <span class="c1"># Get the total weights for all those that have symptoms caused by this module.</span>
         <span class="n">symptoms_being_caused</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">caused_by</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
         <span class="k">def</span> <span class="nf">get_total_disability_weight</span><span class="p">(</span><span class="n">list_of_symptoms</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-            <span class="sd">&quot;&quot;&quot;Returns the sum of the disability weights from a list of symptoms, capping at 1.0&quot;&quot;&quot;</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Returns the sum of the disability weights from a list of symptoms, capping at 1.0&quot;&quot;&quot;</span>
             <span class="n">dw</span> <span class="o">=</span> <span class="mf">0.0</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">list_of_symptoms</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">dw</span>
@@ -382,7 +291,7 @@
                                                                     <span class="n">fill_value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Schisto.do_on_presentation_with_symptoms"><a class="viewcode-back" href="../../../reference/tlo.methods.schisto.html#tlo.methods.schisto.Schisto.do_on_presentation_with_symptoms">[docs]</a>    <span class="k">def</span> <span class="nf">do_on_presentation_with_symptoms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">symptoms</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">list</span><span class="p">,</span> <span class="nb">set</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Do when person presents to the GenericFirstAppt. If the person has certain set of symptoms, refer ta HSI for</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Do when person presents to the GenericFirstAppt. If the person has certain set of symptoms, refer ta HSI for</span>
 <span class="sd">         testing.&quot;&quot;&quot;</span>
 
         <span class="n">set_of_symptoms_indicative_of_schisto</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;anemia&#39;</span><span class="p">,</span> <span class="s1">&#39;haematuria&#39;</span><span class="p">,</span> <span class="s1">&#39;bladder_pathology&#39;</span><span class="p">}</span>
@@ -398,7 +307,7 @@
             <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Schisto.do_effect_of_treatment"><a class="viewcode-back" href="../../../reference/tlo.methods.schisto.html#tlo.methods.schisto.Schisto.do_effect_of_treatment">[docs]</a>    <span class="k">def</span> <span class="nf">do_effect_of_treatment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Do the effects of a treatment administered to a person or persons. This can be called for a person who is</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Do the effects of a treatment administered to a person or persons. This can be called for a person who is</span>
 <span class="sd">        infected and receiving treatment following a diagnosis, or for a person who is receiving treatment as part of a</span>
 <span class="sd">         Mass Drug Administration. The burden and effects of any species are alleviated by a successful treatment.&quot;&quot;&quot;</span>
 
@@ -418,7 +327,7 @@
             <span class="c1"># df.loc[person_id, f&#39;{self.module_prefix}_{spec_prefix}_start_of_high_infection&#39;] = pd.NaT</span>
 
 <div class="viewcode-block" id="Schisto._load_parameters_from_workbook"><a class="viewcode-back" href="../../../reference/tlo.methods.schisto.html#tlo.methods.schisto.Schisto._load_parameters_from_workbook">[docs]</a>    <span class="k">def</span> <span class="nf">_load_parameters_from_workbook</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">workbook</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Load parameters from ResourceFile (loaded by pd.read_excel as `workbook`) that are general (i.e., not</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load parameters from ResourceFile (loaded by pd.read_excel as `workbook`) that are general (i.e., not</span>
 <span class="sd">        specific to a particular species).&quot;&quot;&quot;</span>
 
         <span class="n">parameters</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
@@ -448,7 +357,7 @@
         <span class="k">return</span> <span class="n">parameters</span></div>
 
 <div class="viewcode-block" id="Schisto._register_symptoms"><a class="viewcode-back" href="../../../reference/tlo.methods.schisto.html#tlo.methods.schisto.Schisto._register_symptoms">[docs]</a>    <span class="k">def</span> <span class="nf">_register_symptoms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">symptoms</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Register the symptoms with the `SymptomManager`.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Register the symptoms with the `SymptomManager`.</span>
 <span class="sd">        :params symptoms: The symptoms that are used by this module in a dictionary of the form, {&lt;symptom&gt;:</span>
 <span class="sd">        &lt;generic_symptom_similar&gt;}. Each symptom is associated with the average healthcare seeking behaviour.&quot;&quot;&quot;</span>
         <span class="n">generic_symptoms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">generic_symptoms</span>
@@ -457,7 +366,7 @@
         <span class="p">])</span></div>
 
 <div class="viewcode-block" id="Schisto._get_disability_weight"><a class="viewcode-back" href="../../../reference/tlo.methods.schisto.html#tlo.methods.schisto.Schisto._get_disability_weight">[docs]</a>    <span class="k">def</span> <span class="nf">_get_disability_weight</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Return dict containing the disability weight (value) of each symptom (key).&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return dict containing the disability weight (value) of each symptom (key).&quot;&quot;&quot;</span>
 
         <span class="n">symptoms_to_disability_weight_mapping</span> <span class="o">=</span> <span class="p">{</span>
             <span class="c1"># These mapping are justified in the &#39;DALYS&#39; worksheet of the ResourceFile.</span>
@@ -480,11 +389,11 @@
         <span class="p">}</span></div>
 
 <div class="viewcode-block" id="Schisto._get_item_code_for_praziquantel"><a class="viewcode-back" href="../../../reference/tlo.methods.schisto.html#tlo.methods.schisto.Schisto._get_item_code_for_praziquantel">[docs]</a>    <span class="k">def</span> <span class="nf">_get_item_code_for_praziquantel</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Look-up the item code for Praziquantel&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Look-up the item code for Praziquantel&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Praziquantel, 600 mg (donated)&quot;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Schisto._schedule_mda_events"><a class="viewcode-back" href="../../../reference/tlo.methods.schisto.html#tlo.methods.schisto.Schisto._schedule_mda_events">[docs]</a>    <span class="k">def</span> <span class="nf">_schedule_mda_events</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Schedule MDA events, historical and prognosed.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Schedule MDA events, historical and prognosed.&quot;&quot;&quot;</span>
 
         <span class="c1"># Schedule the  MDA that have occurred, in each district and in each year:</span>
         <span class="k">for</span> <span class="p">(</span><span class="n">district</span><span class="p">,</span> <span class="n">year</span><span class="p">),</span> <span class="n">cov</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;MDA_coverage_historical&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
@@ -514,7 +423,7 @@
 
 
 <span class="k">class</span> <span class="nc">SchistoSpecies</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Helper Class to hold the information specific to a particular species (either S. mansoni or S. haematobium).&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper Class to hold the information specific to a particular species (either S. mansoni or S. haematobium).&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">schisto_module</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">schisto_module</span> <span class="o">=</span> <span class="n">schisto_module</span>
@@ -528,7 +437,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">get_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;The species-specific parameters for this species.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The species-specific parameters for this species.&quot;&quot;&quot;</span>
         <span class="n">params</span> <span class="o">=</span> <span class="p">{</span>
             <span class="c1"># &#39;delay_a&#39;: Parameter(Types.REAL, &#39;End of the latent period in days, start&#39;),</span>
             <span class="c1"># &#39;delay_b&#39;: Parameter(Types.REAL, &#39;End of the latent period in days, end&#39;),</span>
@@ -552,7 +461,7 @@
         <span class="k">return</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_prefix_species_parameter</span><span class="p">(</span><span class="n">k</span><span class="p">):</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
 
     <span class="k">def</span> <span class="nf">get_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;The species-specific properties for this species.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The species-specific properties for this species.&quot;&quot;&quot;</span>
         <span class="n">properties</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s1">&#39;infection_status&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span>
                 <span class="n">Types</span><span class="o">.</span><span class="n">CATEGORICAL</span><span class="p">,</span> <span class="s1">&#39;Current status of schistosomiasis infection for this species&#39;</span><span class="p">,</span>
@@ -565,22 +474,22 @@
         <span class="k">return</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">prefix_species_property</span><span class="p">(</span><span class="n">k</span><span class="p">):</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">properties</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
 
     <span class="k">def</span> <span class="nf">prefix_species_property</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">generic_property_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Add the prefix to a `generic_property_name` to get the name of the species-specific property for this</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add the prefix to a `generic_property_name` to get the name of the species-specific property for this</span>
 <span class="sd">        species.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">schisto_module</span><span class="o">.</span><span class="n">module_prefix</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">generic_property_name</span><span class="si">}</span><span class="s2">&quot;</span>
 
     <span class="k">def</span> <span class="nf">_prefix_species_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">generic_parameter_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Add the prefix to a `generic_parameter_name` to get the name of the species-specific parameter for this</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add the prefix to a `generic_parameter_name` to get the name of the species-specific parameter for this</span>
 <span class="sd">        species.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">generic_parameter_name</span><span class="si">}</span><span class="s2">&quot;</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">infection_status_property</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Return the property that identifies the infection_status of the person with respect to this species.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the property that identifies the infection_status of the person with respect to this species.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">prefix_species_property</span><span class="p">(</span><span class="s1">&#39;infection_status&#39;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">load_parameters_from_workbook</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">workbook</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Load parameters from ResourceFile (loaded by pd.read_excel as `workbook`) that are specific to this</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load parameters from ResourceFile (loaded by pd.read_excel as `workbook`) that are specific to this</span>
 <span class="sd">        species.&quot;&quot;&quot;</span>
         <span class="n">parameters</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
 
@@ -612,14 +521,14 @@
         <span class="k">return</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_prefix_species_parameter</span><span class="p">(</span><span class="n">k</span><span class="p">):</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">parameters</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
 
     <span class="k">def</span> <span class="nf">pre_initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Do things before generating the population (but after read_parameters) and any parameter updating.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Do things before generating the population (but after read_parameters) and any parameter updating.&quot;&quot;&quot;</span>
 
         <span class="c1"># Save species-specific parameter in this class, copying from the `Schisto` module. (We have to do this step</span>
         <span class="c1"># because the module may have updated the parameters).</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">update_parameters_from_schisto_module</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Set species-specific property values for the initial population.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set species-specific property values for the initial population.&quot;&quot;&quot;</span>
 
         <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">prop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prefix_species_property</span>
@@ -634,7 +543,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_assign_initial_worm_burden</span><span class="p">(</span><span class="n">population</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        * Schedule natural history events for those with worm burden initially.</span>
 <span class="sd">        * Schedule the WormBurdenEvent for this species. (A recurring instance of this event will be scheduled for</span>
 <span class="sd">        each species independently.)&quot;&quot;&quot;</span>
@@ -654,7 +563,7 @@
         <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Initialise the species-specific properties for a newborn individual.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialise the species-specific properties for a newborn individual.</span>
 <span class="sd">        :param mother_id: the ID for the mother for this child (redundant)</span>
 <span class="sd">        :param child_id: the new child&quot;&quot;&quot;</span>
 
@@ -672,7 +581,7 @@
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="n">prop</span><span class="p">(</span><span class="s1">&#39;harbouring_rate&#39;</span><span class="p">)]</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">gamma</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;gamma_alpha&#39;</span><span class="p">][</span><span class="n">district</span><span class="p">],</span> <span class="n">size</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">update_infectious_status_and_symptoms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Updates the infection status and symptoms based on the current aggregate worm burden of this species.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Updates the infection status and symptoms based on the current aggregate worm burden of this species.</span>
 <span class="sd">         * Assigns the &#39;infection status&#39; (High-infection, Low-infection, Non-infected) to the persons with ids given</span>
 <span class="sd">         in the `idx` argument, according their age (in years) and their aggregate worm burden (of worms of this</span>
 <span class="sd">         species).</span>
@@ -708,7 +617,7 @@
             <span class="k">return</span> <span class="n">status</span>
 
         <span class="k">def</span> <span class="nf">_impose_symptoms_of_high_intensity_infection</span><span class="p">(</span><span class="n">idx</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="sd">&quot;&quot;&quot;Assign symptoms to the person with high intensity infection.</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Assign symptoms to the person with high intensity infection.</span>
 <span class="sd">            :param idx: indices of individuals&quot;&quot;&quot;</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">return</span>
@@ -740,7 +649,9 @@
         <span class="c1">#  person has two infections causing &#39;High-infection&#39; and one is reduced below &#39;High-infection&#39;, symptoms will</span>
         <span class="c1">#  persist as if the person still had two causes of &#39;High-infection&#39;. The symptoms would not be removed until</span>
         <span class="c1">#  both the aggregate worm burden of both species is reduced.</span>
-        <span class="n">cols_of_infection_status_for_other_species</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">cols_of_infection_status</span><span class="p">)</span> <span class="o">-</span> <span class="p">{</span><span class="n">prop</span><span class="p">(</span><span class="s1">&#39;infection_status&#39;</span><span class="p">)}</span>
+        <span class="n">cols_of_infection_status_for_other_species</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">cols_of_infection_status</span> <span class="k">if</span> <span class="n">col</span> <span class="o">!=</span> <span class="n">prop</span><span class="p">(</span><span class="s1">&#39;infection_status&#39;</span><span class="p">)</span>
+        <span class="p">]</span>
         <span class="n">high_infection_any_other_species</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="n">cols_of_infection_status_for_other_species</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;High-infection&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">no_longer_high_infection</span> <span class="o">=</span> <span class="n">idx</span><span class="p">[</span>
@@ -750,7 +661,7 @@
         <span class="n">sm</span><span class="o">.</span><span class="n">clear_symptoms</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">no_longer_high_infection</span><span class="p">,</span> <span class="n">disease_module</span><span class="o">=</span><span class="n">schisto_module</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">update_parameters_from_schisto_module</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Update the internally-held parameters from the `Schisto` module that are specific to this species.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update the internally-held parameters from the `Schisto` module that are specific to this species.&quot;&quot;&quot;</span>
 
         <span class="k">def</span> <span class="nf">remove_prefix</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">prefix</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">text</span><span class="p">[</span><span class="n">text</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">prefix</span><span class="p">):]</span>
@@ -761,7 +672,7 @@
         <span class="p">}</span>
 
     <span class="k">def</span> <span class="nf">_assign_initial_harbouring_rate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Assign a harbouring rate to every individual in the initial populattion (based on their district of</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Assign a harbouring rate to every individual in the initial populattion (based on their district of</span>
 <span class="sd">        residence).&quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">prop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prefix_species_property</span>
@@ -775,7 +686,7 @@
             <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">in_the_district</span><span class="p">,</span> <span class="n">prop</span><span class="p">(</span><span class="s1">&#39;harbouring_rate&#39;</span><span class="p">)]</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">gamma</span><span class="p">(</span><span class="n">hr</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">in_the_district</span><span class="p">))</span>
 
     <span class="k">def</span> <span class="nf">_assign_initial_worm_burden</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Assign initial distribution of worms to each person (based on district and age-group).&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Assign initial distribution of worms to each person (based on district and age-group).&quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">prop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prefix_species_property</span>
         <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span>
@@ -808,7 +719,7 @@
                     <span class="n">df</span><span class="p">[</span><span class="n">prop</span><span class="p">(</span><span class="s1">&#39;aggregate_worm_burden&#39;</span><span class="p">)]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">worms_per_idx</span><span class="p">))</span>
 
     <span class="k">def</span> <span class="nf">_schedule_death_of_worms_in_initial_population</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Schedule death of worms assigned to the initial population&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Schedule death of worms assigned to the initial population&quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">schisto_module</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">prop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prefix_species_property</span>
         <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span>
@@ -827,7 +738,7 @@
             <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">log_infection_status</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Log the number of persons in each infection status for this species, by age-group and district.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Log the number of persons in each infection status for this species, by age-group and district.&quot;&quot;&quot;</span>
 
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">schisto_module</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
 
@@ -848,7 +759,7 @@
 
 
 <div class="viewcode-block" id="SchistoInfectionWormBurdenEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.schisto.html#tlo.methods.schisto.SchistoInfectionWormBurdenEvent">[docs]</a><span class="k">class</span> <span class="nc">SchistoInfectionWormBurdenEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;A recurring event that causes infection of people with this species.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A recurring event that causes infection of people with this species.</span>
 <span class="sd">     * Determines who becomes infected (using worm burden and reservoir of infectious material.</span>
 <span class="sd">     * Schedules `SchistoMatureWorms` for when the worms mature to adult worms.&quot;&quot;&quot;</span>
 
@@ -916,7 +827,7 @@
 
 
 <div class="viewcode-block" id="SchistoMatureWorms"><a class="viewcode-back" href="../../../reference/tlo.methods.schisto.html#tlo.methods.schisto.SchistoMatureWorms">[docs]</a><span class="k">class</span> <span class="nc">SchistoMatureWorms</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Represents the maturation of worms to adult worms.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Represents the maturation of worms to adult worms.</span>
 <span class="sd">    * Increases the aggregate worm burden of an individual upon maturation of the worms</span>
 <span class="sd">    * Schedules the natural death of worms and symptoms development if High-infection</span>
 <span class="sd">    * Updates the infection status and symptoms of the person accordingly.&quot;&quot;&quot;</span>
@@ -952,7 +863,7 @@
 
 
 <div class="viewcode-block" id="SchistoWormsNatDeath"><a class="viewcode-back" href="../../../reference/tlo.methods.schisto.html#tlo.methods.schisto.SchistoWormsNatDeath">[docs]</a><span class="k">class</span> <span class="nc">SchistoWormsNatDeath</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Represents the death of adult worms.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Represents the death of adult worms.</span>
 <span class="sd">     * Decreases the aggregate worm burden of an individual upon natural death of the adult worm.</span>
 <span class="sd">     * Updates the infection status and the symtoms of the person accordingly.</span>
 <span class="sd">    Nb. This event checks the last day of PZQ treatment and if has been less than the lifespan of the worm it doesn&#39;t</span>
@@ -987,7 +898,7 @@
 
 
 <div class="viewcode-block" id="SchistoMDAEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.schisto.html#tlo.methods.schisto.SchistoMDAEvent">[docs]</a><span class="k">class</span> <span class="nc">SchistoMDAEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Mass-Drug administration scheduled for the population. This event schedules the occurrence of the</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Mass-Drug administration scheduled for the population. This event schedules the occurrence of the</span>
 <span class="sd">    individual-level HSIs for the administration of drugs to each individual.</span>
 <span class="sd">    :param district: The district in which the MDA occurs.</span>
 <span class="sd">    :param coverage: A dictionary of the form {&lt;age_group&gt;: &lt;coverage&gt;}, where &lt;age_group&gt; is one of (&#39;PSAC&#39;, &#39;SAC&#39;,</span>
@@ -1004,7 +915,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">months_between_repeats</span> <span class="o">=</span> <span class="n">months_between_repeats</span></div>
 
 <div class="viewcode-block" id="SchistoMDAEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.schisto.html#tlo.methods.schisto.SchistoMDAEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; Represents the occurence of an MDA, in a particular year and district, which achieves a particular coverage</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Represents the occurence of an MDA, in a particular year and district, which achieves a particular coverage</span>
 <span class="sd">         (by age-group).</span>
 <span class="sd">         * Schedules the MDA HSI for each person that is reached in the MDA.</span>
 <span class="sd">         * Schedules the recurrence of this event, if the MDA is to be repeated in the future.&quot;&quot;&quot;</span>
@@ -1039,7 +950,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">months_between_repeats</span><span class="p">))</span></div>
 
 <div class="viewcode-block" id="SchistoMDAEvent._select_recipients"><a class="viewcode-back" href="../../../reference/tlo.methods.schisto.html#tlo.methods.schisto.SchistoMDAEvent._select_recipients">[docs]</a>    <span class="k">def</span> <span class="nf">_select_recipients</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">district</span><span class="p">,</span> <span class="n">age_group</span><span class="p">,</span> <span class="n">coverage</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Determine persons to receive MDA, based on a specified target age-group and coverage.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Determine persons to receive MDA, based on a specified target age-group and coverage.&quot;&quot;&quot;</span>
 
         <span class="k">assert</span> <span class="mf">0.0</span> <span class="o">&lt;=</span> <span class="n">coverage</span> <span class="o">&lt;=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;Value of coverage </span><span class="si">{</span><span class="n">coverage</span><span class="si">}</span><span class="s1"> is out of bounds.&#39;</span>
         <span class="k">assert</span> <span class="n">age_group</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;PSAC&#39;</span><span class="p">,</span> <span class="s1">&#39;SAC&#39;</span><span class="p">,</span> <span class="s1">&#39;Adults&#39;</span><span class="p">)</span>
@@ -1059,7 +970,7 @@
 
 
 <div class="viewcode-block" id="HSI_Schisto_TestingFollowingSymptoms"><a class="viewcode-back" href="../../../reference/tlo.methods.schisto.html#tlo.methods.schisto.HSI_Schisto_TestingFollowingSymptoms">[docs]</a><span class="k">class</span> <span class="nc">HSI_Schisto_TestingFollowingSymptoms</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;This is a Health System Interaction Event for a person with symptoms who has been referred from the FirstAppt</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This is a Health System Interaction Event for a person with symptoms who has been referred from the FirstAppt</span>
 <span class="sd">    for testing at the clinic.&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="HSI_Schisto_TestingFollowingSymptoms.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.schisto.html#tlo.methods.schisto.HSI_Schisto_TestingFollowingSymptoms.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
@@ -1117,7 +1028,7 @@
 
 
 <div class="viewcode-block" id="HSI_Schisto_TreatmentFollowingDiagnosis"><a class="viewcode-back" href="../../../reference/tlo.methods.schisto.html#tlo.methods.schisto.HSI_Schisto_TreatmentFollowingDiagnosis">[docs]</a><span class="k">class</span> <span class="nc">HSI_Schisto_TreatmentFollowingDiagnosis</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;This is a Health System Interaction Event for a person being provided with PZQ treatment after having been</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This is a Health System Interaction Event for a person being provided with PZQ treatment after having been</span>
 <span class="sd">    diagnosed.&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="HSI_Schisto_TreatmentFollowingDiagnosis.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.schisto.html#tlo.methods.schisto.HSI_Schisto_TreatmentFollowingDiagnosis.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
@@ -1130,13 +1041,13 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1a&#39;</span></div>
 
 <div class="viewcode-block" id="HSI_Schisto_TreatmentFollowingDiagnosis.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.schisto.html#tlo.methods.schisto.HSI_Schisto_TreatmentFollowingDiagnosis.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Do the treatment for this person.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Do the treatment for this person.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_code_for_praziquantel</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">do_effect_of_treatment</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="HSI_Schisto_MDA"><a class="viewcode-back" href="../../../reference/tlo.methods.schisto.html#tlo.methods.schisto.HSI_Schisto_MDA">[docs]</a><span class="k">class</span> <span class="nc">HSI_Schisto_MDA</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;This is a Health System Interaction Event for providing one or more persons with PZQ as part of a Mass Drug</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This is a Health System Interaction Event for providing one or more persons with PZQ as part of a Mass Drug</span>
 <span class="sd">    Administration (MDA). Note that the `person_id` declared as the `target` of this `HSI_Event` is only one of the</span>
 <span class="sd">    beneficiaries. This is in, effect, a &quot;batch job&quot; of individual HSI being handled within one HSI, for the sake of</span>
 <span class="sd">    computational efficiency.&quot;&quot;&quot;</span>
@@ -1160,7 +1071,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1a&#39;</span></div>
 
 <div class="viewcode-block" id="HSI_Schisto_MDA.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.schisto.html#tlo.methods.schisto.HSI_Schisto_MDA.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Provide the treatment to the beneficiaries of this HSI.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Provide the treatment to the beneficiaries of this HSI.&quot;&quot;&quot;</span>
 
         <span class="c1"># Find which of the beneficiaries are still alive</span>
         <span class="n">beneficiaries_still_alive</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">beneficiaries_ids</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span>
@@ -1181,18 +1092,17 @@
 
 <div class="viewcode-block" id="SchistoLoggingEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.schisto.html#tlo.methods.schisto.SchistoLoggingEvent">[docs]</a><span class="k">class</span> <span class="nc">SchistoLoggingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
 <div class="viewcode-block" id="SchistoLoggingEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.schisto.html#tlo.methods.schisto.SchistoLoggingEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;This is a regular event (every month) that causes the logging for each species.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;This is a regular event (every month) that causes the logging for each species.&quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">Schisto</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="SchistoLoggingEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.schisto.html#tlo.methods.schisto.SchistoLoggingEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Call `log_infection_status` for each species.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Call `log_infection_status` for each species.&quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">_spec</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">species</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
             <span class="n">_spec</span><span class="o">.</span><span class="n">log_infection_status</span><span class="p">()</span></div></div>
 </pre></div>
 
            </div>
-           
           </div>
           <footer>
 
@@ -1200,40 +1110,25 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">
-        Last updated on Dec 01, 2022.
-      </span>
-
-    </p>
+      <span class="lastupdated">Last updated on Apr 06, 2023.
+      </span></p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

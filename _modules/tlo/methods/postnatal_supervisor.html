@@ -1,96 +1,45 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
-  
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
   <title>tlo.methods.postnatal_supervisor &mdash; TLOmodel 0.1.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
-
-  
-  
+      <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-        <script src="../../../_static/jquery.js"></script>
-        <script src="../../../_static/underscore.js"></script>
-        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../../_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-
-    
+        <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
           
-            <a href="../../../index.html" class="icon icon-home"> TLOmodel
           
-
-          
+          <a href="../../../index.html" class="icon icon-home">
+            TLOmodel
           </a>
-
-          
-            
-            
               <div class="version">
                 0.1.0
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../index.html">Welcome</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../aims.html">Aims &amp; Objectives</a></li>
@@ -105,71 +54,31 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../index.html">TLOmodel</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
-          <li><a href="../../index.html">Module code</a> &raquo;</li>
-        
-          <li><a href="../methods.html">tlo.methods</a> &raquo;</li>
-        
-      <li>tlo.methods.postnatal_supervisor</li>
-    
-    
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../methods.html">tlo.methods</a></li>
+      <li class="breadcrumb-item active">tlo.methods.postnatal_supervisor</li>
       <li class="wy-breadcrumbs-aside">
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <h1>Source code for tlo.methods.postnatal_supervisor</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
 
@@ -188,7 +97,7 @@
 
 
 <div class="viewcode-block" id="PostnatalSupervisor"><a class="viewcode-back" href="../../../reference/tlo.methods.postnatal_supervisor.html#tlo.methods.postnatal_supervisor.PostnatalSupervisor">[docs]</a><span class="k">class</span> <span class="nc">PostnatalSupervisor</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; This module is responsible for the key conditions/complications experienced by a mother and by a neonate</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; This module is responsible for the key conditions/complications experienced by a mother and by a neonate</span>
 <span class="sd">    following labour and the immediate postpartum period (this period, from birth to day +1, is covered by the labour</span>
 <span class="sd">    module).</span>
 
@@ -510,7 +419,7 @@
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;pn_emergency_event_mother&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div>
 
 <div class="viewcode-block" id="PostnatalSupervisor.further_on_birth_postnatal_supervisor"><a class="viewcode-back" href="../../../reference/tlo.methods.postnatal_supervisor.html#tlo.methods.postnatal_supervisor.PostnatalSupervisor.further_on_birth_postnatal_supervisor">[docs]</a>    <span class="k">def</span> <span class="nf">further_on_birth_postnatal_supervisor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function is called by the on_birth function of NewbornOutcomes module or following an intrapartum</span>
 <span class="sd">        stillbirth in the Labour Module. This function contains additional code related to the postnatal supervisor</span>
 <span class="sd">        module that should be ran on_birth. These additional on_birth functions ensure each modules</span>
@@ -581,7 +490,7 @@
         <span class="k">return</span> <span class="n">daly_series</span></div>
 
 <div class="viewcode-block" id="PostnatalSupervisor.apply_linear_model"><a class="viewcode-back" href="../../../reference/tlo.methods.postnatal_supervisor.html#tlo.methods.postnatal_supervisor.PostnatalSupervisor.apply_linear_model">[docs]</a>    <span class="k">def</span> <span class="nf">apply_linear_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lm</span><span class="p">,</span> <span class="n">df</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Helper function will apply the linear model (lm) on the dataframe (df) to get a probability of some event</span>
 <span class="sd">        happening to each individual. It then returns a series with same index with bools indicating the outcome based</span>
 <span class="sd">        on the toss of the biased coin.</span>
@@ -621,7 +530,7 @@
                                                             <span class="p">)</span></div>
 
 <div class="viewcode-block" id="PostnatalSupervisor.set_postnatal_complications_mothers"><a class="viewcode-back" href="../../../reference/tlo.methods.postnatal_supervisor.html#tlo.methods.postnatal_supervisor.PostnatalSupervisor.set_postnatal_complications_mothers">[docs]</a>    <span class="k">def</span> <span class="nf">set_postnatal_complications_mothers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">week</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function is called by the PostnatalSupervisor event. It applies risk of key complications to a subset of</span>
 <span class="sd">        women during each week of the postnatal period starting from week 2. Currently this includes sepsis,</span>
 <span class="sd">        anaemia and hypertension</span>
@@ -633,7 +542,7 @@
         <span class="n">mni</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;PregnancySupervisor&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mother_and_newborn_info</span>
 
         <span class="k">def</span> <span class="nf">onset</span><span class="p">(</span><span class="n">eq</span><span class="p">):</span>
-            <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">            Runs a specific equation within the linear model for the appropriate subset of women in the postnatal period</span>
 <span class="sd">             and returns a BOOL series</span>
 <span class="sd">            :param eq: linear model equation</span>
@@ -713,11 +622,11 @@
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">onset_anaemia</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">onset_anaemia</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="s1">&#39;pn_anaemia_following_pregnancy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">random_choice_severity</span>
 
         <span class="k">for</span> <span class="n">person</span> <span class="ow">in</span> <span class="n">onset_anaemia</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">onset_anaemia</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
-            <span class="n">store_dalys_in_mni</span><span class="p">(</span><span class="n">person</span><span class="p">,</span> <span class="n">mni</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person</span><span class="p">,</span> <span class="s2">&quot;pn_anaemia_following_pregnancy&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">_anaemia_pp_onset&#39;</span><span class="p">,</span>
+            <span class="n">store_dalys_in_mni</span><span class="p">(</span><span class="n">person</span><span class="p">,</span> <span class="n">mni</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;pn_anaemia_following_pregnancy&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">_anaemia_pp_onset&#39;</span><span class="p">,</span>
                                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
 
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;maternal_complication&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;person&#39;</span><span class="p">:</span> <span class="n">person</span><span class="p">,</span>
-                                                           <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person</span><span class="p">,</span> <span class="s2">&quot;pn_anaemia_following_pregnancy&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span>
+                                                           <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;pn_anaemia_following_pregnancy&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span>
                                                                    <span class="sa">f</span><span class="s1">&#39;_anaemia&#39;</span><span class="p">,</span>
                                                            <span class="s1">&#39;timing&#39;</span><span class="p">:</span> <span class="s1">&#39;postnatal&#39;</span><span class="p">})</span>
 
@@ -899,7 +808,7 @@
                 <span class="n">id_or_index</span><span class="o">=</span><span class="n">week_6_women</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">week_6_women</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="PostnatalSupervisor.apply_risk_of_neonatal_complications_in_week_one"><a class="viewcode-back" href="../../../reference/tlo.methods.postnatal_supervisor.html#tlo.methods.postnatal_supervisor.PostnatalSupervisor.apply_risk_of_neonatal_complications_in_week_one">[docs]</a>    <span class="k">def</span> <span class="nf">apply_risk_of_neonatal_complications_in_week_one</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">child_id</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function is called by PostnatalWeekOneEvent for newborns to determine risk of complications. Currently</span>
 <span class="sd">        this is limited to early onset neonatal sepsis</span>
 <span class="sd">        :param child_id: childs individual id</span>
@@ -936,7 +845,7 @@
                                                           <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;early_onset_sepsis&#39;</span><span class="p">})</span></div>
 
 <div class="viewcode-block" id="PostnatalSupervisor.set_postnatal_complications_neonates"><a class="viewcode-back" href="../../../reference/tlo.methods.postnatal_supervisor.html#tlo.methods.postnatal_supervisor.PostnatalSupervisor.set_postnatal_complications_neonates">[docs]</a>    <span class="k">def</span> <span class="nf">set_postnatal_complications_neonates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">upper_and_lower_day_limits</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function is called by the PostnatalSupervisor event. It applies risk of key complication to neonates</span>
 <span class="sd">        during each week of the neonatal period after week one (weeks 2, 3 &amp; 4). This is currently limited to sepsis but</span>
 <span class="sd">        may be expanded at a later date</span>
@@ -949,7 +858,7 @@
         <span class="c1"># Here we apply risk of late onset neonatal sepsis (sepsis onsetting after day 7) to newborns</span>
         <span class="n">onset_sepsis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_linear_model</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">pn_linear_models</span><span class="p">[</span><span class="s1">&#39;late_onset_neonatal_sepsis&#39;</span><span class="p">],</span>
-            <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;is_alive&#39;</span><span class="p">]</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;mother_id&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;nb_death_after_birth&#39;</span><span class="p">]</span> <span class="o">&amp;</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;is_alive&#39;</span><span class="p">]</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;mother_id&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;nb_death_after_birth&#39;</span><span class="p">]</span> <span class="o">&amp;</span>
                    <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;age_days&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">upper_and_lower_day_limits</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&amp;</span>
                    <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;age_days&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">upper_and_lower_day_limits</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;date_of_birth&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">start_date</span><span class="p">)</span> <span class="o">&amp;</span>
                    <span class="o">~</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;hs_is_inpatient&#39;</span><span class="p">]])</span>
@@ -985,7 +894,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">apply_risk_of_maternal_or_neonatal_death_postnatal</span><span class="p">(</span><span class="n">mother_or_child</span><span class="o">=</span><span class="s1">&#39;child&#39;</span><span class="p">,</span> <span class="n">individual_id</span><span class="o">=</span><span class="n">person</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="PostnatalSupervisor.apply_risk_of_maternal_or_neonatal_death_postnatal"><a class="viewcode-back" href="../../../reference/tlo.methods.postnatal_supervisor.html#tlo.methods.postnatal_supervisor.PostnatalSupervisor.apply_risk_of_maternal_or_neonatal_death_postnatal">[docs]</a>    <span class="k">def</span> <span class="nf">apply_risk_of_maternal_or_neonatal_death_postnatal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_or_child</span><span class="p">,</span> <span class="n">individual_id</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function is called to calculate an individuals risk of death following the onset of a complication. For</span>
 <span class="sd">        individuals who dont seek care this is immediately after the onset of complications. For those who seek care it</span>
 <span class="sd">        is called at the end of the HSI to allow for treatment effects. Either a mother or a child can be passed to the</span>
@@ -1060,7 +969,7 @@
 
 
 <div class="viewcode-block" id="PostnatalSupervisorEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.postnatal_supervisor.html#tlo.methods.postnatal_supervisor.PostnatalSupervisorEvent">[docs]</a><span class="k">class</span> <span class="nc">PostnatalSupervisorEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This is the PostnatalSupervisorEvent. This event runs every week and is responsible for apply risk of complications</span>
 <span class="sd">    to mothers and newborns in the postnatal and neonatal periods. Risk is applied after the first week of life as this</span>
 <span class="sd">    is managed via PostnatalWeekOneMaternalEvent and PostnatalWeekOneNeonatalEvent. In addition this event ensures that</span>
@@ -1121,7 +1030,7 @@
 
         <span class="c1"># Schedule date of resolution for any women with anaemia</span>
         <span class="k">for</span> <span class="n">person</span> <span class="ow">in</span> <span class="n">week_8_postnatal_women_anaemia</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">week_8_postnatal_women_anaemia</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
-            <span class="n">store_dalys_in_mni</span><span class="p">(</span><span class="n">person</span><span class="p">,</span> <span class="n">mni</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person</span><span class="p">,</span> <span class="s2">&quot;pn_anaemia_following_pregnancy&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">_anaemia&#39;</span>
+            <span class="n">store_dalys_in_mni</span><span class="p">(</span><span class="n">person</span><span class="p">,</span> <span class="n">mni</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;pn_anaemia_following_pregnancy&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">_anaemia&#39;</span>
                                             <span class="sa">f</span><span class="s1">&#39;_pp_resolution&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
 
         <span class="n">week_8_postnatal_women</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">la_is_postpartum</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">pn_postnatal_period_in_weeks</span> <span class="o">==</span> <span class="mi">8</span><span class="p">)</span>
@@ -1158,7 +1067,7 @@
 
 
 <div class="viewcode-block" id="PostnatalWeekOneMaternalEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.postnatal_supervisor.html#tlo.methods.postnatal_supervisor.PostnatalWeekOneMaternalEvent">[docs]</a><span class="k">class</span> <span class="nc">PostnatalWeekOneMaternalEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This is PostnatalWeekOneMaternalEvent. It is scheduled for all mothers who survive labour and the first 48 hours</span>
 <span class="sd">    after birth. This event applies risk of key complications that can occur in the first week after birth. This event</span>
 <span class="sd">    also schedules postnatal care for those women predicted to attend after 48 hours or in the situation where they have</span>
@@ -1249,12 +1158,12 @@
 
                 <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">individual_id</span><span class="p">,</span> <span class="s1">&#39;pn_anaemia_following_pregnancy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">random_choice_severity</span>
 
-                <span class="n">store_dalys_in_mni</span><span class="p">(</span><span class="n">individual_id</span><span class="p">,</span> <span class="n">mni</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">individual_id</span><span class="p">,</span> <span class="s2">&quot;pn_anaemia_following_pregnancy&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">_&#39;</span>
+                <span class="n">store_dalys_in_mni</span><span class="p">(</span><span class="n">individual_id</span><span class="p">,</span> <span class="n">mni</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">individual_id</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;pn_anaemia_following_pregnancy&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">_&#39;</span>
                                                        <span class="sa">f</span><span class="s1">&#39;anaemia_pp_onset&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
 
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;maternal_complication&#39;</span><span class="p">,</span>
                             <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;person&#39;</span><span class="p">:</span> <span class="n">individual_id</span><span class="p">,</span>
-                                  <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">individual_id</span><span class="p">,</span> <span class="s2">&quot;pn_anaemia_following_pregnancy&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">_anaemia&#39;</span><span class="p">,</span>
+                                  <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">individual_id</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;pn_anaemia_following_pregnancy&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">_anaemia&#39;</span><span class="p">,</span>
                                   <span class="s1">&#39;timing&#39;</span><span class="p">:</span> <span class="s1">&#39;postnatal&#39;</span><span class="p">})</span>
 
         <span class="c1"># -------------------------------------------- HYPERTENSION -----------------------------------------------</span>
@@ -1377,7 +1286,7 @@
 
 
 <div class="viewcode-block" id="PostnatalWeekOneNeonatalEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.postnatal_supervisor.html#tlo.methods.postnatal_supervisor.PostnatalWeekOneNeonatalEvent">[docs]</a><span class="k">class</span> <span class="nc">PostnatalWeekOneNeonatalEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This is PostnatalWeekOneEvent. It is scheduled for all newborns who survive labour and the first 48 hours after</span>
 <span class="sd">    birth. This event applies risk of key complications that can occur in the first week after birth. This event also</span>
 <span class="sd">    schedules postnatal care for those newborns predicted to attend after 48 hours or in the situation where they have</span>
@@ -1442,7 +1351,7 @@
 
 
 <div class="viewcode-block" id="HSI_PostnatalSupervisor_TreatmentForObstetricFistula"><a class="viewcode-back" href="../../../reference/tlo.methods.postnatal_supervisor.html#tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_TreatmentForObstetricFistula">[docs]</a><span class="k">class</span> <span class="nc">HSI_PostnatalSupervisor_TreatmentForObstetricFistula</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;This is HSI_PostnatalSupervisor_TreatmentForObstetricFistula. It is scheduled by the on_birth function of this</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This is HSI_PostnatalSupervisor_TreatmentForObstetricFistula. It is scheduled by the on_birth function of this</span>
 <span class="sd">     module for women have developed obstetric fistula and choose to seek care. Treatment delivered in this event</span>
 <span class="sd">    includes surgical correction of obstetric fistula</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -1465,13 +1374,12 @@
 
         <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">store_dalys_in_mni</span><span class="p">(</span>
             <span class="n">person_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;PregnancySupervisor&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mother_and_newborn_info</span><span class="p">,</span>
-            <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;pn_obstetric_fistula&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">_fistula_resolution&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
+            <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;pn_obstetric_fistula&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">_fistula_resolution&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
 
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;pn_obstetric_fistula&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;none&#39;</span></div></div>
 </pre></div>
 
            </div>
-           
           </div>
           <footer>
 
@@ -1479,40 +1387,25 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">
-        Last updated on Dec 01, 2022.
-      </span>
-
-    </p>
+      <span class="lastupdated">Last updated on Apr 06, 2023.
+      </span></p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

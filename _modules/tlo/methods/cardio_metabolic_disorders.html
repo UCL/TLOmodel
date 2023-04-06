@@ -1,96 +1,45 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
-  
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
   <title>tlo.methods.cardio_metabolic_disorders &mdash; TLOmodel 0.1.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
-
-  
-  
+      <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-        <script src="../../../_static/jquery.js"></script>
-        <script src="../../../_static/underscore.js"></script>
-        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../../_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-
-    
+        <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
           
-            <a href="../../../index.html" class="icon icon-home"> TLOmodel
           
-
-          
+          <a href="../../../index.html" class="icon icon-home">
+            TLOmodel
           </a>
-
-          
-            
-            
               <div class="version">
                 0.1.0
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../index.html">Welcome</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../aims.html">Aims &amp; Objectives</a></li>
@@ -105,71 +54,31 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../index.html">TLOmodel</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
-          <li><a href="../../index.html">Module code</a> &raquo;</li>
-        
-          <li><a href="../methods.html">tlo.methods</a> &raquo;</li>
-        
-      <li>tlo.methods.cardio_metabolic_disorders</li>
-    
-    
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../methods.html">tlo.methods</a></li>
+      <li class="breadcrumb-item active">tlo.methods.cardio_metabolic_disorders</li>
       <li class="wy-breadcrumbs-aside">
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <h1>Source code for tlo.methods.cardio_metabolic_disorders</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">The joint Cardio-Metabolic Disorders model determines onset, outcome and treatment of:</span>
@@ -211,7 +120,7 @@
 
 
 <div class="viewcode-block" id="CardioMetabolicDisorders"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders">[docs]</a><span class="k">class</span> <span class="nc">CardioMetabolicDisorders</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    CardioMetabolicDisorders module covers a subset of cardio-metabolic conditions and events. Conditions are binary</span>
 <span class="sd">    and individuals experience a risk of acquiring or losing a condition based on annual probability and</span>
 <span class="sd">    demographic/lifestyle risk factors.</span>
@@ -419,7 +328,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">lms_event_symptoms</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="CardioMetabolicDisorders.read_parameters"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Read parameter values from files for condition onset, removal, deaths, and initial prevalence.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read parameter values from files for condition onset, removal, deaths, and initial prevalence.</span>
 
 <span class="sd">        ResourceFile_cmd_condition_onset.xlsx = parameters for onset of conditions</span>
 <span class="sd">        ResourceFile_cmd_condition_removal.xlsx  = parameters for removal of conditions</span>
@@ -449,7 +358,7 @@
         <span class="n">events_hsi</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">cmd_path</span> <span class="o">/</span> <span class="s2">&quot;ResourceFile_cmd_events_hsi.xlsx&quot;</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 
         <span class="k">def</span> <span class="nf">get_values</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-            <span class="sd">&quot;&quot;&quot;replaces nans in the &#39;value&#39; key with specified value&quot;&quot;&quot;</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;replaces nans in the &#39;value&#39; key with specified value&quot;&quot;&quot;</span>
             <span class="n">params</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
             <span class="n">params</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">params</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;parameter_name&#39;</span><span class="p">)[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span>
@@ -512,14 +421,13 @@
         <span class="c1"># Register symptoms from events and make them emergencies</span>
         <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">events</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">register_symptom</span><span class="p">(</span>
-                <span class="n">Symptom</span><span class="p">(</span>
-                    <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">event</span><span class="si">}</span><span class="s1">_damage&#39;</span><span class="p">,</span>
-                    <span class="n">emergency_in_adults</span><span class="o">=</span><span class="kc">True</span>
+                <span class="n">Symptom</span><span class="o">.</span><span class="n">emergency</span><span class="p">(</span>
+                    <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">event</span><span class="si">}</span><span class="s1">_damage&#39;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;adults&#39;</span>
                 <span class="p">),</span>
             <span class="p">)</span></div>
 
 <div class="viewcode-block" id="CardioMetabolicDisorders.initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set property values for the initial population.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">age_cats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Demography&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">AGE_RANGE_CATEGORIES</span>
@@ -529,14 +437,14 @@
         <span class="n">women</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">sex</span> <span class="o">==</span> <span class="s1">&#39;F&#39;</span><span class="p">)</span>
 
         <span class="k">def</span> <span class="nf">sample_eligible</span><span class="p">(</span><span class="n">_filter</span><span class="p">,</span> <span class="n">_p</span><span class="p">,</span> <span class="n">_condition</span><span class="p">):</span>
-            <span class="sd">&quot;&quot;&quot;uses filter to get eligible population and samples individuals for condition using p&quot;&quot;&quot;</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;uses filter to get eligible population and samples individuals for condition using p&quot;&quot;&quot;</span>
             <span class="n">eligible</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">_filter</span><span class="p">]</span>
             <span class="n">init_prev</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">],</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">eligible</span><span class="p">),</span> <span class="n">p</span><span class="o">=</span><span class="p">[</span><span class="n">_p</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">_p</span><span class="p">])</span>
             <span class="k">if</span> <span class="nb">sum</span><span class="p">(</span><span class="n">init_prev</span><span class="p">):</span>
                 <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">eligible</span><span class="p">[</span><span class="n">init_prev</span><span class="p">],</span> <span class="sa">f</span><span class="s1">&#39;nc_</span><span class="si">{</span><span class="n">_condition</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
         <span class="k">def</span> <span class="nf">sample_eligible_diagnosis_medication</span><span class="p">(</span><span class="n">_filter</span><span class="p">,</span> <span class="n">_p</span><span class="p">,</span> <span class="n">_condition</span><span class="p">):</span>
-            <span class="sd">&quot;&quot;&quot;uses filter to get eligible population and samples individuals for prior diagnosis &amp; medication use</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;uses filter to get eligible population and samples individuals for prior diagnosis &amp; medication use</span>
 <span class="sd">             using p&quot;&quot;&quot;</span>
             <span class="n">eligible</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">_filter</span><span class="p">]</span>
             <span class="n">init_diagnosis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">],</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">eligible</span><span class="p">),</span> <span class="n">p</span><span class="o">=</span><span class="p">[</span><span class="n">_p</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">_p</span><span class="p">])</span>
@@ -547,7 +455,7 @@
                 <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">eligible</span><span class="p">[</span><span class="n">init_diagnosis</span><span class="p">],</span> <span class="sa">f</span><span class="s1">&#39;nc_</span><span class="si">{</span><span class="n">_condition</span><span class="si">}</span><span class="s1">_on_medication&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
         <span class="k">def</span> <span class="nf">sample_eligible_treatment_success</span><span class="p">(</span><span class="n">_filter</span><span class="p">,</span> <span class="n">_p</span><span class="p">,</span> <span class="n">_condition</span><span class="p">):</span>
-            <span class="sd">&quot;&quot;&quot;uses filter to get eligible population and samples individuals for prior diagnosis &amp; medication use</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;uses filter to get eligible population and samples individuals for prior diagnosis &amp; medication use</span>
 <span class="sd">             using p&quot;&quot;&quot;</span>
             <span class="n">eligible</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">_filter</span><span class="p">]</span>
             <span class="n">init_treatment_works</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">],</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">eligible</span><span class="p">),</span> <span class="n">p</span><span class="o">=</span><span class="p">[</span><span class="n">_p</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">_p</span><span class="p">])</span>
@@ -624,7 +532,7 @@
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;nc_weight_loss_worked&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div>
 
 <div class="viewcode-block" id="CardioMetabolicDisorders.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Schedule:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Schedule:</span>
 <span class="sd">        * Main Polling Event</span>
 <span class="sd">        * Main Logging Event</span>
 <span class="sd">        * Build the LinearModels for the onset/removal of each condition:</span>
@@ -738,7 +646,7 @@
         <span class="p">)</span></div>
 
 <div class="viewcode-block" id="CardioMetabolicDisorders.build_linear_model"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders.build_linear_model">[docs]</a>    <span class="k">def</span> <span class="nf">build_linear_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">condition</span><span class="p">,</span> <span class="n">interval_between_polls</span><span class="p">,</span> <span class="n">lm_type</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Build a linear model for the risk of onset, removal, or death from a condition, occurrence or death from an</span>
 <span class="sd">        event, and community-based testing for hypertension.</span>
 <span class="sd">        :param condition: the condition or event to build the linear model for</span>
@@ -860,7 +768,7 @@
         <span class="k">return</span> <span class="n">linearmodel</span></div>
 
 <div class="viewcode-block" id="CardioMetabolicDisorders.build_linear_model_symptoms"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders.build_linear_model_symptoms">[docs]</a>    <span class="k">def</span> <span class="nf">build_linear_model_symptoms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">condition</span><span class="p">,</span> <span class="n">interval_between_polls</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Build a linear model for the risk of symptoms from a condition.</span>
 <span class="sd">        :param condition: the condition to build the linear model for</span>
 <span class="sd">        :param interval_between_polls: the duration (in months) between the polls</span>
@@ -879,7 +787,7 @@
         <span class="k">return</span> <span class="n">lms_symptoms_dict</span><span class="p">[</span><span class="n">condition</span><span class="p">]</span></div>
 
 <div class="viewcode-block" id="CardioMetabolicDisorders.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Initialise our properties for a newborn individual.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialise our properties for a newborn individual.</span>
 <span class="sd">        :param mother_id: the mother for this child</span>
 <span class="sd">        :param child_id: the new child</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -902,7 +810,7 @@
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;nc_risk_score&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span></div>
 
 <div class="viewcode-block" id="CardioMetabolicDisorders.update_risk_score"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders.update_risk_score">[docs]</a>    <span class="k">def</span> <span class="nf">update_risk_score</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Generates or updates the risk score for individuals at initialisation of population or at each polling event</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
@@ -911,7 +819,7 @@
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;li_bmi&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">3</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;nc_risk_score&#39;</span><span class="p">]]</span> <span class="o">+=</span> <span class="mi">1</span></div>
 
 <div class="viewcode-block" id="CardioMetabolicDisorders.report_daly_values"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders.report_daly_values">[docs]</a>    <span class="k">def</span> <span class="nf">report_daly_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Report disability weight (average values for the last month) to the HealthBurden module&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Report disability weight (average values for the last month) to the HealthBurden module&quot;&quot;&quot;</span>
 
         <span class="k">def</span> <span class="nf">left_censor</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">window_open</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">obs</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">max</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">window_open</span><span class="p">)</span> <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">notnull</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">else</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span><span class="p">)</span>
@@ -960,13 +868,13 @@
         <span class="k">return</span> <span class="n">dw</span></div>
 
 <div class="viewcode-block" id="CardioMetabolicDisorders.on_hsi_alert"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders.on_hsi_alert">[docs]</a>    <span class="k">def</span> <span class="nf">on_hsi_alert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">treatment_id</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is called whenever there is an HSI event commissioned by one of the other disease modules.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span></div>
 
 <div class="viewcode-block" id="CardioMetabolicDisorders.determine_if_will_be_investigated"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders.determine_if_will_be_investigated">[docs]</a>    <span class="k">def</span> <span class="nf">determine_if_will_be_investigated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is called by the HSI generic first appts module whenever a person attends an appointment and determines</span>
 <span class="sd">        if the person will be tested for a condition.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1015,7 +923,7 @@
                 <span class="p">)</span></div>
 
 <div class="viewcode-block" id="CardioMetabolicDisorders.determine_if_will_be_investigated_events"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders.determine_if_will_be_investigated_events">[docs]</a>    <span class="k">def</span> <span class="nf">determine_if_will_be_investigated_events</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is called by the HSI generic first appts module whenever a person attends an emergency appointment and</span>
 <span class="sd">        determines if they will receive emergency care based on the duration of time since symptoms have appeared.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1036,7 +944,7 @@
 
 
 <span class="k">class</span> <span class="nc">Tracker</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Helper class for keeping a count with respect to some conditions and some age-groups&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper class for keeping a count with respect to some conditions and some age-groups&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">conditions</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">age_groups</span><span class="p">:</span> <span class="nb">list</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_conditions</span> <span class="o">=</span> <span class="n">conditions</span>
@@ -1067,14 +975,14 @@
 
 
 <div class="viewcode-block" id="CardioMetabolicDisorders_MainPollingEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders_MainPollingEvent">[docs]</a><span class="k">class</span> <span class="nc">CardioMetabolicDisorders_MainPollingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;The Main Polling Event.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The Main Polling Event.</span>
 <span class="sd">    * Establishes onset of each condition</span>
 <span class="sd">    * Establishes removal of each condition</span>
 <span class="sd">    * Schedules events that arise, according the condition.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="CardioMetabolicDisorders_MainPollingEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders_MainPollingEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">interval_between_polls</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;The Main Polling Event of the CardioMetabolicDisorders Module</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The Main Polling Event of the CardioMetabolicDisorders Module</span>
 
 <span class="sd">        :param module: the module that created this event</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1082,7 +990,7 @@
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">CardioMetabolicDisorders</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="CardioMetabolicDisorders_MainPollingEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders_MainPollingEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Apply this event to the population.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply this event to the population.</span>
 
 <span class="sd">        :param population: the current population</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1200,7 +1108,7 @@
 
 
 <div class="viewcode-block" id="CardioMetabolicDisordersEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisordersEvent">[docs]</a><span class="k">class</span> <span class="nc">CardioMetabolicDisordersEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This is an Cardio Metabolic Disorders event (indicating an emergency occurrence of stroke or heart attack).</span>
 <span class="sd">    It has been scheduled to occur by the CardioMetabolicDisorders_MainPollingEvent.</span>
 <span class="sd">    :param event: the event occurring</span>
@@ -1238,7 +1146,7 @@
 
 
 <div class="viewcode-block" id="CardioMetabolicDisordersDeathEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisordersDeathEvent">[docs]</a><span class="k">class</span> <span class="nc">CardioMetabolicDisordersDeathEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Performs the Death operation on an individual and logs it.</span>
 <span class="sd">    :param originating_cause: the originating cause of the death, which can be a condition or an event</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -1266,7 +1174,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">check_if_event_and_do_death</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="CardioMetabolicDisordersDeathEvent.check_if_event_and_do_death"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisordersDeathEvent.check_if_event_and_do_death">[docs]</a>    <span class="k">def</span> <span class="nf">check_if_event_and_do_death</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Helper function to perform do_death if person dies of a condition or event. If person dies of an event, this</span>
 <span class="sd">        will only perform do_death if the scheduled date of death matches the current date (to allow for the possibility</span>
 <span class="sd">        that treatment will intercede in an prevent death from the event).</span>
@@ -1289,7 +1197,7 @@
 
 
 <div class="viewcode-block" id="CardioMetabolicDisordersWeightLossEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisordersWeightLossEvent">[docs]</a><span class="k">class</span> <span class="nc">CardioMetabolicDisordersWeightLossEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Gives an individual a probability of losing weight (via a reduction in li_bmi) and records the change in</span>
 <span class="sd">    population.props</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -1318,7 +1226,7 @@
 
 <div class="viewcode-block" id="CardioMetabolicDisorders_LoggingEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders_LoggingEvent">[docs]</a><span class="k">class</span> <span class="nc">CardioMetabolicDisorders_LoggingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
 <div class="viewcode-block" id="CardioMetabolicDisorders_LoggingEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders_LoggingEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Produce a summary of the numbers of people with respect to the action of this module.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Produce a summary of the numbers of people with respect to the action of this module.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">repeat</span> <span class="o">=</span> <span class="mi">12</span>
@@ -1369,7 +1277,7 @@
             <span class="n">pr</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
             <span class="n">pr</span><span class="p">[</span><span class="s1">&#39;flat_index&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
             <span class="k">for</span> <span class="n">_i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pr</span><span class="p">)):</span>
-                <span class="n">pr</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">_i</span><span class="p">,</span> <span class="s1">&#39;flat_index&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;__&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_col</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">pr</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">_i</span><span class="p">,</span> <span class="n">_col</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">_col</span> <span class="ow">in</span> <span class="n">groupbylist</span><span class="p">])</span>
+                <span class="n">pr</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">_i</span><span class="p">,</span> <span class="s1">&#39;flat_index&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;__&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_col</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">pr</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">_i</span><span class="p">,</span><span class="w"> </span><span class="n">_col</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">_col</span> <span class="ow">in</span> <span class="n">groupbylist</span><span class="p">])</span>
             <span class="n">pr</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;flat_index&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="n">pr</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">groupbylist</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">pr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
@@ -1533,7 +1441,7 @@
 <span class="c1">#   HEALTH SYSTEM INTERACTION EVENTS</span>
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
 <div class="viewcode-block" id="HSI_CardioMetabolicDisorders_CommunityTestingForHypertension"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.HSI_CardioMetabolicDisorders_CommunityTestingForHypertension">[docs]</a><span class="k">class</span> <span class="nc">HSI_CardioMetabolicDisorders_CommunityTestingForHypertension</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This event is scheduled by HSI_GenericFirstApptAtFacilityLevel1 following presentation for care with any symptoms.</span>
 <span class="sd">    This event results in a blood pressure measurement being taken that may result in diagnosis and the scheduling of</span>
 <span class="sd">    treatment for a condition.</span>
@@ -1579,7 +1487,7 @@
 
 
 <div class="viewcode-block" id="HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms">[docs]</a><span class="k">class</span> <span class="nc">HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This event is scheduled by HSI_GenericFirstApptAtFacilityLevel1 following presentation for care with any symptoms.</span>
 <span class="sd">    This event results in a blood pressure measurement being taken that may result in diagnosis and the scheduling of</span>
 <span class="sd">    treatment for a condition.</span>
@@ -1638,7 +1546,7 @@
 
 
 <div class="viewcode-block" id="HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms">[docs]</a><span class="k">class</span> <span class="nc">HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This event is scheduled by HSI_GenericFirstApptAtFacilityLevel1 following presentation for care with the symptom</span>
 <span class="sd">    for each condition.</span>
 <span class="sd">    This event begins the investigation that may result in diagnosis and the scheduling of treatment.</span>
@@ -1721,7 +1629,7 @@
 
 
 <div class="viewcode-block" id="HSI_CardioMetabolicDisorders_StartWeightLossAndMedication"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.HSI_CardioMetabolicDisorders_StartWeightLossAndMedication">[docs]</a><span class="k">class</span> <span class="nc">HSI_CardioMetabolicDisorders_StartWeightLossAndMedication</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This is a Health System Interaction Event in which a person receives a recommendation of weight loss.</span>
 <span class="sd">    This results in an individual having a probability of reducing their BMI by one category in the next 6-12 months.</span>
 <span class="sd">    :param condition: the condition to start medication for</span>
@@ -1787,7 +1695,7 @@
 
 
 <div class="viewcode-block" id="HSI_CardioMetabolicDisorders_Refill_Medication"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.HSI_CardioMetabolicDisorders_Refill_Medication">[docs]</a><span class="k">class</span> <span class="nc">HSI_CardioMetabolicDisorders_Refill_Medication</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This is a Health System Interaction Event in which a person seeks a refill prescription of medication.</span>
 <span class="sd">    The next refill of medication is also scheduled.</span>
 <span class="sd">    If the person is flagged as not being on medication, then the event does nothing and returns a blank footprint.</span>
@@ -1857,7 +1765,7 @@
 
 
 <div class="viewcode-block" id="HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment">[docs]</a><span class="k">class</span> <span class="nc">HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This is a Health System Interaction Event.</span>
 <span class="sd">    It is the event when a person with the severe symptoms of chronic syndrome presents for emergency care</span>
 <span class="sd">    and is immediately provided with treatment.</span>
@@ -1869,7 +1777,7 @@
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">CardioMetabolicDisorders</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s1">&#39;CardioMetabolicDisorders_Treatment&#39;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;Over5OPD&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;AccidentsandEmerg&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;Over5OPD&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;2&#39;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">event</span> <span class="o">=</span> <span class="n">ev</span></div>
@@ -1965,7 +1873,6 @@
 </pre></div>
 
            </div>
-           
           </div>
           <footer>
 
@@ -1973,40 +1880,25 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">
-        Last updated on Dec 01, 2022.
-      </span>
-
-    </p>
+      <span class="lastupdated">Last updated on Apr 06, 2023.
+      </span></p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

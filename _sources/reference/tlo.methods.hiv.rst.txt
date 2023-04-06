@@ -156,15 +156,21 @@ tlo.methods.hiv module
         * - rr_test_hiv_positive
           - REAL
           - relative likelihood of having HIV test for people with HIV
+        * - hiv_testing_rate_adjustment
+          - REAL
+          - adjustment to current testing rates to account for multiple routes into HIV testing
         * - treatment_initiation_adjustment
           - REAL
           - adjustment to current ART coverage levels to account for defaulters
         * - vs_adjustment
           - REAL
           - adjustment to current viral suppression levels to account for defaulters
-        * - prob_anc_test_at_delivery
+        * - prob_hiv_test_at_anc_or_delivery
           - REAL
-          - probability of a women having hiv test at anc following delivery
+          - probability of a women having hiv test at anc or following delivery
+        * - prob_hiv_test_for_newborn_infant
+          - REAL
+          - probability of a newborn infant having HIV test pre-discharge
         * - prob_start_art_or_vs
           - REAL
           - Probability that a person will start treatment and be virally suppressed following testing
@@ -183,9 +189,9 @@ tlo.methods.hiv module
         * - probability_of_being_retained_on_prep_every_3_months
           - REAL
           - Probability that someone who has initiated on prep will attend an appointment and be on prep for the next 3 months, until the next appointment.
-        * - probability_of_being_retained_on_art_every_6_months
+        * - probability_of_being_retained_on_art_every_3_months
           - REAL
-          - Probability that someone who has initiated on treatment will attend an appointment and be on treatment for next 6 months, until the next appointment.
+          - Probability that someone who has initiated on treatment will attend an appointment and be on treatment for next 3 months, until the next appointment.
         * - probability_of_seeking_further_art_appointment_if_drug_not_available
           - REAL
           - Probability that a person who 'should' be on art will seek another appointment (the following day and try for each of the next 7 days) if drugs were not available.
@@ -242,20 +248,23 @@ tlo.methods.hiv module
         * - hv_date_inf
           - DATE
           - Date infected with HIV
+        * - hv_date_treated
+          - DATE
+          - date hiv treatment started
 
 
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'NewbornOutcomes', 'Tb'}
+     ADDITIONAL_DEPENDENCIES : {'Tb', 'NewbornOutcomes'}
 
-     CAUSES_OF_DEATH : {'AIDS_non_TB': <tlo.methods.causes.Cause object at 0x7febf123adc0>, 'AIDS_TB': <tlo.methods.causes.Cause object at 0x7febf1254370>}
+     CAUSES_OF_DEATH : {'AIDS_non_TB': <tlo.methods.causes.Cause object at 0x7fb54b167730>, 'AIDS_TB': <tlo.methods.causes.Cause object at 0x7fb54b1677c0>}
 
-     CAUSES_OF_DISABILITY : {'HIV': <tlo.methods.causes.Cause object at 0x7febf1254460>}
+     CAUSES_OF_DISABILITY : {'HIV': <tlo.methods.causes.Cause object at 0x7fb54b167820>}
 
-     INIT_DEPENDENCIES : {'HealthSystem', 'Lifestyle', 'SymptomManager', 'Demography'}
+     INIT_DEPENDENCIES : {'SymptomManager', 'Demography', 'HealthSystem', 'Lifestyle'}
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
@@ -298,6 +307,10 @@ tlo.methods.hiv module
      .. automethod:: stops_treatment
 
      .. automethod:: per_capita_testing_rate
+
+     .. automethod:: decide_whether_hiv_test_for_mother
+
+     .. automethod:: decide_whether_hiv_test_for_infant
 
      .. automethod:: check_config_of_properties
 
@@ -488,6 +501,26 @@ tlo.methods.hiv module
 
 
 
+.. autoclass:: HSI_Hiv_StartInfantProphylaxis
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Hiv_StartInfantProphylaxis):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: never_ran
+
+
+
+
+
+
+
+
 .. autoclass:: HSI_Hiv_StartOrContinueOnPrep
 
      Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
@@ -593,6 +626,9 @@ tlo.methods.hiv module
         * - hv_inf
           - BOOL
           - DUMMY version of the property for hv_inf
+        * - hv_art
+          - CATEGORICAL
+          - DUMMY version of the property for hv_art..  Possible values are: [not, on_VL_suppressed, on_not_VL_suppressed, ]
 
 
 

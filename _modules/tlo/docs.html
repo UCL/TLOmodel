@@ -1,96 +1,45 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
-  
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
   <title>tlo.docs &mdash; TLOmodel 0.1.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/theme_overrides.css" type="text/css" />
-
-  
-  
+      <link rel="stylesheet" href="../../_static/theme_overrides.css" type="text/css" />
     <link rel="shortcut icon" href="../../_static/favicon.png"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
         <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-        <script src="../../_static/jquery.js"></script>
-        <script src="../../_static/underscore.js"></script>
-        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="../../_static/js/theme.js"></script>
-
-    
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
           
-            <a href="../../index.html" class="icon icon-home"> TLOmodel
           
-
-          
+          <a href="../../index.html" class="icon icon-home">
+            TLOmodel
           </a>
-
-          
-            
-            
               <div class="version">
                 0.1.0
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../index.html">Welcome</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../aims.html">Aims &amp; Objectives</a></li>
@@ -105,69 +54,30 @@
 <li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../index.html">TLOmodel</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
-          <li><a href="../index.html">Module code</a> &raquo;</li>
-        
-      <li>tlo.docs</li>
-    
-    
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">tlo.docs</li>
       <li class="wy-breadcrumbs-aside">
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <h1>Source code for tlo.docs</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;The functions used by tlo_methods_rst.py.&quot;&quot;&quot;</span>
 
@@ -181,7 +91,7 @@
 
 
 <div class="viewcode-block" id="get_package_name"><a class="viewcode-back" href="../../reference/tlo.docs.html#tlo.docs.get_package_name">[docs]</a><span class="k">def</span> <span class="nf">get_package_name</span><span class="p">(</span><span class="n">dirpath</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Given a file path to a TLO package, return the name in dot form.</span>
 
 <span class="sd">    :param dirpath: the path to the package,</span>
@@ -205,7 +115,7 @@
 
 
 <div class="viewcode-block" id="generate_module_dict"><a class="viewcode-back" href="../../reference/tlo.docs.html#tlo.docs.generate_module_dict">[docs]</a><span class="k">def</span> <span class="nf">generate_module_dict</span><span class="p">(</span><span class="n">topdir</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Given a root directory topdir, iterates recursively</span>
 <span class="sd">    over top dir and the files and subdirectories within it.</span>
 <span class="sd">    Returns a dictionary with each key = path to a directory</span>
@@ -236,7 +146,7 @@
 
 
 <div class="viewcode-block" id="get_classes_in_module"><a class="viewcode-back" href="../../reference/tlo.docs.html#tlo.docs.get_classes_in_module">[docs]</a><span class="k">def</span> <span class="nf">get_classes_in_module</span><span class="p">(</span><span class="n">fqn</span><span class="p">,</span> <span class="n">module_obj</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Generate a list of lists of the classes *defined* in</span>
 <span class="sd">    the required module (file), in the order in which they</span>
 <span class="sd">    appear in the module file. Note that this excludes</span>
@@ -280,7 +190,7 @@
 
 
 <div class="viewcode-block" id="get_fully_qualified_name"><a class="viewcode-back" href="../../reference/tlo.docs.html#tlo.docs.get_fully_qualified_name">[docs]</a><span class="k">def</span> <span class="nf">get_fully_qualified_name</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Given a file name and a context</span>
 <span class="sd">    return the fully-qualified name of the *module*</span>
 
@@ -301,7 +211,7 @@
 
 
 <div class="viewcode-block" id="write_rst_file"><a class="viewcode-back" href="../../reference/tlo.docs.html#tlo.docs.write_rst_file">[docs]</a><span class="k">def</span> <span class="nf">write_rst_file</span><span class="p">(</span><span class="n">rst_dir</span><span class="p">,</span> <span class="n">fqn</span><span class="p">,</span> <span class="n">mobj</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    We want to write one .rst file per module in ./src/tlo/methods</span>
 
 <span class="sd">    :param rst_dir: directory in which to write the new .rst file</span>
@@ -336,7 +246,7 @@
 
 
 <div class="viewcode-block" id="get_class_output_string"><a class="viewcode-back" href="../../reference/tlo.docs.html#tlo.docs.get_class_output_string">[docs]</a><span class="k">def</span> <span class="nf">get_class_output_string</span><span class="p">(</span><span class="n">classinfo</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Generate output string for a single class to be written to an rst file.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate output string for a single class to be written to an rst file.</span>
 
 <span class="sd">    :param classinfo: a list with [class name, class object, line number]</span>
 <span class="sd">    :return: the string to output</span>
@@ -500,7 +410,7 @@
 
 
 <div class="viewcode-block" id="which_functions_to_print"><a class="viewcode-back" href="../../reference/tlo.docs.html#tlo.docs.which_functions_to_print">[docs]</a><span class="k">def</span> <span class="nf">which_functions_to_print</span><span class="p">(</span><span class="n">clazz</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Which functions do we want to print?</span>
 
 <span class="sd">    :param clazz: class object under consideration</span>
@@ -560,7 +470,7 @@
 
 
 <div class="viewcode-block" id="extract_bases"><a class="viewcode-back" href="../../reference/tlo.docs.html#tlo.docs.extract_bases">[docs]</a><span class="k">def</span> <span class="nf">extract_bases</span><span class="p">(</span><span class="n">class_name</span><span class="p">,</span> <span class="n">class_obj</span><span class="p">,</span> <span class="n">spacer</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Document which classes this class inherits from,</span>
 <span class="sd">    except for the object class or this class itself.</span>
 
@@ -607,7 +517,7 @@
 
 
 <div class="viewcode-block" id="get_base_string"><a class="viewcode-back" href="../../reference/tlo.docs.html#tlo.docs.get_base_string">[docs]</a><span class="k">def</span> <span class="nf">get_base_string</span><span class="p">(</span><span class="n">class_name</span><span class="p">,</span> <span class="n">class_obj</span><span class="p">,</span> <span class="n">base_obj</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    For this object, representing a base class,</span>
 <span class="sd">    extract its name and add a hyperlink to it.</span>
 <span class="sd">    Unless it is the root &#39;object&#39; class, or the name of the class itself.</span>
@@ -666,7 +576,7 @@
 
 
 <div class="viewcode-block" id="get_link"><a class="viewcode-back" href="../../reference/tlo.docs.html#tlo.docs.get_link">[docs]</a><span class="k">def</span> <span class="nf">get_link</span><span class="p">(</span><span class="n">base_fqn</span><span class="p">,</span> <span class="n">base_obj</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Given a name like Mockitis and a base_string like</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Given a name like Mockitis and a base_string like</span>
 <span class="sd">    tlo.core.Module, create a link to the latter&#39;s doc page.</span>
 
 <span class="sd">    :param base_fqn: fully-qualified name of the base class,</span>
@@ -698,7 +608,7 @@
 
 
 <div class="viewcode-block" id="create_table"><a class="viewcode-back" href="../../reference/tlo.docs.html#tlo.docs.create_table">[docs]</a><span class="k">def</span> <span class="nf">create_table</span><span class="p">(</span><span class="n">mydict</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Dynamically create a table of arbitrary length</span>
 <span class="sd">    from a PROPERTIES or PARAMETERS dictionary.</span>
 
@@ -737,9 +647,9 @@
                     <span class="n">description</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">mything</span><span class="si">}</span><span class="s1">, &#39;</span>
                 <span class="n">description</span> <span class="o">+=</span> <span class="s2">&quot;]&quot;</span>
 
-            <span class="n">row</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;&#39;&#39;   * - </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s1"></span>
-<span class="s1">     - </span><span class="si">{</span><span class="n">the_type</span><span class="si">}</span><span class="s1"></span>
-<span class="s1">     - </span><span class="si">{</span><span class="n">description</span><span class="si">}</span><span class="s1"></span>
+            <span class="n">row</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;&#39;&#39;   * - </span><span class="si">{</span><span class="n">key</span><span class="si">}</span>
+<span class="s1">     - </span><span class="si">{</span><span class="n">the_type</span><span class="si">}</span>
+<span class="s1">     - </span><span class="si">{</span><span class="n">description</span><span class="si">}</span>
 <span class="s1">&#39;&#39;&#39;</span>
             <span class="n">examplestr</span> <span class="o">+=</span> <span class="n">row</span>
     <span class="n">mylist</span> <span class="o">=</span> <span class="n">examplestr</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span>
@@ -747,7 +657,6 @@
 </pre></div>
 
            </div>
-           
           </div>
           <footer>
 
@@ -755,40 +664,25 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">
-        Last updated on Dec 01, 2022.
-      </span>
-
-    </p>
+      <span class="lastupdated">Last updated on Apr 06, 2023.
+      </span></p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

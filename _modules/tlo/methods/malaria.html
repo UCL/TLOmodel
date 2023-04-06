@@ -1,96 +1,45 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
-  
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
   <title>tlo.methods.malaria &mdash; TLOmodel 0.1.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
-
-  
-  
+      <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-        <script src="../../../_static/jquery.js"></script>
-        <script src="../../../_static/underscore.js"></script>
-        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../../_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-
-    
+        <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
           
-            <a href="../../../index.html" class="icon icon-home"> TLOmodel
           
-
-          
+          <a href="../../../index.html" class="icon icon-home">
+            TLOmodel
           </a>
-
-          
-            
-            
               <div class="version">
                 0.1.0
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../index.html">Welcome</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../aims.html">Aims &amp; Objectives</a></li>
@@ -105,71 +54,31 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../index.html">TLOmodel</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
-          <li><a href="../../index.html">Module code</a> &raquo;</li>
-        
-          <li><a href="../methods.html">tlo.methods</a> &raquo;</li>
-        
-      <li>tlo.methods.malaria</li>
-    
-    
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../methods.html">tlo.methods</a></li>
+      <li class="breadcrumb-item active">tlo.methods.malaria</li>
       <li class="wy-breadcrumbs-aside">
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <h1>Source code for tlo.methods.malaria</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">this is the malaria module which assigns malaria infections to the population: asymptomatic, clinical and severe</span>
@@ -195,7 +104,7 @@
 
 <div class="viewcode-block" id="Malaria"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria">[docs]</a><span class="k">class</span> <span class="nc">Malaria</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
 <div class="viewcode-block" id="Malaria.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Create instance of Malaria module</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create instance of Malaria module</span>
 
 <span class="sd">        :param name: Name of this module (optional, defaults to name of class)</span>
 <span class="sd">        :param resourcefilepath: Path to the TLOmodel `resources` directory</span>
@@ -416,10 +325,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">register_symptom</span><span class="p">(</span>
             <span class="n">Symptom</span><span class="p">(</span><span class="s2">&quot;jaundice&quot;</span><span class="p">),</span>  <span class="c1"># nb. will cause care seeking as much as a typical symptom</span>
             <span class="n">Symptom</span><span class="p">(</span><span class="s2">&quot;severe_anaemia&quot;</span><span class="p">),</span>  <span class="c1"># nb. will cause care seeking as much as a typical symptom</span>
-            <span class="n">Symptom</span><span class="p">(</span><span class="s2">&quot;acidosis&quot;</span><span class="p">,</span> <span class="n">emergency_in_children</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">emergency_in_adults</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
-            <span class="n">Symptom</span><span class="p">(</span><span class="s2">&quot;coma_convulsions&quot;</span><span class="p">,</span> <span class="n">emergency_in_children</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">emergency_in_adults</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
-            <span class="n">Symptom</span><span class="p">(</span><span class="s2">&quot;renal_failure&quot;</span><span class="p">,</span> <span class="n">emergency_in_children</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">emergency_in_adults</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
-            <span class="n">Symptom</span><span class="p">(</span><span class="s2">&quot;shock&quot;</span><span class="p">,</span> <span class="n">emergency_in_children</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">emergency_in_adults</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">Symptom</span><span class="o">.</span><span class="n">emergency</span><span class="p">(</span><span class="s2">&quot;acidosis&quot;</span><span class="p">),</span>
+            <span class="n">Symptom</span><span class="o">.</span><span class="n">emergency</span><span class="p">(</span><span class="s2">&quot;coma_convulsions&quot;</span><span class="p">),</span>
+            <span class="n">Symptom</span><span class="o">.</span><span class="n">emergency</span><span class="p">(</span><span class="s2">&quot;renal_failure&quot;</span><span class="p">),</span>
+            <span class="n">Symptom</span><span class="o">.</span><span class="n">emergency</span><span class="p">(</span><span class="s2">&quot;shock&quot;</span><span class="p">)</span>
         <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Malaria.initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
@@ -472,7 +381,7 @@
 
         <span class="c1"># ----------------------------------- DISTRICT NEW INFECTIONS -----------------------------------</span>
         <span class="k">def</span> <span class="nf">_draw_incidence_for</span><span class="p">(</span><span class="n">_col</span><span class="p">,</span> <span class="n">_where</span><span class="p">):</span>
-            <span class="sd">&quot;&quot;&quot;a helper function to perform random draw for selected individuals on column of probabilities&quot;&quot;&quot;</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;a helper function to perform random draw for selected individuals on column of probabilities&quot;&quot;&quot;</span>
             <span class="c1"># create an index from the individuals to lookup entries in the current incidence table</span>
             <span class="n">district_age_lookup</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">_where</span><span class="p">]</span><span class="o">.</span><span class="n">set_index</span><span class="p">([</span><span class="s2">&quot;district_num_of_residence&quot;</span><span class="p">,</span> <span class="s2">&quot;ma_age_edited&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">index</span>
             <span class="c1"># get the monthly incidence probabilities for these individuals</span>
@@ -567,7 +476,7 @@
             <span class="p">)</span>  <span class="c1"># schedule the death</span></div>
 
 <div class="viewcode-block" id="Malaria.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        * 1) Schedule the Main Regular Polling Events</span>
 <span class="sd">        * 2) Define the DxTests</span>
 <span class="sd">        * 3) Look-up and save the codes for consumables</span>
@@ -658,11 +567,11 @@
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s2">&quot;ma_iptp&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
 
         <span class="c1"># reset mother&#39;s IPTp status to False</span>
-        <span class="k">if</span> <span class="n">mother_id</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">mother_id</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># exclude direct births</span>
             <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">mother_id</span><span class="p">,</span> <span class="s2">&quot;ma_iptp&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div>
 
 <div class="viewcode-block" id="Malaria.on_hsi_alert"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.on_hsi_alert">[docs]</a>    <span class="k">def</span> <span class="nf">on_hsi_alert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">treatment_id</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;This is called whenever there is an HSI event commissioned by one of the other disease modules.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;This is called whenever there is an HSI event commissioned by one of the other disease modules.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span>
                      <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;This is Malaria, being alerted about a health system interaction for person&#39;</span>
@@ -693,7 +602,7 @@
         <span class="k">return</span> <span class="n">health_values</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">]</span>  <span class="c1"># returns the series</span></div>
 
 <div class="viewcode-block" id="Malaria.clinical_symptoms"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.clinical_symptoms">[docs]</a>    <span class="k">def</span> <span class="nf">clinical_symptoms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">,</span> <span class="n">clinical_index</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;assign clinical symptoms to new clinical malaria cases and schedule symptom resolution</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;assign clinical symptoms to new clinical malaria cases and schedule symptom resolution</span>
 
 <span class="sd">        :param population:</span>
 <span class="sd">        :param clinical_index:</span>
@@ -735,7 +644,7 @@
                 <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Malaria.severe_symptoms"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.severe_symptoms">[docs]</a>    <span class="k">def</span> <span class="nf">severe_symptoms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">,</span> <span class="n">severe_index</span><span class="p">,</span> <span class="n">child</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;assign clinical symptoms to new severe malaria cases. Symptoms can only be resolved by treatment</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;assign clinical symptoms to new severe malaria cases. Symptoms can only be resolved by treatment</span>
 <span class="sd">        handles both adult and child (using the child parameter) symptoms</span>
 
 <span class="sd">        :param population: the population dataframe</span>
@@ -803,7 +712,7 @@
             <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Malaria.check_if_fever_is_caused_by_malaria"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.check_if_fever_is_caused_by_malaria">[docs]</a>    <span class="k">def</span> <span class="nf">check_if_fever_is_caused_by_malaria</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Run by an HSI when an adult presents with fever&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run by an HSI when an adult presents with fever&quot;&quot;&quot;</span>
 
         <span class="c1"># Call the DxTest RDT to diagnose malaria</span>
         <span class="n">dx_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dx_manager</span><span class="o">.</span><span class="n">run_dx_test</span><span class="p">(</span>
@@ -834,7 +743,7 @@
 
 
 <div class="viewcode-block" id="MalariaScheduleTesting"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaScheduleTesting">[docs]</a><span class="k">class</span> <span class="nc">MalariaScheduleTesting</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; additional malaria testing happening outside the symptom-driven generic HSI event</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; additional malaria testing happening outside the symptom-driven generic HSI event</span>
 <span class="sd">    to increase tx coverage up to reported levels</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -864,7 +773,7 @@
 
 
 <div class="viewcode-block" id="MalariaIPTp"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaIPTp">[docs]</a><span class="k">class</span> <span class="nc">MalariaIPTp</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; malaria prophylaxis for pregnant women</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; malaria prophylaxis for pregnant women</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="MalariaIPTp.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaIPTp.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
@@ -888,7 +797,7 @@
 
 
 <div class="viewcode-block" id="MalariaDeathEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaDeathEvent">[docs]</a><span class="k">class</span> <span class="nc">MalariaDeathEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Performs the Death operation on an individual and logs it.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -942,7 +851,7 @@
 
 
 <div class="viewcode-block" id="HSI_Malaria_rdt"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_rdt">[docs]</a><span class="k">class</span> <span class="nc">HSI_Malaria_rdt</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    this is a point-of-care malaria rapid diagnostic test, with results within 2 minutes</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -1069,7 +978,7 @@
 
 
 <div class="viewcode-block" id="HSI_Malaria_non_complicated_treatment_age0_5"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_non_complicated_treatment_age0_5">[docs]</a><span class="k">class</span> <span class="nc">HSI_Malaria_non_complicated_treatment_age0_5</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    this is anti-malarial treatment for children &lt;15 kg. Includes treatment plus one rdt</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -1108,7 +1017,7 @@
 
 
 <div class="viewcode-block" id="HSI_Malaria_non_complicated_treatment_age5_15"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_non_complicated_treatment_age5_15">[docs]</a><span class="k">class</span> <span class="nc">HSI_Malaria_non_complicated_treatment_age5_15</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    this is anti-malarial treatment for children &gt;15 kg. Includes treatment plus one rdt</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -1147,7 +1056,7 @@
 
 
 <div class="viewcode-block" id="HSI_Malaria_non_complicated_treatment_adult"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_non_complicated_treatment_adult">[docs]</a><span class="k">class</span> <span class="nc">HSI_Malaria_non_complicated_treatment_adult</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    this is anti-malarial treatment for adults. Includes treatment plus one rdt</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -1182,7 +1091,7 @@
 
 
 <div class="viewcode-block" id="HSI_Malaria_complicated_treatment_child"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_complicated_treatment_child">[docs]</a><span class="k">class</span> <span class="nc">HSI_Malaria_complicated_treatment_child</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    this is anti-malarial treatment for complicated malaria in children</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -1220,7 +1129,7 @@
 
 
 <div class="viewcode-block" id="HSI_Malaria_complicated_treatment_adult"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_complicated_treatment_adult">[docs]</a><span class="k">class</span> <span class="nc">HSI_Malaria_complicated_treatment_adult</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    this is anti-malarial treatment for complicated malaria in adults</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -1258,7 +1167,7 @@
 
 
 <div class="viewcode-block" id="HSI_MalariaIPTp"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_MalariaIPTp">[docs]</a><span class="k">class</span> <span class="nc">HSI_MalariaIPTp</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    this is IPTp for pregnant women</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -1313,7 +1222,7 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">3</span><span class="p">))</span></div>
 
 <div class="viewcode-block" id="MalariaCureEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaCureEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        this is a regular event which cures people currently on treatment for malaria</span>
 <span class="sd">        and clears symptoms for those not on treatment</span>
 <span class="sd">        it also clears parasites if treated</span>
@@ -1562,7 +1471,6 @@
 </pre></div>
 
            </div>
-           
           </div>
           <footer>
 
@@ -1570,40 +1478,25 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">
-        Last updated on Dec 01, 2022.
-      </span>
-
-    </p>
+      <span class="lastupdated">Last updated on Apr 06, 2023.
+      </span></p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

@@ -55,8 +55,8 @@ tlo.methods.contraception module
           - DATA_FRAME
           - The probability of switching to a new method, by method, conditional that the woman will switch to a new method.
         * - days_between_appts_for_maintenance
-          - INT
-          - The number of days between successive family planning appointments for women that are maintaining the use of a method.
+          - LIST
+          - The number of days between successive family planning appointments for women that are maintaining the use of a method (for each method insorted(self.states_that_may_require_HSI_to_maintain_on), i.e.[IUD, implant, injections, other_modern, pill]).
         * - age_specific_fertility_rates
           - DATA_FRAME
           - Data table from official source (WPP) for age-specific fertility rates and calendar period
@@ -94,7 +94,7 @@ tlo.methods.contraception module
           - Whether the most recent or current pregnancy was unintended.
         * - co_date_of_last_fp_appt
           - DATE
-          - The date of the most recent Family Planning appointment. This is used to determine if a Family Planning appointment is needed to maintain the person on their current contraceptive. If the person is to maintain use of the current contraceptive, they will have an HSI only if the days elapsed since this value exceeds the parameter `days_between_appts_for_maintenance`.
+          - The date of the most recent Family Planning appointment. This is used to determine if a Family Planning appointment is needed to maintain the person on their current contraceptive. If the person is to maintain use of the current contraceptive, they will have an HSI only if the days elapsed since this value exceeds the method-specific parameter `days_between_appts_for_maintenance`.
 
 
 
@@ -108,7 +108,7 @@ tlo.methods.contraception module
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthSystem'}
 
-     all_contraception_states : {'pill', 'withdrawal', 'implant', 'periodic_abstinence', 'male_condom', 'injections', 'other_traditional', 'IUD', 'female_sterilization', 'other_modern', 'not_using'}
+     all_contraception_states : {'injections', 'female_sterilization', 'not_using', 'male_condom', 'withdrawal', 'other_modern', 'implant', 'IUD', 'pill', 'other_traditional', 'periodic_abstinence'}
 
      **Functions (defined or overridden in class Contraception):**
 
@@ -218,11 +218,18 @@ tlo.methods.contraception module
      Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
 
+
+     **Class attributes:**
+
+     EXPECTED_APPT_FOOTPRINT : <property object at 0x7fb54b58e3b0>
+
      **Functions (defined or overridden in class HSI_Contraception_FamilyPlanningAppt):**
 
      .. automethod:: __init__
 
      .. automethod:: apply
+
+     .. automethod:: post_apply_hook
 
      .. automethod:: reschedule
 

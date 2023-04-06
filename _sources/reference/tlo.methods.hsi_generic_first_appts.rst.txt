@@ -37,3 +37,21 @@ tlo.methods.hsi_generic_first_appts module
 
 
 
+
+
+
+.. autoclass:: HSI_EmergencyCare_SpuriousSymptom
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_EmergencyCare_SpuriousSymptom):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+

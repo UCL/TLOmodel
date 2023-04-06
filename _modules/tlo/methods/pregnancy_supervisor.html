@@ -1,96 +1,45 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
-  
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
   <title>tlo.methods.pregnancy_supervisor &mdash; TLOmodel 0.1.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
-
-  
-  
+      <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-        <script src="../../../_static/jquery.js"></script>
-        <script src="../../../_static/underscore.js"></script>
-        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../../_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-
-    
+        <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
           
-            <a href="../../../index.html" class="icon icon-home"> TLOmodel
           
-
-          
+          <a href="../../../index.html" class="icon icon-home">
+            TLOmodel
           </a>
-
-          
-            
-            
               <div class="version">
                 0.1.0
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../index.html">Welcome</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../aims.html">Aims &amp; Objectives</a></li>
@@ -105,71 +54,31 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../index.html">TLOmodel</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
-          <li><a href="../../index.html">Module code</a> &raquo;</li>
-        
-          <li><a href="../methods.html">tlo.methods</a> &raquo;</li>
-        
-      <li>tlo.methods.pregnancy_supervisor</li>
-    
-    
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../methods.html">tlo.methods</a></li>
+      <li class="breadcrumb-item active">tlo.methods.pregnancy_supervisor</li>
       <li class="wy-breadcrumbs-aside">
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <h1>Source code for tlo.methods.pregnancy_supervisor</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
 
@@ -188,7 +97,7 @@
 
 
 <div class="viewcode-block" id="PregnancySupervisor"><a class="viewcode-back" href="../../../reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.PregnancySupervisor">[docs]</a><span class="k">class</span> <span class="nc">PregnancySupervisor</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;This module is responsible for simulating the antenatal period of pregnancy (the period from conception until</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This module is responsible for simulating the antenatal period of pregnancy (the period from conception until</span>
 <span class="sd">     the termination of pregnancy). A number of outcomes are managed by this module including early pregnancy loss</span>
 <span class="sd">     (induced/spontaneous abortion, ectopic pregnancy and antenatal stillbirth) and pregnancy complications of the</span>
 <span class="sd">     antenatal period (nutritional deficiencies , anaemia, placental praevia/abruption,</span>
@@ -791,7 +700,7 @@
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;ps_emergency_event&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div>
 
 <div class="viewcode-block" id="PregnancySupervisor.further_on_birth_pregnancy_supervisor"><a class="viewcode-back" href="../../../reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.PregnancySupervisor.further_on_birth_pregnancy_supervisor">[docs]</a>    <span class="k">def</span> <span class="nf">further_on_birth_pregnancy_supervisor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function is called by the on_birth function of NewbornOutcomes module or following an intrapartum</span>
 <span class="sd">        stillbirth in the Labour Module. This function contains additional code related to the pregnancy supervisor</span>
 <span class="sd">        module that should be ran on_birth. These additional on_birth functions ensure each modules</span>
@@ -827,7 +736,7 @@
                                          <span class="sa">f</span><span class="s1">&#39;person </span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s1"> for: </span><span class="si">{</span><span class="n">treatment_id</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="PregnancySupervisor.report_daly_values"><a class="viewcode-back" href="../../../reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.PregnancySupervisor.report_daly_values">[docs]</a>    <span class="k">def</span> <span class="nf">report_daly_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function calculates and reports the monthly daly weight values accumulated from Maternal Disorders. For</span>
 <span class="sd">        simplicity all daly weights from Maternal Disorders are reported in this module (though may be attributable to</span>
 <span class="sd">        conditions occurring antenatally, intrapartum or postnatally). Individual level monthly-daly weights are</span>
@@ -982,7 +891,7 @@
         <span class="k">return</span> <span class="n">daly_series</span></div>
 
 <div class="viewcode-block" id="PregnancySupervisor.pregnancy_supervisor_property_reset"><a class="viewcode-back" href="../../../reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.PregnancySupervisor.pregnancy_supervisor_property_reset">[docs]</a>    <span class="k">def</span> <span class="nf">pregnancy_supervisor_property_reset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">id_or_index</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function is called when all properties housed in the PregnancySupervisorModule should be reset. For example</span>
 <span class="sd">        following pregnancy loss</span>
 <span class="sd">        :param id_or_index: pass the function either an individual ID (INT) or index of subset of data frame</span>
@@ -1006,7 +915,7 @@
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">id_or_index</span><span class="p">,</span> <span class="s1">&#39;ps_emergency_event&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div>
 
 <div class="viewcode-block" id="PregnancySupervisor.apply_linear_model"><a class="viewcode-back" href="../../../reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_linear_model">[docs]</a>    <span class="k">def</span> <span class="nf">apply_linear_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lm</span><span class="p">,</span> <span class="n">df_slice</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Helper function will apply the linear model (lm) on the dataframe (df) to get a probability of some event</span>
 <span class="sd">        happening to each individual. It then returns a series with same index with bools indicating the outcome based</span>
 <span class="sd">        on the toss of the biased coin.</span>
@@ -1019,7 +928,7 @@
                                                                   <span class="n">year</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">year</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="PregnancySupervisor.schedule_anc_one"><a class="viewcode-back" href="../../../reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.PregnancySupervisor.schedule_anc_one">[docs]</a>    <span class="k">def</span> <span class="nf">schedule_anc_one</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individual_id</span><span class="p">,</span> <span class="n">anc_month</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This functions calculates the correct date each woman will attend her first ANC contact and schedules the visit</span>
 <span class="sd">         for newly pregnant women depending on their predicted month of attendance</span>
 <span class="sd">        :param anc_month: month of pregnancy that woman will attend ANC 1</span>
@@ -1071,7 +980,7 @@
                                                             <span class="n">tclose</span><span class="o">=</span><span class="n">first_anc_date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span></div>
 
 <div class="viewcode-block" id="PregnancySupervisor.apply_risk_of_spontaneous_abortion"><a class="viewcode-back" href="../../../reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_spontaneous_abortion">[docs]</a>    <span class="k">def</span> <span class="nf">apply_risk_of_spontaneous_abortion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gestation_of_interest</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function applies risk of spontaneous abortion to a slice of data frame and is called by</span>
 <span class="sd">        PregnancySupervisorEvent. It calls the do_after_abortion function for women who loose their</span>
 <span class="sd">        pregnancy.</span>
@@ -1091,7 +1000,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">do_after_abortion</span><span class="p">(</span><span class="n">person</span><span class="p">,</span> <span class="s1">&#39;spontaneous_abortion&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="PregnancySupervisor.apply_risk_of_induced_abortion"><a class="viewcode-back" href="../../../reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_induced_abortion">[docs]</a>    <span class="k">def</span> <span class="nf">apply_risk_of_induced_abortion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gestation_of_interest</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function applies risk of induced abortion to a slice of data frame and is called by</span>
 <span class="sd">        PregnancySupervisorEvent. It calls the do_after_abortion for women who loose their pregnancy.</span>
 <span class="sd">        :param gestation_of_interest: gestation in weeks</span>
@@ -1112,7 +1021,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">do_after_abortion</span><span class="p">(</span><span class="n">person</span><span class="p">,</span> <span class="s1">&#39;induced_abortion&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="PregnancySupervisor.do_after_abortion"><a class="viewcode-back" href="../../../reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.PregnancySupervisor.do_after_abortion">[docs]</a>    <span class="k">def</span> <span class="nf">do_after_abortion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individual_id</span><span class="p">,</span> <span class="n">type_abortion</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function is called for all women who experience a spontaneous or induced abortion. The function logs the</span>
 <span class="sd">        pregnancy loss, resets key variables and determines risk of complication.</span>
 <span class="sd">        :param individual_id: individual id</span>
@@ -1158,7 +1067,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">apply_risk_of_abortion_complications</span><span class="p">(</span><span class="n">individual_id</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">type_abortion</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="PregnancySupervisor.apply_risk_of_abortion_complications"><a class="viewcode-back" href="../../../reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_abortion_complications">[docs]</a>    <span class="k">def</span> <span class="nf">apply_risk_of_abortion_complications</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individual_id</span><span class="p">,</span> <span class="n">cause</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function makes stores the type of complication experience by a woman following abortion.</span>
 <span class="sd">        :param individual_id: individual_id</span>
 <span class="sd">        :param cause: &#39;type&#39; of abortion (spontaneous abortion OR induced abortion) (str)</span>
@@ -1208,7 +1117,7 @@
                                 <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">7</span><span class="p">))</span></div>
 
 <div class="viewcode-block" id="PregnancySupervisor.apply_risk_of_anaemia"><a class="viewcode-back" href="../../../reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_anaemia">[docs]</a>    <span class="k">def</span> <span class="nf">apply_risk_of_anaemia</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gestation_of_interest</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function applies risk of anaemia to a slice of the data frame. It is called by PregnancySupervisorEvent</span>
 <span class="sd">        :param gestation_of_interest: gestation in weeks</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1234,10 +1143,10 @@
         <span class="k">for</span> <span class="n">person</span> <span class="ow">in</span> <span class="n">anaemia</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">anaemia</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
             <span class="c1"># We store onset date of anaemia according to severity, as weights vary</span>
             <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">store_dalys_in_mni</span><span class="p">(</span>
-                <span class="n">person</span><span class="p">,</span> <span class="n">mni</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person</span><span class="p">,</span> <span class="s2">&quot;ps_anaemia_in_pregnancy&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">_anaemia_onset&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span></div>
+                <span class="n">person</span><span class="p">,</span> <span class="n">mni</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;ps_anaemia_in_pregnancy&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">_anaemia_onset&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="PregnancySupervisor.apply_risk_of_gestational_diabetes"><a class="viewcode-back" href="../../../reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_gestational_diabetes">[docs]</a>    <span class="k">def</span> <span class="nf">apply_risk_of_gestational_diabetes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gestation_of_interest</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function applies risk of gestational diabetes to a slice of the data frame. It is called by</span>
 <span class="sd">        PregnancySupervisorEvent.</span>
 <span class="sd">        :param gestation_of_interest: gestation in weeks</span>
@@ -1260,7 +1169,7 @@
                                                            <span class="s1">&#39;timing&#39;</span><span class="p">:</span> <span class="s1">&#39;antenatal&#39;</span><span class="p">})</span></div>
 
 <div class="viewcode-block" id="PregnancySupervisor.apply_risk_of_hypertensive_disorders"><a class="viewcode-back" href="../../../reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_hypertensive_disorders">[docs]</a>    <span class="k">def</span> <span class="nf">apply_risk_of_hypertensive_disorders</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gestation_of_interest</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function applies risk of mild pre-eclampsia and mild gestational diabetes to a slice of the data frame. It</span>
 <span class="sd">        is called by PregnancySupervisorEvent.</span>
 <span class="sd">        :param gestation_of_interest: gestation in weeks</span>
@@ -1298,7 +1207,7 @@
                                                            <span class="s1">&#39;timing&#39;</span><span class="p">:</span> <span class="s1">&#39;antenatal&#39;</span><span class="p">})</span></div>
 
 <div class="viewcode-block" id="PregnancySupervisor.apply_risk_of_progression_of_hypertension"><a class="viewcode-back" href="../../../reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_progression_of_hypertension">[docs]</a>    <span class="k">def</span> <span class="nf">apply_risk_of_progression_of_hypertension</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gestation_of_interest</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function applies a risk of progression of hypertensive disorders to women who are experiencing one of the</span>
 <span class="sd">        hypertensive disorders. It is called by PregnancySupervisorEvent</span>
 <span class="sd">        :param gestation_of_interest: gestation in weeks</span>
@@ -1384,7 +1293,7 @@
                                         <span class="n">params</span><span class="p">[</span><span class="s1">&#39;treatment_effect_anti_htns_progression&#39;</span><span class="p">]))</span></div>
 
 <div class="viewcode-block" id="PregnancySupervisor.apply_risk_of_death_from_hypertension"><a class="viewcode-back" href="../../../reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_death_from_hypertension">[docs]</a>    <span class="k">def</span> <span class="nf">apply_risk_of_death_from_hypertension</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gestation_of_interest</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function applies risk of death to women with severe hypertensive disease (severe gestational hypertension/</span>
 <span class="sd">        severe pre-eclampsia). For women who die this function schedules InstantaneousDeathEvent.</span>
 <span class="sd">        :param gestation_of_interest: gestation in weeks</span>
@@ -1411,7 +1320,7 @@
                 <span class="k">del</span> <span class="n">mni</span><span class="p">[</span><span class="n">person</span><span class="p">]</span></div>
 
 <div class="viewcode-block" id="PregnancySupervisor.apply_risk_of_placental_abruption"><a class="viewcode-back" href="../../../reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_placental_abruption">[docs]</a>    <span class="k">def</span> <span class="nf">apply_risk_of_placental_abruption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gestation_of_interest</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function applies risk of placental abruption to a slice of the dataframe. It is called by</span>
 <span class="sd">        PregnancySupervisorEvent.</span>
 <span class="sd">        :param gestation_of_interest: gestation in weeks</span>
@@ -1431,7 +1340,7 @@
                                                            <span class="s1">&#39;timing&#39;</span><span class="p">:</span> <span class="s1">&#39;antenatal&#39;</span><span class="p">})</span></div>
 
 <div class="viewcode-block" id="PregnancySupervisor.apply_risk_of_antepartum_haemorrhage"><a class="viewcode-back" href="../../../reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_antepartum_haemorrhage">[docs]</a>    <span class="k">def</span> <span class="nf">apply_risk_of_antepartum_haemorrhage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gestation_of_interest</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function applies risk of antepartum haemorrhage to a slice of the dataframe. It is called by</span>
 <span class="sd">        PregnancySupervisorEvent.</span>
 <span class="sd">        :param gestation_of_interest: gestation in weeks</span>
@@ -1484,7 +1393,7 @@
                                                            <span class="s1">&#39;timing&#39;</span><span class="p">:</span> <span class="s1">&#39;antenatal&#39;</span><span class="p">})</span></div>
 
 <div class="viewcode-block" id="PregnancySupervisor.apply_risk_of_premature_rupture_of_membranes_and_chorioamnionitis"><a class="viewcode-back" href="../../../reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_premature_rupture_of_membranes_and_chorioamnionitis">[docs]</a>    <span class="k">def</span> <span class="nf">apply_risk_of_premature_rupture_of_membranes_and_chorioamnionitis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gestation_of_interest</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function applies risk of premature rupture of membranes to a slice of the dataframe. It is called by</span>
 <span class="sd">        PregnancySupervisorEvent.</span>
 <span class="sd">        :param gestation_of_interest: gestation in weeks</span>
@@ -1527,7 +1436,7 @@
                                                            <span class="s1">&#39;timing&#39;</span><span class="p">:</span> <span class="s1">&#39;antenatal&#39;</span><span class="p">})</span></div>
 
 <div class="viewcode-block" id="PregnancySupervisor.apply_risk_of_preterm_labour"><a class="viewcode-back" href="../../../reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_preterm_labour">[docs]</a>    <span class="k">def</span> <span class="nf">apply_risk_of_preterm_labour</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gestation_of_interest</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function applies risk of preterm labour to a slice of the dataframe. It is called by</span>
 <span class="sd">        PregnancySupervisorEvent.</span>
 <span class="sd">        :param gestation_of_interest: gestation in weeks</span>
@@ -1573,7 +1482,7 @@
                                     <span class="n">new_due_date</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="PregnancySupervisor.update_variables_post_still_birth_for_data_frame"><a class="viewcode-back" href="../../../reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.PregnancySupervisor.update_variables_post_still_birth_for_data_frame">[docs]</a>    <span class="k">def</span> <span class="nf">update_variables_post_still_birth_for_data_frame</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">women</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function updates variables for a slice of the dataframe who have experience antepartum stillbirth</span>
 <span class="sd">        :param women: women who are experiencing stillbirth</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1599,7 +1508,7 @@
             <span class="n">id_or_index</span><span class="o">=</span><span class="n">women</span><span class="o">.</span><span class="n">index</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="PregnancySupervisor.update_variables_post_still_birth_for_individual"><a class="viewcode-back" href="../../../reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.PregnancySupervisor.update_variables_post_still_birth_for_individual">[docs]</a>    <span class="k">def</span> <span class="nf">update_variables_post_still_birth_for_individual</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individual_id</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function is called to reset all the relevant pregnancy and treatment variables for a woman who undergoes</span>
 <span class="sd">        stillbirth outside of the PregnancySupervisor polling event.</span>
 <span class="sd">        :param individual_id: individual_id</span>
@@ -1624,7 +1533,7 @@
             <span class="n">id_or_index</span><span class="o">=</span><span class="n">individual_id</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="PregnancySupervisor.apply_risk_of_still_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_still_birth">[docs]</a>    <span class="k">def</span> <span class="nf">apply_risk_of_still_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gestation_of_interest</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function applies risk of still birth to a slice of the data frame. It is called by PregnancySupervisorEvent</span>
 <span class="sd">        :param gestation_of_interest: INT used to select women from the data frame at certain gestation</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1639,7 +1548,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">update_variables_post_still_birth_for_data_frame</span><span class="p">(</span><span class="n">still_birth</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">still_birth</span><span class="p">])</span></div>
 
 <div class="viewcode-block" id="PregnancySupervisor.induction_care_seeking_and_still_birth_risk"><a class="viewcode-back" href="../../../reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.PregnancySupervisor.induction_care_seeking_and_still_birth_risk">[docs]</a>    <span class="k">def</span> <span class="nf">induction_care_seeking_and_still_birth_risk</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gestation_of_interest</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function is called for post term women and applies a probability that they will seek care for induction</span>
 <span class="sd">        and if not will experience risk of antenatal stillbirth</span>
 <span class="sd">        :param gestation_of_interest: INT used to select women from the data frame at certain gestation</span>
@@ -1683,7 +1592,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">update_variables_post_still_birth_for_data_frame</span><span class="p">(</span><span class="n">still_birth</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">still_birth</span><span class="p">])</span></div>
 
 <div class="viewcode-block" id="PregnancySupervisor.care_seeking_pregnancy_loss_complications"><a class="viewcode-back" href="../../../reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.PregnancySupervisor.care_seeking_pregnancy_loss_complications">[docs]</a>    <span class="k">def</span> <span class="nf">care_seeking_pregnancy_loss_complications</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individual_id</span><span class="p">,</span> <span class="n">cause</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function manages care seeking for women experiencing ectopic pregnancy or complications following</span>
 <span class="sd">        spontaneous/induced abortion.</span>
 <span class="sd">        :param individual_id: individual_id</span>
@@ -1723,7 +1632,7 @@
         <span class="k">return</span> <span class="kc">False</span></div>
 
 <div class="viewcode-block" id="PregnancySupervisor.apply_risk_of_death_from_monthly_complications"><a class="viewcode-back" href="../../../reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.PregnancySupervisor.apply_risk_of_death_from_monthly_complications">[docs]</a>    <span class="k">def</span> <span class="nf">apply_risk_of_death_from_monthly_complications</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individual_id</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function calculates the risk of death for women who have developed complications but have not received</span>
 <span class="sd">        treatment.  It is called by the PregnancySupervisor Event and HSI_CareOfWomenDuringPregnancy_Maternal</span>
 <span class="sd">        EmergencyAssessment if care cant be delivered .</span>
@@ -1765,7 +1674,7 @@
                 <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">individual_id</span><span class="p">,</span> <span class="s1">&#39;ps_chorioamnionitis&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div>
 
 <div class="viewcode-block" id="PregnancySupervisor.schedule_first_anc_contact_for_new_pregnancy"><a class="viewcode-back" href="../../../reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.PregnancySupervisor.schedule_first_anc_contact_for_new_pregnancy">[docs]</a>    <span class="k">def</span> <span class="nf">schedule_first_anc_contact_for_new_pregnancy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gestation_of_interest</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function is called by the PregnancySupervisorEvent for all pregnant women at 8 weeks gestational age to</span>
 <span class="sd">         determine if/when they will attend their first ANC visit.</span>
 <span class="sd">        :param gestation_of_interest: INT used to select women from the data frame at certain gestation</span>
@@ -1828,7 +1737,7 @@
 
 
 <div class="viewcode-block" id="PregnancySupervisorEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.PregnancySupervisorEvent">[docs]</a><span class="k">class</span> <span class="nc">PregnancySupervisorEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; This is the PregnancySupervisorEvent, it is a weekly event which has four primary functions.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; This is the PregnancySupervisorEvent, it is a weekly event which has four primary functions.</span>
 <span class="sd">    1.) It updates the gestational age (in weeks) of all women who are pregnant</span>
 <span class="sd">    2.) It applies monthly risk of key complications associated with pregnancy</span>
 <span class="sd">    3.) It determines if women who experience life seeking complications associated with pregnancy will seek care</span>
@@ -2052,7 +1961,7 @@
 
 
 <div class="viewcode-block" id="EctopicPregnancyEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.EctopicPregnancyEvent">[docs]</a><span class="k">class</span> <span class="nc">EctopicPregnancyEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;This is EctopicPregnancyEvent. It is scheduled by the set_pregnancy_complications function within</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This is EctopicPregnancyEvent. It is scheduled by the set_pregnancy_complications function within</span>
 <span class="sd">     PregnancySupervisorEvent for women who have experienced ectopic pregnancy. This event makes changes to the data</span>
 <span class="sd">     frame for women with ectopic pregnancies, applies a probability of care seeking and schedules the</span>
 <span class="sd">     EctopicRuptureEvent.&quot;&quot;&quot;</span>
@@ -2093,7 +2002,7 @@
 
 
 <div class="viewcode-block" id="EctopicPregnancyRuptureEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.EctopicPregnancyRuptureEvent">[docs]</a><span class="k">class</span> <span class="nc">EctopicPregnancyRuptureEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;This is EctopicPregnancyRuptureEvent. It is scheduled by the EctopicPregnancyEvent for women who have</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This is EctopicPregnancyRuptureEvent. It is scheduled by the EctopicPregnancyEvent for women who have</span>
 <span class="sd">    experienced an ectopic pregnancy which has ruptured due to lack of treatment. This event manages care seeking post</span>
 <span class="sd">    rupture and schedules EarlyPregnancyLossDeathEvent&quot;&quot;&quot;</span>
 
@@ -2124,7 +2033,7 @@
 
 
 <div class="viewcode-block" id="EarlyPregnancyLossDeathEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.EarlyPregnancyLossDeathEvent">[docs]</a><span class="k">class</span> <span class="nc">EarlyPregnancyLossDeathEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;This is EarlyPregnancyLossDeathEvent. It is scheduled by the EctopicPregnancyRuptureEvent &amp; abortion for</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This is EarlyPregnancyLossDeathEvent. It is scheduled by the EctopicPregnancyRuptureEvent &amp; abortion for</span>
 <span class="sd">    women who are at risk of death following a loss of their pregnancy&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="EarlyPregnancyLossDeathEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.EarlyPregnancyLossDeathEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">individual_id</span><span class="p">,</span> <span class="n">cause</span><span class="p">):</span>
@@ -2171,7 +2080,7 @@
 
 
 <div class="viewcode-block" id="GestationalDiabetesGlycaemicControlEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.GestationalDiabetesGlycaemicControlEvent">[docs]</a><span class="k">class</span> <span class="nc">GestationalDiabetesGlycaemicControlEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This is GestationalDiabetesGlycaemicControlEvent. It is scheduled by CareOfWomenDuringPregnancy module after a</span>
 <span class="sd">    woman is started on treatment for gestational diabetes. This event determines if the treatment a woman has been</span>
 <span class="sd">    started on for GDM will effectively control her blood sugars</span>
@@ -2193,7 +2102,7 @@
 
         <span class="c1"># We apply a probability that the treatment this woman is receiving for her GDM (diet and exercise/</span>
         <span class="c1"># oral anti-diabetics) will not control this womans hyperglycaemia</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span> <span class="o">&gt;</span> <span class="n">params</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;prob_glycaemic_control_</span><span class="si">{</span><span class="n">mother</span><span class="o">.</span><span class="n">ac_gest_diab_on_treatment</span> <span class="si">}</span><span class="s1">&#39;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span> <span class="o">&gt;</span> <span class="n">params</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;prob_glycaemic_control_</span><span class="si">{</span><span class="n">mother</span><span class="o">.</span><span class="n">ac_gest_diab_on_treatment</span><span class="w"> </span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]:</span>
             <span class="c1"># If so we reset her diabetes status as uncontrolled, her treatment is ineffective at reducing</span>
             <span class="c1"># risk of still birth, and when she returns for follow up she should be started on the next</span>
             <span class="c1"># treatment available</span>
@@ -2201,7 +2110,7 @@
 
 
 <div class="viewcode-block" id="SyphilisInPregnancyEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.SyphilisInPregnancyEvent">[docs]</a><span class="k">class</span> <span class="nc">SyphilisInPregnancyEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This is SyphilisInPregnancyEvent. It is scheduled by PregnancySupervisorEvent module after a</span>
 <span class="sd">    woman becomes pregnant and is predicted to experience syphilis during their pregnancy. This event onsets Syphilis</span>
 <span class="sd">    in those women &quot;&quot;&quot;</span>
@@ -2226,7 +2135,7 @@
 
 
 <div class="viewcode-block" id="ParameterUpdateEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.ParameterUpdateEvent">[docs]</a><span class="k">class</span> <span class="nc">ParameterUpdateEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;This is ParameterUpdateEvent. It is scheduled to occur once on 2015 to update parameters being used by the</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This is ParameterUpdateEvent. It is scheduled to occur once on 2015 to update parameters being used by the</span>
 <span class="sd">    maternal and newborn health model&quot;&quot;&quot;</span>
 <div class="viewcode-block" id="ParameterUpdateEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.ParameterUpdateEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">)</span></div>
@@ -2272,7 +2181,7 @@
 
 
 <div class="viewcode-block" id="PregnancyAnalysisEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.PregnancyAnalysisEvent">[docs]</a><span class="k">class</span> <span class="nc">PregnancyAnalysisEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This is PregnancyAnalysisEvent. This event is scheduled in initialise_simulation. When this event runs, and if</span>
 <span class="sd">    either of the module parameters the signify analysis is being conducted are set to True, then key parameters</span>
 <span class="sd">    are overridden to alter the coverage and/or quality of routine antenatal care delivery.</span>
@@ -2336,7 +2245,7 @@
 
 
 <div class="viewcode-block" id="PregnancyLoggingEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.PregnancyLoggingEvent">[docs]</a><span class="k">class</span> <span class="nc">PregnancyLoggingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;This is PregnancyLoggingEvent. It runs yearly to produce summary statistics around pregnancy.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This is PregnancyLoggingEvent. It runs yearly to produce summary statistics around pregnancy.&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="PregnancyLoggingEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.PregnancyLoggingEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">repeat</span> <span class="o">=</span> <span class="mi">1</span>
@@ -2381,7 +2290,6 @@
 </pre></div>
 
            </div>
-           
           </div>
           <footer>
 
@@ -2389,40 +2297,25 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">
-        Last updated on Dec 01, 2022.
-      </span>
-
-    </p>
+      <span class="lastupdated">Last updated on Apr 06, 2023.
+      </span></p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

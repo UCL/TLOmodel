@@ -18,6 +18,9 @@ tlo.methods.tb module
         * - Item
           - Type
           - Description
+        * - prop_mdr2010
+          - REAL
+          - Proportion of active tb cases with multidrug resistance in 2010
         * - who_incidence_estimates
           - REAL
           - WHO estimated active TB incidence per 100,000 population
@@ -30,9 +33,6 @@ tlo.methods.tb module
         * - ipt_coverage
           - DATA_FRAME
           - national estimates of coverage of IPT in PLHIV and paediatric contacts
-        * - prop_mdr2010
-          - REAL
-          - Proportion of active tb cases with multidrug resistance in 2010
         * - incidence_active_tb_2010
           - REAL
           - incidence of active tb in 2010 in all ages
@@ -222,6 +222,9 @@ tlo.methods.tb module
         * - prob_tb_referral_in_generic_hsi
           - REAL
           - probability of referral to TB screening HSI if presenting with TB-related symptoms
+        * - scaleup_parameters
+          - DATA_FRAME
+          - list of parameters and values changed in scenario analysis
 
 
      **PROPERTIES:**
@@ -251,9 +254,9 @@ tlo.methods.tb module
         * - tb_smear
           - BOOL
           - smear positivity with active infection: False=negative, True=positive
-        * - tb_ever_tested
-          - BOOL
-          - ever had a tb test
+        * - tb_date_tested
+          - DATE
+          - Date of last tb test
         * - tb_diagnosed
           - BOOL
           - person has current diagnosis of active tb
@@ -295,17 +298,17 @@ tlo.methods.tb module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'TB': <tlo.methods.causes.Cause object at 0x7febf1254dc0>, 'AIDS_TB': <tlo.methods.causes.Cause object at 0x7febf1254e50>}
+     CAUSES_OF_DEATH : {'TB': <tlo.methods.causes.Cause object at 0x7fb54b14d520>, 'AIDS_TB': <tlo.methods.causes.Cause object at 0x7fb54b14dc70>}
 
-     CAUSES_OF_DISABILITY : {'TB': <tlo.methods.causes.Cause object at 0x7febf1254eb0>}
+     CAUSES_OF_DISABILITY : {'TB': <tlo.methods.causes.Cause object at 0x7fb54b14dd30>}
 
-     INIT_DEPENDENCIES : {'Demography', 'HealthSystem', 'SymptomManager', 'Lifestyle', 'Epi'}
+     INIT_DEPENDENCIES : {'HealthSystem', 'Demography', 'Lifestyle', 'Epi', 'SymptomManager'}
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>}
 
-     OPTIONAL_INIT_DEPENDENCIES : {'Hiv', 'HealthBurden'}
+     OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden', 'Hiv'}
 
-     SYMPTOMS : {'night_sweats', 'fatigue'}
+     SYMPTOMS : {'fatigue', 'night_sweats'}
 
      **Functions (defined or overridden in class Tb):**
 
@@ -315,7 +318,7 @@ tlo.methods.tb module
 
      .. automethod:: pre_initialise_population
 
-     .. automethod:: send_for_screening
+     .. automethod:: send_for_screening_general
 
      .. automethod:: select_tb_test
 
@@ -328,6 +331,8 @@ tlo.methods.tb module
      .. automethod:: on_birth
 
      .. automethod:: report_daly_values
+
+     .. automethod:: calculate_untreated_proportion
 
      .. automethod:: assign_active_tb
 

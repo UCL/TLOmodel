@@ -1,96 +1,45 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
-  
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
   <title>tlo.lm &mdash; TLOmodel 0.1.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/theme_overrides.css" type="text/css" />
-
-  
-  
+      <link rel="stylesheet" href="../../_static/theme_overrides.css" type="text/css" />
     <link rel="shortcut icon" href="../../_static/favicon.png"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
         <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-        <script src="../../_static/jquery.js"></script>
-        <script src="../../_static/underscore.js"></script>
-        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="../../_static/js/theme.js"></script>
-
-    
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
           
-            <a href="../../index.html" class="icon icon-home"> TLOmodel
           
-
-          
+          <a href="../../index.html" class="icon icon-home">
+            TLOmodel
           </a>
-
-          
-            
-            
               <div class="version">
                 0.1.0
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../index.html">Welcome</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../aims.html">Aims &amp; Objectives</a></li>
@@ -105,69 +54,30 @@
 <li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../index.html">TLOmodel</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
-          <li><a href="../index.html">Module code</a> &raquo;</li>
-        
-      <li>tlo.lm</li>
-    
-    
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">tlo.lm</li>
       <li class="wy-breadcrumbs-aside">
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <h1>Source code for tlo.lm</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">ast</span>
 <span class="kn">import</span> <span class="nn">builtins</span>
@@ -195,7 +105,7 @@
         <span class="n">conditions_are_mutually_exclusive</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">conditions_are_exhaustive</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;A Predictor variable for the regression model.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;A Predictor variable for the regression model.</span>
 
 <span class="sd">        :param property_name: A property of the population dataframe e.g. age, sex, etc.</span>
 <span class="sd">            or if ``external=True`` the name of the external property that will be</span>
@@ -251,7 +161,7 @@
         <span class="k">return</span> <span class="bp">self</span></div>
 
     <span class="k">def</span> <span class="nf">_coeff</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">coefficient</span><span class="p">,</span> <span class="n">condition</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;Predictor&#39;</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Adds the coefficient for the Predictor. The arguments can be two:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Adds the coefficient for the Predictor. The arguments can be two:</span>
 <span class="sd">                `coeff(condition, value)` where the condition evaluates the property value to true/false</span>
 <span class="sd">                `coeff(value)` where the value is given to all unconditioned values of the property</span>
 <span class="sd">        The second style (unconditioned value) only makes sense after one or more conditioned values</span>
@@ -301,7 +211,7 @@
         <span class="n">previous_condition</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">for</span> <span class="n">condition</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">conditions</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">condition</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="s2">&quot; &quot;</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">previous_condition</span><span class="p">)</span><span class="si">}</span><span class="s1"> -&gt; </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s1"> (otherwise)&#39;</span><span class="p">)</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="s2">&quot; &quot;</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">previous_condition</span><span class="p">)</span><span class="si">}</span><span class="s1"> -&gt; </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s1"> (otherwise)&#39;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                 <span class="n">previous_condition</span> <span class="o">=</span> <span class="n">condition</span>
@@ -309,7 +219,7 @@
 
 
 <div class="viewcode-block" id="LinearModelType"><a class="viewcode-back" href="../../reference/tlo.lm.html#tlo.lm.LinearModelType">[docs]</a><span class="k">class</span> <span class="nc">LinearModelType</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The type of model specifies how the results from the predictor are combined:</span>
 <span class="sd">    &#39;additive&#39; -&gt; adds the effect_sizes from the predictors</span>
 <span class="sd">    &#39;logisitic&#39; -&gt; multiples the effect_sizes from the predictors and applies the transform x/(1+x)</span>
@@ -332,7 +242,7 @@
         <span class="n">intercept</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
         <span class="o">*</span><span class="n">predictors</span><span class="p">:</span> <span class="n">Predictor</span>
     <span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;A linear model has an intercept and zero or more ``Predictor`` variables.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;A linear model has an intercept and zero or more ``Predictor`` variables.</span>
 
 <span class="sd">        :param lm_type: Model type to use.</span>
 <span class="sd">        :param intercept: Intercept term for the model.</span>
@@ -361,22 +271,22 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">lm_type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LinearModelType</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;The model type.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The model type.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lm_type</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">intercept</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
-        <span class="sd">&quot;&quot;&quot;The intercept value for the model.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The intercept value for the model.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_intercept</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">predictors</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Predictor</span><span class="p">]:</span>
-        <span class="sd">&quot;&quot;&quot;The predictors used in calculating the model output.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The predictors used in calculating the model output.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predictors</span>
 
 <div class="viewcode-block" id="LinearModel.multiplicative"><a class="viewcode-back" href="../../reference/tlo.lm.html#tlo.lm.LinearModel.multiplicative">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">multiplicative</span><span class="p">(</span><span class="o">*</span><span class="n">predictors</span><span class="p">:</span> <span class="n">Predictor</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns a multplicative LinearModel with intercept=1.0</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a multplicative LinearModel with intercept=1.0</span>
 
 <span class="sd">        :param predictors: One or more Predictor objects defining the model</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -384,7 +294,7 @@
 
 <div class="viewcode-block" id="LinearModel.custom"><a class="viewcode-back" href="../../reference/tlo.lm.html#tlo.lm.LinearModel.custom">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">custom</span><span class="p">(</span><span class="n">predict_function</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Define a linear model using the supplied function</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Define a linear model using the supplied function</span>
 
 <span class="sd">        The function acts as a drop-in replacement to the predict function and must</span>
 <span class="sd">        implement the interface:</span>
@@ -415,7 +325,7 @@
         <span class="k">return</span> <span class="n">custom_model</span></div>
 
     <span class="k">def</span> <span class="nf">_parse_predictors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Set model string, callback predictors and predictor names from predictors.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set model string, callback predictors and predictor names from predictors.</span>
 
 <span class="sd">        Sets `self._model_string` to an expression string (to be evaluated by</span>
 <span class="sd">        ``pandas.DataFrame.eval``) corresponding to the evaluation of the model output</span>
@@ -515,7 +425,7 @@
         <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
         <span class="o">**</span><span class="n">external_variables</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]:</span>
-        <span class="sd">&quot;&quot;&quot;Construct mapping from predictor column names to column values.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Construct mapping from predictor column names to column values.</span>
 
 <span class="sd">        For use in ``resolvers`` argument to ``pandas.eval`` call.</span>
 
@@ -557,7 +467,7 @@
         <span class="n">squeeze_single_row_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Evaluate linear model output for a given set of input data.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluate linear model output for a given set of input data.</span>
 
 <span class="sd">        :param df: The input ``DataFrame`` containing the input data to evaluate the</span>
 <span class="sd">          model with.</span>
@@ -616,7 +526,9 @@
         <span class="n">result</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lm_type</span> <span class="o">==</span> <span class="n">LinearModelType</span><span class="o">.</span><span class="n">LOGISTIC</span><span class="p">:</span>
-            <span class="n">result</span> <span class="o">=</span> <span class="n">result</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">result</span><span class="p">)</span>
+            <span class="c1"># Below is equivalent to result = result / (1 + result) but will give correct</span>
+            <span class="c1"># output where any elements in result are inf (--&gt; 1.0) or 0.0 (--&gt; 0.0).</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">result</span><span class="p">))</span>
 
         <span class="c1"># If the user supplied a random number generator then they want outcomes,</span>
         <span class="c1"># not probabilities</span>
@@ -642,7 +554,6 @@
 </pre></div>
 
            </div>
-           
           </div>
           <footer>
 
@@ -650,40 +561,25 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">
-        Last updated on Dec 01, 2022.
-      </span>
-
-    </p>
+      <span class="lastupdated">Last updated on Apr 06, 2023.
+      </span></p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

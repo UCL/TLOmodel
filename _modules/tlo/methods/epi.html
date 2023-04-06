@@ -1,96 +1,45 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
-  
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
   <title>tlo.methods.epi &mdash; TLOmodel 0.1.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
-
-  
-  
+      <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-        <script src="../../../_static/jquery.js"></script>
-        <script src="../../../_static/underscore.js"></script>
-        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../../_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-
-    
+        <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
           
-            <a href="../../../index.html" class="icon icon-home"> TLOmodel
           
-
-          
+          <a href="../../../index.html" class="icon icon-home">
+            TLOmodel
           </a>
-
-          
-            
-            
               <div class="version">
                 0.1.0
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../index.html">Welcome</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../aims.html">Aims &amp; Objectives</a></li>
@@ -105,71 +54,31 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../index.html">TLOmodel</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
-          <li><a href="../../index.html">Module code</a> &raquo;</li>
-        
-          <li><a href="../methods.html">tlo.methods</a> &raquo;</li>
-        
-      <li>tlo.methods.epi</li>
-    
-    
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../methods.html">tlo.methods</a></li>
+      <li class="breadcrumb-item active">tlo.methods.epi</li>
       <li class="wy-breadcrumbs-aside">
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <h1>Source code for tlo.methods.epi</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
 
@@ -186,7 +95,7 @@
 
 <span class="c1"># TODO Vitamin A</span>
 <div class="viewcode-block" id="Epi"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.Epi">[docs]</a><span class="k">class</span> <span class="nc">Epi</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;This is the expanded programme on immunisation module</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This is the expanded programme on immunisation module</span>
 <span class="sd">    it sets up the vaccination schedule for all children from birth</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -364,7 +273,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">get_item_codes</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="Epi.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.Epi.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Initialise our properties for a newborn individual</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialise our properties for a newborn individual</span>
 
 <span class="sd">        birth doses occur within 24 hours of delivery</span>
 
@@ -512,7 +421,7 @@
                     <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Epi.on_hsi_alert"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.Epi.on_hsi_alert">[docs]</a>    <span class="k">def</span> <span class="nf">on_hsi_alert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">treatment_id</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is called whenever there is an HSI event commissioned by one of the other disease modules.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span></div>
@@ -520,7 +429,7 @@
         <span class="c1"># TODO: routine infant check-ups may occur alongside vaccinations</span>
 
 <div class="viewcode-block" id="Epi.report_daly_values"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.Epi.report_daly_values">[docs]</a>    <span class="k">def</span> <span class="nf">report_daly_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; epi module returns dalys=0 for all persons alive &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; epi module returns dalys=0 for all persons alive &quot;&quot;&quot;</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;debug&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s2">&quot;This is epi reporting my health values&quot;</span><span class="p">)</span>
 
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>  <span class="c1"># shortcut to population properties dataframe</span>
@@ -535,7 +444,7 @@
             <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;va_</span><span class="si">{</span><span class="n">vaccine</span><span class="si">}</span><span class="s2">_all_doses&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span></div>
 
 <div class="viewcode-block" id="Epi.get_item_codes"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.Epi.get_item_codes">[docs]</a>    <span class="k">def</span> <span class="nf">get_item_codes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Look-up the item-codes for each vaccine and update `self.cons_item_codes`&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Look-up the item-codes for each vaccine and update `self.cons_item_codes`&quot;&quot;&quot;</span>
         <span class="c1"># get_item_codes_from_package_name = self.sim.modules[&#39;HealthSystem&#39;].get_item_codes_from_package_name</span>
         <span class="n">get_item_code_from_item_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span>
 
@@ -572,26 +481,26 @@
 
 <span class="c1"># BCG</span>
 <div class="viewcode-block" id="BcgVaccineEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.BcgVaccineEvent">[docs]</a><span class="k">class</span> <span class="nc">BcgVaccineEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; give BCG vaccine at birth &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; give BCG vaccine at birth &quot;&quot;&quot;</span>
 <div class="viewcode-block" id="BcgVaccineEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.BcgVaccineEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;bcg&quot;</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="OpvEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.OpvEvent">[docs]</a><span class="k">class</span> <span class="nc">OpvEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; give oral poliovirus vaccine (OPV) &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; give oral poliovirus vaccine (OPV) &quot;&quot;&quot;</span>
 <div class="viewcode-block" id="OpvEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.OpvEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;opv&quot;</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="DtpHepVaccineEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.DtpHepVaccineEvent">[docs]</a><span class="k">class</span> <span class="nc">DtpHepVaccineEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; give DTP_Hep vaccine &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; give DTP_Hep vaccine &quot;&quot;&quot;</span>
 <div class="viewcode-block" id="DtpHepVaccineEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.DtpHepVaccineEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;dtp&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;hep&quot;</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="DtpHibHepVaccineEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.DtpHibHepVaccineEvent">[docs]</a><span class="k">class</span> <span class="nc">DtpHibHepVaccineEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; give DTP_Hib_Hep vaccine &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; give DTP_Hib_Hep vaccine &quot;&quot;&quot;</span>
 <div class="viewcode-block" id="DtpHibHepVaccineEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.DtpHibHepVaccineEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;dtp&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;hep&quot;</span><span class="p">)</span>
@@ -599,38 +508,38 @@
 
 
 <div class="viewcode-block" id="RotavirusVaccineEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.RotavirusVaccineEvent">[docs]</a><span class="k">class</span> <span class="nc">RotavirusVaccineEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; give Rotavirus vaccine &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; give Rotavirus vaccine &quot;&quot;&quot;</span>
 <div class="viewcode-block" id="RotavirusVaccineEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.RotavirusVaccineEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;rota&quot;</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="PneumococcalVaccineEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.PneumococcalVaccineEvent">[docs]</a><span class="k">class</span> <span class="nc">PneumococcalVaccineEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; give Pneumococcal vaccine (PCV) &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; give Pneumococcal vaccine (PCV) &quot;&quot;&quot;</span>
 <div class="viewcode-block" id="PneumococcalVaccineEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.PneumococcalVaccineEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;pneumo&quot;</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="HibVaccineEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HibVaccineEvent">[docs]</a><span class="k">class</span> <span class="nc">HibVaccineEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; give Haemophilus influenza B vaccine &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; give Haemophilus influenza B vaccine &quot;&quot;&quot;</span>
 <div class="viewcode-block" id="HibVaccineEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HibVaccineEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;hib&quot;</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="MeaslesVaccineEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.MeaslesVaccineEvent">[docs]</a><span class="k">class</span> <span class="nc">MeaslesVaccineEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; give measles vaccine &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; give measles vaccine &quot;&quot;&quot;</span>
 <div class="viewcode-block" id="MeaslesVaccineEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.MeaslesVaccineEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;measles&quot;</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="MeaslesRubellaVaccineEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.MeaslesRubellaVaccineEvent">[docs]</a><span class="k">class</span> <span class="nc">MeaslesRubellaVaccineEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; give measles/rubella vaccine &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; give measles/rubella vaccine &quot;&quot;&quot;</span>
 <div class="viewcode-block" id="MeaslesRubellaVaccineEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.MeaslesRubellaVaccineEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;measles&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;rubella&quot;</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="HpvScheduleEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HpvScheduleEvent">[docs]</a><span class="k">class</span> <span class="nc">HpvScheduleEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; HPV vaccine event - each year sample from 9 year old girls and schedule vaccine</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; HPV vaccine event - each year sample from 9 year old girls and schedule vaccine</span>
 <span class="sd">    stagger vaccine administration across the year</span>
 <span class="sd">    coverage estimates dependent on health system capacity</span>
 <span class="sd">    average around 85% for 2018</span>
@@ -690,7 +599,7 @@
 <span class="c1"># could request 1/100 of a box with each vaccine</span>
 
 <div class="viewcode-block" id="HsiBaseVaccine"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HsiBaseVaccine">[docs]</a><span class="k">class</span> <span class="nc">HsiBaseVaccine</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;This is a base class for all vaccination HSI_Events. Handles initialisation and requesting consumables needed</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This is a base class for all vaccination HSI_Events. Handles initialisation and requesting consumables needed</span>
 <span class="sd">    for the vaccination. For custom behaviour, you can override __init__ in subclasses and implemented your own</span>
 <span class="sd">    constructors (or inherit directly from HSI_Event)&quot;&quot;&quot;</span>
 <div class="viewcode-block" id="HsiBaseVaccine.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HsiBaseVaccine.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
@@ -702,11 +611,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1a&#39;</span></div>
 
 <div class="viewcode-block" id="HsiBaseVaccine.treatment_id"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HsiBaseVaccine.treatment_id">[docs]</a>    <span class="k">def</span> <span class="nf">treatment_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;subclasses should implement this method to return the TREATMENT_ID&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;subclasses should implement this method to return the TREATMENT_ID&quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
 <div class="viewcode-block" id="HsiBaseVaccine.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HsiBaseVaccine.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;must be implemented by subclasses&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;must be implemented by subclasses&quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
 <div class="viewcode-block" id="HsiBaseVaccine.did_not_run"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HsiBaseVaccine.did_not_run">[docs]</a>    <span class="k">def</span> <span class="nf">did_not_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -714,7 +623,7 @@
 
 
 <div class="viewcode-block" id="HSI_BcgVaccine"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_BcgVaccine">[docs]</a><span class="k">class</span> <span class="nc">HSI_BcgVaccine</span><span class="p">(</span><span class="n">HsiBaseVaccine</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;gives bcg vaccine 24 hours after birth or as soon as possible afterwards&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;gives bcg vaccine 24 hours after birth or as soon as possible afterwards&quot;&quot;&quot;</span>
 <div class="viewcode-block" id="HSI_BcgVaccine.treatment_id"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_BcgVaccine.treatment_id">[docs]</a>    <span class="k">def</span> <span class="nf">treatment_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s2">&quot;Epi_Childhood_Bcg&quot;</span></div>
 
@@ -726,7 +635,7 @@
 
 
 <div class="viewcode-block" id="HSI_opv"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_opv">[docs]</a><span class="k">class</span> <span class="nc">HSI_opv</span><span class="p">(</span><span class="n">HsiBaseVaccine</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;gives poliovirus vaccine 24 hours after birth, plus weeks 6, 10, 14 or as soon as possible afterwards&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;gives poliovirus vaccine 24 hours after birth, plus weeks 6, 10, 14 or as soon as possible afterwards&quot;&quot;&quot;</span>
 <div class="viewcode-block" id="HSI_opv.treatment_id"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_opv.treatment_id">[docs]</a>    <span class="k">def</span> <span class="nf">treatment_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s2">&quot;Epi_Childhood_Opv&quot;</span></div>
 
@@ -736,7 +645,7 @@
 
 
 <div class="viewcode-block" id="HSI_DtpHibHepVaccine"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_DtpHibHepVaccine">[docs]</a><span class="k">class</span> <span class="nc">HSI_DtpHibHepVaccine</span><span class="p">(</span><span class="n">HsiBaseVaccine</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; gives DTP-Hib_HepB vaccine &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; gives DTP-Hib_HepB vaccine &quot;&quot;&quot;</span>
 <div class="viewcode-block" id="HSI_DtpHibHepVaccine.treatment_id"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_DtpHibHepVaccine.treatment_id">[docs]</a>    <span class="k">def</span> <span class="nf">treatment_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s2">&quot;Epi_Childhood_DtpHibHep&quot;</span></div>
 
@@ -748,7 +657,7 @@
 
 
 <div class="viewcode-block" id="HSI_RotaVaccine"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_RotaVaccine">[docs]</a><span class="k">class</span> <span class="nc">HSI_RotaVaccine</span><span class="p">(</span><span class="n">HsiBaseVaccine</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; gives Rotavirus vaccine 6 and 10 weeks after birth &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; gives Rotavirus vaccine 6 and 10 weeks after birth &quot;&quot;&quot;</span>
 <div class="viewcode-block" id="HSI_RotaVaccine.treatment_id"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_RotaVaccine.treatment_id">[docs]</a>    <span class="k">def</span> <span class="nf">treatment_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s2">&quot;Epi_Childhood_Rota&quot;</span></div>
 
@@ -764,7 +673,7 @@
 
 
 <div class="viewcode-block" id="HSI_PneumoVaccine"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_PneumoVaccine">[docs]</a><span class="k">class</span> <span class="nc">HSI_PneumoVaccine</span><span class="p">(</span><span class="n">HsiBaseVaccine</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; gives Pneumococcal vaccine 6, 10 and 14 weeks after birth &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; gives Pneumococcal vaccine 6, 10 and 14 weeks after birth &quot;&quot;&quot;</span>
 <div class="viewcode-block" id="HSI_PneumoVaccine.treatment_id"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_PneumoVaccine.treatment_id">[docs]</a>    <span class="k">def</span> <span class="nf">treatment_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s2">&quot;Epi_Childhood_Pneumo&quot;</span></div>
 
@@ -774,7 +683,7 @@
 
 
 <div class="viewcode-block" id="HSI_MeaslesRubellaVaccine"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_MeaslesRubellaVaccine">[docs]</a><span class="k">class</span> <span class="nc">HSI_MeaslesRubellaVaccine</span><span class="p">(</span><span class="n">HsiBaseVaccine</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; administers measles+rubella vaccine &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; administers measles+rubella vaccine &quot;&quot;&quot;</span>
 <div class="viewcode-block" id="HSI_MeaslesRubellaVaccine.treatment_id"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_MeaslesRubellaVaccine.treatment_id">[docs]</a>    <span class="k">def</span> <span class="nf">treatment_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s2">&quot;Epi_Childhood_MeaslesRubella&quot;</span></div>
 
@@ -785,7 +694,7 @@
 
 
 <div class="viewcode-block" id="HSI_HpvVaccine"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_HpvVaccine">[docs]</a><span class="k">class</span> <span class="nc">HSI_HpvVaccine</span><span class="p">(</span><span class="n">HsiBaseVaccine</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; gives HPV vaccine to 9 year old girls; recommended 2 doses (WHO) &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; gives HPV vaccine to 9 year old girls; recommended 2 doses (WHO) &quot;&quot;&quot;</span>
 <div class="viewcode-block" id="HSI_HpvVaccine.treatment_id"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_HpvVaccine.treatment_id">[docs]</a>    <span class="k">def</span> <span class="nf">treatment_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s2">&quot;Epi_Adolescent_Hpv&quot;</span></div>
 
@@ -797,7 +706,7 @@
 
 
 <div class="viewcode-block" id="HSI_TdVaccine"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_TdVaccine">[docs]</a><span class="k">class</span> <span class="nc">HSI_TdVaccine</span><span class="p">(</span><span class="n">HsiBaseVaccine</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; gives tetanus/diphtheria vaccine to pregnant women as part of routine antenatal care</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; gives tetanus/diphtheria vaccine to pregnant women as part of routine antenatal care</span>
 <span class="sd">    recommended 2+ doses (WHO)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 <div class="viewcode-block" id="HSI_TdVaccine.treatment_id"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_TdVaccine.treatment_id">[docs]</a>    <span class="k">def</span> <span class="nf">treatment_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -815,7 +724,7 @@
 
 <div class="viewcode-block" id="EpiLoggingEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.EpiLoggingEvent">[docs]</a><span class="k">class</span> <span class="nc">EpiLoggingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
 <div class="viewcode-block" id="EpiLoggingEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.EpiLoggingEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; output vaccine coverage every year &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; output vaccine coverage every year &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">repeat</span> <span class="o">=</span> <span class="mi">12</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">repeat</span><span class="p">))</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">Epi</span><span class="p">)</span></div>
@@ -877,7 +786,6 @@
 </pre></div>
 
            </div>
-           
           </div>
           <footer>
 
@@ -885,40 +793,25 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">
-        Last updated on Dec 01, 2022.
-      </span>
-
-    </p>
+      <span class="lastupdated">Last updated on Apr 06, 2023.
+      </span></p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

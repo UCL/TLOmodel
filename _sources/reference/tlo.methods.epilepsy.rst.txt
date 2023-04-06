@@ -57,12 +57,6 @@ tlo.methods.epilepsy module
         * - base_prob_3m_seiz_stat_none_infreq
           - REAL
           - base probability per 3 months of seizure status nonenow if current infrequent
-        * - base_prob_3m_antiepileptic
-          - REAL
-          - base probability per 3 months of starting antiepileptic, if frequent seizures
-        * - rr_antiepileptic_seiz_infreq
-          - REAL
-          - relative rate of starting antiepileptic if infrequent seizures
         * - base_prob_3m_stop_antiepileptic
           - REAL
           - base probability per 3 months of stopping antiepileptic, if nonenow seizures
@@ -112,13 +106,13 @@ tlo.methods.epilepsy module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'Epilepsy': <tlo.methods.causes.Cause object at 0x7febf2ad1100>}
+     CAUSES_OF_DEATH : {'Epilepsy': <tlo.methods.causes.Cause object at 0x7fb54b186ee0>}
 
-     CAUSES_OF_DISABILITY : {'Epilepsy': <tlo.methods.causes.Cause object at 0x7febf2ad1190>}
+     CAUSES_OF_DISABILITY : {'Epilepsy': <tlo.methods.causes.Cause object at 0x7fb54b186f70>}
 
-     INIT_DEPENDENCIES : {'HealthSystem', 'HealthBurden', 'Demography'}
+     INIT_DEPENDENCIES : {'SymptomManager', 'HealthBurden', 'Demography', 'HealthSystem'}
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>}
 
      TREATMENT_ID : antiepileptic
 
@@ -134,11 +128,11 @@ tlo.methods.epilepsy module
 
      .. automethod:: on_birth
 
-     .. automethod:: query_symptoms_now
-
-     .. automethod:: on_hsi_alert
-
      .. automethod:: report_daly_values
+
+     .. automethod:: transition_seizure_stat
+
+     .. automethod:: stop_antiep
 
 
 
@@ -183,12 +177,30 @@ tlo.methods.epilepsy module
 
 
 
-.. autoclass:: HSI_Epilepsy_Start_Anti_Epilpetic
+.. autoclass:: HSI_Epilepsy_Start_Anti_Epileptic
 
      Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
 
-     **Functions (defined or overridden in class HSI_Epilepsy_Start_Anti_Epilpetic):**
+     **Functions (defined or overridden in class HSI_Epilepsy_Start_Anti_Epileptic):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Epilepsy_Follow_Up
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Epilepsy_Follow_Up):**
 
      .. automethod:: __init__
 

@@ -1,96 +1,45 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
-  
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
   <title>tlo.cli &mdash; TLOmodel 0.1.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/theme_overrides.css" type="text/css" />
-
-  
-  
+      <link rel="stylesheet" href="../../_static/theme_overrides.css" type="text/css" />
     <link rel="shortcut icon" href="../../_static/favicon.png"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
         <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-        <script src="../../_static/jquery.js"></script>
-        <script src="../../_static/underscore.js"></script>
-        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="../../_static/js/theme.js"></script>
-
-    
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
           
-            <a href="../../index.html" class="icon icon-home"> TLOmodel
           
-
-          
+          <a href="../../index.html" class="icon icon-home">
+            TLOmodel
           </a>
-
-          
-            
-            
               <div class="version">
                 0.1.0
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../index.html">Welcome</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../aims.html">Aims &amp; Objectives</a></li>
@@ -105,69 +54,30 @@
 <li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../index.html">TLOmodel</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
-          <li><a href="../index.html">Module code</a> &raquo;</li>
-        
-      <li>tlo.cli</li>
-    
-    
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">tlo.cli</li>
       <li class="wy-breadcrumbs-aside">
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <h1>Source code for tlo.cli</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;The TLOmodel command-line interface&quot;&quot;&quot;</span>
 <span class="kn">import</span> <span class="nn">configparser</span>
@@ -202,7 +112,7 @@
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--verbose&quot;</span><span class="p">,</span> <span class="s2">&quot;-v&quot;</span><span class="p">,</span> <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">pass_context</span>
 <span class="k">def</span> <span class="nf">cli</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">config_file</span><span class="p">,</span> <span class="n">verbose</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;tlo - the TLOmodel command line utility.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;tlo - the TLOmodel command line utility.</span>
 
 <span class="sd">    * run scenarios locally</span>
 <span class="sd">    * submit scenarios to batch system</span>
@@ -220,7 +130,7 @@
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--draw&quot;</span><span class="p">,</span> <span class="s2">&quot;-d&quot;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--output-dir&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">scenario_run</span><span class="p">(</span><span class="n">scenario_file</span><span class="p">,</span> <span class="n">draw_only</span><span class="p">,</span> <span class="n">draw</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Run the specified scenario locally.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run the specified scenario locally.</span>
 
 <span class="sd">    SCENARIO_FILE is path to file containing a scenario class</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -258,7 +168,7 @@
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--keep-pool-alive&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">bool</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">hidden</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">pass_context</span>
 <span class="k">def</span> <span class="nf">batch_submit</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">scenario_file</span><span class="p">,</span> <span class="n">keep_pool_alive</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Submit a scenario to the batch system.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Submit a scenario to the batch system.</span>
 
 <span class="sd">    SCENARIO_FILE is path to file containing scenario class.</span>
 
@@ -273,8 +183,11 @@
         <span class="k">return</span>
 
     <span class="n">scenario</span> <span class="o">=</span> <span class="n">load_scenario</span><span class="p">(</span><span class="n">scenario_file</span><span class="p">)</span>
+
+    <span class="c1"># get the commit we&#39;re going to submit to run on batch, and save the run config for that commit</span>
+    <span class="c1"># it&#39;s the most recent commit on current branch</span>
     <span class="n">repo</span> <span class="o">=</span> <span class="n">Repo</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)</span>
-    <span class="n">commit</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">repo</span><span class="o">.</span><span class="n">iter_commits</span><span class="p">(</span><span class="n">max_count</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">paths</span><span class="o">=</span><span class="n">scenario_file</span><span class="p">))</span>
+    <span class="n">commit</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">repo</span><span class="o">.</span><span class="n">iter_commits</span><span class="p">(</span><span class="n">max_count</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
     <span class="n">run_json</span> <span class="o">=</span> <span class="n">scenario</span><span class="o">.</span><span class="n">save_draws</span><span class="p">(</span><span class="n">commit</span><span class="o">=</span><span class="n">commit</span><span class="o">.</span><span class="n">hexsha</span><span class="p">)</span>
 
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt;Setting up batch</span><span class="se">\r</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
@@ -376,13 +289,12 @@
     <span class="n">task_dir</span> <span class="o">=</span> <span class="s2">&quot;${{AZ_BATCH_TASK_DIR}}&quot;</span>
     <span class="n">gzip_pattern_match</span> <span class="o">=</span> <span class="s2">&quot;{{txt,log}}&quot;</span>
     <span class="n">command</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">    git fetch --all</span>
-<span class="s2">    git checkout -b </span><span class="si">{</span><span class="n">current_branch</span><span class="si">}</span><span class="s2"> origin/</span><span class="si">{</span><span class="n">current_branch</span><span class="si">}</span><span class="s2"></span>
-<span class="s2">    git pull</span>
+<span class="s2">    git fetch origin </span><span class="si">{</span><span class="n">commit</span><span class="o">.</span><span class="n">hexsha</span><span class="si">}</span>
+<span class="s2">    git checkout </span><span class="si">{</span><span class="n">commit</span><span class="o">.</span><span class="n">hexsha</span><span class="si">}</span>
 <span class="s2">    pip install -r requirements/base.txt</span>
-<span class="s2">    tlo --config-file tlo.example.conf batch-run </span><span class="si">{</span><span class="n">azure_run_json</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">working_dir</span><span class="si">}</span><span class="s2"> </span><span class="se">{{</span><span class="s2">draw_number</span><span class="se">}}</span><span class="s2"> </span><span class="se">{{</span><span class="s2">run_number</span><span class="se">}}</span><span class="s2"></span>
+<span class="s2">    tlo --config-file tlo.example.conf batch-run </span><span class="si">{</span><span class="n">azure_run_json</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">working_dir</span><span class="si">}</span><span class="s2"> </span><span class="se">{{</span><span class="s2">draw_number</span><span class="se">}}</span><span class="s2"> </span><span class="se">{{</span><span class="s2">run_number</span><span class="se">}}</span>
 <span class="s2">    cp </span><span class="si">{</span><span class="n">task_dir</span><span class="si">}</span><span class="s2">/std*.txt </span><span class="si">{</span><span class="n">working_dir</span><span class="si">}</span><span class="s2">/</span><span class="se">{{</span><span class="s2">draw_number</span><span class="se">}}</span><span class="s2">/</span><span class="se">{{</span><span class="s2">run_number</span><span class="se">}}</span><span class="s2">/.</span>
-<span class="s2">    gzip </span><span class="si">{</span><span class="n">working_dir</span><span class="si">}</span><span class="s2">/</span><span class="se">{{</span><span class="s2">draw_number</span><span class="se">}}</span><span class="s2">/</span><span class="se">{{</span><span class="s2">run_number</span><span class="se">}}</span><span class="s2">/*.</span><span class="si">{</span><span class="n">gzip_pattern_match</span><span class="si">}</span><span class="s2"></span>
+<span class="s2">    gzip </span><span class="si">{</span><span class="n">working_dir</span><span class="si">}</span><span class="s2">/</span><span class="se">{{</span><span class="s2">draw_number</span><span class="se">}}</span><span class="s2">/</span><span class="se">{{</span><span class="s2">run_number</span><span class="se">}}</span><span class="s2">/*.</span><span class="si">{</span><span class="n">gzip_pattern_match</span><span class="si">}</span>
 <span class="s2">    cp -r </span><span class="si">{</span><span class="n">working_dir</span><span class="si">}</span><span class="s2">/* </span><span class="si">{</span><span class="n">azure_directory</span><span class="si">}</span><span class="s2">/.</span>
 <span class="s2">    &quot;&quot;&quot;</span>
     <span class="n">command</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;/bin/bash -c &#39;</span><span class="si">{</span><span class="n">command</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
@@ -409,7 +321,7 @@
 <span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;draw&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;sample&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">batch_run</span><span class="p">(</span><span class="n">path_to_json</span><span class="p">,</span> <span class="n">work_directory</span><span class="p">,</span> <span class="n">draw</span><span class="p">,</span> <span class="n">sample</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Runs the specified draw and sample for the Scenario&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Runs the specified draw and sample for the Scenario&quot;&quot;&quot;</span>
     <span class="n">runner</span> <span class="o">=</span> <span class="n">SampleRunner</span><span class="p">(</span><span class="n">path_to_json</span><span class="p">)</span>
     <span class="n">output_directory</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">work_directory</span><span class="p">)</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">draw</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">sample</span><span class="si">}</span><span class="s2">&quot;</span>
     <span class="n">output_directory</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -423,7 +335,7 @@
               <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">hidden</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">pass_context</span>
 <span class="k">def</span> <span class="nf">batch_job</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">job_id</span><span class="p">,</span> <span class="n">raw</span><span class="p">,</span> <span class="n">show_tasks</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Display information about a specific job.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Display information about a specific job.&quot;&quot;&quot;</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt;Querying batch system</span><span class="se">\r</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
     <span class="n">config</span> <span class="o">=</span> <span class="n">load_config</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">obj</span><span class="p">[</span><span class="s1">&#39;config_file&#39;</span><span class="p">])</span>
     <span class="n">batch_client</span> <span class="o">=</span> <span class="n">get_batch_client</span><span class="p">(</span>
@@ -487,7 +399,7 @@
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;-n&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Maximum number of jobs to list (default is 5)&quot;</span><span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">pass_context</span>
 <span class="k">def</span> <span class="nf">batch_list</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">status</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">find</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;List and find running and completed jobs.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;List and find running and completed jobs.&quot;&quot;&quot;</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt;Querying batch system</span><span class="se">\r</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
     <span class="n">config</span> <span class="o">=</span> <span class="n">load_config</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">obj</span><span class="p">[</span><span class="s2">&quot;config_file&quot;</span><span class="p">])</span>
     <span class="n">batch_client</span> <span class="o">=</span> <span class="n">get_batch_client</span><span class="p">(</span>
@@ -527,7 +439,7 @@
 
 
 <div class="viewcode-block" id="print_basic_job_details"><a class="viewcode-back" href="../../reference/tlo.cli.html#tlo.cli.print_basic_job_details">[docs]</a><span class="k">def</span> <span class="nf">print_basic_job_details</span><span class="p">(</span><span class="n">job</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Display basic job information&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Display basic job information&quot;&quot;&quot;</span>
     <span class="n">job_labels</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;ID&quot;</span><span class="p">,</span>
         <span class="s2">&quot;creation_time&quot;</span><span class="p">:</span> <span class="s2">&quot;Creation time&quot;</span><span class="p">,</span>
@@ -549,13 +461,13 @@
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--verbose&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">hidden</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">pass_context</span>
 <span class="k">def</span> <span class="nf">batch_download</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">job_id</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">verbose</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Download output files for a job.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Download output files for a job.&quot;&quot;&quot;</span>
     <span class="n">config</span> <span class="o">=</span> <span class="n">load_config</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">obj</span><span class="p">[</span><span class="s2">&quot;config_file&quot;</span><span class="p">])</span>
 
     <span class="n">directory_count</span> <span class="o">=</span> <span class="mi">0</span>
 
     <span class="k">def</span> <span class="nf">walk_fileshare</span><span class="p">(</span><span class="n">dir_name</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Recursively visit directories, create local directories and download files&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Recursively visit directories, create local directories and download files&quot;&quot;&quot;</span>
         <span class="k">nonlocal</span> <span class="n">directory_count</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">directories</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">share_client</span><span class="o">.</span><span class="n">list_directories_and_files</span><span class="p">(</span><span class="n">dir_name</span><span class="p">))</span>
@@ -607,7 +519,7 @@
 
 
 <div class="viewcode-block" id="load_config"><a class="viewcode-back" href="../../reference/tlo.cli.html#tlo.cli.load_config">[docs]</a><span class="k">def</span> <span class="nf">load_config</span><span class="p">(</span><span class="n">config_file</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Load configuration for accessing Batch services&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load configuration for accessing Batch services&quot;&quot;&quot;</span>
     <span class="n">config</span> <span class="o">=</span> <span class="n">configparser</span><span class="o">.</span><span class="n">ConfigParser</span><span class="p">()</span>
     <span class="n">config</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">config_file</span><span class="p">)</span>
     <span class="n">server_config</span> <span class="o">=</span> <span class="n">load_server_config</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;AZURE&quot;</span><span class="p">][</span><span class="s2">&quot;KV_URI&quot;</span><span class="p">],</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;AZURE&quot;</span><span class="p">][</span><span class="s2">&quot;TENANT_ID&quot;</span><span class="p">])</span>
@@ -616,7 +528,7 @@
 
 
 <div class="viewcode-block" id="load_server_config"><a class="viewcode-back" href="../../reference/tlo.cli.html#tlo.cli.load_server_config">[docs]</a><span class="k">def</span> <span class="nf">load_server_config</span><span class="p">(</span><span class="n">kv_uri</span><span class="p">,</span> <span class="n">tenant_id</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]:</span>
-    <span class="sd">&quot;&quot;&quot;Retrieve the server configuration for running Batch using the user&quot;s Azure credentials</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Retrieve the server configuration for running Batch using the user&quot;s Azure credentials</span>
 
 <span class="sd">    Allows user to login using credentials from Azure CLI or interactive browser.</span>
 
@@ -643,14 +555,14 @@
 
 
 <div class="viewcode-block" id="get_batch_client"><a class="viewcode-back" href="../../reference/tlo.cli.html#tlo.cli.get_batch_client">[docs]</a><span class="k">def</span> <span class="nf">get_batch_client</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">url</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Create a Batch service client&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a Batch service client&quot;&quot;&quot;</span>
     <span class="n">credentials</span> <span class="o">=</span> <span class="n">batch_auth</span><span class="o">.</span><span class="n">SharedKeyCredentials</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
     <span class="n">batch_client</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">BatchServiceClient</span><span class="p">(</span><span class="n">credentials</span><span class="p">,</span> <span class="n">batch_url</span><span class="o">=</span><span class="n">url</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">batch_client</span></div>
 
 
 <div class="viewcode-block" id="load_scenario"><a class="viewcode-back" href="../../reference/tlo.cli.html#tlo.cli.load_scenario">[docs]</a><span class="k">def</span> <span class="nf">load_scenario</span><span class="p">(</span><span class="n">scenario_file</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Load the Scenario class from the specified file&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load the Scenario class from the specified file&quot;&quot;&quot;</span>
     <span class="n">scenario_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">scenario_file</span><span class="p">)</span>
     <span class="n">scenario_class</span> <span class="o">=</span> <span class="n">ScenarioLoader</span><span class="p">(</span><span class="n">scenario_path</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="n">scenario_path</span><span class="o">.</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">get_scenario</span><span class="p">()</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found class </span><span class="si">{</span><span class="n">scenario_class</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> in </span><span class="si">{</span><span class="n">scenario_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -658,7 +570,7 @@
 
 
 <div class="viewcode-block" id="is_file_clean"><a class="viewcode-back" href="../../reference/tlo.cli.html#tlo.cli.is_file_clean">[docs]</a><span class="k">def</span> <span class="nf">is_file_clean</span><span class="p">(</span><span class="n">scenario_file</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Checks whether the scenario file and current branch is clean and unchanged.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Checks whether the scenario file and current branch is clean and unchanged.</span>
 
 <span class="sd">    :returns: current branch name if all okay, False otherwise</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -689,7 +601,7 @@
 
 
 <div class="viewcode-block" id="print_batch_exception"><a class="viewcode-back" href="../../reference/tlo.cli.html#tlo.cli.print_batch_exception">[docs]</a><span class="k">def</span> <span class="nf">print_batch_exception</span><span class="p">(</span><span class="n">batch_exception</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Prints the contents of the specified Batch exception.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Prints the contents of the specified Batch exception.</span>
 
 <span class="sd">    :param batch_exception:</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -707,7 +619,7 @@
 
 
 <div class="viewcode-block" id="create_file_share"><a class="viewcode-back" href="../../reference/tlo.cli.html#tlo.cli.create_file_share">[docs]</a><span class="k">def</span> <span class="nf">create_file_share</span><span class="p">(</span><span class="n">connection_string</span><span class="p">,</span> <span class="n">share_name</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Uses a ShareClient object to create a share if it does not exist.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Uses a ShareClient object to create a share if it does not exist.&quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="c1"># Create a ShareClient from a connection string</span>
         <span class="n">share_client</span> <span class="o">=</span> <span class="n">ShareClient</span><span class="o">.</span><span class="n">from_connection_string</span><span class="p">(</span>
@@ -721,7 +633,7 @@
 
 
 <div class="viewcode-block" id="create_directory"><a class="viewcode-back" href="../../reference/tlo.cli.html#tlo.cli.create_directory">[docs]</a><span class="k">def</span> <span class="nf">create_directory</span><span class="p">(</span><span class="n">connection_string</span><span class="p">,</span> <span class="n">share_name</span><span class="p">,</span> <span class="n">dir_name</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Creates a directory in the root of the specified file share by using a</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates a directory in the root of the specified file share by using a</span>
 <span class="sd">    ShareDirectoryClient object.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
@@ -737,7 +649,7 @@
 
 
 <div class="viewcode-block" id="upload_local_file"><a class="viewcode-back" href="../../reference/tlo.cli.html#tlo.cli.upload_local_file">[docs]</a><span class="k">def</span> <span class="nf">upload_local_file</span><span class="p">(</span><span class="n">connection_string</span><span class="p">,</span> <span class="n">local_file_path</span><span class="p">,</span> <span class="n">share_name</span><span class="p">,</span> <span class="n">dest_file_path</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Uploads the contents of the specified file into the specified directory in</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Uploads the contents of the specified file into the specified directory in</span>
 <span class="sd">    the specified Azure file share.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
@@ -760,7 +672,7 @@
 
 <div class="viewcode-block" id="create_job"><a class="viewcode-back" href="../../reference/tlo.cli.html#tlo.cli.create_job">[docs]</a><span class="k">def</span> <span class="nf">create_job</span><span class="p">(</span><span class="n">batch_service_client</span><span class="p">,</span> <span class="n">vm_size</span><span class="p">,</span> <span class="n">pool_node_count</span><span class="p">,</span> <span class="n">job_id</span><span class="p">,</span>
                <span class="n">container_conf</span><span class="p">,</span> <span class="n">mount_configuration</span><span class="p">,</span> <span class="n">keep_pool_alive</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Creates a job with the specified ID, associated with the specified pool.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates a job with the specified ID, associated with the specified pool.</span>
 
 <span class="sd">    :param batch_service_client: A Batch service client.</span>
 <span class="sd">    :type batch_service_client: `azure.batch.BatchServiceClient`</span>
@@ -821,7 +733,7 @@
 
 <div class="viewcode-block" id="add_tasks"><a class="viewcode-back" href="../../reference/tlo.cli.html#tlo.cli.add_tasks">[docs]</a><span class="k">def</span> <span class="nf">add_tasks</span><span class="p">(</span><span class="n">batch_service_client</span><span class="p">,</span> <span class="n">user_identity</span><span class="p">,</span> <span class="n">job_id</span><span class="p">,</span>
               <span class="n">image_name</span><span class="p">,</span> <span class="n">container_run_options</span><span class="p">,</span> <span class="n">scenario</span><span class="p">,</span> <span class="n">command</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Adds the simulation tasks in the collection to the specified job.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Adds the simulation tasks in the collection to the specified job.</span>
 
 <span class="sd">    :param batch_service_client: A Batch service client.</span>
 <span class="sd">    :type batch_service_client: `azure.batch.BatchServiceClient`</span>
@@ -862,7 +774,6 @@
 </pre></div>
 
            </div>
-           
           </div>
           <footer>
 
@@ -870,40 +781,25 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">
-        Last updated on Dec 01, 2022.
-      </span>
-
-    </p>
+      <span class="lastupdated">Last updated on Apr 06, 2023.
+      </span></p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

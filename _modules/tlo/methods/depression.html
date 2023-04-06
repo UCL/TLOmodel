@@ -1,96 +1,45 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
-  
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
   <title>tlo.methods.depression &mdash; TLOmodel 0.1.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
-
-  
-  
+      <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-        <script src="../../../_static/jquery.js"></script>
-        <script src="../../../_static/underscore.js"></script>
-        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../../_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-
-    
+        <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
           
-            <a href="../../../index.html" class="icon icon-home"> TLOmodel
           
-
-          
+          <a href="../../../index.html" class="icon icon-home">
+            TLOmodel
           </a>
-
-          
-            
-            
               <div class="version">
                 0.1.0
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../index.html">Welcome</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../aims.html">Aims &amp; Objectives</a></li>
@@ -105,71 +54,31 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../index.html">TLOmodel</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
-          <li><a href="../../index.html">Module code</a> &raquo;</li>
-        
-          <li><a href="../methods.html">tlo.methods</a> &raquo;</li>
-        
-      <li>tlo.methods.depression</li>
-    
-    
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../methods.html">tlo.methods</a></li>
+      <li class="breadcrumb-item active">tlo.methods.depression</li>
       <li class="wy-breadcrumbs-aside">
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <h1>Source code for tlo.methods.depression</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">This is the Depression Module.</span>
@@ -497,15 +406,11 @@
             <span class="p">)</span>
 
         <span class="c1"># Symptom that this module will use</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">register_symptom</span><span class="p">(</span>
-            <span class="n">Symptom</span><span class="p">(</span>
-                <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Injuries_From_Self_Harm&#39;</span><span class="p">,</span>
-                <span class="n">emergency_in_adults</span><span class="o">=</span><span class="kc">True</span>
-            <span class="p">),</span>
-        <span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">register_symptom</span><span class="p">(</span><span class="n">Symptom</span><span class="o">.</span><span class="n">emergency</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Injuries_From_Self_Harm&#39;</span><span class="p">,</span>
+                                                                              <span class="n">which</span><span class="o">=</span><span class="s1">&#39;adults&#39;</span><span class="p">))</span></div>
 
 <div class="viewcode-block" id="Depression.apply_linear_model"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.Depression.apply_linear_model">[docs]</a>    <span class="k">def</span> <span class="nf">apply_linear_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lm</span><span class="p">,</span> <span class="n">df</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Helper function will apply the linear model (lm) on the dataframe (df) to get a probability of some event</span>
 <span class="sd">        happening to each individual. It then returns a series with same index with bools indicating the outcome based</span>
 <span class="sd">        on the toss of the biased coin.</span>
@@ -586,7 +491,7 @@
             <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Depression.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.Depression.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Launch the main polling event and the logging event.</span>
 <span class="sd">        Schedule the refill prescriptions for those on antidepressants.</span>
 <span class="sd">        Register the assessment of depression with the DxManager.</span>
@@ -622,7 +527,7 @@
                 <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Depression.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.Depression.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Initialise our properties for a newborn individual -- they will not have depression or any history of it.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialise our properties for a newborn individual -- they will not have depression or any history of it.</span>
 <span class="sd">        :param mother_id: the mother for this child</span>
 <span class="sd">        :param child_id: the new child</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -640,13 +545,13 @@
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;de_cc&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div>
 
 <div class="viewcode-block" id="Depression.on_hsi_alert"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.Depression.on_hsi_alert">[docs]</a>    <span class="k">def</span> <span class="nf">on_hsi_alert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">treatment_id</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Nothing happens if this module is alerted to a person attending an HSI</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span></div>
 
 <div class="viewcode-block" id="Depression.report_daly_values"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.Depression.report_daly_values">[docs]</a>    <span class="k">def</span> <span class="nf">report_daly_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Report DALYs based status in the previous month.</span>
 <span class="sd">        A DALY weight is attached to a status of depression for as long as the depression lasted in the previous month.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -681,7 +586,7 @@
         <span class="k">return</span> <span class="n">av_daly_wt_last_month</span></div>
 
 <div class="viewcode-block" id="Depression.do_when_suspected_depression"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.Depression.do_when_suspected_depression">[docs]</a>    <span class="k">def</span> <span class="nf">do_when_suspected_depression</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is called by the a generic HSI event when depression is suspected or otherwise investigated.</span>
 <span class="sd">        :param person_id:</span>
 <span class="sd">        :param hsi_event: The HSI event that has called this event</span>
@@ -715,7 +620,7 @@
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
 
 <div class="viewcode-block" id="DepressionPollingEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.DepressionPollingEvent">[docs]</a><span class="k">class</span> <span class="nc">DepressionPollingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The regular event that actually changes individuals&#39; depression status.</span>
 <span class="sd">    It occurs every 3 months and this cannot be changed.</span>
 <span class="sd">    The onset and resolution of depression events occurs at the polling event and synchronously for</span>
@@ -796,7 +701,7 @@
 
 
 <div class="viewcode-block" id="DepressionSelfHarmEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.DepressionSelfHarmEvent">[docs]</a><span class="k">class</span> <span class="nc">DepressionSelfHarmEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This is a Self-Harm event. It has been scheduled to occur by the DepressionPollingEvent.</span>
 <span class="sd">    It imposes the Injuries_From_Self_Harm symptom, which will lead to emergency care being sought</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -821,7 +726,7 @@
 
 
 <div class="viewcode-block" id="DepressionSuicideEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.DepressionSuicideEvent">[docs]</a><span class="k">class</span> <span class="nc">DepressionSuicideEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This is a Suicide event. It has been scheduled to occur by the DepressionPollingEvent.</span>
 <span class="sd">    It causes the immediate death of the person.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -845,7 +750,7 @@
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
 
 <div class="viewcode-block" id="DepressionLoggingEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.DepressionLoggingEvent">[docs]</a><span class="k">class</span> <span class="nc">DepressionLoggingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This is the LoggingEvent for Depression. It runs every 3 months and gives:</span>
 <span class="sd">    * population summaries for statuses for Depression at that time.</span>
 <span class="sd">    * counts of events of self-harm and suicide that have occurred in the 3 months prior</span>
@@ -914,7 +819,7 @@
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
 
 <div class="viewcode-block" id="HSI_Depression_TalkingTherapy"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.HSI_Depression_TalkingTherapy">[docs]</a><span class="k">class</span> <span class="nc">HSI_Depression_TalkingTherapy</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;This is a Health System Interaction Event in which a person receives a session of talking therapy. It is one</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This is a Health System Interaction Event in which a person receives a session of talking therapy. It is one</span>
 <span class="sd">    of a course of 5 sessions (at months 0, 6, 12, 18, 24). If one of these HSI does not happen</span>
 <span class="sd">    then no further sessions occur. Sessions after the first have no direct effect, as the only property affected is</span>
 <span class="sd">    reflects ever having had one session of talking therapy.&quot;&quot;&quot;</span>
@@ -928,7 +833,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">num_of_sessions_had</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># A counter for the number of sessions of talking therapy had</span></div>
 
 <div class="viewcode-block" id="HSI_Depression_TalkingTherapy.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.HSI_Depression_TalkingTherapy.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Set the property `de_ever_talk_ther` to be True and schedule the next session in the course if the person</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the property `de_ever_talk_ther` to be True and schedule the next session in the course if the person</span>
 <span class="sd">        has not yet had 5 sessions.&quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">num_of_sessions_had</span> <span class="o">+=</span> <span class="mi">1</span>
@@ -947,7 +852,7 @@
 
 
 <div class="viewcode-block" id="HSI_Depression_Start_Antidepressant"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.HSI_Depression_Start_Antidepressant">[docs]</a><span class="k">class</span> <span class="nc">HSI_Depression_Start_Antidepressant</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This is a Health System Interaction Event in which a person is started on anti-depressants.</span>
 <span class="sd">    The facility_level is modified as a input parameter.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -986,7 +891,7 @@
 
 
 <div class="viewcode-block" id="HSI_Depression_Refill_Antidepressant"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.HSI_Depression_Refill_Antidepressant">[docs]</a><span class="k">class</span> <span class="nc">HSI_Depression_Refill_Antidepressant</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This is a Health System Interaction Event in which a person seeks a refill prescription of anti-depressants.</span>
 <span class="sd">    The next refill of anti-depressants is also scheduled.</span>
 <span class="sd">    If the person is flagged as not being on antidepressants, then the event does nothing and returns a blank footprint.</span>
@@ -1037,7 +942,7 @@
 
 <span class="c1"># %%  Compute Key Outputs</span>
 <span class="k">def</span> <span class="nf">compute_key_outputs_for_last_3_years</span><span class="p">(</span><span class="n">parsed_output</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 
 <span class="sd">    Helper function that computes the key outputs for the Depression Module. These are computed as averages for the</span>
 <span class="sd">    last 3 years of the simulation.</span>
@@ -1115,7 +1020,6 @@
 </pre></div>
 
            </div>
-           
           </div>
           <footer>
 
@@ -1123,40 +1027,25 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">
-        Last updated on Dec 01, 2022.
-      </span>
-
-    </p>
+      <span class="lastupdated">Last updated on Apr 06, 2023.
+      </span></p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

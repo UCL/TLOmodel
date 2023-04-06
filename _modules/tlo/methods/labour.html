@@ -1,96 +1,45 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
-  
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
   <title>tlo.methods.labour &mdash; TLOmodel 0.1.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
-
-  
-  
+      <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-        <script src="../../../_static/jquery.js"></script>
-        <script src="../../../_static/underscore.js"></script>
-        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../../_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-
-    
+        <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
           
-            <a href="../../../index.html" class="icon icon-home"> TLOmodel
           
-
-          
+          <a href="../../../index.html" class="icon icon-home">
+            TLOmodel
           </a>
-
-          
-            
-            
               <div class="version">
                 0.1.0
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../index.html">Welcome</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../aims.html">Aims &amp; Objectives</a></li>
@@ -105,71 +54,31 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../index.html">TLOmodel</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
-          <li><a href="../../index.html">Module code</a> &raquo;</li>
-        
-          <li><a href="../methods.html">tlo.methods</a> &raquo;</li>
-        
-      <li>tlo.methods.labour</li>
-    
-    
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../methods.html">tlo.methods</a></li>
+      <li class="breadcrumb-item active">tlo.methods.labour</li>
       <li class="wy-breadcrumbs-aside">
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <h1>Source code for tlo.methods.labour</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
 
@@ -184,7 +93,6 @@
 <span class="kn">from</span> <span class="nn">tlo.methods.causes</span> <span class="kn">import</span> <span class="n">Cause</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.dxmanager</span> <span class="kn">import</span> <span class="n">DxTest</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.healthsystem</span> <span class="kn">import</span> <span class="n">HSI_Event</span>
-<span class="kn">from</span> <span class="nn">tlo.methods.hiv</span> <span class="kn">import</span> <span class="n">HSI_Hiv_TestAndRefer</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.postnatal_supervisor</span> <span class="kn">import</span> <span class="n">PostnatalWeekOneMaternalEvent</span>
 <span class="kn">from</span> <span class="nn">tlo.util</span> <span class="kn">import</span> <span class="n">BitsetHandler</span>
 
@@ -198,7 +106,7 @@
 
 
 <div class="viewcode-block" id="Labour"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.Labour">[docs]</a><span class="k">class</span> <span class="nc">Labour</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;This is module is responsible for the the process of labour, birth and the immediate postnatal period (up until</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This is module is responsible for the the process of labour, birth and the immediate postnatal period (up until</span>
 <span class="sd">    48hrs post birth). This model has a number of core functions including; initiating the onset of labour for women on</span>
 <span class="sd">    their pre-determined due date (or prior to this for preterm labour/admission for delivery), applying the incidence</span>
 <span class="sd">     of a core set of maternal complications occurring in the intrapartum period and outcomes such as maternal death or</span>
@@ -857,7 +765,7 @@
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">previous_cs</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">previous_cs</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="s1">&#39;la_previous_cs_delivery&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span></div>
 
 <div class="viewcode-block" id="Labour.get_and_store_labour_item_codes"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.Labour.get_and_store_labour_item_codes">[docs]</a>    <span class="k">def</span> <span class="nf">get_and_store_labour_item_codes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function defines the required consumables for each intervention delivered during this module and stores</span>
 <span class="sd">        them in a module level dictionary called within HSIs</span>
 <span class="sd">         &quot;&quot;&quot;</span>
@@ -1200,7 +1108,7 @@
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;la_iron_folic_acid_postnatal&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div>
 
 <div class="viewcode-block" id="Labour.further_on_birth_labour"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.Labour.further_on_birth_labour">[docs]</a>    <span class="k">def</span> <span class="nf">further_on_birth_labour</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function is called by the on_birth function of NewbornOutcomes module. This function contains additional</span>
 <span class="sd">        code related to the labour module that should be ran on_birth for all births - it has been</span>
 <span class="sd">        parcelled into functions to ensure each modules (pregnancy,antenatal care, labour, newborn, postnatal) on_birth</span>
@@ -1224,7 +1132,7 @@
             <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">mother_id</span><span class="p">,</span> <span class="s1">&#39;la_gest_htn_on_treatment&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span></div>
 
 <div class="viewcode-block" id="Labour.on_hsi_alert"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.Labour.on_hsi_alert">[docs]</a>    <span class="k">def</span> <span class="nf">on_hsi_alert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">treatment_id</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; This is called whenever there is an HSI event commissioned by one of the other disease modules.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; This is called whenever there is an HSI event commissioned by one of the other disease modules.&quot;&quot;&quot;</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;This is Labour, being alerted about a health system interaction &#39;</span>
                                          <span class="sa">f</span><span class="s1">&#39;person </span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s1">for: </span><span class="si">{</span><span class="n">treatment_id</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span></div>
 
@@ -1239,7 +1147,7 @@
 
     <span class="c1"># ===================================== HELPER AND TESTING FUNCTIONS ==============================================</span>
 <div class="viewcode-block" id="Labour.set_date_of_labour"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.Labour.set_date_of_labour">[docs]</a>    <span class="k">def</span> <span class="nf">set_date_of_labour</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individual_id</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function is called by contraception.py within the events &#39;PregnancyPoll&#39; and &#39;Fail&#39; for women who are</span>
 <span class="sd">        allocated to become pregnant during a simulation run. This function schedules the onset of labour between 37</span>
 <span class="sd">        and 44 weeks gestational age (not foetal age) to ensure all women who become pregnant will go into labour.</span>
@@ -1282,7 +1190,7 @@
                                           <span class="sa">f</span><span class="s1">&#39;possible length of pregnancy&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Labour.predict"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.Labour.predict">[docs]</a>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">eq</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function compares the result of a specific linear equation with a random draw providing a boolean for</span>
 <span class="sd">        the outcome under examination</span>
 <span class="sd">        :param eq: Linear model equation</span>
@@ -1317,7 +1225,7 @@
                                                      <span class="n">delay_three</span><span class="o">=</span><span class="n">delay_three</span><span class="p">)[</span><span class="n">person_id</span><span class="p">]</span></div>
 
 <div class="viewcode-block" id="Labour.reset_due_date"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.Labour.reset_due_date">[docs]</a>    <span class="k">def</span> <span class="nf">reset_due_date</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">id_or_index</span><span class="p">,</span> <span class="n">new_due_date</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function is called at various points in the PregnancySupervisor module to reset the due-date of women who</span>
 <span class="sd">        may have experience pregnancy loss or will now go into pre-term labour on new due-date</span>
 <span class="sd">        :param ind_or_df: (STR) Is this function being use on an individual row or slice of the data frame</span>
@@ -1330,7 +1238,7 @@
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">id_or_index</span><span class="p">,</span> <span class="s1">&#39;la_due_date_current_pregnancy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_due_date</span></div>
 
 <div class="viewcode-block" id="Labour.check_labour_can_proceed"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.Labour.check_labour_can_proceed">[docs]</a>    <span class="k">def</span> <span class="nf">check_labour_can_proceed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individual_id</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function is called by the LabourOnsetEvent to evaluate if labour can proceed for the woman who has arrived</span>
 <span class="sd">         at the event</span>
 <span class="sd">        :param individual_id: individual_id</span>
@@ -1383,7 +1291,7 @@
         <span class="k">return</span> <span class="kc">False</span></div>
 
 <div class="viewcode-block" id="Labour.set_intrapartum_complications"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.Labour.set_intrapartum_complications">[docs]</a>    <span class="k">def</span> <span class="nf">set_intrapartum_complications</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individual_id</span><span class="p">,</span> <span class="n">complication</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;This function is called either during a LabourAtHomeEvent OR HSI_Labour_ReceivesSkilledBirthAttendanceDuring</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;This function is called either during a LabourAtHomeEvent OR HSI_Labour_ReceivesSkilledBirthAttendanceDuring</span>
 <span class="sd">        Labour for all women during labour (home birth vs facility delivery). The function is used to apply risk of</span>
 <span class="sd">        complications which have been passed ot it including the preceding causes of obstructed labour</span>
 <span class="sd">        (malposition, malpresentation and cephalopelvic disproportion), obstructed labour, uterine rupture, placental</span>
@@ -1487,7 +1395,7 @@
                                                                <span class="s1">&#39;timing&#39;</span><span class="p">:</span> <span class="s1">&#39;intrapartum&#39;</span><span class="p">})</span></div>
 
 <div class="viewcode-block" id="Labour.set_postpartum_complications"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.Labour.set_postpartum_complications">[docs]</a>    <span class="k">def</span> <span class="nf">set_postpartum_complications</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individual_id</span><span class="p">,</span> <span class="n">complication</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function is called either during a PostpartumLabourAtHomeEvent OR HSI_Labour_ReceivesSkilledBirthAttendance</span>
 <span class="sd">        FollowingLabour for all women following labour and birth (home birth vs facility delivery). The function is</span>
 <span class="sd">        used to apply risk of complications which have been passed ot it including the preceding causes of postpartum</span>
@@ -1563,7 +1471,7 @@
                                                                       <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Labour.progression_of_hypertensive_disorders"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.Labour.progression_of_hypertensive_disorders">[docs]</a>    <span class="k">def</span> <span class="nf">progression_of_hypertensive_disorders</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individual_id</span><span class="p">,</span> <span class="n">property_prefix</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function is called during LabourAtHomeEvent/PostpartumLabourAtHomeEvent or HSI_Labour_Receives</span>
 <span class="sd">        SkilledBirthAttendanceDuring/FollowingLabour to determine if a woman with a hypertensive disorder will</span>
 <span class="sd">        experience progression to a more severe state of disease during labour or the immediate postpartum period.</span>
@@ -1641,7 +1549,7 @@
                                                                <span class="s1">&#39;timing&#39;</span><span class="p">:</span> <span class="s1">&#39;intrapartum&#39;</span><span class="p">})</span></div>
 
 <div class="viewcode-block" id="Labour.apply_risk_of_early_postpartum_death"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.Labour.apply_risk_of_early_postpartum_death">[docs]</a>    <span class="k">def</span> <span class="nf">apply_risk_of_early_postpartum_death</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individual_id</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function is called for all women who have survived labour. This function is called at various points in</span>
 <span class="sd">        the model depending on a womans pathway through labour and includes PostpartumLabourAtHomeEvent,</span>
 <span class="sd">        HSI_Labour_ReceivesSkilledBirthAttendanceFollowingLabour, HSI_Labour_ReceivesComprehensiveEmergencyObstetric</span>
@@ -1752,7 +1660,7 @@
                                                   <span class="sa">f</span><span class="s1">&#39;apply_risk_of_early_postpartum_death&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Labour.labour_characteristics_checker"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.Labour.labour_characteristics_checker">[docs]</a>    <span class="k">def</span> <span class="nf">labour_characteristics_checker</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individual_id</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;This function is called at multiples points in the module to ensure women of the right characteristics are</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;This function is called at multiples points in the module to ensure women of the right characteristics are</span>
 <span class="sd">        in labour. This function doesnt check for a woman being pregnant or alive, as some events will still run despite</span>
 <span class="sd">        those variables being set to false</span>
 <span class="sd">        :param individual_id: individual_id</span>
@@ -1773,7 +1681,7 @@
                                           <span class="sa">f</span><span class="s1">&#39; not be in labour &#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Labour.postpartum_characteristics_checker"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.Labour.postpartum_characteristics_checker">[docs]</a>    <span class="k">def</span> <span class="nf">postpartum_characteristics_checker</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individual_id</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;This function is called at multiples points in the module to ensure women of the right characteristics are</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;This function is called at multiples points in the module to ensure women of the right characteristics are</span>
 <span class="sd">        in the period following labour. This function doesnt check for a woman being pregnant or alive, as some events</span>
 <span class="sd">        will still run despite those variables being set to false</span>
 <span class="sd">        :param individual_id: individual_id</span>
@@ -1798,7 +1706,7 @@
     <span class="c1"># similar pattern in which consumables are requested and the intervention is delivered if they are available</span>
 
 <div class="viewcode-block" id="Labour.prophylactic_labour_interventions"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.Labour.prophylactic_labour_interventions">[docs]</a>    <span class="k">def</span> <span class="nf">prophylactic_labour_interventions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function houses prophylactic interventions delivered by a Skilled Birth Attendant to women in labour.</span>
 <span class="sd">        It is called by HSI_Labour_PresentsForSkilledBirthAttendanceInLabour</span>
 <span class="sd">        :param hsi_event: HSI event in which the function has been called:</span>
@@ -1851,7 +1759,7 @@
                 <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;corticosteroids_given&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span></div>
 
 <div class="viewcode-block" id="Labour.determine_delivery_mode_in_spe_or_ec"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.Labour.determine_delivery_mode_in_spe_or_ec">[docs]</a>    <span class="k">def</span> <span class="nf">determine_delivery_mode_in_spe_or_ec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span> <span class="n">complication</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function is called following treatment for either severe pre-eclampsia or eclampsia during labour and</span>
 <span class="sd">        determines if women with these conditions will undergo vaginal, assisted vaginal or caesarean section due to</span>
 <span class="sd">         their complication</span>
@@ -1875,7 +1783,7 @@
             <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;cs_indication&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;spe_ec&#39;</span></div>
 
 <div class="viewcode-block" id="Labour.assessment_and_treatment_of_severe_pre_eclampsia_mgso4"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.Labour.assessment_and_treatment_of_severe_pre_eclampsia_mgso4">[docs]</a>    <span class="k">def</span> <span class="nf">assessment_and_treatment_of_severe_pre_eclampsia_mgso4</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span> <span class="n">labour_stage</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;This function represents the diagnosis and management of severe pre-eclampsia during labour. This function</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;This function represents the diagnosis and management of severe pre-eclampsia during labour. This function</span>
 <span class="sd">        defines the required consumables and administers the intervention if available. The intervention is</span>
 <span class="sd">        intravenous magnesium sulphate.  It is called by HSI_Labour_PresentsForSkilledBirthAttendanceInLabour or</span>
 <span class="sd">        HSI_Labour_ReceivesPostnatalCheck</span>
@@ -1917,7 +1825,7 @@
                 <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">log_met_need</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;mag_sulph&#39;</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Labour.assessment_and_treatment_of_hypertension"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.Labour.assessment_and_treatment_of_hypertension">[docs]</a>    <span class="k">def</span> <span class="nf">assessment_and_treatment_of_hypertension</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span> <span class="n">labour_stage</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function represents the diagnosis and management of hypertension during labour. This function</span>
 <span class="sd">        defines the required consumable  and administers the intervention if available. The intervention is</span>
 <span class="sd">        intravenous magnesium sulphate.  It is called by HSI_Labour_PresentsForSkilledBirthAttendanceInLabour or</span>
@@ -1954,7 +1862,7 @@
                     <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;la_gest_htn_on_treatment&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span></div>
 
 <div class="viewcode-block" id="Labour.assessment_and_treatment_of_eclampsia"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.Labour.assessment_and_treatment_of_eclampsia">[docs]</a>    <span class="k">def</span> <span class="nf">assessment_and_treatment_of_eclampsia</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span> <span class="n">labour_stage</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function represents the diagnosis and management of eclampsia during or following labour. This function</span>
 <span class="sd">        defines the required consumables and administers the intervention if available. The intervention is</span>
 <span class="sd">        intravenous magnesium sulphate.  It is called by HSI_Labour_PresentsForSkilledBirthAttendanceInLabour or</span>
@@ -1991,7 +1899,7 @@
                 <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">log_met_need</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;mag_sulph&#39;</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Labour.assessment_for_assisted_vaginal_delivery"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.Labour.assessment_for_assisted_vaginal_delivery">[docs]</a>    <span class="k">def</span> <span class="nf">assessment_for_assisted_vaginal_delivery</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span> <span class="n">indication</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function represents the diagnosis and management of obstructed labour during labour. This function</span>
 <span class="sd">        defines the required consumables and administers the intervention if available. The intervention in this</span>
 <span class="sd">        function is assisted vaginal delivery. It is called by either HSI_Labour_PresentsForSkilledBirthAttendanceIn</span>
@@ -2052,7 +1960,7 @@
                 <span class="n">refer_for_cs</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="Labour.assessment_and_treatment_of_maternal_sepsis"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.Labour.assessment_and_treatment_of_maternal_sepsis">[docs]</a>    <span class="k">def</span> <span class="nf">assessment_and_treatment_of_maternal_sepsis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span> <span class="n">labour_stage</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function represents the diagnosis and management of maternal sepsis during or following labour. This</span>
 <span class="sd">        function defines the required consumables and administers the intervention if they are available. The</span>
 <span class="sd">        intervention in this function is maternal sepsis case management. It is called by either</span>
@@ -2090,7 +1998,7 @@
                 <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">log_met_need</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;sepsis_abx&#39;</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Labour.assessment_and_plan_for_antepartum_haemorrhage"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.Labour.assessment_and_plan_for_antepartum_haemorrhage">[docs]</a>    <span class="k">def</span> <span class="nf">assessment_and_plan_for_antepartum_haemorrhage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function represents the diagnosis of antepartum haemorrhage during  labour. This</span>
 <span class="sd">        function ensures that woman is referred for comprehensive care via caesarean section and blood transfusion.</span>
 <span class="sd">        It is called by  HSI_Labour_PresentsForSkilledBirthAttendanceInLabour</span>
@@ -2122,7 +2030,7 @@
             <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;referred_for_blood&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span></div>
 
 <div class="viewcode-block" id="Labour.assessment_for_referral_uterine_rupture"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.Labour.assessment_for_referral_uterine_rupture">[docs]</a>    <span class="k">def</span> <span class="nf">assessment_for_referral_uterine_rupture</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function represents the diagnosis of uterine rupture during  labour and ensures</span>
 <span class="sd">        that a woman is referred for comprehensive care via caesarean section, surgical repair and blood transfusion.</span>
 <span class="sd">        It is called by either HSI_Labour_PresentsForSkilledBirthAttendanceInLabour</span>
@@ -2144,7 +2052,7 @@
             <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;referred_for_blood&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span></div>
 
 <div class="viewcode-block" id="Labour.active_management_of_the_third_stage_of_labour"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.Labour.active_management_of_the_third_stage_of_labour">[docs]</a>    <span class="k">def</span> <span class="nf">active_management_of_the_third_stage_of_labour</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function represents the administration of active management of the third stage of labour. This</span>
 <span class="sd">        function checks the availability of consumables and delivers the intervention accordingly. It is called by</span>
 <span class="sd">        HSI_Labour_PresentsForSkilledBirthAttendanceFollowingLabour</span>
@@ -2171,7 +2079,7 @@
             <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;amtsl_given&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span></div>
 
 <div class="viewcode-block" id="Labour.assessment_and_treatment_of_pph_uterine_atony"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.Labour.assessment_and_treatment_of_pph_uterine_atony">[docs]</a>    <span class="k">def</span> <span class="nf">assessment_and_treatment_of_pph_uterine_atony</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function represents the diagnosis and management of postpartum haemorrhage secondary to uterine atony</span>
 <span class="sd">        following labour. This function defines the required consumables and administers the intervention if they are</span>
 <span class="sd">        available. The intervention in this function is  intravenous uterotonics followed by referral for further care</span>
@@ -2213,7 +2121,7 @@
                     <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;referred_for_blood&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span></div>
 
 <div class="viewcode-block" id="Labour.assessment_and_treatment_of_pph_retained_placenta"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.Labour.assessment_and_treatment_of_pph_retained_placenta">[docs]</a>    <span class="k">def</span> <span class="nf">assessment_and_treatment_of_pph_retained_placenta</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function represents the diagnosis and management of postpartum haemorrhage secondary to retained placenta</span>
 <span class="sd">        following labour. This function defines the required consumables and administers the intervention if they are</span>
 <span class="sd">        available. The intervention in this function is manual removal of placenta (bedside) followed by referral for</span>
@@ -2260,7 +2168,7 @@
                     <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;referred_for_blood&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span></div>
 
 <div class="viewcode-block" id="Labour.surgical_management_of_pph"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.Labour.surgical_management_of_pph">[docs]</a>    <span class="k">def</span> <span class="nf">surgical_management_of_pph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function represents the surgical management of postpartum haemorrhage (all-cause) following labour. This</span>
 <span class="sd">        function is called during HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare for women who have PPH and</span>
 <span class="sd">        medical management has failed.</span>
@@ -2306,7 +2214,7 @@
             <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">log_met_need</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;pph_surg&#39;</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Labour.blood_transfusion"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.Labour.blood_transfusion">[docs]</a>    <span class="k">def</span> <span class="nf">blood_transfusion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function represents the blood transfusion during or after labour. This function is called during</span>
 <span class="sd">        HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare for women who have experience blood loss due to</span>
 <span class="sd">        antepartum haemorrhage, postpartum haemorrhage or uterine rupture</span>
@@ -2338,7 +2246,7 @@
                     <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;pn_anaemia_following_pregnancy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;none&#39;</span></div>
 
 <div class="viewcode-block" id="Labour.assessment_and_treatment_of_anaemia"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.Labour.assessment_and_treatment_of_anaemia">[docs]</a>    <span class="k">def</span> <span class="nf">assessment_and_treatment_of_anaemia</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function represents the management of postnatal anaemia including iron and folic acid administration and</span>
 <span class="sd">        blood testing. Women with severe anaemia are scheduled to receive blood. It is called during</span>
 <span class="sd">        HSI_Labour_ReceivesPostnatalCheck</span>
@@ -2372,7 +2280,7 @@
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;effect_of_ifa_for_resolving_anaemia&#39;</span><span class="p">]:</span>
                         <span class="c1"># Store date of resolution for daly calculations</span>
                         <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">store_dalys_in_mni</span><span class="p">(</span>
-                            <span class="n">person_id</span><span class="p">,</span> <span class="n">mni</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;pn_anaemia_following_pregnancy&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">_anaemia_resolution&#39;</span><span class="p">,</span>
+                            <span class="n">person_id</span><span class="p">,</span> <span class="n">mni</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;pn_anaemia_following_pregnancy&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">_anaemia_resolution&#39;</span><span class="p">,</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
 
                         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;pn_anaemia_following_pregnancy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;none&#39;</span>
@@ -2382,7 +2290,7 @@
                 <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;referred_for_blood&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span></div>
 
 <div class="viewcode-block" id="Labour.assessment_for_depression"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.Labour.assessment_for_depression">[docs]</a>    <span class="k">def</span> <span class="nf">assessment_for_depression</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function schedules depression screening for women who attend postnatal care via the Depression module. It</span>
 <span class="sd">        is called within HSI_Labour_ReceivesPostnatalCheck.</span>
 <span class="sd">        :param hsi_event: HSI event in which the function has been called</span>
@@ -2395,7 +2303,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Depression&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">do_when_suspected_depression</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Labour.interventions_delivered_pre_discharge"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.Labour.interventions_delivered_pre_discharge">[docs]</a>    <span class="k">def</span> <span class="nf">interventions_delivered_pre_discharge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function contains the interventions that are delivered to women prior to discharge. This are considered</span>
 <span class="sd">        part of essential postnatal care and currently include testing for HIV and postnatal iron and folic acid</span>
 <span class="sd">        supplementation. It is called by HSI_Labour_ReceivesPostnatalCheck</span>
@@ -2405,14 +2313,10 @@
         <span class="n">person_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">target</span><span class="p">)</span>
         <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_parameters</span>
 
-        <span class="c1"># HIV testing occurs within the HIV module for women who havent already been diagnosed</span>
-        <span class="k">if</span> <span class="s1">&#39;Hiv&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;hv_diagnosed&#39;</span><span class="p">]:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
-                    <span class="n">HSI_Hiv_TestAndRefer</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Hiv&#39;</span><span class="p">]),</span>
-                    <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
-                    <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                    <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="c1"># HIV testing occurs within the HIV module for women who haven&#39;t already been diagnosed.</span>
+        <span class="c1"># The probability of getting the HIV test is determined by the Hiv module.</span>
+        <span class="k">if</span> <span class="s1">&#39;Hiv&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Hiv&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">decide_whether_hiv_test_for_mother</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="n">referred_from</span><span class="o">=</span><span class="s2">&quot;labour&quot;</span><span class="p">)</span>
 
         <span class="c1"># ------------------------------- Postnatal iron and folic acid ---------------------------------------------</span>
         <span class="n">cons</span> <span class="o">=</span> <span class="p">{</span><span class="n">_i</span><span class="p">:</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;number_ifa_tablets_required_postnatally&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">_i</span> <span class="ow">in</span>
@@ -2425,7 +2329,7 @@
             <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;la_iron_folic_acid_postnatal&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span></div>
 
 <div class="viewcode-block" id="Labour.run_if_receives_skilled_birth_attendance_cant_run"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.Labour.run_if_receives_skilled_birth_attendance_cant_run">[docs]</a>    <span class="k">def</span> <span class="nf">run_if_receives_skilled_birth_attendance_cant_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function is called by HSI_Labour_PresentsForSkilledBirthAttendanceFollowingLabour if the HSI is unable to</span>
 <span class="sd">        run on the date it has been scheduled for. For these women who cannot deliver in a facility despite presenting</span>
 <span class="sd">         for care, they will be scheduled to undergo a home birth via LabourAtHomeEvent and will continue with the</span>
@@ -2445,7 +2349,7 @@
             <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;hsi_cant_run&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span></div>
 
 <div class="viewcode-block" id="Labour.run_if_receives_postnatal_check_cant_run"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.Labour.run_if_receives_postnatal_check_cant_run">[docs]</a>    <span class="k">def</span> <span class="nf">run_if_receives_postnatal_check_cant_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function is called by HSI_Labour_ReceivesPostnatalCheck if the HSI is unable to</span>
 <span class="sd">        run on the date it has been scheduled for. For these women who have may have experienced life threatening</span>
 <span class="sd">        complications we apply risk of death in this function, as it would have been applied in the HSI which can not</span>
@@ -2457,7 +2361,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">apply_risk_of_early_postpartum_death</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Labour.run_if_receives_comprehensive_emergency_obstetric_care_cant_run"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.Labour.run_if_receives_comprehensive_emergency_obstetric_care_cant_run">[docs]</a>    <span class="k">def</span> <span class="nf">run_if_receives_comprehensive_emergency_obstetric_care_cant_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function is called by HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare if the HSI is unable to</span>
 <span class="sd">        run on the date it has been scheduled for. For these women who have may have experienced life threatening</span>
 <span class="sd">        complications we apply risk of death in this function, as it would have been applied in the HSI which can not</span>
@@ -2475,7 +2379,7 @@
 
 
 <div class="viewcode-block" id="LabourOnsetEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.LabourOnsetEvent">[docs]</a><span class="k">class</span> <span class="nc">LabourOnsetEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This is the LabourOnsetEvent. It is scheduled by the set_date_of_labour function for all women who are newly</span>
 <span class="sd">    pregnant. In addition it is scheduled via the Pregnancy Supervisor module for women who are going into preterm</span>
 <span class="sd">    labour and by the Care of Women During Pregnancy module for women who require emergency delivery as an intervention</span>
@@ -2695,7 +2599,7 @@
 
 
 <div class="viewcode-block" id="LabourAtHomeEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.LabourAtHomeEvent">[docs]</a><span class="k">class</span> <span class="nc">LabourAtHomeEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This is the LabourAtHomeEvent. It is scheduled by the LabourOnsetEvent for women who will not seek delivery care at</span>
 <span class="sd">    a  health facility. This event applies the probability that women delivering at home will experience</span>
 <span class="sd">    complications associated with the intrapartum phase of labour and makes the appropriate changes to the data frame.</span>
@@ -2775,7 +2679,7 @@
 
 
 <div class="viewcode-block" id="LabourDeathAndStillBirthEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.LabourDeathAndStillBirthEvent">[docs]</a><span class="k">class</span> <span class="nc">LabourDeathAndStillBirthEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">     This is the LabourDeathAndStillBirthEvent. It is scheduled by the LabourOnsetEvent for all women in the labour</span>
 <span class="sd">     module following the application of complications (and possibly treatment) for women who have given birth at home</span>
 <span class="sd">     OR in a facility . This event determines if women who have experienced complications in labour will die or</span>
@@ -2868,7 +2772,7 @@
 
 
 <div class="viewcode-block" id="BirthAndPostnatalOutcomesEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.BirthAndPostnatalOutcomesEvent">[docs]</a><span class="k">class</span> <span class="nc">BirthAndPostnatalOutcomesEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This is BirthAndPostnatalOutcomesEvent. It is scheduled by LabourOnsetEvent when women go into labour. This event</span>
 <span class="sd">    calls the do_birth function for all women who have gone into labour to generate a newborn within the simulation.</span>
 <span class="sd">    Additionally this event applies the incidence of complications immediately following birth and determines if each</span>
@@ -2998,7 +2902,7 @@
 
 
 <div class="viewcode-block" id="HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour">[docs]</a><span class="k">class</span> <span class="nc">HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This is the HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour. This event is the first HSI for women who have</span>
 <span class="sd">    chosen to deliver in a health care facility. Broadly this HSI represents care provided by a skilled birth attendant</span>
 <span class="sd">    during labour. This event...</span>
@@ -3170,7 +3074,7 @@
 
 
 <div class="viewcode-block" id="HSI_Labour_ReceivesPostnatalCheck"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.HSI_Labour_ReceivesPostnatalCheck">[docs]</a><span class="k">class</span> <span class="nc">HSI_Labour_ReceivesPostnatalCheck</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This is HSI_Labour_ReceivesPostnatalCheck. It is scheduled by BirthAndPostnatalOutcomesEvent for all women who</span>
 <span class="sd">    will receive full postnatal checkup after birth . This event represents the postpartum care contact after</span>
 <span class="sd">    delivery and includes assessment and treatment of severe pre-eclampsia, hypertension, sepsis and postpartum</span>
@@ -3295,7 +3199,7 @@
 
 
 <div class="viewcode-block" id="HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare">[docs]</a><span class="k">class</span> <span class="nc">HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This is HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare. This event houses all the interventions that are</span>
 <span class="sd">    required to be delivered at a CEmONC level facility including caesarean section, blood transfusion and surgery</span>
 <span class="sd">    during or following labour Currently we assume that if this even runs and the consumables are available then the</span>
@@ -3426,7 +3330,7 @@
 
 
 <div class="viewcode-block" id="HSI_Labour_PostnatalWardInpatientCare"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.HSI_Labour_PostnatalWardInpatientCare">[docs]</a><span class="k">class</span> <span class="nc">HSI_Labour_PostnatalWardInpatientCare</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This is HSI_Labour_PostnatalWardInpatientCare. It is scheduled by HSI_Labour_ReceivesPostnatalCheck for all women</span>
 <span class="sd">    require treatment as inpatients after delivery. The primary function of this event is to capture inpatient bed</span>
 <span class="sd">    days</span>
@@ -3455,7 +3359,7 @@
 
 
 <div class="viewcode-block" id="LabourAndPostnatalCareAnalysisEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.LabourAndPostnatalCareAnalysisEvent">[docs]</a><span class="k">class</span> <span class="nc">LabourAndPostnatalCareAnalysisEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This is LabourAndPostnatalCareAnalysisEvent. This event is scheduled in initialise_simulation. When this event runs,</span>
 <span class="sd">     and if any of the module parameters the signify analysis is being conducted are set to True, then key parameters</span>
 <span class="sd">    are overridden to alter the coverage and/or quality of either B/CEmONC interventions or Postnatal Care for mothers</span>
@@ -3528,7 +3432,7 @@
 
 
 <div class="viewcode-block" id="LabourLoggingEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.LabourLoggingEvent">[docs]</a><span class="k">class</span> <span class="nc">LabourLoggingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;This is the LabourLoggingEvent. It uses the data frame and the labour_tracker to produce summary statistics which</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This is the LabourLoggingEvent. It uses the data frame and the labour_tracker to produce summary statistics which</span>
 <span class="sd">    are processed and presented by different analysis scripts &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="LabourLoggingEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.LabourLoggingEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
@@ -3560,7 +3464,6 @@
 </pre></div>
 
            </div>
-           
           </div>
           <footer>
 
@@ -3568,40 +3471,25 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">
-        Last updated on Dec 01, 2022.
-      </span>
-
-    </p>
+      <span class="lastupdated">Last updated on Apr 06, 2023.
+      </span></p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

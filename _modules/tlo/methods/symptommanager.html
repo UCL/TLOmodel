@@ -1,96 +1,45 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
-  
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
   <title>tlo.methods.symptommanager &mdash; TLOmodel 0.1.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
-
-  
-  
+      <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-        <script src="../../../_static/jquery.js"></script>
-        <script src="../../../_static/underscore.js"></script>
-        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../../_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-
-    
+        <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
           
-            <a href="../../../index.html" class="icon icon-home"> TLOmodel
           
-
-          
+          <a href="../../../index.html" class="icon icon-home">
+            TLOmodel
           </a>
-
-          
-            
-            
               <div class="version">
                 0.1.0
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../index.html">Welcome</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../aims.html">Aims &amp; Objectives</a></li>
@@ -105,71 +54,31 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../index.html">TLOmodel</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
-          <li><a href="../../index.html">Module code</a> &raquo;</li>
-        
-          <li><a href="../methods.html">tlo.methods</a> &raquo;</li>
-        
-      <li>tlo.methods.symptommanager</li>
-    
-    
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../methods.html">tlo.methods</a></li>
+      <li class="breadcrumb-item active">tlo.methods.symptommanager</li>
       <li class="wy-breadcrumbs-aside">
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <h1>Source code for tlo.methods.symptommanager</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">The Symptom Manager:</span>
@@ -205,25 +114,31 @@
 
 
 <span class="k">class</span> <span class="nc">Symptom</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Data structure to hold the information about a symptom.</span>
-<span class="sd">    Adult is peron aged 15+</span>
-<span class="sd">    Child is someone aged &lt;15</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Data structure to hold the information about a symptom.</span>
 
-<span class="sd">    The assumption is that symptom tend to cause health-care seeking. This can be modified by specifying that the</span>
-<span class="sd">    healthcare seeking is an emergency, or is more/less likely than the &#39;average symptom&#39;, or that the symptom does not</span>
-<span class="sd">    cause healthcare seeking at all.</span>
-<span class="sd">    The default behaviour is that a symptom causes health care seeking in the same manner as does the &#39;average symptom&#39;.</span>
+<span class="sd">    The assumption is that a symptom tends to cause health-care seeking. This can be modified by specifying:</span>
+<span class="sd">     * if the symptom does not cause healthcare-seeking at all (`no_healthcareseeking_in_`);</span>
+<span class="sd">     * if the symptom is more or less likely to cause healthcare-seeking compared the &quot;average symptom&quot;;</span>
+<span class="sd">      (`odds_ratio_health_seeking_in_`)</span>
+<span class="sd">     * the probability that emergency care is sought, if care is sought at all (`prob_seeks_emergency_appt_in_`).</span>
 
+<span class="sd">    The default behaviour is for a symptom that causes healthcare-seeking for non-emergency care with the same</span>
+<span class="sd">    probability as the &quot;average symptom&quot;.</span>
+
+<span class="sd">    The in-built method `emergency_symptom_with_automatic_healthcareseeking` produces another common type of symptom,</span>
+<span class="sd">    which gives a very high probability that emergency care is sought.</span>
+
+<span class="sd">    The characteristics of Symptoms is separate for adults (peron aged 15+) and children (those aged aged &lt;15).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">no_healthcareseeking_in_adults</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
                  <span class="n">no_healthcareseeking_in_children</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-                 <span class="n">emergency_in_adults</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-                 <span class="n">emergency_in_children</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
                  <span class="n">odds_ratio_health_seeking_in_adults</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-                 <span class="n">odds_ratio_health_seeking_in_children</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span>
+                 <span class="n">odds_ratio_health_seeking_in_children</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">prob_seeks_emergency_appt_in_adults</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">prob_seeks_emergency_appt_in_children</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="p">):</span>
 
         <span class="c1"># Check that the types are correct and not nonsensical</span>
@@ -233,68 +148,79 @@
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">no_healthcareseeking_in_adults</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">no_healthcareseeking_in_children</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
 
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">emergency_in_adults</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">emergency_in_children</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
-
-        <span class="c1"># Check logic of the arguments that are provided:</span>
-        <span class="c1"># 1) if the symptom does not cause healthseeking behaviour, it should not be emergency or associated with an</span>
-        <span class="c1"># odds ratio</span>
+        <span class="c1"># Check logic of the arguments: if the symptom does not cause healthcare-seeking behaviour then the other</span>
+        <span class="c1"># arguments should not be provided.</span>
         <span class="k">if</span> <span class="n">no_healthcareseeking_in_children</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="n">emergency_in_children</span> <span class="ow">is</span> <span class="kc">False</span>
+            <span class="k">assert</span> <span class="n">prob_seeks_emergency_appt_in_children</span> <span class="ow">is</span> <span class="kc">None</span>
             <span class="k">assert</span> <span class="n">odds_ratio_health_seeking_in_children</span> <span class="ow">is</span> <span class="kc">None</span>
 
         <span class="k">if</span> <span class="n">no_healthcareseeking_in_adults</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="n">emergency_in_adults</span> <span class="ow">is</span> <span class="kc">False</span>
+            <span class="k">assert</span> <span class="n">prob_seeks_emergency_appt_in_adults</span> <span class="ow">is</span> <span class="kc">None</span>
             <span class="k">assert</span> <span class="n">odds_ratio_health_seeking_in_adults</span> <span class="ow">is</span> <span class="kc">None</span>
 
-        <span class="c1"># 2) if the symptom is declared as an emergency, it cannot also have an odds ratio for health seeking</span>
-        <span class="k">if</span> <span class="n">emergency_in_children</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="n">no_healthcareseeking_in_children</span> <span class="ow">is</span> <span class="kc">False</span>
-            <span class="k">assert</span> <span class="n">odds_ratio_health_seeking_in_children</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="c1"># Define the default behaviour:</span>
+        <span class="k">if</span> <span class="n">prob_seeks_emergency_appt_in_adults</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">prob_seeks_emergency_appt_in_adults</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c1"># i.e. Symptom will not cause h.c.s. for emergency care.</span>
 
-        <span class="k">if</span> <span class="n">emergency_in_adults</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="n">no_healthcareseeking_in_adults</span> <span class="ow">is</span> <span class="kc">False</span>
-            <span class="k">assert</span> <span class="n">odds_ratio_health_seeking_in_adults</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">prob_seeks_emergency_appt_in_children</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">prob_seeks_emergency_appt_in_children</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c1"># i.e. Symptom will not cause h.c.s. for emergency care.</span>
 
-        <span class="c1"># 3) if an odds-ratio is specified, it cannot have the emergency or the no-seeking flags</span>
-        <span class="k">if</span> <span class="n">odds_ratio_health_seeking_in_children</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="n">emergency_in_children</span> <span class="ow">is</span> <span class="kc">False</span>
-            <span class="k">assert</span> <span class="n">no_healthcareseeking_in_children</span> <span class="ow">is</span> <span class="kc">False</span>
-            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">odds_ratio_health_seeking_in_children</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
-            <span class="k">assert</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="n">odds_ratio_health_seeking_in_children</span>
+        <span class="k">if</span> <span class="n">odds_ratio_health_seeking_in_adults</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">odds_ratio_health_seeking_in_adults</span> <span class="o">=</span> <span class="mf">1.0</span>  <span class="c1"># i.e. Symptom has same odds of h.c.s. as the &#39;default&#39;</span>
 
-        <span class="k">if</span> <span class="n">odds_ratio_health_seeking_in_adults</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="n">emergency_in_adults</span> <span class="ow">is</span> <span class="kc">False</span>
-            <span class="k">assert</span> <span class="n">no_healthcareseeking_in_adults</span> <span class="ow">is</span> <span class="kc">False</span>
-            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">odds_ratio_health_seeking_in_adults</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
-            <span class="k">assert</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="n">odds_ratio_health_seeking_in_adults</span>
+        <span class="k">if</span> <span class="n">odds_ratio_health_seeking_in_children</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">odds_ratio_health_seeking_in_children</span> <span class="o">=</span> <span class="mf">1.0</span>  <span class="c1"># i.e. Symptom has same odds of h.c.s. as the &#39;default&#39;</span>
 
-        <span class="c1"># If odds-ratios are not provided (and no other flags provided), default to values of 1.0</span>
-        <span class="k">if</span> <span class="p">(</span>
-            <span class="p">(</span><span class="n">odds_ratio_health_seeking_in_children</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="o">&amp;</span>
-            <span class="p">(</span><span class="n">emergency_in_children</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">)</span> <span class="o">&amp;</span>
-            <span class="p">(</span><span class="n">no_healthcareseeking_in_children</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">)</span>
-        <span class="p">):</span>
-            <span class="n">odds_ratio_health_seeking_in_children</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="c1"># Check that the odds-ratio of healthcare seeking is greater than or equal to 0.0</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">odds_ratio_health_seeking_in_adults</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">odds_ratio_health_seeking_in_children</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="mf">0.0</span> <span class="o">&lt;=</span> <span class="n">odds_ratio_health_seeking_in_adults</span>
+        <span class="k">assert</span> <span class="mf">0.0</span> <span class="o">&lt;=</span> <span class="n">odds_ratio_health_seeking_in_children</span>
 
-        <span class="k">if</span> <span class="p">(</span>
-            <span class="p">(</span><span class="n">odds_ratio_health_seeking_in_adults</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="o">&amp;</span>
-            <span class="p">(</span><span class="n">emergency_in_adults</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">)</span> <span class="o">&amp;</span>
-            <span class="p">(</span><span class="n">no_healthcareseeking_in_adults</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">)</span>
-        <span class="p">):</span>
-            <span class="n">odds_ratio_health_seeking_in_adults</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="c1"># Check that probability of seeking an emergency appointment must be between 0.0 and 1.0</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">prob_seeks_emergency_appt_in_adults</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">prob_seeks_emergency_appt_in_children</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="mf">0.0</span> <span class="o">&lt;=</span> <span class="n">prob_seeks_emergency_appt_in_adults</span> <span class="o">&lt;=</span> <span class="mf">1.0</span>
+        <span class="k">assert</span> <span class="mf">0.0</span> <span class="o">&lt;=</span> <span class="n">prob_seeks_emergency_appt_in_children</span> <span class="o">&lt;=</span> <span class="mf">1.0</span>
 
         <span class="c1"># Store properties:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">no_healthcareseeking_in_children</span> <span class="o">=</span> <span class="n">no_healthcareseeking_in_children</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">no_healthcareseeking_in_adults</span> <span class="o">=</span> <span class="n">no_healthcareseeking_in_adults</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">emergency_in_adults</span> <span class="o">=</span> <span class="n">emergency_in_adults</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">emergency_in_children</span> <span class="o">=</span> <span class="n">emergency_in_children</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prob_seeks_emergency_appt_in_adults</span> <span class="o">=</span> <span class="n">prob_seeks_emergency_appt_in_adults</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prob_seeks_emergency_appt_in_children</span> <span class="o">=</span> <span class="n">prob_seeks_emergency_appt_in_children</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">odds_ratio_health_seeking_in_adults</span> <span class="o">=</span> <span class="n">odds_ratio_health_seeking_in_adults</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">odds_ratio_health_seeking_in_children</span> <span class="o">=</span> <span class="n">odds_ratio_health_seeking_in_children</span>
 
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">emergency</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">which</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;both&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return an instance of `Symptom` that will guarantee healthcare-seeking for an Emergency Appointment.&quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">tlo.methods.healthseekingbehaviour</span> <span class="kn">import</span> <span class="n">HIGH_ODDS_RATIO</span>
+
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;No name given.&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">which</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;adults&quot;</span><span class="p">,</span> <span class="s2">&quot;children&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Argument not recognised.&#39;</span><span class="p">)</span>
+
+        <span class="n">emergency_in_adults</span> <span class="o">=</span> <span class="n">which</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;adults&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">)</span>
+        <span class="n">emergency_in_children</span> <span class="o">=</span> <span class="n">which</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;children&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">Symptom</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">no_healthcareseeking_in_adults</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">no_healthcareseeking_in_children</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">prob_seeks_emergency_appt_in_adults</span><span class="o">=</span><span class="mf">1.0</span> <span class="k">if</span> <span class="n">emergency_in_adults</span> <span class="k">else</span> <span class="mf">0.0</span><span class="p">,</span>
+            <span class="n">prob_seeks_emergency_appt_in_children</span><span class="o">=</span><span class="mf">1.0</span> <span class="k">if</span> <span class="n">emergency_in_children</span> <span class="k">else</span> <span class="mf">0.0</span><span class="p">,</span>
+            <span class="n">odds_ratio_health_seeking_in_adults</span><span class="o">=</span><span class="n">HIGH_ODDS_RATIO</span> <span class="k">if</span> <span class="n">emergency_in_adults</span> <span class="k">else</span> <span class="mf">0.0</span><span class="p">,</span>
+            <span class="n">odds_ratio_health_seeking_in_children</span><span class="o">=</span><span class="n">HIGH_ODDS_RATIO</span> <span class="k">if</span> <span class="n">emergency_in_children</span> <span class="k">else</span> <span class="mf">0.0</span><span class="p">,</span>
+            <span class="c1">#                                      10_000 is an arbitrarily large odds ratio that will practically</span>
+            <span class="c1">#                                       ensure that there is healthcare-seeking. `np.inf` might have been</span>
+            <span class="c1">#                                       used but this is not does not work within the LinearModel.</span>
+        <span class="p">)</span>
+
     <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Define the basis upon which tests of equivalence are made for Symptom objects.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Define the basis upon which tests of equivalence are made for Symptom objects.</span>
 <span class="sd">        NB. This seems neccessary to enable to checking of equivalency between symptoms registered in different</span>
 <span class="sd">        places. Without this two instance of the object with the same properties are not recognised as being the &#39;same&#39;.</span>
 <span class="sd">        This is done in conjunction with over-riding the hash property.&quot;&quot;&quot;</span>
@@ -303,14 +229,14 @@
                 <span class="s1">&#39;name&#39;</span><span class="p">,</span>
                 <span class="s1">&#39;no_healthcareseeking_in_children&#39;</span><span class="p">,</span>
                 <span class="s1">&#39;no_healthcareseeking_in_adults&#39;</span><span class="p">,</span>
-                <span class="s1">&#39;emergency_in_adults&#39;</span><span class="p">,</span>
-                <span class="s1">&#39;emergency_in_children&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;prob_seeks_emergency_appt_in_adults&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;prob_seeks_emergency_appt_in_children&#39;</span><span class="p">,</span>
                 <span class="s1">&#39;odds_ratio_health_seeking_in_adults&#39;</span><span class="p">,</span>
                 <span class="s1">&#39;odds_ratio_health_seeking_in_children&#39;</span><span class="p">]</span>
              <span class="p">])</span>
 
     <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Override the hash function to force set to rely on __eq__.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Override the hash function to force set to rely on __eq__.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="mi">0</span>
 
 
@@ -320,7 +246,7 @@
 
 
 <div class="viewcode-block" id="SymptomManager"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager">[docs]</a><span class="k">class</span> <span class="nc">SymptomManager</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This module is used to track the symptoms of persons. The addition and removal of symptoms by disease modules is</span>
 <span class="sd">     handled here. This module can also causes symptoms that are not related to any disease module (representing those</span>
 <span class="sd">     caused by conditions not represented explicitly in the model).</span>
@@ -356,7 +282,8 @@
             <span class="s1">&#39;backache&#39;</span><span class="p">,</span>
             <span class="s1">&#39;injury&#39;</span><span class="p">,</span>
             <span class="s1">&#39;eye_complaint&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;diarrhoea&#39;</span>
+            <span class="s1">&#39;diarrhoea&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;spurious_emergency_symptom&#39;</span>
         <span class="p">}</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">all_registered_symptoms</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
@@ -367,16 +294,16 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">spurious_symptom_resolve_event</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 <div class="viewcode-block" id="SymptomManager.get_column_name_for_symptom"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.get_column_name_for_symptom">[docs]</a>    <span class="k">def</span> <span class="nf">get_column_name_for_symptom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">symptom_name</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;get the column name that corresponds to the symptom_name&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;get the column name that corresponds to the symptom_name&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;sy_</span><span class="si">{</span><span class="n">symptom_name</span><span class="si">}</span><span class="s1">&#39;</span></div>
 
 <div class="viewcode-block" id="SymptomManager.read_parameters"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Read in the generic symptoms and register them&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read in the generic symptoms and register them&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;generic_symptoms_spurious_occurrence&#39;</span><span class="p">]</span> <span class="o">=</span> \
             <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_GenericSymptoms_and_HealthSeeking.csv&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="SymptomManager.register_symptom"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.register_symptom">[docs]</a>    <span class="k">def</span> <span class="nf">register_symptom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">symptoms_to_register</span><span class="p">:</span> <span class="n">Symptom</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Stores the symptom classes that are passed. Registration must be done before &#39;pre-initialise population&#39; is</span>
 <span class="sd">        called.</span>
 <span class="sd">        The disease module associated with each symptom is also stored.</span>
@@ -392,31 +319,27 @@
                 <span class="k">raise</span> <span class="n">DuplicateSymptomWithNonIdenticalPropertiesError</span></div>
 
 <div class="viewcode-block" id="SymptomManager.register_generic_symptoms"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.register_generic_symptoms">[docs]</a>    <span class="k">def</span> <span class="nf">register_generic_symptoms</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Register the genric symptoms, using information read in from the ResourceFile.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Register the genric symptoms, using information read in from the ResourceFile.&quot;&quot;&quot;</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;generic_symptoms_spurious_occurrence&#39;</span><span class="p">]</span>
 
         <span class="c1"># Check that information is contained in the ResourceFile for every generic symptom that must be defined</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">generic_symptoms</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;generic_symptoms_spurious_occurrence&#39;</span><span class="p">][</span><span class="s1">&#39;generic_symptom_name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_list</span><span class="p">())</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">generic_symptoms</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_list</span><span class="p">())</span>
 
-        <span class="n">odds_ratio_health_seeking_in_children</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;generic_symptoms_spurious_occurrence&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span>
-            <span class="s1">&#39;generic_symptom_name&#39;</span><span class="p">)[</span><span class="s1">&#39;odds_ratio_for_health_seeking_in_children&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
-        <span class="n">odds_ratio_health_seeking_in_adults</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;generic_symptoms_spurious_occurrence&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span>
-            <span class="s1">&#39;generic_symptom_name&#39;</span><span class="p">)[</span><span class="s1">&#39;odds_ratio_for_health_seeking_in_adults&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        <span class="n">symptoms_to_register</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span>
+            <span class="p">[</span>
+                <span class="s1">&#39;name&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;odds_ratio_health_seeking_in_children&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;odds_ratio_health_seeking_in_adults&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;prob_seeks_emergency_appt_in_adults&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;prob_seeks_emergency_appt_in_children&#39;</span><span class="p">,</span>
+            <span class="p">]</span>
+        <span class="p">]</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">generic_symptoms</span><span class="p">)]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>  <span class="c1"># order as `sorted(self.generic_symptoms)`</span>
 
-        <span class="c1"># Register the Generic Symptoms</span>
-        <span class="k">for</span> <span class="n">generic_symptom_name</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">generic_symptoms</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">register_symptom</span><span class="p">(</span>
-                <span class="n">Symptom</span><span class="p">(</span>
-                    <span class="n">name</span><span class="o">=</span><span class="n">generic_symptom_name</span><span class="p">,</span>
-                    <span class="n">odds_ratio_health_seeking_in_adults</span><span class="o">=</span><span class="n">odds_ratio_health_seeking_in_adults</span><span class="p">[</span><span class="n">generic_symptom_name</span><span class="p">],</span>
-                    <span class="n">odds_ratio_health_seeking_in_children</span><span class="o">=</span><span class="n">odds_ratio_health_seeking_in_children</span><span class="p">[</span><span class="n">generic_symptom_name</span><span class="p">],</span>
-                    <span class="n">emergency_in_adults</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                    <span class="n">emergency_in_children</span><span class="o">=</span><span class="kc">False</span>
-                <span class="p">)</span>
-            <span class="p">)</span></div>
+        <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">_r</span> <span class="ow">in</span> <span class="n">symptoms_to_register</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">register_symptom</span><span class="p">(</span><span class="n">Symptom</span><span class="p">(</span><span class="o">**</span><span class="n">_r</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()))</span></div>
 
 <div class="viewcode-block" id="SymptomManager.pre_initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.pre_initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">pre_initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Register the generic symptoms and define the properties for each symptom&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Register the generic symptoms and define the properties for each symptom&quot;&quot;&quot;</span>
 
         <span class="c1"># Register Generic Symptoms</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">register_generic_symptoms</span><span class="p">()</span>
@@ -428,7 +351,7 @@
             <span class="n">SymptomManager</span><span class="o">.</span><span class="n">PROPERTIES</span><span class="p">[</span><span class="n">symptom_column_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">INT</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;Presence of symptom </span><span class="si">{</span><span class="n">symptom_name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="SymptomManager.initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Establish the Properties and the BitSetHandler for each of the symptoms:</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">recognised_module_names</span> <span class="o">=</span> <span class="p">[</span>
@@ -451,7 +374,7 @@
         <span class="c1">#     assert not u.any().any()</span>
 
 <div class="viewcode-block" id="SymptomManager.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Schedule SpuriousSymptomsOnset/Resolve if the parameter &#39;spurious_symptoms&#39; is True&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Schedule SpuriousSymptomsOnset/Resolve if the parameter &#39;spurious_symptoms&#39; is True&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">spurious_symptoms</span><span class="p">:</span>
             <span class="c1"># Create and schedule the Onset Event</span>
             <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span>
@@ -467,7 +390,7 @@
             <span class="p">)</span></div>
 
 <div class="viewcode-block" id="SymptomManager.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Give a value of 0 for each symptom.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Give a value of 0 for each symptom.</span>
 <span class="sd">        NB. This will over-write any symptom that has already been set on the child, so is only safe is SymptomManager</span>
 <span class="sd">        is registered before any Disease Module.&quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
@@ -476,7 +399,7 @@
 
 <div class="viewcode-block" id="SymptomManager.change_symptom"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.change_symptom">[docs]</a>    <span class="k">def</span> <span class="nf">change_symptom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">symptom_string</span><span class="p">,</span> <span class="n">add_or_remove</span><span class="p">,</span> <span class="n">disease_module</span><span class="p">,</span>
                        <span class="n">duration_in_days</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">date_of_onset</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is how disease module report that a person has developed a new symptom or an existing symptom has resolved.</span>
 <span class="sd">        The sy_ property contains a set of of the disease_module names that currently cause the symptom.</span>
 <span class="sd">        Check if the set is empty or not to determine if the symptom is currently present.</span>
@@ -562,7 +485,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">bsh</span><span class="o">.</span><span class="n">unset</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="n">disease_module</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">sy_columns</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="SymptomManager.who_has"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.who_has">[docs]</a>    <span class="k">def</span> <span class="nf">who_has</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">list_of_symptoms</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is a helper function to look up who has a particular symptom or set of symptoms.</span>
 <span class="sd">        It returns a list of indicies for person that have all of the symptoms specified</span>
 
@@ -587,7 +510,7 @@
         <span class="k">return</span> <span class="n">has_all_symptoms</span><span class="p">[</span><span class="n">has_all_symptoms</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="SymptomManager.who_not_have"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.who_not_have">[docs]</a>    <span class="k">def</span> <span class="nf">who_not_have</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">symptom_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get person IDs of individuals who are alive and do not have a symptom.</span>
 
 <span class="sd">        :param symptom_string: The string of the symptom.</span>
@@ -609,7 +532,7 @@
         <span class="p">]</span></div>
 
 <div class="viewcode-block" id="SymptomManager.has_what"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.has_what">[docs]</a>    <span class="k">def</span> <span class="nf">has_what</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">disease_module</span><span class="p">:</span> <span class="n">Module</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is a helper function that will give a list of strings for the symptoms that a _single_ person</span>
 <span class="sd">        is currently experiencing.</span>
 <span class="sd">        Optionally can specify disease_module_name to limit to the symptoms caused by that disease module</span>
@@ -636,7 +559,7 @@
             <span class="k">return</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">symptom_names</span> <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;sy_</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span></div>
 
 <div class="viewcode-block" id="SymptomManager.have_what"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.have_what">[docs]</a>    <span class="k">def</span> <span class="nf">have_what</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_ids</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]):</span>
-        <span class="sd">&quot;&quot;&quot;Find the set of symptoms for a list of person_ids.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find the set of symptoms for a list of person_ids.</span>
 <span class="sd">        NB. This is a fast implementation without the same amount checking as &#39;has_what&#39;&quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="k">return</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_ids</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
@@ -644,7 +567,7 @@
         <span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s1">&#39;symptoms&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="SymptomManager.causes_of"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.causes_of">[docs]</a>    <span class="k">def</span> <span class="nf">causes_of</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">symptom_string</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is a helper function that will give a list of the disease modules causing a particular symptom for</span>
 <span class="sd">        a particular person.</span>
 <span class="sd">        :param person_id:</span>
@@ -667,7 +590,7 @@
         <span class="p">)</span></div>
 
 <div class="viewcode-block" id="SymptomManager.clear_symptoms"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.clear_symptoms">[docs]</a>    <span class="k">def</span> <span class="nf">clear_symptoms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="n">disease_module</span><span class="p">:</span> <span class="n">Module</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Remove all the symptoms for one or more persons caused by a specified disease module</span>
 
 <span class="sd">        :param person_id: IDs for one or more persons to clear symptoms for.</span>
@@ -685,7 +608,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">bsh</span><span class="o">.</span><span class="n">unset</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="n">disease_module</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">sy_columns</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="SymptomManager.caused_by"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.caused_by">[docs]</a>    <span class="k">def</span> <span class="nf">caused_by</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">disease_module</span><span class="p">:</span> <span class="n">Module</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Find the persons experiencing symptoms due to a particular module.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find the persons experiencing symptoms due to a particular module.</span>
 <span class="sd">        Returns a dict of the form {&lt;&lt;person_id&gt;&gt;, &lt;&lt;list_of_symptoms&gt;&gt;}.&quot;&quot;&quot;</span>
 
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
@@ -708,7 +631,7 @@
 
 
 <div class="viewcode-block" id="SymptomManager_AutoOnsetEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_AutoOnsetEvent">[docs]</a><span class="k">class</span> <span class="nc">SymptomManager_AutoOnsetEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This utility function will add symptoms. It is scheduled by the SymptomManager to let symptoms &#39;auto-onset&#39; on a</span>
 <span class="sd">    particular date.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -734,7 +657,7 @@
 
 
 <div class="viewcode-block" id="SymptomManager_AutoResolveEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_AutoResolveEvent">[docs]</a><span class="k">class</span> <span class="nc">SymptomManager_AutoResolveEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This utility function will remove symptoms. It is scheduled by the SymptomManager to let symptoms &#39;auto-resolve&#39;</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -757,11 +680,11 @@
 
 
 <div class="viewcode-block" id="SymptomManager_SpuriousSymptomOnset"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_SpuriousSymptomOnset">[docs]</a><span class="k">class</span> <span class="nc">SymptomManager_SpuriousSymptomOnset</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; This event gives the occurrence of generic symptoms that are not caused by a disease module in the TLO model.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; This event gives the occurrence of generic symptoms that are not caused by a disease module in the TLO model.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="SymptomManager_SpuriousSymptomOnset.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_SpuriousSymptomOnset.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;This event occurs every day&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;This event occurs every day&quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
 
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">SymptomManager</span><span class="p">)</span>
@@ -770,8 +693,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">rand</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">rand</span></div>
 
 <div class="viewcode-block" id="SymptomManager_SpuriousSymptomOnset.get_generic_symptoms_dict"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_SpuriousSymptomOnset.get_generic_symptoms_dict">[docs]</a>    <span class="k">def</span> <span class="nf">get_generic_symptoms_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">generic_sympoms_df</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Helper function to store contents of the generic_symptoms dataframe as dicts&quot;&quot;&quot;</span>
-        <span class="n">df</span> <span class="o">=</span> <span class="n">generic_sympoms_df</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;generic_symptom_name&#39;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Helper function to store contents of the generic_symptoms dataframe as dicts&quot;&quot;&quot;</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">generic_sympoms_df</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="p">{</span>
             <span class="s1">&#39;prob_per_day&#39;</span><span class="p">:</span> <span class="p">{</span>
@@ -785,7 +708,7 @@
         <span class="p">}</span></div>
 
 <div class="viewcode-block" id="SymptomManager_SpuriousSymptomOnset.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_SpuriousSymptomOnset.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Determine who will be onset which which symptoms today&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Determine who will be onset which which symptoms today&quot;&quot;&quot;</span>
 
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">group_indices</span> <span class="o">=</span> <span class="p">{</span>
@@ -826,11 +749,11 @@
 
 
 <div class="viewcode-block" id="SymptomManager_SpuriousSymptomResolve"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_SpuriousSymptomResolve">[docs]</a><span class="k">class</span> <span class="nc">SymptomManager_SpuriousSymptomResolve</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; This event resolves the generic symptoms that have been onset by this module.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; This event resolves the generic symptoms that have been onset by this module.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="SymptomManager_SpuriousSymptomResolve.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_SpuriousSymptomResolve.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;This event occurs every day&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;This event occurs every day&quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">SymptomManager</span><span class="p">)</span>
 
@@ -840,18 +763,18 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">to_resolve</span><span class="p">[</span><span class="n">symp</span><span class="p">]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="SymptomManager_SpuriousSymptomResolve.schedule_symptom_resolve"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_SpuriousSymptomResolve.schedule_symptom_resolve">[docs]</a>    <span class="k">def</span> <span class="nf">schedule_symptom_resolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">date_of_resolution</span><span class="p">,</span> <span class="n">symptom_string</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Store information to allow symptoms to be resolved for groups of persons each day&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Store information to allow symptoms to be resolved for groups of persons each day&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">to_resolve</span><span class="p">[</span><span class="n">symptom_string</span><span class="p">][</span><span class="n">date_of_resolution</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="SymptomManager_SpuriousSymptomResolve.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_SpuriousSymptomResolve.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Resolve the symptoms when due; a whole group of persons with the same symptoms at once&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Resolve the symptoms when due; a whole group of persons with the same symptoms at once&quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">date_today</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">date</span><span class="p">()</span>
 
         <span class="k">for</span> <span class="n">symp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_resolve</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="k">if</span> <span class="n">date_today</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_resolve</span><span class="p">[</span><span class="n">symp</span><span class="p">]:</span>
                 <span class="n">person_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_resolve</span><span class="p">[</span><span class="n">symp</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">date_today</span><span class="p">)</span>
-                <span class="n">persons</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_ids</span><span class="p">]</span>
+                <span class="n">persons</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="nb">sorted</span><span class="p">(</span><span class="n">person_ids</span><span class="p">)]</span>
                 <span class="n">person_ids_alive</span> <span class="o">=</span> <span class="n">persons</span><span class="p">[</span><span class="n">persons</span><span class="o">.</span><span class="n">is_alive</span><span class="p">]</span><span class="o">.</span><span class="n">index</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">change_symptom</span><span class="p">(</span>
                     <span class="n">person_id</span><span class="o">=</span><span class="n">person_ids_alive</span><span class="p">,</span>
@@ -862,7 +785,6 @@
 </pre></div>
 
            </div>
-           
           </div>
           <footer>
 
@@ -870,40 +792,25 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">
-        Last updated on Dec 01, 2022.
-      </span>
-
-    </p>
+      <span class="lastupdated">Last updated on Apr 06, 2023.
+      </span></p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

@@ -1,96 +1,45 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
-  
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
   <title>tlo.methods.healthseekingbehaviour &mdash; TLOmodel 0.1.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
-
-  
-  
+      <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-        <script src="../../../_static/jquery.js"></script>
-        <script src="../../../_static/underscore.js"></script>
-        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../../_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-
-    
+        <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
           
-            <a href="../../../index.html" class="icon icon-home"> TLOmodel
           
-
-          
+          <a href="../../../index.html" class="icon icon-home">
+            TLOmodel
           </a>
-
-          
-            
-            
               <div class="version">
                 0.1.0
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../index.html">Welcome</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../aims.html">Aims &amp; Objectives</a></li>
@@ -105,71 +54,31 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../index.html">TLOmodel</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
-          <li><a href="../../index.html">Module code</a> &raquo;</li>
-        
-          <li><a href="../methods.html">tlo.methods</a> &raquo;</li>
-        
-      <li>tlo.methods.healthseekingbehaviour</li>
-    
-    
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../methods.html">tlo.methods</a></li>
+      <li class="breadcrumb-item active">tlo.methods.healthseekingbehaviour</li>
       <li class="wy-breadcrumbs-aside">
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <h1>Source code for tlo.methods.healthseekingbehaviour</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Health Seeking Behaviour Module</span>
@@ -196,9 +105,11 @@
 <span class="c1">#   MODULE DEFINITIONS</span>
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
 
+<span class="n">HIGH_ODDS_RATIO</span> <span class="o">=</span> <span class="mf">1e5</span>
+
 
 <div class="viewcode-block" id="HealthSeekingBehaviour"><a class="viewcode-back" href="../../../reference/tlo.methods.healthseekingbehaviour.html#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour">[docs]</a><span class="k">class</span> <span class="nc">HealthSeekingBehaviour</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This modules determines if the onset of symptoms will lead to that person presenting at the health</span>
 <span class="sd">    facility for a HSI_GenericFirstAppointment.</span>
 
@@ -215,8 +126,8 @@
     <span class="c1"># No parameters to declare</span>
     <span class="n">PARAMETERS</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s1">&#39;force_any_symptom_to_lead_to_healthcareseeking&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
-            <span class="n">Types</span><span class="o">.</span><span class="n">BOOL</span><span class="p">,</span> <span class="s2">&quot;Whether every symptom should always lead to healthcare seeking (ignoring the other parameters &quot;</span>
-                        <span class="s2">&quot;that determine the probability of seeking care.&quot;</span><span class="p">),</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">BOOL</span><span class="p">,</span> <span class="s2">&quot;Whether every symptom [except those that declare they should not lead to any healthcare &quot;</span>
+                        <span class="s2">&quot;seeking] should always lead to healthcare seeking immediately.&quot;</span><span class="p">),</span>
         <span class="s1">&#39;baseline_odds_of_healthcareseeking_children&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span> <span class="s1">&#39;odds of health-care seeking (children:&#39;</span>
                                                                              <span class="s1">&#39; 0-14) if male, 0-5 years-old, living in&#39;</span>
                                                                              <span class="s1">&#39; a rural setting in the Northern region,&#39;</span>
@@ -265,25 +176,24 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span> <span class="o">=</span> <span class="n">resourcefilepath</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">hsb_linear_models</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">odds_ratio_health_seeking_in_children</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">odds_ratio_health_seeking_in_adults</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">no_healthcareseeking_in_children</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">emergency_in_children</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">non_emergency_healthcareseeking_in_children</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">no_healthcareseeking_in_adults</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">emergency_in_adults</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">non_emergency_healthcareseeking_in_adults</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prob_seeks_emergency_appt_in_children</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prob_seeks_emergency_appt_in_adults</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">hsb_linear_models</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">emergency_appt_linear_models</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
 
         <span class="c1"># &quot;force_any_symptom_to_lead_to_healthcareseeking&quot;=True will mean that probability of health care seeking is 1.0</span>
-        <span class="c1"># for anyone with newly onset symptoms. Note that if this is not specified, then the value is taken from the</span>
-        <span class="c1"># ResourceFile.</span>
+        <span class="c1"># for anyone with newly onset symptoms (excepting symptoms explicitly declared to have no healthcareseeking</span>
+        <span class="c1"># behaviour) and the care is sought on the same day.</span>
+        <span class="c1"># (Note that if this is not specified, then the value is taken from the ResourceFile.)</span>
         <span class="k">if</span> <span class="n">force_any_symptom_to_lead_to_healthcareseeking</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">force_any_symptom_to_lead_to_healthcareseeking</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">arg_force_any_symptom_to_lead_to_healthcareseeking</span> <span class="o">=</span> <span class="n">force_any_symptom_to_lead_to_healthcareseeking</span></div>
 
 <div class="viewcode-block" id="HealthSeekingBehaviour.read_parameters"><a class="viewcode-back" href="../../../reference/tlo.methods.healthseekingbehaviour.html#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Read in ResourceFile&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read in ResourceFile&quot;&quot;&quot;</span>
         <span class="c1"># Load parameters from resource file:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">load_parameters_from_dataframe</span><span class="p">(</span>
             <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_HealthSeekingBehaviour.csv&#39;</span><span class="p">)</span>
@@ -294,19 +204,16 @@
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;force_any_symptom_to_lead_to_healthcareseeking&#39;</span><span class="p">],</span> <span class="nb">bool</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="HealthSeekingBehaviour.initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.healthseekingbehaviour.html#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Nothing to initialise in the population</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Nothing to initialise in the population</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span></div>
 
 <div class="viewcode-block" id="HealthSeekingBehaviour.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.healthseekingbehaviour.html#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        * define the linear models that govern healthcare seeking</span>
 <span class="sd">        * set the first occurrence of the repeating HealthSeekingBehaviourPoll</span>
 <span class="sd">        * assemble the health-care seeking information from the registered symptoms</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="c1"># Define the linear models that govern healthcare seeking</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">define_linear_models</span><span class="p">()</span>
 
         <span class="c1"># Schedule the HealthSeekingBehaviourPoll</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">theHealthSeekingBehaviourPoll</span> <span class="o">=</span> <span class="n">HealthSeekingBehaviourPoll</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
@@ -315,83 +222,106 @@
         <span class="c1"># Assemble the health-care seeking information from the registered symptoms</span>
         <span class="k">for</span> <span class="n">symptom</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">all_registered_symptoms</span><span class="p">:</span>
             <span class="c1"># Children:</span>
-            <span class="k">if</span> <span class="n">symptom</span><span class="o">.</span><span class="n">no_healthcareseeking_in_children</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">no_healthcareseeking_in_children</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">symptom</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">symptom</span><span class="o">.</span><span class="n">emergency_in_children</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">emergency_in_children</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">symptom</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">non_emergency_healthcareseeking_in_children</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">symptom</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">symptom</span><span class="o">.</span><span class="n">no_healthcareseeking_in_children</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">odds_ratio_health_seeking_in_children</span><span class="p">[</span><span class="n">symptom</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
                     <span class="n">symptom</span><span class="o">.</span><span class="n">odds_ratio_health_seeking_in_children</span>
                 <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">prob_seeks_emergency_appt_in_children</span><span class="p">[</span><span class="n">symptom</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">symptom</span><span class="o">.</span><span class="n">prob_seeks_emergency_appt_in_children</span>
+                <span class="p">)</span>
 
             <span class="c1"># Adults:</span>
-            <span class="k">if</span> <span class="n">symptom</span><span class="o">.</span><span class="n">no_healthcareseeking_in_adults</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">no_healthcareseeking_in_adults</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">symptom</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">symptom</span><span class="o">.</span><span class="n">emergency_in_adults</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">emergency_in_adults</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">symptom</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">non_emergency_healthcareseeking_in_adults</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">symptom</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">symptom</span><span class="o">.</span><span class="n">no_healthcareseeking_in_adults</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">odds_ratio_health_seeking_in_adults</span><span class="p">[</span><span class="n">symptom</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
                     <span class="n">symptom</span><span class="o">.</span><span class="n">odds_ratio_health_seeking_in_adults</span>
-                <span class="p">)</span></div>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">prob_seeks_emergency_appt_in_adults</span><span class="p">[</span><span class="n">symptom</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">symptom</span><span class="o">.</span><span class="n">prob_seeks_emergency_appt_in_adults</span>
+                <span class="p">)</span>
+
+        <span class="c1"># Define the linear models that govern healthcare seeking</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">define_linear_models</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="HealthSeekingBehaviour.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.healthseekingbehaviour.html#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Nothing to handle on_birth</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Nothing to handle on_birth</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span></div>
 
 <div class="viewcode-block" id="HealthSeekingBehaviour.define_linear_models"><a class="viewcode-back" href="../../../reference/tlo.methods.healthseekingbehaviour.html#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.define_linear_models">[docs]</a>    <span class="k">def</span> <span class="nf">define_linear_models</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Define linear models for health seeking behaviour for children and adults&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Define linear models for health seeking behaviour for children and adults&quot;&quot;&quot;</span>
         <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
-        <span class="k">for</span> <span class="n">subgroup</span><span class="p">,</span> <span class="n">age_predictor</span><span class="p">,</span> <span class="n">odds_ratios</span><span class="p">,</span> <span class="n">care_seeking_symptoms</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
-            <span class="p">(</span><span class="s1">&#39;children&#39;</span><span class="p">,</span> <span class="s1">&#39;adults&#39;</span><span class="p">),</span>
+
+        <span class="c1"># Model for care seeking:</span>
+        <span class="k">for</span> <span class="n">subgroup</span><span class="p">,</span> <span class="n">age_predictor</span><span class="p">,</span> <span class="n">care_seeking_odds_ratios</span><span class="p">,</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+            <span class="p">(</span>
+                <span class="s1">&#39;children&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;adults&#39;</span>
+            <span class="p">),</span>
             <span class="p">(</span>
                 <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;age_years&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;&gt;=5&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;odds_ratio_children_age_5to14&#39;</span><span class="p">]),</span>
-                <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;age_years&#39;</span><span class="p">,</span> <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(35,59)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;odds_ratio_adults_age_35to59&#39;</span><span class="p">])</span>
-                <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;&gt;=60&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;odds_ratio_adults_age_60plus&#39;</span><span class="p">]),</span>
+                <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;age_years&#39;</span><span class="p">,</span> <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span>
+                          <span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(35,59)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;odds_ratio_adults_age_35to59&#39;</span><span class="p">])</span>
+                           <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;&gt;=60&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;odds_ratio_adults_age_60plus&#39;</span><span class="p">]),</span>
             <span class="p">),</span>
             <span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">odds_ratio_health_seeking_in_children</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">odds_ratio_health_seeking_in_adults</span>
             <span class="p">),</span>
-            <span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">non_emergency_healthcareseeking_in_children</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">non_emergency_healthcareseeking_in_adults</span>
-            <span class="p">),</span>
         <span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">hsb_linear_models</span><span class="p">[</span><span class="n">subgroup</span><span class="p">]</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="p">(</span>
                 <span class="n">LinearModelType</span><span class="o">.</span><span class="n">LOGISTIC</span><span class="p">,</span>
                 <span class="n">p</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;baseline_odds_of_healthcareseeking_</span><span class="si">{</span><span class="n">subgroup</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">],</span>
+
                 <span class="c1"># First set of predictors are for behaviour due to the &#39;average symptom&#39;</span>
-                <span class="c1"># This is from the Ng&#39;ambia et al. papers</span>
-                <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;li_urban&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span>
-                    <span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;odds_ratio_</span><span class="si">{</span><span class="n">subgroup</span><span class="si">}</span><span class="s1">_setting_urban&#39;</span><span class="p">]</span>
-                <span class="p">),</span>
-                <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;sex&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;F&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;odds_ratio_</span><span class="si">{</span><span class="n">subgroup</span><span class="si">}</span><span class="s1">_sex_Female&#39;</span><span class="p">]),</span>
                 <span class="n">age_predictor</span><span class="p">,</span>
-                <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;region_of_residence&#39;</span><span class="p">,</span> <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;Central&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;odds_ratio_</span><span class="si">{</span><span class="n">subgroup</span><span class="si">}</span><span class="s1">_region_Central&#39;</span><span class="p">])</span>
-                <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;Southern&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;odds_ratio_</span><span class="si">{</span><span class="n">subgroup</span><span class="si">}</span><span class="s1">_region_Southern&#39;</span><span class="p">]),</span>
-                <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;li_wealth&#39;</span><span class="p">,</span> <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;odds_ratio_</span><span class="si">{</span><span class="n">subgroup</span><span class="si">}</span><span class="s1">_wealth_higher&#39;</span><span class="p">])</span>
-                <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;odds_ratio_</span><span class="si">{</span><span class="n">subgroup</span><span class="si">}</span><span class="s1">_wealth_higher&#39;</span><span class="p">]),</span>
-                <span class="c1"># Second set of predictors are the symptom specific odd ratios</span>
-                <span class="o">*</span><span class="p">(</span>
-                    <span class="n">Predictor</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;sy_</span><span class="si">{</span><span class="n">symptom</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;&gt;0&#39;</span><span class="p">,</span> <span class="n">odds_ratios</span><span class="p">[</span><span class="n">symptom</span><span class="p">])</span>
-                    <span class="k">for</span> <span class="n">symptom</span> <span class="ow">in</span> <span class="n">care_seeking_symptoms</span>
-                <span class="p">)</span>
-            <span class="p">)</span></div>
+                <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;li_urban&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;odds_ratio_</span><span class="si">{</span><span class="n">subgroup</span><span class="si">}</span><span class="s1">_setting_urban&#39;</span><span class="p">]),</span>
+                <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;sex&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;F&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;odds_ratio_</span><span class="si">{</span><span class="n">subgroup</span><span class="si">}</span><span class="s1">_sex_Female&#39;</span><span class="p">]),</span>
+                <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;region_of_residence&#39;</span><span class="p">,</span> <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span>
+                          <span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;Central&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;odds_ratio_</span><span class="si">{</span><span class="n">subgroup</span><span class="si">}</span><span class="s1">_region_Central&#39;</span><span class="p">])</span>
+                           <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;Southern&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;odds_ratio_</span><span class="si">{</span><span class="n">subgroup</span><span class="si">}</span><span class="s1">_region_Southern&#39;</span><span class="p">]),</span>
+                <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;li_wealth&#39;</span><span class="p">,</span> <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span>
+                          <span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;odds_ratio_</span><span class="si">{</span><span class="n">subgroup</span><span class="si">}</span><span class="s1">_wealth_higher&#39;</span><span class="p">])</span>
+                           <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;odds_ratio_</span><span class="si">{</span><span class="n">subgroup</span><span class="si">}</span><span class="s1">_wealth_higher&#39;</span><span class="p">]),</span>
+
+                <span class="c1"># Second set of predictors are the symptom-specific odd ratios</span>
+                <span class="o">*</span><span class="p">(</span><span class="n">Predictor</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;sy_</span><span class="si">{</span><span class="n">symptom</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;&gt;0&#39;</span><span class="p">,</span> <span class="n">odds</span><span class="p">)</span> <span class="k">for</span> <span class="n">symptom</span><span class="p">,</span> <span class="n">odds</span> <span class="ow">in</span> <span class="n">care_seeking_odds_ratios</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Model for the care-seeking (if it occurs) to be for an EMERGENCY Appointment:</span>
+        <span class="k">def</span> <span class="nf">custom_predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">externals</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Custom predict function for LinearModel. This finds the probability that a person seeks emergency care</span>
+<span class="sd">            by finding the highest probability of seeking emergency care for all symptoms they have currently.&quot;&quot;&quot;</span>
+            <span class="n">prob</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span>
+                <span class="p">(</span>
+                    <span class="p">(</span><span class="n">df</span><span class="p">[[</span><span class="sa">f</span><span class="s1">&#39;sy_</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">prob_emergency_appt</span><span class="p">]]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+                    <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prob_emergency_appt</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+                <span class="n">df</span><span class="o">.</span><span class="n">index</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">prob</span> <span class="o">&gt;</span> <span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">prob</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">subgroup</span><span class="p">,</span> <span class="n">prob_emergency_appt</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+            <span class="p">(</span>
+                <span class="s1">&#39;children&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;adults&#39;</span>
+            <span class="p">),</span>
+            <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">prob_seeks_emergency_appt_in_children</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">prob_seeks_emergency_appt_in_adults</span>
+            <span class="p">),</span>
+        <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">emergency_appt_linear_models</span><span class="p">[</span><span class="n">subgroup</span><span class="p">]</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="o">.</span><span class="n">custom</span><span class="p">(</span><span class="n">predict_function</span><span class="o">=</span><span class="n">custom_predict</span><span class="p">,</span>
+                                                                             <span class="n">prob_emergency_appt</span><span class="o">=</span><span class="n">prob_emergency_appt</span><span class="p">)</span></div>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">force_any_symptom_to_lead_to_healthcareseeking</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns the parameter value stored for `force_any_symptom_to_lead_to_healthcareseeking` unless this has</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the parameter value stored for `force_any_symptom_to_lead_to_healthcareseeking` unless this has</span>
 <span class="sd">         been over-ridden by an argument to the module.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">arg_force_any_symptom_to_lead_to_healthcareseeking</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;force_any_symptom_to_lead_to_healthcareseeking&#39;</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">arg_force_any_symptom_to_lead_to_healthcareseeking</span></div>
+
 
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
 <span class="c1">#   REGULAR POLLING EVENT</span>
@@ -399,10 +329,11 @@
 
 
 <div class="viewcode-block" id="HealthSeekingBehaviourPoll"><a class="viewcode-back" href="../../../reference/tlo.methods.healthseekingbehaviour.html#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviourPoll">[docs]</a><span class="k">class</span> <span class="nc">HealthSeekingBehaviourPoll</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;This event occurs every day and determines if persons with newly onset symptoms will seek care.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This event occurs every day and determines if persons with newly onset symptoms will seek care.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
 <div class="viewcode-block" id="HealthSeekingBehaviourPoll.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.healthseekingbehaviour.html#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviourPoll.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Initialise the HealthSeekingBehaviourPoll</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialise the HealthSeekingBehaviourPoll</span>
 <span class="sd">        :param module: the module that created this event</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">priority</span><span class="o">=</span><span class="n">Priority</span><span class="o">.</span><span class="n">LAST_HALF_OF_DAY</span><span class="p">)</span>
@@ -410,13 +341,13 @@
 
 <div class="viewcode-block" id="HealthSeekingBehaviourPoll._has_any_symptoms"><a class="viewcode-back" href="../../../reference/tlo.methods.healthseekingbehaviour.html#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviourPoll._has_any_symptoms">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">_has_any_symptoms</span><span class="p">(</span><span class="n">persons</span><span class="p">,</span> <span class="n">symptoms</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Which rows in `persons` have non-zero values for columns in `symptoms`.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Which rows in `persons` have non-zero values for columns in `symptoms`.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">symptoms</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;At least one symptom must be specified&#39;</span><span class="p">)</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">persons</span><span class="p">[[</span><span class="sa">f</span><span class="s1">&#39;sy_</span><span class="si">{</span><span class="n">symptom</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">symptom</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">]]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="HealthSeekingBehaviourPoll.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.healthseekingbehaviour.html#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviourPoll.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Determine if persons with newly onset acute generic symptoms will seek care. This event runs second-to-last</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Determine if persons with newly onset acute generic symptoms will seek care. This event runs second-to-last</span>
 <span class="sd">        every day (i.e., just before the `HealthSystemScheduler`) in order that symptoms arising this day can lead to</span>
 <span class="sd">        FirstAttendance on the same day.</span>
 
@@ -433,114 +364,100 @@
         <span class="c1"># Get IDs of alive persons with new symptoms</span>
         <span class="n">person_ids_with_newly_onset_symptoms</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
             <span class="n">symptom_manager</span><span class="o">.</span><span class="n">get_persons_with_newly_onset_symptoms</span><span class="p">())</span>
-        <span class="n">symptomatic_persons</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_ids_with_newly_onset_symptoms</span><span class="p">]</span>
-        <span class="n">alive_symptomatic_persons</span> <span class="o">=</span> <span class="n">symptomatic_persons</span><span class="p">[</span><span class="n">symptomatic_persons</span><span class="o">.</span><span class="n">is_alive</span><span class="p">]</span>
+        <span class="n">newly_symptomatic_persons</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_ids_with_newly_onset_symptoms</span><span class="p">]</span>
+        <span class="n">alive_newly_symptomatic_persons</span> <span class="o">=</span> <span class="n">newly_symptomatic_persons</span><span class="p">[</span><span class="n">newly_symptomatic_persons</span><span class="o">.</span><span class="n">is_alive</span><span class="p">]</span>
 
         <span class="c1"># Clear the list of persons with newly onset symptoms</span>
         <span class="n">symptom_manager</span><span class="o">.</span><span class="n">reset_persons_with_newly_onset_symptoms</span><span class="p">()</span>
 
-        <span class="c1"># Split alive symptomatic persons into child and adult subgroups</span>
-        <span class="n">are_under_15</span> <span class="o">=</span> <span class="n">alive_symptomatic_persons</span><span class="o">.</span><span class="n">age_years</span> <span class="o">&lt;</span> <span class="mi">15</span>
-        <span class="n">alive_symptomatic_children</span> <span class="o">=</span> <span class="n">alive_symptomatic_persons</span><span class="p">[</span><span class="n">are_under_15</span><span class="p">]</span>
-        <span class="n">alive_symptomatic_adults</span> <span class="o">=</span> <span class="n">alive_symptomatic_persons</span><span class="p">[</span><span class="o">~</span><span class="n">are_under_15</span><span class="p">]</span>
+        <span class="c1"># Split alive newly symptomatic persons into child and adult subgroups</span>
+        <span class="n">are_under_15</span> <span class="o">=</span> <span class="n">alive_newly_symptomatic_persons</span><span class="o">.</span><span class="n">age_years</span> <span class="o">&lt;</span> <span class="mi">15</span>
+        <span class="n">alive_newly_symptomatic_children</span> <span class="o">=</span> <span class="n">alive_newly_symptomatic_persons</span><span class="p">[</span><span class="n">are_under_15</span><span class="p">]</span>
+        <span class="n">alive_newly_symptomatic_adults</span> <span class="o">=</span> <span class="n">alive_newly_symptomatic_persons</span><span class="p">[</span><span class="o">~</span><span class="n">are_under_15</span><span class="p">]</span>
+
+        <span class="n">idx_where_true</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">series</span><span class="p">:</span> <span class="n">series</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">series</span><span class="p">]</span><span class="o">.</span><span class="n">index</span>  <span class="c1"># noqa: E731</span>
 
         <span class="c1"># Separately schedule HSI events for child and adult subgroups</span>
-        <span class="k">for</span> <span class="n">subgroup</span><span class="p">,</span> <span class="n">emergency_symptoms</span><span class="p">,</span> <span class="n">care_seeking_symptoms</span><span class="p">,</span> <span class="n">hsb_model</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
-            <span class="p">(</span><span class="n">alive_symptomatic_children</span><span class="p">,</span> <span class="n">alive_symptomatic_adults</span><span class="p">),</span>
-            <span class="p">(</span><span class="n">module</span><span class="o">.</span><span class="n">emergency_in_children</span><span class="p">,</span> <span class="n">module</span><span class="o">.</span><span class="n">emergency_in_adults</span><span class="p">),</span>
+        <span class="k">for</span> <span class="n">subgroup</span><span class="p">,</span> <span class="n">symptoms_that_allow_healthcareseeking</span><span class="p">,</span> <span class="n">hsb_model</span><span class="p">,</span> <span class="n">emergency_appt_model</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
             <span class="p">(</span>
-                <span class="n">module</span><span class="o">.</span><span class="n">non_emergency_healthcareseeking_in_children</span><span class="p">,</span>
-                <span class="n">module</span><span class="o">.</span><span class="n">non_emergency_healthcareseeking_in_adults</span>
+                <span class="n">alive_newly_symptomatic_children</span><span class="p">,</span>
+                <span class="n">alive_newly_symptomatic_adults</span>
             <span class="p">),</span>
-            <span class="p">(</span><span class="n">module</span><span class="o">.</span><span class="n">hsb_linear_models</span><span class="p">[</span><span class="s1">&#39;children&#39;</span><span class="p">],</span> <span class="n">module</span><span class="o">.</span><span class="n">hsb_linear_models</span><span class="p">[</span><span class="s1">&#39;adults&#39;</span><span class="p">])</span>
+            <span class="p">(</span>
+                <span class="n">module</span><span class="o">.</span><span class="n">odds_ratio_health_seeking_in_children</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span>
+                <span class="n">module</span><span class="o">.</span><span class="n">odds_ratio_health_seeking_in_adults</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span>
+            <span class="p">),</span>
+            <span class="p">(</span>
+                <span class="n">module</span><span class="o">.</span><span class="n">hsb_linear_models</span><span class="p">[</span><span class="s1">&#39;children&#39;</span><span class="p">],</span>
+                <span class="n">module</span><span class="o">.</span><span class="n">hsb_linear_models</span><span class="p">[</span><span class="s1">&#39;adults&#39;</span><span class="p">]</span>
+            <span class="p">),</span>
+            <span class="p">(</span>
+                <span class="n">module</span><span class="o">.</span><span class="n">emergency_appt_linear_models</span><span class="p">[</span><span class="s1">&#39;children&#39;</span><span class="p">],</span>
+                <span class="n">module</span><span class="o">.</span><span class="n">emergency_appt_linear_models</span><span class="p">[</span><span class="s1">&#39;adults&#39;</span><span class="p">]</span>
+            <span class="p">),</span>
         <span class="p">):</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">emergency_symptoms</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="c1"># Generate an emergency HSI event if any of the symptoms is an emergency</span>
-                <span class="n">is_emergency_care_seeking</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_any_symptoms</span><span class="p">(</span>
-                    <span class="n">subgroup</span><span class="p">,</span> <span class="n">emergency_symptoms</span>
-                <span class="p">)</span>
-                <span class="n">health_system</span><span class="o">.</span><span class="n">schedule_batch_of_individual_hsi_events</span><span class="p">(</span>
-                    <span class="n">hsi_event_class</span><span class="o">=</span><span class="n">emergency_hsi_event_class</span><span class="p">,</span>
-                    <span class="n">person_ids</span><span class="o">=</span><span class="n">subgroup</span><span class="p">[</span><span class="n">is_emergency_care_seeking</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
-                    <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                    <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
-                    <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                    <span class="n">module</span><span class="o">=</span><span class="n">module</span>
-                <span class="p">)</span>
-                <span class="c1"># If a person has had an emergency appointment scheduled this day</span>
-                <span class="c1"># already due to emergency symptoms, then do not allow a non-emergency</span>
-                <span class="c1"># appointment to be scheduled in addition, so select the subgroup</span>
-                <span class="c1"># who are not emergency care-seeking</span>
-                <span class="n">not_emergency_care_seeking_subgroup</span> <span class="o">=</span> <span class="n">subgroup</span><span class="p">[</span>
-                    <span class="o">~</span><span class="n">is_emergency_care_seeking</span>
-                <span class="p">]</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">not_emergency_care_seeking_subgroup</span> <span class="o">=</span> <span class="n">subgroup</span>
-
-            <span class="c1"># Check if no symptoms initiating (non-emergency) care seeking specified</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">care_seeking_symptoms</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">continue</span>
-            <span class="c1"># Symptoms in non-emergency care seeking set may or may not generate an</span>
-            <span class="c1"># associated HSI event, we first select all persons in</span>
-            <span class="c1"># not_emergency_care_seeking_subgroup who have any symptoms which may lead</span>
-            <span class="c1"># to a HSI event being generated. From here onwards care seeking should be</span>
-            <span class="c1"># taken to mean specifically *non-emergency* care seeking</span>
-            <span class="n">possibly_care_seeking_subgroup</span> <span class="o">=</span> <span class="n">not_emergency_care_seeking_subgroup</span><span class="p">[</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_has_any_symptoms</span><span class="p">(</span>
-                    <span class="n">not_emergency_care_seeking_subgroup</span><span class="p">,</span> <span class="n">care_seeking_symptoms</span>
-                <span class="p">)</span>
-            <span class="p">]</span>
-
+            <span class="c1"># Determine who will seek care:</span>
             <span class="k">if</span> <span class="n">module</span><span class="o">.</span><span class="n">force_any_symptom_to_lead_to_healthcareseeking</span><span class="p">:</span>
-                <span class="c1"># This HSB module flag causes a generic non-emergency appointment to be</span>
-                <span class="c1"># scheduled for any symptom immediately</span>
-                <span class="n">health_system</span><span class="o">.</span><span class="n">schedule_batch_of_individual_hsi_events</span><span class="p">(</span>
-                    <span class="n">hsi_event_class</span><span class="o">=</span><span class="n">routine_hsi_event_class</span><span class="p">,</span>
-                    <span class="n">person_ids</span><span class="o">=</span><span class="n">possibly_care_seeking_subgroup</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
-                    <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                    <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
-                    <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                    <span class="n">module</span><span class="o">=</span><span class="n">module</span>
+                <span class="c1"># If forcing any person with symptoms to seek care, find all those with any symptoms which cause</span>
+                <span class="c1"># any degree of healthcare seeking (i.e., excluding symptoms declared to have no healthcare-seeking</span>
+                <span class="c1"># behaviour).</span>
+                <span class="n">will_seek_care</span> <span class="o">=</span> <span class="n">idx_where_true</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_has_any_symptoms</span><span class="p">(</span><span class="n">subgroup</span><span class="p">,</span> <span class="n">symptoms_that_allow_healthcareseeking</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># If not forcing, run the linear model to predict which persons will seek care, from among those with</span>
+                <span class="c1"># symptoms that cause any degree of healthcare seeking.</span>
+                <span class="n">will_seek_care</span> <span class="o">=</span> <span class="n">idx_where_true</span><span class="p">(</span>
+                    <span class="n">hsb_model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span>
+                        <span class="n">subgroup</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_has_any_symptoms</span><span class="p">(</span><span class="n">subgroup</span><span class="p">,</span> <span class="n">symptoms_that_allow_healthcareseeking</span><span class="p">)],</span>
+                        <span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="p">,</span>
+                        <span class="n">squeeze_single_row_output</span><span class="o">=</span><span class="kc">False</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+
+                <span class="c1"># Force the addition to this set those who are already in-patient. (In-patients will always get the</span>
+                <span class="c1"># notional &quot;FirstAppointment&quot; for a new symptom.)</span>
+                <span class="n">will_seek_care</span> <span class="o">=</span> <span class="n">will_seek_care</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">idx_where_true</span><span class="p">(</span><span class="n">subgroup</span><span class="o">.</span><span class="n">hs_is_inpatient</span><span class="p">))</span>
+
+            <span class="c1"># Determine if the care sought will be emergency care (for those that seek care):</span>
+            <span class="n">will_seek_emergency_care</span> <span class="o">=</span> <span class="n">idx_where_true</span><span class="p">(</span>
+                <span class="n">emergency_appt_model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">subgroup</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">will_seek_care</span><span class="p">],</span> <span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="p">,</span> <span class="n">squeeze_single_row_output</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+
+            <span class="c1"># Determine who will seek non-emergency care (those that did not seek emergency care):</span>
+            <span class="n">will_seek_non_emergency_care</span> <span class="o">=</span> <span class="n">will_seek_care</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">will_seek_emergency_care</span><span class="p">)</span>
+
+            <span class="c1"># Schedule Emergency Care for same day</span>
+            <span class="n">health_system</span><span class="o">.</span><span class="n">schedule_batch_of_individual_hsi_events</span><span class="p">(</span>
+                <span class="n">hsi_event_class</span><span class="o">=</span><span class="n">emergency_hsi_event_class</span><span class="p">,</span>
+                <span class="n">person_ids</span><span class="o">=</span><span class="nb">sorted</span><span class="p">(</span><span class="n">will_seek_emergency_care</span><span class="p">),</span>
+                <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
+                <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">module</span><span class="o">=</span><span class="n">module</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Schedule Non-Emergency Care for &quot;soon&quot; (after a random delay), or the same day if using</span>
+            <span class="c1"># `force_any_symptom_to_lead_to_healthcareseeking`.</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">module</span><span class="o">.</span><span class="n">force_any_symptom_to_lead_to_healthcareseeking</span><span class="p">:</span>
+                <span class="n">care_seeking_dates</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="c1"># Create NumPy datetime with day unit to allow directly adding</span>
+                    <span class="c1"># array of generated integer delays in [0, max_delay]</span>
+                    <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;datetime64[D]&#39;</span><span class="p">)</span>
+                    <span class="o">+</span> <span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">max_delay</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">will_seek_non_emergency_care</span><span class="p">))</span>
+                    <span class="c1"># (The +1 is because `randint` takes the upper bound to be excluded.)</span>
                 <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># All in-patients with symptoms always generate a HSI event</span>
-                <span class="n">care_seeking_inpatients</span> <span class="o">=</span> <span class="n">possibly_care_seeking_subgroup</span><span class="p">[</span>
-                    <span class="n">possibly_care_seeking_subgroup</span><span class="o">.</span><span class="n">hs_is_inpatient</span>
-                <span class="p">]</span>
-                <span class="c1"># For non-in-patients with symptoms use HSB linear model to (randomly)</span>
-                <span class="c1"># select subset seeking care and so generating a HSI event</span>
-                <span class="n">possibly_care_seeking_non_inpatients</span> <span class="o">=</span> <span class="n">possibly_care_seeking_subgroup</span><span class="p">[</span>
-                    <span class="o">~</span><span class="n">possibly_care_seeking_subgroup</span><span class="o">.</span><span class="n">hs_is_inpatient</span>
-                <span class="p">]</span>
-                <span class="n">care_seeking_non_inpatients</span> <span class="o">=</span> <span class="n">possibly_care_seeking_non_inpatients</span><span class="p">[</span>
-                    <span class="n">hsb_model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span>
-                        <span class="n">possibly_care_seeking_non_inpatients</span><span class="p">,</span>
-                        <span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="p">,</span>
-                        <span class="n">squeeze_single_row_output</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                    <span class="p">)</span>
-                <span class="p">]</span>
-                <span class="k">for</span> <span class="n">care_seeking_ids</span> <span class="ow">in</span> <span class="p">(</span>
-                    <span class="n">care_seeking_inpatients</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">care_seeking_non_inpatients</span><span class="o">.</span><span class="n">index</span>
-                <span class="p">):</span>
-                    <span class="c1"># Schedule generic non-emergency appointments after a random delay</span>
-                    <span class="n">care_seeking_dates</span> <span class="o">=</span> <span class="p">(</span>
-                        <span class="c1"># Create NumPy datetime with day unit to allow directly adding</span>
-                        <span class="c1"># array of generated integer delays in [0, max_delay]</span>
-                        <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;datetime64[D]&#39;</span><span class="p">)</span>
-                        <span class="o">+</span> <span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">max_delay</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">care_seeking_ids</span><span class="p">))</span>
-                    <span class="p">)</span>
-                    <span class="n">health_system</span><span class="o">.</span><span class="n">schedule_batch_of_individual_hsi_events</span><span class="p">(</span>
-                        <span class="n">hsi_event_class</span><span class="o">=</span><span class="n">routine_hsi_event_class</span><span class="p">,</span>
-                        <span class="n">person_ids</span><span class="o">=</span><span class="n">care_seeking_ids</span><span class="p">,</span>
-                        <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                        <span class="n">topen</span><span class="o">=</span><span class="nb">map</span><span class="p">(</span><span class="n">Date</span><span class="p">,</span> <span class="n">care_seeking_dates</span><span class="p">),</span>
-                        <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                        <span class="n">module</span><span class="o">=</span><span class="n">module</span>
-                    <span class="p">)</span></div></div>
+                <span class="n">care_seeking_dates</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">will_seek_non_emergency_care</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
+
+            <span class="n">health_system</span><span class="o">.</span><span class="n">schedule_batch_of_individual_hsi_events</span><span class="p">(</span>
+                <span class="n">hsi_event_class</span><span class="o">=</span><span class="n">routine_hsi_event_class</span><span class="p">,</span>
+                <span class="n">person_ids</span><span class="o">=</span><span class="nb">sorted</span><span class="p">(</span><span class="n">will_seek_non_emergency_care</span><span class="p">),</span>
+                <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="n">topen</span><span class="o">=</span><span class="nb">map</span><span class="p">(</span><span class="n">Date</span><span class="p">,</span> <span class="n">care_seeking_dates</span><span class="p">),</span>
+                <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">module</span><span class="o">=</span><span class="n">module</span>
+            <span class="p">)</span></div></div>
 </pre></div>
 
            </div>
-           
           </div>
           <footer>
 
@@ -548,40 +465,25 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">
-        Last updated on Dec 01, 2022.
-      </span>
-
-    </p>
+      <span class="lastupdated">Last updated on Apr 06, 2023.
+      </span></p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

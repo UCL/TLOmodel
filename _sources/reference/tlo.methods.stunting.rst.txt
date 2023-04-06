@@ -108,6 +108,9 @@ tlo.methods.stunting module
         * - effectiveness_of_food_supplementation_in_stunting_reduction
           - REAL
           - Probability of stunting being reduced by one standard deviation (category) by supplementary feeding.
+        * - prob_stunting_diagnosed_at_generic_appt
+          - REAL
+          - Probability of a stunted or severely stunted person being checked and correctly diagnosed
 
 
      **PROPERTIES:**
@@ -127,9 +130,9 @@ tlo.methods.stunting module
 
      **Class attributes:**
 
-     INIT_DEPENDENCIES : {'NewbornOutcomes', 'Wasting', 'Diarrhoea', 'Demography', 'Hiv'}
+     INIT_DEPENDENCIES : {'Hiv', 'Wasting', 'Demography', 'NewbornOutcomes', 'Diarrhoea'}
 
-     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>}
 
      **Functions (defined or overridden in class Stunting):**
 
@@ -264,7 +267,7 @@ tlo.methods.stunting module
 
      **Class attributes:**
 
-     ALTERNATIVE_TO : {'Wasting', 'Hiv', 'Diarrhoea'}
+     ALTERNATIVE_TO : {'Hiv', 'Wasting', 'Diarrhoea'}
 
      INIT_DEPENDENCIES : {'Demography'}
 
