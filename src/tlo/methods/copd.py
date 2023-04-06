@@ -152,7 +152,7 @@ class Copd(Module):
         """Define and register Symptoms"""
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom('breathless_moderate'),
-            Symptom('breathless_severe'),
+            Symptom.emergency('breathless_severe'),
             #   todo The line above can be updated to `Symptom.emergency('breathless_severe')` when new PRs are merged.
         )
 
