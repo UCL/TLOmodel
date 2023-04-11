@@ -787,7 +787,6 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
 
     # Summary log:
     summary_hsi_event = log["tlo.methods.healthsystem.summary"]["HSI_Event"]
-    summary_hsi_event_sf = log["tlo.methods.healthsystem.summary"]["HSI_Event_Squeeze_Factor"]
     summary_capacity = log["tlo.methods.healthsystem.summary"]["Capacity"]
     summary_consumables = log["tlo.methods.healthsystem.summary"]["Consumables"]
     summary_beddays = log["tlo.methods.healthsystem.summary"]["BedDays"]
@@ -797,7 +796,7 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
     assert summary_hsi_event['TREATMENT_ID'].apply(pd.Series).sum().to_dict() == \
            detailed_hsi_event.groupby('TREATMENT_ID').size().to_dict()
     #  - Average of squeeze-factors for each TREATMENT_ID (by each year)
-    assert summary_hsi_event_sf.apply(pd.Series).groupby(by=summary_hsi_event_sf.date.dt.year).sum().unstack().to_dict() == \
+    assert summary_hsi_event['squeeze_factor'].apply(pd.Series).groupby(by=summary_hsi_event.date.dt.year).sum().unstack().to_dict() == \
            detailed_hsi_event.assign(
                treatment_id_hsi_name=lambda df: df['TREATMENT_ID'] + ':' + df['Event_Name'],
                year=lambda df: df.date.dt.year,
@@ -850,6 +849,117 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
 
     assert summary_hsi_event['Number_By_Appt_Type_Code'].apply(pd.Series).sum().to_dict() == \
            counts_of_appts_by_level.sum(axis=1, level=1).sum(axis=0).to_dict()
+
+
+@pytest.mark.slow
+def test_summary_logger_for_hsi_event_squeeze_factors(seed, tmpdir):
+    """Check that the summary logger can be parsed correctly when a different set of HSI occur in different years."""
+
+    # Create a dummy disease module (to be the parent of the dummy HSI)
+    class DummyModule(Module):
+        METADATA = {Metadata.DISEASE_MODULE}
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            # In 2010: Dummy1 only
+            sim.modules['HealthSystem'].schedule_hsi_event(
+                HSI_Dummy1(self, person_id=0),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0
+            )
+            # In 2011: Dummy2 & Dummy3
+            sim.modules['HealthSystem'].schedule_hsi_event(
+                HSI_Dummy2(self, person_id=0),
+                topen=self.sim.date + pd.DateOffset(years=1),
+                tclose=None,
+                priority=0
+            )
+            sim.modules['HealthSystem'].schedule_hsi_event(
+                HSI_Dummy3(self, person_id=0),
+                topen=self.sim.date + pd.DateOffset(years=1),
+                tclose=None,
+                priority=0
+            )
+
+            # In 2011: to-do.....
+
+    # Create two different dummy HSI events:
+    class HSI_Dummy1(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = 'Dummy1'
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+            self.ACCEPTED_FACILITY_LEVEL = '1a'
+
+        def apply(self, person_id, squeeze_factor):
+            pass
+
+    class HSI_Dummy2(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = 'Dummy2'
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+            self.ACCEPTED_FACILITY_LEVEL = '1a'
+
+        def apply(self, person_id, squeeze_factor):
+            pass
+
+    class HSI_Dummy3(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = 'Dummy3'
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+            self.ACCEPTED_FACILITY_LEVEL = '1a'
+
+        def apply(self, person_id, squeeze_factor):
+            pass
+
+
+    # Set up simulation:
+    sim = Simulation(start_date=start_date, seed=seed, log_config={
+        'filename': 'tmpfile',
+        'directory': tmpdir,
+        'custom_levels': {
+            "tlo.methods.healthsystem": logging.DEBUG,
+            "tlo.methods.healthsystem.summary": logging.INFO
+        }
+    })
+
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                  mode_appt_constraints=1,
+                                  capabilities_coefficient=1e-10,  # <--- to give non-trivial squeeze-factors
+                                  ),
+        DummyModule(),
+        sort_modules=False,
+        check_all_dependencies=False
+    )
+    sim.make_initial_population(n=1000)
+
+    sim.simulate(end_date=start_date + pd.DateOffset(years=2))
+    log = parse_log_file(sim.log_filepath, level=logging.DEBUG)
+
+    # Standard log:
+    detailed_hsi_event = log["tlo.methods.healthsystem"]['HSI_Event']
+
+    # Summary log:
+    summary_hsi_event = log["tlo.methods.healthsystem.summary"]["HSI_Event"]
+
+    #  - The squeeze-factors that applied for each TREATMENT_ID
+    assert summary_hsi_event.set_index(summary_hsi_event['date'].dt.year)['squeeze_factor'].apply(pd.Series).unstack().dropna().to_dict() == \
+           detailed_hsi_event.assign(
+               treatment_id_hsi_name=lambda df: df['TREATMENT_ID'] + ':' + df['Event_Name'],
+               year=lambda df: df.date.dt.year,
+           ).groupby(by=['treatment_id_hsi_name', 'year'])['Squeeze_Factor'].mean().to_dict()
+
+
 
 
 @pytest.mark.slow
