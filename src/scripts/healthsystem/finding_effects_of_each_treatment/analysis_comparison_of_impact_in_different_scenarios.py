@@ -10,7 +10,6 @@ from matplotlib import pyplot as plt
 from src.scripts.healthsystem.finding_effects_of_each_treatment.analysis_effect_of_each_treatment import (
     apply,
 )
-from tlo import Date
 from tlo.analysis.utils import get_color_short_treatment_id
 
 outputs = Path("./outputs/tbh03@ic.ac.uk/")
@@ -29,7 +28,7 @@ for k, v in results_folders.items():
     results[k] = apply(results_folder=v, output_folder=v, rtn_results=True)
 
 
-#%% Make a comparison of the impact (Dalys_averted) of each (coarse) TREATMENT_ID in the different Scenarios.
+# %% Make a comparison of the impact (Dalys_averted) of each (coarse) TREATMENT_ID in the different Scenarios.
 
 # Reformat and scale the captured output for plotting:
 num_dalys_averted = {

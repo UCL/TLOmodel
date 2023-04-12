@@ -215,7 +215,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 plt.close(fig)
 
         # Simple pie-charts of just TLO estimates
-        normalize_series = lambda ser: ser / ser.sum()
+        normalize_series = lambda ser: ser / ser.sum()  # noqa: E731
 
         def shift_row_to_top(df, index_to_shift):
             idx = [i for i in df.index if i != index_to_shift]
@@ -226,12 +226,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             outcome_by_age_pt['Model'].sum().loc['mean'].sort_values(ascending=True)
         )
         slices = shift_row_to_top(slices, 'Other')
-        wedges, texts, autotexts = ax.pie(slices.values,
-               labels=slices.index,
-               colors=map(get_color_cause_of_death_or_daly_label, slices.index),
-               startangle=90,
-               autopct='%1.1f%%',
-               )
+        wedges, texts, autotexts = ax.pie(
+            slices.values,
+            labels=slices.index,
+            colors=map(get_color_cause_of_death_or_daly_label, slices.index),
+            startangle=90,
+            autopct='%1.1f%%',
+        )
 
         threshold = 3.0
         for label, pct_label in zip(texts, autotexts):
@@ -408,7 +409,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     make_std_graphs(what='DALYs', period='2015-2019')
     make_std_graphs(what='Deaths', period='2015-2019')
-
 
 
 if __name__ == "__main__":

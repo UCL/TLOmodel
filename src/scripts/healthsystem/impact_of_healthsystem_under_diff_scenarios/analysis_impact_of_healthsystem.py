@@ -10,11 +10,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 from tlo import Date
-from tlo.analysis.utils import (
-    extract_results,
-    make_age_grp_lookup,
-    summarize,
-)
+from tlo.analysis.utils import extract_results, make_age_grp_lookup, summarize
 
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None, ):
@@ -36,8 +32,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     def get_parameter_names_from_scenario_file() -> Tuple[str]:
         """Get the tuple of names of the scenarios from `Scenario` class used to create the results."""
-        from scripts.healthsystem.impact_of_healthsystem_under_diff_scenarios.scenario_impact_of_healthsystem import \
-            ImpactOfHealthSystemAssumptions
+        from scripts.healthsystem.impact_of_healthsystem_under_diff_scenarios.scenario_impact_of_healthsystem import (
+            ImpactOfHealthSystemAssumptions,
+        )
         e = ImpactOfHealthSystemAssumptions()
         return tuple(e._scenarios.keys())
 
@@ -131,8 +128,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         do_scaling=True
     ).pipe(set_param_names_as_column_index_level_0)
 
-    num_deaths_summarized = summarize(num_deaths).loc[0].unstack()
-    num_dalys_summarized = summarize(num_dalys).loc[0].unstack()
+    # num_deaths_summarized = summarize(num_deaths).loc[0].unstack()
+    # num_dalys_summarized = summarize(num_dalys).loc[0].unstack()
 
     # Deaths and DALYS averted relative to Default Healthcare System
     num_deaths_averted = summarize(

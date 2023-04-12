@@ -796,22 +796,27 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
     assert summary_hsi_event['TREATMENT_ID'].apply(pd.Series).sum().to_dict() == \
            detailed_hsi_event.groupby('TREATMENT_ID').size().to_dict()
     #  - Average of squeeze-factors for each TREATMENT_ID (by each year)
-    assert summary_hsi_event['squeeze_factor'].apply(pd.Series).groupby(by=summary_hsi_event.date.dt.year).sum().unstack().to_dict() == \
-           detailed_hsi_event.assign(
+    assert summary_hsi_event['squeeze_factor'].apply(pd.Series) \
+                                              .groupby(by=summary_hsi_event.date.dt.year) \
+                                              .sum() \
+                                              .unstack() \
+                                              .to_dict() \
+           == detailed_hsi_event.assign(
                treatment_id_hsi_name=lambda df: df['TREATMENT_ID'] + ':' + df['Event_Name'],
                year=lambda df: df.date.dt.year,
-           ).groupby(by=['treatment_id_hsi_name', 'year'])['Squeeze_Factor'].mean().to_dict()
-
+              ).groupby(by=['treatment_id_hsi_name', 'year'])['Squeeze_Factor']\
+               .mean() \
+               .to_dict()
 
     #  - Appointments (total over entire period of the log)
     assert summary_hsi_event['Number_By_Appt_Type_Code'].apply(pd.Series).sum().to_dict() == \
-        detailed_hsi_event['Number_By_Appt_Type_Code'].apply(pd.Series).sum().to_dict()
+           detailed_hsi_event['Number_By_Appt_Type_Code'].apply(pd.Series).sum().to_dict()
 
     #  - Average fraction of HCW time used (year by year)
     assert summary_capacity.set_index(pd.to_datetime(summary_capacity.date).dt.year
                                       )['average_Frac_Time_Used_Overall'].round(4).to_dict() == \
-        detailed_capacity.set_index(pd.to_datetime(detailed_capacity.date).dt.year
-                                    )['Frac_Time_Used_Overall'].groupby(level=0).mean().round(4).to_dict()
+           detailed_capacity.set_index(pd.to_datetime(detailed_capacity.date).dt.year
+                                       )['Frac_Time_Used_Overall'].groupby(level=0).mean().round(4).to_dict()
 
     #  - Consumables (total over entire period of log that are available / not available)  # add _Item_
     assert summary_consumables['Item_Available'].apply(pd.Series).sum().to_dict() == \
@@ -824,19 +829,19 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
     #  - Bed-Days (bed-type by bed-type and year by year)
     for _bed_type in bed_types:
         # Detailed:
-        tracker = detailed_beddays[_bed_type]\
-            .assign(year=pd.to_datetime(detailed_beddays[_bed_type].date).dt.year)\
-            .set_index('year')\
-            .drop(columns=['date'])\
+        tracker = detailed_beddays[_bed_type] \
+            .assign(year=pd.to_datetime(detailed_beddays[_bed_type].date).dt.year) \
+            .set_index('year') \
+            .drop(columns=['date']) \
             .T
         tracker.index = tracker.index.astype(int)
         capacity = sim.modules['HealthSystem'].bed_days._scaled_capacity[_bed_type]
         detail_beddays_used = tracker.sub(capacity, axis=0).mul(-1).sum().groupby(level=0).sum().to_dict()
 
         # Summary: total bed-days used by year
-        summary_beddays_used = summary_beddays\
-            .assign(year=pd.to_datetime(summary_beddays.date).dt.year)\
-            .set_index('year')[_bed_type]\
+        summary_beddays_used = summary_beddays \
+            .assign(year=pd.to_datetime(summary_beddays.date).dt.year) \
+            .set_index('year')[_bed_type] \
             .to_dict()
 
         assert detail_beddays_used == summary_beddays_used
@@ -920,7 +925,6 @@ def test_summary_logger_for_hsi_event_squeeze_factors(seed, tmpdir):
         def apply(self, person_id, squeeze_factor):
             pass
 
-
     # Set up simulation:
     sim = Simulation(start_date=start_date, seed=seed, log_config={
         'filename': 'tmpfile',
@@ -953,13 +957,17 @@ def test_summary_logger_for_hsi_event_squeeze_factors(seed, tmpdir):
     summary_hsi_event = log["tlo.methods.healthsystem.summary"]["HSI_Event"]
 
     #  - The squeeze-factors that applied for each TREATMENT_ID
-    assert summary_hsi_event.set_index(summary_hsi_event['date'].dt.year)['squeeze_factor'].apply(pd.Series).unstack().dropna().to_dict() == \
+    assert summary_hsi_event.set_index(summary_hsi_event['date'].dt.year)['squeeze_factor'].apply(pd.Series)\
+                                                                                           .unstack()\
+                                                                                           .dropna()\
+                                                                                           .to_dict() \
+           == \
            detailed_hsi_event.assign(
                treatment_id_hsi_name=lambda df: df['TREATMENT_ID'] + ':' + df['Event_Name'],
                year=lambda df: df.date.dt.year,
-           ).groupby(by=['treatment_id_hsi_name', 'year'])['Squeeze_Factor'].mean().to_dict()
-
-
+           ).groupby(by=['treatment_id_hsi_name', 'year'])['Squeeze_Factor']\
+            .mean()\
+            .to_dict()
 
 
 @pytest.mark.slow
@@ -968,6 +976,7 @@ def test_summary_logger_generated_in_year_long_simulation(seed, tmpdir):
 
     def summary_logger_is_present(end_date_of_simulation):
         """Returns True if the summary logger is present when using the specified end_date for the simulation."""
+
         # Create a dummy disease module (to be the parent of the dummy HSI)
         class DummyModule(Module):
             METADATA = {Metadata.DISEASE_MODULE}
@@ -1258,9 +1267,10 @@ def test_hsi_run_on_same_day_if_scheduled_for_same_day(seed, tmpdir):
 
     class DummyHSI_To_Run_On_Same_Day(HSI_Event, IndividualScopeEventMixin):
         """HSI event that will demonstrate it has been run."""
+
         def __init__(self, module, person_id, source):
             super().__init__(module, person_id=person_id)
-            self.TREATMENT_ID = f"{self.__class__.__name__ }_{source}"
+            self.TREATMENT_ID = f"{self.__class__.__name__}_{source}"
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
             self.ACCEPTED_FACILITY_LEVEL = '1a'
 
@@ -1269,6 +1279,7 @@ def test_hsi_run_on_same_day_if_scheduled_for_same_day(seed, tmpdir):
 
     class DummyHSI_To_Run_On_First_Day_Of_Simulation(HSI_Event, IndividualScopeEventMixin):
         """HSI event that schedules another HSI_Event for the same day"""
+
         def __init__(self, module, person_id):
             super().__init__(module, person_id=person_id)
             self.TREATMENT_ID = self.__class__.__name__

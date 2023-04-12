@@ -1902,7 +1902,6 @@ class HealthSystemSummaryCounter:
             },
         )
 
-
         logger_summary.info(
             key="Capacity",
             description="The fraction of all the healthcare worker time that is used each day, averaged over this "
