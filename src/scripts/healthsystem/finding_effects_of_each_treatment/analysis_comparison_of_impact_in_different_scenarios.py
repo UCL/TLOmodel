@@ -31,8 +31,6 @@ for k, v in results_folders.items():
 
 #%% Make a comparison of the impact (Dalys_averted) of each (coarse) TREATMENT_ID in the different Scenarios.
 
-TARGET_PERIOD = (Date(2010, 1, 1), Date(2014, 12, 31))
-
 # Reformat and scale the captured output for plotting:
 num_dalys_averted = {
     k: results[k]['num_dalys_averted'].drop(['*']).sort_values('mean') / 1e6
