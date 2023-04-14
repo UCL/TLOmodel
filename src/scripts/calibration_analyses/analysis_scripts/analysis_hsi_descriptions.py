@@ -609,37 +609,91 @@ def figure6_cons_use(results_folder: Path, output_folder: Path, resourcefilepath
 
 def figure7_squeeze_factors(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     """ 'Figure 7': Squeeze Factors for the HSIs"""
-    print("Do this!")
-    # make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_Fig7_{stub}.png"  # noqa: E731
-    # todo --- similar to figure1, use the new key to summarize squeeze factor by HSI and by TREATMENT_ID
+    make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_Fig7_{stub}.png"  # noqa: E731
+
+    def get_mean_squeeze_factor_by_hsi(_df):
+        """Get the counts of the short TREATMENT_IDs occurring"""
+        return _df \
+            .loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), 'squeeze_factor'] \
+            .apply(pd.Series) \
+            .mean()
+
+    squeeze_factor_by_hsi = summarize(
+        extract_results(
+            results_folder,
+            module='tlo.methods.healthsystem.summary',
+            key='HSI_Event',
+            custom_generate_series=get_mean_squeeze_factor_by_hsi,
+            do_scaling=False,
+        ),
+        only_mean=True,
+        collapse_columns=True,
+    )
+
+    # Index by Treatment_ID / HSI:
+    squeeze_factor_by_hsi.index = squeeze_factor_by_hsi.index.str.split(':', expand=True)
+    squeeze_factor_by_hsi = squeeze_factor_by_hsi.reset_index().rename(columns={
+        'level_0': '_TREATMENT_ID',
+        'level_1': 'HSI',
+        'mean': 'squeeze_factor',
+    })
+
+    # Add in short TREATMENT_ID
+    squeeze_factor_by_hsi['TREATMENT_ID'] = squeeze_factor_by_hsi['_TREATMENT_ID'].map(lambda x: x.split('_')[0] + "*")
+
+    # Sort to collect the same TREATMENT_ID together
+
+    squeeze_factor_by_hsi = squeeze_factor_by_hsi.sort_values('TREATMENT_ID', key=order_of_short_treatment_ids, ascending=False).reset_index(drop=True)
+
+    fig, ax = plt.subplots(figsize=(7.0, 10.5))
+    name_of_plot = 'Average Squeeze Factors'
+    for i, row in squeeze_factor_by_hsi.iterrows():
+        ax.plot(
+            row['squeeze_factor'],
+            i,
+            marker='.',
+            markersize=10,
+            color=get_color_short_treatment_id(row['TREATMENT_ID'])
+        )
+    ax.set_xlabel('Average Squeeze Factor')
+    ax.set_ylabel('Health System Interaction Event')
+    ax.set_yticks(squeeze_factor_by_hsi.index)
+    ax.set_yticklabels(squeeze_factor_by_hsi['HSI'], fontsize=6)
+    ax.grid(axis='x')
+    ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
+    fig.show()
+    plt.close(fig)
+
 
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Description of the usage of healthcare system resources."""
 
-    figure1_distribution_of_hsi_event_by_treatment_id(
-        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
-    )
-
-    figure2_appointments_used(
-        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
-    )
-
-    figure3_fraction_of_time_of_hcw_used_by_treatment(
-        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
-    )
-
-    figure4_hr_use_overall(
-        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
-    )
-
-    figure5_bed_use(
-        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
-    )
-
-    figure6_cons_use(
-        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
-    )
+    # figure1_distribution_of_hsi_event_by_treatment_id(
+    #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    # )
+    #
+    # figure2_appointments_used(
+    #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    # )
+    #
+    # figure3_fraction_of_time_of_hcw_used_by_treatment(
+    #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    # )
+    #
+    # figure4_hr_use_overall(
+    #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    # )
+    #
+    # figure5_bed_use(
+    #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    # )
+    #
+    # figure6_cons_use(
+    #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    # )
 
     figure7_squeeze_factors(
         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
