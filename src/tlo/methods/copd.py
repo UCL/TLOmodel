@@ -429,7 +429,7 @@ class CopdDeath(Event, IndividualScopeEventMixin):
             )
 
 
-class HSICopdTreatmentOnSevereExacerbation(HSI_Event, IndividualScopeEventMixin):
+class HSI_CopdTreatmentOnSevereExacerbation(HSI_Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
