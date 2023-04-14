@@ -364,7 +364,7 @@ def test_ageing_of_old_people_up_to_max_age(simulation):
     simulation.make_initial_population(n=1000)
     df = simulation.population.props
     df.loc[df.is_alive, 'date_of_birth'] = simulation.start_date - pd.DateOffset(years=90)
-    ever_alive = set(df.loc[df.is_alive].index)
+    ever_alive = df.loc[df.is_alive].index
 
     # Make the intrinsic risk of death zero (to enable ageing up to MAX_AGE)
     simulation.modules['Demography'].parameters['all_cause_mortality_schedule']['death_rate'] = 0.0

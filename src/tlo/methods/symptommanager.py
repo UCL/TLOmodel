@@ -692,7 +692,7 @@ class SymptomManager_SpuriousSymptomResolve(RegularEvent, PopulationScopeEventMi
         for symp in self.to_resolve.keys():
             if date_today in self.to_resolve[symp]:
                 person_ids = self.to_resolve[symp].pop(date_today)
-                persons = df.loc[person_ids]
+                persons = df.loc[sorted(person_ids)]
                 person_ids_alive = persons[persons.is_alive].index
                 self.module.change_symptom(
                     person_id=person_ids_alive,
