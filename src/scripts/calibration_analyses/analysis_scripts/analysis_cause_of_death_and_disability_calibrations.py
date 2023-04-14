@@ -307,7 +307,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         top_five_causes_of_death_not_modelled = ''.join([
             f"* {_cause} ({round(100 * _percent_deaths, 1)}%)\n"
-            for _cause, _percent_deaths in unmodelled_causes[0:10].iteritems() if _percent_deaths >= 0.005
+            for _cause, _percent_deaths in unmodelled_causes[0:10].items() if _percent_deaths >= 0.005
         ])
 
         outcomes = outcome_by_age_pt['GBD'][("mean")]

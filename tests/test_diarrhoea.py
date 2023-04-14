@@ -305,9 +305,9 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
                      )
         # Edit rate of spurious symptoms to be limited to additional cases of diarrhoea:
         sp_symps = sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence']
-        for symp in sp_symps['generic_symptom_name']:
+        for symp in sp_symps['name']:
             sp_symps.loc[
-                sp_symps['generic_symptom_name'] == symp,
+                sp_symps['name'] == symp,
                 ['prob_spurious_occurrence_in_adults_per_day', 'prob_spurious_occurrence_in_children_per_day']
             ] = 5.0 / 1000 if symp == 'diarrhoea' else 0.0
 
@@ -914,6 +914,10 @@ def test_effect_of_vaccine(seed):
     # Get the method that determines dehydration
     get_dehydration = sim.modules['Diarrhoea'].models.get_dehydration
 
+    # increase probability to ensure at least one case of severe dehydration when vaccine is imperfect
+    sim.modules['Diarrhoea'].parameters['prob_dehydration_by_rotavirus'] = 1.0
+    sim.modules['Diarrhoea'].parameters['prob_dehydration_by_shigella'] = 1.0
+
     # 1) Make effect of vaccine perfect
     sim.modules['Diarrhoea'].parameters['rr_severe_dehydration_due_to_rotavirus_with_R1_under1yo'] = 0.0
     sim.modules['Diarrhoea'].parameters['rr_severe_dehydration_due_to_rotavirus_with_R1_over1yo'] = 0.0
@@ -931,8 +935,8 @@ def test_effect_of_vaccine(seed):
                         for _ in range(100)]
 
     # 2) Make effect of vaccine imperfect
-    sim.modules['Diarrhoea'].parameters['rr_severe_dehydration_due_to_rotavirus_with_R1_under1yo'] = 1.0
-    sim.modules['Diarrhoea'].parameters['rr_severe_dehydration_due_to_rotavirus_with_R1_over1yo'] = 1.0
+    sim.modules['Diarrhoea'].parameters['rr_severe_dehydration_due_to_rotavirus_with_R1_under1yo'] = 0.5
+    sim.modules['Diarrhoea'].parameters['rr_severe_dehydration_due_to_rotavirus_with_R1_over1yo'] = 0.5
 
     # Check that if the vaccine is imperfect and the person is infected with rotavirus, then there sometimes is severe
     # dehydration.

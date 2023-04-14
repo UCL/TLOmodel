@@ -151,7 +151,7 @@ class SimplifiedBirths(Module):
                           'si_breastfeeding_status_6mo_to_23mo': breastfeeding_status_6mo_to_23mo,
                           }
                       }
-        df.at[child_id, properties.keys()] = properties.values()
+        df.loc[child_id, properties.keys()] = properties.values()
 
 
 class SimplifiedBirthsPoll(RegularEvent, PopulationScopeEventMixin):

@@ -339,9 +339,8 @@ class CardioMetabolicDisorders(Module):
         # Register symptoms from events and make them emergencies
         for event in self.events:
             self.sim.modules['SymptomManager'].register_symptom(
-                Symptom(
-                    name=f'{event}_damage',
-                    emergency_in_adults=True
+                Symptom.emergency(
+                    name=f'{event}_damage', which='adults'
                 ),
             )
 
@@ -1696,7 +1695,7 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
         assert isinstance(module, CardioMetabolicDisorders)
 
         self.TREATMENT_ID = 'CardioMetabolicDisorders_Treatment'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1, 'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '2'
 
         self.event = ev

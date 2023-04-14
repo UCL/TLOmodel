@@ -9,7 +9,6 @@ from tlo.lm import LinearModel
 from tlo.methods import Metadata, demography, newborn_outcomes_lm, pregnancy_helper_functions
 from tlo.methods.causes import Cause
 from tlo.methods.healthsystem import HSI_Event
-from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.methods.postnatal_supervisor import PostnatalWeekOneNeonatalEvent
 from tlo.util import BitsetHandler
 
@@ -948,18 +947,11 @@ class NewbornOutcomes(Module):
         """
         df = self.sim.population.props
         child_id = int(child_id)
+        mother_id = df.at[child_id, 'mother_id']
 
         if 'Hiv' in self.sim.modules:
-            if not df.at[child_id, 'hv_diagnosed']:
-
-                if df.at[child_id, 'nb_pnc_check'] == 1:
-                    for days in 0, 41:
-                        self.sim.modules['HealthSystem'].schedule_hsi_event(
-                            HSI_Hiv_TestAndRefer(person_id=child_id, module=self.sim.modules['Hiv']),
-                            topen=self.sim.date + pd.DateOffset(days=days),
-                            tclose=None,
-                            priority=0
-                        )
+            # schedule test if child not already diagnosed and mother is known hiv+
+            self.sim.modules['Hiv'].decide_whether_hiv_test_for_infant(mother_id, child_id)
 
     def assessment_and_initiation_of_neonatal_resus(self, hsi_event):
         """
@@ -1088,8 +1080,8 @@ class NewbornOutcomes(Module):
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 early_event, priority=0,
-                topen=self.sim.date,
-                tclose=self.sim.date + pd.DateOffset(days=1))
+                topen=self.sim.date + pd.DateOffset(days=1),
+                tclose=self.sim.date + pd.DateOffset(days=2))
 
         else:
             # 'Late' PNC is scheduled in the postnatal supevervisor module

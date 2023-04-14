@@ -229,8 +229,16 @@ class HealthBurden(Module):
                             'are ascribed to the age of the death and the year of the death.'
             )
 
-        # 4) Log total DALYS (Stacked by Age and Time), broken down by wealth
-        # todo ...
+        # 4) Log total DALYS (Stacked by Age and Time), broken down by wealth only
+        for _, row in dalys_stacked_by_age_and_time.groupby(level=[2, 3]).sum().reset_index().iterrows():
+            logger.info(
+                key='dalys_by_wealth_stacked_by_age_and_time',
+                data=row.to_dict(),
+                description='DALYS, by the labels are that are declared for each cause_of_death and cause_of_disability'
+                            ', broken down by year and wealth category.'
+                            'Stacking by age and time: i.e., all the year of life lost '
+                            'are ascribed to the age of the death and the year of the death.'
+            )
 
     def compute_dalys(self):
         """Compute total DALYS (by label), by age, sex and year. Do this by summing the YLD and LYL with respect to the
@@ -325,7 +333,7 @@ class HealthBurden(Module):
                 end_date=(
                     date_of_birth + pd.DateOffset(years=self.parameters['Age_Limit_For_YLL']) - pd.DateOffset(days=1)),
                 date_of_birth=date_of_birth
-            ).sum(level=1)\
+            ).groupby(level=1).sum()\
              .assign(year=date_of_death.year)\
              .set_index(['year'], append=True)['person_years']\
              .pipe(_format_for_multi_index)
@@ -334,7 +342,7 @@ class HealthBurden(Module):
         # ascribed to the age of death and to the year of death. This is computed by collapsing the age-dimension of
         # `yll_stacked_by_time` onto the age(-range) of death.
         age_range_to_stack_to = age_range
-        yll_stacked_by_age_and_time = pd.DataFrame(yll_stacked_by_time.sum(level=[0, 2, 3]))\
+        yll_stacked_by_age_and_time = pd.DataFrame(yll_stacked_by_time.groupby(level=[0, 2, 3]).sum())\
                                         .assign(age_range=age_range_to_stack_to)\
                                         .set_index(['age_range'], append=True)['person_years']\
                                         .reorder_levels(['sex', 'age_range', 'li_wealth', 'year'])
@@ -426,7 +434,7 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
 
         # Get the population dataframe
         df = self.sim.population.props
-        idx_alive = set(df.loc[df.is_alive].index)
+        idx_alive = df.loc[df.is_alive].index
 
         # 1) Ask each disease module to log the DALYS for the previous month
         dalys_from_each_disease_module = list()
@@ -454,7 +462,7 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
 
                 # Perform checks on what has been returned
                 assert set(dalys_from_disease_module.columns) == set(declared_causes_of_disability_module)
-                assert set(dalys_from_disease_module.index) == idx_alive
+                assert set(dalys_from_disease_module.index) == set(idx_alive)
                 assert not pd.isnull(dalys_from_disease_module).any().any()
                 assert ((dalys_from_disease_module >= 0) & (dalys_from_disease_module <= 1)).all().all()
                 assert (dalys_from_disease_module.sum(axis=1) <= 1).all()

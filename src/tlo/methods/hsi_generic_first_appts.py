@@ -83,7 +83,8 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
 
         self.TREATMENT_ID = 'FirstAttendance_Emergency'
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
+            ('Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD'): 1})
 
     def apply(self, person_id, squeeze_factor):
 
@@ -93,6 +94,26 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
             return
 
         do_at_generic_first_appt_emergency(hsi_event=self, squeeze_factor=squeeze_factor)
+
+
+class HSI_EmergencyCare_SpuriousSymptom(HSI_Event, IndividualScopeEventMixin):
+    """This is an HSI event that provides Accident & Emergency Care for a person that has spurious emergency symptom."""
+
+    def __init__(self, module, person_id, accepted_facility_level='1a'):
+        super().__init__(module, person_id=person_id)
+        assert module is self.sim.modules['HealthSeekingBehaviour']
+
+        self.TREATMENT_ID = "FirstAttendance_SpuriousEmergencyCare"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
+        self.ACCEPTED_FACILITY_LEVEL = accepted_facility_level  # '1a' in default or '1b' as an alternative
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        if not df.at[person_id, 'is_alive']:
+            return self.make_appt_footprint({})
+        else:
+            sm = self.sim.modules['SymptomManager']
+            sm.change_symptom(person_id, "spurious_emergency_symptom", '-', sm)
 
 
 def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
@@ -119,19 +140,21 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                 topen=hsi_event.sim.date,
                 tclose=None)
 
-    # 'Automatic' testing for HIV for everyone attending care:
+    # 'Automatic' testing for HIV for everyone attending care with AIDS symptoms:
     #  - suppress the footprint (as it done as part of another appointment)
     #  - do not do referrals if the person is HIV negative (assumed not time for counselling etc).
     if 'Hiv' in sim.modules:
-        schedule_hsi(
-            HSI_Hiv_TestAndRefer(
-                person_id=person_id,
-                module=hsi_event.sim.modules['Hiv'],
-                suppress_footprint=True,
-                do_not_refer_if_neg=True),
-            topen=hsi_event.sim.date,
-            tclose=None,
-            priority=0)
+        if 'aids_symptoms' in symptoms:
+            schedule_hsi(
+                HSI_Hiv_TestAndRefer(
+                    person_id=person_id,
+                    module=hsi_event.sim.modules['Hiv'],
+                    referred_from="hsi_generic_first_appt",
+                    suppress_footprint=True,
+                    do_not_refer_if_neg=True),
+                topen=hsi_event.sim.date,
+                tclose=None,
+                priority=0)
 
     if 'injury' in symptoms:
         if 'RTI' in sim.modules:
@@ -367,14 +390,6 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
             sim.modules['Depression'].do_when_suspected_depression(person_id=person_id, hsi_event=hsi_event)
             # TODO: Trigger surgical care for injuries.
 
-    if 'Hiv' in sim.modules:
-        sim.modules['HealthSystem'].schedule_hsi_event(
-            HSI_Hiv_TestAndRefer(person_id=person_id, module=sim.modules['Hiv']),
-            topen=sim.date,
-            tclose=None,
-            priority=0
-        )
-
     if "Malaria" in sim.modules:
         # Quick diagnosis algorithm - just perfectly recognises the symptoms of severe malaria
         sev_set = {"acidosis",
@@ -446,3 +461,11 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
     if 'Alri' in sim.modules:
         if (age <= 5) and (('cough' in symptoms) or ('difficult_breathing' in symptoms)):
             sim.modules['Alri'].on_presentation(person_id=person_id, hsi_event=hsi_event)
+
+    # ----- spurious emergency symptom -----
+    if 'spurious_emergency_symptom' in symptoms:
+        event = HSI_EmergencyCare_SpuriousSymptom(
+            module=sim.modules['HealthSeekingBehaviour'],
+            person_id=person_id
+        )
+        schedule_hsi(event, priority=0, topen=sim.date)
