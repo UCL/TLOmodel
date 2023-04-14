@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 from pytest import approx
 
-from tlo import Date, Module, Simulation, logging
+from tlo import DAYS_IN_YEAR, Date, Module, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.events import Event, IndividualScopeEventMixin
 from tlo.methods import (
@@ -364,7 +364,7 @@ def test_airthmetic_of_lifeyearslost(seed, tmpdir):
 
     # Set the date_of_birth of the person_id=0, such that the person is 4.5 years-old on 1st Jan 2010 (so that life-
     #  years lost span 0-4 and 5-9 age-groups)
-    dob = start_date - pd.DateOffset(days=int(4.5 * 365.25))
+    dob = start_date - pd.DateOffset(days=int(4.5 * DAYS_IN_YEAR))
     df = sim.population.props
     df.loc[0, ['sex', 'is_alive', 'date_of_birth']] = ('F', True, dob)
     sim.simulate(end_date=Date(2010, 12, 31))
@@ -385,9 +385,9 @@ def test_airthmetic_of_lifeyearslost(seed, tmpdir):
     assert yll.sum().sum() == approx(1.0)
 
     # check that age-range is correct (0.5 ly lost among 0-4 year-olds; 0.5 ly lost to 5-9 year-olds)
-    assert yll.loc[('F', '0-4', slice(None), 2010)].sum().sum() == approx(0.5, abs=2.0 / 365.25)
-    assert yll.loc[('F', '5-9', slice(None), 2010)].sum().sum() == approx(0.5, abs=2.0 / 365.25)
-    assert yll.loc[('F', ['0-4', '5-9'], slice(None), 2010)].sum().sum() == approx(1.0, abs=0.5 / 365.25)
+    assert yll.loc[('F', '0-4', slice(None), 2010)].sum().sum() == approx(0.5, abs=2.0 / DAYS_IN_YEAR)
+    assert yll.loc[('F', '5-9', slice(None), 2010)].sum().sum() == approx(0.5, abs=2.0 / DAYS_IN_YEAR)
+    assert yll.loc[('F', ['0-4', '5-9'], slice(None), 2010)].sum().sum() == approx(1.0, abs=0.5 / DAYS_IN_YEAR)
 
 
 @pytest.mark.slow

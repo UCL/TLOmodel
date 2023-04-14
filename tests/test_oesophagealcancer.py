@@ -4,7 +4,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from tlo import Date, Simulation
+from tlo import DAYS_IN_YEAR, Date, Simulation
 from tlo.methods import (
     demography,
     enhanced_lifestyle,
@@ -169,7 +169,7 @@ def check_configuration_of_population(sim):
     # check that date diagnosed is consistent with the age of the person (ie. not before they were 20.0
     age_at_dx = (df.loc[~pd.isnull(df.oc_date_diagnosis)].oc_date_diagnosis - df.loc[
         ~pd.isnull(df.oc_date_diagnosis)].date_of_birth)
-    assert all([int(x.days / 365.25) >= 20 for x in age_at_dx])
+    assert all([int(x.days / DAYS_IN_YEAR) >= 20 for x in age_at_dx])
 
     # check that those treated are a subset of those diagnosed (and that the order of dates makes sense):
     assert set(df.index[~pd.isnull(df.oc_date_treatment)]).issubset(df.index[~pd.isnull(df.oc_date_diagnosis)])
