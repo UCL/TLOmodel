@@ -21,6 +21,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     TARGET_PERIOD = (Date(2010, 1, 1), Date(2019, 12, 31))
 
+    def get_parameter_names_from_scenario_file() -> Tuple[str]:
+        """Get the tuple of names of the scenarios from `Scenario` class used to create the results."""
+        from scripts.healthsystem.impact_of_mode.scenario_impact_of_mode import ImpactOfHealthSystemMode
+        e = ImpactOfHealthSystemMode()
+        return tuple(e._scenarios.keys())
+
     def get_counts_of_hsi_by_treatment_id(_df):
         """Get the counts of the short TREATMENT_IDs occurring"""
         _counts_by_treatment_id = _df \
@@ -36,31 +42,30 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _short_treatment_id = _counts_by_treatment_id.index.map(lambda x: x.split('_')[0] + "*")
         return _counts_by_treatment_id.groupby(by=_short_treatment_id).sum()
 
+    def set_param_names_as_column_index_level_0(_df):
+        """Set the columns index (level 0) as the param_names."""
+        ordered_param_names_no_prefix = {i: x for i, x in enumerate(param_names)}
+        names_of_cols_level0 = [ordered_param_names_no_prefix.get(col) for col in _df.columns.levels[0]]
+        assert len(names_of_cols_level0) == len(_df.columns.levels[0])
+        _df.columns = _df.columns.set_levels(names_of_cols_level0, level=0)
+        return _df
+
+    # %% Define parameter names
+    param_names = get_parameter_names_from_scenario_file()
+
     counts_of_hsi_by_treatment_id = summarize(
         extract_results(
             results_folder,
             module='tlo.methods.healthsystem.summary',
             key='HSI_Event',
             custom_generate_series=get_counts_of_hsi_by_treatment_id,
-            do_scaling=True
-        ),
+            do_scaling=False, # Counts of HSI shouldn't be scaled for this investigation
+        ).pipe(set_param_names_as_column_index_level_0),
         only_mean=True,
-        collapse_columns=True,
     )
 
-    counts_of_hsi_by_treatment_id_short = summarize(
-        extract_results(
-            results_folder,
-            module='tlo.methods.healthsystem.summary',
-            key='HSI_Event',
-            custom_generate_series=get_counts_of_hsi_by_short_treatment_id,
-            do_scaling=True
-        ),
-        only_mean=True,
-        collapse_columns=True,
-    )
-
-
+    # copy to clipboard
+    counts_of_hsi_by_treatment_id.fillna(0.0).to_clipboard(excel=True)
 
 
 
