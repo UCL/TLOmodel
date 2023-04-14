@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 from pytest import approx
 
-from tlo import Date, Module, Simulation, logging
+from tlo import DAYS_IN_MONTH, DAYS_IN_YEAR, Date, Module, Simulation, logging
 from tlo.analysis.utils import compare_number_of_deaths, parse_log_file
 from tlo.methods import Metadata, demography
 from tlo.methods.causes import Cause
@@ -194,9 +194,8 @@ def test_py_calc(simulation):
     simulation.date += pd.DateOffset(days=1)
     age_update = AgeUpdateEvent(simulation.modules['Demography'], simulation.modules['Demography'].AGE_RANGE_LOOKUP)
     now = simulation.date
-    one_year = np.timedelta64(1, 'Y')
-    one_month = np.timedelta64(1, 'M')
-
+    one_year = pd.Timedelta(days=DAYS_IN_YEAR)
+    one_month = pd.Timedelta(days=DAYS_IN_MONTH)
     calc_py_lived_in_last_year = simulation.modules['Demography'].calc_py_lived_in_last_year
 
     # calc py: person is born and died before sim.date
@@ -293,7 +292,7 @@ def test_py_calc_w_mask(simulation):
     simulation.date += pd.DateOffset(days=1)
     age_update = AgeUpdateEvent(simulation.modules['Demography'], simulation.modules['Demography'].AGE_RANGE_LOOKUP)
     now = simulation.date
-    one_year = np.timedelta64(1, 'Y')
+    one_year = pd.Timedelta(days=DAYS_IN_YEAR)
 
     calc_py_lived_in_last_year = simulation.modules['Demography'].calc_py_lived_in_last_year
 

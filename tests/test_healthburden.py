@@ -20,7 +20,7 @@ from tlo.methods import (
     symptommanager,
 )
 from tlo.methods.causes import Cause
-from tlo.methods.demography import InstantaneousDeath
+from tlo.methods.demography import InstantaneousDeath, age_at_date
 from tlo.methods.diarrhoea import increase_risk_of_death, make_treatment_perfect
 from tlo.methods.fullmodel import fullmodel
 from tlo.methods.healthburden import Get_Current_DALYS
@@ -464,8 +464,9 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
     disability_onset_date = sim.modules['DiseaseThatCausesA'].disability_onset_date
 
     age_range_at_disability_onset = AGE_RANGE_LOOKUP[
-        int(np.round((disability_onset_date - date_of_birth) / np.timedelta64(1, 'Y')))]
-    age_at_death = int(np.round((death_date - date_of_birth) / np.timedelta64(1, 'Y')))
+        int(np.round(age_at_date(disability_onset_date, date_of_birth)))
+    ]
+    age_at_death = int(np.round(age_at_date(death_date, date_of_birth)))
     age_range_at_death = AGE_RANGE_LOOKUP[age_at_death]
 
     age_groups_where_yll_are_accrued = set(
