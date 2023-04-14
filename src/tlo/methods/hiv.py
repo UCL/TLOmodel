@@ -325,9 +325,15 @@ class Hiv(Module):
             Types.REAL,
             "Probability that a male will be circumcised, if HIV-negative, following testing",
         ),
-        "rel_prob_circ_for_child": Parameter(
+        "prob_circ_for_child_before_2020": Parameter(
             Types.REAL,
-            "Relative probability that a male aging <15 yrs will be circumcised, compared to a male aging 15+ yrs",
+            "Probability that a male aging <15 yrs will be circumcised before year 2020",
+        ),
+        "prob_circ_for_child_from_2020": Parameter(
+            Types.REAL,
+            "Probability that a male aging <15 yrs will be circumcised from year 2020, "
+            "which is different from before 2020 as children vmmc policy/fund/cases has changed, "
+            "according to PEPFAR 2020 Country Operational Plan and DHIS2 data",
         ),
         "probability_of_being_retained_on_prep_every_3_months": Parameter(
             Types.REAL,
@@ -517,14 +523,15 @@ class Hiv(Module):
 
         # Linear model for circumcision for male and aging <15 yrs who spontaneously presents for VMMC
         # This is to increase the VMMC cases/visits for <15 yrs males, which should account for about
-        # 40% of total VMMC cases according to UNAIDS & WHO/DHIS2 data.
-        # i.e., VMMC cases of <15 yrs vs 15+ yrs should be 40%:60%=2:3
-        self.lm["lm_circ_child"] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            # the probability that a male aging <15 yrs to be circumcised
-            p["prob_circ_after_hiv_test"] * p["rel_prob_circ_for_child"],
+        # 40% of total VMMC cases according to UNAIDS & WHO/DHIS2 2015-2019 data.
+        self.lm["lm_circ_child"] = LinearModel.multiplicative(
             Predictor("sex").when("M", 1.0).otherwise(0.0),
             Predictor("age_years").when("<15", 1.0).otherwise(0.0),
+            Predictor("year",
+                      external=True,
+                      conditions_are_mutually_exclusive=True,
+                      conditions_are_exhaustive=True).when("<2020", p["prob_circ_for_child_before_2020"])
+                                                     .otherwise(p["prob_circ_for_child_from_2020"])
         )
 
     def initialise_population(self, population):
@@ -1680,21 +1687,29 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 )
 
         # ----------------------------------- SPONTANEOUS VMMC FOR <15 YRS -----------------------------------
-        def vmmc_for_child(person_id):
+        def vmmc_for_child():
             """schedule the HSI_Hiv_Circ for <15 yrs males according to his age, circumcision status
             and the probability of being circumcised"""
-            person = df.loc[person_id]
-            if (person["sex"] == "M") & (person["age_years"] == "<15") & (~person["li_is_circ"]):
-                x = self.module.lm["lm_circ_child"].predict(
-                    df.loc[[person_id]], self.module.rng
+            # work out who will be circumcised.
+            will_go_to_circ = self.module.lm["lm_circ_child"].predict(
+                df.loc[
+                    df.is_alive
+                    & (df.sex == "M")
+                    & (df.age_years < 15)
+                    & (~df.li_is_circ)
+                ],
+                self.module.rng,
+                year=self.sim.date.year,
+            )
+
+            # schedule the HSI based on the probability
+            for person_id in will_go_to_circ.loc[will_go_to_circ].index:
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    HSI_Hiv_Circ(person_id=person_id, module=self.module),
+                    topen=self.sim.date,
+                    tclose=None,
+                    priority=0,
                 )
-                if x:
-                    self.sim.modules["HealthSystem"].schedule_hsi_event(
-                        HSI_Hiv_Circ(person_id=person_id, module=self.module),
-                        topen=self.sim.date,
-                        tclose=None,
-                        priority=0,
-                    )
 
         # Horizontal transmission: Male --> Female
         horizontal_transmission(from_sex="M", to_sex="F")
@@ -1714,8 +1729,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         prep_for_agyw()
 
         # VMMC for <15 yrs in the population
-        for each_person in df.index:
-            vmmc_for_child(each_person)
+        vmmc_for_child()
 
 
 # ---------------------------------------------------------------------------
@@ -2259,14 +2273,14 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
                 # Schedule follow-up appts
                 # schedule first follow-up appt, 3 days from procedure;
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    HSI_Hiv_Circ(person_id=person_id, module=self.module),
+                    self,
                     topen=self.sim.date + DateOffset(days=3),
                     tclose=None,
                     priority=0,
                 )
                 # schedule second follow-up appt, 7 days from procedure;
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    HSI_Hiv_Circ(person_id=person_id, module=self.module),
+                    self,
                     topen=self.sim.date + DateOffset(days=7),
                     tclose=None,
                     priority=0,
