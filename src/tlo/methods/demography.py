@@ -22,7 +22,7 @@ from tlo import (
     Parameter,
     Property,
     Types,
-    logging
+    logging,
 )
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.causes import (
