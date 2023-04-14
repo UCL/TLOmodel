@@ -645,8 +645,8 @@ def figure7_squeeze_factors(results_folder: Path, output_folder: Path, resourcef
 
     squeeze_factor_by_hsi = squeeze_factor_by_hsi.sort_values('TREATMENT_ID', key=order_of_short_treatment_ids, ascending=False).reset_index(drop=True)
 
-    fig, ax = plt.subplots(figsize=(7.0, 10.5))
-    name_of_plot = 'Average Squeeze Factors'
+    fig, ax = plt.subplots(figsize=(7.2, 10.5))
+    name_of_plot = 'Average Squeeze Factors for each Health System Interaction Event'
     for i, row in squeeze_factor_by_hsi.iterrows():
         ax.plot(
             row['squeeze_factor'],
@@ -660,7 +660,7 @@ def figure7_squeeze_factors(results_folder: Path, output_folder: Path, resourcef
     ax.set_yticks(squeeze_factor_by_hsi.index)
     ax.set_yticklabels(squeeze_factor_by_hsi['HSI'], fontsize=6)
     ax.grid(axis='x')
-    ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
+    fig.suptitle(name_of_plot, fontsize=12, weight='bold')
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
