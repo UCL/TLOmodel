@@ -642,8 +642,9 @@ def figure7_squeeze_factors(results_folder: Path, output_folder: Path, resourcef
     squeeze_factor_by_hsi['TREATMENT_ID'] = squeeze_factor_by_hsi['_TREATMENT_ID'].map(lambda x: x.split('_')[0] + "*")
 
     # Sort to collect the same TREATMENT_ID together
-
-    squeeze_factor_by_hsi = squeeze_factor_by_hsi.sort_values('TREATMENT_ID', key=order_of_short_treatment_ids, ascending=False).reset_index(drop=True)
+    squeeze_factor_by_hsi = squeeze_factor_by_hsi.sort_values('TREATMENT_ID',
+                                                              key=order_of_short_treatment_ids,
+                                                              ascending=False).reset_index(drop=True)
 
     fig, ax = plt.subplots(figsize=(7.2, 10.5))
     name_of_plot = 'Average Squeeze Factors for each Health System Interaction Event'
