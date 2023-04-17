@@ -246,24 +246,18 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
                            )
                 return _x.groupby(_x.index).mean().stack()
 
-            if in_log_file == 'run_analysis_contraception_no_diseases__2023-02-02T194158.log':
-                # without interv, 250K, till 2050; enhanced_lifestyle, healthseekingbehaviour, symptommanager excluded
-                results_folder_name = 'run_analysis_contraception_no_diseases-2023-02-02T193933Z'
-            elif in_log_file == 'run_analysis_contraception_no_diseases__2023-02-02T194458.log':
-                # with interv, 250K, till 2050; enhanced_lifestyle, healthseekingbehaviour, symptommanager excluded
-                results_folder_name = 'run_analysis_contraception_no_diseases-2023-02-02T194247Z'
-            elif in_log_file == 'run_analysis_contraception_no_diseases__2023-01-20T185253.log':
-                # without interv, 2K, till 2099
-                results_folder_name = 'run_analysis_contraception_no_diseases-2023-01-20T185037Z'
-            elif in_log_file == 'run_analysis_contraception_no_diseases__2023-01-20T185048.log':
-                # with interv, 2K, till 2050
-                results_folder_name = 'run_analysis_contraception_no_diseases-2023-01-20T184840Z'
-            elif in_log_file == 'run_analysis_contraception_no_diseases__2023-03-25T113153.log':
-                # without interv, 2K, till 2099, new days + costs updated
-                results_folder_name = 'run_analysis_contraception_no_diseases-2023-03-25T112934Z'
-            elif in_log_file == 'run_analysis_contraception_no_diseases__2023-03-25T115607.log':
-                # with interv, 2K, till 2099, new days + costs updated
-                results_folder_name = 'run_analysis_contraception_no_diseases-2023-03-25T115340Z'
+            if in_log_file == 'run_analysis_contraception_no_diseases__2023-04-04T222656.log':
+                # without interv, 250K, till 2050; final costs update EHP & OHT
+                results_folder_name = 'run_analysis_contraception_no_diseases-2023-04-04T222430Z'
+            elif in_log_file == 'run_analysis_contraception_no_diseases__2023-04-04T222332.log':
+                # with interv, 250K, till 2050; final costs update EHP & OHT
+                results_folder_name = 'run_analysis_contraception_no_diseases-2023-04-04T222103Z'
+            elif in_log_file == 'run_analysis_contraception_no_diseases__2023-04-04T224551.log':
+                # without interv, 2K till 2099, final costs update EHP & OHT
+                results_folder_name = 'run_analysis_contraception_no_diseases-2023-04-04T224344Z'
+            elif in_log_file == 'run_analysis_contraception_no_diseases__2023-04-04T224342.log':
+                # with interv, 2K till 2099, final costs update EHP & OHT
+                results_folder_name = 'run_analysis_contraception_no_diseases-2023-04-04T224121Z'
             else:
                 raise ValueError(
                     "Unknown results_folder_name for the log file " + str(in_log_file) +
@@ -620,12 +614,12 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
                 return 'male_condom'
             if in_d == dict({3: 1, 1933: 1, 98: 1}):
                 return 'injections'
-            if in_d == dict({1933: 1, 7: 1}):
+            if in_d == dict({1933: 2, 7: 1}):
                 return 'IUD'
-            if in_d == dict({1933: 3, 8: 1, 5: 1, 9: 1, 10: 1, 11: 1, 12: 1}):
+            if in_d == dict({1933: 3, 8: 2, 5: 1, 9: 2, 10: 0.1, 11: 1, 12: 1}):
                 return 'implant'
             if in_d == dict(
-                {8: 1, 2019: 1, 307: 0.5, 15: 1, 1960: 2, 75: 10, 2676: 1, 2677: 1, 21: 0.25, 112: 3, 23: 2, 5: 2,
+                {8: 1, 2019: 1, 307: 0.5, 15: 1, 1960: 3, 75: 2, 2676: 3, 2677: 3, 21: 0.25, 112: 2, 23: 8, 5: 2,
                  49: 0.2}
             ):
                 return 'female_sterilization'
