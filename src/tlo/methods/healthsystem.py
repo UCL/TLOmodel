@@ -461,8 +461,7 @@ class HealthSystem(Module):
         name: Optional[str] = None,
         resourcefilepath: Optional[Path] = None,
         service_availability: Optional[List[str]] = None,
-        ListFTAttributes: [List[str]] = None,
-        ListFTChannels: [List[str]] = None,
+        list_fasttrack: [List[str]] = None,
         mode_appt_constraints: int = 0,
         cons_availability: Optional[str] = None,
         beds_availability: Optional[str] = None,
@@ -483,11 +482,9 @@ class HealthSystem(Module):
         :param name: Name to use for module, defaults to module class name if ``None``.
         :param resourcefilepath: Path to directory containing resource files.
         :param service_availability: A list of treatment IDs to allow.
-        :param ListFTAttributes: list of individual's attributes that will be relevant in
-            determining whether they should be eligible for fast tracking
-        :param ListFTChannels: list of fast tracking channels that will be potentially available to
-            individuals given the modules included in the simulation.
-            determining whether they should be eligible for fast tracking
+        :param list_fasttrack: list of individual's attributes that will be relevant in
+            determining whether they should be eligible for fast tracking, and the corresponding
+            fast tracking channels that can be potentially available given the modules included in the simulation.
         :param mode_appt_constraints: Integer code in ``{0, 1, 2}`` determining mode of
             constraints with regards to officer numbers and time - 0: no constraints,
             all HSI events run with no squeeze factor, 1: elastic constraints, all HSI
@@ -565,12 +562,9 @@ class HealthSystem(Module):
 
         # Store the attributes of a person that will be relevant in determining who can qualify
         # for fast tracking
-        self.arg_ListFTAttributes = ListFTAttributes
-        self.ListFTAttributes = []  # provided so that there is a default even before simulation is run
-
         # Store the fast tracking channels that will be relevant for policy given the modules included
-        self.arg_ListFTChannels = ListFTChannels
-        self.ListFTChannels = []  # provided so that there is a default even before simulation is run
+        self.arg_list_fasttrack = list_fasttrack
+        self.list_fasttrack = []  # provided so that there is a default even before simulation is run
 
         # Check that the capabilities coefficient is correct
         if capabilities_coefficient is not None:
@@ -710,25 +704,18 @@ class HealthSystem(Module):
             Dictio.set_index("Treatment", drop=True, inplace=True)
             self.PriorityRank_Dict = Dictio.to_dict(orient="index")
 
-        # The list of attributes that can be looked up to determine whether a person might be eligible
-        # for fast tracking is dependent on the modules included in the simulation. Store it at this
-        # point to avoid having to recheck which modules are saved every time an HSI_Event is scheduled.
-        # Each attribute is associated with one specific fast tracking channel; the list of channels that
-        # can be considered will therefore also depend on the modules included, so store this info at this stage
-        # also.
+        # The attributes that can be looked up to determine whether a person might be eligible
+        # for fast-tracking, as well as the corresponding fast-tracking channels, depend on the modules
+        # included in the simulation. Store the attributes&channels pairs allowed given the modules included
+        # to avoid having to recheck which modules are saved every time an HSI_Event is scheduled.
         if self.include_fasttrack_routes:
-            self.ListFTAttributes.append('age_exact_years')
-            self.ListFTChannels.append('FT_if_5orUnder')
+            self.list_fasttrack.append(('age_exact_years', 'FT_if_5orUnder'))
             if 'Contraception' in self.sim.modules or 'SimplifiedBirths' in self.sim.modules:
-                self.ListFTAttributes.append('is_pregnant')
-                self.ListFTChannels.append('FT_if_pregnant')
+                self.list_fasttrack.append(('is_pregnant', 'FT_if_pregnant'))
             if 'Hiv' in self.sim.modules:
-                self.ListFTAttributes.append('hv_diagnosed')
-                self.ListFTChannels.append('FT_if_Hivdiagnosed')
+                self.list_fasttrack.append(('hv_diagnosed', 'FT_if_Hivdiagnosed'))
             if 'Tb' in self.sim.modules:
-                self.ListFTAttributes.append('tb_diagnosed')
-                self.ListFTChannels.append('FT_if_tbdiagnosed')
-            assert len(self.ListFTChannels) == len(self.ListFTAttributes)
+                self.list_fasttrack.append(('tb_diagnosed', 'FT_if_tbdiagnosed'))
 
     def initialise_population(self, population):
         self.bed_days.initialise_population(population.props)
@@ -1131,15 +1118,16 @@ class HealthSystem(Module):
                     # don't check remaining, as they all lead to priority=1.
 
                     # Look up relevant attributes for HSI_Event's target
-                    target_attributes = pdf.loc[hsi_event.target, self.ListFTAttributes]
+                    list_targets = list(list(zip(*self.list_fasttrack))[0])
+                    target_attributes = pdf.loc[hsi_event.target, list_targets]
 
                     # First item in Lists is age-related, therefore need to invoke different logic.
-                    if (PR[hsi_event.TREATMENT_ID][self.ListFTChannels[0]] == 1 and target_attributes[0] <= 5):
+                    if (PR[hsi_event.TREATMENT_ID][self.list_fasttrack[0][1]] == 1 and target_attributes[0] <= 5):
                         return 1
 
                     # All other attributes are boolean, can do this in for loop
-                    for i in range(1, len(self.ListFTChannels)):
-                        if (PR[hsi_event.TREATMENT_ID][self.ListFTChannels[i]] == 1 and target_attributes[i]):
+                    for i in range(1, len(self.list_fasttrack)):
+                        if (PR[hsi_event.TREATMENT_ID][self.list_fasttrack[i][1]] == 1 and target_attributes[i]):
                             return 1
 
                 return _priority_ranking
