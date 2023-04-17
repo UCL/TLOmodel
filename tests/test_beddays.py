@@ -157,7 +157,13 @@ def test_bed_days_basics(tmpdir, seed):
     for bed_type in [f"bed_tracker_{bed}" for bed in hs.bed_days.bed_types]:
         # Check dates are as expected:
         dates_in_log = pd.to_datetime(log[bed_type]['date'])
-        date_range = pd.date_range(sim.start_date, sim.end_date, freq='D', inclusive='left')
+        # Default behaviour of date_range is to include both start and end date in range
+        # therefore offset end by minus one day to get all days up to but not including
+        # end date. closed / inclusive kwarg avoided here to keep compatibility across
+        # Pandas versions
+        date_range = pd.date_range(
+            sim.start_date, sim.end_date - pd.DateOffset(days=1), freq='D'
+        )
         assert set(date_range) == set(dates_in_log)
 
         # Check columns (for each facility_ID) are as expected:
