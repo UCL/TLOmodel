@@ -3171,7 +3171,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Rti_MedicalIntervention'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 8})
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})
 
         p = module.parameters
         # Load the parameters used in this event
