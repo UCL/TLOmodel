@@ -1,10 +1,10 @@
 import time
 from pathlib import Path
 
-import tables
 import fnc_analyse_contraception as a_co
 import numpy as np
 import pandas as pd
+import tables
 
 time_start = time.time()
 # running time - both analysis all figs & tab for 250K pop till 2050:
