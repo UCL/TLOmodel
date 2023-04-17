@@ -61,7 +61,8 @@ def table_use_costs__plot_costs(in_use_output, in_use_without_df, in_percentage_
     interv_cons_total = []
     for tp in in_interv_costs_with_df.index:
         interv_cons_total.append(
-            in_interv_costs_with_df.loc[tp, 'interventions_total'] + in_costs_with_df.loc[(tp, 'co_modern_total'), 'Costs']
+            in_interv_costs_with_df.loc[tp, 'interventions_total'] + in_costs_with_df.loc[(tp, 'co_modern_total'),
+                                                                                          'Costs']
         )
     in_interv_costs_with_df['interv_cons_total'] = interv_cons_total
 
@@ -114,7 +115,8 @@ def table_use_costs__plot_costs(in_use_output, in_use_without_df, in_percentage_
     costs_mwk_usd_with_df = in_costs_with_df.astype(str) + " (" + costs_usd_with_df.astype(str) + ")"
     interv_costs_mwk_usd_without_df = \
         in_interv_costs_without_df.astype(str) + " (" + interv_costs_usd_without_df.astype(str) + ")"
-    interv_costs_mwk_usd_with_df = in_interv_costs_with_df.astype(str) + " (" + interv_costs_usd_with_df.astype(str) + ")"
+    interv_costs_mwk_usd_with_df =\
+        in_interv_costs_with_df.astype(str) + " (" + interv_costs_usd_with_df.astype(str) + ")"
 
     # TODO: move the creation of the table (bellow) to a separate .py file
     def combine_use_costs_with_without_interv(
