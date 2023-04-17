@@ -8,31 +8,25 @@ import pandas as pd
 
 time_start = time.time()
 # running time - both analysis all figs & tab for 250K pop till 2050:
-# running 1st time (ie run_analysis = True) ~ 34 mins
+# running 1st time (ie run_analysis = True) with all plot_.._bool = False ~ 34 mins
 # running 2nd time (ie run_analysis = False) ~ 1.5 min
 ########################################################################################################################
 # TODO: estimate the pop_size_simulated from scaling_factor (and if not same for both sims, add them to IDs instead to
 #  suffix) & return last year of sims (the same for that) // separate them as pop_size_simulated & last_year_simulated
-pop_size_simulated = "2K"
-# pop_size_simulated = "250K_till2050"
-branch_name = 'co_2023_02_inclPR807-CostsUpdate'
+# pop_size_simulated = "2K"
+pop_size_simulated = "250K"
+branch_name = 'co_2023_02_inclPR807-AnalysisUpdate2'
 # which results to use
 # - Without interv
-datestamp_without_log = '2023-03-25T113153'
-# 2K till 2099, with new days_betw_appts: '2023-03-25T113153' from 2023-03-25T112934Z
-# datestamp_without_log = '2023-01-20T185253'
-# 2K till 2099: '2023-01-20T185253' from 2023-01-20T185037Z
-# datestamp_without_log = '2023-02-02T194158'
-# 250K till 2050; enhanced_lifestyle, healthseekingbehaviour, symptommanager excluded:
-#     '2023-02-02T194158' from 2023-02-02T193933Z
+# datestamp_without_log = '2023-04-04T224551'
+# 2K till 2099, final costs update EHP & OHT: '2023-04-04T224551' from 2023-04-04T224344Z
+datestamp_without_log = '2023-04-04T222656'
+# 250K till 2050; final costs update EHP & OHT: '2023-04-04T222656' from 2023-04-04T222430Z
 # # - With interv
-datestamp_with_log = '2023-03-25T115607'
-# 2K till 2099, with new days_betw_appts: '2023-03-25T115607' from 2023-03-25T115340Z
-# datestamp_with_log = '2023-01-20T185048'
-# 2K till 2050: '2023-01-20T185048' from 2023-01-20T184840Z
-# datestamp_with_log = '2023-02-02T194458'
-# 250K till 2050; enhanced_lifestyle, healthseekingbehaviour, symptommanager excluded:
-#     '2023-02-02T194458' from 2023-02-02T194247Z
+# datestamp_with_log = '2023-04-04T224342'
+# 2K till 2099, final costs update EHP & OHT: '2023-04-04T224342' from 2023-04-04T224121Z
+datestamp_with_log = '2023-04-04T222332'
+# 250K till 2050; final costs update EHP & OHT: '2023-04-04T222332' from 2023-04-04T222103Z
 logFile_without = 'run_analysis_contraception_no_diseases__' + datestamp_without_log + '.log'
 logFile_with = 'run_analysis_contraception_no_diseases__' + datestamp_with_log + '.log'
 ##
