@@ -2,7 +2,6 @@
 Lifestyle module
 Documentation: 04 - Methods Repository/Method_Lifestyle.xlsx
 """
-import datetime
 from pathlib import Path
 
 import numpy as np
