@@ -114,7 +114,7 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
         """
 
     # %% Plot Contraception Use (By Method) Over Time?
-    if in_plot_use_time_bool or in_plot_use_time_method_bool:
+    if in_plot_use_time_bool or in_plot_use_time_method_bool or in_plot_pregnancies_bool:
 
         # Load Model Results
         co_df = log_df['tlo.methods.contraception']['contraception_use_summary'].set_index('date').copy()
@@ -311,58 +311,60 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
 
             print("Figs: Contraception Use By Method Over time saved.")
 
-    # %% Plot Pregnancies Over time:
-    if in_plot_pregnancies_bool:
+        # %% Plot Pregnancies Over time:
+        if in_plot_pregnancies_bool:
 
-        # Load Model Results by Months up to 2050
-        preg_df_by_months = log_df['tlo.methods.contraception']['pregnancy'].set_index('date').copy()
-        if preg_df_by_months.index.year[-1] > 2050:
-            preg_df_by_months = preg_df_by_months[preg_df_by_months.index.year <= 2050]
-        # if not warn yet, warn that the sim ended before 2050, hence the plots will be prepared till then only
-        elif preg_df_by_months.index.year[-1] < 2050 and not in_plot_use_time_bool and not in_plot_use_time_method_bool:
-            warnings.warn(
-                '\nWarning: The simulation ended before the year 2050, specifically in ' +
-                str(preg_df_by_months.index.year[-1]) + ', hence all the figs are till then only.')
-        # Create Data by Years (NB. Figs by Months are too noisy.)
-        preg_df_by_years = preg_df_by_months.copy()
-        preg_df_by_years.index = pd.to_datetime(preg_df_by_years.index).year
-        num_pregs_by_year = preg_df_by_years.groupby(by=preg_df_by_years.index).size()
-        plot_years = num_pregs_by_year.index
-        pregnancy_by_years = num_pregs_by_year.values
+            # Load Model Results by Months up to 2050
+            women1549_total = co_df.sum(axis=1)[0:len(plot_months)]
+            preg_df_by_months = log_df['tlo.methods.contraception']['pregnancy'].set_index('date').copy()
+            if preg_df_by_months.index.year[-1] > 2050:
+                preg_df_by_months = preg_df_by_months[preg_df_by_months.index.year <= 2050]
+            # if not warn yet, warn that the sim ended before 2050, hence the plots will be prepared till then only
+            elif preg_df_by_months.index.year[-1] < 2050\
+                    and not in_plot_use_time_bool and not in_plot_use_time_method_bool:
+                warnings.warn(
+                    '\nWarning: The simulation ended before the year 2050, specifically in ' +
+                    str(preg_df_by_months.index.year[-1]) + ', hence all the figs are till then only.')
+            # Create Data by Years (NB. Figs by Months are too noisy.)
+            preg_df_by_years = preg_df_by_months.copy()
+            preg_df_by_years.index = pd.to_datetime(preg_df_by_years.index).year
+            num_pregs_by_year = preg_df_by_years.groupby(by=preg_df_by_years.index).size()
+            plot_years = num_pregs_by_year.index
+            pregnancy_by_years = num_pregs_by_year.values
 
-        # Plot total pregnancies per Year
-        fig, ax = plt.subplots()
-        ax.plot(np.asarray(plot_years), pregnancy_by_years * scaling_factor, ls=line_style)
-        plt.axvline(x=2023, ls=ls_start_interv, color='gray', label='interventions start')
-        if in_set_ylims_bool:
-            ax.set_ylim([0, in_ylims_l[3]])
-        plt.title("Pregnancies per Year")
-        plt.xlabel("Year")
-        plt.ylabel("Number of pregnancies")
-        plt.savefig(outputpath / ('Pregnancies per Year ' + in_id +
-                                  "_UpTo" + str(plot_years[-1]) + in_suffix + '.png'), format='png')
+            # Plot total pregnancies per Year
+            fig, ax = plt.subplots()
+            ax.plot(np.asarray(plot_years), pregnancy_by_years * scaling_factor, ls=line_style)
+            plt.axvline(x=2023, ls=ls_start_interv, color='gray', label='interventions start')
+            if in_set_ylims_bool:
+                ax.set_ylim([0, in_ylims_l[3]])
+            plt.title("Pregnancies per Year")
+            plt.xlabel("Year")
+            plt.ylabel("Number of pregnancies")
+            plt.savefig(outputpath / ('Pregnancies per Year ' + in_id +
+                                      "_UpTo" + str(plot_years[-1]) + in_suffix + '.png'), format='png')
 
-        # Calculate Means of Pregnancies Proportions within Women 15-49 per Year
-        # (women1549_total are monthly data, hence pregnancy monthly data used to calculate the means )
-        num_pregs_by_months = preg_df_by_months.groupby(by=preg_df_by_months.index).size()
-        model_pregnancy_by_month = num_pregs_by_months.values
-        preg_props = model_pregnancy_by_month / women1549_total
-        preg_props.index = pd.to_datetime(preg_props.index).year
-        mean_preg_props_by_year = preg_props.groupby(by=preg_props.index).mean()
+            # Calculate Means of Pregnancies Proportions within Women 15-49 per Year
+            # (women1549_total are monthly data, hence pregnancy monthly data used to calculate the means )
+            num_pregs_by_months = preg_df_by_months.groupby(by=preg_df_by_months.index).size()
+            model_pregnancy_by_month = num_pregs_by_months.values
+            preg_props = model_pregnancy_by_month / women1549_total
+            preg_props.index = pd.to_datetime(preg_props.index).year
+            mean_preg_props_by_year = preg_props.groupby(by=preg_props.index).mean()
 
-        # Plot mean proportion of pregnancies in 15-49 women pop per Years
-        fig, ax = plt.subplots()
-        ax.plot(np.asarray(plot_years), mean_preg_props_by_year, ls=line_style)
-        plt.axvline(x=2023, ls=ls_start_interv, color='gray', label='interventions start')
-        if in_set_ylims_bool:
-            ax.set_ylim([0, in_ylims_l[4]])
-        plt.title("Mean Proportion of Pregnancies in Females 15-49 per Year")
-        plt.xlabel("Year")
-        plt.ylabel("Mean proportion of pregnancies")
-        plt.savefig(outputpath / ('Mean Prop of Pregnancies in Fem15-49 per Year ' + in_id +
-                                  "_UpTo" + str(plot_years[-1]) + in_suffix + '.png'), format='png')
+            # Plot mean proportion of pregnancies in 15-49 women pop per Years
+            fig, ax = plt.subplots()
+            ax.plot(np.asarray(plot_years), mean_preg_props_by_year, ls=line_style)
+            plt.axvline(x=2023, ls=ls_start_interv, color='gray', label='interventions start')
+            if in_set_ylims_bool:
+                ax.set_ylim([0, in_ylims_l[4]])
+            plt.title("Mean Proportion of Pregnancies in Females 15-49 per Year")
+            plt.xlabel("Year")
+            plt.ylabel("Mean proportion of pregnancies")
+            plt.savefig(outputpath / ('Mean Prop of Pregnancies in Fem15-49 per Year ' + in_id +
+                                      "_UpTo" + str(plot_years[-1]) + in_suffix + '.png'), format='png')
 
-        print("Figs: Pregnancies Over time saved.")
+            print("Figs: Pregnancies Over time saved.")
 
     # %% Plot Dependency Ratio Over time:
     if in_plot_depend_ratio_bool:
