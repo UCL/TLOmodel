@@ -8,8 +8,8 @@ import tables
 
 time_start = time.time()
 # running time - both analysis all figs & tab for 250K pop till 2050:
-# running 1st time (ie run_analysis = True) with all plot_.._bool = False ~ 34 mins
-# running 2nd time (ie run_analysis = False) ~ 1.5 min
+# running 1st time (ie run_analysis = True) with all plot_.._bool = False ~ 37 mins
+# running again (ie run_analysis = False) with all plot_.._bool = True or False ~ 1.7 min
 ########################################################################################################################
 # TODO: estimate the pop_size_simulated from scaling_factor (and if not same for both sims, add them to IDs instead to
 #  suffix) & return last year of sims (the same for that) // separate them as pop_size_simulated & last_year_simulated
@@ -90,6 +90,9 @@ do_interv_analysis = True
 # plot_costs = False
 plot_costs = True
 ########################################################################################################################
+# Prepare the table of consumables (no sim is needed)
+tables.table_cons(mwk_to_usd_exchange_rate, contraceptives_order)
+
 # Actually run analysis for the table, only if you require the table. ;)
 run_analysis = run_analysis and table_use_costs_bool
 
