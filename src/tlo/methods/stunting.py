@@ -324,6 +324,8 @@ class Models:
             ).when(
                 "1 <= age_exact_years < 2", p["base_inc_rate_stunting_by_agegp"][2]
             ).when(
+                "2 <= age_exact_years < 3", p["base_inc_rate_stunting_by_agegp"][3]
+            ).when(
                 "3 <= age_exact_years < 4", p["base_inc_rate_stunting_by_agegp"][4]
             ).when(
                 "4 <= age_exact_years < 5", p["base_inc_rate_stunting_by_agegp"][5]
