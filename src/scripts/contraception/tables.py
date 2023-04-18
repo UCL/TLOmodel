@@ -1,9 +1,11 @@
 import math
+from datetime import date
 
 import bar_chart_costs
 import pandas as pd
 
 
+# %% TABLE USE & COSTS + FIGs COSTS ....................................................................................
 def table_use_costs__plot_costs(in_use_output, in_use_without_df, in_percentage_use_without_df,
                                 in_use_with_df, in_percentage_use_with_df, in_rounding_use_to,
                                 in_costs_without_df, in_costs_with_df,
@@ -184,7 +186,7 @@ def table_use_costs__plot_costs(in_use_output, in_use_without_df, in_percentage_
                                    index=pd.MultiIndex.from_product([
                                        in_df_use_without.index,
                                        ['Without interventions', 'With Pop and PPFP interventions'],
-                                       [str(in_use_output).capitalize() + ' % of\n women using\n (' +
+                                       [str(in_use_output).capitalize() + ' % of\nwomen using\n(' +
                                         rounding_name(in_rounding_use_to) + ' users)',
                                         'Costs in\n' + rounding_name(in_rounding_costs_mwk_to) + ' MWK\n'
                                         + "(" + rounding_name(in_rounding_costs_mwk_to / 1000) + ' USD)']
@@ -198,11 +200,11 @@ def table_use_costs__plot_costs(in_use_output, in_use_without_df, in_percentage_
 
     # Change the names of totals
     use_costs_table_df = use_costs_table_df.rename(
-        index={'co_modern_total': 'modern contraceptives\n TOTAL',
+        index={'co_modern_total': 'modern contraceptives\nTOTAL',
                'pop_interv': 'Pop implementation',
                'ppfp_interv': 'PPFP implementation',
                'pop_ppfp_interv': 'Pop & PPFP implementation',
-               'co_modern_all_interv_total': 'modern contraceptives &\n interventions implementation\n TOTAL'
+               'co_modern_all_interv_total': 'modern contraceptives &\ninterventions implementation\nTOTAL'
                }
     )
     # Remove the underscores from the names of contraception methods
@@ -211,7 +213,78 @@ def table_use_costs__plot_costs(in_use_output, in_use_without_df, in_percentage_
     output_table_file = r"outputs/output_table_" + in_use_output + "-use_costs" + "__" +\
                         in_ID_without + "_" + in_ID_with + in_suffix + ".xlsx"
     writer = pd.ExcelWriter(output_table_file)
-    # Mean use rounded to two decimals for the table
     use_costs_table_df.to_excel(writer, index_label=use_costs_table_df.columns.name)
 
     writer.save()
+
+
+# %% TABLE CONSUMABLES .................................................................................................
+def table_cons(in_mwk_to_usd_exchange_rate,
+               in_contraceptives_order: list = ['pill', 'IUD', 'injections', 'implant', 'male_condom',
+                                                'female_sterilization', 'other_modern'],):
+
+    resource_items_pkgs_df = pd.read_csv(
+        'resources/healthsystem/consumables/ResourceFile_Consumables_Items_and_Packages.csv'
+    )
+
+    last_line_interv_pkg_name = 'Female Condom'
+    last_line_nmb_data =\
+        resource_items_pkgs_df.loc[resource_items_pkgs_df['Intervention_Pkg'] == last_line_interv_pkg_name].index[0]
+    co_pkgs_df = resource_items_pkgs_df.loc[0:last_line_nmb_data,
+                                            ['Intervention_Pkg', 'Items', 'Expected_Units_Per_Case', 'Unit_Cost']]
+    # Remove Male sterilization if not among contraceptives we consider
+    if 'male_sterilization' not in in_contraceptives_order:
+        co_pkgs_df = co_pkgs_df.loc[co_pkgs_df['Intervention_Pkg'] != 'Male sterilization', :]
+    # Rename the columns
+    co_pkgs_df.columns =\
+        ['\nContraception\noption', '\n\nItems', 'Expected\nUnits\nPer Case', 'Unit Cost\n2021 prices\nin MWK']
+    # ['Contraception option', 'Items', 'Expected Units Per Case', 'Unit Cost 2021 prices in MWK']
+
+    def mwk_to_usd(in_mwk_price):
+        return in_mwk_price * in_mwk_to_usd_exchange_rate
+
+    # Calculate the costs in USD and round to 2 decimals
+    co_pkgs_df['Unit Cost\n2021 prices\nin USD'] =\
+        round(co_pkgs_df['Unit Cost\n2021 prices\nin MWK'].apply(mwk_to_usd), 2)
+    # Round costs in MWK to 2 decimals
+    co_pkgs_df['Unit Cost\n2021 prices\nin MWK'] = round(co_pkgs_df['Unit Cost\n2021 prices\nin MWK'], 2)
+
+    # Rename the pkgs to be consistent with methods names elsewhere and order the dataframe by contraceptives_order
+    def pkg_name_to_method(in_co_pkg_name):
+        """
+        Returns contraception method name based on input Intervention_Pkg name from the RF.
+
+        :param in_co_pkg_name: Intervention_Pkg name used in a ResourceFile.
+
+        :return: Name of the contraception method.
+        """
+        if in_co_pkg_name == 'Pill':
+            return 'pill'
+        if in_co_pkg_name == 'Male condom':
+            return 'male_condom'
+        if in_co_pkg_name == 'Female Condom':
+            return 'other_modern'
+        if in_co_pkg_name == 'IUD':
+            return 'IUD'
+        if in_co_pkg_name == 'Injectable':
+            return 'injections'
+        if in_co_pkg_name == 'Implant':
+            return 'implant'
+        if in_co_pkg_name == 'Female sterilization':
+            return 'female_sterilization'
+        else:
+            raise ValueError(
+                "There is an unrecognised co. Intervention_Pkg name: " + str(in_co_pkg_name) + "."
+            )
+
+    co_pkgs_df['\nContraception\noption'] = co_pkgs_df['\nContraception\noption'].apply(pkg_name_to_method)
+    co_pkgs_df = co_pkgs_df.sort_values(by='\nContraception\noption',
+                                        key=lambda x: x.map(lambda v: in_contraceptives_order.index(v)))
+
+    output_table_file = r"outputs/output_table_cons" "__" + str(date.today()) + ".xlsx"
+    writer = pd.ExcelWriter(output_table_file)
+    co_pkgs_df.to_excel(writer, index=False)
+
+    writer.save()
+    # TODO: finish? (the boarders, header align left, make the expected units to be nmbs so they are aligned right,
+    #  write down the unique contraception option just once)
