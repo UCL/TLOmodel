@@ -18,7 +18,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -339,9 +339,8 @@ class CardioMetabolicDisorders(Module):
         # Register symptoms from events and make them emergencies
         for event in self.events:
             self.sim.modules['SymptomManager'].register_symptom(
-                Symptom(
-                    name=f'{event}_damage',
-                    emergency_in_adults=True
+                Symptom.emergency(
+                    name=f'{event}_damage', which='adults'
                 ),
             )
 
@@ -799,7 +798,7 @@ class CardioMetabolicDisorders(Module):
         """
 
         def is_next_test_due(current_date, date_of_last_test):
-            return pd.isnull(date_of_last_test) or (current_date - date_of_last_test).days > 365.25 / 2
+            return pd.isnull(date_of_last_test) or (current_date - date_of_last_test).days > DAYS_IN_YEAR / 2
 
         df = self.sim.population.props
         symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
@@ -1696,7 +1695,7 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
         assert isinstance(module, CardioMetabolicDisorders)
 
         self.TREATMENT_ID = 'CardioMetabolicDisorders_Treatment'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1, 'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '2'
 
         self.event = ev

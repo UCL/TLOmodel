@@ -103,6 +103,13 @@ def test_configuration_of_properties(seed):
     assert df.loc[df['date_of_birth'] < sim.start_date, 'de_ever_depr'].sum()
 
 
+def get_hsi_events_run(sim):
+    return {
+        event_details.event_name
+        for event_details in sim.modules['HealthSystem'].hsi_event_counts.keys()
+    }
+
+
 @pytest.mark.slow
 def test_hsi_functions(tmpdir, seed):
     # With health seeking and healthsystem functioning and no constraints --
@@ -118,7 +125,7 @@ def test_hsi_functions(tmpdir, seed):
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            mode_appt_constraints=0,
                                            cons_availability='all',
-                                           store_hsi_events_that_have_run=True),
+                                           hsi_event_count_log_period="simulation"),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
@@ -154,10 +161,10 @@ def test_hsi_functions(tmpdir, seed):
     # Check that there have been been some cases of Talking Therapy and anti-depressants
     assert df['de_ever_talk_ther'].sum()
 
-    hsi = [_hsi_event['HSI_Event'] for _hsi_event in sim.modules['HealthSystem'].store_of_hsi_events_that_have_run]
-    assert 'HSI_Depression_TalkingTherapy' in hsi
-    assert 'HSI_Depression_Start_Antidepressant' in hsi
-    assert 'HSI_Depression_Refill_Antidepressant' in hsi
+    hsi_events_run = get_hsi_events_run(sim)
+    assert 'HSI_Depression_TalkingTherapy' in hsi_events_run
+    assert 'HSI_Depression_Start_Antidepressant' in hsi_events_run
+    assert 'HSI_Depression_Refill_Antidepressant' in hsi_events_run
 
 
 @pytest.mark.slow
@@ -177,7 +184,7 @@ def test_hsi_functions_no_medication_available(tmpdir, seed):
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            mode_appt_constraints=0,
                                            cons_availability='none',
-                                           store_hsi_events_that_have_run=True),
+                                           hsi_event_count_log_period="simulation"),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
@@ -214,10 +221,10 @@ def test_hsi_functions_no_medication_available(tmpdir, seed):
     assert df['de_ever_talk_ther'].sum()
     assert 0 == df['de_on_antidepr'].sum()
 
-    hsi = [_hsi_event['HSI_Event'] for _hsi_event in sim.modules['HealthSystem'].store_of_hsi_events_that_have_run]
-    assert 'HSI_Depression_TalkingTherapy' in hsi
-    assert 'HSI_Depression_Start_Antidepressant' in hsi
-    assert 'HSI_Depression_Refill_Antidepressant' not in hsi
+    hsi_events_run = get_hsi_events_run(sim)
+    assert 'HSI_Depression_TalkingTherapy' in hsi_events_run
+    assert 'HSI_Depression_Start_Antidepressant' in hsi_events_run
+    assert 'HSI_Depression_Refill_Antidepressant' not in hsi_events_run
 
 
 @pytest.mark.slow

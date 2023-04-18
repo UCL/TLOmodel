@@ -6,18 +6,13 @@ import pandas as pd
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
-    care_of_women_during_pregnancy,
-    contraception,
     demography,
     enhanced_lifestyle,
     epi,
-    healthburden,
     healthseekingbehaviour,
     healthsystem,
-    labour,
     measles,
-    newborn_outcomes,
-    pregnancy_supervisor,
+    simplified_births,
     symptommanager,
 )
 
@@ -55,24 +50,13 @@ sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 # # able to handle dependencies if modules are registered together
 sim.register(
     demography.Demography(resourcefilepath=resources),
-    healthsystem.HealthSystem(
-        resourcefilepath=resources,
-        service_availability=['*'],
-        mode_appt_constraints=0,
-        ignore_cons_constraints=True,
-        ignore_priority=True,
-        capabilities_coefficient=1.0,
-        disable=False,
-    ),
-    symptommanager.SymptomManager(resourcefilepath=resources),
-    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
-    healthburden.HealthBurden(resourcefilepath=resources),
-    contraception.Contraception(resourcefilepath=resources),
+    simplified_births.SimplifiedBirths(resourcefilepath=resources),
     enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
-    labour.Labour(resourcefilepath=resources),
-    newborn_outcomes.NewbornOutcomes(resourcefilepath=resources),
-    care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resources),
-    pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resources),
+    symptommanager.SymptomManager(resourcefilepath=resources),
+
+    healthsystem.HealthSystem(resourcefilepath=resources, disable=True),
+    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
+
     epi.Epi(resourcefilepath=resources),
     measles.Measles(resourcefilepath=resources),
 )
