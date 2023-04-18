@@ -25,6 +25,7 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
                           in_plot_use_time_bool: bool = False,
                           in_plot_use_time_method_bool: bool = False,
                           in_plot_pregnancies_bool: bool = False,
+                          in_plot_depend_ratio_bool: bool = False,
                           in_set_ylims_bool: bool = False, in_ylims_l: list = [],
                           in_calc_use_costs_bool: bool = False, in_required_time_period_starts: list = [],
                           in_contraceptives_order: list = ['pill', 'IUD', 'injections', 'implant', 'male_condom',
@@ -49,6 +50,8 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
         individual contraception methods over time (default: False)
     :param in_plot_pregnancies_bool: True if we want to plot pregnancies over
         time (default: False)
+    :param in_plot_depend_ratio_bool: True if we want to plot dependency ratio
+        over time (default: False)
     :param in_set_ylims_bool: True if we want to set upper limits for the y-axes
         for the 3 plots. (default: False)
     :param in_ylims_l: list of the upper limits for y-axes of the figures in the
@@ -360,6 +363,64 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
                                   "_UpTo" + str(plot_years[-1]) + in_suffix + '.png'), format='png')
 
         print("Figs: Pregnancies Over time saved.")
+
+    # %% Plot Dependency Ratio Over time:
+    if in_plot_depend_ratio_bool:
+        def fullcols(in_to_print):
+            with pd.option_context('display.max_rows', 10, 'display.max_columns', None):
+                print(in_to_print)
+
+        # Load Demographic Results by Age groups by Years up to 2050
+        demog_df_f_by_years = log_df['tlo.methods.demography']['age_range_f'].set_index('date').copy()
+        demog_df_m_by_years = log_df['tlo.methods.demography']['age_range_m'].set_index('date').copy()
+
+        def demog_gend_labor(in_demog_gend_df_by_years):
+            """
+            :param in_demog_gend_df_by_years: A dataframe with demographic data for a gender (age groups:
+                0-4  5-9  10-14  15-19  20-24  25-29  30-34  35-39  40-44  45-49  50-54  55-59  60-64  65-69  70-74
+                75-79 80-84  85-89
+            :return: The dataframe with two new columns: 'labor_force' = nmb of individuals of the gender in the labor
+                force (age of 15-64), and 'non-labor_force' = the nmb of individuals who are not typically in the labor
+                force (age of 0-14 or 65+).
+            """
+            out_demog_gend_df_by_years = in_demog_gend_df_by_years.copy()
+            if out_demog_gend_df_by_years.index.year[-1] > 2050:
+                out_demog_gend_df_by_years = out_demog_gend_df_by_years[out_demog_gend_df_by_years.index.year <= 2050]
+            out_demog_gend_df_by_years['year'] = pd.to_datetime(out_demog_gend_df_by_years.index).year
+            out_demog_gend_df_by_years.index = pd.to_datetime(out_demog_gend_df_by_years.index).year
+            out_demog_gend_df_by_years.index.name = 'year'
+            out_demog_gend_df_by_years['labor_force'] =\
+                out_demog_gend_df_by_years.loc[:, ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49',
+                                                   '50-54', '55-59', '60-64']].sum(axis=1)
+            out_demog_gend_df_by_years['non-labor_force'] =\
+                out_demog_gend_df_by_years.loc[:, ['0-4', '5-9', '10-14', '65-69', '70-74', '75-79', '80-84', '85-89']]\
+                .sum(axis=1)
+            return out_demog_gend_df_by_years
+
+        # Add total females & males labor force & non-labor force
+        demog_df_f_by_years = demog_gend_labor(demog_df_f_by_years)
+        demog_df_m_by_years = demog_gend_labor(demog_df_m_by_years)
+
+        # Calculate dependency ratio by Years
+        popsize_labor_force = demog_df_f_by_years['labor_force'] + demog_df_m_by_years['labor_force']
+        popsize_nonlabor_force = demog_df_f_by_years['non-labor_force'] + demog_df_m_by_years['non-labor_force']
+        # total females & males non-labor force:
+        depend_ratio_df = pd.DataFrame({"Dependency ratio": popsize_nonlabor_force/popsize_labor_force})
+        plot_years = depend_ratio_df.index
+
+        # Plot dependency ratio by Years
+        fig, ax = plt.subplots()
+        ax.plot(np.asarray(plot_years), depend_ratio_df, ls=line_style)
+        plt.axvline(x=2023, ls=ls_start_interv, color='gray', label='interventions start')
+        if in_set_ylims_bool:
+            ax.set_ylim([0, in_ylims_l[5]])
+        plt.title("Dependency Ratio")
+        plt.xlabel("Year")
+        # plt.ylabel("Dependency Ratio")
+        plt.savefig(outputpath / ('Dependency Ratio Over Time ' + in_id +
+                                  "_UpTo" + str(plot_years[-1]) + in_suffix + '.png'), format='png')
+
+        print("Fig: Dependency Ratio Over time saved.")
 
     # %% Calculate Use and Consumables Costs of Contraception methods within
     # some time periods:
