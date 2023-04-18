@@ -8,6 +8,7 @@ import tables
 
 time_start = time.time()
 # running time - both analysis all figs & tab for 250K pop till 2050:
+# (not updated with Dependency ratio)
 # running 1st time (ie run_analysis = True) with all plot_.._bool = False ~ 37 mins
 # running again (ie run_analysis = False) with all plot_.._bool = True or False ~ 1.7 min
 ########################################################################################################################
@@ -42,11 +43,14 @@ plot_use_time_method_bool = True
 # %% Plot Pregnancies Over time?
 # plot_pregnancies_bool = False
 plot_pregnancies_bool = True
+# %% Plot Dependency Ratio Over time?
+# plot_depend_ratio_bool = False
+plot_depend_ratio_bool = True
 # %% Do you want to set the upper limits for the y-axes for the 3 plots above?
 set_ylims_bool = True
 # If the above is True (otherwise it doesn't matter),
 # upper limits for the figures (in the order [Use, Props of Use, Use By Method, Pregnancies, Props of Pregnancies ]
-ylims_l = [1.08e7, 0.88, 3.6e6, 1.37e6, 0.019]
+ylims_l = [1.08e7, 0.88, 3.6e6, 1.37e6, 0.019, 1]
 #
 # %%%% table
 # %% Run analysis? If the dataframes from the analysis are not prepared yet, then run the analysis.
@@ -138,6 +142,8 @@ def do_analysis(ID, logFile, in_calc_intervention_costs_bool):
             plot_use_time_method_bool,
             # %% Plot Pregnancies Over time?
             plot_pregnancies_bool,
+            # %% Plot Dependency Ratio Over time?
+            plot_depend_ratio_bool,
             # %% Do you want to set the upper limits for the y-axes?
             # If so, order them as [Use, Use By Method, Pregnancies] within ylims_l.
             set_ylims_bool, ylims_l,
