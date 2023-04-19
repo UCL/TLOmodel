@@ -801,12 +801,18 @@ def test_everyone_seeks_care_for_symptom_with_high_odds_ratio_of_seeking_care(se
     # Check that the linear model of health-care seeking show that the prob of seeking care is ~1.0
     hsb = sim.modules['HealthSeekingBehaviour']
     assert np.allclose(
-        hsb.hsb_linear_models['children'].predict(df.loc[df.is_alive & (df.age_years < 15)]),
+        hsb.hsb_linear_models['children'].predict(df.loc[df.is_alive & (df.age_years < 15)],
+                                                  subgroup='children',
+                                                  care_seeking_odds_ratios=hsb.odds_ratio_health_seeking_in_children
+                                                  ),
         1.0,
         atol=0.001
     )
     assert np.allclose(
-        hsb.hsb_linear_models['adults'].predict(df.loc[df.is_alive & (df.age_years >= 15)]),
+        hsb.hsb_linear_models['adults'].predict(df.loc[df.is_alive & (df.age_years >= 15)],
+                                                subgroup='adults',
+                                                care_seeking_odds_ratios=hsb.odds_ratio_health_seeking_in_adults
+                                                ),
         1.0,
         atol=0.001
     )
@@ -1164,9 +1170,8 @@ def test_custom_function_is_equivalent_to_linear_model(seed):
             raise ValueError('At least one symptom must be specified')
         return (persons[[f'sy_{symptom}' for symptom in symptoms]] != 0).any(axis=1)
 
+    # Linear model for care seeking:
     def linear_model(subgroup, age_predictor, care_seeking_odds_ratios, p):
-        # Model for care seeking:
-
         lm = LinearModel(
             LinearModelType.LOGISTIC,
             p[f'baseline_odds_of_healthcareseeking_{subgroup}'],
@@ -1212,7 +1217,7 @@ def test_custom_function_is_equivalent_to_linear_model(seed):
             subgroup.loc[_has_any_symptoms(subgroup, care_seeking_odds_ratios.keys())],
             subgroup=subgroup_name, care_seeking_odds_ratios=care_seeking_odds_ratios)
 
-        will_seek_care_cf = sim.modules["HealthSeekingBehaviour"].custom_hsb_linear_models[subgroup_name].predict(
+        will_seek_care_cf = sim.modules["HealthSeekingBehaviour"].hsb_linear_models[subgroup_name].predict(
             subgroup.loc[_has_any_symptoms(subgroup, care_seeking_odds_ratios.keys())],
             subgroup=subgroup_name, care_seeking_odds_ratios=care_seeking_odds_ratios)
 

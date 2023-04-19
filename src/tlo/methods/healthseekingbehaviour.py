@@ -101,7 +101,6 @@ class HealthSeekingBehaviour(Module):
 
         self.hsb_linear_models = dict()
         self.emergency_appt_linear_models = dict()
-        self.custom_hsb_linear_models = dict()
 
         # "force_any_symptom_to_lead_to_healthcareseeking"=True will mean that probability of health care seeking is 1.0
         # for anyone with newly onset symptoms (excepting symptoms explicitly declared to have no healthcareseeking
@@ -170,43 +169,7 @@ class HealthSeekingBehaviour(Module):
         """Define linear models for health seeking behaviour for children and adults"""
         p = self.parameters
 
-        # Model for care seeking:
-        for subgroup, age_predictor, care_seeking_odds_ratios, in zip(
-            (
-                'children',
-                'adults'
-            ),
-            (
-                Predictor('age_years').when('>=5', p['odds_ratio_children_age_5to14']),
-                Predictor('age_years', conditions_are_mutually_exclusive=True
-                          ).when('.between(35,59)', p['odds_ratio_adults_age_35to59']
-                                 ).when('>=60', p['odds_ratio_adults_age_60plus']),
-            ),
-            (
-                self.odds_ratio_health_seeking_in_children,
-                self.odds_ratio_health_seeking_in_adults
-            ),
-        ):
-            self.hsb_linear_models[subgroup] = LinearModel(
-                LinearModelType.LOGISTIC,
-                p[f'baseline_odds_of_healthcareseeking_{subgroup}'],
-
-                # First set of predictors are for behaviour due to the 'average symptom'
-                age_predictor,
-                Predictor('li_urban').when(True, p[f'odds_ratio_{subgroup}_setting_urban']),
-                Predictor('sex').when('F', p[f'odds_ratio_{subgroup}_sex_Female']),
-                Predictor('region_of_residence', conditions_are_mutually_exclusive=True
-                          ).when('Central', p[f'odds_ratio_{subgroup}_region_Central'])
-                .when('Southern', p[f'odds_ratio_{subgroup}_region_Southern']),
-                Predictor('li_wealth', conditions_are_mutually_exclusive=True
-                          ).when(4, p[f'odds_ratio_{subgroup}_wealth_higher'])
-                .when(5, p[f'odds_ratio_{subgroup}_wealth_higher']),
-
-                # Second set of predictors are the symptom-specific odd ratios
-                *(Predictor(f'sy_{symptom}').when('>0', odds) for symptom, odds in care_seeking_odds_ratios.items())
-            )
-
-        # use a custom function to represent the linear model for healthcare seeking
+        # Use a custom function to represent the linear model for healthcare seeking
         def predict_healthcareseeking(
             self, df, rng=None, subgroup=None, care_seeking_odds_ratios=None
         ):
@@ -240,7 +203,7 @@ class HealthSeekingBehaviour(Module):
             'children',
             'adults'
         ):
-            self.custom_hsb_linear_models[subgroup] = LinearModel.custom(predict_function=predict_healthcareseeking)
+            self.hsb_linear_models[subgroup] = LinearModel.custom(predict_function=predict_healthcareseeking)
 
         # Model for the care-seeking (if it occurs) to be for an EMERGENCY Appointment:
         def custom_predict(self, df, rng=None, **externals) -> pd.Series:
@@ -347,8 +310,8 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                 module.odds_ratio_health_seeking_in_adults,
             ),
             (
-                module.custom_hsb_linear_models['children'],
-                module.custom_hsb_linear_models['adults']
+                module.hsb_linear_models['children'],
+                module.hsb_linear_models['adults']
             ),
             (
                 module.emergency_appt_linear_models['children'],
