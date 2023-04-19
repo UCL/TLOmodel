@@ -836,11 +836,7 @@ class Hiv(Module):
             ].index
 
         # Those that are in neither category are "before AIDS" (will have AIDS Onset Event scheduled)
-        before_aids_idx = (
-            set(df.loc[df.is_alive & df.hv_inf].index)
-            - set(has_aids_idx)
-            - set(on_art_idx)
-        )
+        before_aids_idx = df.loc[df.is_alive & df.hv_inf].index.difference(has_aids_idx).difference(on_art_idx)
 
         # Impose the symptom to those that have AIDS (the symptom is the definition of having AIDS)
         self.sim.modules["SymptomManager"].change_symptom(
