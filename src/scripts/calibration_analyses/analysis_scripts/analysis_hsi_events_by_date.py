@@ -95,7 +95,6 @@ def figure1_distribution_of_hsi_event_by_date(results_folder: Path, output_folde
     fig.show()
     plt.close(fig)
 
-
     fig, ax = plt.subplots()
     name_of_plot = 'Proportion of HSI Events by Facility level'
     for key, value in facility_id.items():
