@@ -42,7 +42,6 @@ def formatting_hsi_df(_df):
 
     # Produce coarse version of TREATMENT_ID (just first level, which is the module)
     _df['TREATMENT_ID_SHORT'] = _df['TREATMENT_ID'].str.split('_').apply(lambda x: x[0])
-    # _df['TREATMENT_ID_SHORT'].value_counts()
 
     return _df
 
