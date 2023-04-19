@@ -1,17 +1,9 @@
 """Test file for the COPD module."""
-
-# todo Emmanuel - let's add some more tests here! For example...
-#  1) If everyone starts at ch_lungfunction=0 and then is high progression rate --> everyone ends up in category 6
-#  2) Zero risk of exacerbations --> No exacerbations scheduled; High risk --> Many exacerbations scheduled
-#  3) Exacerbation (moderate) --> leads to moderate symptoms --> leads to non-emergency care seeking --> gets inhaler
-#  4) Exacerbation (severe) --> leads to severe symptoms --> leads to emergency care seeking --> gets treatment
-#  5) Zero death rate --> No death; High death rate --> Many deaths; High death rate but perfect treatment -> No deaths
-#  6) ...
-
 import os
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file, unflatten_flattened_multi_index_in_logging
@@ -23,10 +15,10 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     simplified_births,
-    symptommanager,
+    symptommanager, hsi_generic_first_appts,
 )
-from tlo.methods.copd import HSICopdTreatmentOnSevereExacerbation
-from tlo.methods.hsi_generic_first_appts import HSI_GenericFirstApptAtFacilityLevel0
+from tlo.methods.copd import HSI_CopdTreatmentOnSevereExacerbation, CopdExacerbationEvent
+from tlo.methods.healthseekingbehaviour import HealthSeekingBehaviourPoll
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
@@ -41,6 +33,7 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
+@pytest.mark.slow
 def test_basic_run(tmpdir, seed):
     """Run the simulation with the Copd module and read the log from the Copd module."""
 
@@ -57,14 +50,19 @@ def test_basic_run(tmpdir, seed):
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, cons_availability='all'),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           disable=False,
+                                           cons_availability='all'),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath,
+                                                               # force symptoms to lead to health care seeking:
+                                                               force_any_symptom_to_lead_to_healthcareseeking=True
+                                                               ),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  copd.Copd(resourcefilepath=resourcefilepath),
                  )
     sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=end_date)
+    sim.simulate(end_date=Date(2030, 1, 1))
     check_dtypes(sim)
     log = parse_log_file(sim.log_filepath)['tlo.methods.copd']
 
@@ -75,14 +73,12 @@ def test_basic_run(tmpdir, seed):
         select_record = lambda df, _date: df.loc[df['date'] == _date].drop(columns=['date'])  # noqa: E731
         return unflatten_flattened_multi_index_in_logging(select_record(log_prev_copd, date)).iloc[0].T.unstack()
 
-    print(unflatten(log_prev_copd['date'].values[0]))
-    print(unflatten(log_prev_copd['date'].values[-1]))
-
 
 def get_simulation(pop_size):
     """ Return a simulation object
 
-    :param pop_size: total number of individuals at the start of simulation """
+    :param pop_size: total number of individuals at the start of simulation
+    :param sim_end_date: date of ending simulation """
     sim = Simulation(
         start_date=start_date
     )
@@ -90,9 +86,15 @@ def get_simulation(pop_size):
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           disable=False,
+                                           cons_availability='all'
+                                           ),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath,
+                                                               # force symptoms to lead to health care seeking:
+                                                               force_any_symptom_to_lead_to_healthcareseeking=True
+                                                               ),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  copd.Copd(resourcefilepath=resourcefilepath),
                  )
@@ -121,10 +123,12 @@ def test_ch_lungfunction():
     # set probability of progressing to next lung function to 1. This will ensure everyone progresses
     # to the next lung function
     copd_module.parameters['prob_progress_to_next_cat'] = 1.0
+    # re-initialise models to use updated parameters
+    copd_module.pre_initialise_population()
 
     # Run a function to progress to next lung function six times and ensure all individuals have progressed to a higher
     # lung function(6)
-    for _range in range(6):
+    for _ in range(6):
         copd.CopdPollEvent(module=copd_module).progress_to_next_lung_function(df)
     # all individuals should progress to the highest lung function which in this case is 6
     assert all(df['ch_lungfunction'] == 6)
@@ -136,12 +140,13 @@ def test_exacerbations():
     sim = get_simulation(1)  # get simulation object
     copd_module = sim.modules['Copd']  # get copd module
 
-    # 1)--------------- NO RISK OF EXACERBATION
+    # 1)--------------- NO RISK OF EXACERBATION DUE TO NON-ELIGIBILITY
     # reset individual properties to zero risk exacerbations.
     # reset age to <15 and lung function to 0
     df = sim.population.props
+    df.loc[df.index, 'is_alive'] = True
     df.loc[df.index, 'age_years'] = 10
-    df.loc[df.index, 'ch_lungfunction'] = 0
+    df.loc[df.index, 'ch_lungfunction'] = np.NAN
 
     # clear the event queue
     sim.event_queue.queue = []
@@ -159,24 +164,30 @@ def test_exacerbations():
     # reset individual properties to higher risk exacerbations.
     # reset age to >15 and lung function to 6
     df = sim.population.props
+    df.loc[df.index, 'is_alive'] = True
     df.loc[df.index, 'age_years'] = 20
     df.loc[df.index, 'ch_lungfunction'] = 6
 
     # set severe and moderate exacerbation probability to maximum(1). This ensures all exacerbation events are schedules
     # on all eligible individuals
-    copd_module.parameters['prob_mod_exacerb_lung_func_6'] = 1.0
-    copd_module.parameters['prob_sev_exacerb_lung_func_6'] = 1.0
+    copd_module.parameters['prob_mod_exacerb'][6] = 1.0
+    copd_module.parameters['prob_sev_exacerb'][6] = 1.0
+
+    # re-initialise models to use updated parameters
+    copd_module.pre_initialise_population()
 
     # clear the event queue
     sim.event_queue.queue = []
 
-    # schedule copd poll event
+    # run copd poll event
     _event = copd.CopdPollEvent(copd_module)
     _event.apply(sim.population)
 
     # confirm more than one event has been scheduled
-    _individual_events = sim.find_events_for_person(df.index[0])
-    assert 1 < len(_individual_events), f'not all events have been scheduled {_individual_events}'
+    _exacerbation_events = [ev[1] for ev in sim.find_events_for_person(df.index[0]) if
+                            isinstance(ev[1], CopdExacerbationEvent)]
+
+    assert 1 < len(_exacerbation_events), f'not all events have been scheduled {_exacerbation_events}'
 
 
 def test_moderate_exacerbation():
@@ -188,39 +199,45 @@ def test_moderate_exacerbation():
     sim = get_simulation(1)  # get simulation object
     copd_module = sim.modules['Copd']  # the copd module
 
-    # reset value to make an individual eligible for moderate exacerbations
-    df = sim.population.props
-    df.loc[df.index, 'is_alive'] = True
-    df.loc[df.index, 'age_years'] = 20
-    df.loc[df.index, 'ch_lungfunction'] = 6
-    df.loc[df.index, 'ch_has_inhaler'] = False
+    # sim.event_queue.queue = []  # clear the event queues
 
-    # get person id
-    person_id = df.index[0]
+    df = sim.population.props  # population dataframe
+    person_id = df.index[0]  # get person id
 
-    # schedule moderate exacerbations event setting severe to False. This will ensure the individual has
-    # moderate exacerbation
-    copd.CopdExacerbationEvent(copd_module, person_id, severe=False).apply(person_id)
+    # reset individual properties. An individual should be alive and without an inhaler
+    df.at[person_id, 'is_alive'] = True
+    df.loc[person_id, 'age_years'] = 20
+    df.at[person_id, 'ch_has_inhaler'] = False
 
-    # moderate exacerbation should lead to moderate symptom(breathless moderate in this case). check this is true
-    assert 'breathless_moderate' in sim.modules['SymptomManager'].has_what(person_id, copd_module)
+    # check individuals do not have symptoms before an event is run
+    assert 'breathless_moderate' not in sim.modules['SymptomManager'].has_what(person_id)
 
-    # check no individual has inhaler before care seeking event is scheduled
+    # run Copd Exacerbation event on an individual and confirm they now have a
+    # non-emergency symptom(breathless moderate)
+    copd.CopdExacerbationEvent(copd_module, person_id, severe=False).run()
+    assert 'breathless_moderate' in sim.modules['SymptomManager'].has_what(person_id)
+
+    # Run health seeking behavior event and check non-emergency care is sought
+    hsp = HealthSeekingBehaviourPoll(sim.modules['HealthSeekingBehaviour'])
+    hsp.apply(sim.population)
+
+    # check non-emergency care event is scheduled
+    assert isinstance(sim.modules['HealthSystem'].find_events_for_person(person_id)[0][1],
+                      hsi_generic_first_appts.HSI_GenericFirstApptAtFacilityLevel0)
+
+    # check an individual has no inhaler before  scheduling facility care event
     assert not df.loc[person_id, "ch_has_inhaler"]
 
-    # Clear the HealthSystem queue
-    sim.modules['HealthSystem'].reset_queue()
+    # Run the created instance of HSI_GenericFirstApptAtFacilityLevel0 and check no emergency care was sought
+    ge = [ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+          isinstance(ev[1], hsi_generic_first_appts.HSI_GenericFirstApptAtFacilityLevel0)][0]
+    ge.apply(ge.target, squeeze_factor=0.0)
 
-    # Check non-emergency symptoms leads to non-emergency care seeking.
-    generic_hsi = HSI_GenericFirstApptAtFacilityLevel0(
-        module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
-    copd_module.do_when_present_with_breathless(person_id=person_id, hsi_event=generic_hsi)
+    # check that no HSI_CopdTreatmentOnSevereExacerbation event is scheduled. Only inhaler should be given
+    for _event in sim.modules['HealthSystem'].find_events_for_person(person_id):
+        assert not isinstance(_event[1], HSI_CopdTreatmentOnSevereExacerbation)
 
-    # For moderate exacerbation, no HSI copd treatment on severe exacerbation event should be scheduled
-    _event = sim.modules['HealthSystem'].find_events_for_person(person_id)
-    assert 0 == len(_event), 'one or more event is scheduled'
-
-    # only inhaler should be given
+    # check inhaler is given
     assert df.loc[person_id, "ch_has_inhaler"]
 
 
@@ -235,30 +252,38 @@ def test_severe_exacerbation():
 
     # reset value to make an individual eligible for moderate exacerbations
     df = sim.population.props
-    df.loc[df.index, 'is_alive'] = True
-    df.loc[df.index, 'age_years'] = 20
-    df.loc[df.index, 'ch_lungfunction'] = 6
-    df.loc[df.index, 'ch_has_inhaler'] = False
-
-    # get person id
-    person_id = df.index[0]
+    person_id = df.index[0]  # get person id
+    df.at[person_id, 'is_alive'] = True
+    df.at[person_id, 'age_years'] = 20
+    df.at[person_id, 'ch_has_inhaler'] = False
 
     # schedule exacerbations event setting severe to True. This will ensure the individual has severe exacerbation
-    copd.CopdExacerbationEvent(copd_module, person_id, severe=True).apply(person_id)
+    copd.CopdExacerbationEvent(copd_module, person_id, severe=True).run()
 
     # severe exacerbation should lead to severe symptom(breathless severe in this case). check this is true
     assert 'breathless_severe' in sim.modules['SymptomManager'].has_what(person_id, copd_module)
 
-    # check emergency symptoms leads to emergency care seeking
-    generic_hsi = HSI_GenericFirstApptAtFacilityLevel0(
-        module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
-    copd_module.do_when_present_with_breathless(person_id=person_id, hsi_event=generic_hsi)
+    # # Run health seeking behavior event and check emergency care is sought
+    hsp = HealthSeekingBehaviourPoll(module=sim.modules['HealthSeekingBehaviour'])
+    hsp.apply(sim.population)
+    # check that an instance of HSI_GenericFirstApptAtFacilityLevel1 is created
+    assert isinstance(sim.modules['HealthSystem'].find_events_for_person(person_id)[0][1],
+                      hsi_generic_first_appts.HSI_GenericEmergencyFirstApptAtFacilityLevel1)
 
-    # HSI copd treatment on severe exacerbation event should be scheduled for this individual
-    _event = sim.modules['HealthSystem'].find_events_for_person(person_id)
-    assert isinstance(_event[0][1], HSICopdTreatmentOnSevereExacerbation)
+    # check an individual has no inhaler before  scheduling facility care event
+    assert not df.loc[person_id, "ch_has_inhaler"]
 
-    # inhaler should be given as well
+    # Run the created instance of HSI_GenericFirstApptAtFacilityLevel1 and check no emergency care was sort
+    ge = [ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+          isinstance(ev[1], hsi_generic_first_appts.HSI_GenericEmergencyFirstApptAtFacilityLevel1)][0]
+    ge.apply(ge.target, squeeze_factor=0.0)
+
+    # check that HSI_CopdTreatmentOnSevereExacerbation event is scheduled. Inhaler should also be given
+    assert isinstance([ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+                       isinstance(ev[1], HSI_CopdTreatmentOnSevereExacerbation)][0],
+                      HSI_CopdTreatmentOnSevereExacerbation)
+
+    # check inhaler is given
     assert df.loc[person_id, "ch_has_inhaler"]
 
 
@@ -269,7 +294,7 @@ def test_death_rate():
             iii) High death rate should lead to Many deaths
     """
     # create population dataframe from simulation
-    sim = get_simulation(5)
+    sim = get_simulation(100) # get simulation object
     copd_module = sim.modules['Copd']  # the copd module
 
     df = sim.population.props
@@ -312,7 +337,7 @@ def test_death_rate():
     # call treatment on severe exacerbation event and check that deaths has been canceled. we assume perfect treatment
     # is given
     for idx in range(len(df.index)):
-        _event = copd.HSICopdTreatmentOnSevereExacerbation(copd_module, idx)
+        _event = copd.HSI_CopdTreatmentOnSevereExacerbation(copd_module, idx)
         _event.apply(idx, 0.0)
 
     # all individuals should now not be scheduled to die
@@ -336,7 +361,7 @@ def test_death_rate():
         _event.apply(idx)
 
     # all individuals should be scheduled to die
-    assert 5 == df.ch_will_die_this_episode.sum(), 'not all individuals are scheduled to die'
+    assert len(df) == df.ch_will_die_this_episode.sum(), 'not all individuals are scheduled to die'
 
     # schedule death event and confirm all are dead
     for idx in range(len(df.index)):

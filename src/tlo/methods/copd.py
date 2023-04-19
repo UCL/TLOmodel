@@ -55,33 +55,11 @@ class Copd(Module):
             Types.REAL, 'probability of changing from a lower lung function to a '
                         'higher lung function'
         ),
-        'prob_exacerb_lung_func_less_3': Parameter(
-            Types.REAL, 'probability of moderate or severe exacerbation when lung function is less '
-                        'than 3 '
+        'prob_mod_exacerb': Parameter(
+            Types.LIST, 'probability of moderate exacerbation given lung function '
         ),
-        'prob_mod_exacerb_lung_func_3': Parameter(
-            Types.REAL, 'probability of moderate exacerbation when lung function is 3 '
-        ),
-        'prob_mod_exacerb_lung_func_4': Parameter(
-            Types.REAL, 'probability of moderate exacerbation when lung function is 4 '
-        ),
-        'prob_mod_exacerb_lung_func_5': Parameter(
-            Types.REAL, 'probability of moderate exacerbation when lung function is 5 '
-        ),
-        'prob_mod_exacerb_lung_func_6': Parameter(
-            Types.REAL, 'probability of moderate exacerbation when lung function is 6 '
-        ),
-        'prob_sev_exacerb_lung_func_3': Parameter(
-            Types.REAL, 'probability of severe exacerbation when lung function is 3 '
-        ),
-        'prob_sev_exacerb_lung_func_4': Parameter(
-            Types.REAL, 'probability of severe exacerbation when lung function is 4 '
-        ),
-        'prob_sev_exacerb_lung_func_5': Parameter(
-            Types.REAL, 'probability of moderate exacerbation when lung function is 5 '
-        ),
-        'prob_sev_exacerb_lung_func_6': Parameter(
-            Types.REAL, 'probability of moderate exacerbation when lung function is 6 '
+        'prob_sev_exacerb': Parameter(
+            Types.LIST, 'probability of severe exacerbation given lung function '
         ),
         'prob_will_die_sev_exacerbation': Parameter(
             Types.REAL, 'probability that a person will die of severe exacerbation '
@@ -152,19 +130,19 @@ class Copd(Module):
         """Define and register Symptoms"""
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom('breathless_moderate'),
-            Symptom('breathless_severe'),
-            #   todo The line above can be updated to `Symptom.emergency('breathless_severe')` when new PRs are merged.
+            Symptom.emergency('breathless_severe'),
         )
 
     def lookup_item_codes(self):
         """Look-up the item-codes for the consumables needed in the HSI Events for this module."""
         # todo: Need to look-up these item-codes.
         self.item_codes = {
-            'broncho_dilater_inhaler': 293,
+            'bronchodilater_inhaler': 293,
             'steroid_inhaler': 294,
             'oxygen': 301,
-            'amino_phylline': 292,
+            'aminophylline': 292,
             'amoxycillin': 125,
+            'prednisolone': 291
         }
 
     def do_logging(self):
@@ -183,7 +161,7 @@ class Copd(Module):
         df = self.sim.population.props
         has_inhaler = df.at[person_id, 'ch_has_inhaler']
         if not has_inhaler:
-            if hsi_event.get_consumables(self.item_codes['broncho_dilater_inhaler']):
+            if hsi_event.get_consumables(self.item_codes['bronchodilater_inhaler']):
                 df.at[person_id, 'ch_has_inhaler'] = True
 
     def do_when_present_with_breathless(self, person_id: int, hsi_event: HSI_Event):
@@ -195,8 +173,9 @@ class Copd(Module):
         self.give_inhaler(hsi_event=hsi_event, person_id=person_id)
 
         if 'breathless_severe' in self.sim.modules['SymptomManager'].has_what(person_id):
+            print('this is severe')
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSICopdTreatmentOnSevereExacerbation(module=self, person_id=person_id),
+                hsi_event=HSI_CopdTreatmentOnSevereExacerbation(module=self, person_id=person_id),
                 priority=0,
                 topen=self.sim.date,
                 tclose=None,
@@ -209,55 +188,40 @@ class CopdModels:
     def __init__(self, params, rng):
         self.params = params
         self.rng = rng
-
-    def progress_lung_function(self):
-        """ Return a linear model that will predict the likelihood of progressing lung function in
-        individuals."""
         # The chance (in a 3-month period) of progressing to the next (greater) category of ch_lungfunction
-        __Prob_Progress_LungFunction__ = LinearModel(
+        self.__Prob_Progress_LungFunction__ = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             self.params['prob_progress_to_next_cat']
         )
-        return __Prob_Progress_LungFunction__
-
-    def moderate_exacerbation(self):
-        """ Return a linear model that will predict the likelihood of individuals to have moderate
-        exacerbation. """
         # The probability (in a 3-month period) of having a Moderate Exacerbation
-        __Prob_ModerateExacerbation__ = LinearModel.multiplicative(
+        self.__Prob_ModerateExacerbation__ = LinearModel.multiplicative(
             Predictor(
                 'ch_lungfunction',
                 conditions_are_exhaustive=True,
                 conditions_are_mutually_exclusive=True
-            ).when(0, self.params['prob_exacerb_lung_func_less_3'])
-            .when(1, self.params['prob_exacerb_lung_func_less_3'])
-            .when(2, self.params['prob_exacerb_lung_func_less_3'])
-            .when(3, self.params['prob_mod_exacerb_lung_func_3'])
-            .when(4, self.params['prob_mod_exacerb_lung_func_4'])
-            .when(5, self.params['prob_mod_exacerb_lung_func_5'])
-            .when(6, self.params['prob_mod_exacerb_lung_func_6'])
+            ).when(0, self.params['prob_mod_exacerb'][0])
+            .when(1, self.params['prob_mod_exacerb'][1])
+            .when(2, self.params['prob_mod_exacerb'][2])
+            .when(3, self.params['prob_mod_exacerb'][3])
+            .when(4, self.params['prob_mod_exacerb'][4])
+            .when(5, self.params['prob_mod_exacerb'][5])
+            .when(6, self.params['prob_mod_exacerb'][6])
         )
 
-        return __Prob_ModerateExacerbation__
-
-    def severe_exacerbation(self):
-        """ Return a lineal model that will predict the likelihood of individuals having severe
-        exacerbations"""
         # The probability (in a 3-month period) of having a Severe Exacerbation
-        __Prob_SevereExacerbation__ = LinearModel.multiplicative(
+        self.__Prob_SevereExacerbation__ = LinearModel.multiplicative(
             Predictor(
                 'ch_lungfunction',
                 conditions_are_exhaustive=True,
                 conditions_are_mutually_exclusive=True
-            ).when(0, self.params['prob_exacerb_lung_func_less_3'])
-            .when(1, self.params['prob_exacerb_lung_func_less_3'])
-            .when(2, self.params['prob_exacerb_lung_func_less_3'])
-            .when(3, self.params['prob_sev_exacerb_lung_func_3'])
-            .when(4, self.params['prob_sev_exacerb_lung_func_4'])
-            .when(5, self.params['prob_sev_exacerb_lung_func_5'])
-            .when(6, self.params['prob_sev_exacerb_lung_func_6'])
+            ).when(0, self.params['prob_sev_exacerb'][0])
+            .when(1, self.params['prob_sev_exacerb'][1])
+            .when(2, self.params['prob_sev_exacerb'][2])
+            .when(3, self.params['prob_sev_exacerb'][3])
+            .when(4, self.params['prob_sev_exacerb'][4])
+            .when(5, self.params['prob_sev_exacerb'][5])
+            .when(6, self.params['prob_sev_exacerb'][6])
         )
-        return __Prob_SevereExacerbation__
 
     def init_lung_function(self, df: pd.DataFrame) -> pd.Series:
         """Returns the values for ch_lungfunction for an initial population described in `df`."""
@@ -296,20 +260,20 @@ class CopdModels:
     def will_progres_to_next_cat_of_lungfunction(self, df: pd.DataFrame) -> List:
         """Returns the indices (corresponding to the person_id) that will progress to the next category up of
          `ch_lungfunction`, based on the probability of progression in a 3-month period."""
-        will_progress_to_next_category = self.progress_lung_function().predict(df, self.rng,
-                                                                               squeeze_single_row_output=False)
+        will_progress_to_next_category = self.__Prob_Progress_LungFunction__.predict(df, self.rng,
+                                                                                     squeeze_single_row_output=False)
         return will_progress_to_next_category[will_progress_to_next_category].index.to_list()
 
     def will_get_moderate_exacerbation(self, df: pd.DataFrame) -> List:
         """Returns the indices (corresponding to the person_id) that will have a Moderate Exacerbation, based on the
         probability of having a Severe Exacerbation in a 3-month period"""
-        will_get_ex = self.moderate_exacerbation().predict(df, self.rng, squeeze_single_row_output=False)
+        will_get_ex = self.__Prob_ModerateExacerbation__.predict(df, self.rng, squeeze_single_row_output=False)
         return will_get_ex[will_get_ex].index.to_list()
 
     def will_get_severe_exacerbation(self, df: pd.DataFrame) -> List:
         """Returns the indices (corresponding to the person_id) that will have a Severe Exacerbation, based on the
         probability of having a Severe Exacerbation in a 3-month period"""
-        will_get_ex = self.severe_exacerbation().predict(df, self.rng, squeeze_single_row_output=False)
+        will_get_ex = self.__Prob_SevereExacerbation__.predict(df, self.rng, squeeze_single_row_output=False)
         return will_get_ex[will_get_ex].index.to_list()
 
     def will_die_given_severe_exacerbation(self) -> bool:
@@ -348,7 +312,6 @@ class CopdPollEvent(RegularEvent, PopulationScopeEventMixin):
          * Schedules Exacerbation (Moderate / Severe) events.
          * Log current states.
         """
-
         def gen_random_date_in_next_three_months():
             """Returns a datetime for a day that is chosen randomly to be within the next 3 months."""
             return random_date(self.sim.date, self.sim.date + pd.DateOffset(months=3), self.module.rng)
@@ -389,7 +352,6 @@ class CopdExacerbationEvent(Event, IndividualScopeEventMixin):
         self.severe = severe
 
     def apply(self, person_id):
-
         if not self.sim.population.props.at[person_id, 'is_alive']:
             return
 
@@ -429,7 +391,7 @@ class CopdDeath(Event, IndividualScopeEventMixin):
             )
 
 
-class HSICopdTreatmentOnSevereExacerbation(HSI_Event, IndividualScopeEventMixin):
+class HSI_CopdTreatmentOnSevereExacerbation(HSI_Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -444,13 +406,12 @@ class HSICopdTreatmentOnSevereExacerbation(HSI_Event, IndividualScopeEventMixin)
          * Provide treatment: whatever is available at this facility at this time (no referral).
         """
         # todo: Consider whether person should be referred to higher level.
-
         df = self.sim.population.props
 
         # Give oxygen and AminoPhylline, if possible, ... and cancel death if the treatment is successful.
         prob_treatment_success = self.module.models.prob_livesaved_given_treatment(
             oxygen=self.get_consumables(self.module.item_codes['oxygen']),
-            amino_phylline=self.get_consumables(self.module.item_codes['amino_phylline'])
+            amino_phylline=self.get_consumables(self.module.item_codes['aminophylline'])
         )
         if self.module.rng.random_sample() < prob_treatment_success:
             df.at[person_id, 'ch_will_die_this_episode'] = False
