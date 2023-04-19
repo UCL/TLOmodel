@@ -15,6 +15,7 @@ from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
+from tlo.util import random_date
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -670,7 +671,6 @@ class MalariaScheduleTesting(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         df = population.props
-        now = self.sim.date
         p = self.module.parameters
 
         # select people to go for testing (and subsequent tx)
@@ -686,7 +686,8 @@ class MalariaScheduleTesting(RegularEvent, PopulationScopeEventMixin):
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Malaria_rdt(self.module, person_id=person_index),
                 priority=1,
-                topen=now, tclose=None
+                topen=random_date(self.sim.date, self.sim.date + self.frequency, self.module.rng),
+                tclose=None
             )
 
 
