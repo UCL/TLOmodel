@@ -151,11 +151,6 @@ def figure2_distribution_of_hsi_event_by_treatment(results_folder: Path, output_
         plot(kind='line', color=get_color_short_treatment_id("Tb"), stacked=True, label="Tb")
     date.iloc[treatment["Malaria"]].value_counts(normalize=True). \
         plot(kind='line', color=get_color_short_treatment_id("Malaria"), stacked=True, label="Malaria")
-    # date.iloc[treatment["CardioMetabolicDisorders"]].value_counts(normalize=True). \
-    #    plot(kind='line', color=get_color_short_treatment_id("CardioMetabolicDisorders"),
-    #    stacked=True, label="CardioMetabolicDisorders")
-    # date.iloc[treatment["FirstAttendance"]].value_counts(normalize=True). \
-    #    plot(kind='line', color=get_color_short_treatment_id("FirstAttendance"), stacked=True, label="FirstAttendance")
     ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
     ax.legend(ncol=2, prop={'size': 8}, loc='upper left')
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
