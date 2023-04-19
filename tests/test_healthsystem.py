@@ -1438,3 +1438,16 @@ def test_policy_and_lowest_priority_enforced(seed, tmpdir):
     ev = hp.heappop(sim.event_queue.queue)
     assert not ev[3].run_hsi
     assert ev[0] == _tclose
+
+
+def test_mode_appt_constraints2_on_healthsystem(seed, tmpdir):
+    """Test that mode_appt_constraints=2 leads to correct constraints on number of HSIs that can run
+    Tests:
+    1) Put all individuals in one district seeking the same treatment at the same level. Set capacity in
+    that district to 70% of the total time requested. Check that not all HSIs run. Do this twice, changing the
+    priority of the HSIs, to check that the number of HSIs that run decreases if the priority is higher,
+    since the max allowed squeeze will be lower.
+    2) Split individuals across two districts with same capacity as before. Check that all HSIs run, since not competing
+    for resources in different facilities.
+    3) Split same HSIs across two different facility levels, to check that competition for resources is within
+    facilities."""

@@ -69,7 +69,7 @@ class HSIEventQueueItem(NamedTuple):
     so on.
     """
     topen: Date
-    #facility_ID: int  # Split by facility_ID to facilitate appt_mode_constraints = 2
+    # Note: for speed up in mode=2, include facility_ID: int here
     priority: int
     rand_queue_counter: int  # Ensure order of events with same topen & priority is not model-dependent
     queue_counter: int  # Include safety tie-breaker in unlikely event rand_queue_counter is equal
@@ -1335,12 +1335,12 @@ class HealthSystem(Module):
 
         return appt_footprint_times
 
-
     def get_max_squeeze_based_on_priority(self, priority):
         """
-        Function to calculate maximum allowed squeeze in mode_appt=2 given priority. If want to enforce completely hard constraints,
-        set max_squeeze = 0 for all of them
-        Eventually switch to max_squeeze[priority] look-up table initialised with this function, so that don't have to recalculate this every time 
+        Function to calculate maximum allowed squeeze in mode_appt=2 given priority.
+        If want to enforce completely hard constraints, set max_squeeze = 0 for all of them
+        Eventually switch to max_squeeze[priority] look-up table initialised with this function,
+        so that don't have to recalculate this every time for few values.
         """
         max_squeeze = 1.0/np.exp(-(priority+0.2)/6.0) - 1.0
         return max_squeeze
@@ -1413,18 +1413,13 @@ class HealthSystem(Module):
 
         # 1) Compute the load factors for each officer type at each facility that is
         # called-upon in this list of HSIs
-        print("Current capabilities ", current_capabilities)
-        print("The total footprint is ", total_footprint)
         load_factor = {}
         for officer, call in total_footprint.items():
-            print("Officer, call = ", officer,call)
             if compute_squeeze_factor_to_district_level:
                 availability = get_total_minutes_of_this_officer_in_this_district(officer)
             else:
                 availability = get_total_minutes_of_this_officer_in_all_district(officer)
 
-            print("Availability is ", availability)
-            print("call/Availability is ", call/availability - 1)
             if availability is None:  # todo - does this ever happen?
                 load_factor[officer] = 99.99
             elif availability == 0:
@@ -1435,10 +1430,6 @@ class HealthSystem(Module):
         # 2) Convert these load-factors into an overall 'squeeze' signal for each HSI,
         # based on the highest load-factor of any officer required (or zero if event
         # has an empty footprint)
-
-        for footprint in footprints_per_event:
-            print("Footprints per event", footprint)
-        exit(-1)
         squeeze_factor_per_hsi_event = np.array([
             max((load_factor[officer] for officer in footprint), default=0)
             for footprint in footprints_per_event
@@ -1645,7 +1636,8 @@ class HealthSystem(Module):
             pop_level_hsi_event.run(squeeze_factor=0)
             self.record_hsi_event(hsi_event=pop_level_hsi_event)
 
-    def run_individual_level_events(self, _list_of_individual_hsi_event_tuples: List[HSIEventQueueItem]) -> List:
+    def run_individual_level_events(self, capabilities_monitor,
+                                    _list_of_individual_hsi_event_tuples: List[HSIEventQueueItem]) -> List:
         """Run a list of individual level events. Returns: list of events that did not run (maybe an empty a list)."""
         _to_be_held_over = list()
 
@@ -1660,15 +1652,15 @@ class HealthSystem(Module):
             ]
 
             # Compute total appointment footprint across all events
-            # Note-to-self: This is *updating*, not just computing, so appointments today that had ran in previous iterations are also included
+            # Note-to-self: This is *updating*, not just computing, so appointments today
+            #  that had ran in previous iterations are also included
             for footprint in footprints_of_all_individual_level_hsi_event:
-                print("Individual footprint is", footprint)
                 # Counter.update method when called with dict-like argument adds counts
                 # from argument to Counter object called from
                 self.running_total_footprint.update(footprint)
 
             # Estimate Squeeze-Factors for today
-            # Note-to-self: for this iteration of today's events
+            # Note-to-self: today = this iteration of today's events
             if self.mode_appt_constraints == 0:
                 # For Mode 0 (no Constraints), the squeeze factors are all zero.
                 squeeze_factor_per_hsi_event = np.zeros(
@@ -1681,64 +1673,114 @@ class HealthSystem(Module):
                     current_capabilities=self.capabilities_today,
                     compute_squeeze_factor_to_district_level=self.compute_squeeze_factor_to_district_level,
                 )
- 
-            #if self.module.mode_appt_constraints == 2:
-                #Split list of individual events due today by facility_ID
 
-                #for facility in facilities: 
+            if self.mode_appt_constraints == 2:
+                # Note: to speed up, split queue of today's events by facility ID; if all capacities in
+                # facility have ran out, then can hold over all subsequent events. Note: because need to
+                # call 'did_not_run' for each of them this may not be much faster, however printing
+                #  running_footprint + capabilities_monitor could replace individual 'did_not_run' calls.
+                for ev_num, event in enumerate(_list_of_individual_hsi_event_tuples):
 
-                #while(events_for_today_in_this_facility>0):
+                    # Get max squeeze factor allowed given priority of HSI
+                    squeeze_factor_priority = self.get_max_squeeze_based_on_priority(event.priority)
+                    event = event.hsi_event
+                    # Get required squeeze factor to run all HSIs in the queue
+                    squeeze_factor_queue = squeeze_factor_per_hsi_event[ev_num]                  # todo use zip here!
+                    # Squeeze as little as possible, i.e. chose min between two
+                    squeeze_factor = min(squeeze_factor_queue, squeeze_factor_priority)
 
-                #squeeze_factor_priority = self.get_max_squeeze_based_on_priority(event.priority)
-                #event = event.hsi_event
-                #squeeze_factor_queue = squeeze_factor_per_hsi_event[ev_num]                  # todo use zip here!
-                #Should always squeeze as little as possible, chose min between two:
-                #squeeze_factor = min(squeeze_factor_queue, squeeze_factor_priority)
+                    # Get initial footprint, this is just to retrieve officers&facility required for HSI
+                    updated_call = footprints_of_all_individual_level_hsi_event[ev_num]
 
-                #Option 1: Get actual footprint by running event, and stop subsequent events if counter goes to <0 after. 
-                #          Equivalent to allowing a little overtime to complete last event of the day.
-                #          ISSUE: most HSIs don't actually update footprint based on squeeze_factor (?)
-                # actual_appt_footprint = event.run(squeeze_factor=squeeze_factor)
-                # capabilities_counter[_officer] -= actual_appt_footprint
-                # if capabilities_counter[_officer] <= 0 (i.e. no more capabilities left):
-                           # Do "ok_to_run==False" for all subsequent HSIs scheduled for today at this facility (hence terminate loop)
-                # else:
-                           # Correct running_total_footprint and load_factors since will still need them
+                    # Check if any of the officers required have ran out.
+                    out_of_resources = False
+                    for officer, call in updated_call.items():
+                        if capabilities_monitor[officer] <= 0:
+                            out_of_resources = True
 
-                #Option 2: Calculate duration before running event, and check if have enough left in capabilities_used
-                #          Bonus: don't allow overtime, and can enforce a floor for realistic minimal duration 
-                #          (e.g. no appointment can be carried out in less than 1 min, so if trying to squeeze below default to 1min)
-                # capabilities_counter[_officer] -= actual_appt_footprint 
-                # if capabilities_count >= zero:
-                           # run hsi
-                           # Correct running_total_footprint and load_factors
-                # else
-                           # Do "ok_to_run==False" for this hsi AND ALL SUBSEQUENT ONES (this will terminate while loop for this facility)
-                           # Won't be needing running_total_footprint and squeeze table for this facility anymore, don't update 
-                           # (if interested in logging capabilities_counter, correct for the fact that last appt didn't actually run)
+                    # If officers still available, run event. Note: in current logic, a little overtime is allowed to
+                    # run last event of the day. This seems more realistic than medical staff leaving earlier than
+                    # planned if seeing another patient would take them into overtime.
 
-            #else (if not in mode ) do below. 
-            #Need to remove mention of mode_appt_constraints==2 below, and the ok_to_run==False option, since they will always run
+                    if out_of_resources:
+                        # Do not run,
+                        # Call did_not_run for the hsi_event
+                        rtn_from_did_not_run = event.did_not_run()
 
-            # For each event, determine to run or not, and run if so.
-            for ev_num, event in enumerate(_list_of_individual_hsi_event_tuples):
-                event = event.hsi_event
-                squeeze_factor = squeeze_factor_per_hsi_event[ev_num]                  # todo use zip here!
+                        # If received no response from the call to did_not_run, or a True signal, then
+                        # add to the hold-over queue.
+                        # Otherwise (disease module returns "FALSE") the event is not rescheduled and will not run.
 
-                _appt_footprint_before_running = event.EXPECTED_APPT_FOOTPRINT  # store appt_footprint before running
+                        if not (rtn_from_did_not_run is False):
+                            # reschedule event
+                            hp.heappush(_to_be_held_over, _list_of_individual_hsi_event_tuples[ev_num])
 
-                # Will always be ok to run this case 
-                ok_to_run = (
-                    (self.mode_appt_constraints == 0)
-                    or (self.mode_appt_constraints == 1)
-                    or ((self.mode_appt_constraints == 2) and (squeeze_factor == 0.0))
-                )
+                        # Log that the event did not run
+                        self.record_hsi_event(
+                            hsi_event=event,
+                            actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
+                            squeeze_factor=squeeze_factor,
+                            did_run=False,
+                        )
 
-                # Mode 0: All HSI Event run, with no squeeze
-                # Mode 1: All Run With Squeeze
-                # Mode 2: Only if squeeze <1
+                    # Have enough capabilities left to run event
+                    else:
 
-                if ok_to_run:
+                        # Recalculate call on officers based on squeeze factor. Additionally enforce a realistic
+                        # "1 min" floor, i.e. cannot realistically squeeze any appointment below 1 min.
+                        # Reasons why new footprint is calculated like this, rather than from running HSI is that
+                        # many HSIs seem not to return an updated footprint, even when running with non-zero squeeze;
+                        for k in updated_call.keys():
+                            updated_call[k] = max(updated_call[k]/(squeeze_factor + 1.), 1.)
+
+                        # Subtract this from capabilities used so-far today
+                        capabilities_monitor.subtract(updated_call)
+
+                        # Run event
+                        actual_appt_footprint = event.run(squeeze_factor=squeeze_factor)
+
+                        # Compute the bed days that are allocated to this HSI and provide this information to the HSI
+                        # todo - only do this if some bed-days declared
+                        event._received_info_about_bed_days = \
+                            self.bed_days.issue_bed_days_according_to_availability(
+                                facility_id=self.bed_days.get_facility_id_for_beds(persons_id=event.target),
+                                footprint=event.BEDDAYS_FOOTPRINT
+                            )
+                        # Correct footprints
+                        original_call = footprints_of_all_individual_level_hsi_event[ev_num]
+                        footprints_of_all_individual_level_hsi_event[ev_num] = updated_call
+                        self.running_total_footprint -= original_call
+                        self.running_total_footprint += updated_call
+
+                        # Recompute squeeze factors and footprints
+                        squeeze_factor_per_hsi_event = self.get_squeeze_factors(
+                            footprints_per_event=footprints_of_all_individual_level_hsi_event,
+                            total_footprint=self.running_total_footprint,
+                            current_capabilities=self.capabilities_today,
+                            compute_squeeze_factor_to_district_level=self.compute_squeeze_factor_to_district_level,
+                        )
+
+                        # Write to the log
+                        self.record_hsi_event(
+                            hsi_event=event,
+                            actual_appt_footprint=actual_appt_footprint,
+                            squeeze_factor=squeeze_factor,
+                            did_run=True,
+                        )
+
+            # If not in mode_appt_constraints=2, run all events.
+            else:
+
+                for ev_num, event in enumerate(_list_of_individual_hsi_event_tuples):
+                    event = event.hsi_event
+                    squeeze_factor = squeeze_factor_per_hsi_event[ev_num]                  # todo use zip here!
+
+                    # store appt_footprint before running
+                    _appt_footprint_before_running = event.EXPECTED_APPT_FOOTPRINT
+
+                    # Mode 0: All HSI Event run, with no squeeze
+                    # Mode 1: All Run With Squeeze
+
                     # Compute the bed days that are allocated to this HSI and provide this information to the HSI
                     # todo - only do this if some bed-days declared
                     event._received_info_about_bed_days = \
@@ -1791,27 +1833,6 @@ class HealthSystem(Module):
                         actual_appt_footprint=actual_appt_footprint,
                         squeeze_factor=squeeze_factor,
                         did_run=True,
-                    )
-
-                else:
-                    # Do not run,
-                    # Call did_not_run for the hsi_event
-                    rtn_from_did_not_run = event.did_not_run()
-
-                    # If received no response from the call to did_not_run, or a True signal, then
-                    # add to the hold-over queue.
-                    # Otherwise (disease module returns "FALSE") the event is not rescheduled and will not run.
-
-                    if not (rtn_from_did_not_run is False):
-                        # reschedule event
-                        hp.heappush(_to_be_held_over, _list_of_individual_hsi_event_tuples[ev_num])
-
-                    # Log that the event did not run
-                    self.record_hsi_event(
-                        hsi_event=event,
-                        actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
-                        squeeze_factor=squeeze_factor,
-                        did_run=False,
                     )
 
         return _to_be_held_over
@@ -1980,8 +2001,11 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         # Create hold-over list. This will hold events that cannot occur today before they are added back to the queue.
         hold_over = list()
 
-        #MOD: Initialise capabilities_used monitor based on start-of-day capabilities
-        capabilities_monitor = self.module.capabilities_today
+        # Initialise capabilities_monitor based on start-of-day capabilities
+        # Note-to-self: for speed up, could initialise this once with capabilities_today, and here use local copy
+        capabilities_monitor = Counter()
+        for i, v in self.module.capabilities_today.items():
+            capabilities_monitor[i] += v
 
         # 3) Run all events due today, repeating the check for due events until none are due (this allows for HSI that
         # are added to the queue in the course of other HSI for this today to be run this day).
@@ -1998,17 +2022,15 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             ):
                 break
 
-
             # Run the list of population-level HSI events
-            self.module.run_population_level_events(list_of_population_hsi_event_tuples_due_today) 
+            self.module.run_population_level_events(list_of_population_hsi_event_tuples_due_today)
 
             # Run the list of individual-level events
             _to_be_held_over = self.module.run_individual_level_events(
+                capabilities_monitor,
                 list_of_individual_hsi_event_tuples_due_today,
-                #capabilities_monitor
             )
             hold_over.extend(_to_be_held_over)
-            
 
         # -- End-of-day activities --
         # Add back to the HSI_EVENT_QUEUE heapq all those events which are still eligible to run but which did not run
@@ -2019,6 +2041,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         self.module.log_current_capabilities_and_usage()
 
         # Trigger jobs to be done at the end of the day (after all HSI run)
+        # Note: Could print capabilities_monitor to get overview of what was used that day. Could
+        # maybe compute a running monthly average, and print once a month?
         self.module.on_end_of_day()
 
         # Do activities that are required at end of month (if last day of the month)
