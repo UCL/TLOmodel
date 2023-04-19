@@ -28,11 +28,11 @@ from tlo.methods.symptommanager import Symptom
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
 log_config = lambda _tmpdir: {  # noqa: E731
-        'filename': 'temp',
-        'directory': _tmpdir,
-        'custom_levels': {
-            "tlo.methods.healthsystem": logging.DEBUG
-        }
+    'filename': 'temp',
+    'directory': _tmpdir,
+    'custom_levels': {
+        "tlo.methods.healthsystem": logging.DEBUG
+    }
 }
 
 
@@ -923,6 +923,7 @@ def test_care_seeking_from_symptoms_with_different_levels_of_prob_emergency(seed
         """Returns a pd.Series describing the events scheduled for each person after running the HealthcareSeeking poll,
         in a simulation when a Symptom is defined with a high degree of healthcare-seeking and the specified probability
         of seeking emergency care."""
+
         class DummyDisease(Module):
             METADATA = {Metadata.USES_SYMPTOMMANAGER}
             """Dummy Disease - it's only job is to create a symptom and impose it on everyone"""
@@ -995,7 +996,6 @@ def test_care_seeking_from_symptoms_with_different_levels_of_prob_emergency(seed
         return evs
 
     for prob_seeks_emergency_appt in [0.0, 0.25, 0.5, 0.75, 1.0]:
-
         evs = get_evs_generated_by_hcs_poll(prob_seeks_emergency_appt=prob_seeks_emergency_appt)
 
         # - check that all people have exactly one HSI
@@ -1163,7 +1163,6 @@ def test_custom_function_is_equivalent_to_linear_model(seed):
     alive_newly_symptomatic_children = alive_newly_symptomatic_persons[are_under_15]
     alive_newly_symptomatic_adults = alive_newly_symptomatic_persons[~are_under_15]
 
-
     def _has_any_symptoms(persons, symptoms):
         """Which rows in `persons` have non-zero values for columns in `symptoms`."""
         if len(symptoms) == 0:
@@ -1181,10 +1180,10 @@ def test_custom_function_is_equivalent_to_linear_model(seed):
             Predictor('li_urban').when(True, p[f'odds_ratio_{subgroup}_setting_urban']),
             Predictor('sex').when('F', p[f'odds_ratio_{subgroup}_sex_Female']),
             Predictor('region_of_residence', conditions_are_mutually_exclusive=True
-                        ).when('Central', p[f'odds_ratio_{subgroup}_region_Central'])
+                      ).when('Central', p[f'odds_ratio_{subgroup}_region_Central'])
             .when('Southern', p[f'odds_ratio_{subgroup}_region_Southern']),
             Predictor('li_wealth', conditions_are_mutually_exclusive=True
-                        ).when(4, p[f'odds_ratio_{subgroup}_wealth_higher'])
+                      ).when(4, p[f'odds_ratio_{subgroup}_wealth_higher'])
             .when(5, p[f'odds_ratio_{subgroup}_wealth_higher']),
 
             # Second set of predictors are the symptom-specific odd ratios

@@ -12,7 +12,7 @@ import pandas as pd
 
 from tlo import Date, DateOffset, Module, Parameter, Types
 from tlo.events import PopulationScopeEventMixin, Priority, RegularEvent
-from tlo.lm import LinearModel, LinearModelType, Predictor
+from tlo.lm import LinearModel
 from tlo.methods import Metadata
 from tlo.methods.hsi_generic_first_appts import (
     HSI_GenericEmergencyFirstApptAtFacilityLevel1,
