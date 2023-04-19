@@ -1689,7 +1689,7 @@ class HealthSystem(Module):
                     # Squeeze as little as possible, i.e. chose min between two
                     squeeze_factor = min(squeeze_factor_queue, squeeze_factor_priority)
 
-                    # Get initial footprint, this is just to retrieve officers&facility required for HSI
+                    # Retrieve officers&facility required for HSI
                     updated_call = footprints_of_all_individual_level_hsi_event[ev_num]
 
                     # Check if any of the officers required have ran out.
@@ -1725,7 +1725,6 @@ class HealthSystem(Module):
 
                     # Have enough capabilities left to run event
                     else:
-
                         # Recalculate call on officers based on squeeze factor. Additionally enforce a realistic
                         # "1 min" floor, i.e. cannot realistically squeeze any appointment below 1 min.
                         # Reasons why new footprint is calculated like this, rather than from running HSI is that
