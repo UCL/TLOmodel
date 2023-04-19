@@ -23,7 +23,7 @@ class LongRun(BaseScenario):
         self.start_date = Date(2010, 1, 1)
         self.end_date = self.start_date + pd.DateOffset(years=10)
         self.pop_size = 20_000
-        self.number_of_draws = 3
+        self.number_of_draws = 2
         self.runs_per_draw = 10
 
     def log_configuration(self):
@@ -48,7 +48,7 @@ class LongRun(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         return {
             'Malaria': {
-                'testing_adj_not_malaria': [0.1, 0.01, 0.001][draw_number],
+                'testing_adj_malaria': [0.35, 0.5][draw_number],
             }
         }
 
