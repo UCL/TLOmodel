@@ -946,7 +946,7 @@ class Tb(Module):
         sim.schedule_event(TbActiveCasePoll(self), sim.date + DateOffset(years=1))
 
         # schedule outreach xrays for tb screening from 2023
-        sim.schedule_event(TbCommunityXray(self), sim.date + DateOffset(years=13))
+        sim.schedule_event(TbCommunityXray(self), sim.date + DateOffset(years=0))
 
         # log at the end of the year
         sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(years=1))
@@ -1458,90 +1458,13 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         # baseline scenario 0: no change to parameters/functions
         if scenario == 0:
             return
+        #
+        if scenario ==1:
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                {185: 0.0})
 
-        # all scenarios 1-4 have scale-up of testing/treatment
-        if scenario > 0:
-
-            # HIV
-            if p["scenario_SI"] != "a":
-                # increase testing/diagnosis rates, default 2020 0.03/0.25 -> 93% dx
-                self.sim.modules["Hiv"].parameters["hiv_testing_rates"]["annual_testing_rate_children"] = 0.1
-                self.sim.modules["Hiv"].parameters["hiv_testing_rates"]["annual_testing_rate_adults"] = 0.3
-
-                # ANC testing - value for mothers and infants testing
-                self.sim.modules["Hiv"].parameters["prob_anc_test_at_delivery"] = 0.95
-
-                # prob ART start if dx, this is already 95% at 2020
-                # self.sim.modules["Hiv"].parameters["prob_start_art_after_hiv_test"] = 0.95
-
-            if p["scenario_SI"] != "b":
-                # viral suppression rates
-                # adults already at 95% by 2020
-                # change all column values
-                self.sim.modules["Hiv"].parameters["prob_start_art_or_vs"]["virally_suppressed_on_art"] = 95
-
-            # TB
-            if p["scenario_SI"] != "c":
-                # use NTP treatment rates
-                self.sim.modules["Tb"].parameters["rate_testing_active_tb"]["treatment_coverage"] = 90
-
-            if p["scenario_SI"] != "d":
-                # increase tb treatment success rates
-                self.sim.modules["Tb"].parameters["prob_tx_success_ds"] = 0.9
-                self.sim.modules["Tb"].parameters["prob_tx_success_mdr"] = 0.9
-                self.sim.modules["Tb"].parameters["prob_tx_success_0_4"] = 0.9
-                self.sim.modules["Tb"].parameters["prob_tx_success_5_14"] = 0.9
-                self.sim.modules["Tb"].parameters["prob_tx_success_shorter"] = 0.9
-
-            if p["scenario_SI"] != "e":
-                # change first-line testing for TB to xpert
-                p["first_line_test"] = "xpert"
-                p["second_line_test"] = "sputum"
-
-        # remove consumables constraints, all cons available
-        if (scenario == 1) or (scenario == 4):
-            # list only things that change: constraints on consumables and personnel
-            new_parameters = {
-                'cons_availability': 'all',  # use cons availability from LMIS
-            }
-            self.sim.schedule_event(
-                HealthSystemChangeParameters(
-                    self.sim.modules['HealthSystem'], parameters=new_parameters),
-                self.sim.date)
-
-        # improve preventive measures
-        if (scenario == 3) or (scenario == 4):
-
-            # HIV
-            if p["scenario_SI"] != "f":
-                # reduce risk of HIV - applies to whole adult population
-                self.sim.modules["Hiv"].parameters["beta"] = self.sim.modules["Hiv"].parameters["beta"] * 0.9
-
-            if p["scenario_SI"] != "g":
-                # increase PrEP coverage for FSW after HIV test
-                self.sim.modules["Hiv"].parameters["prob_prep_for_fsw_after_hiv_test"] = 0.5
-
-                # prep poll for AGYW - target to the highest risk
-                # increase retention to 75% for FSW and AGYW
-                self.sim.modules["Hiv"].parameters["prob_prep_for_agyw"] = 0.1
-                self.sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_3_months"] = 0.75
-
-            if p["scenario_SI"] != "h":
-                # increase probability of VMMC after hiv test
-                self.sim.modules["Hiv"].parameters["prob_circ_after_hiv_test"] = 0.25
-
-            # TB
-            if p["scenario_SI"] != "i":
-                # change IPT eligibility for TB contacts to all years
-                p["age_eligibility_for_ipt"] = 100
-
-                # increase coverage of IPT
-                p["ipt_coverage"]["coverage_plhiv"] = 0.6
-                p["ipt_coverage"]["coverage_paediatric"] = 80  # this will apply to contacts of all ages
-
-                # retention on IPT (PLHIV)
-                self.sim.modules["Tb"].parameters["prob_retained_ipt_6_months"] = 0.99
-
+# ######################################################
+#
 
 class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
     """The Tb Regular Poll Event for assigning active infections
