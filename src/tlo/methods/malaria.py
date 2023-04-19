@@ -640,7 +640,7 @@ class Malaria(Module):
         # one from hsi_generic_first_appts > check_if_fever_is_caused_by_malaria,
         # the other from MalariaScheduleTesting > HSI_Malaria_rdt
         df = self.sim.population.props
-        if df.at[person_id, 'ma_inf_type'].isin(['asym', 'clinical', 'severe']) and df.at[person_id, 'ma_tx']:
+        if (df.at[person_id, 'ma_inf_type'] in ['asym', 'clinical', 'severe']) and df.at[person_id, 'ma_tx']:
             return
 
         # Call the DxTest RDT to diagnose malaria
@@ -815,7 +815,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
         # one from hsi_generic_first_appts > check_if_fever_is_caused_by_malaria,
         # the other from MalariaScheduleTesting > HSI_Malaria_rdt
         if (not df.at[person_id, 'is_alive']) or (
-            df.at[person_id, 'ma_inf_type'].isin(['asym', 'clinical', 'severe']) and df.at[person_id, 'ma_tx']
+            (df.at[person_id, 'ma_inf_type'] in ['asym', 'clinical', 'severe']) and df.at[person_id, 'ma_tx']
         ):
             return hs.get_blank_appt_footprint()
 
