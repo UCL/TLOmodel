@@ -224,9 +224,9 @@ def apply(results_folder: Path, output_folder: Path):
     figure2_distribution_of_hsi_event_by_treatment(
         results_folder=results_folder, output_folder=results_folder
     )
-    # figure3_appointments_used(
-    #    results_folder=results_folder, output_folder=results_folder
-    # )
+    figure3_appointments_used(
+       results_folder=results_folder, output_folder=results_folder
+    )
 
 
 if __name__ == "__main__":
