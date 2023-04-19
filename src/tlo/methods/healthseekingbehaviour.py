@@ -332,11 +332,8 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
 
         idx_where_true = lambda series: set(series.loc[series].index)  # noqa: E731
 
-        # assert if the linear model and custom model give the same results
-        assert_lm_equals_cf = False
-
         # Separately schedule HSI events for child and adult subgroups
-        for subgroup, subgroup_name, care_seeking_odds_ratios, hsb_model, hsb_model_custom, emergency_appt_model in zip(
+        for subgroup, subgroup_name, care_seeking_odds_ratios, hsb_model, emergency_appt_model in zip(
             (
                 alive_newly_symptomatic_children,
                 alive_newly_symptomatic_adults
@@ -348,10 +345,6 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
             (
                 module.odds_ratio_health_seeking_in_children,
                 module.odds_ratio_health_seeking_in_adults,
-            ),
-            (
-                module.hsb_linear_models['children'],
-                module.hsb_linear_models['adults']
             ),
             (
                 module.custom_hsb_linear_models['children'],
@@ -373,20 +366,11 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                 # If not forcing, run the custom model to predict which persons will seek care, from among those
                 # with symptoms that cause any degree of healthcare seeking.
                 will_seek_care = idx_where_true(
-                    hsb_model_custom.predict(
+                    hsb_model.predict(
                         subgroup.loc[self._has_any_symptoms(subgroup, symptoms_that_allow_healthcareseeking)],
                         module.rng,
                         subgroup=subgroup_name, care_seeking_odds_ratios=care_seeking_odds_ratios)
                 )
-                if assert_lm_equals_cf:
-                    will_seek_care_lm = hsb_model.predict(
-                        subgroup.loc[self._has_any_symptoms(subgroup, symptoms_that_allow_healthcareseeking)],
-                        squeeze_single_row_output=False)
-                    will_seek_care_cf = hsb_model_custom.predict(
-                        subgroup.loc[self._has_any_symptoms(subgroup, symptoms_that_allow_healthcareseeking)],
-                        subgroup=subgroup_name, care_seeking_odds_ratios=care_seeking_odds_ratios)
-
-                    assert np.allclose(will_seek_care_lm, will_seek_care_cf)
 
                 # Force the addition to this set those who are already in-patient. (In-patients will always get the
                 # notional "FirstAppointment" for a new symptom.)
