@@ -165,8 +165,9 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
             plt.axvline(x=Date(2023, 1, 1), ls=ls_start_interv, color='gray', label='interventions start')
             if in_set_ylims_bool:
                 ax.set_ylim([0, in_ylims_l[1]])
-            plt.title("Proportion Females 15-49 Using Contraceptive Over Time")
+            plt.title("Proportion of Females 15-49 Using Contraceptive over Time")
             plt.xlabel("Year")
+            plt.ylabel('Proportion')
             plt.savefig(outputpath / ('Prop Fem1549 Using Contraceptive Over Time ' + in_id +
                                       "_UpTo" + str(plot_months.year[-1]) + in_suffix + '.png'), format='png')
 
@@ -233,7 +234,7 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
             #  (then join ordered modern & non-modern methods)
             plt.title("Contraception Use By Method")
             plt.xlabel("Year")
-            plt.ylabel("Number using method")
+            plt.ylabel("Number of women using method")
             plt.legend(contraceptives_order_all_meths)
             plt.savefig(outputpath / ('Contraception Use By Method ' + in_id +
                                       "_UpTo" + str(plot_months.year[-1]) + in_suffix + '.png'), format='png')
@@ -299,7 +300,7 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
             # colours defined in the same order as methods, hence need to be reversed too
             mean_usage.plot.area(stacked=True, ax=ax, legend=False, color=list(reversed(colours_notusing_all_meths)))
             plt.axvline(x=2023, ls=ls_start_interv, color='white')
-            plt.title('Proportion Females 15-49 Using Contraception Methods', x=0.7)
+            plt.title('Proportions of Females 15-49 Using Contraception Methods', x=0.7)
             plt.xlabel('Year')
             plt.ylabel('Proportion')
             # move the fig title so it fits with others in the panel
@@ -358,19 +359,16 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
             plt.axvline(x=2023, ls=ls_start_interv, color='gray', label='interventions start')
             if in_set_ylims_bool:
                 ax.set_ylim([0, in_ylims_l[4]])
-            plt.title("Mean Proportion of Pregnancies in Females 15-49 per Year")
+            plt.title("Mean Proportion of Females 15-49 Becoming Pregnant per Year")
             plt.xlabel("Year")
             plt.ylabel("Mean proportion of pregnancies")
-            plt.savefig(outputpath / ('Mean Prop of Pregnancies in Fem15-49 per Year ' + in_id +
+            plt.savefig(outputpath / ('Mean Prop of Fem15-49 Becom Preg per Year ' + in_id +
                                       "_UpTo" + str(plot_years[-1]) + in_suffix + '.png'), format='png')
 
             print("Figs: Pregnancies Over time saved.")
 
     # %% Plot Dependency Ratio Over time:
     if in_plot_depend_ratio_bool:
-        def fullcols(in_to_print):
-            with pd.option_context('display.max_rows', 10, 'display.max_columns', None):
-                print(in_to_print)
 
         # Load Demographic Results by Age groups by Years up to 2050
         demog_df_f_by_years = log_df['tlo.methods.demography']['age_range_f'].set_index('date').copy()
@@ -416,10 +414,10 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
         plt.axvline(x=2023, ls=ls_start_interv, color='gray', label='interventions start')
         if in_set_ylims_bool:
             ax.set_ylim([0, in_ylims_l[5]])
-        plt.title("Dependency Ratio")
+        plt.title("Dependency Ratio per Year")
         plt.xlabel("Year")
-        # plt.ylabel("Dependency Ratio")
-        plt.savefig(outputpath / ('Dependency Ratio Over Time ' + in_id +
+        plt.ylabel("Dependency ratio")
+        plt.savefig(outputpath / ('Dependency Ratio over Time ' + in_id +
                                   "_UpTo" + str(plot_years[-1]) + in_suffix + '.png'), format='png')
 
         print("Fig: Dependency Ratio Over time saved.")
