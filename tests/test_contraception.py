@@ -638,7 +638,12 @@ def test_defaulting_off_method_if_no_healthsystem_at_population_level(tmpdir, se
         (sim.start_date + pd.DateOffset(months=1, days=max_days_between_appt_for_maintenance))
     # max_days_between_appt_for_maintenance + 1 month allow time for an appointment to become due for everyone
     # (allowing for the monthly occurrence of the poll).
-    assert (ys.loc[after_everyone_has_appt, states_that_may_require_HSI_to_maintain_on] == 0).all().all()
+    assert (
+        ys.loc[
+            after_everyone_has_appt,
+            sorted(states_that_may_require_HSI_to_maintain_on)
+        ] == 0
+    ).all().all()
 
     # Check there is no record of starting/switching-to contraception of anything that requires an HSI
     states_that_may_require_HSI_to_switch_to = sim.modules['Contraception'].states_that_may_require_HSI_to_switch_to
@@ -681,8 +686,11 @@ def test_defaulting_off_method_if_no_consumables_at_population_level(tmpdir, see
         (sim.start_date + pd.DateOffset(months=1, days=max_days_between_appt_for_maintenance))
     # max_days_between_appt_for_maintenance + 1 month allow time for an appointment to become due for everyone
     # (allowing for the monthly occurrence of the poll).
-    assert (num_on_contraceptives.loc[after_everyone_has_appt, states_that_may_require_HSI_to_maintain_on] == 0
-            ).all().all()
+    assert (
+        num_on_contraceptives.loc[
+            after_everyone_has_appt, sorted(states_that_may_require_HSI_to_maintain_on)
+        ] == 0
+    ).all().all()
 
     # Check that people are not switching to those contraceptives that require consumables to switch to.
     changes = log["contraception_change"]
@@ -813,7 +821,9 @@ def test_contraception_coverage_with_use_healthsystem(tmpdir, seed):
 
         def find_average_availability(items: List, level: str):
             """Find the probability that all the items are available at the level."""
-            facilities = set([x.id for x in sim.modules['HealthSystem']._facilities_for_each_district[level].values()])
+            facilities = sorted(
+                set([x.id for x in sim.modules['HealthSystem']._facilities_for_each_district[level].values()])
+            )
 
             # Warn if some item codes are not recognised and hence average availability is calculated for the remaining
             # item(s)
