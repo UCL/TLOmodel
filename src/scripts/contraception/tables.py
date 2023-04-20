@@ -246,8 +246,8 @@ def table_cons(in_mwk_to_usd_exchange_rate,
     # Calculate the costs in USD and round to 2 decimals
     co_pkgs_df['Unit Cost\n2021 prices\nin USD'] =\
         round(co_pkgs_df['Unit Cost\n2021 prices\nin MWK'].apply(mwk_to_usd), 2)
-    # Round costs in MWK to 2 decimals
-    co_pkgs_df['Unit Cost\n2021 prices\nin MWK'] = round(co_pkgs_df['Unit Cost\n2021 prices\nin MWK'], 2)
+    # Round costs in MWK to 0 decimals
+    co_pkgs_df['Unit Cost\n2021 prices\nin MWK'] = round(co_pkgs_df['Unit Cost\n2021 prices\nin MWK'])
 
     # Rename the pkgs to be consistent with methods names elsewhere and order the dataframe by contraceptives_order
     def pkg_name_to_method(in_co_pkg_name):
