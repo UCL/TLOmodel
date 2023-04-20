@@ -653,6 +653,7 @@ def test_all_appt_types_can_run(seed):
 
     # For each type of appointment, for a person in each district, create the HSI, schedule the HSI and check it runs
     error_msg = list()
+    run_hsi_msg = list()
 
     def check_appt_works(district, level, appt_type):
         sim.modules['HealthSystem'].reset_queue()
@@ -686,6 +687,9 @@ def test_all_appt_types_can_run(seed):
                 if not hsi_did_run:
                     error_msg.append(f"The HSI did not run: "
                                      f"level={_level}, appt_type={_appt_type}, district={_district}, sqz={sqz}")
+                else:
+                    run_hsi_msg.append(f"The HSI did run: "
+                                       f"level={_level}, appt_type={_appt_type}, district={_district}, sqz={sqz}")
 
     # replacers = {':': ',', 'level=': '', 'appt_type=': '', 'district=': '', 'sqz=': ''}
     # error_df = pd.Series(error_msg)
