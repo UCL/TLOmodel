@@ -173,7 +173,6 @@ class Copd(Module):
         self.give_inhaler(hsi_event=hsi_event, person_id=person_id)
 
         if 'breathless_severe' in self.sim.modules['SymptomManager'].has_what(person_id):
-            print('this is severe')
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_CopdTreatmentOnSevereExacerbation(module=self, person_id=person_id),
                 priority=0,
@@ -352,6 +351,7 @@ class CopdExacerbationEvent(Event, IndividualScopeEventMixin):
         self.severe = severe
 
     def apply(self, person_id):
+
         if not self.sim.population.props.at[person_id, 'is_alive']:
             return
 
@@ -406,6 +406,7 @@ class HSI_CopdTreatmentOnSevereExacerbation(HSI_Event, IndividualScopeEventMixin
          * Provide treatment: whatever is available at this facility at this time (no referral).
         """
         # todo: Consider whether person should be referred to higher level.
+
         df = self.sim.population.props
 
         # Give oxygen and AminoPhylline, if possible, ... and cancel death if the treatment is successful.
