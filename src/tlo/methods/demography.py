@@ -85,7 +85,7 @@ class Demography(Module):
         max_age=MAX_AGE_FOR_RANGE,
         range_size=AGE_RANGE_SIZE)
 
-    # Convert AGE_RANGE_LOOKUP to immutable MappingProxyType to avoid accidental updates
+    # Convert AGE_RANGE_LOOKUP to read-only mapping to avoid accidental updates
     AGE_RANGE_LOOKUP = MappingProxyType(AGE_RANGE_LOOKUP)
 
     # We should have 21 age range categories
