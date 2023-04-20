@@ -86,7 +86,7 @@ class Demography(Module):
         range_size=AGE_RANGE_SIZE)
 
     # Convert AGE_RANGE_LOOKUP to read-only mapping to avoid accidental updates
-    AGE_RANGE_LOOKUP = MappingProxyType(AGE_RANGE_LOOKUP)
+    AGE_RANGE_LOOKUP = MappingProxyType(dict(AGE_RANGE_LOOKUP))
 
     # We should have 21 age range categories
     assert len(AGE_RANGE_CATEGORIES) == 21
