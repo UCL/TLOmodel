@@ -1,0 +1,10 @@
+channels:
+  - conda-forge
+dependencies:
+  - pytest
+  - pytest-cov
+  - pytest-xdist
+  - pip
+  - tox
+  - conda-lock
+  - pyinstrument>=4.3

@@ -1,0 +1,17 @@
+channels:
+  - conda-forge
+dependencies:
+  - python==3.11
+  - GitPython
+  - click
+  - matplotlib
+  - pyshp
+  - squarify
+  - numpy
+  - pandas~=2.0.0
+  - scipy
+  - openpyxl==3.1.0 # avoid https://foss.heptapod.net/openpyxl/openpyxl/-/issues/1963
+  - azure-batch
+  - azure-identity
+  - azure-keyvault
+  - azure-storage-file-share
