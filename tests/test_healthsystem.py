@@ -631,7 +631,7 @@ def test_all_appt_types_can_run(seed):
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            capabilities_coefficient=1.0,
                                            mode_appt_constraints=2,
-                                           use_funded_or_actual_staffing='funded_plus'),
+                                           use_funded_or_actual_staffing='actual'),
                  # <-- hard constraint (only HSI events with no squeeze factor can run)
                  # <-- using the 'funded_plus' number/distribution of officers
                  DummyModule()
