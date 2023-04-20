@@ -8,6 +8,7 @@ The core demography module and its associated events.
 import math
 from collections import defaultdict
 from pathlib import Path
+from types import MappingProxyType
 from typing import Union
 
 import numpy as np
@@ -83,6 +84,9 @@ class Demography(Module):
         min_age=MIN_AGE_FOR_RANGE,
         max_age=MAX_AGE_FOR_RANGE,
         range_size=AGE_RANGE_SIZE)
+
+    # Convert AGE_RANGE_LOOKUP to read-only mapping to avoid accidental updates
+    AGE_RANGE_LOOKUP = MappingProxyType(dict(AGE_RANGE_LOOKUP))
 
     # We should have 21 age range categories
     assert len(AGE_RANGE_CATEGORIES) == 21
