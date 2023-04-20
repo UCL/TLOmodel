@@ -149,11 +149,11 @@ class Copd(Module):
         """Log current states."""
         df = self.sim.population.props
         counts = df.loc[df.is_alive].groupby(by=['sex', 'age_range', 'ch_lungfunction']).size()
-        proportions = counts.unstack().apply(lambda row: row / row.sum(), axis=1).stack()
+        # proportions = counts.unstack().apply(lambda row: row / row.sum(), axis=1).stack()
         logger.info(
             key='copd_prevalence',
             description='Proportion of alive persons in each COPD category currently (by age and sex)',
-            data=flatten_multi_index_series_into_dict_for_logging(proportions)
+            data=flatten_multi_index_series_into_dict_for_logging(counts)
         )
 
     def give_inhaler(self, person_id: int, hsi_event: HSI_Event):

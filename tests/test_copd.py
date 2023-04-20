@@ -77,8 +77,7 @@ def test_basic_run(tmpdir, seed):
 def get_simulation(pop_size):
     """ Return a simulation object
 
-    :param pop_size: total number of individuals at the start of simulation
-    :param sim_end_date: date of ending simulation """
+    :param pop_size: total number of individuals at the start of simulation """
     sim = Simulation(
         start_date=start_date
     )
