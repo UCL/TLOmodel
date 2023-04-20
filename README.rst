@@ -22,10 +22,13 @@ you prefer, you can carry out the setup using the command line:
 
 ::
 
-    conda create -n tlo python=3.8
+    conda create -n tlo --file conda-dev-{platform}.lock
     conda activate tlo
-    pip install -r requirements/dev.txt
     pip install -e .
+
+where `{platform}` is `linux-64` if installing on a Linux system, `osx-64` if installing on
+MacOS (x86 processor), `osx-arm64` if installing on MacOS (ARM64 'Apple silicon' processor) or
+`win-64` if installing on Windows.
 
 This will install the software in 'editable' mode, so any changes you make to the source will immediately be reflected.
 After the initial install, each time you wish to use the model simply activate the environment::
@@ -37,15 +40,16 @@ To update dependencies, perform the following steps in the TLOmodel directory:
 ::
 
     conda activate tlo
-    pip install -r requirements/dev.txt
+    conda install --file conda-dev-{platform}.lock
 
+where `{platform}` is one of `linux-64`, `osx-64`, `osx-arm64` or `win-64` as above.
 
 Documentation
 =============
 
 To build the documentation, activate your environment as above then run::
 
-    tox -e docs
+    tox -f docs
 
 The generated HTML documentation will appear in `dist/docs`.
 
@@ -63,7 +67,7 @@ To run the Python code tests only::
 
 To run all the tests::
 
-    tox
+    tox -f test
 
 Note, to combine test coverage data from all the tox environments run:
 
