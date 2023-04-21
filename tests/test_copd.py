@@ -203,7 +203,7 @@ def test_moderate_exacerbation():
 
     df = sim.population.props  # population dataframe
     person_id = df.index[0]  # get person id
-assert not 'breathless_moderate' in sim.modules['SymptomManager'].has_what(person_id, copd_module)
+
     # reset individual properties. An individual should be alive and without an inhaler
     df.at[person_id, 'is_alive'] = True
     df.loc[person_id, 'age_years'] = 20
@@ -256,6 +256,9 @@ def test_severe_exacerbation():
     df.at[person_id, 'is_alive'] = True
     df.at[person_id, 'age_years'] = 20
     df.at[person_id, 'ch_has_inhaler'] = False
+
+    # check an individual do not have emergency symptoms before an event is run
+    assert 'breathless_severe' not in sim.modules['SymptomManager'].has_what(person_id)
 
     # schedule exacerbations event setting severe to True. This will ensure the individual has severe exacerbation
     copd.CopdExacerbationEvent(copd_module, person_id, severe=True).run()
