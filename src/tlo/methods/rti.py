@@ -3396,9 +3396,8 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         # Specify the type of bed days needed? not sure if necessary
         self.BEDDAYS_FOOTPRINT.update({'general_bed': inpatient_days})
         # update the expected appointment foortprint
-        # disable the following two lines, which seem duplicate the usage of InpatientDays.
-        # if inpatient_days > 0:
-        #     self.EXPECTED_APPT_FOOTPRINT.update({'InpatientDays': inpatient_days})
+        if inpatient_days > 0:
+            self.EXPECTED_APPT_FOOTPRINT.update({'InpatientDays': inpatient_days})
         # ================ Determine whether the person will require ICU days =========================================
         # Percentage of RTIs that required ICU stay 2.7% at KCH : https://doi.org/10.1007/s00268-020-05853-z
         # Percentage of RTIs that require HDU stay 3.3% at KCH
