@@ -31,6 +31,7 @@ from tlo.methods import (
 #  for (2) This is done easily using the `compare_deaths` utility function and there are lots of examples of simple
 #   plots being made using those results.
 
+
 class CopdAnalyses:
     """ Copd Analyses class responsible for plotting all COPD module outputs. Here we are plotting;
         1. stacked bars for individuals in each of the lung function categories;
