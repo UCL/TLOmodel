@@ -203,7 +203,7 @@ def test_moderate_exacerbation():
 
     df = sim.population.props  # population dataframe
     person_id = df.index[0]  # get person id
-
+assert not 'breathless_moderate' in sim.modules['SymptomManager'].has_what(person_id, copd_module)
     # reset individual properties. An individual should be alive and without an inhaler
     df.at[person_id, 'is_alive'] = True
     df.loc[person_id, 'age_years'] = 20
