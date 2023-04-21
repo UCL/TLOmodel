@@ -14,10 +14,11 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
+    hsi_generic_first_appts,
     simplified_births,
-    symptommanager, hsi_generic_first_appts,
+    symptommanager,
 )
-from tlo.methods.copd import HSI_CopdTreatmentOnSevereExacerbation, CopdExacerbationEvent
+from tlo.methods.copd import CopdExacerbationEvent, HSI_CopdTreatmentOnSevereExacerbation
 from tlo.methods.healthseekingbehaviour import HealthSeekingBehaviourPoll
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -293,7 +294,7 @@ def test_death_rate():
             iii) High death rate should lead to Many deaths
     """
     # create population dataframe from simulation
-    sim = get_simulation(100) # get simulation object
+    sim = get_simulation(100)   # get simulation object
     copd_module = sim.modules['Copd']  # the copd module
 
     df = sim.population.props
