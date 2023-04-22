@@ -444,3 +444,32 @@ fig.savefig(outputspath / "Epi_outputs_focussed.png")
 
 plt.show()
 
+# %%:  ---------------------------------- PrEP IMPACT ---------------------------------- #
+
+# HIV incidence in AGYW
+
+def hiv_agyw_inc(results_folder):
+    inc = extract_results(
+        results_folder,
+        module="tlo.methods.hiv",
+        key="infections_by_2age_groups_and_sex",
+        column="n_new_infections_female_1524",
+        index="date",
+        do_scaling=False
+    )
+
+    inc.columns = inc.columns.get_level_values(0)
+    inc_summary = pd.DataFrame(index=inc.index, columns=["median", "lower", "upper"])
+    inc_summary["median"] = inc.median(axis=1)
+    inc_summary["lower"] = inc.quantile(q=0.025, axis=1)
+    inc_summary["upper"] = inc.quantile(q=0.975, axis=1)
+
+    return inc_summary
+
+
+agyw_inc0 = hiv_agyw_inc(results0)
+agyw_inc3 = hiv_agyw_inc(results1)
+agyw_inc4 = hiv_agyw_inc(results2)
+
+baseline_num_infections = agyw_inc0["median"][12:25]
+# multiply by scaling factor to get numbers of expected infections
