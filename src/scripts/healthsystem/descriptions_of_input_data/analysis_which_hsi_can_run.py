@@ -78,47 +78,49 @@ for mode_appt_constraints in (0, 1, 2):
             person_for_district.keys())
 
 
-def check_appt_works(district, level, appt_type) -> Tuple:
-    sim.modules['HealthSystem'].reset_queue()
+        def check_appt_works(district, level, appt_type) -> Tuple:
+            sim.modules['HealthSystem'].reset_queue()
 
-    hsi = DummyHSIEvent(
-        module=sim.modules['DummyModule'],
-        person_id=person_for_district[district],
-        appt_type=appt_type,
-        level=level
-    )
+            hsi = DummyHSIEvent(
+                module=sim.modules['DummyModule'],
+                person_id=person_for_district[district],
+                appt_type=appt_type,
+                level=level
+            )
 
-    sim.modules['HealthSystem'].schedule_hsi_event(
-        hsi_event=hsi,
-        topen=sim.date,
-        tclose=sim.date + pd.DateOffset(days=1),
-        priority=1
-    )
+            sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=hsi,
+                topen=sim.date,
+                tclose=sim.date + pd.DateOffset(days=1),
+                priority=1
+            )
 
-    healthsystemscheduler.run()
+            healthsystemscheduler.run()
 
-    return hsi.this_hsi_event_ran, hsi.squeeze_factor_of_this_hsi
+            return hsi.this_hsi_event_ran, hsi.squeeze_factor_of_this_hsi
 
 
-for _district in person_for_district:
-    for _facility_level_col_name in appt_types_offered.columns:
-        for _appt_type in (
-            appt_types_offered[_facility_level_col_name].loc[appt_types_offered[_facility_level_col_name]].index
-        ):
-            _level = _facility_level_col_name.split('_')[-1]
-            hsi_did_run, sqz = check_appt_works(district=_district, level=_level, appt_type=_appt_type)
+        for _district in person_for_district:
+            for _facility_level_col_name in appt_types_offered.columns:
+                for _appt_type in (
+                    appt_types_offered[_facility_level_col_name].loc[appt_types_offered[_facility_level_col_name]].index
+                ):
+                    _level = _facility_level_col_name.split('_')[-1]
+                    hsi_did_run, sqz = check_appt_works(district=_district, level=_level, appt_type=_appt_type)
 
-            results.append(dict(
-                mode_appt_constraints=mode_appt_constraints,
-                use_funded_or_actual_staffing=use_funded_or_actual_staffing,
-                level=_level,
-                appt_type=_appt_type,
-                district=_district,
-                hsi_did_run=hsi_did_run,
-                sqz=sqz,
-            ))
+                    results.append(dict(
+                        mode_appt_constraints=mode_appt_constraints,
+                        use_funded_or_actual_staffing=use_funded_or_actual_staffing,
+                        level=_level,
+                        appt_type=_appt_type,
+                        district=_district,
+                        hsi_did_run=hsi_did_run,
+                        sqz=sqz,
+                    ))
 
-results = pd.DataFrame(results)
+        results = pd.DataFrame(results)
+
+
 
 # print to console
 print(results)
