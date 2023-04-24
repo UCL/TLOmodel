@@ -24,13 +24,6 @@ from tlo.methods import (
     symptommanager,
 )
 
-# todo @Emmmanuel....
-#  First thing will be to run the model with Copd registered for 30 years. Then,
-#  for (1) In the test file I've written an example of how to get this out of the log. We want stacked bars (that sum
-#   to 1.0), for the people in each of the lung function categories; and one bar for each age/sex group.
-#  for (2) This is done easily using the `compare_deaths` utility function and there are lots of examples of simple
-#   plots being made using those results.
-
 
 class CopdAnalyses:
     """ Copd Analyses class responsible for plotting all COPD module outputs. Here we are plotting;
