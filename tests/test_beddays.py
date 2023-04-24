@@ -856,7 +856,11 @@ def test_bed_days_allocation_information_is_provided_to_HSI(seed):
 
 def test_in_patient_admission_included_in_appt_footprint_if_any_bed_days():
     """Check that helper function works which adds the in-patient admission appointment type to the APPT_FOOTPRINT. """
-    from tlo.methods.bed_days import IN_PATIENT_ADMISSION, IN_PATIENT_DAY_SUBSEQUENT_DAYS, IN_PATIENT_DAY_FIRST_DAY
+    from tlo.methods.bed_days import (
+        IN_PATIENT_ADMISSION,
+        IN_PATIENT_DAY_FIRST_DAY,
+        IN_PATIENT_DAY_SUBSEQUENT_DAYS,
+    )
 
     footprint = {'Under5OPD': 1}
     footprint_with_correct_inpatient_admission_and_inpatient_day = {
