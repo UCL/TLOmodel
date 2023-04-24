@@ -225,7 +225,6 @@ class CopdModels:
 
     def init_lung_function(self, df: pd.DataFrame) -> pd.Series:
         """Returns the values for ch_lungfunction for an initial population described in `df`."""
-        # todo Persons are assigned a random category - this should be updated
         cats = ch_lungfunction_cats
         probs = np.ones(len(cats)) / len(cats)
         return pd.Series(index=df.index, data=self.rng.choice(cats, p=probs, size=len(df)))
