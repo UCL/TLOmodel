@@ -615,10 +615,8 @@ def test_all_appt_types_can_run(seed):
             self.ACCEPTED_FACILITY_LEVEL = level
 
             self.this_hsi_event_ran = False
-            self.squeeze_factor_of_this_hsi = 0.0
 
         def apply(self, person_id, squeeze_factor):
-            self.squeeze_factor_of_this_hsi = squeeze_factor
             if (squeeze_factor != 99) and (squeeze_factor != np.inf):  # todo - this changed!
                 # Check that this appointment is being run and run not with a squeeze_factor that signifies that a cadre
                 # is not at all available.
@@ -630,8 +628,8 @@ def test_all_appt_types_can_run(seed):
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            capabilities_coefficient=1.0,
-                                           mode_appt_constraints=2,
-                                           use_funded_or_actual_staffing='actual'),
+                                           mode_appt_constraints=1,
+                                           use_funded_or_actual_staffing='funded_plus'),
                  # <-- hard constraint (only HSI events with no squeeze factor can run)
                  # <-- using the 'funded_plus' number/distribution of officers
                  DummyModule()
@@ -653,7 +651,6 @@ def test_all_appt_types_can_run(seed):
 
     # For each type of appointment, for a person in each district, create the HSI, schedule the HSI and check it runs
     error_msg = list()
-    run_hsi_msg = list()
 
     def check_appt_works(district, level, appt_type):
         sim.modules['HealthSystem'].reset_queue()
@@ -673,9 +670,9 @@ def test_all_appt_types_can_run(seed):
         healthsystemscheduler.apply(sim.population)
 
         if not hsi.this_hsi_event_ran:
-            return False, hsi.squeeze_factor_of_this_hsi
+            return False
         else:
-            return True, hsi.squeeze_factor_of_this_hsi
+            return True
 
     for _district in person_for_district:
         for _facility_level_col_name in appt_types_offered.columns:
@@ -683,27 +680,15 @@ def test_all_appt_types_can_run(seed):
                 appt_types_offered[_facility_level_col_name]
             ].index:
                 _level = _facility_level_col_name.split('_')[-1]
-                hsi_did_run, sqz = check_appt_works(district=_district, level=_level, appt_type=_appt_type)
-                if not hsi_did_run:
+                if not check_appt_works(district=_district, level=_level, appt_type=_appt_type):
                     error_msg.append(f"The HSI did not run: "
-                                     f"level={_level}, appt_type={_appt_type}, district={_district}, sqz={sqz}")
-                else:
-                    run_hsi_msg.append(f"The HSI did run: "
-                                       f"level={_level}, appt_type={_appt_type}, district={_district}, sqz={sqz}")
-
-    # replacers = {':': ',', 'level=': '', 'appt_type=': '', 'district=': '', 'sqz=': ''}
-    # error_df = pd.Series(error_msg)
-    # error_df = error_df.replace(replacers, regex=True)
-    # error_df = error_df.str.split(pat=', ', expand=True)
-    # error_df.rename(columns={1: 'level', 2: 'appt_type', 3: 'district', 4: 'squeeze_factor'}, inplace=True)
-    # error_df['count'] = error_df['district'].copy()
-    # error_df = error_df.groupby(['appt_type', 'level'], as_index=False).agg({'count': 'count', 'district': ', '.join})
+                                     f"level={_level}, appt_type={_appt_type}, district={_district}")
 
     if len(error_msg):
         for _line in error_msg:
             print(_line)
 
-    # assert 0 == len(error_msg)
+    assert 0 == len(error_msg)
 
 
 @pytest.mark.slow
