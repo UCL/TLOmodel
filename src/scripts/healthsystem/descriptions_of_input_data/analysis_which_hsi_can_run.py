@@ -118,9 +118,8 @@ for mode_appt_constraints in (0, 1, 2):
                         sqz=sqz,
                     ))
 
-        results = pd.DataFrame(results)
 
-
+results = pd.DataFrame(results)
 
 # print to console
 print(results)
