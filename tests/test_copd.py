@@ -153,7 +153,7 @@ def test_exacerbations():
 
     # schedule copd poll event
     _event = copd.CopdPollEvent(copd_module)
-    _event.apply(sim.population)
+    _event.run()
 
     # confirm no event on an individual has been scheduled
     _individual_events = sim.find_events_for_person(df.index[0])
@@ -181,7 +181,7 @@ def test_exacerbations():
 
     # run copd poll event
     _event = copd.CopdPollEvent(copd_module)
-    _event.apply(sim.population)
+    _event.run()
 
     # confirm more than one event has been scheduled
     _exacerbation_events = [ev[1] for ev in sim.find_events_for_person(df.index[0]) if
@@ -219,7 +219,7 @@ def test_moderate_exacerbation():
 
     # Run health seeking behavior event and check non-emergency care is sought
     hsp = HealthSeekingBehaviourPoll(sim.modules['HealthSeekingBehaviour'])
-    hsp.apply(sim.population)
+    hsp.run()
 
     # check non-emergency care event is scheduled
     assert isinstance(sim.modules['HealthSystem'].find_events_for_person(person_id)[0][1],
@@ -231,7 +231,7 @@ def test_moderate_exacerbation():
     # Run the created instance of HSI_GenericFirstApptAtFacilityLevel0 and check no emergency care was sought
     ge = [ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
           isinstance(ev[1], hsi_generic_first_appts.HSI_GenericFirstApptAtFacilityLevel0)][0]
-    ge.apply(ge.target, squeeze_factor=0.0)
+    ge.run(squeeze_factor=0.0)
 
     # check that no HSI_CopdTreatmentOnSevereExacerbation event is scheduled. Only inhaler should be given
     for _event in sim.modules['HealthSystem'].find_events_for_person(person_id):
@@ -268,7 +268,7 @@ def test_severe_exacerbation():
 
     # # Run health seeking behavior event and check emergency care is sought
     hsp = HealthSeekingBehaviourPoll(module=sim.modules['HealthSeekingBehaviour'])
-    hsp.apply(sim.population)
+    hsp.run()
     # check that an instance of HSI_GenericFirstApptAtFacilityLevel1 is created
     assert isinstance(sim.modules['HealthSystem'].find_events_for_person(person_id)[0][1],
                       hsi_generic_first_appts.HSI_GenericEmergencyFirstApptAtFacilityLevel1)
@@ -279,7 +279,7 @@ def test_severe_exacerbation():
     # Run the created instance of HSI_GenericFirstApptAtFacilityLevel1 and check no emergency care was sort
     ge = [ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
           isinstance(ev[1], hsi_generic_first_appts.HSI_GenericEmergencyFirstApptAtFacilityLevel1)][0]
-    ge.apply(ge.target, squeeze_factor=0.0)
+    ge.run(squeeze_factor=0.0)
 
     # check that HSI_CopdTreatmentOnSevereExacerbation event is scheduled. Inhaler should also be given
     assert isinstance([ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
@@ -341,7 +341,7 @@ def test_death_rate():
     # is given
     for idx in range(len(df.index)):
         _event = copd.HSI_Copd_TreatmentOnSevereExacerbation(copd_module, idx)
-        _event.apply(idx, 0.0)
+        _event.run(0.0)
 
     # all individuals should now not be scheduled to die
     assert not df.ch_will_die_this_episode.all(), 'now that individuals have received perfect treatment,' \
