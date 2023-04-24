@@ -232,7 +232,7 @@ class CopdModels:
 
     def at_birth_lungfunction(self, person_id: int) -> int:
         """Returns value for ch_lungfunction for the person at birth."""
-        return 0  # todo This might need to be associated with birth weight.
+        return 0
 
     def prob_livesaved_given_treatment(self, oxygen: bool, amino_phylline: bool):
         """Returns the probability that a treatment prevents death during an exacerbation, according to the treatment
