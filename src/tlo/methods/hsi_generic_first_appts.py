@@ -175,7 +175,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                 sim.modules['Alri'].on_presentation(person_id=person_id, hsi_event=hsi_event)
 
         if "Malaria" in sim.modules:
-            if 'fever' in symptoms:
+            if 'fever' in symptoms and (not df.at[person_id, 'ma_tx']):
                 malaria_test_result = sim.modules['Malaria'].check_if_fever_is_caused_by_malaria(
                     person_id=person_id, hsi_event=hsi_event)
 
@@ -204,7 +204,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
 
     elif age < 15:
         # ----------------------------------- CHILD 5-14 -----------------------------------
-        if 'fever' in symptoms and "Malaria" in sim.modules:
+        if 'fever' in symptoms and "Malaria" in sim.modules and (not df.at[person_id, 'ma_tx']):
             malaria_test_result = sim.modules['Malaria'].check_if_fever_is_caused_by_malaria(
                 person_id=person_id, hsi_event=hsi_event)
 
@@ -314,7 +314,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                 depr.do_when_suspected_depression(person_id=person_id, hsi_event=hsi_event)
 
         if "Malaria" in sim.modules:
-            if 'fever' in symptoms:
+            if 'fever' in symptoms and (not df.at[person_id, 'ma_tx']):
                 malaria_test_result = sim.modules['Malaria'].check_if_fever_is_caused_by_malaria(
                     person_id=person_id, hsi_event=hsi_event)
 
@@ -402,7 +402,7 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
         # if person's symptoms are on severe malaria list then consider treatment for malaria
         any_symptoms_indicative_of_severe_malaria = len(sev_set.intersection(symptoms)) > 0
 
-        if any_symptoms_indicative_of_severe_malaria:
+        if any_symptoms_indicative_of_severe_malaria and (not df.at[person_id, 'ma_tx']):
             # Check if malaria parasitaemia:
             malaria_test_result = sim.modules["Malaria"].check_if_fever_is_caused_by_malaria(
                 person_id=person_id, hsi_event=hsi_event)

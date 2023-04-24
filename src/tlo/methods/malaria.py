@@ -636,14 +636,6 @@ class Malaria(Module):
     def check_if_fever_is_caused_by_malaria(self, person_id, hsi_event):
         """Run by an HSI when an adult presents with fever"""
 
-        # Ignore this check if the person is already diagnosed and treated
-        # This is to avoid duplicated diagnosis via two malaria test routes:
-        # one from hsi_generic_first_appts > check_if_fever_is_caused_by_malaria,
-        # the other from MalariaScheduleTesting > HSI_Malaria_rdt
-        df = self.sim.population.props
-        if (df.at[person_id, 'ma_inf_type'] in ['asym', 'clinical', 'severe']) and df.at[person_id, 'ma_tx']:
-            return
-
         # Call the DxTest RDT to diagnose malaria
         dx_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
             dx_tests_to_run='malaria_rdt',
@@ -811,13 +803,11 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
         params = self.module.parameters
         hs = self.sim.modules["HealthSystem"]
 
-        # Ignore this event if the person is no longer alive, or if the person is already diagnosed and treated
+        # Ignore this event if the person is no longer alive, or if the person is already treated
         # The latter check is to avoid duplicated diagnosis via two malaria test routes:
         # one from hsi_generic_first_appts > check_if_fever_is_caused_by_malaria,
         # the other from MalariaScheduleTesting > HSI_Malaria_rdt
-        if (not df.at[person_id, 'is_alive']) or (
-            (df.at[person_id, 'ma_inf_type'] in ['asym', 'clinical', 'severe']) and df.at[person_id, 'ma_tx']
-        ):
+        if (not df.at[person_id, 'is_alive']) or (df.at[person_id, 'ma_tx']):
             return hs.get_blank_appt_footprint()
 
         district = df.at[person_id, "district_num_of_residence"]
