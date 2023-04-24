@@ -332,6 +332,7 @@ class CopdPollEvent(RegularEvent, PopulationScopeEventMixin):
         """Returns a datetime for a day that is chosen randomly to be within the next 3 months."""
         return random_date(self.sim.date, self.sim.date + pd.DateOffset(months=3), self.module.rng)
 
+    @staticmethod
     def increment_category(ser: pd.Series) -> pd.Series:
         """Returns a pd.Series with same index as `ser` but with the categories shifted to next higher one."""
         new_codes = ser.cat.codes + 1
