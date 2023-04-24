@@ -1481,6 +1481,7 @@ def test_mode_appt_constraints2_on_healthsystem(seed, tmpdir):
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            capabilities_coefficient=1.0,
                                            mode_appt_constraints=2,
+                                           randomise_queue=True,
                                            use_funded_or_actual_staffing='funded_plus'),
                  DummyModule()
                  )
@@ -1582,6 +1583,6 @@ def test_mode_appt_constraints2_on_healthsystem(seed, tmpdir):
     # Check that the maximum squeeze allowed is set by priority:
     # The capabilities in the second district were tuned to accomodate only priority=2
     # appointments under the maximum squeeze allowed, so check that exactly all priority=2
-    # appointments were allowed and no priority=3 allowed. This ensures that maximum squeeze
+    # appointments were allowed and no priority=3. This checks that the maximum squeeze
     # allowed in queue given priority is correct.
     assert (Nran_w_priority2 == int(tot_population/4)) & (Nran_w_priority3 == 0)
