@@ -27,7 +27,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2019, 12, 31)
-        self.pop_size = 100_000
+        self.pop_size = 1_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 5
@@ -92,8 +92,6 @@ class ImpactOfHealthSystemMode(BaseScenario):
             "Mode 2": {
                 'HealthSystem': {
                     'mode_appt_constraints': 2,
-                    'randomise_queue': True,
-                    'ignore_priority': True,
                     "use_funded_or_actual_staffing": "actual",
                 },
             },

@@ -838,11 +838,11 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
     # Check the count of appointment type (total) matches the count split by level
     counts_of_appts_by_level = pd.concat(
         {idx: pd.DataFrame.from_dict(mydict)
-         for idx, mydict in summary_hsi_event['Number_By_Appt_Type_Code_And_Level'].iteritems()
+         for idx, mydict in summary_hsi_event['Number_By_Appt_Type_Code_And_Level'].items()
          }).unstack().fillna(0.0).astype(int)
 
     assert summary_hsi_event['Number_By_Appt_Type_Code'].apply(pd.Series).sum().to_dict() == \
-           counts_of_appts_by_level.sum(axis=1, level=1).sum(axis=0).to_dict()
+           counts_of_appts_by_level.groupby(axis=1, level=1).sum().sum().to_dict()
 
 
 @pytest.mark.slow
@@ -1069,7 +1069,8 @@ def test_manipulation_of_service_availability(seed, tmpdir):
     """Check that the parameter `service_availability` can be used to allow/disallow certain `TREATMENT_ID`s.
     N.B. This is setting service_availability through a change in parameter, as would be done by BatchRunner."""
 
-    generic_first_appts = {'FirstAttendance_NonEmergency', 'FirstAttendance_Emergency'}
+    generic_first_appts = {'FirstAttendance_NonEmergency', 'FirstAttendance_Emergency',
+                           'FirstAttendance_SpuriousEmergencyCare'}
 
     def get_set_of_treatment_ids_that_run(service_availability) -> Set[str]:
         """Return set of TREATMENT_IDs that occur when running the simulation with the `service_availability`."""
@@ -1358,6 +1359,7 @@ def test_policy_and_lowest_priority_enforced(seed, tmpdir):
                  healthsystem.HealthSystem(
                      resourcefilepath=resourcefilepath,
                      disable=False,
+                     ignore_priority=False,
                      include_fasttrack_routes=True,
                      adopt_priority_policy=True,
                      randomise_queue=True,
@@ -1481,6 +1483,7 @@ def test_mode_appt_constraints2_on_healthsystem(seed, tmpdir):
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            capabilities_coefficient=1.0,
                                            mode_appt_constraints=2,
+                                           ignore_priority=False,
                                            randomise_queue=True,
                                            use_funded_or_actual_staffing='funded_plus'),
                  DummyModule()

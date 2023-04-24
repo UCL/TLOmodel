@@ -98,7 +98,7 @@ def get_model_prevalence_by_district(spec: str):
     """Get the prevalence of a particular species at end of 2010 (???) for a particular species. """
     _df = dfs[f'infection_status_{spec}']
     t = _df.loc[_df.index.year == 2010].iloc[-1]
-    counts = t.unstack(level=1).sum(level=0).T
+    counts = t.unstack(level=1).groupby(level=0).sum().T
     return ((counts['High-infection'] + counts['Low-infection']) / counts.sum(axis=1)).to_dict()
 
 
