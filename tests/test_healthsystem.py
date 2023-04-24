@@ -1493,11 +1493,10 @@ def test_mode_appt_constraints2_on_healthsystem(seed, tmpdir):
     # Get pointer to the HealthSystemScheduler event
     healthsystemscheduler = sim.modules['HealthSystem'].healthsystemscheduler
 
-    # Get the all the districts in which a person could be resident, and allocate one person to each district
+    # Split individuals equally across two districts
     person_for_district = {d: i for i, d in enumerate(sim.population.props['district_of_residence'].cat.categories)}
     keys_district = list(person_for_district.keys())
 
-    # Split individuals equally across two districts
     for i in range(0, int(tot_population/2)):
         sim.population.props.at[i, 'district_of_residence'] = keys_district[0]
     for i in range(int(tot_population/2), tot_population):
@@ -1521,7 +1520,8 @@ def test_mode_appt_constraints2_on_healthsystem(seed, tmpdir):
         )
 
     # Now adjust capabilities available.
-    # In first district, make capabilities half of what would be required:
+    # In first district, make capabilities half of what would be required to run all events
+    # without squeeze:
     hsi1 = DummyHSIEvent(module=sim.modules['DummyModule'],
                          person_id=0,  # Ensures call is on officers in first district
                          appt_type='MinorSurg',
@@ -1531,8 +1531,8 @@ def test_mode_appt_constraints2_on_healthsystem(seed, tmpdir):
         print(k, sim.modules['HealthSystem']._daily_capabilities[k])
         sim.modules['HealthSystem']._daily_capabilities[k] = v*(tot_population/4)
 
-    # In second district, make capabilities tuned to run all priority=2 events under maximum squeezed
-    # allowed for this priority
+    # In second district, make capabilities tuned to be those required to run all priority=2 events under
+    # maximum squeezed allowed for this priority
     scale = (1.+sim.modules["HealthSystem"].get_max_squeeze_based_on_priority(2))
 
     hsi2 = DummyHSIEvent(module=sim.modules['DummyModule'],
@@ -1560,17 +1560,15 @@ def test_mode_appt_constraints2_on_healthsystem(seed, tmpdir):
     Nran_w_priority2 = len(hs_output[(hs_output['priority'] == 2) & (hs_output['did_run'])])
     Nran_w_priority3 = len(hs_output[(hs_output['priority'] == 3) & (hs_output['did_run'])])
 
+    # Within district, check that appointments with higher priority occurred more frequently
+    assert Nran_w_priority0 > Nran_w_priority1
+    assert Nran_w_priority2 > Nran_w_priority3
+
     # Check that if capabilities ran out in one district, capabilities in different district
     # cannot be accessed, even if priority should give precedence:
     # Because competition for resources occurs by facility, priority=2 should occur more
-    # frequently than priority=1, because priority=2 represents the highest priority in the
-    # second district, wherease priority=1 isn't the highest
-    # priority in the first district.
+    # frequently than priority=1.
     assert Nran_w_priority2 > Nran_w_priority1
-
-    # Within district, appointment with higher priority should have occurred more frequently
-    assert Nran_w_priority0 > Nran_w_priority1
-    assert Nran_w_priority2 > Nran_w_priority3
 
     # SQUEEZE CHECKS
 
@@ -1581,8 +1579,8 @@ def test_mode_appt_constraints2_on_healthsystem(seed, tmpdir):
     assert Nran_w_priority0 + Nran_w_priority1 > (tot_population/4)
 
     # Check that the maximum squeeze allowed is set by priority:
-    # The capabilities in the second district were tuned to accomodate only priority=2
-    # appointments under the maximum squeeze allowed, so check that exactly all priority=2
-    # appointments were allowed and no priority=3. This checks that the maximum squeeze
+    # The capabilities in the second district were tuned to accomodate all priority=2
+    # appointments under the maximum squeeze allowed. Check that exactly all priority=2
+    # appointments were allowed and no priority=3, to verify that the maximum squeeze
     # allowed in queue given priority is correct.
     assert (Nran_w_priority2 == int(tot_population/4)) & (Nran_w_priority3 == 0)
