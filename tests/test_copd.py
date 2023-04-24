@@ -63,7 +63,7 @@ def test_basic_run(tmpdir, seed):
                  copd.Copd(resourcefilepath=resourcefilepath),
                  )
     sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=Date(2030, 1, 1))
+    sim.simulate(end_date=Date(2030, 1, 1))  # Long run
     check_dtypes(sim)
     log = parse_log_file(sim.log_filepath)['tlo.methods.copd']
 
