@@ -173,7 +173,7 @@ class Copd(Module):
 
         if 'breathless_severe' in self.sim.modules['SymptomManager'].has_what(person_id):
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_CopdTreatmentOnSevereExacerbation(module=self, person_id=person_id),
+                hsi_event=HSI_Copd_TreatmentOnSevereExacerbation(module=self, person_id=person_id),
                 priority=0,
                 topen=self.sim.date,
                 tclose=None,
@@ -390,7 +390,7 @@ class CopdDeath(Event, IndividualScopeEventMixin):
             )
 
 
-class HSI_CopdTreatmentOnSevereExacerbation(HSI_Event, IndividualScopeEventMixin):
+class HSI_Copd_TreatmentOnSevereExacerbation(HSI_Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)

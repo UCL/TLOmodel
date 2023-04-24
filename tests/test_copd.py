@@ -18,7 +18,7 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
-from tlo.methods.copd import CopdExacerbationEvent, HSI_CopdTreatmentOnSevereExacerbation
+from tlo.methods.copd import CopdExacerbationEvent, HSI_Copd_TreatmentOnSevereExacerbation
 from tlo.methods.healthseekingbehaviour import HealthSeekingBehaviourPoll
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -235,7 +235,7 @@ def test_moderate_exacerbation():
 
     # check that no HSI_CopdTreatmentOnSevereExacerbation event is scheduled. Only inhaler should be given
     for _event in sim.modules['HealthSystem'].find_events_for_person(person_id):
-        assert not isinstance(_event[1], HSI_CopdTreatmentOnSevereExacerbation)
+        assert not isinstance(_event[1], HSI_Copd_TreatmentOnSevereExacerbation)
 
     # check inhaler is given
     assert df.loc[person_id, "ch_has_inhaler"]
@@ -283,8 +283,8 @@ def test_severe_exacerbation():
 
     # check that HSI_CopdTreatmentOnSevereExacerbation event is scheduled. Inhaler should also be given
     assert isinstance([ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
-                       isinstance(ev[1], HSI_CopdTreatmentOnSevereExacerbation)][0],
-                      HSI_CopdTreatmentOnSevereExacerbation)
+                       isinstance(ev[1], HSI_Copd_TreatmentOnSevereExacerbation)][0],
+                      HSI_Copd_TreatmentOnSevereExacerbation)
 
     # check inhaler is given
     assert df.loc[person_id, "ch_has_inhaler"]
@@ -340,7 +340,7 @@ def test_death_rate():
     # call treatment on severe exacerbation event and check that deaths has been canceled. we assume perfect treatment
     # is given
     for idx in range(len(df.index)):
-        _event = copd.HSI_CopdTreatmentOnSevereExacerbation(copd_module, idx)
+        _event = copd.HSI_Copd_TreatmentOnSevereExacerbation(copd_module, idx)
         _event.apply(idx, 0.0)
 
     # all individuals should now not be scheduled to die
