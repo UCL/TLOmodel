@@ -404,8 +404,6 @@ class HSI_CopdTreatmentOnSevereExacerbation(HSI_Event, IndividualScopeEventMixin
         """What to do when someone presents for care with an exacerbation.
          * Provide treatment: whatever is available at this facility at this time (no referral).
         """
-        # todo: Consider whether person should be referred to higher level.
-
         df = self.sim.population.props
 
         # Give oxygen and AminoPhylline, if possible, ... and cancel death if the treatment is successful.
