@@ -52,14 +52,13 @@ class Copd(Module):
 
     PARAMETERS = {
         'prob_progress_to_next_cat': Parameter(
-            Types.REAL, 'probability of changing from a lower lung function to a '
-                        'higher lung function'
+            Types.REAL, 'probability of changing from a lower lung function category to a higher lung function category'
         ),
         'prob_mod_exacerb': Parameter(
-            Types.LIST, 'probability of moderate exacerbation given lung function '
+            Types.LIST, 'probability of moderate exacerbation given lung function, for each lungfunction category. '
         ),
         'prob_sev_exacerb': Parameter(
-            Types.LIST, 'probability of severe exacerbation given lung function '
+            Types.LIST, 'probability of severe exacerbation given lung function, for each lungfunction category.'
         ),
         'prob_will_die_sev_exacerbation': Parameter(
             Types.REAL, 'probability that a person will die of severe exacerbation '
