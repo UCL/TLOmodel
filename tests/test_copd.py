@@ -276,7 +276,7 @@ def test_severe_exacerbation():
     # check an individual has no inhaler before  scheduling facility care event
     assert not df.loc[person_id, "ch_has_inhaler"]
 
-    # Run the created instance of HSI_GenericFirstApptAtFacilityLevel1 and check no emergency care was sort
+    # Run the created instance of HSI_GenericEmergencyFirstApptAtFacilityLevel1 and check emergency care was sort
     ge = [ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
           isinstance(ev[1], hsi_generic_first_appts.HSI_GenericEmergencyFirstApptAtFacilityLevel1)][0]
     ge.run(squeeze_factor=0.0)
