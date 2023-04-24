@@ -225,9 +225,17 @@ class CopdModels:
 
     def init_lung_function(self, df: pd.DataFrame) -> pd.Series:
         """Returns the values for ch_lungfunction for an initial population described in `df`."""
+        # For over-15s, random selection of ch_lungfunction
+        idx_over15 = df.index[df.age_years >= 15]
         cats = ch_lungfunction_cats
         probs = np.ones(len(cats)) / len(cats)
-        return pd.Series(index=df.index, data=self.rng.choice(cats, p=probs, size=len(df)))
+        cats_for_over15s = dict(zip(idx_over15, self.rng.choice(cats, p=probs, size=len(idx_over15))))
+
+        # For under-15s, assign the category that would be given at birth
+        idx_notover15 = df.index[df.age_years < 15]
+        cats_for_under15s = {idx: self.at_birth_lungfunction(idx) for idx in idx_notover15}
+
+        return pd.Series(index=df.index, data={**cats_for_over15s, **cats_for_under15s})
 
     def at_birth_lungfunction(self, person_id: int) -> int:
         """Returns value for ch_lungfunction for the person at birth."""
