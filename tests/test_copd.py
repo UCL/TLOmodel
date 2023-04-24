@@ -314,14 +314,14 @@ def test_death_rate():
     # call copd exacerbation event and check no one is scheduled to die
     for idx in range(len(df.index)):
         _event = copd.CopdExacerbationEvent(copd_module, idx, severe=True)
-        _event.apply(idx)
+        _event.run()
     # no one should be scheduled to die
     assert not df.ch_will_die_this_episode.all(), 'no one should be scheduled to die when death rate is 0'
 
     # schedule death event and confirm no one has died
     for idx in range(len(df.index)):
         _event = copd.CopdDeath(copd_module, idx)
-        _event.apply(idx)
+        _event.run()
 
     # no one should die
     assert df.is_alive.all(), 'no one should die when death rate is 0'
@@ -332,7 +332,7 @@ def test_death_rate():
     # call copd exacerbation event and confirm all have been scheduled to die
     for idx in range(len(df.index)):
         _event = copd.CopdExacerbationEvent(copd_module, idx, severe=True)
-        _event.apply(idx)
+        _event.run()
 
     # all individuals should be scheduled to die
     assert df.ch_will_die_this_episode.all(), 'not all individuals are scheduled to die'
@@ -350,7 +350,7 @@ def test_death_rate():
     # schedule death event and confirm no one is dead
     for idx in range(len(df.index)):
         _event = copd.CopdDeath(copd_module, idx)
-        _event.apply(idx)
+        _event.run()
 
     # no one should die
     assert df.is_alive.all(), 'individuals who have received perfect copd treatment should not die'
@@ -361,7 +361,7 @@ def test_death_rate():
     # call copd exacerbation event and confirm all have been scheduled to die
     for idx in range(len(df.index)):
         _event = copd.CopdExacerbationEvent(copd_module, idx, severe=True)
-        _event.apply(idx)
+        _event.run()
 
     # all individuals should be scheduled to die
     assert len(df) == df.ch_will_die_this_episode.sum(), 'not all individuals are scheduled to die'
@@ -369,7 +369,7 @@ def test_death_rate():
     # schedule death event and confirm all are dead
     for idx in range(len(df.index)):
         _event = copd.CopdDeath(copd_module, idx)
-        _event.apply(idx)
+        _event.run()
 
     # all individuals should die
     assert not df.is_alive.all(), 'all individuals should die when death rate is set to max rate'
