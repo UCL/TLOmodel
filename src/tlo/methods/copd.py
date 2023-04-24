@@ -186,11 +186,13 @@ class CopdModels:
     def __init__(self, params, rng):
         self.params = params
         self.rng = rng
+
         # The chance (in a 3-month period) of progressing to the next (greater) category of ch_lungfunction
         self.__Prob_Progress_LungFunction__ = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             self.params['prob_progress_to_next_cat']
         )
+
         # The probability (in a 3-month period) of having a Moderate Exacerbation
         self.__Prob_ModerateExacerbation__ = LinearModel.multiplicative(
             Predictor(
@@ -198,12 +200,12 @@ class CopdModels:
                 conditions_are_exhaustive=True,
                 conditions_are_mutually_exclusive=True
             ).when(0, self.params['prob_mod_exacerb'][0])
-            .when(1, self.params['prob_mod_exacerb'][1])
-            .when(2, self.params['prob_mod_exacerb'][2])
-            .when(3, self.params['prob_mod_exacerb'][3])
-            .when(4, self.params['prob_mod_exacerb'][4])
-            .when(5, self.params['prob_mod_exacerb'][5])
-            .when(6, self.params['prob_mod_exacerb'][6])
+             .when(1, self.params['prob_mod_exacerb'][1])
+             .when(2, self.params['prob_mod_exacerb'][2])
+             .when(3, self.params['prob_mod_exacerb'][3])
+             .when(4, self.params['prob_mod_exacerb'][4])
+             .when(5, self.params['prob_mod_exacerb'][5])
+             .when(6, self.params['prob_mod_exacerb'][6])
         )
 
         # The probability (in a 3-month period) of having a Severe Exacerbation
@@ -213,12 +215,12 @@ class CopdModels:
                 conditions_are_exhaustive=True,
                 conditions_are_mutually_exclusive=True
             ).when(0, self.params['prob_sev_exacerb'][0])
-            .when(1, self.params['prob_sev_exacerb'][1])
-            .when(2, self.params['prob_sev_exacerb'][2])
-            .when(3, self.params['prob_sev_exacerb'][3])
-            .when(4, self.params['prob_sev_exacerb'][4])
-            .when(5, self.params['prob_sev_exacerb'][5])
-            .when(6, self.params['prob_sev_exacerb'][6])
+             .when(1, self.params['prob_sev_exacerb'][1])
+             .when(2, self.params['prob_sev_exacerb'][2])
+             .when(3, self.params['prob_sev_exacerb'][3])
+             .when(4, self.params['prob_sev_exacerb'][4])
+             .when(5, self.params['prob_sev_exacerb'][5])
+             .when(6, self.params['prob_sev_exacerb'][6])
         )
 
     def init_lung_function(self, df: pd.DataFrame) -> pd.Series:
@@ -280,22 +282,13 @@ class CopdModels:
         return self.rng.random_sample() < death_rate_prob
 
 
-def increment_category(ser):
-    """Returns ser (a pd.Series with categorical variable) with the categories shifted to next higher one."""
-    new_codes = ser.cat.codes + 1
-    ser.values[:] = new_codes
-    return ser
-
-
-def eligible_to_progress_to_next_lung_function(df):
-    """ Return true for all individuals who are eligible to progress to the next level
-
+def eligible_to_progress_to_next_lung_function(df: pd.DataFrame) -> pd.Series:
+    """ Returns a pd.Series with the same index as `df` and with value `True` where individuals are eligible to progress
+     to the next level of ch_lungfunction (i.e., alive, aged 15+, and not in the highest category already).
     :param df: an individual population dataframe """
-    # Progres the ch_lungfunction property (alive, aged 15+, and not in the highest category already)
-    eligible_to_progress_category = (
+    return (
         df.is_alive & (df.age_years >= 15) & (df['ch_lungfunction'] != ch_lungfunction_cats[-1])
     )
-    return eligible_to_progress_category
 
 
 class CopdPollEvent(RegularEvent, PopulationScopeEventMixin):
@@ -310,32 +303,40 @@ class CopdPollEvent(RegularEvent, PopulationScopeEventMixin):
          * Schedules Exacerbation (Moderate / Severe) events.
          * Log current states.
         """
-        def gen_random_date_in_next_three_months():
-            """Returns a datetime for a day that is chosen randomly to be within the next 3 months."""
-            return random_date(self.sim.date, self.sim.date + pd.DateOffset(months=3), self.module.rng)
-
         df = population.props
+
         # call a function to make individuals progress to a next higher lung function
         self.progress_to_next_lung_function(df)
+
         # Schedule Moderate Exacerbation
         for idx in self.module.models.will_get_moderate_exacerbation(df.loc[df.is_alive]):
             self.sim.schedule_event(CopdExacerbationEvent(self.module, idx, severe=False),
-                                    gen_random_date_in_next_three_months())
+                                    self.gen_random_date_in_next_three_months())
 
         # Schedule Severe Exacerbation (persons can have a moderate and severe exacerbation in the same 3-month period)
         for idx in self.module.models.will_get_severe_exacerbation(df.loc[df.is_alive]):
             self.sim.schedule_event(CopdExacerbationEvent(self.module, idx, severe=True),
-                                    gen_random_date_in_next_three_months())
+                                    self.gen_random_date_in_next_three_months())
 
         # Logging
         self.module.do_logging()
+
+    def gen_random_date_in_next_three_months(self):
+        """Returns a datetime for a day that is chosen randomly to be within the next 3 months."""
+        return random_date(self.sim.date, self.sim.date + pd.DateOffset(months=3), self.module.rng)
+
+    def increment_category(ser: pd.Series) -> pd.Series:
+        """Returns a pd.Series with same index as `ser` but with the categories shifted to next higher one."""
+        new_codes = ser.cat.codes + 1
+        ser.values[:] = new_codes
+        return ser
 
     def progress_to_next_lung_function(self, df):
         """ make individuals progress to a next higher lung function """
         idx_will_progress_to_next_category = self.module.models.will_progres_to_next_cat_of_lungfunction(
             df.loc[eligible_to_progress_to_next_lung_function(df)])
 
-        df.loc[idx_will_progress_to_next_category, 'ch_lungfunction'] = increment_category(
+        df.loc[idx_will_progress_to_next_category, 'ch_lungfunction'] = self.increment_category(
             df.loc[idx_will_progress_to_next_category, 'ch_lungfunction'])
 
 
