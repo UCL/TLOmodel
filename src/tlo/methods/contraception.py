@@ -306,6 +306,7 @@ class Contraception(Module):
             self.processed_params = self.process_params()
             self.interventions_on = True
 
+        assert self.sim.population.props.at[person_id, 'co_contraception'] == "not_using"  # TODO: remove
         self.sim.population.props.at[person_id, 'is_pregnant'] = False
         person_age = self.sim.population.props.at[person_id, 'age_years']
         self.select_contraceptive_following_birth(person_id, person_age)
@@ -612,21 +613,23 @@ class Contraception(Module):
         self.schedule_batch_of_contraceptive_changes(ids=[mother_id], old=['not_using'], new=[new_contraceptive])
 
     def get_item_code_for_each_contraceptive(self):
-        """Get the item_code for each contraceptive"""
+        """Get the item_code for each contraceptive and for contraceptive initiation."""
+        # TODO: update with optional items (currently all considered essential)
 
         get_items_from_pkg = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
 
         _cons_codes = dict()
         _cons_codes['pill'] = get_items_from_pkg('Pill')
         _cons_codes['male_condom'] = get_items_from_pkg('Male condom')
-        _cons_codes['other_modern'] = get_items_from_pkg('Female Condom')  # NB. The consumable female condom is used
-        # for the contraceptive state of "other_modern method"
+        _cons_codes['other_modern'] = get_items_from_pkg('Female Condom')
+        # NB. The consumable female condom is used for the contraceptive state of "other_modern method"
         _cons_codes['IUD'] = get_items_from_pkg('IUD')
         _cons_codes['injections'] = get_items_from_pkg('Injectable')
         _cons_codes['implant'] = get_items_from_pkg('Implant')
         _cons_codes['female_sterilization'] = get_items_from_pkg('Female sterilization')
-
         assert set(_cons_codes.keys()) == set(self.states_that_may_require_HSI_to_switch_to)
+        _cons_codes['co_initiation'] = get_items_from_pkg('Contraception initiation')
+
         return _cons_codes
 
     def schedule_batch_of_contraceptive_changes(self, ids, old, new):
@@ -1100,8 +1103,16 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         # Record the date that Family Planning Appointment happened for this person
         self.sim.population.props.at[person_id, "co_date_of_last_fp_appt"] = self.sim.date
 
-        # Record use of consumables and default the person to "not_using" if the consumable is not available:
-        cons_available = self.get_consumables(self.module.cons_codes[self.new_contraceptive])
+        # Record use of consumables and default the person to "not_using" if the consumable is not available.
+        # If initiating a contraceptive that may require HSI to switch to, "co_initiation" items included except for
+        # condoms (i.e. for "male_condom", and "other_modern" as for Malawi only female condom is considered as
+        # "other_modern").
+        cons_to_check = self.module.cons_codes[self.new_contraceptive].copy()
+        if current_method == "not_using"\
+           and self.new_contraceptive in self.module.states_that_may_require_HSI_to_switch_to\
+           and self.new_contraceptive != 'male_condom' and self.new_contraceptive != 'other_modern':
+            cons_to_check.update(self.module.cons_codes["co_initiation"])
+        cons_available = self.get_consumables(cons_to_check)
         _new_contraceptive = self.new_contraceptive if cons_available else "not_using"
 
         if current_method != _new_contraceptive:
