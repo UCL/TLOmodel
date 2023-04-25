@@ -243,7 +243,7 @@ ax1.bar(years_num[13:26], hcw1["median"].loc[13:25], width, color=sc1_colour)
 ax1.bar(years_num[13:26] + width, hcw2["median"].loc[13:25], width, color=sc2_colour)
 
 ax1.set_ylabel("% difference HCW time", rotation=90, labelpad=15)
-ax1.set_ylim([-0.5, 1.5])
+# ax1.set_ylim([-0.5, 1.5])
 
 ax1.yaxis.set_label_position("left")
 ax1.legend(["Constrained scale-up", "Unconstrained scale-up"], frameon=False)

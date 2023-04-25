@@ -468,8 +468,21 @@ def hiv_agyw_inc(results_folder):
 
 
 agyw_inc0 = hiv_agyw_inc(results0)
-agyw_inc3 = hiv_agyw_inc(results1)
-agyw_inc4 = hiv_agyw_inc(results2)
+agyw_inc1 = hiv_agyw_inc(results1)
+agyw_inc2 = hiv_agyw_inc(results2)
 
-baseline_num_infections = agyw_inc0["median"][12:25]
 # multiply by scaling factor to get numbers of expected infections
+
+# get scaling factor for numbers of tests performed and treatments requested
+# scaling factor 145.39609
+sf = extract_results(
+    results0,
+    module="tlo.methods.population",
+    key="scaling_factor",
+    column="scaling_factor",
+    index="date",
+    do_scaling=False)
+
+sc0_agyw = agyw_inc0["median"][12:25] * sf[0][0].values[0]
+sc1_agyw = agyw_inc1["median"][12:25] * sf[0][0].values[0]
+sc2_agyw = agyw_inc2["median"][12:25] * sf[0][0].values[0]

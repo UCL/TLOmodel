@@ -558,3 +558,14 @@ fig.savefig(outputspath / "Treatment_cascade_6panel.png")
 
 plt.show()
 
+
+# extract numbers of appts scaled to full population size
+
+# hiv test
+
+# hiv tx
+
+# tb test
+
+# tb treatment
+
