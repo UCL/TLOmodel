@@ -383,7 +383,7 @@ def test_bed_days_property_is_inpatient(tmpdir, seed):
     beds_occupied = tracker.sum(axis=1)[0] - tracker.sum(axis=1)
 
     def assert_two_series_are_the_same_where_index_overlaps(a, b):
-        return pd.concat([tot_time_as_in_patient, beds_occupied], axis=1) \
+        return pd.concat([tot_time_as_in_patient, beds_occupied], axis=1)\
             .dropna().apply(lambda row: row[0] == row[1], axis=1).all()
 
     assert assert_two_series_are_the_same_where_index_overlaps(beds_occupied, tot_time_as_in_patient)
@@ -604,9 +604,9 @@ def test_the_use_of_beds_from_multiple_facilities(seed):
 
     # Define the district and the facility_id to which the person will have beddays.
     person_info = [
-        ("Chitipa", 129),  # <-- in the Northern region, so use facility_id 129 (for which capacity is defined)
-        ("Kasungu", 130),  # <-- in the Central region, so use facility_id 130 (for which capacity is defined)
-        ("Machinga", 128)  # <-- in the Southern region, so use facility_id 128 (for which no capacity is defined)
+        ("Chitipa", 129),    # <-- in the Northern region, so use facility_id 129 (for which capacity is defined)
+        ("Kasungu", 130),    # <-- in the Central region, so use facility_id 130 (for which capacity is defined)
+        ("Machinga", 128)    # <-- in the Southern region, so use facility_id 128 (for which no capacity is defined)
     ]
 
     df = sim.population.props
@@ -789,7 +789,7 @@ def test_bed_days_allocation_to_HSI(seed):
 def test_bed_days_allocation_information_is_provided_to_HSI(seed):
     """Checks the HSI is "informed" of the bed days footprint provided to it"""
 
-    district_of_residence = 'Zomba'  # Where person_id=0 is resident: Zomba district is in in the Southern region
+    district_of_residence = 'Zomba'   # Where person_id=0 is resident: Zomba district is in in the Southern region
     facility_id = 128  # Facility that will provide the beds (Referral Hospital_Southern)
     days_of_simulation = 1
     footprint_requested = {'bed_A': 3, 'bed_B': 3}
