@@ -3,7 +3,18 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging, util
+from tlo import (
+    DAYS_IN_MONTH,
+    DAYS_IN_YEAR,
+    Date,
+    DateOffset,
+    Module,
+    Parameter,
+    Property,
+    Types,
+    logging,
+    util,
+)
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel
 from tlo.methods import Metadata, labour, pregnancy_helper_functions, pregnancy_supervisor_lm
@@ -668,7 +679,6 @@ class PregnancySupervisor(Module):
 
         logger.debug(key='message', data='This is PregnancySupervisor reporting my health values')
         monthly_daly = dict()
-        days_per_year = 365.25
 
         # First we define a function that calculates disability associated with 'acute' complications of pregnancy
         def acute_daly_calculation(person, complication):
@@ -700,7 +710,7 @@ class PregnancySupervisor(Module):
             # months disability
             if pd.isnull(mni[person][f'{complication}_resolution']):
                 if mni[person][f'{complication}_onset'] < (self.sim.date - DateOffset(months=1)):
-                    weight = (p[f'{complication}'] / days_per_year) * (days_per_year / 12)
+                    weight = (p[f'{complication}'] / DAYS_IN_YEAR) * (DAYS_IN_YEAR / 12)
                     monthly_daly[person] += weight
 
                 # Otherwise, if the complication started this month she gets a daly weight relative to the number of
@@ -709,7 +719,7 @@ class PregnancySupervisor(Module):
                      f'{complication}_onset'] <= self.sim.date:
                     days_since_onset = pd.Timedelta((self.sim.date - mni[person][f'{complication}_onset']),
                                                     unit='d')
-                    daly_weight = days_since_onset.days * (p[f'{complication}'] / days_per_year)
+                    daly_weight = days_since_onset.days * (p[f'{complication}'] / DAYS_IN_YEAR)
 
                     monthly_daly[person] += daly_weight
 
@@ -726,15 +736,14 @@ class PregnancySupervisor(Module):
                         return
 
                     # Calculate daily weight and how many days this woman hasnt had the complication
-                    daily_weight = p[f'{complication}'] / days_per_year
+                    daily_weight = p[f'{complication}'] / DAYS_IN_YEAR
                     days_without_complication = pd.Timedelta((
                         mni[person][f'{complication}_onset'] - mni[person][f'{complication}_resolution']),
                         unit='d')
 
                     # Use the average days in a month to calculate how many days shes had the complication this
                     # month
-                    avg_days_in_month = days_per_year / 12
-                    days_with_comp = avg_days_in_month - days_without_complication.days
+                    days_with_comp = DAYS_IN_MONTH - days_without_complication.days
 
                     monthly_daly[person] += daily_weight * days_with_comp
 
@@ -757,7 +766,7 @@ class PregnancySupervisor(Module):
                                                                 unit='d')
                     mid_way_calc = (self.sim.date - DateOffset(months=1)) + days_free_of_comp_this_month
                     days_with_comp_this_month = pd.Timedelta((self.sim.date - mid_way_calc), unit='d')
-                    daly_weight = days_with_comp_this_month.days * (p[f'{complication}'] / days_per_year)
+                    daly_weight = days_with_comp_this_month.days * (p[f'{complication}'] / DAYS_IN_YEAR)
                     monthly_daly[person] += daly_weight
 
                     if not monthly_daly[person] >= 0:
@@ -1503,7 +1512,7 @@ class PregnancySupervisor(Module):
         # who are post term)
         non_care_seekers = df.loc[care_seekers.loc[~care_seekers].index]
         still_birth_risk = self.ps_linear_models['antenatal_stillbirth'].predict(non_care_seekers)
-        weeks_per_month = (365.25/12) / 7
+        weeks_per_month = (DAYS_IN_YEAR / 12) / 7
         weekly_risk = still_birth_risk / weeks_per_month
         still_birth = self.rng.random_sample(len(weekly_risk)) < weekly_risk
 

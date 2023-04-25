@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 from pytest import approx
 
-from tlo import Date, Module, Simulation, logging
+from tlo import DAYS_IN_MONTH, DAYS_IN_YEAR, Date, Module, Simulation, logging
 from tlo.analysis.utils import compare_number_of_deaths, parse_log_file
 from tlo.methods import Metadata, demography
 from tlo.methods.causes import Cause
@@ -194,9 +194,8 @@ def test_py_calc(simulation):
     simulation.date += pd.DateOffset(days=1)
     age_update = AgeUpdateEvent(simulation.modules['Demography'], simulation.modules['Demography'].AGE_RANGE_LOOKUP)
     now = simulation.date
-    one_year = np.timedelta64(1, 'Y')
-    one_month = np.timedelta64(1, 'M')
-
+    one_year = pd.Timedelta(days=DAYS_IN_YEAR)
+    one_month = pd.Timedelta(days=DAYS_IN_MONTH)
     calc_py_lived_in_last_year = simulation.modules['Demography'].calc_py_lived_in_last_year
 
     # calc py: person is born and died before sim.date
@@ -238,21 +237,21 @@ def test_py_calc(simulation):
     df.is_alive = True
     age_update.apply(simulation.population)
     df_py = calc_py_lived_in_last_year(delta=one_year)
-    np.testing.assert_almost_equal(0.5, df_py['M'][19])
-    np.testing.assert_almost_equal(0.5, df_py['M'][20])
+    np.testing.assert_allclose(0.5, df_py['M'][19])
+    np.testing.assert_allclose(0.5, df_py['M'][20])
 
     # calc person who is alive and aged 19, has birthday mid-way through the last year, and died 3 months ago
     df.date_of_birth = now - (one_year * 20) - (one_month * 6)
-    df.date_of_death = now - np.timedelta64(3, 'M')
+    df.date_of_death = now - (one_month * 3)
     # we have to set the age at time of death - usually this would have been set by the AgeUpdateEvent
     df.age_exact_years = (df.date_of_death - df.date_of_birth) / one_year
     df.age_years = df.age_exact_years.astype('int64')
     df.is_alive = False
     age_update.apply(simulation.population)
     df_py = calc_py_lived_in_last_year(delta=one_year)
-    assert 0.75 == df_py['M'].sum()
-    assert 0.5 == df_py['M'][19]
-    assert 0.25 == df_py['M'][20]
+    np.testing.assert_allclose(0.75, df_py['M'].sum())
+    np.testing.assert_allclose(0.5, df_py['M'][19])
+    np.testing.assert_allclose(0.25, df_py['M'][20])
 
     # 0/1 year-old with first birthday during the last year
     df.date_of_birth = now - (one_month * 15)
@@ -260,8 +259,8 @@ def test_py_calc(simulation):
     df.is_alive = True
     age_update.apply(simulation.population)
     df_py = calc_py_lived_in_last_year(delta=one_year)
-    assert 0.75 == df_py['M'][0]
-    assert 0.25 == df_py['M'][1]
+    np.testing.assert_allclose(0.75, df_py['M'][0])
+    np.testing.assert_allclose(0.25, df_py['M'][1])
 
     # 0 year born in the last year
     df.date_of_birth = now - (one_month * 9)
@@ -269,8 +268,8 @@ def test_py_calc(simulation):
     df.is_alive = True
     age_update.apply(simulation.population)
     df_py = calc_py_lived_in_last_year(delta=one_year)
-    assert 0.75 == df_py['M'][0]
-    assert (0 == df_py['M'][1:]).all()
+    np.testing.assert_allclose(0.75, df_py['M'][0])
+    np.testing.assert_allclose(0, df_py['M'][1:])
 
     # 99 years-old turning 100 in the last year
     df.date_of_birth = now - (one_year * 100) - (one_month * 6)
@@ -278,8 +277,8 @@ def test_py_calc(simulation):
     df.is_alive = True
     age_update.apply(simulation.population)
     df_py = calc_py_lived_in_last_year(delta=one_year)
-    assert 0.5 == df_py['M'][99]
-    assert 1 == df_py['M'].sum()
+    np.testing.assert_allclose(0.5, df_py['M'][99])
+    np.testing.assert_allclose(1, df_py['M'].sum())
 
 
 def test_py_calc_w_mask(simulation):
@@ -293,7 +292,7 @@ def test_py_calc_w_mask(simulation):
     simulation.date += pd.DateOffset(days=1)
     age_update = AgeUpdateEvent(simulation.modules['Demography'], simulation.modules['Demography'].AGE_RANGE_LOOKUP)
     now = simulation.date
-    one_year = np.timedelta64(1, 'Y')
+    one_year = pd.Timedelta(days=DAYS_IN_YEAR)
 
     calc_py_lived_in_last_year = simulation.modules['Demography'].calc_py_lived_in_last_year
 

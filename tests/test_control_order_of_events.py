@@ -89,7 +89,7 @@ def test_control_of_ordering_in_the_day(seed, tmpdir):
     events = parse_log_file(sim.log_filepath)['tlo.simulation']['event'].reset_index()
 
     # Check that order is as expected: Start -> Middle --> End
-    events['date'] = pd.to_datetime(events['date']).dt.date
+    events['date'] = events['date'].astype("datetime64[ns]")
     order_on_day_one = tuple(events.loc[events['date'] == Date(2010, 1, 1), 'id'])
     assert order_on_day_one == ("EventForStartOfDay",
                                 "EventForMiddleOfDay",
@@ -97,7 +97,7 @@ def test_control_of_ordering_in_the_day(seed, tmpdir):
                                 "EventForEndOfDay")
 
     # Check order is the same every day
-    dates = pd.to_datetime(events['date']).dt.date.drop_duplicates()
+    dates = events['date'].drop_duplicates()
     for day in dates:
         assert order_on_day_one == tuple(events.loc[events['date'] == day, 'id'])
 
