@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 from pytest import approx
 
-from tlo import Date, Module, Simulation, logging
+from tlo import DAYS_IN_YEAR, Date, Module, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.events import Event, IndividualScopeEventMixin
 from tlo.methods import (
@@ -20,7 +20,7 @@ from tlo.methods import (
     symptommanager,
 )
 from tlo.methods.causes import Cause
-from tlo.methods.demography import InstantaneousDeath
+from tlo.methods.demography import InstantaneousDeath, age_at_date
 from tlo.methods.diarrhoea import increase_risk_of_death, make_treatment_perfect
 from tlo.methods.fullmodel import fullmodel
 from tlo.methods.healthburden import Get_Current_DALYS
@@ -182,7 +182,7 @@ def test_arithmetic_of_disability_aggregation_calcs(seed):
 
         def report_daly_values(self):
             df = self.sim.population.props
-            disability = pd.DataFrame(index=df.loc[df.is_alive].index, columns={'A', 'B'}, data=0.0)
+            disability = pd.DataFrame(index=df.loc[df.is_alive].index, columns=['A', 'B'], data=0.0)
             disability.loc[self.persons_affected, 'A'] = self.daly_wt_A
             disability.loc[self.persons_affected, 'B'] = self.daly_wt_B
             return disability
@@ -364,7 +364,7 @@ def test_airthmetic_of_lifeyearslost(seed, tmpdir):
 
     # Set the date_of_birth of the person_id=0, such that the person is 4.5 years-old on 1st Jan 2010 (so that life-
     #  years lost span 0-4 and 5-9 age-groups)
-    dob = start_date - pd.DateOffset(days=int(4.5 * 365.25))
+    dob = start_date - pd.DateOffset(days=int(4.5 * DAYS_IN_YEAR))
     df = sim.population.props
     df.loc[0, ['sex', 'is_alive', 'date_of_birth']] = ('F', True, dob)
     sim.simulate(end_date=Date(2010, 12, 31))
@@ -385,9 +385,9 @@ def test_airthmetic_of_lifeyearslost(seed, tmpdir):
     assert yll.sum().sum() == approx(1.0)
 
     # check that age-range is correct (0.5 ly lost among 0-4 year-olds; 0.5 ly lost to 5-9 year-olds)
-    assert yll.loc[('F', '0-4', slice(None), 2010)].sum().sum() == approx(0.5, abs=2.0 / 365.25)
-    assert yll.loc[('F', '5-9', slice(None), 2010)].sum().sum() == approx(0.5, abs=2.0 / 365.25)
-    assert yll.loc[('F', ['0-4', '5-9'], slice(None), 2010)].sum().sum() == approx(1.0, abs=0.5 / 365.25)
+    assert yll.loc[('F', '0-4', slice(None), 2010)].sum().sum() == approx(0.5, abs=2.0 / DAYS_IN_YEAR)
+    assert yll.loc[('F', '5-9', slice(None), 2010)].sum().sum() == approx(0.5, abs=2.0 / DAYS_IN_YEAR)
+    assert yll.loc[('F', ['0-4', '5-9'], slice(None), 2010)].sum().sum() == approx(1.0, abs=0.5 / DAYS_IN_YEAR)
 
 
 @pytest.mark.slow
@@ -464,8 +464,9 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
     disability_onset_date = sim.modules['DiseaseThatCausesA'].disability_onset_date
 
     age_range_at_disability_onset = AGE_RANGE_LOOKUP[
-        int(np.round((disability_onset_date - date_of_birth) / np.timedelta64(1, 'Y')))]
-    age_at_death = int(np.round((death_date - date_of_birth) / np.timedelta64(1, 'Y')))
+        int(np.round(age_at_date(disability_onset_date, date_of_birth)))
+    ]
+    age_at_death = int(np.round(age_at_date(death_date, date_of_birth)))
     age_range_at_death = AGE_RANGE_LOOKUP[age_at_death]
 
     age_groups_where_yll_are_accrued = set(
@@ -513,9 +514,9 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
         death_date.year].sum()  # In year of death, 68 years of lost life.
     assert (yll_stacked_by_time.loc[death_date.year, yll_stacked_by_time.columns[
         yll_stacked_by_time.columns.isin(age_groups_where_yll_are_accrued)]] > 0).all()
-    assert 0.0 == yll_stacked_by_time[age_groups_where_yll_are_not_accrued].sum().sum()  # There should be no yll for
-    #                                                                                      ages above 70 because that
-    #                                                                                      is the definition
+    assert 0.0 == yll_stacked_by_time[
+        sorted(age_groups_where_yll_are_not_accrued)
+    ].sum().sum()  # There should be no yll for ages above 70 because that is the definition
 
     # -- YLL (Stacked by age and time)
     yll_stacked_by_age_and_time = log['yll_by_causes_of_death_stacked_by_age_and_time']

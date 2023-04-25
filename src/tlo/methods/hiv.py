@@ -452,7 +452,9 @@ class Hiv(Module):
                 "age_years",
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True)
-            .when("<20", p["infection_to_death_weibull_scale_1519"])
+            .when("==0", p["mean_survival_for_infants_infected_prior_to_birth"])
+            .when(".between(1,4)", p["infection_to_death_infant_infection_after_birth_weibull_scale"])
+            .when(".between(5, 19)", p["infection_to_death_weibull_scale_1519"])
             .when(".between(20, 24)", p["infection_to_death_weibull_scale_2024"])
             .when(".between(25, 29)", p["infection_to_death_weibull_scale_2529"])
             .when(".between(30, 34)", p["infection_to_death_weibull_scale_3034"])
@@ -467,7 +469,9 @@ class Hiv(Module):
                 "age_years",
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True)
-            .when("<20", p["infection_to_death_weibull_shape_1519"])
+            .when("==0", 1)   # Weibull with shape=1 equivalent to exponential distribution
+            .when(".between(1,4)", p["infection_to_death_infant_infection_after_birth_weibull_shape"])
+            .when(".between(5, 19)", p["infection_to_death_weibull_shape_1519"])
             .when(".between(20, 24)", p["infection_to_death_weibull_shape_2024"])
             .when(".between(25, 29)", p["infection_to_death_weibull_shape_2529"])
             .when(".between(30, 34)", p["infection_to_death_weibull_shape_3034"])
@@ -475,6 +479,16 @@ class Hiv(Module):
             .when(".between(40, 44)", p["infection_to_death_weibull_shape_4044"])
             .when(".between(45, 49)", p["infection_to_death_weibull_shape_4549"])
             .when(">= 50", p["infection_to_death_weibull_shape_4549"])
+        )
+
+        # -- Linear Model to give the mean months between aids and death depending on age
+        self.lm["offset_parameter_for_months_from_aids_to_death"] = LinearModel.multiplicative(
+            Predictor(
+                "age_years",
+                conditions_are_mutually_exclusive=True,
+                conditions_are_exhaustive=True)
+            .when("<5", p["mean_months_between_aids_and_death_infant"])
+            .when(">=5", p["mean_months_between_aids_and_death"])
         )
 
         # -- Linear Models for the Uptake of Services
@@ -822,11 +836,7 @@ class Hiv(Module):
             ].index
 
         # Those that are in neither category are "before AIDS" (will have AIDS Onset Event scheduled)
-        before_aids_idx = (
-            set(df.loc[df.is_alive & df.hv_inf].index)
-            - set(has_aids_idx)
-            - set(on_art_idx)
-        )
+        before_aids_idx = df.loc[df.is_alive & df.hv_inf].index.difference(has_aids_idx).difference(on_art_idx)
 
         # Impose the symptom to those that have AIDS (the symptom is the definition of having AIDS)
         self.sim.modules["SymptomManager"].change_symptom(
@@ -840,23 +850,27 @@ class Hiv(Module):
         # AIDS Onset Event for those who are infected but not yet AIDS and have not ever started ART
         # NB. This means that those on ART at the start of the simulation may not have an AIDS event --
         # like it happened at some point in the past
-
-        for person_id in before_aids_idx:
-            # get days until develops aids, repeating sampling until a positive number is obtained.
-            days_until_aids = 0
-            while days_until_aids <= 0:
-                days_since_infection = (
-                    self.sim.date - df.at[person_id, "hv_date_inf"]
-                ).days
-                days_infection_to_aids = np.round(
-                    (self.get_time_from_infection_to_aids(person_id)).months * 30.5
+        scale, shape, offset = self.get_time_from_infection_to_aids_distribution_parameters(before_aids_idx)
+        days_infection_to_aids = self.sample_time_from_infection_to_aids_given_parameters(scale, shape, offset)
+        days_since_infection = (self.sim.date - df.loc[before_aids_idx, "hv_date_inf"])
+        # If any days_since_infection >= days_infection_to_aids are negative resample
+        # these values until all are positive
+        days_until_aids_is_negative = days_since_infection >= days_infection_to_aids
+        while np.any(days_until_aids_is_negative):
+            days_infection_to_aids[days_until_aids_is_negative] = (
+                self.sample_time_from_infection_to_aids_given_parameters(
+                    scale[days_until_aids_is_negative],
+                    shape[days_until_aids_is_negative],
+                    offset[days_until_aids_is_negative],
                 )
-                days_until_aids = days_infection_to_aids - days_since_infection
-
-            date_onset_aids = self.sim.date + pd.DateOffset(days=days_until_aids)
+            )
+            days_until_aids_is_negative = days_since_infection >= days_infection_to_aids
+        days_until_aids = days_infection_to_aids - days_since_infection
+        date_onset_aids = self.sim.date + pd.to_timedelta(days_until_aids, unit='D')
+        for person_id, date in zip(before_aids_idx, date_onset_aids):
             sim.schedule_event(
                 HivAidsOnsetEvent(person_id=person_id, module=self, cause='AIDS_non_TB'),
-                date=date_onset_aids,
+                date=date,
             )
 
         # Schedule the AIDS death events for those who have got AIDS already
@@ -1153,93 +1167,64 @@ class Hiv(Module):
         df.at[person_id, "hv_date_inf"] = self.sim.date
 
         # Schedule AIDS onset events for this person
-        date_onset_aids = self.sim.date + self.get_time_from_infection_to_aids(
-            person_id=person_id
+        parameters = self.get_time_from_infection_to_aids_distribution_parameters(
+            [person_id]
         )
+        date_onset_aids = (
+            self.sim.date
+            + self.sample_time_from_infection_to_aids_given_parameters(*parameters)
+        ).iloc[0]
         self.sim.schedule_event(
-            event=HivAidsOnsetEvent(self, person_id, cause='AIDS_non_TB'), date=date_onset_aids
+            event=HivAidsOnsetEvent(self, person_id, cause='AIDS_non_TB'),
+            date=date_onset_aids,
         )
 
-    def get_time_from_infection_to_aids(self, person_id):
-        """Gives time between onset of infection and AIDS, returning a pd.DateOffset.
-        For those infected prior to, or at, birth: (this is a draw from an exponential distribution)
-        For those infected after birth but before reaching age 5.0 (this is drawn from a weibull distribution)
-        For adults: (this is a drawn from a weibull distribution (with scale depending on age);
-        * NB. It is further assumed that the time from aids to death is 18 months.
+    def sample_time_from_infection_to_aids_given_parameters(self, scale, shape, offset):
+        """Generate time(s) between onset of infection and AIDS as Pandas time deltas.
+
+        The times are generated from translated Weibull distributions discretised to
+        an integer number of months.
+
+        :param scale: Scale parameters of Weibull distributions (unit: years).
+        :param shape: Shape parameters of Weibull distributions.
+        :param offset: Offset to (negatively) shift Weibull variable by (unit: months).
+
+        :return: Generated time deltas.
         """
 
-        df = self.sim.population.props
-        age = df.at[person_id, "age_exact_years"]
-        p = self.parameters
+        months_to_death = self.rng.weibull(shape) * scale * 12
+        months_to_aids = np.round(months_to_death - offset).clip(0).astype(int)
 
-        if age == 0.0:
-            # The person is infected prior to, or at, birth:
-            months_to_death = int(self.rng.exponential(
-                scale=p["mean_survival_for_infants_infected_prior_to_birth"]
-            )
-                                  * 12,
-                                  )
+        return pd.to_timedelta(months_to_aids * 30.5, unit='D')
 
-            months_to_aids = int(
-                max(
-                    0.0,
-                    np.round(
-                        months_to_death
-                        - self.parameters["mean_months_between_aids_and_death_infant"]
-                    ),
-                )
-            )
-        elif age < 5.0:
-            # The person is infected after birth but before age 5.0:
-            months_to_death = int(
-                max(
-                    0.0,
-                    self.rng.weibull(
-                        p[
-                            "infection_to_death_infant_infection_after_birth_weibull_shape"
-                        ]
-                    )
-                    * p["infection_to_death_infant_infection_after_birth_weibull_scale"]
-                    * 12,
-                )
-            )
-            months_to_aids = int(
-                max(
-                    0.0,
-                    np.round(
-                        months_to_death
-                        - self.parameters["mean_months_between_aids_and_death_infant"]
-                    ),
-                )
-            )
-        else:
-            # The person is infected after age 5.0
-            # - get the shape parameters (unit: years)
-            scale = (
-                self.lm["scale_parameter_for_infection_to_death"].predict(
-                    self.sim.population.props.loc[[person_id]]
-                ).values[0]
-            )
-            # - get the scale parameter (unit: years)
-            shape = (
-                self.lm["shape_parameter_for_infection_to_death"].predict(
-                    self.sim.population.props.loc[[person_id]]
-                ).values[0]
-            )
-            # - draw from Weibull and convert to months
-            months_to_death = self.rng.weibull(shape) * scale * 12
-            # - compute months to aids, which is somewhat shorter than the months to death
-            months_to_aids = int(
-                max(
-                    0.0,
-                    np.round(
-                        months_to_death
-                        - self.parameters["mean_months_between_aids_and_death"]
-                    ),
-                )
-            )
+    def get_time_from_infection_to_aids_distribution_parameters(self, person_ids):
+        """Compute per-person parameters of distribution of time from infection to aids.
 
-        return pd.DateOffset(months=months_to_aids)
+        Evaluates three linear models which output age specific scale, shape and offset
+        parameters for the (translated) Weibull distribution used to generate the time
+        from infection to aids for an individual.
+
+        For those infected prior to, or at, birth, a Weibull distribution with shape
+        parameter 1 (equivalent to an exponential distribution) is used.
+
+        For those infected after birth a Weibull distribution with both shape and
+        scale depending on age is used.
+
+        :param person_ids: Iterable of ID indices of individuals to get parameters for.
+
+        :return: Per-person parameters as a 3-tuple ``(scale, shape, offset)`` of
+            ``pandas.Series`` objects.
+        """
+        subpopulation = self.sim.population.props.loc[person_ids]
+        # get the scale parameters (unit: years)
+        scale = self.lm["scale_parameter_for_infection_to_death"].predict(subpopulation)
+        # get the shape parameter
+        shape = self.lm["shape_parameter_for_infection_to_death"].predict(subpopulation)
+        # get the mean months between aids and death (unit: months)
+        offset = self.lm["offset_parameter_for_months_from_aids_to_death"].predict(
+            subpopulation
+        )
+        return scale, shape, offset
 
     def get_time_from_aids_to_death(self):
         """Gives time between onset of AIDS and death, returning a pd.DateOffset.

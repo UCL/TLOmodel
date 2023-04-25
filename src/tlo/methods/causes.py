@@ -119,12 +119,12 @@ def create_mappers_from_causes_to_label(causes: dict, all_gbd_causes: set = None
     #  - from tlo_cause --> label (key=tlo_cause, value=label)
     mapper_from_tlo_causes = dict((v, k) for k, v in (
         lookup_df.tlo_causes.apply(pd.Series).stack().reset_index(level=1, drop=True)
-    ).iteritems())
+    ).items())
 
     #  - from gbd_cause --> label (key=gbd_cause, value=label)
     mapper_from_gbd_causes = dict((v, k) for k, v in (
         lookup_df.gbd_causes.apply(pd.Series).stack().reset_index(level=1, drop=True)
-    ).iteritems())
+    ).items())
 
     # -- checks
     assert set(mapper_from_tlo_causes.keys()) == set(causes.keys())
