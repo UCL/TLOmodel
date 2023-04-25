@@ -59,6 +59,7 @@ def set_all_women_as_pregnant_and_reset_baseline_parity(sim):
     women_repro = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)]
     df.loc[women_repro.index, 'is_pregnant'] = True
     df.loc[women_repro.index, 'date_of_last_pregnancy'] = sim.start_date
+    df.loc[women_repro.index, 'co_contraception'] = "not_using"
     for person in women_repro.index:
         sim.modules['Labour'].set_date_of_labour(person)
 
