@@ -693,6 +693,9 @@ for fac in fac_ids:
 # Check that there are not missing values
 assert not pd.isnull(full_set_interpolated).any().any()
 
+# Store availability figures as int instead of float (to save storage space)
+full_set_interpolated['available_prop'] = int(full_set_interpolated['available_prop'] * 100)
+
 # --- Check that the exported file has the properties required of it by the model code. --- #
 check_format_of_consumables_file(df=full_set_interpolated.reset_index(), fac_ids=fac_ids)
 
