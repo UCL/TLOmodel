@@ -60,7 +60,6 @@ class Malaria(Module):
     }
 
     PARAMETERS = {
-        "mal_inc": Parameter(Types.REAL, "monthly incidence of malaria in all ages"),
         "interv": Parameter(Types.REAL, "data frame of intervention coverage by year"),
         "clin_inc": Parameter(
             Types.REAL,
@@ -172,7 +171,6 @@ class Malaria(Module):
         p = self.parameters
 
         # baseline characteristics
-        p["mal_inc"] = workbook["incidence"]
         p["interv"] = workbook["interventions"]
         p["itn_district"] = workbook["MAP_ITNrates"]
         p["irs_district"] = workbook["MAP_IRSrates"]
