@@ -1278,8 +1278,8 @@ class HealthSystem(Module):
             else:
                 availability = get_total_minutes_of_this_officer_in_all_district(officer)
 
-            if availability is None:  # todo - does this ever happen?
-                load_factor[officer] = 99.99
+            if availability is None:
+                load_factor[officer] = float('inf')
             elif availability == 0:
                 load_factor[officer] = float('inf')
             else:
