@@ -1,6 +1,6 @@
 """This script produces a pd.DataFrame that shows which ApptTypes can run at each facility, under the different modes
  of the HealthSystem and the different assumptions for the HR resources."""
-
+import numpy as np
 from pathlib import Path
 from typing import Tuple
 
@@ -40,6 +40,7 @@ class DummyHSIEvent(HSI_Event, IndividualScopeEventMixin):
         self.squeeze_factor_of_this_hsi = None
 
     def apply(self, person_id, squeeze_factor):
+        assert isinstance(squeeze_factor, (float, np.float64)), f"squeeze_factor is not a float: {squeeze_factor=}"
         self.squeeze_factor_of_this_hsi = squeeze_factor
         self.this_hsi_event_ran = True
 
