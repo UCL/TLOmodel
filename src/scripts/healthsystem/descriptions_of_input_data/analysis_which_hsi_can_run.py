@@ -78,7 +78,6 @@ for mode_appt_constraints in (0, 1, 2):
         sim.population.props.loc[person_for_district.values(), 'district_of_residence'] = list(
             person_for_district.keys())
 
-
         def check_appt_works(district, level, appt_type) -> Tuple:
             sim.modules['HealthSystem'].reset_queue()
 
@@ -99,7 +98,6 @@ for mode_appt_constraints in (0, 1, 2):
             healthsystemscheduler.run()
 
             return hsi.this_hsi_event_ran, hsi.squeeze_factor_of_this_hsi
-
 
         for _district in person_for_district:
             for _facility_level_col_name in appt_types_offered.columns:
