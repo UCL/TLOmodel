@@ -307,7 +307,7 @@ class Contraception(Module):
             self.processed_params = self.process_params()
             self.interventions_on = True
 
-        assert self.sim.population.props.at[person_id, 'co_contraception'] == "not_using"  # TODO: remove
+        assert self.sim.population.props.at[person_id, 'co_contraception'] == "not_using"
         self.sim.population.props.at[person_id, 'is_pregnant'] = False
         person_age = self.sim.population.props.at[person_id, 'age_years']
         self.select_contraceptive_following_birth(person_id, person_age)
