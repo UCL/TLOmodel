@@ -239,7 +239,11 @@ class Malaria(Module):
             p["daly_wt_severe"] = self.sim.modules["HealthBurden"].get_daly_weight(213)
 
         # ----------------------------------- DECLARE THE SYMPTOMS -------------------------------------------
+        # todo add malaria fever
         self.sim.modules['SymptomManager'].register_symptom(
+            Symptom("malaria_fever",
+                    odds_ratio_health_seeking_in_children=10,
+                    odds_ratio_health_seeking_in_adults=5),
             Symptom("jaundice"),  # nb. will cause care seeking as much as a typical symptom
             Symptom("severe_anaemia"),  # nb. will cause care seeking as much as a typical symptom
             Symptom.emergency("acidosis"),
@@ -403,7 +407,8 @@ class Malaria(Module):
 
         sim.schedule_event(MalariaPollingEventDistrict(self), sim.date + DateOffset(months=1))
 
-        sim.schedule_event(MalariaScheduleTesting(self), sim.date + DateOffset(days=1))
+        # todo reinstate?
+        # sim.schedule_event(MalariaScheduleTesting(self), sim.date + DateOffset(days=0))
 
         if 'CareOfWomenDuringPregnancy' not in self.sim.modules:
             sim.schedule_event(MalariaIPTp(self), sim.date + DateOffset(days=30.5))
@@ -524,7 +529,7 @@ class Malaria(Module):
 
         df.loc[clinical_index, "ma_date_symptoms"] = date_symptom_onset
 
-        symptom_list = {"fever", "headache", "vomiting", "stomachache"}
+        symptom_list = {"malaria_fever", "fever", "headache", "vomiting", "stomachache"}
 
         # this also schedules symptom resolution in 5 days
         self.sim.modules["SymptomManager"].change_symptom(
@@ -672,21 +677,22 @@ class MalariaScheduleTesting(RegularEvent, PopulationScopeEventMixin):
         # alive = df.is_alive
         # test = df.index[alive][self.module.rng.random_sample(size=alive.sum()) < p["testing_adj"]]
 
-        # weight testing to those with malaria infection and not on treatment
-        # can include asymptomatic, clinical and severe
+        # weight testing to those with clinical malaria infection and not on treatment
+        # severe cases will seek emergency care
         random_draw = self.module.rng.random_sample(size=len(df))
 
         test = df.loc[df.is_alive &
-                      (df.ma_inf_type != "none") &
+                      (df.ma_inf_type == "clinical") &
                       ~df.ma_tx &
                       (random_draw < p["testing_adj"])].index
 
         for person_index in test:
             logger.debug(key='message',
                          data=f'MalariaScheduleTesting: scheduling HSI_Malaria_rdt for person {person_index}')
+
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Malaria_rdt(self.module, person_id=person_index),
-                priority=1,
+                priority=0,
                 topen=random_date(self.sim.date, self.sim.date + self.frequency, self.module.rng),
                 tclose=None
             )
@@ -836,7 +842,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
 
                 treat = HSI_Malaria_Treatment(self.module, person_id=person_id)
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    treat, priority=1, topen=self.sim.date, tclose=None
+                    treat, priority=0, topen=self.sim.date, tclose=None
                 )
 
     def did_not_run(self):
@@ -1208,7 +1214,7 @@ class MalariaTxLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     description='Treatment of malaria cases')
 
         # reset all counters
-        logger.info(key='message',
+        logger.debug(key='message',
                     data=f'Resetting the malaria counter {self.sim.date}')
 
         df["ma_clinical_counter"] = 0

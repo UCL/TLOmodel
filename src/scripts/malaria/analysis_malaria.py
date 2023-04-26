@@ -45,6 +45,7 @@ log_config = {
     "custom_levels": {
         "*": logging.WARNING,
         "tlo.methods.malaria": logging.INFO,
+        "tlo.methods.healthsystem.summary": logging.INFO,
     },
 }
 seed = random.randint(0, 50000)
@@ -72,7 +73,7 @@ sim.register(
     )
 )
 
-sim.modules["Malaria"].parameters["testing_adj"] = 0.1
+sim.modules["Malaria"].parameters["testing_adj"] = 0.8
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)

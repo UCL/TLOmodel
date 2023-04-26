@@ -43,10 +43,23 @@ test_WHO = pd.read_excel(
     Path(resourcefilepath) / "ResourceFile_malaria.xlsx", sheet_name="WHO_TestData2023",
 )
 
-# WHO
-WHO_data = pd.read_excel(
-    Path(resourcefilepath) / "ResourceFile_malaria.xlsx", sheet_name="WHO_MalReport",
-)
+# ---------------------------------------------------------------------- #
+# %%: MODEL OUTPUTS
+# ---------------------------------------------------------------------- #
+
+# load the results
+with open(outputpath / "default_run.pickle", "rb") as f:
+    output = pickle.load(f)
+
+
+inc = output["tlo.methods.malaria"]["incidence"]
+pfpr = output["tlo.methods.malaria"]["prevalence"]
+tx = output["tlo.methods.malaria"]["tx_coverage"]
+mort = output["tlo.methods.malaria"]["ma_mortality"]
+
+# numbers rdt requested
+num_rdt = output["tlo.methods.healthsystem.summary"]["Consumables"]
+
 
 # ------------------------------------- FIGURES -----------------------------------------#
 
@@ -56,15 +69,9 @@ plt.figure(1, figsize=(10, 10))
 # Malaria incidence per 1000py - all ages
 ax = plt.subplot(221)  # numrows, numcols, fignum
 plt.plot(inc_MAP.Year, inc_MAP.IncidenceRatePer1000)  # MAP data
+plt.plot(inc_WHO.Year, inc_WHO.IncidencePer1000)  # WHO data
 plt.fill_between(
-    incMAP_data.Year,
-    incMAP_data.inc_1000py_Lower,
-    incMAP_data.inc_1000pyUpper,
-    alpha=0.5,
-)
-plt.plot(WHO_data.Year, WHO_data.cases1000pyPoint)  # WHO data
-plt.fill_between(
-    WHO_data.Year, WHO_data.cases1000pyLower, WHO_data.cases1000pyUpper, alpha=0.5
+    inc_WHO.Year, inc_WHO.IncidencePer1000Low, inc_WHO.IncidencePer1000High, alpha=0.5
 )
 plt.plot(
     model_years, inc_av, color="mediumseagreen"
