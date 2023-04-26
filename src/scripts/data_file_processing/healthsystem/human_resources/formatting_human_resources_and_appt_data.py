@@ -1854,7 +1854,7 @@ funded_daily_capability_coarse.to_csv(
 # final check that for an appointment required at a particular level (in Appt_Time_Table), \
 # then indeed, the staff capabilities are available to satisfy that, for a person in any district \
 # (including the regional and national facilities);
-# todo: also, find the HCW not there ((i.e., with 0 capability)) when required by an appt type for each facility id
+# also, find the HCW not there ((i.e., with 0 capability)) when required by an appt type for each facility id
 # (i.e., each pair of facility level and district)
 
 # Define the check function
@@ -1921,6 +1921,47 @@ def all_appts_can_run(capability):
             assert 0 == 1  # There should be no 'else'; otherwise, the generated tables above is incorrect
 
     return appt_have_or_miss_capability
+
+
+def find_districts_with_no_required_hcw(capability, scenario):
+    # get appts have or miss capability data
+    appt_miss_cap = all_appts_can_run(capability)
+
+    # keep rows where required appts have no requested hcw (i.e. with 0-capability)
+    appt_miss_cap = appt_miss_cap.loc[~(appt_miss_cap['fail_district'] == 'All districts pass')]
+
+    # split fail districts, merge and melt
+    fail_district_split = appt_miss_cap['fail_district'].str.split(',', expand=True)
+    fail_district_split.replace({'': None}, inplace=True)
+    fail_district_split.dropna(axis='columns', how='all', inplace=True)
+
+    appt_miss_cap.drop(columns='fail_district', inplace=True)
+    appt_miss_cap = appt_miss_cap.merge(fail_district_split, how='outer', left_index=True, right_index=True)
+
+    appt_miss_cap = pd.melt(appt_miss_cap, id_vars=['Appt_Type_Code', 'Facility_Level', 'Officer_Category'],
+                            value_name=scenario)
+    appt_miss_cap.drop(columns='variable', inplace=True)
+    appt_miss_cap.dropna(axis='index', how='any', inplace=True)
+
+    return appt_miss_cap
+
+
+df_actual = find_districts_with_no_required_hcw(curr_daily_capability_coarse, 'actual')
+df_funded = find_districts_with_no_required_hcw(funded_daily_capability_coarse, 'funded')
+appts_with_no_required_hcw = pd.merge(df_actual, df_funded,
+                                      on=['Appt_Type_Code', 'Facility_Level', 'Officer_Category'],
+                                      how='outer')
+appts_with_no_required_hcw = pd.melt(appts_with_no_required_hcw,
+                                     id_vars=['Appt_Type_Code', 'Facility_Level', 'Officer_Category'],
+                                     var_name='HR_Scenario',
+                                     value_name='Fail_District_Or_CenHos')
+appts_with_no_required_hcw.drop_duplicates(inplace=True, ignore_index=True)
+appts_with_no_required_hcw.dropna(axis='index', how='any', inplace=True)
+
+# save results for actual and funded HR scenarios;
+# excl. funded_plus scenario, where there is no failing district or CenHos
+appts_with_no_required_hcw.to_csv(
+    outputlocation / 'human_resources' / 'definitions' / 'ResourceFile_Appts_With_No_Required_HCW.csv', index=False)
 
 # Save results for funded
 # Need to # following lines below when generate funded_plus capability
