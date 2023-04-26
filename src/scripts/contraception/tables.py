@@ -237,17 +237,16 @@ def table_cons(in_mwk_to_usd_exchange_rate,
         co_pkgs_df = co_pkgs_df.loc[co_pkgs_df['Intervention_Pkg'] != 'Male sterilization', :]
     # Rename the columns
     co_pkgs_df.columns =\
-        ['\nContraception\noption', '\n\nItems', 'Expected\nUnits\nPer Case', 'Unit Cost\n2021 prices\nin MWK']
-    # ['Contraception option', 'Items', 'Expected Units Per Case', 'Unit Cost 2021 prices in MWK']
+        ['\nContraception\noption', '\n\nItem', 'Expected\nUnits\nPer Case', 'Unit Cost\n2021 price\nin MWK']
 
     def mwk_to_usd(in_mwk_price):
         return in_mwk_price * in_mwk_to_usd_exchange_rate
 
     # Calculate the costs in USD and round to 2 decimals
-    co_pkgs_df['Unit Cost\n2021 prices\nin USD'] =\
-        round(co_pkgs_df['Unit Cost\n2021 prices\nin MWK'].apply(mwk_to_usd), 2)
+    co_pkgs_df['Unit Cost\n2021 price\nin USD'] =\
+        round(co_pkgs_df['Unit Cost\n2021 price\nin MWK'].apply(mwk_to_usd), 2)
     # Round costs in MWK to 0 decimals
-    co_pkgs_df['Unit Cost\n2021 prices\nin MWK'] = round(co_pkgs_df['Unit Cost\n2021 prices\nin MWK'])
+    co_pkgs_df['Unit Cost\n2021 price\nin MWK'] = round(co_pkgs_df['Unit Cost\n2021 price\nin MWK'])
 
     # Rename the pkgs to be consistent with methods names elsewhere and order the dataframe by contraceptives_order
     def pkg_name_to_method(in_co_pkg_name):
