@@ -1,108 +1,68 @@
+""" load the outputs from a simulation and plot the results with comparison data """
+
 import datetime
+import pickle
 from pathlib import Path
 
+import matplotlib.lines as mlines
+import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from matplotlib import pyplot as plt
 
-from tlo.analysis.utils import parse_log_file
-
-# model outputs
-outputpath = Path("./outputs/malaria")
-datestamp = datetime.date.today().strftime("__%Y_%m_%d")
+from tlo.analysis.utils import compare_number_of_deaths
 
 resourcefilepath = Path("./resources")
+outputpath = Path("./outputs")  # folder for convenience of storing outputs
+datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
-# ----------------------------------- AVERAGE OUTPUTS -----------------------------------
-logfile1 = outputpath + "Malaria_Baseline1__2020_01_28.log"
-output1 = parse_log_file(logfile1)
+# %% Function to make standard plot to compare model and data
+def make_plot(model=None, data_mid=None, data_low=None, data_high=None, title_str=None):
+    assert model is not None
+    assert title_str is not None
 
-logfile2 = outputpath + "Malaria_Baseline2__2020_01_28.log"
-output2 = parse_log_file(logfile2)
+    # Make plot
+    fig, ax = plt.subplots()
+    ax.plot(model.index, model.values, "-", color="r")
 
-logfile3 = outputpath + "Malaria_Baseline3__2020_01_28.log"
-output3 = parse_log_file(logfile3)
+    if data_mid is not None:
+        ax.plot(data_mid.index, data_mid.values, "-")
+    if (data_low is not None) and (data_high is not None):
+        ax.fill_between(data_low.index, data_low, data_high, alpha=0.2)
+    plt.title(title_str)
+    plt.legend(["Model", "Data"])
+    plt.gca().set_ylim(bottom=0)
+    plt.savefig(
+        outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
+    )
+    # plt.show()
 
-inc1 = output1["tlo.methods.malaria"]["incidence"]
-pfpr1 = output1["tlo.methods.malaria"]["prevalence"]
-tx1 = output1["tlo.methods.malaria"]["tx_coverage"]
-mort1 = output1["tlo.methods.malaria"]["ma_mortality"]
 
-inc2 = output2["tlo.methods.malaria"]["incidence"]
-pfpr2 = output2["tlo.methods.malaria"]["prevalence"]
-tx2 = output2["tlo.methods.malaria"]["tx_coverage"]
-mort2 = output2["tlo.methods.malaria"]["ma_mortality"]
-
-inc3 = output3["tlo.methods.malaria"]["incidence"]
-pfpr3 = output3["tlo.methods.malaria"]["prevalence"]
-tx3 = output3["tlo.methods.malaria"]["tx_coverage"]
-mort3 = output3["tlo.methods.malaria"]["ma_mortality"]
-
-# take average of incidence clinical counter
-inc_av = np.mean(
-    [inc1.inc_clin_counter, inc2.inc_clin_counter, inc3.inc_clin_counter], axis=0
-)
-pfpr_av = np.mean(
-    [pfpr1.child2_10_prev, pfpr2.child2_10_prev, pfpr3.child2_10_prev], axis=0
-)
-tx_av = np.mean(
-    [tx1.treatment_coverage, tx2.treatment_coverage, tx3.treatment_coverage], axis=0
-)
-mort_av = np.mean([mort2.mort_rate, mort2.mort_rate, mort2.mort_rate], axis=0)
-
-# ----------------------------------- SAVE OUTPUTS -----------------------------------
-# out_path = '//fi--san02/homes/tmangal/Thanzi la Onse/Malaria/model_outputs/'
-#
-# if malaria_strat == 0:
-#     savepath = out_path + "national_output_" + datestamp + ".xlsx"
-# else:
-#     savepath = out_path + "district_output_" + datestamp + ".xlsx"
-#
-# writer = pd.ExcelWriter(savepath, engine='xlsxwriter')
-#
-# inc_df = pd.DataFrame(inc)
-# inc_df.to_excel(writer, sheet_name='inc')
-#
-# pfpr_df = pd.DataFrame(pfpr)
-# pfpr_df.to_excel(writer, sheet_name='pfpr')
-#
-# tx_df = pd.DataFrame(tx)
-# tx_df.to_excel(writer, sheet_name='tx')
-#
-# mort_df = pd.DataFrame(mort)
-# mort_df.to_excel(writer, sheet_name='mort')
-#
-# # symp_df = pd.DataFrame(symp)
-# # symp_df.to_excel(writer, sheet_name='symp')
-#
-# prev_district_df = pd.DataFrame(prev_district)
-# prev_district_df.to_excel(writer, sheet_name='prev_district')
-#
-# writer.save()
-
-# ----------------------------------- CREATE PLOTS-----------------------------------
-
-# get model output dates in correct format
-model_years = pd.to_datetime(inc1.date)
-model_years = model_years.dt.year
+# ---------------------------------------------------------------------- #
+# %%: DATA
+# ---------------------------------------------------------------------- #
 start_date = 2010
-end_date = 2025
+end_date = 2020
 
-# import malaria data
+# load all the data for calibration
 # MAP
-incMAP_data = pd.read_excel(
+inc_MAP = pd.read_excel(
     Path(resourcefilepath) / "ResourceFile_malaria.xlsx",
-    sheet_name="inc1000py_MAPdata",
+    sheet_name="MAP_InfectionData2023",
 )
-PfPRMAP_data = pd.read_excel(
-    Path(resourcefilepath) / "ResourceFile_malaria.xlsx", sheet_name="PfPR_MAPdata",
+commodities_MAP = pd.read_excel(
+    Path(resourcefilepath) / "ResourceFile_malaria.xlsx", sheet_name="MAP_CommoditiesData2023",
 )
-mortMAP_data = pd.read_excel(
-    Path(resourcefilepath) / "ResourceFile_malaria.xlsx",
-    sheet_name="mortalityRate_MAPdata",
-)
-txMAP_data = pd.read_excel(
+treatment_MAP = pd.read_excel(
     Path(resourcefilepath) / "ResourceFile_malaria.xlsx", sheet_name="txCov_MAPdata",
+)
+
+inc_WHO = pd.read_excel(
+    Path(resourcefilepath) / "ResourceFile_malaria.xlsx",
+    sheet_name="WHO_CaseData2023",
+)
+test_WHO = pd.read_excel(
+    Path(resourcefilepath) / "ResourceFile_malaria.xlsx", sheet_name="WHO_TestData2023",
 )
 
 # WHO

@@ -1,6 +1,8 @@
 """
 this file runs the malaria module and outputs graphs with data for comparison
 """
+import datetime
+import pickle
 import random
 import time
 from pathlib import Path
@@ -23,29 +25,37 @@ from tlo.methods import (
 
 t0 = time.time()
 
+# Where will outputs go
+outputpath = Path("./outputs")  # folder for convenience of storing outputs
+
+# date-stamp to label log files and any other outputs
+datestamp = datetime.date.today().strftime("__%Y_%m_%d")
+
 # The resource files
-resources = Path("./resources")
+resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2018, 12, 31)
+end_date = Date(2014, 12, 31)
 popsize = 500
 
-# Establish the simulation object
+# set up the log config
 log_config = {
-    'filename': 'Malaria_LogFile',
-    'directory': './outputs',
-    'custom_levels': {"*": logging.WARNING, "tlo.methods.malaria": logging.INFO}
+    "filename": "test_runs",
+    "directory": outputpath,
+    "custom_levels": {
+        "*": logging.WARNING,
+        "tlo.methods.malaria": logging.INFO,
+    },
 }
-
 seed = random.randint(0, 50000)
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
 # Register the appropriate modules
 sim.register(
-    demography.Demography(resourcefilepath=resources),
-    simplified_births.SimplifiedBirths(resourcefilepath=resources),
+    demography.Demography(resourcefilepath=resourcefilepath),
+    simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
     healthsystem.HealthSystem(
-        resourcefilepath=resources,
+        resourcefilepath=resourcefilepath,
         service_availability=["*"],
         mode_appt_constraints=0,
         cons_availability='default',
@@ -53,18 +63,30 @@ sim.register(
         capabilities_coefficient=1.0,
         disable=False,
     ),
-    symptommanager.SymptomManager(resourcefilepath=resources),
-    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
-    healthburden.HealthBurden(resourcefilepath=resources),
-    enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
+    symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+    healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+    enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
     malaria.Malaria(
-        resourcefilepath=resources,
+        resourcefilepath=resourcefilepath,
     )
 )
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
+
+# parse the results
+output = parse_log_file(sim.log_filepath)
+
+# save the results, argument 'wb' means write using binary mode. use 'rb' for reading file
+with open(outputpath / "default_run.pickle", "wb") as f:
+    # Pickle the 'data' dictionary using the highest protocol available.
+    pickle.dump(dict(output), f, pickle.HIGHEST_PROTOCOL)
+
+# load the results
+with open(outputpath / "default_run.pickle", "rb") as f:
+    output = pickle.load(f)
 
 
 # %% read the results

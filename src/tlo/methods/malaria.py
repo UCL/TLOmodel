@@ -324,6 +324,7 @@ class Malaria(Module):
         df.loc[now_infected, "ma_is_infected"] = True
         df.loc[now_infected, "ma_date_infected"] = now
         df.loc[now_infected, "ma_inf_type"] = "asym"
+        df.loc[now_infected, "ma_clinical_counter"] += 1
 
         # select all currently infected
         alive_infected = alive & df.ma_is_infected
@@ -333,7 +334,7 @@ class Malaria(Module):
         now_clinical = _draw_incidence_for("monthly_prob_clin", alive_infected_asym)
         df.loc[now_clinical, "ma_inf_type"] = "clinical"
         df.loc[now_clinical, "ma_date_infected"] = now  # updated infection date
-        df.loc[now_clinical, "ma_clinical_counter"] += 1
+        # df.loc[now_clinical, "ma_clinical_counter"] += 1
 
         # draw from clinical cases to allocate severe cases - draw from all currently clinical cases
         alive_infected_clinical = alive_infected & (df.ma_inf_type == "clinical")
@@ -403,7 +404,7 @@ class Malaria(Module):
 
         sim.schedule_event(MalariaPollingEventDistrict(self), sim.date + DateOffset(months=1))
 
-        sim.schedule_event(MalariaScheduleTesting(self), sim.date + DateOffset(days=1))
+        # sim.schedule_event(MalariaScheduleTesting(self), sim.date + DateOffset(days=1))
 
         if 'CareOfWomenDuringPregnancy' not in self.sim.modules:
             sim.schedule_event(MalariaIPTp(self), sim.date + DateOffset(days=30.5))
