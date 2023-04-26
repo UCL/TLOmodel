@@ -1710,8 +1710,10 @@ funded_daily_capability = funded_daily_minutes.merge(funded_staff_floats, how='l
 # Reset facility level column to exclude 'Facility_Level_'
 funded_daily_capability['Facility_Level'] = \
     funded_daily_capability['Facility_Level'].str.split(pat='_', expand=True).iloc[:, 2]
-# Drop row with zero or nan minutes (due to either zero staff counts or nan daily minutes)
-funded_daily_capability.fillna(0, inplace=True)
+# Drop zero-minute rows (also zero staff count)
+assert not funded_daily_capability['Total_Mins_Per_Day'].isnull().values.any()
+assert funded_daily_capability[funded_daily_capability['Total_Mins_Per_Day'] == 0].index.equals(
+    funded_daily_capability[funded_daily_capability['Staff_Count'] == 0].index)
 funded_daily_capability.drop(
     index=funded_daily_capability[funded_daily_capability['Total_Mins_Per_Day'] == 0].index, inplace=True)
 # Reset index
@@ -1745,7 +1747,7 @@ funded_daily_capability = funded_daily_capability.merge(officer_types_table, on=
 funded_daily_capability_coarse = pd.DataFrame(
     funded_daily_capability.groupby(
         ['Facility_ID', 'Facility_Name', 'Facility_Level', 'District', 'Region', 'Officer_Category'],
-        dropna=False).sum()
+        dropna=False)[['Total_Mins_Per_Day', 'Staff_Count']].sum()
 ).reset_index()
 
 # --- Daily capability for current staff; staff counts in floats
@@ -1784,7 +1786,9 @@ curr_daily_capability = curr_daily_minutes.merge(curr_staff_floats, how='left')
 curr_daily_capability['Facility_Level'] = \
     curr_daily_capability['Facility_Level'].str.split(pat='_', expand=True).iloc[:, 2]
 # Drop row with zero minutes (also zero staff counts)
-curr_daily_capability.fillna(0, inplace=True)
+assert not curr_daily_capability['Total_Mins_Per_Day'].isnull().values.any()
+assert curr_daily_capability[curr_daily_capability['Total_Mins_Per_Day'] == 0].index.equals(
+    curr_daily_capability[curr_daily_capability['Staff_Count'] == 0].index)
 curr_daily_capability.drop(
     index=curr_daily_capability[curr_daily_capability['Total_Mins_Per_Day'] == 0].index, inplace=True)
 # Reset index
@@ -1818,7 +1822,7 @@ curr_daily_capability = curr_daily_capability.merge(officer_types_table, on='Off
 curr_daily_capability_coarse = pd.DataFrame(
     curr_daily_capability.groupby(
         ['Facility_ID', 'Facility_Name', 'Facility_Level', 'District', 'Region', 'Officer_Category'],
-        dropna=False).sum()
+        dropna=False)[['Total_Mins_Per_Day', 'Staff_Count']].sum()
 ).reset_index()
 
 # Save
