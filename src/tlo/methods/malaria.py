@@ -303,7 +303,7 @@ class Malaria(Module):
             district_age_lookup = df[_where].set_index(["district_num_of_residence", "ma_age_edited"]).index
             # get the monthly incidence probabilities for these individuals
             monthly_prob = curr_inc.loc[district_age_lookup, _col]
-            # update the index so it"s the same as the original population dataframe for these individuals
+            # update the index so it's the same as the original population dataframe for these individuals
             monthly_prob = monthly_prob.set_axis(df.index[_where])
             # select individuals for infection
             random_draw = rng.random_sample(_where.sum()) < monthly_prob
@@ -885,7 +885,7 @@ class HSI_Malaria_Treatment(HSI_Event, IndividualScopeEventMixin):
             drugs_available = self.get_consumables(
                 item_codes=self.module.item_codes_for_consumables_required['malaria_uncomplicated_young_children'])
 
-        if age_of_person.between(5, 15):
+        elif age_of_person.between(5, 15):
             # Formulation for older children
             drugs_available = self.get_consumables(
                 item_codes=self.module.item_codes_for_consumables_required['malaria_uncomplicated_older_children'])
@@ -1230,4 +1230,3 @@ class MalariaPrevDistrictLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info(key='pop_district',
                     data=pop.to_dict(),
                     description='District population sizes')
-

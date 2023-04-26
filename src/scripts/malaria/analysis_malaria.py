@@ -27,7 +27,7 @@ t0 = time.time()
 resources = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2022, 12, 31)
+end_date = Date(2018, 12, 31)
 popsize = 500
 
 # Establish the simulation object

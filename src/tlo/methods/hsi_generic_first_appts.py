@@ -27,11 +27,8 @@ from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.methods.labour import HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour
 from tlo.methods.malaria import (
-    HSI_Malaria_complicated_treatment_adult,
-    HSI_Malaria_complicated_treatment_child,
-    HSI_Malaria_non_complicated_treatment_adult,
-    HSI_Malaria_non_complicated_treatment_age0_5,
-    HSI_Malaria_non_complicated_treatment_age5_15,
+    HSI_Malaria_Treatment,
+    HSI_Malaria_Treatment_Complicated,
 )
 from tlo.methods.measles import HSI_Measles_Treatment
 from tlo.methods.mockitis import HSI_Mockitis_PresentsForCareWithSevereSymptoms
@@ -182,50 +179,26 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                 # Treat / refer based on diagnosis
                 if malaria_test_result == "severe_malaria":
                     schedule_hsi(
-                        HSI_Malaria_complicated_treatment_child(
+                        HSI_Malaria_Treatment_Complicated(
                             person_id=person_id,
                             module=sim.modules["Malaria"]),
-                        priority=1,
+                        priority=0,
                         topen=sim.date,
                         tclose=None)
 
+                # return type "clinical_malaria" includes asymptomatic infection
                 elif malaria_test_result == "clinical_malaria":
                     schedule_hsi(
-                        HSI_Malaria_non_complicated_treatment_age0_5(
+                        HSI_Malaria_Treatment(
                             person_id=person_id,
                             module=sim.modules["Malaria"]),
-                        priority=1,
+                        priority=0,
                         topen=sim.date,
                         tclose=None)
 
         # Routine assessments
         if 'Stunting' in sim.modules:
             sim.modules['Stunting'].do_routine_assessment_for_chronic_undernutrition(person_id=person_id)
-
-    elif age < 15:
-        # ----------------------------------- CHILD 5-14 -----------------------------------
-        if 'fever' in symptoms and "Malaria" in sim.modules:
-            malaria_test_result = sim.modules['Malaria'].check_if_fever_is_caused_by_malaria(
-                person_id=person_id, hsi_event=hsi_event)
-
-            # Treat / refer based on diagnosis
-            if malaria_test_result == "severe_malaria":
-                schedule_hsi(
-                    HSI_Malaria_complicated_treatment_child(
-                        person_id=person_id,
-                        module=sim.modules["Malaria"]),
-                    priority=1,
-                    topen=sim.date,
-                    tclose=None)
-
-            elif malaria_test_result == "clinical_malaria":
-                schedule_hsi(
-                    HSI_Malaria_non_complicated_treatment_age5_15(
-                        person_id=person_id,
-                        module=sim.modules["Malaria"]),
-                    priority=1,
-                    topen=sim.date,
-                    tclose=None)
 
     else:
         # ----------------------------------- ADULT -----------------------------------
