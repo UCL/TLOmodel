@@ -1714,8 +1714,8 @@ funded_daily_capability['Facility_Level'] = \
 assert not funded_daily_capability['Total_Mins_Per_Day'].isnull().values.any()
 assert funded_daily_capability[funded_daily_capability['Total_Mins_Per_Day'] == 0].index.equals(
     funded_daily_capability[funded_daily_capability['Staff_Count'] == 0].index)
-funded_daily_capability.drop(
-    index=funded_daily_capability[funded_daily_capability['Total_Mins_Per_Day'] == 0].index, inplace=True)
+# funded_daily_capability.drop(
+#     index=funded_daily_capability[funded_daily_capability['Total_Mins_Per_Day'] == 0].index, inplace=True)
 # Reset index
 funded_daily_capability.reset_index(drop=True, inplace=True)
 
@@ -1749,6 +1749,11 @@ funded_daily_capability_coarse = pd.DataFrame(
         ['Facility_ID', 'Facility_Name', 'Facility_Level', 'District', 'Region', 'Officer_Category'],
         dropna=False)[['Total_Mins_Per_Day', 'Staff_Count']].sum()
 ).reset_index()
+
+# Since not dropped zero-minute rows in lines 1717-1718,
+# check that there are entries for all coarse cadres and all facility id
+assert set(mfl.Facility_ID) == set(funded_daily_capability_coarse.Facility_ID.drop_duplicates())
+assert len(funded_daily_capability_coarse) == len(mfl) * len(officer_types_table.Officer_Category.drop_duplicates())
 
 # --- Daily capability for current staff; staff counts in floats
 # For float staff counts, calculate total minutes per day
@@ -1789,8 +1794,8 @@ curr_daily_capability['Facility_Level'] = \
 assert not curr_daily_capability['Total_Mins_Per_Day'].isnull().values.any()
 assert curr_daily_capability[curr_daily_capability['Total_Mins_Per_Day'] == 0].index.equals(
     curr_daily_capability[curr_daily_capability['Staff_Count'] == 0].index)
-curr_daily_capability.drop(
-    index=curr_daily_capability[curr_daily_capability['Total_Mins_Per_Day'] == 0].index, inplace=True)
+# curr_daily_capability.drop(
+#     index=curr_daily_capability[curr_daily_capability['Total_Mins_Per_Day'] == 0].index, inplace=True)
 # Reset index
 curr_daily_capability.reset_index(drop=True, inplace=True)
 
@@ -1825,6 +1830,11 @@ curr_daily_capability_coarse = pd.DataFrame(
         dropna=False)[['Total_Mins_Per_Day', 'Staff_Count']].sum()
 ).reset_index()
 
+# Since not dropped zero-minute rows in lines 1797-1798,
+# check that there are entries for all coarse cadres and all facility id
+assert set(mfl.Facility_ID) == set(curr_daily_capability_coarse.Facility_ID.drop_duplicates())
+assert len(curr_daily_capability_coarse) == len(mfl) * len(officer_types_table.Officer_Category.drop_duplicates())
+
 # Save
 curr_daily_capability_coarse.to_csv(
     outputlocation / 'human_resources' / 'actual' / 'ResourceFile_Daily_Capabilities.csv', index=False)
@@ -1843,19 +1853,22 @@ funded_daily_capability_coarse.to_csv(
 # ---------------------------------------------------------------------------------------------------------------------
 # final check that for an appointment required at a particular level (in Appt_Time_Table), \
 # then indeed, the staff capabilities are available to satisfy that, for a person in any district \
-# (including the regional and national facilities)
+# (including the regional and national facilities);
+# todo: also, find the HCW not there ((i.e., with 0 capability)) when required by an appt type for each facility id
+# (i.e., each pair of facility level and district)
 
 # Define the check function
 def all_appts_can_run(capability):
     # Creat a table storing whether the appts have consistent requirements/demand and capabilities/supply
     appt_have_or_miss_capability = appt_time_table_coarse.copy()
     # Delete the column of minutes
+    assert (appt_have_or_miss_capability['Time_Taken_Mins'] > 0).all()  # ensure that each row/appt is required
     appt_have_or_miss_capability.drop(columns=['Time_Taken_Mins'], inplace=True)
     # Store the info of district (including central hospital, ZMH) that fails
     appt_have_or_miss_capability.loc[:, 'fail_district'] = ''
 
     for _I in appt_have_or_miss_capability.index:  # Loop through all appts
-        # Get the info of app, level and officer_category
+        # Get the info of required app, level and officer_category
         # the_appt = appt_have_or_miss_capability.loc[I, 'Appt_Type_Code']
         L = appt_have_or_miss_capability.loc[_I, 'Facility_Level']
         the_officer_category = appt_have_or_miss_capability.loc[_I, 'Officer_Category']
@@ -1868,7 +1881,8 @@ def all_appts_can_run(capability):
                 idx = capability[
                     (capability['District'] == D) &
                     (capability['Facility_Level'] == str(L)) &
-                    (capability['Officer_Category'] == the_officer_category)].index
+                    (capability['Officer_Category'] == the_officer_category) &
+                    (capability['Total_Mins_Per_Day'] > 0)].index
                 if idx.size == 0:
                     # Store the district that fails to provide required officer_category
                     appt_have_or_miss_capability.loc[_I, 'fail_district'] = \
@@ -1882,7 +1896,8 @@ def all_appts_can_run(capability):
                 idx1 = capability[
                     (capability['Region'] == region) &
                     (capability['Facility_Level'] == str(L)) &
-                    (capability['Officer_Category'] == the_officer_category)].index
+                    (capability['Officer_Category'] == the_officer_category) &
+                    (capability['Total_Mins_Per_Day'] > 0)].index
                 if idx1.size == 0:
                     # Store the regional hospital that fails
                     appt_have_or_miss_capability.loc[_I, 'fail_district'] = \
@@ -1894,7 +1909,8 @@ def all_appts_can_run(capability):
             n = 0  # Record is ZMH failed
             idx2 = capability[
                 (capability['Facility_Level'] == str(L)) &
-                (capability['Officer_Category'] == the_officer_category)].index
+                (capability['Officer_Category'] == the_officer_category) &
+                (capability['Total_Mins_Per_Day'] > 0)].index
             if idx2.size == 0:
                 appt_have_or_miss_capability.loc[_I, 'fail_district'] = \
                     appt_have_or_miss_capability.loc[_I, 'fail_district'] + 'Zomba Mental Hospital,'
