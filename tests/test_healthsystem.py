@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Set
+from typing import Set, Tuple
 
 import numpy as np
 import pandas as pd
@@ -1340,26 +1340,32 @@ def test_which_hsi_can_run(seed):
 
     results = pd.DataFrame(results)
 
-    # mode 0 - actual, funded, funded_plus - every hsi runs, with sqz=0.0
+    # check under each mode (0, 1, 2) and each HR scenario (actual, funded, funded_plus), the hsi runs as we expect
+
+    # mode 0 - actual, funded, funded_plus -> every hsi runs, with sqz=0.0
+    # as in mode 0, we assume no constraints at all
     assert results.loc[results['mode_appt_constraints'] == 0, 'hsi_did_run'].all()
     assert (results.loc[results['mode_appt_constraints'] == 0, 'sqz'] == 0.0).all()
 
-    # mode 1 - actual/funded/funded_plus -> every hsi that does run, has sqz in [0.0, Inf)
+    # mode 1 - actual, funded, funded_plus -> every hsi that does run, has sqz in [0.0, Inf)
     assert results.loc[
         (results['mode_appt_constraints'] == 1) & (results['hsi_did_run']), 'sqz'].between(0.0, float('inf'), 'left')
 
-    # mode 1 - funded_plus -> all run; actual/funded -> some don't run (the ones we expect ; i.e. where the HCW is not there)
+    # mode 1 - funded_plus -> every hsi runs
     assert results.loc[(results['mode_appt_constraints'] == 1) &
                        (results['use_funded_or_actual_staffing'] == 'funded_plus'), 'hsi_did_run'].all()
+
+    # mode 1 - actual, funded -> some don't run (the ones we expect, i.e., where the HCW is not there)
     assert not results.loc[(results['mode_appt_constraints'] == 1) &
                            ~(results['use_funded_or_actual_staffing'] == 'funded_plus'), 'hsi_did_run'].all(), \
-        "Mode 1: Some HSI under funded_plus did nt run"
+        "Mode 1: Some HSI under funded_plus did not run"
+    # todo: find where the HCW is not there and do a detailed check
 
     # mode 2 - actual, funded, funded_plus -> every hsi that does run, has sqz = 0.0
-    assert (results.loc[
-                (results['mode_appt_constraints'] == 2) & (results['hsi_did_run']), 'sqz'] == 0.0).all()
+    assert (results.loc[(results['mode_appt_constraints'] == 2) & (results['hsi_did_run']), 'sqz'] == 0.0).all()
 
-    # mode 2 - actual. funded, funded_plus -> some don't run (the one we expected, i.e., those don't run in mode 1 and those with non-zero sqz)
+    # mode 2 - actual, funded, funded_plus -> some don't run (the one we expected,
+    # i.e., those don't run in mode 1 and those with non-zero sqz in mode 1)
     df_1 = results.loc[(results['mode_appt_constraints'] == 1) & ((~results['hsi_did_run']) | (results['sqz'] > 0.0))]
     df_2 = results.loc[(results['mode_appt_constraints'] == 2) & (~results['hsi_did_run'])]
 
