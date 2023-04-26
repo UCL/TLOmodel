@@ -1231,6 +1231,7 @@ def test_hsi_run_on_same_day_if_scheduled_for_same_day(seed, tmpdir):
         'DummyHSI_To_Run_On_Same_Day_HSI',
     ]
 
+
 @pytest.mark.slow
 def test_which_hsi_can_run(seed):
     """This test confirms whether, and how, HSI with each Appointment Type can run at each facility, under the
@@ -1263,8 +1264,8 @@ def test_which_hsi_can_run(seed):
             self.squeeze_factor_of_this_hsi = squeeze_factor
             self.this_hsi_event_ran = True
 
-    # For each Mode and assumption on HR resources, test whether each type of appointment can run in each district at each
-    # level for which it is defined.
+    # For each Mode and assumption on HR resources, test whether each type of appointment can run in each district
+    # at each level for which it is defined.
     results = list()
     for mode_appt_constraints in (0, 1, 2):
         for use_funded_or_actual_staffing in ('actual', 'funded', 'funded_plus'):
