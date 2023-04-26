@@ -293,19 +293,19 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
 
                 if malaria_test_result == "severe_malaria":
                     schedule_hsi(
-                        HSI_Malaria_complicated_treatment_adult(
+                        HSI_Malaria_Treatment_Complicated(
                             person_id=person_id,
                             module=sim.modules["Malaria"]),
-                        priority=1,
+                        priority=0,
                         topen=sim.date,
                         tclose=None)
 
                 elif malaria_test_result == "clinical_malaria":
                     schedule_hsi(
-                        HSI_Malaria_non_complicated_treatment_adult(
+                        HSI_Malaria_Treatment(
                             person_id=person_id,
                             module=sim.modules["Malaria"]),
-                        priority=1,
+                        priority=0,
                         topen=sim.date,
                         tclose=None)
 
