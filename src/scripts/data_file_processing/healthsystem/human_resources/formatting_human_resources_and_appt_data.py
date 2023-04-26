@@ -1846,8 +1846,6 @@ funded_daily_capability_coarse.to_csv(
 # *** Only for funded_plus ********************************************************************************************
 # funded_daily_capability_coarse.to_csv(
 #     outputlocation / 'human_resources' / 'funded_plus' / 'ResourceFile_Daily_Capabilities.csv', index=False)
-
-
 # *********************************************************************************************************************
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -1856,6 +1854,7 @@ funded_daily_capability_coarse.to_csv(
 # (including the regional and national facilities);
 # also, find the HCW not there ((i.e., with 0 capability)) when required by an appt type for each facility id
 # (i.e., each pair of facility level and district)
+
 
 # Define the check function
 def all_appts_can_run(capability):
@@ -1957,6 +1956,11 @@ appts_with_no_required_hcw = pd.melt(appts_with_no_required_hcw,
                                      value_name='Fail_District_Or_CenHos')
 appts_with_no_required_hcw.drop_duplicates(inplace=True, ignore_index=True)
 appts_with_no_required_hcw.dropna(axis='index', how='any', inplace=True)
+
+# *** Only for funded_plus ********************************************************************************************
+# df_funded_plus = find_districts_with_no_required_hcw(funded_daily_capability_coarse, 'funded_plus')
+# assert len(df_funded_plus) == 0
+# *********************************************************************************************************************
 
 # save results for actual and funded HR scenarios;
 # excl. funded_plus scenario, where there is no failing district or CenHos
