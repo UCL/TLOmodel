@@ -411,7 +411,6 @@ class Malaria(Module):
         sim.schedule_event(MalariaCureEvent(self), sim.date + DateOffset(days=5))
         sim.schedule_event(MalariaParasiteClearanceEvent(self), sim.date + DateOffset(days=30.5))
 
-
         # add an event to log to screen - 31st Dec each year
         sim.schedule_event(MalariaLoggingEvent(self), sim.date + DateOffset(days=364))
         sim.schedule_event(MalariaTxLoggingEvent(self), sim.date + DateOffset(days=364))
@@ -485,13 +484,6 @@ class Malaria(Module):
         # reset mother's IPTp status to False
         if mother_id >= 0:  # exclude direct births
             df.at[mother_id, "ma_iptp"] = False
-
-    def on_hsi_alert(self, person_id, treatment_id):
-        """This is called whenever there is an HSI event commissioned by one of the other disease modules.
-        """
-        logger.debug(key='message',
-                     data=f'This is Malaria, being alerted about a health system interaction for person'
-                          f'{person_id} and treatment {treatment_id}')
 
     def report_daly_values(self):
         # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
@@ -865,7 +857,7 @@ class HSI_Malaria_Treatment(HSI_Event, IndividualScopeEventMixin):
                          data=f'HSI_Malaria_Treatment: requesting malaria treatment for {person_id}')
 
             # Check if drugs are available, and provide drugs:
-            drugs_available = self.get_drugs(age_of_person=person["age_years"], severity=person["ma_inf_type"])
+            drugs_available = self.get_drugs(age_of_person=person["age_years"])
 
             if drugs_available:
 
@@ -883,7 +875,7 @@ class HSI_Malaria_Treatment(HSI_Event, IndividualScopeEventMixin):
                 {"Under5OPD": 1}
             )
 
-    def get_drugs(self, age_of_person, severity):
+    def get_drugs(self, age_of_person):
         """Helper function to get treatment according to the age of the person being treated. Returns bool to indicate
         whether drugs were available"""
 
