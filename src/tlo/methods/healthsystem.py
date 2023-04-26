@@ -468,7 +468,7 @@ class HealthSystem(Module):
         ignore_priority: bool = False,
         lowest_priority_considered: int = 10,
         adopt_priority_policy: bool = False,
-        randomise_queue: bool = False,
+        randomise_queue: bool = True,
         include_fasttrack_routes: bool = False,
         capabilities_coefficient: Optional[float] = None,
         use_funded_or_actual_staffing: Optional[str] = 'funded_plus',
@@ -1032,7 +1032,7 @@ class HealthSystem(Module):
         assert topen >= self.sim.date
 
         # Check that priority is in valid range
-        assert priority in (0, 1, 2)
+        assert priority >= 0
 
         # Check that topen is strictly before tclose
         assert topen < tclose
