@@ -382,23 +382,14 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
 
             # if any symptoms indicative of malaria and they have parasitaemia (would return a positive rdt)
             if malaria_test_result in ("severe_malaria", "clinical_malaria"):
-                # Launch the HSI for treatment for Malaria - choosing the right one for adults/children
-                if df.at[person_id, 'age_years'] < 5.0:
-                    schedule_hsi(
-                        hsi_event=HSI_Malaria_complicated_treatment_child(
-                            sim.modules["Malaria"], person_id=person_id
-                        ),
-                        priority=0,
-                        topen=sim.date,
-                    )
-                else:
-                    schedule_hsi(
-                        hsi_event=HSI_Malaria_complicated_treatment_adult(
-                            sim.modules["Malaria"], person_id=person_id
-                        ),
-                        priority=0,
-                        topen=sim.date,
-                    )
+                # Launch the HSI for treatment for Malaria, HSI_Malaria_Treatment will determine correct treatment
+                schedule_hsi(
+                    hsi_event=HSI_Malaria_Treatment(
+                        sim.modules["Malaria"], person_id=person_id
+                    ),
+                    priority=0,
+                    topen=sim.date,
+                )
 
     # ------ CARDIO-METABOLIC DISORDERS ------
     if 'CardioMetabolicDisorders' in sim.modules:
