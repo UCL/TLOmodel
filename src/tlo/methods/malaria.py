@@ -788,11 +788,10 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
-        params = self.module.parameters
         hs = self.sim.modules["HealthSystem"]
 
-        # Ignore this event if the person is no longer alive:
-        if not df.at[person_id, 'is_alive']:
+        # Ignore this event if the person is no longer alive or already on treatment
+        if not df.at[person_id, 'is_alive'] or df.at[person_id, 'ma_tx']:
             return hs.get_blank_appt_footprint()
 
         district = df.at[person_id, "district_num_of_residence"]
@@ -807,39 +806,35 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
         )
 
         if dx_result:
+            # ----------------------------------- SEVERE MALARIA -----------------------------------
 
-            # check if currently on treatment
-            if not df.at[person_id, "ma_tx"]:
+            # if severe malaria, treat for complicated malaria
+            if df.at[person_id, "ma_inf_type"] == "severe":
 
-                # ----------------------------------- SEVERE MALARIA -----------------------------------
+                logger.debug(key='message',
+                             data=f'HSI_Malaria_rdt: scheduling HSI_Malaria_Treament_Complicated {person_id}'
+                                  f'on date {self.sim.date}')
 
-                # if severe malaria, treat for complicated malaria
-                if df.at[person_id, "ma_inf_type"] == "severe":
+                treat = HSI_Malaria_Treatment_Complicated(
+                    self.sim.modules["Malaria"], person_id=person_id
+                )
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    treat, priority=0, topen=self.sim.date, tclose=None
+                )
 
-                    logger.debug(key='message',
-                                 data=f'HSI_Malaria_rdt: scheduling HSI_Malaria_Treament_Complicated {person_id}'
-                                      f'on date {self.sim.date}')
+            # ----------------------------------- TREATMENT CLINICAL DISEASE -----------------------------------
 
-                    treat = HSI_Malaria_Treatment_Complicated(
-                        self.sim.modules["Malaria"], person_id=person_id
-                    )
-                    self.sim.modules["HealthSystem"].schedule_hsi_event(
-                        treat, priority=0, topen=self.sim.date, tclose=None
-                    )
+            # clinical malaria - not severe
+            # this will allow those with asym malaria (positive RDT) to also be treated
+            else:
+                logger.debug(key='message',
+                             data=f'HSI_Malaria_rdt scheduling HSI_Malaria_Treatment for person {person_id}'
+                                  f'on date {self.sim.date}')
 
-                # ----------------------------------- TREATMENT CLINICAL DISEASE -----------------------------------
-
-                # clinical malaria - not severe
-                # this will allow those with asym malaria (positive RDT) to also be treated
-                else:
-                    logger.debug(key='message',
-                                 data=f'HSI_Malaria_rdt scheduling HSI_Malaria_Treatment for person {person_id}'
-                                      f'on date {self.sim.date}')
-
-                    treat = HSI_Malaria_Treatment(self.module, person_id=person_id)
-                    self.sim.modules["HealthSystem"].schedule_hsi_event(
-                        treat, priority=1, topen=self.sim.date, tclose=None
-                    )
+                treat = HSI_Malaria_Treatment(self.module, person_id=person_id)
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    treat, priority=1, topen=self.sim.date, tclose=None
+                )
 
     def did_not_run(self):
         logger.debug(key='message',
