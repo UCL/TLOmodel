@@ -384,7 +384,7 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
             if malaria_test_result in ("severe_malaria", "clinical_malaria"):
                 # Launch the HSI for treatment for Malaria, HSI_Malaria_Treatment will determine correct treatment
                 schedule_hsi(
-                    hsi_event=HSI_Malaria_Treatment(
+                    hsi_event=HSI_Malaria_Treatment_Complicated(
                         sim.modules["Malaria"], person_id=person_id
                     ),
                     priority=0,
@@ -402,21 +402,6 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
                          priority=0,
                          topen=sim.date,
                          tclose=None)
-
-    # -----  EXAMPLES FOR MOCKITIS AND CHRONIC SYNDROME  -----
-    if 'craving_sandwiches' in symptoms:
-        event = HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(
-            module=sim.modules['ChronicSyndrome'],
-            person_id=person_id
-        )
-        schedule_hsi(event, priority=1, topen=sim.date)
-
-    if 'extreme_pain_in_the_nose' in symptoms:
-        event = HSI_Mockitis_PresentsForCareWithSevereSymptoms(
-            module=sim.modules['Mockitis'],
-            person_id=person_id
-        )
-        schedule_hsi(event, priority=1, topen=sim.date)
 
     if 'severe_trauma' in symptoms:
         if 'RTI' in sim.modules:
