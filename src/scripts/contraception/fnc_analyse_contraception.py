@@ -669,7 +669,7 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
         # TODO: soft code this (use resource_items_pkgs_df)
         #  (note: similar thing done in co_test in analyses combined branch)
         # TODO: remove zeros from logging
-            if in_d == dict({1: 3.75, 2019: 1}):
+            if dict({1: 3.75}).items() <= in_d.items():
                 return 'pill'
             if in_d == dict({2: 30}):
                 return 'male_condom'
