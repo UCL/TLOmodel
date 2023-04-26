@@ -334,6 +334,7 @@ class Malaria(Module):
         now_clinical = _draw_incidence_for("monthly_prob_clin", alive_infected_asym)
         df.loc[now_clinical, "ma_inf_type"] = "clinical"
         df.loc[now_clinical, "ma_date_infected"] = now  # updated infection date
+        # todo remove??
         # df.loc[now_clinical, "ma_clinical_counter"] += 1
 
         # draw from clinical cases to allocate severe cases - draw from all currently clinical cases
@@ -404,7 +405,7 @@ class Malaria(Module):
 
         sim.schedule_event(MalariaPollingEventDistrict(self), sim.date + DateOffset(months=1))
 
-        # sim.schedule_event(MalariaScheduleTesting(self), sim.date + DateOffset(days=1))
+        sim.schedule_event(MalariaScheduleTesting(self), sim.date + DateOffset(days=1))
 
         if 'CareOfWomenDuringPregnancy' not in self.sim.modules:
             sim.schedule_event(MalariaIPTp(self), sim.date + DateOffset(days=30.5))
@@ -669,8 +670,18 @@ class MalariaScheduleTesting(RegularEvent, PopulationScopeEventMixin):
         # random sample 0.4 to match clinical case tx coverage
         # this sample will include asymptomatic infections too to account for
         # unnecessary treatments  and uninfected people
-        alive = df.is_alive
-        test = df.index[alive][self.module.rng.random_sample(size=alive.sum()) < p["testing_adj"]]
+        # todo change back if needed
+        # alive = df.is_alive
+        # test = df.index[alive][self.module.rng.random_sample(size=alive.sum()) < p["testing_adj"]]
+
+        # weight testing to those with malaria infection and not on treatment
+        # can include asymptomatic, clinical and severe
+        random_draw = self.module.rng.random_sample(size=len(df))
+
+        test = df.loc[df.is_alive &
+                      (df.ma_inf_type != "none") &
+                      ~df.ma_tx &
+                      (random_draw < p["testing_adj"])].index
 
         for person_index in test:
             logger.debug(key='message',

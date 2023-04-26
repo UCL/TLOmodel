@@ -16,28 +16,6 @@ resourcefilepath = Path("./resources")
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
-# %% Function to make standard plot to compare model and data
-def make_plot(model=None, data_mid=None, data_low=None, data_high=None, title_str=None):
-    assert model is not None
-    assert title_str is not None
-
-    # Make plot
-    fig, ax = plt.subplots()
-    ax.plot(model.index, model.values, "-", color="r")
-
-    if data_mid is not None:
-        ax.plot(data_mid.index, data_mid.values, "-")
-    if (data_low is not None) and (data_high is not None):
-        ax.fill_between(data_low.index, data_low, data_high, alpha=0.2)
-    plt.title(title_str)
-    plt.legend(["Model", "Data"])
-    plt.gca().set_ylim(bottom=0)
-    plt.savefig(
-        outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
-    )
-    # plt.show()
-
-
 # ---------------------------------------------------------------------- #
 # %%: DATA
 # ---------------------------------------------------------------------- #
@@ -70,15 +48,14 @@ WHO_data = pd.read_excel(
     Path(resourcefilepath) / "ResourceFile_malaria.xlsx", sheet_name="WHO_MalReport",
 )
 
-# ------------------------------------- MULTIPLE RUN FIGURES -----------------------------------------#
-# FIGURES
+# ------------------------------------- FIGURES -----------------------------------------#
 
 plt.style.use("ggplot")
 plt.figure(1, figsize=(10, 10))
 
-# Malaria incidence per 1000py - all ages with MAP model estimates
+# Malaria incidence per 1000py - all ages
 ax = plt.subplot(221)  # numrows, numcols, fignum
-plt.plot(incMAP_data.Year, incMAP_data.inc_1000pyMean)  # MAP data
+plt.plot(inc_MAP.Year, inc_MAP.IncidenceRatePer1000)  # MAP data
 plt.fill_between(
     incMAP_data.Year,
     incMAP_data.inc_1000py_Lower,
