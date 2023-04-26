@@ -27,25 +27,18 @@ t0 = time.time()
 resources = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 12, 31)
+end_date = Date(2022, 12, 31)
 popsize = 500
 
 # Establish the simulation object
 log_config = {
     'filename': 'Malaria_LogFile',
     'directory': './outputs',
-    'custom_levels': {"*": logging.WARNING, "tlo.methods.malaria": logging.DEBUG}
+    'custom_levels': {"*": logging.WARNING, "tlo.methods.malaria": logging.INFO}
 }
 
 seed = random.randint(0, 50000)
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
-
-# ----- Control over the types of intervention that can occur -----
-# Make a list that contains the treatment_id that will be allowed. Empty list means nothing allowed.
-# '*' means everything. It will allow any treatment_id that begins with a stub (e.g. Mockitis*)
-service_availability = ["*"]
-# malaria_testing = 0.35  # adjust this to match rdt/tx levels
-# itn = 0.6  # adjust if changing ITN coverage from 2019 onwards, should be <=0.7 for matching to ICL incidence tables
 
 # Register the appropriate modules
 sim.register(
@@ -53,11 +46,12 @@ sim.register(
     simplified_births.SimplifiedBirths(resourcefilepath=resources),
     healthsystem.HealthSystem(
         resourcefilepath=resources,
-        service_availability=service_availability,
+        service_availability=["*"],
         mode_appt_constraints=0,
+        cons_availability='default',
         ignore_priority=True,
         capabilities_coefficient=1.0,
-        disable=True,
+        disable=False,
     ),
     symptommanager.SymptomManager(resourcefilepath=resources),
     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
@@ -72,8 +66,6 @@ sim.register(
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 
-t1 = time.time()
-print("Time taken", t1 - t0)
 
 # %% read the results
 # model outputs

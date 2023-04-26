@@ -894,129 +894,86 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
         pass
 
 
-class HSI_Malaria_non_complicated_treatment_age0_5(HSI_Event, IndividualScopeEventMixin):
+class HSI_Malaria_Treatment(HSI_Event, IndividualScopeEventMixin):
     """
-    this is anti-malarial treatment for children <15 kg. Includes treatment plus one rdt
-    """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, Malaria)
-
-        self.TREATMENT_ID = "Malaria_Treatment_NotComplicated_Child"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Under5OPD": 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1a'
-
-    def apply(self, person_id, squeeze_factor):
-
-        df = self.sim.population.props
-        if not df.at[person_id, "ma_tx"]:
-
-            logger.debug(key='message',
-                         data=f'HSI_Malaria_tx_0_5: requesting malaria treatment for child {person_id}')
-
-            if self.get_consumables(
-                self.module.item_codes_for_consumables_required['malaria_uncomplicated_young_children']
-            ):
-
-                logger.debug(key='message',
-                             data=f'HSI_Malaria_tx_0_5: giving malaria treatment for child {person_id}')
-
-                if df.at[person_id, "is_alive"]:
-                    df.at[person_id, "ma_tx"] = True
-                    df.at[person_id, "ma_date_tx"] = self.sim.date
-                    df.at[person_id, "ma_tx_counter"] += 1
-
-    def did_not_run(self):
-        logger.debug(key='message',
-                     data='HSI_Malaria_tx_0_5: did not run')
-        pass
-
-
-class HSI_Malaria_non_complicated_treatment_age5_15(HSI_Event, IndividualScopeEventMixin):
-    """
-    this is anti-malarial treatment for children >15 kg. Includes treatment plus one rdt
+    this is anti-malarial treatment for all ages. Includes treatment plus one rdt
     """
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Malaria)
 
-        self.TREATMENT_ID = "Malaria_Treatment_NotComplicated_Child"
+        self.TREATMENT_ID = "Malaria_Treatment"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
 
     def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
-        if not df.at[person_id, "ma_tx"]:
+        person = df.loc[person_id]
+
+        if not person["ma_tx"]:
 
             logger.debug(key='message',
-                         data=f'HSI_Malaria_tx_5_15: requesting malaria treatment for child {person_id}')
+                         data=f'HSI_Malaria_Treatment: requesting malaria treatment for {person_id}')
 
-            if self.get_consumables(
-                self.module.item_codes_for_consumables_required['malaria_uncomplicated_older_children']
-            ):
+            # Check if drugs are available, and provide drugs:
+            drugs_available = self.get_drugs(age_of_person=person["age_years"], severity=person["ma_inf_type"])
+
+            if drugs_available:
 
                 logger.debug(key='message',
-                             data=f'HSI_Malaria_tx_5_15: giving malaria treatment for child {person_id}')
+                             data=f'HSI_Malaria_Treatment: giving malaria treatment for {person_id}')
 
                 if df.at[person_id, "is_alive"]:
                     df.at[person_id, "ma_tx"] = True
                     df.at[person_id, "ma_date_tx"] = self.sim.date
                     df.at[person_id, "ma_tx_counter"] += 1
 
+        # change footprint type if young child
+        if person["age_years"] < 5:
+            ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
+                {"Under5OPD": 1}
+            )
+
+    def get_drugs(self, age_of_person, severity):
+        """Helper function to get treatment according to the age of the person being treated. Returns bool to indicate
+        whether drugs were available"""
+
+        # non-complicated malaria
+        if age_of_person < 5:
+            # Formulation for young children
+            drugs_available = self.get_consumables(
+                item_codes=self.module.item_codes_for_consumables_required['malaria_uncomplicated_young_children'])
+
+        if age_of_person.between(5, 15):
+            # Formulation for older children
+            drugs_available = self.get_consumables(
+                item_codes=self.module.item_codes_for_consumables_required['malaria_uncomplicated_older_children'])
+
+        else:
+            # Formulation for adults
+            drugs_available = self.get_consumables(
+                item_codes=self.module.item_codes_for_consumables_required['malaria_uncomplicated_adult'])
+
+        return drugs_available
+
     def did_not_run(self):
         logger.debug(key='message',
-                     data='HSI_Malaria_tx_5_15: did not run')
+                     data='HSI_Malaria_Treatment: did not run')
         pass
 
 
-class HSI_Malaria_non_complicated_treatment_adult(HSI_Event, IndividualScopeEventMixin):
+class HSI_Malaria_Treatment_Complicated(HSI_Event, IndividualScopeEventMixin):
     """
-    this is anti-malarial treatment for adults. Includes treatment plus one rdt
+    this is anti-malarial treatment for complicated malaria in all ages
     """
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Malaria)
 
-        self.TREATMENT_ID = "Malaria_Treatment_NotComplicated_Adult"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1a'
-
-    def apply(self, person_id, squeeze_factor):
-
-        df = self.sim.population.props
-        if not df.at[person_id, "ma_tx"] and df.at[person_id, "is_alive"]:
-
-            logger.debug(key='message',
-                         data=f'HSI_Malaria_tx_adult: requesting malaria treatment for person {person_id}')
-
-            if self.get_consumables(self.module.item_codes_for_consumables_required['malaria_uncomplicated_adult']):
-                logger.debug(key='message',
-                             data=f'HSI_Malaria_tx_adult: giving malaria treatment for person {person_id}')
-
-                df.at[person_id, "ma_tx"] = True
-                df.at[person_id, "ma_date_tx"] = self.sim.date
-                df.at[person_id, "ma_tx_counter"] += 1
-
-    def did_not_run(self):
-        logger.debug(key='message',
-                     data='HSI_Malaria_tx_adult: did not run')
-        pass
-
-
-class HSI_Malaria_complicated_treatment_child(HSI_Event, IndividualScopeEventMixin):
-    """
-    this is anti-malarial treatment for complicated malaria in children
-    """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, Malaria)
-
-        self.TREATMENT_ID = "Malaria_Treatment_Complicated_Child"
+        self.TREATMENT_ID = "Malaria_Treatment_Complicated"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})
@@ -1027,13 +984,13 @@ class HSI_Malaria_complicated_treatment_child(HSI_Event, IndividualScopeEventMix
         if not df.at[person_id, "ma_tx"] and df.at[person_id, "is_alive"]:
 
             logger.debug(key='message',
-                         data=f'HSI_Malaria_tx_compl_child: requesting complicated malaria treatment for '
-                              f'child {person_id}')
+                         data=f'HSI_Malaria_Treatment_Complicated: requesting complicated malaria treatment for '
+                              f' {person_id}')
 
             if self.get_consumables(self.module.item_codes_for_consumables_required['malaria_complicated']):
                 logger.debug(key='message',
-                             data=f'HSI_Malaria_tx_compl_child: giving complicated malaria treatment for '
-                                  f'child {person_id}')
+                             data=f'HSI_Malaria_Treatment_Complicated: giving complicated malaria treatment for '
+                                  f' {person_id}')
 
                 df.at[person_id, "ma_tx"] = True
                 df.at[person_id, "ma_date_tx"] = self.sim.date
@@ -1041,45 +998,7 @@ class HSI_Malaria_complicated_treatment_child(HSI_Event, IndividualScopeEventMix
 
     def did_not_run(self):
         logger.debug(key='message',
-                     data='HSI_Malaria_tx_compl_child: did not run')
-        pass
-
-
-class HSI_Malaria_complicated_treatment_adult(HSI_Event, IndividualScopeEventMixin):
-    """
-    this is anti-malarial treatment for complicated malaria in adults
-    """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, Malaria)
-
-        self.TREATMENT_ID = "Malaria_Treatment_Complicated_Adult"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
-        self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})
-
-    def apply(self, person_id, squeeze_factor):
-
-        df = self.sim.population.props
-        if not df.at[person_id, "ma_tx"] and df.at[person_id, "is_alive"]:
-
-            logger.debug(key='message',
-                         data=f'HSI_Malaria_tx_compl_adult: requesting complicated malaria treatment '
-                              f'for person {person_id}')
-
-            if self.get_consumables(self.module.item_codes_for_consumables_required['malaria_complicated']):
-                logger.debug(key='message',
-                             data=f'HSI_Malaria_tx_compl_adult: giving complicated malaria treatment '
-                                  f'for person {person_id}')
-
-                df.at[person_id, "ma_tx"] = True
-                df.at[person_id, "ma_date_tx"] = self.sim.date
-                df.at[person_id, "ma_tx_counter"] += 1
-
-    def did_not_run(self):
-        logger.debug(key='message',
-                     data='HSI_Malaria_tx_compl_adult: did not run')
+                     data='HSI_Malaria_Treatment_Complicated: did not run')
         pass
 
 
