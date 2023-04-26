@@ -411,7 +411,6 @@ class Malaria(Module):
         sim.schedule_event(MalariaCureEvent(self), sim.date + DateOffset(days=5))
         sim.schedule_event(MalariaParasiteClearanceEvent(self), sim.date + DateOffset(days=30.5))
 
-        sim.schedule_event(MalariaResetCounterEvent(self), sim.date + DateOffset(days=365))  # 01 jan each year
 
         # add an event to log to screen - 31st Dec each year
         sim.schedule_event(MalariaLoggingEvent(self), sim.date + DateOffset(days=364))
@@ -1204,6 +1203,14 @@ class MalariaTxLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     data=treatment,
                     description='Treatment of malaria cases')
 
+        # reset all counters
+        logger.info(key='message',
+                    data=f'Resetting the malaria counter {self.sim.date}')
+
+        df["ma_clinical_counter"] = 0
+        df["ma_tx_counter"] = 0
+        df["ma_clinical_preg_counter"] = 0
+
 
 class MalariaPrevDistrictLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
@@ -1232,23 +1239,3 @@ class MalariaPrevDistrictLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     data=pop.to_dict(),
                     description='District population sizes')
 
-
-# ---------------------------------------------------------------------------------
-# Reset counters
-# ---------------------------------------------------------------------------------
-class MalariaResetCounterEvent(RegularEvent, PopulationScopeEventMixin):
-    def __init__(self, module):
-        self.repeat = 12
-        super().__init__(module, frequency=DateOffset(months=self.repeat))
-
-    def apply(self, population):
-        # reset all the counters to zero each year
-        df = population.props
-        now = self.sim.date
-
-        logger.info(key='message',
-                    data=f'Resetting the malaria counter {now}')
-
-        df["ma_clinical_counter"] = 0
-        df["ma_tx_counter"] = 0
-        df["ma_clinical_preg_counter"] = 0
