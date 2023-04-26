@@ -411,9 +411,9 @@ class Malaria(Module):
         sim.schedule_event(MalariaCureEvent(self), sim.date + DateOffset(days=5))
         sim.schedule_event(MalariaParasiteClearanceEvent(self), sim.date + DateOffset(days=30.5))
 
-        # add an event to log to screen - 31st Dec each year
-        sim.schedule_event(MalariaLoggingEvent(self), sim.date + DateOffset(days=364))
-        sim.schedule_event(MalariaTxLoggingEvent(self), sim.date + DateOffset(days=364))
+        # add logger events
+        sim.schedule_event(MalariaLoggingEvent(self), sim.date + DateOffset(days=0))
+        sim.schedule_event(MalariaTxLoggingEvent(self), sim.date + DateOffset(days=0))
         sim.schedule_event(MalariaPrevDistrictLoggingEvent(self), sim.date + DateOffset(days=30.5))
 
         # 2) ----------------------------------- DIAGNOSTIC TESTS -----------------------------------
@@ -647,6 +647,8 @@ class MalariaPollingEventDistrict(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         logger.debug(key='message', data='MalariaEvent: tracking the disease progression of the population')
+
+        # assigns new malaria infections
         self.module.malaria_poll2(population)
 
 
@@ -885,7 +887,7 @@ class HSI_Malaria_Treatment(HSI_Event, IndividualScopeEventMixin):
             drugs_available = self.get_consumables(
                 item_codes=self.module.item_codes_for_consumables_required['malaria_uncomplicated_young_children'])
 
-        elif age_of_person.between(5, 15):
+        elif 5 <= age_of_person <= 15:
             # Formulation for older children
             drugs_available = self.get_consumables(
                 item_codes=self.module.item_codes_for_consumables_required['malaria_uncomplicated_older_children'])
