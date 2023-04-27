@@ -325,6 +325,7 @@ class Malaria(Module):
         alive_infected = alive & df.ma_is_infected
 
         # draw from currently asymptomatic to allocate clinical cases
+        # this can include people who became ainfected/asym in previous polls
         alive_infected_asym = alive_infected & (df.ma_inf_type == "asym")
         now_clinical = _draw_incidence_for("monthly_prob_clin", alive_infected_asym)
         df.loc[now_clinical, "ma_inf_type"] = "clinical"
@@ -335,38 +336,47 @@ class Malaria(Module):
         now_severe = _draw_incidence_for("monthly_prob_sev", alive_infected_clinical)
         df.loc[now_severe, "ma_inf_type"] = "severe"
 
-        # todo remove condition date_infected
         # malaria infections in pregnancy
-        # alive_now_infected_pregnant = now_clinical & (df.ma_date_infected == now) & df.is_pregnant
-        alive_now_infected_pregnant = now_clinical & (df.ma_date_infected == now) & df.is_pregnant
+        alive_now_infected_pregnant = now_clinical & df.is_pregnant
         df.loc[alive_now_infected_pregnant, "ma_clinical_preg_counter"] += 1
+
+        # ----------------------------------- ASSIGN INFECTION DATES -----------------------------------
+
+        # index now_clinical includes now_severe
+        new_clinical = df.loc[now_clinical].index
+        new_severe = df.loc[now_severe].index
+        new_infections = df.loc[now_infected].index
+
+        # create list of all new infections
+        all_new_infections = list(new_infections)
+        all_new_infections.extend(x for x in new_clinical if x not in all_new_infections)
 
         # scatter infection dates across the month
         # now_infected includes all new infections this month
-        new_infections = now_infected[now_infected].index
-        for idx in new_infections:
+        # join all indices (some clinical infections drawn from asymptomatic infections from previous months)
+        for idx in all_new_infections:
             date_of_infection = now + pd.DateOffset(
                 days=self.rng.randint(0, 30)
             )
             df.at[idx, "ma_date_infected"] = date_of_infection
 
+        assert (df.loc[new_infections, "ma_date_infected"] > self.sim.date).all()
+
         # ----------------------------------- CLINICAL MALARIA SYMPTOMS -----------------------------------
-        # index now_clinical includes now_severe
-        # update symptoms with date one week from infection date
-        new_clinical = df.loc[now_clinical].index
-        new_severe = df.loc[now_severe].index
 
         # update clinical symptoms for all new clinical and severe infections
+        # todo new_clinical, new_severe should all have date_infection after self.sim.date
         self.clinical_symptoms(df, new_clinical, new_severe)
         # check symptom onset occurs in one week
         assert (df.loc[new_clinical, "ma_date_infected"] < df.loc[new_clinical, "ma_date_symptoms"]).all()
+        assert not pd.isnull(df.loc[new_clinical, "ma_date_symptoms"]).all()
 
         # ----------------------------------- SCHEDULED DEATHS -----------------------------------
         # schedule deaths within the next week
         # Assign time of infections across the month
 
         # the cfr applies to all severe malaria
-        random_draw = rng.random_sample(size=new_severe.sum())
+        random_draw = rng.random_sample(size=len(new_severe))
         death = df.index[new_severe][random_draw < (p["cfr"] * p["mortality_adjust"])]
 
         for person in death:
@@ -527,6 +537,10 @@ class Malaria(Module):
             if person in severe_index:
                 symptom_list.add("severe_malaria")
 
+            print("symptoms", self.sim.date)
+            print(person)
+            print(symptom_onset)
+
             self.sim.modules["SymptomManager"].change_symptom(
                 person_id=person,
                 symptom_string=symptom_list,
@@ -540,11 +554,14 @@ class Malaria(Module):
             # also includes those with severe malaria
             # if person will test, schedule for 0-4 days after symptom onset
             if self.rng.random_sample() < p["testing_adj"]:
+                print(person)
+                print(self.sim.date)
 
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     HSI_Malaria_rdt(self, person_id=person),
                     priority=0,
-                    topen=random_date(symptom_onset, symptom_onset + DateOffset(days=4), self.rng),
+                    topen=random_date(symptom_onset + DateOffset(days=1),
+                                      symptom_onset + DateOffset(days=4), self.rng),
                     tclose=None
                 )
 
