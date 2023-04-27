@@ -323,7 +323,7 @@ def generate_table():
                     complications=x.complications,
 
                     # Information about the care that can be provided:
-                    oximeter_available=True,
+                    oximeter_available=False,
                     oxygen_available=True,
                     classification_for_treatment='danger_signs_pneumonia'
                 ),

@@ -38,7 +38,7 @@ MODEL_POPSIZE = 15_000
 MIN_SAMPLE_OF_NEW_CASES = 200
 NUM_REPS_FOR_EACH_CASE = 20
 
-_facility_level = '0'  # <-- assumes that the diagnosis/treatment occurs at this level
+_facility_level = '2'  # <-- assumes that the diagnosis/treatment occurs at this level
 
 # Helper function for conversion between odds and probabilities
 to_odds = lambda pr: pr / (1.0 - pr)  # noqa: E731
@@ -758,7 +758,7 @@ if __name__ == "__main__":
 
     res = {
         "Facility level 2": {
-            "No Treatment": table['prob_die_if_no_treatment'].groupby(by=[disease_classification2, low_oxygen]).sum(),
+            # "No Treatment": table['prob_die_if_no_treatment'].groupby(by=[disease_classification2, low_oxygen]).sum(),
             "Antiobiotics only": (
                 table['prob_die_if_no_treatment'] *
                 (1.0 -
@@ -787,7 +787,7 @@ if __name__ == "__main__":
         },
 
         "Facility level 1a": {
-            "No Treatment": table['prob_die_if_no_treatment'].groupby(by=[disease_classification2, low_oxygen]).sum(),
+            # "No Treatment": table['prob_die_if_no_treatment'].groupby(by=[disease_classification2, low_oxygen]).sum(),
             "Antiobiotics only": (
                 table['prob_die_if_no_treatment'] *
                 (1.0 -
@@ -1032,7 +1032,7 @@ if __name__ == "__main__":
     # fig.suptitle('Deaths Under Different Interventions Combinations', fontsize=14, fontweight='semibold')
     fig.suptitle('Scenario: Normal health worker diagnostic accuracy', fontsize=12, fontweight='semibold')
     fig.show()
-    fig.savefig(Path('./outputs') / ('imperfect dx - intervention bars hosp vs hc current policy' + datestamp + ".pdf"), format='pdf')
+    fig.savefig(Path('./outputs') / ('perfect dx - intervention bars hosp vs hc current policy' + datestamp + ".pdf"), format='pdf')
     plt.close(fig)
 
     # # # # Calculations # # # #

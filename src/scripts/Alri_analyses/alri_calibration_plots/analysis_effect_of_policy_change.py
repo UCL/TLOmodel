@@ -243,10 +243,10 @@ def treatment_efficacy(
         use_oximeter=oximeter_available,
     )
 
-    imci_symptom_based_classification = alri_module_with_perfect_diagnosis.get_imci_classification_based_on_symptoms(
+    imci_symptom_based_classification = alri_module.get_imci_classification_based_on_symptoms(
         child_is_younger_than_2_months=(age_exact_years < 2.0 / 12.0),
         symptoms=symptoms, facility_level='2'
-    )
+    )  # alri_module_with_perfect_diagnosis
 
     # Get the treatment selected based on classification given
     ultimate_treatment = alri_module._ultimate_treatment_indicated_for_patient(
@@ -905,70 +905,6 @@ if __name__ == "__main__":
 
     results = (100_000 / len(table)) * pd.concat({k: pd.DataFrame(v) for k, v in res.items()}, axis=1)
 
-    # # Plot graph by * classification differences *
-    # # compare the classification differences
-    # res1 = {
-    #     "By hospital classification": {
-    #         "No Treatment": table['prob_die_if_no_treatment'].groupby(by=[disease_classification2, low_oxygen]).sum(),
-    #         "Antiobiotics only": (
-    #             table['prob_die_if_no_treatment'] *
-    #             (1.0 -
-    #              table[
-    #                  'treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_perfect_hw_dx_level1a'] / 100.0
-    #              )).groupby(by=[disease_classification2, low_oxygen]).sum(),
-    #         "+ oxygen": (
-    #             table['prob_die_if_no_treatment'] *
-    #             (1.0 -
-    #              table[
-    #                  'treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_perfect_hw_dx_level1a']
-    #              / 100.0
-    #              )).groupby(by=[disease_classification2, low_oxygen]).sum(),
-    #         "+ oximeter": (
-    #             table['prob_die_if_no_treatment'] *
-    #             (1.0 -
-    #              table[
-    #                  'treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx_level1a'] / 100.0
-    #              )).groupby(by=[disease_classification2, low_oxygen]).sum(),
-    #         "+ oximeter & oxygen": (
-    #             table['prob_die_if_no_treatment'] *
-    #             (1.0 -
-    #              table[
-    #                  'treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx_level1a'] / 100.0
-    #              )).groupby(by=[disease_classification2, low_oxygen]).sum(),
-    #     },
-    #
-    #     "By health centre classification": {
-    #         "No Treatment": table['prob_die_if_no_treatment'].groupby(by=[disease_classification1a, low_oxygen]).sum(),
-    #         "Antiobiotics only": (
-    #             table['prob_die_if_no_treatment'] *
-    #             (1.0 -
-    #              table[
-    #                  'treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_perfect_hw_dx_level1a'] / 100.0
-    #              )).groupby(by=[disease_classification1a, low_oxygen]).sum(),
-    #         "+ oxygen": (
-    #             table['prob_die_if_no_treatment'] *
-    #             (1.0 -
-    #              table[
-    #                  'treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_perfect_hw_dx_level1a']
-    #              / 100.0
-    #              )).groupby(by=[disease_classification1a, low_oxygen]).sum(),
-    #         "+ oximeter": (
-    #             table['prob_die_if_no_treatment'] *
-    #             (1.0 -
-    #              table[
-    #                  'treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx_level1a'] / 100.0
-    #              )).groupby(by=[disease_classification1a, low_oxygen]).sum(),
-    #         "+ oximeter & oxygen": (
-    #             table['prob_die_if_no_treatment'] *
-    #             (1.0 -
-    #              table[
-    #                  'treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx_level1a'] / 100.0
-    #              )).groupby(by=[disease_classification1a, low_oxygen]).sum(),
-    #     },
-    # }
-    #
-    # results = (100_000 / len(table)) * pd.concat({k: pd.DataFrame(v) for k, v in res1.items()}, axis=1)
-
     # reorder the index:
     reorderlist = list()
     if results.index.size == 12:  # broken down by 3 SpO2 levels
@@ -1174,6 +1110,18 @@ if __name__ == "__main__":
         f'treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_{dx_accuracy}_hw_dx_current_pol'] / 100.0)
                                            ).groupby(by=[disease_classification2, low_oxygen]).sum()
 
+    # oxygen only under *current* policy --- CFR SAME FOR EITHER POLICY
+    deaths_ox_only_new_pol = (table['prob_die_if_no_treatment'] * (
+        1.0 - table[
+        f'treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_{dx_accuracy}_hw_dx_new_pol'] / 100.0)
+                              ).groupby(by=[disease_classification2, low_oxygen]).sum()
+
+    # antibiotics only under *current* policy --- CFR SAME FOR EITHER POLICY
+    deaths_antibiotics_only_new_pol = (table['prob_die_if_no_treatment'] * (
+        1.0 - table[
+        f'treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_{dx_accuracy}_hw_dx_new_pol'] / 100.0)
+                                       ).groupby(by=[disease_classification2, low_oxygen]).sum()
+
     # -------------- current policy ---------------------------
     # pulse oximeter only under *current* policy
     deaths_po_only_current_pol = (table['prob_die_if_no_treatment'] * (
@@ -1201,9 +1149,9 @@ if __name__ == "__main__":
                                 ).groupby(by=[disease_classification2, low_oxygen]).sum()
 
     impact_po_new_pol = 1 - (
-            deaths_po_only_new_pol.mean() / deaths_po_only_current_pol.mean())  # 6.368% vs normal 14.97%
+        deaths_po_only_new_pol.mean() / deaths_po_only_current_pol.mean())  # 6.368% vs normal 14.97%
     impact_po_and_ox = 1 - (
-            deaths_po_and_ox_new_pol.mean() / deaths_po_and_ox_current_pol.mean())  # 13.4979% vs normal 20.715%
+        deaths_po_and_ox_new_pol.mean() / deaths_po_and_ox_current_pol.mean())  # 13.4979% vs normal 20.715%
 
     cfr_po = deaths_po_only_new_pol / number_cases
     cfr_po_and_ox = deaths_po_and_ox_new_pol / number_cases
@@ -1215,20 +1163,26 @@ if __name__ == "__main__":
     cfr_df['po_only/current_pol'] = (deaths_po_only_current_pol / number_cases) * 100
     cfr_df['po_only/new_pol'] = (deaths_po_only_new_pol / number_cases) * 100
     cfr_df['po_only/%change'] = (1 - (cfr_df['po_only/new_pol'] / cfr_df['po_only/current_pol'])) * 100
+    cfr_df['antibiotics_only/new_pol'] = (deaths_antibiotics_only_new_pol / number_cases) * 100
+    cfr_df['oxygen_only/new_pol'] = (deaths_ox_only_new_pol / number_cases) * 100
+    cfr_df['po_only/current_pol'] = (deaths_po_only_current_pol / number_cases) * 100
     cfr_df['po_and_ox/current_pol'] = (deaths_po_and_ox_current_pol / number_cases) * 100
     cfr_df['po_and_ox/new_pol'] = (deaths_po_and_ox_new_pol / number_cases) * 100
     cfr_df['po_and_ox/%change'] = (1 - (cfr_df['po_and_ox/new_pol'] / cfr_df['po_and_ox/current_pol'])) * 100
 
     cfr_df.loc['Total', :] = [(deaths_antibiotics_only_current_pol.sum() / number_cases.sum()) * 100,
                               (deaths_ox_only_current_pol.sum() / number_cases.sum()) * 100,
-                               (deaths_po_only_current_pol.sum() / number_cases.sum()) * 100,
-                               (deaths_po_only_new_pol.sum() / number_cases.sum()) * 100,
-                               (1 - ((deaths_po_only_new_pol.sum() / number_cases.sum()) / (deaths_po_only_current_pol.sum() / number_cases.sum()))) * 100,
-                               (deaths_po_and_ox_current_pol.sum() / number_cases.sum()) * 100,
-                               (deaths_po_and_ox_new_pol.sum() / number_cases.sum()) * 100,
-                               (1 - ((deaths_po_and_ox_new_pol.sum() / number_cases.sum()) / (deaths_po_and_ox_current_pol.sum() / number_cases.sum()))) * 100
-                               ]
-
+                              (deaths_po_only_current_pol.sum() / number_cases.sum()) * 100,
+                              (deaths_po_only_new_pol.sum() / number_cases.sum()) * 100,
+                              (1 - ((deaths_po_only_new_pol.sum() / number_cases.sum()) / (
+                                  deaths_po_only_current_pol.sum() / number_cases.sum()))) * 100,
+                              (deaths_antibiotics_only_new_pol.sum() / number_cases.sum()) * 100,
+                              (deaths_ox_only_new_pol.sum() / number_cases.sum()) * 100,
+                              (deaths_po_and_ox_current_pol.sum() / number_cases.sum()) * 100,
+                              (deaths_po_and_ox_new_pol.sum() / number_cases.sum()) * 100,
+                              (1 - ((deaths_po_and_ox_new_pol.sum() / number_cases.sum()) / (
+                                  deaths_po_and_ox_current_pol.sum() / number_cases.sum()))) * 100
+                              ]
 
     # reorder the index:
     reorderindex = [('cough_or_cold', '>=93%'),
