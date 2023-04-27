@@ -1140,7 +1140,7 @@ class HealthSystem(Module):
         """
         # Check that all keys known appointment types and all values non-negative
         return isinstance(appt_footprint, dict) and all(
-            k in self._appointment_types and v > 0
+            k in self._appointment_types and v >= 0
             for k, v in appt_footprint.items()
         )
 
