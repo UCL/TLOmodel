@@ -237,7 +237,7 @@ def table_cons(in_mwk_to_usd_exchange_rate,
         co_pkgs_df = co_pkgs_df.loc[co_pkgs_df['Intervention_Pkg'] != 'Male sterilization', :]
     # Rename the columns
     co_pkgs_df.columns =\
-        ['\nContraception\noption', '\n\nItem', 'Expected\nUnits\nPer Case', 'Unit Cost\n2021 price\nin MWK']
+        ['\nContraception\npackage', '\n\nItem', 'Expected\nUnits\nPer Case', 'Unit Cost\n2021 price\nin MWK']
 
     def mwk_to_usd(in_mwk_price):
         return in_mwk_price * in_mwk_to_usd_exchange_rate
@@ -271,14 +271,17 @@ def table_cons(in_mwk_to_usd_exchange_rate,
             return 'implant'
         if in_co_pkg_name == 'Female sterilization':
             return 'female_sterilization'
+        if in_co_pkg_name == 'Contraception initiation':
+            return 'contraception initiation'
         else:
             raise ValueError(
                 "There is an unrecognised co. Intervention_Pkg name: " + str(in_co_pkg_name) + "."
             )
 
-    co_pkgs_df['\nContraception\noption'] = co_pkgs_df['\nContraception\noption'].apply(pkg_name_to_method)
-    co_pkgs_df = co_pkgs_df.sort_values(by='\nContraception\noption',
-                                        key=lambda x: x.map(lambda v: in_contraceptives_order.index(v)))
+    contraception_pkgs_order = ['contraception initiation'] + in_contraceptives_order
+    co_pkgs_df['\nContraception\npackage'] = co_pkgs_df['\nContraception\npackage'].apply(pkg_name_to_method)
+    co_pkgs_df = co_pkgs_df.sort_values(by='\nContraception\npackage',
+                                        key=lambda x: x.map(lambda v: contraception_pkgs_order.index(v)))
 
     output_table_file = r"outputs/output_table_cons" "__" + str(date.today()) + ".xlsx"
     writer = pd.ExcelWriter(output_table_file)
@@ -286,4 +289,4 @@ def table_cons(in_mwk_to_usd_exchange_rate,
 
     writer.save()
     # TODO: finish? (the boarders, header align left, make the expected units to be nmbs so they are aligned right,
-    #  write down the unique contraception option just once)
+    #  write down the unique contraception package just once)
