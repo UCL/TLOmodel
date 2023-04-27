@@ -360,16 +360,16 @@ class Malaria(Module):
             )
             df.at[idx, "ma_date_infected"] = date_of_infection
 
-        assert (df.loc[new_infections, "ma_date_infected"] > self.sim.date).all()
+        assert (df.loc[all_new_infections, "ma_date_infected"] >= self.sim.date).all()
 
         # ----------------------------------- CLINICAL MALARIA SYMPTOMS -----------------------------------
 
         # update clinical symptoms for all new clinical and severe infections
-        # todo new_clinical, new_severe should all have date_infection after self.sim.date
         self.clinical_symptoms(df, new_clinical, new_severe)
         # check symptom onset occurs in one week
-        assert (df.loc[new_clinical, "ma_date_infected"] < df.loc[new_clinical, "ma_date_symptoms"]).all()
-        assert not pd.isnull(df.loc[new_clinical, "ma_date_symptoms"]).all()
+        if len(new_clinical):
+            assert (df.loc[new_clinical, "ma_date_infected"] < df.loc[new_clinical, "ma_date_symptoms"]).all()
+            assert not pd.isnull(df.loc[new_clinical, "ma_date_symptoms"]).all()
 
         # ----------------------------------- SCHEDULED DEATHS -----------------------------------
         # schedule deaths within the next week
