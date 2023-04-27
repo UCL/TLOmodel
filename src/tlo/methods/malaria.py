@@ -537,10 +537,6 @@ class Malaria(Module):
             if person in severe_index:
                 symptom_list.add("severe_malaria")
 
-            print("symptoms", self.sim.date)
-            print(person)
-            print(symptom_onset)
-
             self.sim.modules["SymptomManager"].change_symptom(
                 person_id=person,
                 symptom_string=symptom_list,
@@ -554,8 +550,6 @@ class Malaria(Module):
             # also includes those with severe malaria
             # if person will test, schedule for 0-4 days after symptom onset
             if self.rng.random_sample() < p["testing_adj"]:
-                print(person)
-                print(self.sim.date)
 
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     HSI_Malaria_rdt(self, person_id=person),

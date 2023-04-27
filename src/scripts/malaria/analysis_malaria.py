@@ -35,8 +35,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2014, 12, 31)
-popsize = 50
+end_date = Date(2018, 12, 31)
+popsize = 500
 
 # set up the log config
 log_config = {
@@ -74,7 +74,7 @@ sim.register(
     )
 )
 
-# sim.modules["Malaria"].parameters["testing_adj"] = 0.8
+sim.modules["Malaria"].parameters["testing_adj"] = 0.8
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
