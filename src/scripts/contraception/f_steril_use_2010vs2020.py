@@ -6,9 +6,10 @@ from matplotlib import dates as mdates
 from tlo.analysis.utils import parse_log_file
 
 # ### TO SET #################################################################################################
-datestamp_without_log = '2022-10-18T165118'
-logFile_without_interv = 'run_analysis_contraception__' + datestamp_without_log + '.log'
-# this is for runs done by the run_analysis_contraception.py (located in src/scripts/contraception/scenarios)
+datestamp_without_log = '2023-04-26T142627'
+logFile_without_interv = 'run_analysis_contraception_no_diseases__' + datestamp_without_log + '.log'
+# this is for the runs done by the run_analysis_contraception_no_diseases.py (located in
+# src/scripts/contraception/scenarios)
 ##############################################################################################################
 
 
