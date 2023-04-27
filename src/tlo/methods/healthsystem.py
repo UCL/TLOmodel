@@ -1018,7 +1018,8 @@ class HealthSystem(Module):
             # It must have EXPECTED_APPT_FOOTPRINT, BEDDAYS_FOOTPRINT and ACCEPTED_FACILITY_LEVELS.
 
             # Correct formatted EXPECTED_APPT_FOOTPRINT
-            assert self.appt_footprint_is_valid(hsi_event.EXPECTED_APPT_FOOTPRINT)
+            assert self.appt_footprint_is_valid(hsi_event.EXPECTED_APPT_FOOTPRINT), \
+                f"the incorrectly formatted appt_footprint is {hsi_event.EXPECTED_APPT_FOOTPRINT}"
 
             # That it has an acceptable 'ACCEPTED_FACILITY_LEVEL' attribute
             assert hsi_event.ACCEPTED_FACILITY_LEVEL in self._facility_levels, \
