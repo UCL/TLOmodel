@@ -11,7 +11,7 @@ time_start = time.time()
 # (not updated with Dependency ratio)
 # running 1st time (ie run_analysis = True) with all plot_.._bool = False ~ 37 mins
 # running again (ie run_analysis = False) with all plot_.._bool = True or False ~ 1.7 min
-########################################################################################################################
+# ####### TO SET #######################################################################################################
 # TODO: estimate the pop_size_simulated from scaling_factor (and if not same for both sims, add them to IDs instead to
 #  suffix) & return last year of sims (the same for that) // separate them as pop_size_simulated & last_year_simulated
 # pop_size_simulated = "2K"
@@ -19,15 +19,15 @@ pop_size_simulated = "250K"
 branch_name = 'co_2023_02_inclPR807-AnalysisUpdate2'
 # which results to use
 # - Without interv
-# datestamp_without_log = '2023-04-04T224551'
-# 2K till 2099, final costs update EHP & OHT: '2023-04-04T224551' from 2023-04-04T224344Z
-datestamp_without_log = '2023-04-04T222656'
-# 250K till 2050; final costs update EHP & OHT: '2023-04-04T222656' from 2023-04-04T222430Z
+# datestamp_without_log = '2023-04-26T141435'
+# 2K till 2099, final costs update EHP & OHT + pregn test to initiate co: '2023-04-26T141435' from 2023-04-26T141159Z
+datestamp_without_log = '2023-04-26T142627'
+# 250K till 2050; final costs update EHP & OHT + pregn test to initiate co: '2023-04-26T142627' from 2023-04-26T142416Z
 # # - With interv
-# datestamp_with_log = '2023-04-04T224342'
-# 2K till 2099, final costs update EHP & OHT: '2023-04-04T224342' from 2023-04-04T224121Z
-datestamp_with_log = '2023-04-04T222332'
-# 250K till 2050; final costs update EHP & OHT: '2023-04-04T222332' from 2023-04-04T222103Z
+# datestamp_with_log = '2023-04-26T141545'
+# 2K till 2099, final costs update EHP & OHT + pregn test to initiate co: '2023-04-26T141545' from 2023-04-26T141321Z
+datestamp_with_log = '2023-04-26T142508'
+# 250K till 2050; final costs update EHP & OHT + pregn test to initiate co: '2023-04-26T142508' from 2023-04-26T142300Z
 logFile_without = 'run_analysis_contraception_no_diseases__' + datestamp_without_log + '.log'
 logFile_with = 'run_analysis_contraception_no_diseases__' + datestamp_with_log + '.log'
 ##
