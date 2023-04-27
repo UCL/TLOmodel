@@ -2,8 +2,8 @@ import math
 from datetime import date
 
 import bar_chart_costs
+import numpy as np
 import pandas as pd
-
 
 # %% TABLE USE & COSTS + FIGs COSTS ....................................................................................
 def table_use_costs__plot_costs(in_use_output, in_use_without_df, in_percentage_use_without_df,
@@ -228,6 +228,9 @@ def table_cons(in_mwk_to_usd_exchange_rate,
     )
 
     last_line_interv_pkg_name = 'Female Condom'
+    assert np.count_nonzero(resource_items_pkgs_df['Intervention_Pkg'] == last_line_interv_pkg_name) == 1
+    # TODO: This works only if there is only one item for the last pkg. Needs to be improved to work with a pkg with
+    #  more items.
     last_line_nmb_data =\
         resource_items_pkgs_df.loc[resource_items_pkgs_df['Intervention_Pkg'] == last_line_interv_pkg_name].index[0]
     co_pkgs_df = resource_items_pkgs_df.loc[0:last_line_nmb_data,
