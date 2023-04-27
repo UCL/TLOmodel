@@ -1264,6 +1264,13 @@ def test_which_hsi_can_run(seed):
             self.squeeze_factor_of_this_hsi = squeeze_factor
             self.this_hsi_event_ran = True
 
+    def collapse_into_set_of_strings(df: pd.DataFrame) -> Set:
+        """Returns a set of strings wherein the column value are seperated by |"""
+        lst = list()
+        for _, row in df.iterrows():
+            lst.append("|".join([_c for _c in row]))
+        return set(lst)
+
     # For each Mode and assumption on HR resources, test whether each type of appointment can run in each district
     # at each level for which it is defined.
     results = list()
@@ -1336,12 +1343,14 @@ def test_which_hsi_can_run(seed):
                             sqz=sqz,
                         ))
 
-    # check squeeze_factor is always float
+    # in the first place, check squeeze_factor is always float
     assert all([isinstance(r['sqz'], float) for r in results])
 
     results = pd.DataFrame(results)
 
-    # check under each mode (0, 1, 2) and each HR scenario (actual, funded, funded_plus), the hsi runs as we expect
+    # check under each mode (0, 1, 2) and each HR scenario (actual, funded, funded_plus), the hsi runs as we expect.
+    # note that in both actual and funded scenarios, there are some required (by appt time) HCW cadres not there, i.e.,
+    # those cadres with 0-minute capability.
 
     # mode 0 - actual, funded, funded_plus -> every hsi runs, with sqz=0.0
     # as in mode 0, we assume no constraints at all
@@ -1357,24 +1366,53 @@ def test_which_hsi_can_run(seed):
                        (results['use_funded_or_actual_staffing'] == 'funded_plus'), 'hsi_did_run'].all()
 
     # mode 1 - actual, funded -> some don't run (the ones we expect, i.e., where the HCW is not there)
+    # simple checks that some hsi did not run
     assert not results.loc[(results['mode_appt_constraints'] == 1) &
-                           ~(results['use_funded_or_actual_staffing'] == 'funded_plus'), 'hsi_did_run'].all(), \
-        "Mode 1: Some HSI under funded_plus did not run"
-    # todo: find where the HCW is not there and do a detailed check
+                           (results['use_funded_or_actual_staffing'] == 'actual'), 'hsi_did_run'].all(), \
+        "Mode 1: Some HSI under actual hr scenario did not run"
+    assert not results.loc[(results['mode_appt_constraints'] == 1) &
+                           (results['use_funded_or_actual_staffing'] == 'funded'), 'hsi_did_run'].all(), \
+        "Mode 1: Some HSI under funded hr scenario did not run"
+    # now refer to the detailed appts/hsi that don't run as the required HCW is not there and do a detailed check
+    # read necessary files
+    mfl = pd.read_csv(
+        Path('./') / 'resources/healthsystem/organisation/ResourceFile_Master_Facilities_List.csv'
+    )
+    appts_not_run = pd.read_csv(
+        Path('./') / 'resources/healthsystem/human_resources/definitions/ResourceFile_Appts_With_No_Required_HCW.csv'
+    )  # this file includes both actual and funded scenarios
+    # reformat to map with results file for convenience
+    appts_not_run = appts_not_run.drop(columns='Officer_Category').drop_duplicates().rename(
+        columns={'HR_Scenario': 'use_funded_or_actual_staffing', 'Facility_Level': 'level',
+                 'Appt_Type_Code': 'appt_type', 'Fail_District_Or_CenHos': 'district'}
+    )  # drop_duplicates is due to possible rows with same column info except Officer_Category
+    appts_not_run = appts_not_run[['use_funded_or_actual_staffing', 'level', 'appt_type', 'district']]  # re-order cols
+    # reformat the 'district' info at levels 3 and 4 in results to map with appts_not_run file for convenience
+    districts_per_region = mfl[['District', 'Region']].drop_duplicates().dropna(axis='index', how='any').set_index(
+        'District', drop=True)
+    districts_per_region['CenHos'] = 'Referral Hospital_' + districts_per_region['Region']
+    districts_per_cenhos = districts_per_region['CenHos'].T.to_dict()
+    results_alt = results.copy()  # do not overwrite the results file
+    results_alt.loc[results_alt['level'] == '4', 'district'] = 'Zomba Mental Hospital'
+    results_alt.loc[results_alt['level'] == '3', 'district'] = results_alt.loc[
+        results_alt['level'] == '3', 'district'].replace(districts_per_cenhos)
+    # the detailed check
+    results_alt = results_alt.loc[(results_alt['mode_appt_constraints'] == 1) & (~results_alt['hsi_did_run'])].drop(
+        columns=['mode_appt_constraints', 'hsi_did_run', 'sqz']
+    )
+    assert (results_alt.columns == appts_not_run.columns).all()
+    assert collapse_into_set_of_strings(results_alt) == collapse_into_set_of_strings(appts_not_run)
 
     # mode 2 - actual, funded, funded_plus -> every hsi that does run, has sqz = 0.0
     assert (results.loc[(results['mode_appt_constraints'] == 2) & (results['hsi_did_run']), 'sqz'] == 0.0).all()
 
-    # mode 2 - actual, funded, funded_plus -> some don't run (the one we expected,
+    # mode 2 - actual, funded, funded_plus -> some don't run (the ones we expected,
     # i.e., those don't run in mode 1 and those with non-zero sqz in mode 1)
-    df_1 = results.loc[(results['mode_appt_constraints'] == 1) & ((~results['hsi_did_run']) | (results['sqz'] > 0.0))]
-    df_2 = results.loc[(results['mode_appt_constraints'] == 2) & (~results['hsi_did_run'])]
-
-    def collapse_into_set_of_strings(df: pd.DataFrame) -> Set:
-        """Returns a set of strings wherein the column value are seperated by |"""
-        lst = list()
-        for _, row in df.iterrows():
-            list.append("|".join([_c for _c in row]))
-        return set(lst)
-
+    df_1 = results.loc[(results['mode_appt_constraints'] == 1)
+                       & ((~results['hsi_did_run']) | (results['sqz'] > 0.0))].drop(
+        columns=['mode_appt_constraints', 'hsi_did_run', 'sqz']
+    )
+    df_2 = results.loc[(results['mode_appt_constraints'] == 2) & (~results['hsi_did_run'])].drop(
+        columns=['mode_appt_constraints', 'hsi_did_run', 'sqz']
+    )
     assert collapse_into_set_of_strings(df_1) == collapse_into_set_of_strings(df_2)
