@@ -381,7 +381,7 @@ def figure4_hr_use_overall(results_folder: Path, output_folder: Path, resourcefi
     capacity_unstacked_average = capacity_by_facility.unstack().mean()
     # levels = [find_level_for_facility(i) if i != 'All' else 'All' for i in capacity_unstacked_average.index]
     xpos_for_level = dict(zip((color_for_level.keys()), range(len(color_for_level))))
-    for id, val in capacity_unstacked_average.iteritems():
+    for id, val in capacity_unstacked_average.items():
         if id != 'All':
             _level = find_level_for_facility(id)
             if _level != '5':

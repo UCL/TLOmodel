@@ -29,7 +29,7 @@ from typing import Dict, List, Tuple, Union
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -44,7 +44,6 @@ logger.setLevel(logging.INFO)
 # Helper function for conversion between odds and probabilities
 to_odds = lambda pr: pr / (1.0 - pr)  # noqa: E731
 to_prob = lambda odds: odds / (1.0 + odds)  # noqa: E731
-
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITION
@@ -124,8 +123,12 @@ class Alri(Module):
         'other_alri'
     })
 
-    classifications = {'danger_signs_pneumonia', 'fast_breathing_pneumonia', 'chest_indrawing_pneumonia',
-                       'cough_or_cold'}
+    classifications = sorted({
+        'danger_signs_pneumonia',
+        'fast_breathing_pneumonia',
+        'chest_indrawing_pneumonia',
+        'cough_or_cold'
+    })
 
     all_symptoms = {
         'cough', 'difficult_breathing', 'fever', 'tachypnoea', 'chest_indrawing', 'danger_signs', 'respiratory_distress'
@@ -431,10 +434,6 @@ class Alri(Module):
         'proportion_hypoxaemia_with_SpO2<90%':
             Parameter(Types.REAL,
                       'proportion of hypoxaemic children with SpO2 <90%'
-                      ),
-        'prob_atelectasis_in_bronchiolitis':
-            Parameter(Types.REAL,
-                      'probability of atalectasis in other alri in children under-2 years '
                       ),
 
         # Risk of death parameters -----
@@ -995,8 +994,8 @@ class Alri(Module):
             if symptom_name not in self.sim.modules['SymptomManager'].generic_symptoms:
                 if symptom_name == 'danger_signs':
                     self.sim.modules['SymptomManager'].register_symptom(
-                        Symptom(name=symptom_name,
-                                emergency_in_children=True))
+                        Symptom.emergency(name=symptom_name, which='children')
+                    )
                 elif symptom_name in ('tachypnoea', 'chest_indrawing', 'respiratory_distress'):
                     self.sim.modules['SymptomManager'].register_symptom(
                         Symptom(name=symptom_name,
@@ -1094,7 +1093,7 @@ class Alri(Module):
         df.loc[child_id, ['ri_primary_pathogen',
                           'ri_secondary_bacterial_pathogen',
                           'ri_disease_type']] = np.nan
-        df.at[child_id, [f"ri_complication_{complication}" for complication in self.complications]] = False
+        df.loc[child_id, [f"ri_complication_{complication}" for complication in self.complications]] = False
         df.at[child_id, 'ri_SpO2_level'] = ">=93%"
 
         # ---- Internal values ----
@@ -1123,9 +1122,12 @@ class Alri(Module):
 
         # report the DALYs occurred
         total_daly_values = pd.Series(data=0.0, index=df.index[df.is_alive])
-        total_daly_values.loc[has_danger_signs] = self.daly_wts['daly_severe_ALRI']
         total_daly_values.loc[
-            has_fast_breathing_or_chest_indrawing_but_not_danger_signs] = self.daly_wts['daly_non_severe_ALRI']
+            sorted(has_danger_signs)
+        ] = self.daly_wts['daly_severe_ALRI']
+        total_daly_values.loc[
+            sorted(has_fast_breathing_or_chest_indrawing_but_not_danger_signs)
+        ] = self.daly_wts['daly_non_severe_ALRI']
 
         # Split out by pathogen that causes the Alri
         dummies_for_pathogen = pd.get_dummies(df.loc[total_daly_values.index, 'ri_primary_pathogen'], dtype='float')
@@ -1691,11 +1693,11 @@ class Models:
                         'age_years',
                         conditions_are_mutually_exclusive=True,
                         conditions_are_exhaustive=True).when(0, age_effects[0])
-                        .when(1, age_effects[1])
-                        .when(2, age_effects[2])
-                        .when(3, age_effects[3])
-                        .when(4, age_effects[4])
-                        .when('>= 5', 0.0),
+                                                       .when(1, age_effects[1])
+                                                       .when(2, age_effects[2])
+                                                       .when(3, age_effects[3])
+                                                       .when(4, age_effects[4])
+                                                       .when('>= 5', 0.0),
                     Predictor('li_wood_burn_stove').when(False, p['rr_ALRI_indoor_air_pollution']),
                     Predictor().when('(va_measles_all_doses == False) & (age_years >= 1)',
                                      p['rr_ALRI_incomplete_measles_immunisation']),
@@ -2751,7 +2753,7 @@ class AlriPollingEvent(RegularEvent, PopulationScopeEventMixin):
     def fraction_of_year_between_polling_event(self):
         """Return the fraction of a year that elapses between polling event. This is used to adjust the risk of
         infection"""
-        return (self.sim.date + self.frequency - self.sim.date) / np.timedelta64(1, 'Y')
+        return (self.sim.date + self.frequency - self.sim.date) / pd.Timedelta(days=DAYS_IN_YEAR)
 
     def get_probs_of_acquiring_pathogen(self, interval_as_fraction_of_a_year: float):
         """Return the probability of each person in the dataframe acquiring each pathogen, during the time interval

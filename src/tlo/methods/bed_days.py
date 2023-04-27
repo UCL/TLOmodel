@@ -267,7 +267,7 @@ class BedDays:
             if not available.all():
                 # If the bed is not available on all days, assume it cannot be used after the first day
                 # that it is not available.
-                available.loc[available.idxmin(~available):] = False
+                available.loc[available[~available].index[0]:] = False
 
                 # Add any days for which a bed of this type is not available to the footprint for next bed-type:
                 hold_over_dates_for_next_bed_type = list(available.loc[~available].index)

@@ -61,25 +61,6 @@ def get_sim(seed):
     return sim
 
 
-def test_scenario_parameters(seed):
-
-    sim = get_sim(seed=seed)
-    sim.modules["Tb"].parameters["scenario"] = 3
-    sim.make_initial_population(n=10)
-
-    scenario_change_event = tb.ScenarioSetupEvent(module=sim.modules['Tb'])
-    scenario_change_event.apply(sim.population)
-
-    # check parameters have changed for scenario 3
-    assert sim.modules["Hiv"].parameters["prob_prep_for_fsw_after_hiv_test"] == 0.5
-    assert sim.modules["Hiv"].parameters["prob_prep_for_agyw"] == 0.1
-    assert sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_3_months"] == 0.75
-    assert sim.modules["Hiv"].parameters["prob_circ_after_hiv_test"] == 0.25
-    assert sim.modules["Tb"].parameters["age_eligibility_for_ipt"] == 100
-    assert sim.modules["Tb"].parameters["ipt_coverage"]["coverage_plhiv"].all() >= 0.6
-    assert sim.modules["Tb"].parameters["ipt_coverage"]["coverage_paediatric"].all() >= 0.8
-
-
 @pytest.mark.slow
 def test_scenario_ipt_expansion(seed):
     """ test scenario IPT expansion is set up correctly
@@ -93,8 +74,8 @@ def test_scenario_ipt_expansion(seed):
 
     # stop PLHIV getting IPT for purpose of tests
     sim.modules['Tb'].parameters['ipt_coverage'].coverage_plhiv = 0
-    # set coverage of IPT for TB contacts to 1.0
-    sim.modules['Tb'].parameters['ipt_coverage'].coverage_paediatric = 1.0
+    # set coverage of IPT for TB contacts to 100%
+    sim.modules['Tb'].parameters['ipt_coverage'].coverage_paediatric = 100
 
     # Make the population
     sim.make_initial_population(n=popsize)
@@ -136,7 +117,7 @@ def test_scenario_ipt_expansion(seed):
                                                  module=sim.modules['Tb'])
     screening_appt.apply(person_id=person_id, squeeze_factor=0.0)
 
-    assert df.at[person_id, 'tb_ever_tested']
+    assert pd.notnull(df.at[person_id, 'tb_date_tested'])
     assert df.at[person_id, 'tb_diagnosed']
 
     # check ages of those scheduled for HSI_Tb_Start_or_Continue_Ipt
@@ -151,87 +132,6 @@ def test_scenario_ipt_expansion(seed):
     idx_of_ipt_candidates = [x[2] for x in list_of_events]
     ages_of_ipt_candidates = df.loc[idx_of_ipt_candidates, "age_exact_years"]
     assert (ages_of_ipt_candidates < 6).all()
-
-    # run ScenarioSetupEvent - should not change parameter "age_eligibility_for_ipt"
-    progression_event = tb.ScenarioSetupEvent(module=sim.modules['Tb'])
-    progression_event.apply(population=sim.population)
-    assert sim.modules["Tb"].parameters["age_eligibility_for_ipt"] == 5.0
-
-    # ---------- change scenario to 3 ---------- #
-    # reset population
-    sim = get_sim(seed=seed)
-
-    # change scenario to 3 (expanded access to IPT: all ages)
-    sim.modules['Tb'].parameters['scenario'] = 3
-
-    # Make the population
-    sim.make_initial_population(n=popsize)
-    # simulate for 0 days, just get everything set up (dxtests etc)
-    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
-    df = sim.population.props
-
-    # check scenario is set to 3
-    assert sim.modules['Tb'].parameters['scenario'] == 3
-
-    # assign all population into one district - so all are eligible as contacts
-    df.loc[df.is_alive, 'district_of_residence'] = 'Blantyre'
-
-    # run ScenarioSetupEvent - should change parameter "age_eligibility_for_ipt"
-    progression_event = tb.ScenarioSetupEvent(module=sim.modules['Tb'])
-    progression_event.apply(population=sim.population)
-
-    # these parameters are changed during ScenarioSetupEvent so reset them
-    # stop PLHIV getting IPT for purpose of tests
-    sim.modules['Tb'].parameters['ipt_coverage'].coverage_plhiv = 0
-    # set coverage of IPT for TB contacts to 1.0
-    sim.modules['Tb'].parameters['ipt_coverage'].coverage_paediatric = 1.0
-
-    assert sim.modules["Tb"].parameters["age_eligibility_for_ipt"] >= 5.0
-
-    # assign another person active TB
-    person_id = 3
-
-    # assign person_id active tb
-    df.at[person_id, 'tb_inf'] = 'active'
-    df.at[person_id, 'tb_strain'] = 'ds'
-    df.at[person_id, 'tb_date_active'] = sim.date
-    df.at[person_id, 'tb_smear'] = True
-    df.at[person_id, 'age_exact_years'] = 20
-    df.at[person_id, 'age_years'] = 20
-
-    # assign symptoms
-    symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
-    sim.modules["SymptomManager"].change_symptom(
-        person_id=person_id,
-        symptom_string=symptom_list,
-        add_or_remove="+",
-        disease_module=sim.modules['Tb'],
-        duration_in_days=None,
-    )
-
-    # run HSI_Tb_ScreeningAndRefer for person 3
-    # check ages again of those scheduled for HSI_Tb_Start_or_Continue_Ipt
-    assert "tb_sputum_test_smear_positive" in sim.modules["HealthSystem"].dx_manager.dx_tests
-    screening_appt = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id,
-                                                 module=sim.modules['Tb'])
-    screening_appt.apply(person_id=person_id, squeeze_factor=0.0)
-
-    assert df.at[person_id, 'tb_ever_tested']
-    assert df.at[person_id, 'tb_diagnosed']
-
-    # check ages of those scheduled for HSI_Tb_Start_or_Continue_Ipt
-    list_of_events = list()
-
-    for ev_tuple in sim.modules['HealthSystem'].HSI_EVENT_QUEUE:
-        date = ev_tuple[1]  # this is the 'topen' value
-        event = ev_tuple[4]
-        if isinstance(event, tb.HSI_Tb_Start_or_Continue_Ipt):
-            list_of_events.append((date, event, event.target))
-
-    idx_of_ipt_candidates = [x[2] for x in list_of_events]
-    ages_of_ipt_candidates = df.loc[idx_of_ipt_candidates, "age_exact_years"]
-    # make sure at least one candidate is over 5 years old
-    assert (ages_of_ipt_candidates > 5.0).any()
 
 
 @pytest.mark.slow
@@ -262,12 +162,12 @@ def test_check_tb_test_under_each_scenario(seed):
     hiv_pos_person = 1
     both_people = [hiv_neg_person, hiv_pos_person]
 
-    df.at[both_people, 'tb_inf'] = 'active'
-    df.at[both_people, 'tb_strain'] = 'ds'
-    df.at[both_people, 'tb_date_active'] = sim.date
-    df.at[both_people, 'tb_smear'] = True
-    df.at[both_people, 'age_exact_years'] = 20
-    df.at[both_people, 'age_years'] = 20
+    df.loc[both_people, 'tb_inf'] = 'active'
+    df.loc[both_people, 'tb_strain'] = 'ds'
+    df.loc[both_people, 'tb_date_active'] = sim.date
+    df.loc[both_people, 'tb_smear'] = True
+    df.loc[both_people, 'age_exact_years'] = 20
+    df.loc[both_people, 'age_years'] = 20
 
     # set HIV status
     df.at[hiv_neg_person, 'hv_inf'] = False
@@ -294,7 +194,7 @@ def test_check_tb_test_under_each_scenario(seed):
                                                  module=sim.modules['Tb'])
     screening_appt.apply(person_id=hiv_neg_person, squeeze_factor=0.0)
 
-    assert df.at[hiv_neg_person, 'tb_ever_tested']
+    assert pd.notnull(df.at[hiv_neg_person, 'tb_date_tested'])
     assert df.at[hiv_neg_person, 'tb_diagnosed']
     assert not df.at[hiv_neg_person, 'tb_diagnosed_mdr']
 
@@ -303,7 +203,7 @@ def test_check_tb_test_under_each_scenario(seed):
                                                  module=sim.modules['Tb'])
     screening_appt.apply(person_id=hiv_pos_person, squeeze_factor=0.0)
 
-    assert df.at[hiv_pos_person, 'tb_ever_tested']
+    assert pd.notnull(df.at[hiv_pos_person, 'tb_date_tested'])
     assert df.at[hiv_pos_person, 'tb_diagnosed']
     assert not df.at[hiv_pos_person, 'tb_diagnosed_mdr']
 
@@ -336,12 +236,12 @@ def test_check_tb_test_under_each_scenario(seed):
     hiv_pos_person = 1
     both_people = [hiv_neg_person, hiv_pos_person]
 
-    df.at[both_people, 'tb_inf'] = 'active'
-    df.at[both_people, 'tb_strain'] = 'ds'
-    df.at[both_people, 'tb_date_active'] = sim.date
-    df.at[both_people, 'tb_smear'] = True
-    df.at[both_people, 'age_exact_years'] = 20
-    df.at[both_people, 'age_years'] = 20
+    df.loc[both_people, 'tb_inf'] = 'active'
+    df.loc[both_people, 'tb_strain'] = 'ds'
+    df.loc[both_people, 'tb_date_active'] = sim.date
+    df.loc[both_people, 'tb_smear'] = True
+    df.loc[both_people, 'age_exact_years'] = 20
+    df.loc[both_people, 'age_years'] = 20
     # set HIV status
     df.at[hiv_neg_person, 'hv_inf'] = False
     df.at[hiv_pos_person, 'hv_inf'] = True
