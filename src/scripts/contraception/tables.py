@@ -5,6 +5,7 @@ import bar_chart_costs
 import numpy as np
 import pandas as pd
 
+
 # %% TABLE USE & COSTS + FIGs COSTS ....................................................................................
 def table_use_costs__plot_costs(in_use_output, in_use_without_df, in_percentage_use_without_df,
                                 in_use_with_df, in_percentage_use_with_df, in_rounding_use_to,
