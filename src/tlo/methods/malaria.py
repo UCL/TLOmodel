@@ -241,15 +241,8 @@ class Malaria(Module):
         # ----------------------------------- DECLARE THE SYMPTOMS -------------------------------------------
         # todo add malaria fever
         self.sim.modules['SymptomManager'].register_symptom(
-            Symptom("malaria_fever",
-                    odds_ratio_health_seeking_in_children=10,
-                    odds_ratio_health_seeking_in_adults=5),
-            Symptom("jaundice"),  # nb. will cause care seeking as much as a typical symptom
             Symptom("severe_anaemia"),  # nb. will cause care seeking as much as a typical symptom
-            Symptom.emergency("acidosis"),
-            Symptom.emergency("coma_convulsions"),
-            Symptom.emergency("renal_failure"),
-            Symptom.emergency("shock")
+            Symptom.emergency("severe_malaria"),  # emergency
         )
 
     def initialise_population(self, population):
@@ -326,7 +319,6 @@ class Malaria(Module):
         alive_uninfected = alive & ~df.ma_is_infected & ~df.ma_iptp
         now_infected = _draw_incidence_for("monthly_prob_inf", alive_uninfected)
         df.loc[now_infected, "ma_is_infected"] = True
-        df.loc[now_infected, "ma_date_infected"] = now
         df.loc[now_infected, "ma_inf_type"] = "asym"
 
         # select all currently infected
@@ -336,64 +328,60 @@ class Malaria(Module):
         alive_infected_asym = alive_infected & (df.ma_inf_type == "asym")
         now_clinical = _draw_incidence_for("monthly_prob_clin", alive_infected_asym)
         df.loc[now_clinical, "ma_inf_type"] = "clinical"
-        df.loc[now_clinical, "ma_date_infected"] = now  # updated infection date
         df.loc[now_clinical, "ma_clinical_counter"] += 1
 
         # draw from clinical cases to allocate severe cases - draw from all currently clinical cases
         alive_infected_clinical = alive_infected & (df.ma_inf_type == "clinical")
         now_severe = _draw_incidence_for("monthly_prob_sev", alive_infected_clinical)
         df.loc[now_severe, "ma_inf_type"] = "severe"
-        df.loc[now_severe, "ma_date_infected"] = now  # updated infection date
 
+        # todo remove condition date_infected
+        # malaria infections in pregnancy
+        # alive_now_infected_pregnant = now_clinical & (df.ma_date_infected == now) & df.is_pregnant
         alive_now_infected_pregnant = now_clinical & (df.ma_date_infected == now) & df.is_pregnant
         df.loc[alive_now_infected_pregnant, "ma_clinical_preg_counter"] += 1
 
+        # scatter infection dates across the month
+        # now_infected includes all new infections this month
+        new_infections = now_infected[now_infected].index
+        for idx in new_infections:
+            date_of_infection = now + pd.DateOffset(
+                days=self.rng.randint(0, 30)
+            )
+            df.at[idx, "ma_date_infected"] = date_of_infection
+
         # ----------------------------------- CLINICAL MALARIA SYMPTOMS -----------------------------------
-        # clinical - can't use now_clinical, because some clinical may have become severe
-        clin = df.index[df.is_alive & (df.ma_inf_type == "clinical") & (df.ma_date_infected == now)]
+        # index now_clinical includes now_severe
+        # update symptoms with date one week from infection date
+        new_clinical = df.loc[now_clinical].index
+        new_severe = df.loc[now_severe].index
 
-        # update clinical symptoms for all new clinical infections
-        self.clinical_symptoms(df, clin)
+        # update clinical symptoms for all new clinical and severe infections
+        self.clinical_symptoms(df, new_clinical, new_severe)
         # check symptom onset occurs in one week
-        assert (df.loc[clin, "ma_date_infected"] < df.loc[clin, "ma_date_symptoms"]).all()
-
-        # ----------------------------------- SEVERE MALARIA SYMPTOMS -----------------------------------
-
-        # SEVERE CASES
-        severe = df.is_alive & (df.ma_inf_type == "severe") & (df.ma_date_infected == now)
-
-        children = severe & (df.age_exact_years < 5)
-        adult = severe & (df.age_exact_years >= 5)
-
-        # update symptoms for all new severe infections
-        self.severe_symptoms(df, df.index[children], child=True)
-        self.severe_symptoms(df, df.index[adult], child=False)
-        # check symptom onset occurs in one week
-        assert (df.loc[severe, "ma_date_infected"] < df.loc[severe, "ma_date_symptoms"]).all()
+        assert (df.loc[new_clinical, "ma_date_infected"] < df.loc[new_clinical, "ma_date_symptoms"]).all()
 
         # ----------------------------------- SCHEDULED DEATHS -----------------------------------
         # schedule deaths within the next week
         # Assign time of infections across the month
 
         # the cfr applies to all severe malaria
-        random_draw = rng.random_sample(size=severe.sum())
-        death = df.index[severe][random_draw < (p["cfr"] * p["mortality_adjust"])]
+        random_draw = rng.random_sample(size=new_severe.sum())
+        death = df.index[new_severe][random_draw < (p["cfr"] * p["mortality_adjust"])]
 
         for person in death:
 
             logger.debug(key='message',
                          data=f'MalariaEvent: scheduling malaria death for person {person}')
 
-            # symptom onset occurs one week after infection
-            # death occurs 1-7 days after symptom onset, 8+ days after infection
-            random_date = rng.randint(low=8, high=14)
-            random_days = pd.to_timedelta(random_date, unit="d")
+            # death occurs 1-7 days after symptom onset
+            date_death = df.at[person, "ma_date_symptoms"] + DateOffset(days=rng.randint(low=1, high=7))
 
             death_event = MalariaDeathEvent(
                 self, individual_id=person, cause="Malaria"
             )  # make that death event
             self.sim.schedule_event(
-                death_event, self.sim.date + random_days
+                death_event, date_death
             )  # schedule the death
 
     def initialise_simulation(self, sim):
@@ -407,8 +395,7 @@ class Malaria(Module):
 
         sim.schedule_event(MalariaPollingEventDistrict(self), sim.date + DateOffset(months=1))
 
-        # todo reinstate?
-        # sim.schedule_event(MalariaScheduleTesting(self), sim.date + DateOffset(days=0))
+        sim.schedule_event(MalariaScheduleTesting(self), sim.date + DateOffset(days=0))
 
         if 'CareOfWomenDuringPregnancy' not in self.sim.modules:
             sim.schedule_event(MalariaIPTp(self), sim.date + DateOffset(days=30.5))
@@ -514,115 +501,52 @@ class Malaria(Module):
 
         return health_values.loc[df.is_alive]  # returns the series
 
-    def clinical_symptoms(self, population, clinical_index):
+    def clinical_symptoms(self, population, clinical_index, severe_index):
         """assign clinical symptoms to new clinical malaria cases and schedule symptom resolution
+        this includes those who will develop severe symptoms also (through severe_symptoms)
 
         :param population:
         :param clinical_index:
         """
         df = population
         p = self.parameters
-        rng = self.rng
-        now = self.sim.date
 
-        date_symptom_onset = now + pd.DateOffset(days=7)
+        df.loc[clinical_index, "ma_date_symptoms"] = df.loc[clinical_index, "ma_date_infected"] + pd.DateOffset(days=7)
 
-        df.loc[clinical_index, "ma_date_symptoms"] = date_symptom_onset
+        # schedule symptom onset 7 days after date of infection
+        # have to do individually as can't pass date onset as list
+        for person in clinical_index:
+            symptom_onset = df.at[person, "ma_date_symptoms"]
 
-        symptom_list = {"malaria_fever", "fever", "headache", "vomiting", "stomachache"}
+            if df.at[person, "is_pregnant"]:
+                symptom_list = {"severe_anaemia", "fever", "headache", "vomiting", "stomachache"}
+            else:
+                symptom_list = {"fever", "headache", "vomiting", "stomachache"}
 
-        # this also schedules symptom resolution in 5 days
-        self.sim.modules["SymptomManager"].change_symptom(
-            person_id=list(clinical_index),
-            symptom_string=symptom_list,
-            add_or_remove="+",
-            disease_module=self,
-            date_of_onset=date_symptom_onset,
-            duration_in_days=None,  # remove duration as symptoms cleared by MalariaCureEvent
-        )
+            # add symptom "severe_malaria" if needed, will trigger emergency healthcare seeking
+            if person in severe_index:
+                symptom_list.add("severe_malaria")
 
-        # additional risk of severe anaemia in pregnancy
-        pregnant_infected = df.is_alive & (df.ma_inf_type == "clinical") & (df.ma_date_infected == now) & df.is_pregnant
-        if pregnant_infected.sum() > 0:
-            random_draw = rng.random_sample(size=pregnant_infected.sum())
-            preg_infected = df.index[pregnant_infected][random_draw < p["p_sev_anaemia_preg"]]
-            if len(preg_infected) > 0:
-                self.sim.modules["SymptomManager"].change_symptom(
-                    person_id=list(preg_infected),
-                    symptom_string="severe_anaemia",
-                    add_or_remove="+",
-                    disease_module=self,
-                    date_of_onset=date_symptom_onset,
-                    duration_in_days=None,
-                )
-
-    def severe_symptoms(self, population, severe_index, child=False):
-        """assign clinical symptoms to new severe malaria cases. Symptoms can only be resolved by treatment
-        handles both adult and child (using the child parameter) symptoms
-
-        :param population: the population dataframe
-        :param severe_index: the indices of new clinical cases
-        :param child: to apply severe symptoms to children (otherwise applied to adults)
-        """
-        # If no indices specified exit straight away
-        if len(severe_index) == 0:
-            return
-
-        df = population
-        p = self.parameters
-        rng = self.rng
-        date_symptom_onset = self.sim.date + pd.DateOffset(days=7)
-
-        df.loc[severe_index, "ma_date_symptoms"] = date_symptom_onset
-
-        # general symptoms - applied to all
-        symptom_list = {"fever", "headache", "vomiting", "stomachache"}
-
-        self.sim.modules["SymptomManager"].change_symptom(
-            person_id=list(severe_index),
-            symptom_string=symptom_list,
-            add_or_remove="+",
-            disease_module=self,
-            date_of_onset=date_symptom_onset,
-            duration_in_days=None,
-        )
-
-        # symptoms specific to severe cases
-        # get range of probabilities of each symptom for severe cases for children and adults
-        range_symp = p["sev_symp_prob"]
-
-        if child:
-            range_symp = range_symp.loc[range_symp.age_group == "0_5"]
-        else:
-            range_symp = range_symp.loc[range_symp.age_group == "5_60"]
-        range_symp = range_symp.set_index("symptom")
-        symptom_list_severe = list(range_symp.index)
-
-        # assign symptoms
-
-        for symptom in symptom_list_severe:
-            # Let u ~ Uniform(0, 1) and p ~ Uniform(prop_lower, prop_upper),
-            # then the probability of the event (u < p) is (prop_lower + prop_upper) / 2
-            # That is the probability of b == True in the following code snippet
-            #     b = rng.uniform() < rng.uniform(low=prop_lower, high=prop_upper)
-            # and this one
-            #     b = rng.uniform() < (prop_lower + prop_upper) / 2
-            # are equivalent.
-            persons_gaining_symptom = severe_index[
-                rng.uniform(size=len(severe_index))
-                < (
-                    range_symp.at[symptom, "prop_lower"]
-                    + range_symp.at[symptom, "prop_upper"]
-                ) / 2
-            ]
-            # schedule symptom onset
             self.sim.modules["SymptomManager"].change_symptom(
-                person_id=persons_gaining_symptom,
-                symptom_string=symptom,
+                person_id=person,
+                symptom_string=symptom_list,
                 add_or_remove="+",
                 disease_module=self,
-                duration_in_days=None,
+                date_of_onset=symptom_onset,
+                duration_in_days=None,  # remove duration as symptoms cleared by MalariaCureEvent
             )
+
+            # probability of person testing (includes pregnant women outside ANC)
+            # also includes those with severe malaria
+            # if person will test, schedule for 0-4 days after symptom onset
+            if self.rng.random_sample() < p["testing_adj"]:
+
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    HSI_Malaria_rdt(self, person_id=person),
+                    priority=0,
+                    topen=random_date(symptom_onset, symptom_onset + DateOffset(days=4), self.rng),
+                    tclose=None
+                )
 
     def check_if_fever_is_caused_by_malaria(self, person_id, hsi_event):
         """Run by an HSI when an adult presents with fever"""
@@ -663,7 +587,7 @@ class MalariaScheduleTesting(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))
+        super().__init__(module, frequency=DateOffset(days=3))
 
     def apply(self, population):
         df = population.props
