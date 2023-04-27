@@ -395,7 +395,7 @@ class Malaria(Module):
 
         sim.schedule_event(MalariaPollingEventDistrict(self), sim.date + DateOffset(months=1))
 
-        sim.schedule_event(MalariaScheduleTesting(self), sim.date + DateOffset(days=0))
+        # sim.schedule_event(MalariaScheduleTesting(self), sim.date + DateOffset(days=0))
 
         if 'CareOfWomenDuringPregnancy' not in self.sim.modules:
             sim.schedule_event(MalariaIPTp(self), sim.date + DateOffset(days=30.5))
@@ -581,45 +581,45 @@ class MalariaPollingEventDistrict(RegularEvent, PopulationScopeEventMixin):
         self.module.malaria_poll2(population)
 
 
-class MalariaScheduleTesting(RegularEvent, PopulationScopeEventMixin):
-    """ additional malaria testing happening outside the symptom-driven generic HSI event
-    to increase tx coverage up to reported levels
-    """
-
-    def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(days=3))
-
-    def apply(self, population):
-        df = population.props
-        p = self.module.parameters
-
-        # select people to go for testing (and subsequent tx)
-        # random sample 0.4 to match clinical case tx coverage
-        # this sample will include asymptomatic infections too to account for
-        # unnecessary treatments  and uninfected people
-        # todo change back if needed
-        # alive = df.is_alive
-        # test = df.index[alive][self.module.rng.random_sample(size=alive.sum()) < p["testing_adj"]]
-
-        # weight testing to those with clinical malaria infection and not on treatment
-        # severe cases will seek emergency care
-        random_draw = self.module.rng.random_sample(size=len(df))
-
-        test = df.loc[df.is_alive &
-                      (df.ma_inf_type == "clinical") &
-                      ~df.ma_tx &
-                      (random_draw < p["testing_adj"])].index
-
-        for person_index in test:
-            logger.debug(key='message',
-                         data=f'MalariaScheduleTesting: scheduling HSI_Malaria_rdt for person {person_index}')
-
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                HSI_Malaria_rdt(self.module, person_id=person_index),
-                priority=0,
-                topen=random_date(self.sim.date, self.sim.date + self.frequency, self.module.rng),
-                tclose=None
-            )
+# class MalariaScheduleTesting(RegularEvent, PopulationScopeEventMixin):
+#     """ additional malaria testing happening outside the symptom-driven generic HSI event
+#     to increase tx coverage up to reported levels
+#     """
+#
+#     def __init__(self, module):
+#         super().__init__(module, frequency=DateOffset(days=3))
+#
+#     def apply(self, population):
+#         df = population.props
+#         p = self.module.parameters
+#
+#         # select people to go for testing (and subsequent tx)
+#         # random sample 0.4 to match clinical case tx coverage
+#         # this sample will include asymptomatic infections too to account for
+#         # unnecessary treatments  and uninfected people
+#         # todo change back if needed
+#         # alive = df.is_alive
+#         # test = df.index[alive][self.module.rng.random_sample(size=alive.sum()) < p["testing_adj"]]
+#
+#         # weight testing to those with clinical malaria infection and not on treatment
+#         # severe cases will seek emergency care
+#         random_draw = self.module.rng.random_sample(size=len(df))
+#
+#         test = df.loc[df.is_alive &
+#                       (df.ma_inf_type == "clinical") &
+#                       ~df.ma_tx &
+#                       (random_draw < p["testing_adj"])].index
+#
+#         for person_index in test:
+#             logger.debug(key='message',
+#                          data=f'MalariaScheduleTesting: scheduling HSI_Malaria_rdt for person {person_index}')
+#
+#             self.sim.modules["HealthSystem"].schedule_hsi_event(
+#                 HSI_Malaria_rdt(self.module, person_id=person_index),
+#                 priority=0,
+#                 topen=random_date(self.sim.date, self.sim.date + self.frequency, self.module.rng),
+#                 tclose=None
+#             )
 
 
 class MalariaIPTp(RegularEvent, PopulationScopeEventMixin):
