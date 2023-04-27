@@ -435,21 +435,18 @@ class Malaria(Module):
 
         # malaria treatment uncomplicated children <15kg
         self.item_codes_for_consumables_required['malaria_uncomplicated_young_children'] = {
-            get_item_code("Malaria test kit (RDT)"): 1,
             get_item_code("Lumefantrine 120mg/Artemether 20mg,  30x18_540_CMST"): 1,
             get_item_code("Paracetamol syrup 120mg/5ml_0.0119047619047619_CMST"): 18
         }
 
         # malaria treatment uncomplicated children >15kg
         self.item_codes_for_consumables_required['malaria_uncomplicated_older_children'] = {
-            get_item_code("Malaria test kit (RDT)"): 1,
             get_item_code("Lumefantrine 120mg/Artemether 20mg,  30x18_540_CMST"): 3,
             get_item_code("Paracetamol syrup 120mg/5ml_0.0119047619047619_CMST"): 18
         }
 
         # malaria treatment uncomplicated adults >36kg
         self.item_codes_for_consumables_required['malaria_uncomplicated_adult'] = {
-            get_item_code("Malaria test kit (RDT)"): 1,
             get_item_code("Lumefantrine 120mg/Artemether 20mg,  30x18_540_CMST"): 4,
             get_item_code("Paracetamol 500mg_1000_CMST"): 18
         }
