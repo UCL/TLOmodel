@@ -436,24 +436,32 @@ class Malaria(Module):
         # malaria treatment uncomplicated children <15kg
         self.item_codes_for_consumables_required['malaria_uncomplicated_young_children'] = {
             get_item_code("Lumefantrine 120mg/Artemether 20mg,  30x18_540_CMST"): 1,
+            # get_item_code("Paracetamol syrup 120mg/5ml_0.0119047619047619_CMST"): 18
+        }
+        self.item_codes_for_consumables_required['paracetamol_syrup'] = {
             get_item_code("Paracetamol syrup 120mg/5ml_0.0119047619047619_CMST"): 18
         }
 
         # malaria treatment uncomplicated children >15kg
         self.item_codes_for_consumables_required['malaria_uncomplicated_older_children'] = {
             get_item_code("Lumefantrine 120mg/Artemether 20mg,  30x18_540_CMST"): 3,
-            get_item_code("Paracetamol syrup 120mg/5ml_0.0119047619047619_CMST"): 18
         }
 
         # malaria treatment uncomplicated adults >36kg
         self.item_codes_for_consumables_required['malaria_uncomplicated_adult'] = {
             get_item_code("Lumefantrine 120mg/Artemether 20mg,  30x18_540_CMST"): 4,
+            # get_item_code("Paracetamol 500mg_1000_CMST"): 18
+        }
+        self.item_codes_for_consumables_required['paracetamol'] = {
             get_item_code("Paracetamol 500mg_1000_CMST"): 18
         }
 
         # malaria treatment complicated - same consumables for adults and children
         self.item_codes_for_consumables_required['malaria_complicated'] = {
             get_item_code("Injectable artesunate"): 1,
+         }
+
+        self.item_codes_for_consumables_required['malaria_complicated_optional_items'] = {
             get_item_code("Cannula iv  (winged with injection pot) 18_each_CMST"): 3,
             get_item_code("Disposables gloves, powder free, 100 pieces per box"): 1,
             get_item_code("Gauze, absorbent 90cm x 40m_each_CMST"): 3,
@@ -833,17 +841,20 @@ class HSI_Malaria_Treatment(HSI_Event, IndividualScopeEventMixin):
         if age_of_person < 5:
             # Formulation for young children
             drugs_available = self.get_consumables(
-                item_codes=self.module.item_codes_for_consumables_required['malaria_uncomplicated_young_children'])
+                item_codes=self.module.item_codes_for_consumables_required['malaria_uncomplicated_young_children'],
+                optional_item_codes=self.module.item_codes_for_consumables_required['paracetamol_syrup'])
 
         elif 5 <= age_of_person <= 15:
             # Formulation for older children
             drugs_available = self.get_consumables(
-                item_codes=self.module.item_codes_for_consumables_required['malaria_uncomplicated_older_children'])
+                item_codes=self.module.item_codes_for_consumables_required['malaria_uncomplicated_older_children'],
+                optional_item_codes=self.module.item_codes_for_consumables_required['paracetamol_syrup'])
 
         else:
             # Formulation for adults
             drugs_available = self.get_consumables(
-                item_codes=self.module.item_codes_for_consumables_required['malaria_uncomplicated_adult'])
+                item_codes=self.module.item_codes_for_consumables_required['malaria_uncomplicated_adult'],
+                optional_item_codes=self.module.item_codes_for_consumables_required['paracetamol'])
 
         return drugs_available
 
@@ -876,7 +887,10 @@ class HSI_Malaria_Treatment_Complicated(HSI_Event, IndividualScopeEventMixin):
                          data=f'HSI_Malaria_Treatment_Complicated: requesting complicated malaria treatment for '
                               f' {person_id}')
 
-            if self.get_consumables(self.module.item_codes_for_consumables_required['malaria_complicated']):
+            if self.get_consumables(
+                item_codes=self.module.item_codes_for_consumables_required['malaria_complicated'],
+                    optional_item_codes=self.module.item_codes_for_consumables_required['malaria_complicated_optional_items']):
+
                 logger.debug(key='message',
                              data=f'HSI_Malaria_Treatment_Complicated: giving complicated malaria treatment for '
                                   f' {person_id}')
