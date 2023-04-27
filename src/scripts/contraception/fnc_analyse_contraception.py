@@ -673,16 +673,14 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
                 return 'pill'
             if in_d == dict({2: 30}):
                 return 'male_condom'
-            if in_d == dict({3: 1, 1933: 1, 98: 1}):
+            if dict({3: 1, 1933: 1, 98: 1, 5: 1, 75: 1}).items() <= in_d.items():
                 return 'injections'
-            if in_d == dict({1933: 2, 7: 1}):
+            if dict({1933: 2, 7: 1}).items() <= in_d.items():
                 return 'IUD'
-            if in_d == dict({1933: 3, 8: 2, 5: 1, 9: 2, 10: 0.1, 11: 1, 12: 1}):
+            if dict({1933: 3, 8: 2, 5: 1, 9: 2, 10: 0.1, 11: 1, 12: 1, 75: 1}).items() <= in_d.items():
                 return 'implant'
-            if in_d == dict(
-                {8: 1, 2019: 1, 307: 0.5, 15: 1, 1960: 3, 75: 2, 2676: 3, 2677: 3, 21: 0.25, 112: 2, 23: 8, 5: 2,
-                 49: 0.2}
-            ):
+            if dict({8: 1, 307: 0.5, 15: 1, 1960: 3, 75: 2, 2676: 3, 2677: 3, 21: 0.25, 112: 2, 23: 8, 5: 2,
+                     49: 0.2}).items() <= in_d.items():
                 return 'female_sterilization'
             if in_d == dict({25: 30}):
                 return 'other_modern'
@@ -777,19 +775,23 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
             """
             l_costs = []
             for i in in_df_cons_avail_by_time_and_method.index:
-                # if the method == males or females condoms (f. condoms as other_modern), calculate from the mean
-                # numbers of women using them (there is only one item for condoms), these are calculated from rescaled
-                # numbers of women, hence no need to rescale the costs
                 costs = 0
                 # calculate costs from the logs and rescale to the pop. size of Malawi
                 item_avail_dict = in_df_cons_avail_by_time_and_method.loc[
                     i, 'Item_Available_summation'
                 ]
                 for time_method_key in list(item_avail_dict.keys()):
-                    unit_cost = float(in_df_resource_items_pkgs['Unit_Cost'].loc[
-                            (in_df_resource_items_pkgs['Intervention_Pkg'] == get_intervention_pkg_name(i[1]))
-                            & (in_df_resource_items_pkgs['Item_Code'] == time_method_key)])
-                    costs = costs + (unit_cost * item_avail_dict[time_method_key])
+                    # TODO: change the below to be any of items form the 'Contraception initiation' pkg
+                    if time_method_key == 2019:
+                        unit_cost = float(in_df_resource_items_pkgs['Unit_Cost'].loc[
+                                (in_df_resource_items_pkgs['Intervention_Pkg'] == 'Contraception initiation')
+                                & (in_df_resource_items_pkgs['Item_Code'] == time_method_key)])
+                        costs = costs + (unit_cost * item_avail_dict[time_method_key])
+                    else:
+                        unit_cost = float(in_df_resource_items_pkgs['Unit_Cost'].loc[
+                                (in_df_resource_items_pkgs['Intervention_Pkg'] == get_intervention_pkg_name(i[1]))
+                                & (in_df_resource_items_pkgs['Item_Code'] == time_method_key)])
+                        costs = costs + (unit_cost * item_avail_dict[time_method_key])
                 costs = costs * scaling_factor
                 l_costs.append(costs)
             return l_costs
