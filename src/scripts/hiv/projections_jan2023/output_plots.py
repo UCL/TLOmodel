@@ -423,7 +423,6 @@ plt.show()
 # %%: DEATHS
 # ---------------------------------------------------------------------- #
 
-
 # deaths
 deaths = output["tlo.methods.demography"]["death"].copy()  # outputs individual deaths
 deaths = deaths.set_index("date")
@@ -758,56 +757,6 @@ make_plot(
 plt.legend(["TLO", "UNAIDS"])
 # plt.savefig(outputpath / ("HIV_Proportion_on_ART" + datestamp + ".png"), format='png')
 
-plt.show()
-
-# ---------------------------------------------------------------------- #
-
-# Circumcision
-make_plot(
-    title_str="Proportion of Men (15+) That Are Circumcised",
-    model=cov_over_time["prop_men_circ"],
-)
-plt.plot(
-    cov_over_time["prop_men_circ"].index[3], 0.23,
-    "gx",
-)
-plt.plot(
-    cov_over_time["prop_men_circ"].index[5], 0.279,
-    "bx",
-)
-plt.ylim((0, 0.4))
-
-# handles for legend
-red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO")
-green_cross = mlines.Line2D(
-    [], [], linewidth=0, color="g", marker="x", markersize=7, label="KABP"
-)
-blue_cross = mlines.Line2D(
-    [], [], linewidth=0, color="b", marker="x", markersize=7, label="MDHS"
-)
-# orange_ci = mlines.Line2D([], [], color="C1", marker=".", markersize=15, label="DHS")
-plt.legend(handles=[red_line, green_cross, blue_cross])
-plt.savefig(outputpath / ("Proportion_men_circumcised" + datestamp + ".png"), format='png')
-plt.show()
-
-
-# ---------------------------------------------------------------------- #
-
-# PrEP among FSW
-make_plot(
-    title_str="Proportion of FSW That Are On PrEP",
-    model=cov_over_time["prop_fsw_on_prep"],
-)
-plt.show()
-
-
-# ---------------------------------------------------------------------- #
-
-# Behaviour Change
-make_plot(
-    title_str="Proportion of Adults (15+) Exposed to Behaviour Change Intervention",
-    model=cov_over_time["prop_adults_exposed_to_behav_intv"],
-)
 plt.show()
 
 # ---------------------------------------------------------------------- #

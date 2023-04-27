@@ -945,8 +945,8 @@ class Tb(Module):
         sim.schedule_event(TbSelfCureEvent(self), sim.date + DateOffset(days=0))
         sim.schedule_event(TbActiveCasePoll(self), sim.date + DateOffset(years=1))
 
-        # schedule outreach xrays for tb screening from 2023
-        sim.schedule_event(TbCommunityXray(self), sim.date + DateOffset(years=0))
+        # schedule outreach xrays for tb screening from 2018 but set to privisionally set to zero to assess model behavior
+        sim.schedule_event(TbCommunityXray(self), sim.date + DateOffset(years=100))
 
         # log at the end of the year
         sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(years=1))
@@ -1430,17 +1430,9 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
     """ This event exists to change parameters or functions
     depending on the scenario for projections which has been set
     * scenario 0 is the default which uses baseline parameters
-    * scenario 1 optimistic, achieving all program targets
-    * scenario 2 optimistic with program constraints
-    * scenario 3 optimistic with program constraints and additional measures to reduce incidence
-    * scenario 4 optimistic and additional measures to reduce incidence
-
+    * scenario 1 constrains availablity of Xpert by setting probability of expert  to zero
     It only occurs once at param: scenario_start_date,
     called by initialise_simulation
-
-    the sensitivity analysis is determined by parameter scenario_SI which redacts one intervention at a time
-    using parameter values "a"-"i"
-    currently this is only called for scenario 4 runs, otherwise the default scenario_SI value is "z"
     """
 
     def __init__(self, module):
@@ -1454,17 +1446,15 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         logger.debug(
             key="message", data=f"ScenarioSetupEvent: scenario {scenario}"
         )
-
         # baseline scenario 0: no change to parameters/functions
         if scenario == 0:
             return
-        #
+        # sets availability of xpert no none
         if scenario ==1:
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
-                {185: 0.0})
+                {187: 0})
 
 # ######################################################
-#
 
 class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
     """The Tb Regular Poll Event for assigning active infections
