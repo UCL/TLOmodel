@@ -414,8 +414,8 @@ class Malaria(Module):
         sim.schedule_event(MalariaParasiteClearanceEvent(self), sim.date + DateOffset(days=30.5))
 
         # add logger events
-        sim.schedule_event(MalariaLoggingEvent(self), sim.date + DateOffset(days=0))
-        sim.schedule_event(MalariaTxLoggingEvent(self), sim.date + DateOffset(days=0))
+        sim.schedule_event(MalariaLoggingEvent(self), sim.date + DateOffset(years=1))
+        sim.schedule_event(MalariaTxLoggingEvent(self), sim.date + DateOffset(years=1))
         sim.schedule_event(MalariaPrevDistrictLoggingEvent(self), sim.date + DateOffset(days=30.5))
 
         # 2) ----------------------------------- DIAGNOSTIC TESTS -----------------------------------

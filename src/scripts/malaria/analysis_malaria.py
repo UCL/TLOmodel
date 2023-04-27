@@ -35,8 +35,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2018, 12, 31)
-popsize = 500
+end_date = Date(2025, 1, 1)
+popsize = 2000
 
 # set up the log config
 log_config = {
@@ -49,7 +49,7 @@ log_config = {
     },
 }
 # seed = random.randint(0, 50000)
-seed = 10
+seed = 100
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
 # Register the appropriate modules
