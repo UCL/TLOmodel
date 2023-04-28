@@ -482,30 +482,27 @@ class HealthSystem(Module):
         name: Optional[str] = None,
         resourcefilepath: Optional[Path] = None,
         service_availability: Optional[List[str]] = None,
-        list_fasttrack: [List[str]] = None,
         mode_appt_constraints: Optional[int] = None,
         cons_availability: Optional[str] = None,
         beds_availability: Optional[str] = None,
-        ignore_priority: bool = True,
-        lowest_priority_considered: int = 10,
-        adopt_priority_policy: bool = False,
-        include_fasttrack_routes: bool = False,
         randomise_queue: bool = True,
+        ignore_priority: bool = True,
+        adopt_priority_policy: bool = False,
+        PriorityRank_Dict: dict = None,
+        lowest_priority_considered: int = 10,
+        include_fasttrack_routes: bool = False,
+        list_fasttrack: [List[str]] = None,
         capabilities_coefficient: Optional[float] = None,
         use_funded_or_actual_staffing: Optional[str] = None,
         disable: bool = False,
         disable_and_reject_all: bool = False,
         compute_squeeze_factor_to_district_level: bool = True,
         hsi_event_count_log_period: Optional[str] = "month",
-        PriorityRank_Dict: dict = None,
     ):
         """
         :param name: Name to use for module, defaults to module class name if ``None``.
         :param resourcefilepath: Path to directory containing resource files.
         :param service_availability: A list of treatment IDs to allow.
-        :param list_fasttrack: list of individual's attributes that will be relevant in
-            determining whether they should be eligible for fast tracking, and the corresponding
-            fast tracking channels that can be potentially available given the modules included in the simulation.
         :param mode_appt_constraints: Integer code in ``{0, 1, 2}`` determining mode of
             constraints with regards to officer numbers and time - 0: no constraints,
             all HSI events run with no squeeze factor, 1: elastic constraints, all HSI
@@ -516,16 +513,20 @@ class HealthSystem(Module):
         or 'none', requests for consumables are not logged.
         :param beds_availability: If 'default' then use the availability specified in the ResourceFile; if 'none', then
         let no beds be ever be available; if 'all', then all beds are always available.
-        :param ignore_priority: If ``True`` do not use the priority information in HSI
-            event to schedule
-        :param lowest_priority_considered: If priority lower (i.e. priority value greater than) this, do not schedule
-            (and instead call `never_ran` at the time of `tclose`).
-        :param adopt_priority_policy: If 'True' then use priority specified in the PriorityRank ResourceFile instead
-            of that provided as argument when scheduling via `schedule_hsi_event`.
-        :param include_fasttrack_routes: If 'True' then include fast-tracking options for vulnerable categories;
-            otherwise ignore indicators for fast-tracking. It is specified in the PriorityRank ResourceFile
         :param randomise_queue ensure that the queue is not model-dependent, i.e. properly randomised for equal topen
             and priority
+        :param ignore_priority: If ``True`` do not use the priority information in HSI
+            event to schedule
+        :param adopt_priority_policy: If 'True' then use priority specified in the PriorityRank ResourceFile instead
+            of that provided as argument when scheduling via `schedule_hsi_event`.
+        :param PriorityRank_Dict: contains priority and fast tracking channel eligibility given Treatment_ID
+        :param lowest_priority_considered: If priority lower (i.e. priority value greater than) this, do not schedule
+            (and instead call `never_ran` at the time of `tclose`).
+        :param include_fasttrack_routes: If 'True' then include fast-tracking options for vulnerable categories;
+        :param list_fasttrack: list of individual's attributes that will be relevant in
+            determining whether they should be eligible for fast tracking, and the corresponding
+            fast tracking channels that can be potentially available given the modules included in the simulation.
+            otherwise ignore indicators for fast-tracking. It is specified in the PriorityRank ResourceFile
         :param capabilities_coefficient: Multiplier for the capabilities of health
             officers, if ``None`` set to ratio of initial population to estimated 2010
             population.
@@ -545,7 +546,6 @@ class HealthSystem(Module):
             end of each day, end of each calendar month, end of each calendar year or
             the end of the simulation respectively, or ``None`` to not track the HSI
             event details and frequencies.
-        :param PriorityRank_Dict: contains priority and fast tracking channel eligibility given Treatment_ID
         """
 
         super().__init__(name)
