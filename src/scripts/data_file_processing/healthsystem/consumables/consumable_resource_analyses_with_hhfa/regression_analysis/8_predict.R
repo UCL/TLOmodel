@@ -4,7 +4,6 @@
 ###########################################################
 # 1. Set up
 ###########################################################
-
 # 1.1 Run setup script
 #---------------------------------
 source(paste0(path_to_scripts, "3b_data_setup_for_regression.R"))
@@ -27,14 +26,14 @@ rep_str = c('acute lower respiratory infections'='alri','obstetric and newborn c
 df_regress$program_plot <- str_replace_all(df_regress$program_plot, rep_str)
 df_regress <- df_regress[unlist(c(chosen_varlist_for_fac_re, 'program_plot'))]
 
-# 3.1 All facilities have computers
-####################################
+# 3.1 Scenario - All facilities have computers
+###############################################
 df_pred_computer <- df_regress
 df_pred_computer['functional_computer'] = 1 # Set computer availability
 df_pred_computer$available_prob <- rep(NA,nrow(df_pred_computer)) # empty column
 
 newpred_computer <- predict(model_fac_item_re,newdata=df_pred_computer, type = "response") # Predict availability
-save(newpred_computer, file = "2 outputs/predictions/pred_computer_all.rdta")
+save(newpred_computer, file = paste0(path_to_outputs, "predictions/pred_computer_all.rdta"))
 df_pred_computer$available_prob <- newpred_computer 
 
 # Update probability values to binary
@@ -62,6 +61,11 @@ c <- length(unique(df_regress[which(df_regress$functional_computer == 0),]$fac_c
 print(paste0("Among ",c,  " facilities which previously did not have computers, availability changed from 0 to 1 in ",
              round(a*100,2), " % of instances, and changed from 1 to 0 in ", round(b*100,2), " % of the instances."))
 
+# Collapse data
+summary_pred_computer <- df_pred_computer %>% 
+  group_by(district, fac_type, program_plot, item) %>%
+  summarise_at(vars(available_predict, available), list(mean))
+
 # Extract .csv for model simulation
 write.csv(summary_pred_computer,paste0(path_to_outputs, "predictions/summary_pred_computer.csv"), row.names = TRUE)
 
@@ -84,17 +88,19 @@ df_pred_pharma$available_predict[df_pred_pharma$available_prob >0.5] <- 1
 stopifnot(mean(df_pred_pharma$available, na.rm = TRUE) < 
             mean(df_pred_pharma$available_predict, na.rm = TRUE))
 
+# Collapse data
+summary_pred_pharma <- df_pred_pharma %>% 
+  group_by(district, fac_type, program_plot, item) %>%
+  summarise_at(vars(available_predict, available), list(mean))
+
+# Extract .csv for model simulation
+write.csv(summary_pred_pharma,paste0(path_to_outputs, "predictions/summary_pred_pharma.csv"), row.names = TRUE)
+
 #################################
 # 4. Plot predicted availability
 ###############################
 # 4.1 Computer
 ###############################
-# Plot predicted values
-# Collapse data
-summary_pred_computer <- df_pred_computer %>% 
-  group_by(district, fac_type, program_plot, item) %>%
-  summarise_at(vars(available_predict, available), list(mean))
-
 # Plot original values
 p_original <- ggplot(summary_pred_computer, aes(item, district,  fill= available)) + 
   geom_tile() +
@@ -109,7 +115,7 @@ p_original <- ggplot(summary_pred_computer, aes(item, district,  fill= available
        subtitle =paste0("Global average = ", round(mean(summary_pred_computer$available) *100, 2),"%")) +
   xlab("consumable")
 
-
+# Plot predicted values
 p_predict <- ggplot(summary_pred_computer, aes(item, district,  fill= available_predict)) + 
   geom_tile() +
   facet_wrap(~fac_type) +
@@ -133,19 +139,8 @@ figure <- ggpubr::ggarrange(p_original, p_predict, # list of plots
                   nrow = 2)  %>% # number of rows
   ggexport(filename = paste0(path_to_outputs, "predictions/figures/pred_computer.pdf"))
 
-# If we want common axis titles
-#annotate_figure(figure, left = textGrob("District", rot = 90, vjust = 1, gp = gpar(cex = 1.3)),
-#                bottom = textGrob("Consumable", gp = gpar(cex = 1.3))) %>% # 
-#  ggexport(filename = "2 outputs/figures/prediction/pred_computer.pdf") 
-
 # 4.2 Person in-charge of drug orders
 #####################################
-# Plot predicted values
-# Collapse data
-summary_pred_pharma <- df_pred_pharma %>% 
-  group_by(district, fac_type, program_plot, item) %>%
-  summarise_at(vars(available_predict, available), list(mean))
-
 # Plot original values
 p_original <- ggplot(summary_pred_pharma, aes(item, district,  fill= available)) + 
   geom_tile() +
@@ -160,7 +155,7 @@ p_original <- ggplot(summary_pred_pharma, aes(item, district,  fill= available))
        subtitle =paste0("Global average = ", round(mean(summary_pred_pharma$available) *100, 2),"%")) +
   xlab("consumable")
 
-
+# Plot predicted values
 p_predict <- ggplot(summary_pred_pharma, aes(item, district,  fill= available_predict)) + 
   geom_tile() +
   facet_wrap(~fac_type) +
@@ -173,7 +168,6 @@ p_predict <- ggplot(summary_pred_pharma, aes(item, district,  fill= available_pr
   labs(title = "Probability of consumable availability - predicted \n (all facilities have pharmacists for drug stock management)", 
        subtitle =paste0("Global average = ", round(mean(summary_pred_pharma$available_predict) *100, 2),"%")) +
   xlab("consumable")
-
 
 
 ggpubr::ggarrange(p_original, p_predict, # list of plots
