@@ -1379,7 +1379,7 @@ def test_policy_and_lowest_priority_enforced(seed, tmpdir):
     sim.event_queue.queue = []  # clear the queue
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE = []  # clear the queue
     # Overwrite one of the Treatments with HSI_Dummy, and assign it a policy priority
-    dictio = sim.modules['HealthSystem'].PriorityRank_Dict
+    dictio = sim.modules['HealthSystem'].priority_rank_dict
     dictio['HSI_Dummy'] = dictio['Alri_Pneumonia_Treatment_Outpatient']
     del dictio['Alri_Pneumonia_Treatment_Outpatient']
     dictio['HSI_Dummy']['Priority'] = 0
